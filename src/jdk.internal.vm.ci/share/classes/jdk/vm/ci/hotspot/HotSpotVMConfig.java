@@ -167,7 +167,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_compiler_counters._nof_overflow_recompiles", Integer.class, "uint");
     final int methodDataOverflowTraps = getFieldOffset("MethodData::_compiler_counters._nof_overflow_traps", Integer.class, "uint");
 
-    final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "CompLevel");
+    final int nmethodHdrOffset = getFieldOffset("nmethod::_hdr", Integer.class, "nmethod::NMethodHeader*");
+    final int nmethodHeaderCompLevelOffset = getFieldOffset("nmethod::NMethodHeader::_comp_level", Integer.class, "CompLevel");
 
     final int compilationLevelNone = getConstant("CompLevel_none", Integer.class);
     final int compilationLevelSimple = getConstant("CompLevel_simple", Integer.class);

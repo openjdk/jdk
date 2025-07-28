@@ -1988,7 +1988,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ compare64_and_branch(Z_RET, (intptr_t) 0, Assembler::bcondEqual, dispatch);
 
     // Nmethod may have been invalidated (VM may block upon call_VM return).
-    __ z_cliy(in_bytes(nmethod::state_offset()), Z_RET, nmethod::in_use);
+    // Load the _hdr pointer from the nmethod
+    __ z_lg(Z_R1_scratch, Address(Z_RET, nmethod::hdr_offset()));
+    // Load _state value from _hdr at an offset specified by nmethod::state_offset()
+    __ z_cliy(in_bytes(nmethod::state_offset()), Z_R1_scratch, nmethod::in_use);
     __ z_brne(dispatch);
 
     // Migrate the interpreter frame off of the stack.
@@ -2005,7 +2008,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ pop_interpreter_frame(Z_R14, Z_ARG2/*tmp1*/, Z_ARG3/*tmp2*/);
 
     // ... and begin the OSR nmethod.
-    __ z_lg(Z_R1_scratch, Address(Z_tmp_1, nmethod::osr_entry_point_offset()));
+    // Load the _hdr pointer from the nmethod
+    __ z_lg(Z_R1_scratch, Address(Z_tmp_1, nmethod::hdr_offset()));
+    // Load _osr_entry_point address from _hdr at an offset specified
+    // by nmethod::osr_entry_point_offset()
+    __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, nmethod::osr_entry_point_offset()));
     __ z_br(Z_R1_scratch);
   }
   BLOCK_COMMENT("} TemplateTable::branch");
