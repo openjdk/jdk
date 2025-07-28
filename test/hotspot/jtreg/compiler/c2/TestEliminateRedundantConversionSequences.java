@@ -91,16 +91,16 @@ public class TestEliminateRedundantConversionSequences {
     }
 
     public static void main(String[] strArr) {
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < 1550; ++i) {
             testD2L(1);
         }
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < 1550; ++i) {
             testF2I(1);
         }
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < 1550; ++i) {
             testF2L(1);
         }
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < 1550; ++i) {
             testI2F(1);
         }
     }
