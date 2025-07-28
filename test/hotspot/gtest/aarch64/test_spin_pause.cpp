@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,13 @@
  * questions.
  */
 
-/**
- * <p>
- * <b>Deprecated, for removal: This API element is subject to removal
- * in a future version.</b><br>
- * <em>The jdk.jsobject module will be delivered with JavaFX.</em>
- * </p>
- *
- * <p>
- * Provides Java code the ability to access the JavaScript engine and the
- * HTML DOM in the web browser.
- * </p>
- *
- * <p>
- * The classes in this package were initially specified by Netscape, and are the
- * de facto standard mechanism for calling JavaScript from the Java runtime.
- * </p>
- *
- * @since 1.5
- */
+#if defined(AARCH64) && !defined(ZERO)
 
-package netscape.javascript;
+#include "utilities/spinYield.hpp"
+#include "unittest.hpp"
+
+TEST_VM(SpinPause, sanity) {
+  ASSERT_EQ(SpinPause(), 1);
+}
+
+#endif  // AARCH64

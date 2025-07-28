@@ -6686,8 +6686,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_catch_exception_entry = generate_catch_exception();
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 

@@ -1729,6 +1729,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -2261,6 +2267,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {

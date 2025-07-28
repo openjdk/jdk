@@ -306,10 +306,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     }
     assert(_obj != noreg, "must be a valid register");
     Register tmp = rax;
-    __ push(tmp);
+    __ push_ppx(tmp);
     __ movptr(tmp, Address(_obj, java_lang_Class::klass_offset()));
     __ cmpptr(r15_thread, Address(tmp, InstanceKlass::init_thread_offset()));
-    __ pop(tmp); // pop it right away, no matter which path we take
+    __ pop_ppx(tmp); // pop it right away, no matter which path we take
     __ jccb(Assembler::notEqual, call_patch);
 
     // access_field patches may execute the patched code before it's
