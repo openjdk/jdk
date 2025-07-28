@@ -164,7 +164,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
       return nullptr;
     }
 
-    MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
       size_t desired_capacity = bucket_size(bucket) * 2;
       if (!try_expand_to(desired_capacity)) {
@@ -293,13 +293,13 @@ void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQ
 }
 
 void G1CMMarkStack::add_chunk_to_chunk_list(TaskQueueEntryChunk* elem) {
-  MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   add_chunk_to_list(&_chunk_list, elem);
   _chunks_in_chunk_list++;
 }
 
 void G1CMMarkStack::add_chunk_to_free_list(TaskQueueEntryChunk* elem) {
-  MutexLocker x(MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
   add_chunk_to_list(&_free_list, elem);
 }
 
@@ -312,7 +312,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_list(TaskQu
 }
 
 G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_chunk_list() {
-  MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   TaskQueueEntryChunk* result = remove_chunk_from_list(&_chunk_list);
   if (result != nullptr) {
     _chunks_in_chunk_list--;
@@ -321,7 +321,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_chunk_list(
 }
 
 G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_free_list() {
-  MutexLocker x(MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
   return remove_chunk_from_list(&_free_list);
 }
 
@@ -432,9 +432,9 @@ bool G1CMRootMemRegions::contains(const MemRegion mr) const {
 }
 
 void G1CMRootMemRegions::notify_scan_done() {
-  MutexLocker x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
   _scan_in_progress = false;
-  RootRegionScan_lock->notify_all();
+  G1RootRegionScan_lock->notify_all();
 }
 
 void G1CMRootMemRegions::cancel_scan() {
@@ -459,7 +459,7 @@ bool G1CMRootMemRegions::wait_until_scan_finished() {
   }
 
   {
-    MonitorLocker ml(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
     while (scan_in_progress()) {
       ml.wait();
     }
@@ -517,7 +517,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_num_regions(), mtGC)),
   _needs_remembered_set_rebuild(false)
 {
-  assert(CGC_lock != nullptr, "CGC_lock must be initialized");
+  assert(G1CGC_lock != nullptr, "CGC_lock must be initialized");
 
   _mark_bitmap.initialize(g1h->reserved(), bitmap_storage);
 
@@ -1113,7 +1113,7 @@ uint G1ConcurrentMark::completed_mark_cycles() const {
 }
 
 void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
-  _g1h->collector_state()->set_clearing_bitmap(false);
+  _g1h->collector_state()->set_clear_bitmap_in_progress(false);
 
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
@@ -1380,7 +1380,7 @@ void G1ConcurrentMark::remark() {
   }
 
   G1Policy* policy = _g1h->policy();
-  policy->record_concurrent_mark_remark_start();
+  policy->record_pause_start_time();
 
   double start = os::elapsedTime();
 
@@ -1450,8 +1450,13 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
-    _g1h->resize_heap_if_necessary(size_t(0) /* allocation_word_size */);
-    _g1h->uncommit_regions_if_necessary();
+    // For Remark Pauses that may have been triggered by PeriodicGCs, we maintain
+    // resizing based on MinHeapFreeRatio or MaxHeapFreeRatio. If a PeriodicGC is
+    // triggered, it likely means there are very few regular GCs, making resizing
+    // based on gc heuristics less effective.
+    if (_g1h->last_gc_was_periodic()) {
+      _g1h->resize_heap_after_full_collection(0 /* allocation_word_size */);
+    }
 
     compute_new_sizes();
 
@@ -1511,7 +1516,7 @@ void G1ConcurrentMark::cleanup() {
   }
 
   G1Policy* policy = _g1h->policy();
-  policy->record_concurrent_mark_cleanup_start();
+  policy->record_pause_start_time();
 
   double start = os::elapsedTime();
 

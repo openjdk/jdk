@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.util.function.BiPredicate;
 
 import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -53,6 +54,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
+import static jdk.internal.net.http.common.Utils.copyProxy;
 
 public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
@@ -135,15 +137,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = requestURI;
-        if (isWebSocket) {
-            // WebSocket determines and sets the proxy itself
-            this.proxy = ((HttpRequestImpl) request).proxy;
-        } else {
-            if (ps != null)
-                this.proxy = retrieveProxy(ps, uri);
-            else
-                this.proxy = null;
-        }
+        this.proxy = retrieveProxy(request, ps, uri);
         this.expectContinue = request.expectContinue();
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestPublisher = request.bodyPublisher().orElse(null);
@@ -164,7 +158,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                                                             String method,
                                                             HttpRequestImpl other,
                                                             boolean mayHaveBody) {
-        return new HttpRequestImpl(uri, method, other, mayHaveBody);
+        if (uri.getScheme().equalsIgnoreCase(other.uri.getScheme()) &&
+                uri.getRawAuthority().equals(other.uri.getRawAuthority())) {
+            return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.empty());
+        }
+        return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.of(Utils.ALLOWED_REDIRECT_HEADERS));
     }
 
     /** Returns a new instance suitable for authentication. */
@@ -184,9 +182,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                             String method,
                             HttpRequestImpl other,
                             boolean mayHaveBody) {
+        this(uri, method, other, mayHaveBody, Optional.empty());
+    }
+
+    private HttpRequestImpl(URI uri,
+                            String method,
+                            HttpRequestImpl other,
+                            boolean mayHaveBody,
+                            Optional<BiPredicate<String, String>> redirectHeadersFilter) {
         assert method == null || Utils.isValidName(method);
-        this.method = method == null? "GET" : method;
-        this.userHeaders = other.userHeaders;
+        this.method = method == null ? "GET" : method;
+        HttpHeaders userHeaders = redirectHeadersFilter.isPresent() ?
+                HttpHeaders.of(other.userHeaders.map(), redirectHeadersFilter.get()) : other.userHeaders;
+        this.userHeaders = userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
         if (userHeaders.firstValue("User-Agent").isEmpty()) {
@@ -328,16 +336,27 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public boolean expectContinue() { return expectContinue; }
 
-    /** Retrieves the proxy, from the given ProxySelector, if there is one. */
-    private static Proxy retrieveProxy(ProxySelector ps, URI uri) {
-        Proxy proxy = null;
-        List<Proxy> pl = ps.select(uri);
-        if (!pl.isEmpty()) {
-            Proxy p = pl.get(0);
-            if (p.type() == Proxy.Type.HTTP)
-                proxy = p;
+    /** Retrieves a copy of the proxy either from the given {@link HttpRequest} or {@link ProxySelector}, if there is one. */
+    private static Proxy retrieveProxy(HttpRequest request, ProxySelector ps, URI uri) {
+
+        // WebSocket determines and sets the proxy itself
+        if (request instanceof HttpRequestImpl requestImpl && requestImpl.isWebSocket) {
+            return requestImpl.proxy;
         }
-        return proxy;
+
+        // Try to find a matching one from the `ProxySelector`
+        if (ps != null) {
+            List<Proxy> pl = ps.select(uri);
+            if (!pl.isEmpty()) {
+                Proxy p = pl.getFirst();
+                if (p.type() == Proxy.Type.HTTP) {
+                    return copyProxy(p);
+                }
+            }
+        }
+
+        return null;
+
     }
 
     InetSocketAddress proxy() {
@@ -353,7 +372,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public void setProxy(Proxy proxy) {
         assert isWebSocket;
-        this.proxy = proxy;
+        this.proxy = copyProxy(proxy);
     }
 
     @Override
