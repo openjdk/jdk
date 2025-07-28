@@ -62,6 +62,7 @@ import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
@@ -258,7 +259,7 @@ public class JDKPlatformProvider implements PlatformProvider {
                         fs = FileSystems.newFileSystem(file, CT_SYM_ZIP_ENV);
                         // If for any reason this was not opened from a ZIP file,
                         // then the resulting file system would not be read-only.
-                        assert fs.isReadOnly();
+                        Assert.check(fs.isReadOnly());
                         ctSym2FileSystem.put(file, fs);
                     }
 

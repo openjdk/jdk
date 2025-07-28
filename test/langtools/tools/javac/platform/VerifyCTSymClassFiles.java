@@ -35,9 +35,6 @@
  * @run main VerifyCTSymClassFiles
  */
 
-import com.sun.tools.javac.file.FSInfo;
-import com.sun.tools.javac.util.Context;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.classfile.ClassFile;
@@ -48,6 +45,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 public class VerifyCTSymClassFiles {
 
@@ -57,8 +55,6 @@ public class VerifyCTSymClassFiles {
         t.checkClassFiles();
     }
 
-    private final FSInfo fsInfo = FSInfo.instance(new Context());
-
     void checkClassFiles() throws IOException {
         Path ctSym = Paths.get(System.getProperty("java.home"), "lib", "ct.sym");
 
@@ -67,7 +63,12 @@ public class VerifyCTSymClassFiles {
             return ;
         }
         // Expected to always be a ZIP filesystem.
-        try (var fs = fsInfo.getJarFSProvider().newFileSystem(ctSym, fsInfo.readOnlyJarFSEnv(null))) {
+        Map<String, ?> env = Map.of("accessMode", "readOnly");
+        try (FileSystem fs = FileSystems.newFileSystem(ctSym, env)) {
+            // Check that the file system is read only (not true if not a zip file system).
+            if (!fs.isReadOnly()) {
+                throw new AssertionError("Expected read-only file system");
+            }
             Files.walk(fs.getRootDirectories().iterator().next())
                  .filter(p -> Files.isRegularFile(p))
                  .forEach(p -> checkClassFile(p));
