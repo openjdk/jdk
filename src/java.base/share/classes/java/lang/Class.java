@@ -1381,7 +1381,7 @@ public final class Class<T> implements java.io.Serializable,
         // Location.CLASS allows SUPER and AccessFlag.MODULE which
         // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
         // and STATIC, which are not allowed on Location.CLASS.
-        // Use getClassAccessFlagsRaw to expose SUPER status.
+        // Use getRawClassAccessFlags to expose SUPER status.
         var location = (isMemberClass() || isLocalClass() ||
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
@@ -4133,13 +4133,10 @@ public final class Class<T> implements java.io.Serializable,
     private native int getClassFileVersion0();
 
     /**
-     * {@return the access flags as they were in the class's bytecode, including
-     * the original setting of ACC_SUPER}
-     *
-     * If the class is an array type then the access flags of the element type is
-     * returned.  If the class is a primitive then ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
+     * Return the access flags as they were in the class's bytecode, including
+     * the original setting of ACC_SUPER.
      */
     int getRawClassAccessFlags() {
-        return isArray() ? elementType().getRawClassAccessFlags() : rawAccessFlags;
+        return rawAccessFlags;
     }
 }
