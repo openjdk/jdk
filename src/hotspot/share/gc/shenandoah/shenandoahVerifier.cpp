@@ -409,7 +409,9 @@ public:
     _garbage += bytes_garbage_in_region;
     _committed += r->is_committed() ? _region_size_bytes : 0;
     if (r->is_humongous()) {
-      _humongous_waste += r->free();
+      size_t waste_bytes = r->free();
+      _humongous_waste += waste_bytes;
+      _used += waste_bytes;     // humongous_waste is counted as part of _used
     }
     if (r->is_trash()) {
       _trashed_regions++;
