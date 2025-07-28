@@ -74,7 +74,6 @@ address NativeCall::reloc_destination() {
   if (code->is_nmethod()) {
     stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
     assert(stub_addr != nullptr, "Sanity");
-    return stub_addr;
   }
 
   return stub_addr;
