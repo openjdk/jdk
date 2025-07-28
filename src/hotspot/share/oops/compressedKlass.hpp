@@ -231,8 +231,8 @@ public:
   // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }
 
-  static bool is_null(Klass* v)      { return v == nullptr; }
-  static bool is_null(narrowKlass v) { return v == 0; }
+  static bool is_null(const Klass* v)  { return v == nullptr; }
+  static bool is_null(narrowKlass v)   { return v == 0; }
 
   // Versions without asserts
   static inline Klass* decode_not_null_without_asserts(narrowKlass v);
@@ -240,9 +240,9 @@ public:
   static inline Klass* decode_not_null(narrowKlass v);
   static inline Klass* decode(narrowKlass v);
 
-  static inline narrowKlass encode_not_null_without_asserts(Klass* k, address narrow_base, int shift);
-  static inline narrowKlass encode_not_null(Klass* v);
-  static inline narrowKlass encode(Klass* v);
+  static inline narrowKlass encode_not_null_without_asserts(const Klass* k, address narrow_base, int shift);
+  static inline narrowKlass encode_not_null(const Klass* v);
+  static inline narrowKlass encode(const Klass* v);
 
 #ifdef ASSERT
   // Given an address, check that it can be encoded with the current encoding
@@ -250,6 +250,9 @@ public:
   // Given a narrow Klass ID, check that it is valid according to current encoding
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
+
+  // Given a narrow Klass ID, returns true if it appears to be valid
+  inline static bool is_valid_narrow_klass_id(narrowKlass nk);
 
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.

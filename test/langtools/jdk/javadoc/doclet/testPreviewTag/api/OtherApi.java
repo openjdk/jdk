@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,28 @@
  * questions.
  */
 
-/*
- * @test
- * @summary run CTW for all classes from jdk.jsobject module
- *
- * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.jimage
- *          java.base/jdk.internal.misc
- *          java.base/jdk.internal.reflect
- * @modules jdk.jsobject
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.jsobject
+package api;
+
+/**
+ * Non-preview class with a preview members.
  */
+public class OtherApi {
+
+   /**
+    * This is a preview method.
+    *
+    * @previewFeature  First preview feature
+    * @previewNote     Alternative preview note. {@link PreviewApi} is a preview API.
+    */
+    public void previewMethod() {}
+
+   /**
+    * This is another preview method.
+    *
+    * @previewFeature Second preview feature
+    * @previewNote    Alternative preview note for second preview feature.
+    * @previewNote    Extra note tag triggers a warning
+    */
+    public void otherPreviewMethod() {}
+
+}
