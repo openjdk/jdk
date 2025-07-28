@@ -27,7 +27,7 @@
  * @summary Redundant ConvX2Y->ConvY2X->ConvX2Y sequences should be
  *          simplified to a single ConvX2Y operation when applicable
  *          VerifyIterativeGVN checks that this optimization was applied
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
  *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences
  * @run main compiler.c2.TestEliminateRedundantConversionSequences
