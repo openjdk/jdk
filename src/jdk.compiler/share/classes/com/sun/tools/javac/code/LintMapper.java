@@ -52,7 +52,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
  * Maps source code positions to the applicable {@link Lint} instance.
  *
  * <p>
- * Because {@code @SuppressWarnings} is a Java symbol, in general this mapping can't be be
+ * Because {@code @SuppressWarnings} is a Java symbol, in general this mapping can't be
  * calculated until after attribution. As each top-level declaration (class, package, or module)
  * is attributed, this singleton is notified and the {@link Lint}s that apply to every source
  * position within that top-level declaration are calculated.
