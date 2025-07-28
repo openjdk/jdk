@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
@@ -424,9 +425,14 @@ abstract class ECDSASignature extends SignatureSpi {
         throws SignatureException {
 
         byte[] seedBytes = new byte[(seedBits + 7) / 8];
-        byte[] s = priv instanceof ECPrivateKeyImpl
-                ? ((ECPrivateKeyImpl)priv).getArrayS()
-                : ECUtil.sArray(priv.getS(), priv.getParams());
+        byte[] s;
+        boolean extraCopyToZero = false;
+        if(priv instanceof ECPrivateKeyImpl) {
+            s = ((ECPrivateKeyImpl) priv).getArrayS();
+        } else {
+            extraCopyToZero = true;
+            s = ECUtil.sArray(priv.getS(), priv.getParams());
+        }
 
         // Attempt to create the signature in a loop that uses new random input
         // each time. The chance of failure is very small assuming the
@@ -436,7 +442,14 @@ abstract class ECDSASignature extends SignatureSpi {
             random.nextBytes(seedBytes);
             ECDSAOperations.Seed seed = new ECDSAOperations.Seed(seedBytes);
             try {
-                return ops.signDigest(s, digest, seed);
+                // a new allocation for this value, rather than just
+                // returning it, is a trade-off to zero-out the local
+                // value for "s" when necessary
+                byte[] retValue = ops.signDigest(s, digest, seed);
+                if(extraCopyToZero) {
+                    Arrays.fill(s, (byte)0x00);
+                }
+                return retValue;
             } catch (IntermediateValueException ex) {
                 // try again in the next iteration
             }
