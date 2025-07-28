@@ -317,7 +317,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     }
 
     ShenandoahFreeSet* freeset = _heap->free_set();
-    freeset->transfer_humongous_regions_from_mutator_to_old_collector(spanned_regions, humongous_waste / HeapWordSize);
+    freeset->transfer_humongous_regions_from_mutator_to_old_collector(spanned_regions, humongous_waste);
 
     old_gen->increase_affiliated_region_count(spanned_regions);
     old_gen->increase_used(spanned_regions * region_size_bytes);

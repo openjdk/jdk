@@ -2311,8 +2311,9 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
           oop obj = cast_to_oop(region->bottom());
           size_t byte_size = obj->size() * HeapWordSize;
           size_t region_span = ShenandoahHeapRegion::required_regions(byte_size);
-          humongous_waste_bytes = region_span * ShenandoahHeapRegion::region_size_words() - byte_size;
-        } else if (ac >= ShenandoahHeap::min_fill_size() * HeapWordSize) {
+          humongous_waste_bytes = region_span * ShenandoahHeapRegion::region_size_bytes() - byte_size;
+        } else if (!region->is_humongous() && (ac >= ShenandoahHeap::min_fill_size() * HeapWordSize)) {
+          // Don't fill humongous continuations
           size_t fill_words = ac / HeapWordSize;
           region->allocate_fill(fill_words);
         }
@@ -2439,11 +2440,13 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
   log_info(gc)("Transferring %zu humongous regions from mutator to old (promoting)", xfer_regions);
 #endif
 
-  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, xfer_regions);
   _partitions.decrease_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, humongous_waste_bytes);
   _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, xfer_regions * region_size_bytes);
+  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, xfer_regions);
+  _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator, xfer_regions * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions * region_size_bytes);
   _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::OldCollector, humongous_waste_bytes);
   _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions * region_size_bytes);
 
@@ -2497,15 +2500,15 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
                                                                 mutator_high_idx, mutator_low_idx, mutator_high_idx);
   _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
 
-  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
   _partitions.decrease_region_counts(which_collector, transferred_regions);
   _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
   _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
   _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
   _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
 
   recompute_total_used();
   _partitions.assert_bounds(true);
@@ -2557,10 +2560,12 @@ transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPa
                                                                 mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
   _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
 
-  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
   _partitions.decrease_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
+  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
   _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, used_transfer);
 
@@ -3072,26 +3077,26 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   }
 
   _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_to_old_collector + used_to_collector);
-  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator,
-                                           regions_to_old_collector + regions_to_collector);
   _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, regions_to_old_collector + regions_to_collector);
   _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator,
                                            empty_regions_to_old_collector + empty_regions_to_collector);
+  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator,
+                                           regions_to_old_collector + regions_to_collector);
   // decrease_capacity() also decreases available
   _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator,
                                 (regions_to_old_collector + regions_to_collector) * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
-  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
   // increase_capacity() also increases available
   _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
+  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
-  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
   // increase_capacity() also increases available
   _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
+  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
 
   if (used_to_collector > 0) {
     _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, used_to_collector);
