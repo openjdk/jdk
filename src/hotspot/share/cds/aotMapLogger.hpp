@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 class ArchiveHeapInfo;
 class DumpRegion;
@@ -38,15 +39,10 @@ class outputStream;
 
 // Write detailed info to a mapfile to analyze contents of the archive.
 // static dump:
-//   java -Xshare:dump -Xlog:aot+map=trace:file=aot.map:none:filesize=0
+//   java -Xshare:dump -Xlog:aot+map=trace,aot+map+oops=trace:file=aot.map:none:filesize=0
 // dynamic dump:
 //   java -cp MyApp.jar -XX:ArchiveClassesAtExit=MyApp.jsa \
 //        -Xlog:aot+map=trace:file=aot.map:none:filesize=0 MyApp
-//
-// We need to do some address translation because the buffers used at dump time may be mapped to
-// a different location at runtime. At dump time, the buffers may be at arbitrary locations
-// picked by the OS. At runtime, we try to map at a fixed location (SharedBaseAddress). For
-// consistency, we log everything using runtime addresses.
 class AOTMapLogger : AllStatic {
   struct ArchivedObjInfo {
     address _src_addr;
@@ -60,6 +56,7 @@ class AOTMapLogger : AllStatic {
   class FakeMirror;
   class FakeObjArray;
   class FakeOop;
+  class FakeTypeArray;
 
   class RequestedMetadataAddr;
 
@@ -74,8 +71,8 @@ class AOTMapLogger : AllStatic {
   static void log_metaspace_region(const char* name, DumpRegion* region,
                                    const ArchiveBuilder::SourceObjList* src_objs);
   static void log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs);
-  static void log_metaspace_objects(address region_base, address region_end,
-                                    GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx);
+  static void log_metaspace_objects_impl(address region_base, address region_end,
+                                         GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs, int start_idx, int end_idx);
 
   static void log_constant_pool(ConstantPool* cp, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
@@ -102,12 +99,11 @@ class AOTMapLogger : AllStatic {
 
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
   static void runtime_log_oops(address buf_start, address buf_end);
-  class ArchivedFieldPrinter;
+  class ArchivedFieldPrinter; // to be replaced by ArchivedFieldPrinter2
   class ArchivedFieldPrinter2;
 #endif
 
 public:
-
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                            ArchiveHeapInfo* heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);

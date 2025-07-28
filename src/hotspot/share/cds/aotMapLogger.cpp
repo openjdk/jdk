@@ -91,7 +91,7 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 // This class is used to find the location and type of all the
 // archived metaspace objects.
 class AOTMapLogger::GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
-  GrowableArray<ArchivedObjInfo> _objs;
+  GrowableArrayCHeap<ArchivedObjInfo, mtClass> _objs;
 
   static int compare_objs_by_addr(ArchivedObjInfo* a, ArchivedObjInfo* b) {
     intx diff = a->_src_addr - b->_src_addr;
@@ -105,7 +105,7 @@ class AOTMapLogger::GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure 
   }
 
 public:
-  GrowableArray<ArchivedObjInfo>* objs() { return &_objs; }
+  GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs() { return &_objs; }
 
   virtual bool do_unique_ref(Ref* ref, bool read_only) {
     ArchivedObjInfo info;
@@ -154,7 +154,7 @@ void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
 
   ResourceMark rm;
   GatherArchivedMetaspaceObjs gatherer;
-  GrowableArray<ArchivedObjInfo>* objs = nullptr;
+  GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs = nullptr;
   int first_ro_index = 0;
 
   if (log_is_enabled(Debug, aot, map)) {
@@ -185,12 +185,12 @@ void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
 
   log_region("rw", rw_base, rw_end, rw_base - _requested_to_mapped_metadata_delta);
   if (log_is_enabled(Debug, aot, map)) {
-    log_metaspace_objects(rw_base, rw_end, objs, 0, first_ro_index);
+    log_metaspace_objects_impl(rw_base, rw_end, objs, 0, first_ro_index);
   }
 
   log_region("ro", ro_base, ro_end, ro_base - _requested_to_mapped_metadata_delta);
   if (log_is_enabled(Debug, aot, map)) {
-    log_metaspace_objects(ro_base, ro_end, objs, first_ro_index, objs->length());
+    log_metaspace_objects_impl(ro_base, ro_end, objs, first_ro_index, objs->length());
   }
 }
 
@@ -233,7 +233,7 @@ void AOTMapLogger::log_metaspace_region(const char* name, DumpRegion* region,
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
 void AOTMapLogger::log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
-  GrowableArray<ArchivedObjInfo> objs;
+  GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
 
   for (int i = 0; i < src_objs->objs()->length(); i++) {
     ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
@@ -246,10 +246,10 @@ void AOTMapLogger::log_metaspace_objects(DumpRegion* region, const ArchiveBuilde
     objs.append(info);
   }
 
-  log_metaspace_objects(address(region->base()), address(region->end()), &objs, 0, objs.length());
+  log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
 }
 
-void AOTMapLogger::log_metaspace_objects(address region_base, address region_end, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx) {
+void AOTMapLogger::log_metaspace_objects_impl(address region_base, address region_end, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs, int start_idx, int end_idx) {
   address last_obj_base = region_base;
   address last_obj_end  = region_base;
   Thread* current = Thread::current();
@@ -308,12 +308,10 @@ void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       cp->pool_holder()->external_name());
 
-/*
   LogStreamHandle(Trace, aot, map) lsh;
   if (lsh.is_enabled()) {
     cp->print_on(&lsh);
   }
-*/
 }
 
 void AOTMapLogger::log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
@@ -415,12 +413,13 @@ void AOTMapLogger::log_oops(ArchiveHeapInfo* heap_info, address start, address e
       ShouldNotReachHere();
     }
 
-    address oop_end = start + byte_size;
-    log_as_hex(start, oop_end, requested_start, /*is_heap=*/true);
-
     if (source_oop != nullptr) {
       log_oop_details(heap_info, source_oop, /*buffered_addr=*/start);
     }
+
+    address oop_end = start + byte_size;
+    log_as_hex(start, oop_end, requested_start, /*is_heap=*/true);
+
     start = oop_end;
   }
 }
@@ -612,8 +611,14 @@ void AOTMapLogger::print_oop_info_cr(outputStream* st, oop source_oop, bool prin
   }
 }
 
-class FakeMirror;
-
+// FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray) are used to traverse and print
+// the heap objects stored in the AOT cache. These objects are different than regular oops:
+// - They do not reside inside the range of the heap.
+// - For +UseCompressedOops: pointers may use a different narrowOop encoding: see FakeOop::read_oop_at(narrowOop*)
+// - For -UseCompressedOops: pointers are not direct: see FakeOop::read_oop_at(oop*)
+//
+// Hence, in general, we cannot use regular oop API (such as oopDesc::obj_field()) on these objects. There
+// are a few raw case where regular oop API work, but these are all guarded with the raw_oop() method.
 class AOTMapLogger::FakeOop {
   static int _requested_shift;
   static intx _buffer_to_requested_delta;
@@ -635,6 +640,11 @@ protected:
   RequestedMetadataAddr metadata_field(int field_offset) {
     return RequestedMetadataAddr(*(address*)(field_addr(field_offset)));
   }
+
+  // Return an "oop" pointer so we can use APIs that accept regular oops. This
+  // must be used with care, as only a limited number of APIs can work with oops that
+  // live outside of the range of the heap.
+  oop raw_oop() { return cast_to_oop(_buffer_addr); }
 
 public:
   static void init(address requested_start, int requested_shift, address buffer_base, address buffer_start, address buffer_end) {
@@ -665,8 +675,8 @@ public:
 
   size_t size() {
     return raw_oop()->size_given_klass(real_klass());
-
   }
+
   bool is_array() { return real_klass()->is_array_klass(); }
   bool is_null() { return _buffer_addr == nullptr; }
 
@@ -694,9 +704,7 @@ public:
     return false; // TODO
   }
 
-  oop raw_oop() { return cast_to_oop(_buffer_addr); }
-
-  FakeOop read_oop_at(narrowOop* addr) {
+  FakeOop read_oop_at(narrowOop* addr) { // +UseCompressedOops
     narrowOop n = *addr;
     if (size_t(n) == 0) {
       return FakeOop(nullptr);
@@ -706,39 +714,59 @@ public:
     }
   }
 
+  FakeOop read_oop_at(oop* addr) { // -UseCompressedOops
+    address requested_value = cast_from_oop<address>(*addr);
+    if (requested_value == nullptr) {
+      return FakeOop(nullptr);
+    } else {
+      return FakeOop(requested_value - _buffer_to_requested_delta);
+    }
+  }
+
   FakeOop obj_field(int field_offset) {
     if (UseCompressedOops) {
-      narrowOop n = *raw_oop()->field_addr<narrowOop>(field_offset);
-      if (size_t(n) == 0) {
-        return FakeOop(nullptr);
-      } else {
-        address field_value = _buffer_base + (size_t(n) << _requested_shift);
-        return FakeOop(field_value);
-      }
+      return read_oop_at(raw_oop()->field_addr<narrowOop>(field_offset));
     } else {
-      return FakeOop(nullptr); // FIXME
+      return read_oop_at(raw_oop()->field_addr<oop>(field_offset));
     }
+  }
+
+  void print_non_oop_field(outputStream* st, fieldDescriptor* fd) {
+    // fd->print_on_for() works for non-oop fields in fake oops
+    precond(fd->field_type() != T_ARRAY && fd->field_type() != T_OBJECT);
+    fd->print_on_for(st, raw_oop());
   }
 
   FakeMirror& as_mirror();
   FakeObjArray& as_obj_array();
+  FakeTypeArray& as_type_array();
+};
 
+class AOTMapLogger::FakeTypeArray : public AOTMapLogger::FakeOop {
+  typeArrayOop raw_typeArrayOop() {
+    return (typeArrayOop)raw_oop();
+  }
+
+public:
+  void print_elements_on(outputStream* st) {
+    TypeArrayKlass::cast(real_klass())->oop_print_elements_on(raw_typeArrayOop(), st);
+  }
 };
 
 class AOTMapLogger::FakeObjArray : public AOTMapLogger::FakeOop {
-  objArrayOop raw_obj_array() {
+  objArrayOop raw_objArrayOop() {
     return (objArrayOop)raw_oop();
   }
 
 public:
   int length() {
-    return raw_obj_array()->length();
+    return raw_objArrayOop()->length();
   }
   FakeOop obj_at(int i) {
     if (UseCompressedOops) {
-      return read_oop_at(raw_obj_array()->obj_at_addr<narrowOop>(i));
+      return read_oop_at(raw_objArrayOop()->obj_at_addr<narrowOop>(i));
     } else {
-      return FakeOop(nullptr); // FIXME
+      return read_oop_at(raw_objArrayOop()->obj_at_addr<oop>(i));
     }
   }
 };
@@ -751,6 +779,10 @@ public:
     RequestedMetadataAddr mirrored_klass = metadata_field(java_lang_Class::klass_offset());
     return mirrored_klass.to_real_klass();
   }
+
+  int static_oop_field_count() {
+    return java_lang_Class::static_oop_field_count(raw_oop());
+  }
 };
 
 AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
@@ -761,6 +793,11 @@ AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
 AOTMapLogger::FakeObjArray& AOTMapLogger::FakeOop::as_obj_array() {
   precond(raw_oop()->is_objArray());
   return (FakeObjArray&)*this;
+}
+
+AOTMapLogger::FakeTypeArray& AOTMapLogger::FakeOop::as_type_array() {
+  precond(raw_oop()->is_typeArray());
+  return (FakeTypeArray&)*this;
 }
 
 void AOTMapLogger::FakeOop::print_string_on(outputStream* st) {
@@ -795,6 +832,7 @@ void AOTMapLogger::FakeMirror::print_class_signature_on(outputStream* st) {
   }
 }
 
+// This will eventually completely replace ArchivedFieldPrinter
 class AOTMapLogger::ArchivedFieldPrinter2 : public FieldClosure {
   FakeOop _fake_oop;
   outputStream* _st;
@@ -817,7 +855,7 @@ public:
       if (_fake_oop.is_marked_as_native_pointer(fd->offset())) {
         print_as_native_pointer(fd);
       } else {
-        fd->print_on_for(_st, _fake_oop.raw_oop()); // name, offset, value
+        _fake_oop.print_non_oop_field(_st, fd); // name, offset, value
         _st->cr();
       }
     }
@@ -903,7 +941,7 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
     log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
   }
 
-  address requested_base = (address)mapinfo->narrow_oop_base();
+  address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
   address requested_start = requested_base + r->mapping_offset();
   address buffer_base = buffer_start - r->mapping_offset();
 
@@ -923,7 +961,7 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
   st->cr();
 
   if (real_klass->is_typeArray_klass()) {
-    // TypeArrayKlass::cast(source_klass)->oop_print_elements_on(typeArrayOop(source_oop), &st);
+    fake_oop.as_type_array().print_elements_on(st);
   } else if (real_klass->is_objArray_klass()) {
     FakeObjArray fake_obj_array = fake_oop.as_obj_array();
     for (int i = 0; i < fake_obj_array.length(); i++) {
@@ -950,7 +988,7 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
         //st->print(" - archived_resolved_references: ");
         //print_oop_info_cr(&st, rr);
 
-        st->print_cr("- ---- static fields (%d):", java_lang_Class::static_oop_field_count(fake_oop.raw_oop()));
+        st->print_cr("- ---- static fields (%d):", fake_mirror.static_oop_field_count());
         InstanceKlass::cast(real_mirrored_klass)->do_local_static_fields(&print_field);
       }
     }
@@ -963,20 +1001,20 @@ void AOTMapLogger::runtime_log_oops(address buffer_start, address buffer_end) {
     return;
   }
 
-  for (address fo = buffer_start; fo < buffer_end; ) {
-    FakeOop fake_oop(fo);
+  for (address fop = buffer_start; fop < buffer_end; ) {
+    FakeOop fake_oop(fop);
     st.print(PTR_FORMAT ": @@ Object ", p2i(fake_oop.requested_addr()));
-    new_print_oop_info_cr(&st, fake_oop);
-
-    address next_fo = fo + fake_oop.size() * BytesPerWord;
-    log_as_hex(fo, next_fo, fake_oop.requested_addr(), /*is_heap=*/true);
+    new_print_oop_info_cr(&st, fake_oop, /*print_requested_addr=*/false);
 
     LogStreamHandle(Trace, aot, map, oops) trace_st;
     if (trace_st.is_enabled()) {
       new_print_oop_details(fake_oop, &trace_st);
     }
 
-    fo = next_fo;
+    address next_fop = fop + fake_oop.size() * BytesPerWord;
+    log_as_hex(fop, next_fop, fake_oop.requested_addr(), /*is_heap=*/true);
+
+    fop = next_fop;
   }
 }
 
