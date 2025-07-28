@@ -52,6 +52,8 @@ class AOTMapLogger : AllStatic {
     MetaspaceObj::Type _type;
   };
   static intx _requested_to_mapped_metadata_delta;
+  static bool _is_logging_at_bootstrap;
+  static bool _is_logging_mapped_aot_cache;
 
   class FakeMirror;
   class FakeObjArray;
@@ -103,7 +105,17 @@ class AOTMapLogger : AllStatic {
   class ArchivedFieldPrinter2;
 #endif
 
+  static bool is_logging_mapped_aot_cache() { return _is_logging_mapped_aot_cache; }
+
+  // Functions like ConstantPool::print_on() won't work in the assembly phase
+  // - The C++ vtables for the buffered objects are not initialized
+  // - Pointers such as ConstantPool::_tags are "requested addresses" that do not point
+  //   to actual memory used by the current JVM.
+  static bool is_logging_metadata_details() { return is_logging_mapped_aot_cache(); } 
 public:
+  static void ergo_initialize();
+  static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
+
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                            ArchiveHeapInfo* heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);

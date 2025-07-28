@@ -30,6 +30,7 @@
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/globals_extension.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
@@ -37,6 +38,8 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/growableArray.hpp"
 
+bool AOTMapLogger::_is_logging_at_bootstrap;
+bool AOTMapLogger::_is_logging_mapped_aot_cache;
 intx AOTMapLogger::_buffer_to_requested_delta;
 intx  AOTMapLogger::_requested_to_mapped_metadata_delta;
 
@@ -56,9 +59,21 @@ public:
   }
 };
 
+void AOTMapLogger::ergo_initialize() {
+  if (!CDSConfig::is_dumping_archive() && CDSConfig::is_using_archive() && log_is_enabled(Info, aot, map)) {
+    _is_logging_at_bootstrap = true;
+    if (FLAG_IS_DEFAULT(ArchiveRelocationMode)) {
+      FLAG_SET_ERGO(ArchiveRelocationMode, 0);
+    } else if (ArchiveRelocationMode != 0) {
+      log_warning(aot, map)("Addresses in the AOT map may be incorrect for -XX:ArchiveRelocationMode=%d.", ArchiveRelocationMode);
+    }
+  }
+}
+
 void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                                 ArchiveHeapInfo* heap_info,
                                 char* bitmap, size_t bitmap_size_in_bytes) {
+  _is_logging_mapped_aot_cache = false;
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
 
   log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
@@ -126,6 +141,7 @@ public:
 };
 
 void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
+  _is_logging_mapped_aot_cache = true;
   _requested_to_mapped_metadata_delta = mapinfo->relocation_delta();
 
   address header = address(mapinfo->header());
@@ -308,9 +324,13 @@ void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       cp->pool_holder()->external_name());
 
-  LogStreamHandle(Trace, aot, map) lsh;
-  if (lsh.is_enabled()) {
-    cp->print_on(&lsh);
+  // Snippet for supporting JDK-8363440: "Upgrade AOT map file logging to display more assets and asset content"
+  // To be removed from final version of this PR.
+  if (is_logging_metadata_details()) {
+    LogStreamHandle(Trace, aot, map) lsh;
+    if (lsh.is_enabled()) {
+      cp->print_on(&lsh);
+    }
   }
 }
 

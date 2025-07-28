@@ -1965,7 +1965,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   Universe::load_archived_object_instances();
   AOTCodeCache::initialize();
 
-  if (log_is_enabled(Info, aot, map)) {
+  if (AOTMapLogger::is_logging_at_bootstrap()) {
     AOTMapLogger::runtime_log(static_mapinfo);
   }
 
