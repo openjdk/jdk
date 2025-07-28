@@ -104,8 +104,8 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
-volatile intptr_t VMError::handshakeTimedOutThread = p2i(nullptr);
-volatile intptr_t VMError::safepointTimedOutThread = p2i(nullptr);
+volatile intptr_t VMError::_handshake_timeout_thread = p2i(nullptr);
+volatile intptr_t VMError::_safepoint_timeout_thread = p2i(nullptr);
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -820,9 +820,9 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        if (handshakeTimedOutThread == p2i(_thread)) {
+        if (_handshake_timeout_thread == p2i(_thread)) {
           st->print(" (sent by handshake timeout handler");
-        } else if (safepointTimedOutThread == p2i(_thread)) {
+        } else if (_safepoint_timeout_thread == p2i(_thread)) {
           st->print(" (sent by safepoint timeout handler");
         } else {
           st->print(" (sent by kill)");
@@ -1337,12 +1337,12 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
-void VMError::set_handshake_timed_out_thread(intptr_t x) {
-  handshakeTimedOutThread = x;
+void VMError::set_handshake_timed_out_thread(intptr_t thread_addr) {
+  _handshake_timeout_thread = thread_addr;
 }
 
-void VMError::set_safepoint_timed_out_thread(intptr_t x) {
-  safepointTimedOutThread = x;
+void VMError::set_safepoint_timed_out_thread(intptr_t thread_addr) {
+  _safepoint_timeout_thread = thread_addr;
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting

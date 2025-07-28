@@ -211,7 +211,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
     log_error(handshake)("No thread with an unfinished handshake op(" INTPTR_FORMAT ") found.", p2i(op));
   }
   if (target != nullptr) {
-    fatal("Thread " PTR_FORMAT " has not cleared handshake op: " PTR_FORMAT ", then failed to terminate JVM", p2i(target), p2i(op));
+    fatal("Thread " PTR_FORMAT " has not cleared handshake op %s, and failed to terminate the JVM", p2i(target), op->name());
   } else {
     fatal("Handshake timeout");
   }
