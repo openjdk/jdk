@@ -940,7 +940,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # ACLE and this flag are required to build the aarch64 SVE related functions in
   # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
   # that check.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_CPU" = "xlinux"; then
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_OS" = "xlinux"; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
       AC_LANG_PUSH(C)
       OLD_CFLAGS="$CFLAGS"
