@@ -79,8 +79,8 @@ closeDescriptors(void)
      * opendir() can then use these lowest numbered closed file
      * descriptors afresh.
      *
-     * WARNING: We are not allowed to fail until after these two closes are
-     * done. forkedChildProcess() relies on this. */
+     * WARNING: We are not allowed to return with a failure until after
+     * these two closes are done. forkedChildProcess() relies on this. */
 
     close(from_fd);          /* for possible use by opendir() */
     close(from_fd + 1);      /* another one for good luck */
