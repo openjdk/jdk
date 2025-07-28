@@ -61,7 +61,7 @@ public class TestHistoryInHsErrFile {
     output.shouldNotHaveExitValue(0);
 
     output.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
-    output.shouldMatch("# +SIGSEGV.*");
+    output.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
     File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
 
     // now:                     |------------------- process -----------------||--------- glibc ---------||---- java heap ----||---- classes ----||--------- metaspace ---------||- threads -||-------------- nmt malloc -------------|
