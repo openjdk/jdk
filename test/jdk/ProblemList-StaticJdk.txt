@@ -1,0 +1,14 @@
+# Require jarsigner
+java/lang/System/LoggerFinder/SignedLoggerFinderTest/SignedLoggerFinderTest.java 8346719 generic-all
+java/util/jar/JarFile/jarVerification/MultiProviderTest.java                     8346719 generic-all
+
+# Require jar
+java/lang/System/MacEncoding/TestFileEncoding.java                               8346719 generic-all
+java/util/ResourceBundle/modules/basic/BasicTest.java                            8346719 generic-all
+
+# Require javac
+java/util/ResourceBundle/modules/layer/LayerTest.java                            8346719 generic-all
+java/util/ResourceBundle/modules/unnamed/UnNamedTest.java                        8346719 generic-all
+
+# Require jps
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java                            8346719 generic-all

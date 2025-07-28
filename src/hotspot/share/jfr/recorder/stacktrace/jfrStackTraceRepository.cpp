@@ -25,12 +25,10 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrPredicate.hpp"
-#include "jfr/utilities/jfrRelation.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/growableArray.hpp"
 
 /*
  * There are two separate repository instances.
@@ -48,7 +46,7 @@ JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
 }
 
-static JfrStackTraceRepository& leak_profiler_instance() {
+JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
   assert(_leak_profiler_instance != nullptr, "invariant");
   return *_leak_profiler_instance;
 }
@@ -68,7 +66,7 @@ JfrStackTraceRepository* JfrStackTraceRepository::create() {
   return _instance;
 }
 
-class JfrFrameType : public JfrSerializer {
+class JfrFrameTypeSerializer : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(JfrStackFrame::NUM_FRAME_TYPES);
@@ -84,7 +82,7 @@ class JfrFrameType : public JfrSerializer {
 };
 
 bool JfrStackTraceRepository::initialize() {
-  return JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameType());
+  return JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameTypeSerializer());
 }
 
 void JfrStackTraceRepository::destroy() {
@@ -153,19 +151,9 @@ traceid JfrStackTraceRepository::record(Thread* current_thread, int skip /* 0 */
   if (!current_thread->is_Java_thread() || current_thread->is_hidden_from_external_view()) {
     return 0;
   }
-  JfrStackFrame* frames = tl->stackframes();
-  if (frames == nullptr) {
-    // pending oom
-    return 0;
-  }
-  assert(frames != nullptr, "invariant");
-  assert(tl->stackframes() == frames, "invariant");
-  return instance().record(JavaThread::cast(current_thread), skip, stack_filter_id, frames, tl->stackdepth());
-}
-
-traceid JfrStackTraceRepository::record(JavaThread* current_thread, int skip, int64_t stack_filter_id, JfrStackFrame *frames, u4 max_frames) {
-  JfrStackTrace stacktrace(frames, max_frames);
-  return stacktrace.record(current_thread, skip, stack_filter_id) ? add(instance(), stacktrace) : 0;
+  ResourceMark rm(current_thread);
+  JfrStackTrace stacktrace;
+  return stacktrace.record(JavaThread::cast(current_thread), skip, stack_filter_id) ? add(instance(), stacktrace) : 0;
 }
 
 traceid JfrStackTraceRepository::add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace) {
@@ -188,7 +176,8 @@ void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* current_threa
   JfrThreadLocal* const tl = current_thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   assert(!tl->has_cached_stack_trace(), "invariant");
-  JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
+  ResourceMark rm(current_thread);
+  JfrStackTrace stacktrace;
   stacktrace.record(current_thread, skip, -1);
   const traceid hash = stacktrace.hash();
   if (hash != 0) {
@@ -198,7 +187,7 @@ void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* current_threa
 
 traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  assert(stacktrace._nr_of_frames > 0, "invariant");
+  assert(stacktrace.number_of_frames() > 0, "invariant");
   const size_t index = stacktrace._hash % TABLE_SIZE;
   const JfrStackTrace* table_entry = _table[index];
 
@@ -244,37 +233,4 @@ size_t JfrStackTraceRepository::clear() {
 traceid JfrStackTraceRepository::next_id() {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   return ++_next_id;
-}
-
-static inline bool should_write(const JfrStackTrace* stacktrace, GrowableArray<traceid>* leakp_set) {
-  assert(stacktrace != nullptr, "invariant");
-  return stacktrace->should_write() && JfrPredicate<traceid, compare_traceid>::test(leakp_set, stacktrace->id());
-}
-
-void JfrStackTraceRepository::write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t) {
-  assert(leakp_set != nullptr, "invariant");
-  assert(leakp_set->is_nonempty(), "invariant");
-  assert(t != nullptr, "invariant");
-
-  JfrCheckpointWriter writer(t);
-  writer.write_type(TYPE_STACKTRACE);
-  const int64_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
-
-  int count = 0;
-  const JfrStackTraceRepository& repo = leak_profiler_instance();
-
-  for (u4 i = 0; i < TABLE_SIZE; ++i) {
-    const JfrStackTrace* stacktrace = repo._table[i];
-    while (stacktrace != nullptr) {
-      if (should_write(stacktrace, leakp_set)) {
-        stacktrace->write(writer);
-        ++count;
-      }
-      stacktrace = stacktrace->next();
-    }
-  }
-
-  assert(count > 0, "invariant");
-  assert(count <= leakp_set->length(), "invariant");
-  writer.write_count(count, count_offset);
 }

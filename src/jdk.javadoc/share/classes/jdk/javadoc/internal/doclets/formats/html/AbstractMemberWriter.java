@@ -266,13 +266,10 @@ public abstract class AbstractMemberWriter {
         var inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
 
         for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
-            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
+            if (!utils.isVisible(inheritedClass)) {
                 continue;
             }
             if (Objects.equals(inheritedClass, typeElement)) {
-                continue;
-            }
-            if (utils.hasHiddenTag(inheritedClass)) {
                 continue;
             }
 

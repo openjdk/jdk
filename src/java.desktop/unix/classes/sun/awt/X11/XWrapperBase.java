@@ -31,6 +31,7 @@ import sun.util.logging.PlatformLogger;
 abstract class XWrapperBase {
     static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.wrappers");
 
+    @Override
     public String toString() {
         String ret = "";
 
@@ -62,6 +63,7 @@ abstract class XWrapperBase {
         }
     }
     public abstract long getPData();
+    @Override
     public XEvent clone() {
         long copy = XlibWrapper.unsafe.allocateMemory(getDataSize());
         XlibWrapper.unsafe.copyMemory(getPData(), copy, getDataSize());

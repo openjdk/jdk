@@ -32,11 +32,12 @@
 <ul>
 <li><a href="#introduction" id="toc-introduction">Introduction</a>
 <ul>
+<li><a href="#changing-this-document"
+id="toc-changing-this-document">Changing this Document</a></li>
 <li><a href="#why-care-about-style" id="toc-why-care-about-style">Why
 Care About Style?</a></li>
-<li><a href="#counterexamples-and-updates"
-id="toc-counterexamples-and-updates">Counterexamples and
-Updates</a></li>
+<li><a href="#counterexamples"
+id="toc-counterexamples">Counterexamples</a></li>
 </ul></li>
 <li><a href="#structure-and-formatting"
 id="toc-structure-and-formatting">Structure and Formatting</a>
@@ -76,6 +77,9 @@ SFINAE</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
+<li><a href="#initializing-variables-with-static-storage-duration"
+id="toc-initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</a></li>
 <li><a href="#uniform-initialization"
 id="toc-uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects"
@@ -83,6 +87,7 @@ id="toc-local-function-objects">Local Function Objects</a></li>
 <li><a href="#inheriting-constructors"
 id="toc-inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#attributes" id="toc-attributes">Attributes</a></li>
+<li><a href="#noexcept" id="toc-noexcept">noexcept</a></li>
 <li><a href="#additional-permitted-features"
 id="toc-additional-permitted-features">Additional Permitted
 Features</a></li>
@@ -99,6 +104,21 @@ writing HotSpot code. Following these will help new code fit in with
 existing HotSpot code, making it easier to read and maintain. Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.</p>
+<h3 id="changing-this-document">Changing this Document</h3>
+<p>Proposed changes should be discussed on the <a
+href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
+list. Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.</p>
+<p>Substantive changes are approved by <a
+href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
+of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
+Members. The Group Lead determines whether consensus has been
+reached.</p>
+<p>Editorial changes (changes that only affect the description of
+HotSpot style, not its substance) do not require the full consensus
+gathering process. The normal HotSpot pull request process may be used
+for editorial changes, with the additional requirement that the
+requisite reviewers are also HotSpot Group Members.</p>
 <h3 id="why-care-about-style">Why Care About Style?</h3>
 <p>Some programmers seem to have lexers and even C preprocessors
 installed directly behind their eyeballs. The rest of us require code
@@ -124,7 +144,7 @@ conforms locally to its own peculiar conventions, it is not worth
 reformatting the whole thing. Also consider separating changes that make
 extensive stylistic updates from those which make functional
 changes.</p>
-<h3 id="counterexamples-and-updates">Counterexamples and Updates</h3>
+<h3 id="counterexamples">Counterexamples</h3>
 <p>Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
 not sufficient justification for new code to follow the counterexample
@@ -137,20 +157,6 @@ bring it up for discussion and possible change. The architectural rule,
 of course, is "When in Rome do as the Romans". Sometimes in the suburbs
 of Rome the rules are a little different; these differences can be
 pointed out here.</p>
-<p>Proposed changes should be discussed on the <a
-href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
-list. Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.</p>
-<p>Substantive changes are approved by <a
-href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
-of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
-Members. The Group Lead determines whether consensus has been
-reached.</p>
-<p>Editorial changes (changes that only affect the description of
-HotSpot style, not its substance) do not require the full consensus
-gathering process. The normal HotSpot pull request process may be used
-for editorial changes, with the additional requirement that the
-requisite reviewers are also HotSpot Group Members.</p>
 <h2 id="structure-and-formatting">Structure and Formatting</h2>
 <h3 id="factoring-and-class-design">Factoring and Class Design</h3>
 <ul>
@@ -207,27 +213,34 @@ the simple "getter".</p></li>
 <ul>
 <li><p>All source files must have a globally unique basename. The build
 system depends on this uniqueness.</p></li>
-<li><p>Keep the include lines within a section alphabetically sorted.</p></li>
-<li><p>Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
-include lines. This also applies to macro-expanded includes of platform
-dependent files.</p></li>
-<li><p>Put system includes in a section after the HotSpot include lines with a blank
-line separating the two sections.</p></li>
+<li><p>Keep the include lines within a section alphabetically sorted by
+their lowercase value. If an include must be out of order for
+correctness, suffix with it a comment such as
+<code>// do not reorder</code>. Source code processing tools can also
+use this hint.</p></li>
+<li><p>Put conditional inclusions (<code>#if ...</code>) at the end of
+the section of HotSpot include lines. This also applies to
+macro-expanded includes of platform dependent files.</p></li>
+<li><p>Put system includes in a section after the HotSpot include lines
+with a blank line separating the two sections.</p></li>
 <li><p>Do not put non-trivial function implementations in .hpp files. If
-the implementation depends on other .hpp files, put it in a .cpp or
-a .inline.hpp file.</p></li>
+the implementation depends on other .hpp files, put it in a .cpp or a
+.inline.hpp file.</p></li>
 <li><p>.inline.hpp files should only be included in .cpp or .inline.hpp
 files.</p></li>
-<li><p>All .inline.hpp files should include their corresponding .hpp file as
-the first include line with a blank line separating it from the rest of the
-include lines. Declarations needed by other files should be put in the .hpp
-file, and not in the .inline.hpp file. This rule exists to resolve problems
-with circular dependencies between .inline.hpp files.</p></li>
-<li><p>Do not include a .hpp file if the corresponding .inline.hpp file is included.</p></li>
-<li><p>Use include guards for .hpp and .inline.hpp files. The name of the defined
-guard should be derived from the full search path of the file relative to the
-hotspot source directory. The guard should be all upper case with all paths
-separators and periods replaced by underscores.</p></li>
+<li><p>All .inline.hpp files should include their corresponding .hpp
+file as the first include line with a blank line separating it from the
+rest of the include lines. Declarations needed by other files should be
+put in the .hpp file, and not in the .inline.hpp file. This rule exists
+to resolve problems with circular dependencies between .inline.hpp
+files.</p></li>
+<li><p>Do not include a .hpp file if the corresponding .inline.hpp file
+is included.</p></li>
+<li><p>Use include guards for .hpp and .inline.hpp files. The name of
+the defined guard should be derived from the full search path of the
+file relative to the hotspot source directory. The guard should be all
+upper case with all paths separators and periods replaced by
+underscores.</p></li>
 <li><p>Some build configurations use precompiled headers to speed up the
 build times. The precompiled headers are included in the precompiled.hpp
 file. Note that precompiled.hpp is just a build time optimization, so
@@ -782,6 +795,33 @@ differ from what the Java compilers implement.</p>
 "conservative" memory ordering, which may differ from (may be stronger
 than) sequentially consistent. There are algorithms in HotSpot that are
 believed to rely on that ordering.</p>
+<h3
+id="initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</h3>
+<p>Variables with static storage duration and <em>dynamic
+initialization</em> <a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
+3.6.2</a>). should be avoided, unless an implementation is permitted to
+perform the initialization as a static initialization. The order in
+which dynamic initializations occur is incompletely specified.
+Initialization order problems can be difficult to deal with and lead to
+surprises.</p>
+<p>Variables with static storage duration and non-trivial destructors
+should be avoided. HotSpot doesn't generally try to cleanup on exit, and
+running destructors at exit can lead to problems.</p>
+<p>Some of the approaches used in HotSpot to avoid dynamic
+initialization include:</p>
+<ul>
+<li><p>Use the <code>Deferred&lt;T&gt;</code> class template. Add a call
+to its initialization function at an appropriate place during VM
+initialization. The underlying object is never destroyed.</p></li>
+<li><p>For objects of class type, use a variable whose value is a
+pointer to the class, initialized to <code>nullptr</code>. Provide an
+initialization function that sets the variable to a dynamically
+allocated object. Add a call to that function at an appropriate place
+during VM initialization. Such objects are usually never
+destroyed.</p></li>
+</ul>
 <h3 id="uniform-initialization">Uniform Initialization</h3>
 <p>The use of <em>uniform initialization</em> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm">n2672</a>),
@@ -1101,6 +1141,58 @@ function name and the parameter list.</li>
 <code>memory_order_consume</code>.</li>
 <li><code>[[deprecated]]</code> - Not relevant in HotSpot code.</li>
 </ul>
+<h3 id="noexcept">noexcept</h3>
+<p>Use of <code>noexcept</code> exception specifications (<a
+href="http://wg21.link/n3050">n3050</a>) are permitted with restrictions
+described below.</p>
+<ul>
+<li>Only the argument-less form of <code>noexcept</code> exception
+specifications are permitted.</li>
+<li>Allocation functions that may return <code>nullptr</code> to
+indicate allocation failure must be declared <code>noexcept</code>.</li>
+<li>All other uses of <code>noexcept</code> exception specifications are
+forbidden.</li>
+<li><code>noexcept</code> expressions are forbidden.</li>
+<li>Dynamic exception specifications are forbidden.</li>
+</ul>
+<p>HotSpot is built with exceptions disabled, e.g. compile with
+<code>-fno-exceptions</code> (gcc, clang) or no <code>/EH</code> option
+(MSVC++). So why do we need to consider <code>noexcept</code> at all?
+It's because <code>noexcept</code> exception specifications serve two
+distinct purposes.</p>
+<p>The first is to allow the compiler to avoid generating code or data
+in support of exceptions being thrown by a function. But this is
+unnecessary, because exceptions are disabled.</p>
+<p>The second is to allow the compiler and library code to choose
+different algorithms, depending on whether some function may throw
+exceptions. This is only relevant to a certain set of functions.</p>
+<ul>
+<li><p>Some allocation functions (<code>operator new</code> and
+<code>operator new[]</code>) return <code>nullptr</code> to indicate
+allocation failure. If a <code>new</code> expression calls such an
+allocation function, it must check for and handle that possibility.
+Declaring such a function <code>noexcept</code> informs the compiler
+that <code>nullptr</code> is a possible result. If an allocation
+function is not declared <code>noexcept</code> then the compiler may
+elide that checking and handling for a <code>new</code> expression
+calling that function.</p></li>
+<li><p>Certain Standard Library facilities (notably containers) provide
+different guarantees for some operations (and may choose different
+algorithms to implement those operations), depending on whether certain
+functions (constructors, copy/move operations, swap) are nothrow or not.
+They detect this using type traits that test whether a function is
+declared <code>noexcept</code>. This can have a significant performance
+impact if, for example, copying is chosen over a potentially throwing
+move. But this isn't relevant, since HotSpot forbids the use of most
+Standard Library facilities.</p></li>
+</ul>
+<p>HotSpot code can assume no exceptions will ever be thrown, even from
+functions not declared <code>noexcept</code>. So HotSpot code doesn't
+ever need to check, either with conditional exception specifications or
+with <code>noexcept</code> expressions.</p>
+<p>Dynamic exception specifications were deprecated in C++11. C++17
+removed all but <code>throw()</code>, with that remaining a deprecated
+equivalent to <code>noexcept</code>.</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
@@ -1189,12 +1281,6 @@ Library names.</p></li>
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html">n2179</a>)
 — HotSpot does not permit the use of exceptions, so this feature isn't
 useful.</p></li>
-<li><p>Avoid non-local variables with non-constexpr initialization. In
-particular, avoid variables with types requiring non-trivial
-initialization or destruction. Initialization order problems can be
-difficult to deal with and lead to surprises, as can destruction
-ordering. HotSpot doesn't generally try to cleanup on exit, and running
-destructors at exit can also lead to problems.</p></li>
 <li><p>Avoid most operator overloading, preferring named functions. When
 operator overloading is used, ensure the semantics conform to the normal
 expected behavior of the operation.</p></li>

@@ -27,6 +27,7 @@
  * @key cgroups
  * @summary Test JVM's CPU resource awareness when running inside docker container
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.platform

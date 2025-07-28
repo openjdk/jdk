@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -119,6 +118,12 @@ public interface JavaLangAccess {
      * the result is uncloned, cached, and shared by all callers.
      */
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
+
+    /**
+     * Returns the big-endian packed minor-major version of the class file
+     * of this class.
+     */
+    int classFileVersion(Class<?> clazz);
 
     /**
      * Set current thread's blocker field.
@@ -232,11 +237,6 @@ public interface JavaLangAccess {
     void addOpensToAllUnnamed(Module m, String pkg);
 
     /**
-     * Updates module m to open all packages in the given sets.
-     */
-    void addOpensToAllUnnamed(Module m, Set<String> concealedPkgs, Set<String> exportedPkgs);
-
-    /**
      * Updates module m to use a service.
      */
     void addUses(Module m, Class<?> service);
@@ -302,6 +302,8 @@ public interface JavaLangAccess {
 
     /**
      * Count the number of leading positive bytes in the range.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
     int countPositives(byte[] ba, int off, int len);
 
@@ -311,37 +313,40 @@ public interface JavaLangAccess {
     int countNonZeroAscii(String s);
 
     /**
-     * Constructs a new {@code String} by decoding the specified subarray of
-     * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
-     *
-     * The caller of this method shall relinquish and transfer the ownership of
-     * the byte array to the callee since the later will not make a copy.
+     * Constructs a new {@code String} by decoding the specified byte array
+     * using the specified {@linkplain java.nio.charset.Charset charset}.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the byte array to the callee</b>, since the latter will not
+     * make a copy.
      *
      * @param bytes the byte array source
      * @param cs the Charset
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
-     * Encode the given string into a sequence of bytes using the specified Charset.
-     *
-     * This method avoids copying the String's internal representation if the input
-     * is ASCII.
-     *
-     * This method throws CharacterCodingException instead of replacing when
-     * malformed input or unmappable characters are encountered.
+     * Encode the given string into a sequence of bytes using the specified
+     * {@linkplain java.nio.charset.Charset charset}.
+     * <p>
+     * <b>WARNING: This method returns the {@code byte[]} backing the provided
+     * {@code String}, if the input is ASCII. Hence, the returned byte array
+     * must not be modified.</b>
+     * <p>
+     * This method throws {@code CharacterCodingException} instead of replacing
+     * when malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
      * @return the encoded bytes
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns a new string by decoding from the given utf8 bytes array.
+     * Returns a new string by decoding from the given UTF-8 bytes array.
      *
      * @param off the index of the first byte to decode
      * @param len the number of bytes to decode
@@ -351,23 +356,27 @@ public interface JavaLangAccess {
     String newStringUTF8NoRepl(byte[] bytes, int off, int len);
 
     /**
-     * Get the char at index in a byte[] in internal UTF-16 representation,
-     * with no bounds checks.
+     * Get the {@code char} at {@code index} in a {@code byte[]} in internal
+     * UTF-16 representation.
+     * <p>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
      * @param bytes the UTF-16 encoded bytes
      * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
      * @return the char value
      */
-    char getUTF16Char(byte[] bytes, int index);
+    char uncheckedGetUTF16Char(byte[] bytes, int index);
 
     /**
-     * Put the char at index in a byte[] in internal UTF-16 representation,
-     * with no bounds checks.
+     * Put the {@code ch} at {@code index} in a {@code byte[]} in internal
+     * UTF-16 representation.
+     * <p>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
      * @param bytes the UTF-16 encoded bytes
      * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
      */
-    void putCharUTF16(byte[] bytes, int index, int ch);
+    void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
      * Encode the given string into a sequence of bytes using utf8.
@@ -379,13 +388,18 @@ public interface JavaLangAccess {
     byte[] getBytesUTF8NoRepl(String s);
 
     /**
-     * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate
+     * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
+     * {@code StringLatin1.inflate}.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      *
      * @return the number of bytes successfully decoded, at most len
      */
@@ -403,13 +417,15 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes ASCII codepoints as possible from the source array into
+     * Encodes as many ASCII codepoints as possible from the source array into
      * the destination byte array, assuming that the encoding is ASCII
-     * compatible
+     * compatible.
+     * <p>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
      * @return the number of bytes successfully encoded, or 0 if none
      */
-    int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable
@@ -442,7 +458,14 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
-    Object stringConcat1(String[] constants);
+    /**
+     * Creates helper for string concatenation.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the string array to the callee</b>, since the latter will not
+     * make a copy.
+     */
+    Object uncheckedStringConcat1(String[] constants);
 
     /**
      * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
@@ -524,12 +547,6 @@ public interface JavaLangAccess {
     void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
 
     /**
-     * Returns {@code true} if there is a value in the current carrier thread's copy of
-     * thread-local, even if that values is {@code null}.
-     */
-    boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
-
-    /**
      * Returns the current thread's scoped values cache
      */
     Object[] scopedValueCache();
@@ -585,11 +602,6 @@ public interface JavaLangAccess {
      * Returns the virtual thread default scheduler.
      */
     Executor virtualThreadDefaultScheduler();
-
-    /**
-     * Returns a stream of the delayed task schedulers used for virtual threads.
-     */
-    Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers();
 
     /**
      * Creates a new StackWalker

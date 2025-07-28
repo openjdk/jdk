@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,12 @@
 #include "gc/z/zList.hpp"
 
 #include "utilities/debug.hpp"
+#include "utilities/vmError.hpp"
 
 template <typename T>
 inline ZListNode<T>::ZListNode()
   : _next(this),
     _prev(this) {}
-
-template <typename T>
-inline ZListNode<T>::~ZListNode() {
-  verify_links_unlinked();
-}
 
 template <typename T>
 inline void ZListNode<T>::verify_links() const {
@@ -60,6 +56,16 @@ inline void ZListNode<T>::verify_links_unlinked() const {
 template <typename T>
 inline void ZList<T>::verify_head() const {
   _head.verify_links();
+}
+
+template <typename T>
+inline void ZList<T>::verify_head_error_reporter_safe() const {
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    // Do not verify if this thread is in the process of reporting an error.
+    return;
+  }
+
+  verify_head();
 }
 
 template <typename T>
@@ -95,6 +101,17 @@ inline ZList<T>::ZList()
   : _head(),
     _size(0) {
   verify_head();
+}
+
+template <typename T>
+inline size_t ZList<T>::size_error_reporter_safe() const {
+  verify_head_error_reporter_safe();
+  return _size;
+}
+
+template <typename T>
+inline bool ZList<T>::is_empty_error_reporter_safe() const {
+  return size_error_reporter_safe() == 0;
 }
 
 template <typename T>

@@ -57,7 +57,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ jcc(Assembler::zero, L_done); // zero count - nothing to do
 
 
-#ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
   __ shrptr(addr, CardTable::card_shift());
@@ -70,17 +69,6 @@ __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
   __ decrement(count);
   __ jcc(Assembler::greaterEqual, L_loop);
-#else
-  __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift());
-  __ shrptr(end,   CardTable::card_shift());
-  __ subptr(end, addr); // end --> count
-__ BIND(L_loop);
-  Address cardtable(addr, count, Address::times_1, disp);
-  __ movb(cardtable, 0);
-  __ decrement(count);
-  __ jcc(Assembler::greaterEqual, L_loop);
-#endif
 
 __ BIND(L_done);
 }

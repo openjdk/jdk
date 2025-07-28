@@ -182,11 +182,11 @@ public final class LocalDate
     /**
      * @serial The month-of-year.
      */
-    private final short month;
+    private final byte month;
     /**
      * @serial The day-of-month.
      */
-    private final short day;
+    private final byte day;
 
     //-----------------------------------------------------------------------
     /**
@@ -490,8 +490,8 @@ public final class LocalDate
      */
     private LocalDate(int year, int month, int dayOfMonth) {
         this.year = year;
-        this.month = (short) month;
-        this.day = (short) dayOfMonth;
+        this.month = (byte) month;
+        this.day = (byte) dayOfMonth;
     }
 
     //-----------------------------------------------------------------------
@@ -2133,10 +2133,7 @@ public final class LocalDate
      */
     @Override
     public int hashCode() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        return (yearValue & 0xFFFFF800) ^ ((yearValue << 11) + (monthValue << 6) + (dayValue));
+        return (year & 0xFFFFF800) ^ ((year << 11) + (month << 6) + day);
     }
 
     //-----------------------------------------------------------------------

@@ -53,9 +53,7 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
@@ -114,9 +112,6 @@
 
 #define MAX_PATH    (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Bsd::_physical_memory = 0;
@@ -146,7 +141,9 @@ julong os::free_memory() {
   return Bsd::available_memory();
 }
 
-// available here means free
+// Available here means free. Note that this number is of no much use. As an estimate
+// for future memory pressure it is far too conservative, since MacOS will use a lot
+// of unused memory for caches, and return it willingly in case of needs.
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
 #ifdef __APPLE__
@@ -157,7 +154,8 @@ julong os::Bsd::available_memory() {
   assert(kerr == KERN_SUCCESS,
          "host_statistics64 failed - check mach_host_self() and count");
   if (kerr == KERN_SUCCESS) {
-    available = vmstat.free_count * os::vm_page_size();
+    // free_count is just a lowerbound, other page categories can be freed too and make memory available
+    available = (vmstat.free_count + vmstat.inactive_count + vmstat.purgeable_count) * os::vm_page_size();
   }
 #endif
   return available;
@@ -647,10 +645,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ResourceMark rm;
     pthread_t tid;
     int ret = 0;
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
 
     char buf[64];
     if (ret == 0) {
@@ -771,10 +782,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
-}
 
 #ifdef __APPLE__
 void os::Bsd::clock_init() {
@@ -815,7 +822,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
@@ -1103,7 +1110,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     return result;
   }
-
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1470,109 +1480,6 @@ void os::print_memory_info(outputStream* st) {
   }
 
   st->cr();
-}
-
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  char dli_fname[MAXPATHLEN];
-  dli_fname[0] = '\0';
-  bool ret = dll_address_to_library_name(
-                                         CAST_FROM_FN_PTR(address, os::jvm_path),
-                                         dli_fname, sizeof(dli_fname), nullptr);
-  assert(ret, "cannot locate libjvm");
-  char *rp = nullptr;
-  if (ret && dli_fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
-  }
-  if (rp == nullptr) {
-    return;
-  }
-
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so"
-    // or "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.dylib". If "/jre/lib/"
-    // appears at the right place in the string, then assume we are
-    // installed in a JDK and we're done. Otherwise, check for a
-    // JAVA_HOME environment variable and construct a path to the JVM
-    // being overridden.
-
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 5; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
-
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
-
-        // Check the current module name "libjvm"
-        p = strrchr(buf, '/');
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-        rp = os::realpath(java_home_var, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
-        assert(len < buflen, "Ran out of buffer space");
-        jrelib_p = buf + len;
-
-        // Add the appropriate library subdir
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        // Add the appropriate JVM variant subdir
-        len = strlen(buf);
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "%s", "");
-        }
-
-        // If the path exists within JAVA_HOME, add the JVM library name
-        // to complete the path to JVM being overridden.  Otherwise fallback
-        // to the path to the current library.
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm"
-          len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
-        } else {
-          // Fall back to path of current library
-          rp = os::realpath(dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, MAXPATHLEN);
-  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2449,14 +2356,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

@@ -24,14 +24,16 @@
 /*
  * @test
  * @bug 4865918
- * @requires (os.family != "mac")
+ * @key headful
  * @summary REGRESSION:JCK1.4a-runtime api/javax_swing/interactive/JScrollBarTests.html#JScrollBar
  * @run main bug4865918
  */
 
 import java.awt.Dimension;
+import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.JFrame;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.CountDownLatch;
@@ -41,24 +43,33 @@ import java.util.Date;
 
 public class bug4865918 {
 
+    private static JFrame frame;
     private static TestScrollBar sbar;
     private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (osName.toLowerCase().contains("os x")) {
-            System.out.println("This test is not for MacOS, considered passed.");
-            return;
-        }
-        SwingUtilities.invokeAndWait(() -> setupTest());
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
-        SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
-        if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Timed out waiting for mouse press");
-        }
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        if (getValue() != 9) {
-            throw new RuntimeException("The scrollbar block increment is incorrect");
+            SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
+            if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Timed out waiting for mouse press");
+            }
+
+            if (getValue() != 9) {
+                throw new RuntimeException("The scrollbar block increment " +
+                                            getValue() + " is incorrect");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -73,8 +84,8 @@ public class bug4865918 {
         return result[0];
     }
 
-    private static void setupTest() {
-
+    private static void createAndShowGUI() {
+        frame = new JFrame("bug4865918");
         sbar = new TestScrollBar(JScrollBar.HORIZONTAL, -1, 10, -100, 100);
         sbar.setPreferredSize(new Dimension(200, 20));
         sbar.setBlockIncrement(10);
@@ -83,7 +94,11 @@ public class bug4865918 {
                 mousePressLatch.countDown();
             }
         });
-
+        frame.getContentPane().add(sbar);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        frame.toFront();
     }
 
     static class TestScrollBar extends JScrollBar {

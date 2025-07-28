@@ -35,8 +35,7 @@
               static_field(VM_Version,      _rop_protection, bool)      \
               static_field(VM_Version,      _pac_mask,       uintptr_t)
 
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
-  declare_toplevel_type(VM_Version)
+#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant)
 

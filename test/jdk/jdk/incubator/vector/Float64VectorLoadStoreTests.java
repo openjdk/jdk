@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,26 @@ public class Float64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
             a[i] = f.apply(i);
         }
         return a;
+    }
+
+    @DontInline
+    static VectorShuffle<Float> shuffleFromArray(int[] a, int i) {
+        return SPECIES.shuffleFromArray(a, i);
+    }
+
+    @DontInline
+    static void shuffleIntoArray(VectorShuffle<Float> s, int[] a, int i) {
+        s.intoArray(a, i);
+    }
+
+    @DontInline
+    static VectorShuffle<Float> shuffleFromMemorySegment(MemorySegment mem, int i, ByteOrder bo) {
+        return VectorShuffle.fromMemorySegment(SPECIES, mem, i, bo);
+    }
+
+    @DontInline
+    static void shuffleIntoMemorySegment(VectorShuffle<Float> s, MemorySegment mem, int i, ByteOrder bo) {
+        s.intoMemorySegment(mem, i, bo);
     }
 
     @DontInline
@@ -682,18 +702,161 @@ public class Float64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
 
-    @Test
-    static void loadStoreShuffle() {
-        IntUnaryOperator fn = a -> a + 5;
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            var shuffle = VectorShuffle.fromOp(SPECIES, fn);
-            int [] r = shuffle.toArray();
+   @Test(dataProvider = "shuffleIntProvider")
+   static void loadStoreShuffleArray(IntFunction<int[]> fa) {
+       int[] a = fa.apply(SPECIES.length());
+       int[] r = new int[a.length];
 
-            int [] a = expectedShuffle(SPECIES.length(), fn);
-            Assert.assertEquals(r, a);
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < a.length; i += SPECIES.length()) {
+               VectorShuffle<Float> shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+               shuffle.intoArray(r, i);
+           }
        }
-    }
 
+       for (int i = 0; i < a.length; i++) {
+          Assert.assertEquals(testPartiallyWrapIndex(SPECIES, a[i]), r[i]);
+       }
+
+   }
+
+   @Test(dataProvider = "shuffleIntProviderForIOOBE")
+   static void storeShuffleArrayIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+       int[] a = fa.apply(SPECIES.length());
+       int[] r = new int[a.length];
+
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < a.length; i += SPECIES.length()) {
+               VectorShuffle<Float> shuffle = shuffleFromArray(a, i);
+               shuffleIntoArray(shuffle, r, i);
+           }
+       }
+
+       int index = fi.apply(a.length);
+       boolean shouldFail = isIndexOutOfBounds(SPECIES.length(), index, a.length);
+       try {
+           VectorShuffle<Float> shuffle = shuffleFromArray(a, index);
+           shuffleIntoArray(shuffle, r, index);
+           if (shouldFail) {
+               Assert.fail("Failed to throw IndexOutOfBoundsException");
+           }
+       } catch (IndexOutOfBoundsException e) {
+           if (!shouldFail) {
+               Assert.fail("Unexpected IndexOutOfBoundsException");
+           }
+       }
+   }
+
+   @Test(dataProvider = "shuffleIntProviderForIOOBE")
+   static void loadShuffleArrayIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+       int[] a = fa.apply(SPECIES.length());
+       int[] r = new int[a.length];
+
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < a.length; i += SPECIES.length()) {
+               VectorShuffle<Float> shuffle = shuffleFromArray(a, i);
+               shuffle.intoArray(r, i);
+           }
+       }
+
+       int index = fi.apply(a.length);
+       boolean shouldFail = isIndexOutOfBounds(SPECIES.length(), index, a.length);
+       try {
+           shuffleFromArray(a, index);
+           if (shouldFail) {
+               Assert.fail("Failed to throw IndexOutOfBoundsException");
+           }
+       } catch (IndexOutOfBoundsException e) {
+           if (!shouldFail) {
+               Assert.fail("Unexpected IndexOutOfBoundsException");
+           }
+       }
+   }
+
+   @Test(dataProvider = "shuffleIntMemorySegmentProvider")
+   static void loadStoreShuffleMemorySegment(IntFunction<int[]> fa,
+                                      IntFunction<MemorySegment> fb,
+                                      ByteOrder bo) {
+       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), fb);
+       MemorySegment r = fb.apply((int) a.byteSize());
+
+       int l = (int) a.byteSize();
+       int s = SPECIES.length() * 4; //An integer for every lane is read out. So 4 bytes per lane
+
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < l; i += s) {
+               VectorShuffle<Float> shuffle = VectorShuffle.fromMemorySegment(SPECIES, a, i, bo);
+               shuffle.intoMemorySegment(r, i, bo);
+           }
+       }
+
+       for (int i = 0; i < l / 4; i++) {
+           int ai = a.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo), i);
+           int ri = r.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo), i);
+           Assert.assertEquals(testPartiallyWrapIndex(SPECIES, ai), ri);
+       }
+   }
+
+   @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
+   static void shuffleLoadMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i));
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize());
+
+       int l = (int) a.byteSize();
+       int s = SPECIES.length() * 4;
+
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < l; i += s) {
+               VectorShuffle<Float> shuffle = shuffleFromMemorySegment(a, i, ByteOrder.nativeOrder());
+               shuffle.intoMemorySegment(r, i, ByteOrder.nativeOrder());
+           }
+       }
+
+       int index = fi.apply((int) a.byteSize());
+       boolean shouldFail = isIndexOutOfBounds(s, index, (int) a.byteSize());
+       try {
+           shuffleFromMemorySegment(a, index, ByteOrder.nativeOrder());
+           if (shouldFail) {
+               Assert.fail("Failed to throw IndexOutOfBoundsException");
+           }
+       } catch (IndexOutOfBoundsException e) {
+           if (!shouldFail) {
+               Assert.fail("Unexpected IndexOutOfBoundsException");
+           }
+       }
+   }
+
+   @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
+   static void shuffleStoreMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i));
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize());
+
+       int l = (int) a.byteSize();
+       int s = SPECIES.length() * 4;
+
+       for (int ic = 0; ic < INVOC_COUNT; ic++) {
+           for (int i = 0; i < l; i += s) {
+               VectorShuffle<Float> shuffle =
+                       VectorShuffle.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
+               shuffleIntoMemorySegment(shuffle, r, i, ByteOrder.nativeOrder());
+           }
+       }
+
+       int index = fi.apply((int) a.byteSize());
+       boolean shouldFail = isIndexOutOfBounds(s, index, (int) a.byteSize());
+       try {
+           VectorShuffle<Float> shuffle =
+                   VectorShuffle.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
+           shuffleIntoMemorySegment(shuffle, r, index, ByteOrder.nativeOrder());
+           if (shouldFail) {
+               Assert.fail("Failed to throw IndexOutOfBoundsException");
+           }
+       } catch (IndexOutOfBoundsException e) {
+           if (!shouldFail) {
+               Assert.fail("Unexpected IndexOutOfBoundsException");
+           }
+       }
+   }
 
 
 

@@ -161,6 +161,12 @@ void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool a
   }
 }
 
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
+}
+
 void outputStream::print(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
@@ -225,10 +231,6 @@ void outputStream::cr() {
   this->write("\n", 1);
 }
 
-void outputStream::cr_indent() {
-  cr(); indent();
-}
-
 void outputStream::stamp() {
   if (! _stamp.is_updated()) {
     _stamp.update(); // start at 0 on first call to stamp()
@@ -277,12 +279,6 @@ outputStream& outputStream::indent() {
   return *this;
 }
 
-bool outputStream::set_autoindent(bool value) {
-  const bool old = _autoindent;
-  _autoindent = value;
-  return old;
-}
-
 void outputStream::print_jlong(jlong value) {
   print(JLONG_FORMAT, value);
 }
@@ -300,16 +296,16 @@ void outputStream::print_julong(julong value) {
  * 0000020: 0000 0000 0000 0040 0000 0000 0000 015d  .......@.......]
  * ...
  *
- * indent is applied to each line.  Ends with a CR.
+ * Ends with a CR.
  */
 void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
       if (rel_addr) {
-        indent().print("%07" PRIxPTR ":", i);
+        print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
+        print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
@@ -434,6 +430,13 @@ char* stringStream::as_string(bool c_heap) const {
     // the pointer to it.
     OrderAccess::storestore();
   }
+  return copy;
+}
+
+char* stringStream::as_string(Arena* arena) const {
+  char* copy = NEW_ARENA_ARRAY(arena, char, _written + 1);
+  ::memcpy(copy, _buffer, _written);
+  copy[_written] = '\0';  // terminating null
   return copy;
 }
 
@@ -1074,11 +1077,11 @@ bufferedStream::~bufferedStream() {
 #ifndef PRODUCT
 
 #if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #elif defined(_WINDOWS)
 #include <Ws2tcpip.h>
 #endif

@@ -29,6 +29,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -60,6 +61,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -165,8 +167,8 @@ uintx Universe::_the_array_interfaces_bitmap = 0;
 uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
-debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
-debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
+DEBUG_ONLY(OopHandle Universe::_fullgc_alot_dummy_array;)
+DEBUG_ONLY(int Universe::_fullgc_alot_dummy_next = 0;)
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -436,6 +438,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -443,7 +448,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
@@ -894,17 +898,22 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
-
 #if INCLUDE_CDS
-  DynamicArchive::check_for_dynamic_dump();
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
   }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+  }
   if (CDSConfig::is_dumping_archive()) {
-    MetaspaceShared::prepare_for_dumping();
+    CDSConfig::prepare_for_dumping();
   }
 #endif
 
@@ -1160,7 +1169,10 @@ void Universe::compute_base_vtable_size() {
 void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
-  heap()->print_on(st);
+
+  StreamIndentor si(st, 1);
+  heap()->print_heap_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void Universe::print_heap_at_SIGBREAK() {

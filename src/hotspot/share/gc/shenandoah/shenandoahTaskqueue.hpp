@@ -26,8 +26,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
@@ -309,14 +309,14 @@ private:
   volatile jint     _claimed_index;
   shenandoah_padding(1);
 
-  debug_only(uint   _reserved;  )
+  DEBUG_ONLY(uint   _reserved;  )
 
 public:
   using GenericTaskQueueSet<T, MT>::size;
 
 public:
   ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, MT>(n), _claimed_index(0) {
-    debug_only(_reserved = 0; )
+    DEBUG_ONLY(_reserved = 0; )
   }
 
   void clear_claimed() { _claimed_index = 0; }
@@ -326,10 +326,10 @@ public:
   void reserve(uint n) {
     assert(n <= size(), "Sanity");
     _claimed_index = (jint)n;
-    debug_only(_reserved = n;)
+    DEBUG_ONLY(_reserved = n;)
   }
 
-  debug_only(uint get_reserved() const { return (uint)_reserved; })
+  DEBUG_ONLY(uint get_reserved() const { return (uint)_reserved; })
 };
 
 template <class T, MemTag MT>

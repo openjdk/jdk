@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,8 +561,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException {
             this.archivePath = archivePath;
+            Map<String,String> env = new HashMap<>();
+            // ignores timestamps not stored in ZIP central directory, reducing I/O
+            // This key is handled by ZipFileSystem only.
+            env.put("zipinfo-time", "false");
+
             if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
-                Map<String,String> env = Collections.singletonMap("multi-release", multiReleaseValue);
+                env.put("multi-release", multiReleaseValue);
                 FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
                 Assert.checkNonNull(jarFSProvider, "should have been caught before!");
                 try {
@@ -571,7 +576,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     throw new IOException("ZipException opening \"" + archivePath.getFileName() + "\": " + ze.getMessage(), ze);
                 }
             } else {
-                this.fileSystem = FileSystems.newFileSystem(archivePath, (ClassLoader)null);
+                // Less common case is possible if the file manager was not initialized in JavacTask,
+                // or if non "*.jar" files are on the classpath.
+                this.fileSystem = FileSystems.newFileSystem(archivePath, env, (ClassLoader)null);
             }
             packages = new HashMap<>();
             for (Path root : fileSystem.getRootDirectories()) {
@@ -913,13 +920,21 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             if (getClassOutDir() != null) {
                 dir = getClassOutDir();
             } else {
+                // Sibling is the associated source of the class file (e.g. x/y/Foo.java).
+                // The base name for class output is the class file name (e.g. "Foo.class").
                 String baseName = fileName.basename();
-                if (sibling != null && sibling instanceof PathFileObject pathFileObject) {
+                // Use the sibling to determine the output location where possible, unless
+                // it is in a JAR/ZIP file (we don't attempt to write class files back into
+                // archives).
+                if (sibling instanceof PathFileObject pathFileObject && !pathFileObject.isJarFile()) {
                     return pathFileObject.getSibling(baseName);
                 } else {
-                    Path p = getPath(baseName);
-                    Path real = fsInfo.getCanonicalFile(p);
-                    return PathFileObject.forSimplePath(this, real, p);
+                    // Without the sibling present, we just create an output path in the
+                    // current working directory (this isn't great, but it is what older
+                    // versions of the JDK did).
+                    Path userPath = getPath(baseName);
+                    Path realPath = fsInfo.getCanonicalFile(userPath);
+                    return PathFileObject.forSimplePath(this, realPath, userPath);
                 }
             }
         } else if (location == SOURCE_OUTPUT) {

@@ -37,6 +37,7 @@ public:
   static void arraycopy_barrier_narrow_oop(narrowOop* src, narrowOop* dst, size_t length);
 
   static void write_ref_field_pre(oopDesc* orig, JavaThread* thread);
+  static void write_barrier_pre(oopDesc* orig);
 
   static oopDesc* load_reference_barrier_strong(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_strong_narrow(oopDesc* src, narrowOop* load_addr);

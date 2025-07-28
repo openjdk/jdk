@@ -43,8 +43,10 @@ public final class WMouseInfoPeer implements MouseInfoPeer {
     WMouseInfoPeer() {
     }
 
+    @Override
     public native int fillPointWithCoords(Point point);
 
+    @Override
     public native boolean isWindowUnderMouse(Window w);
 
 }

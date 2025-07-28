@@ -365,10 +365,6 @@ public class Analyzer {
             super(AnalyzerMode.LOCAL, tag);
         }
 
-        boolean isImplicitlyTyped(JCVariableDecl decl) {
-            return decl.vartype.pos == Position.NOPOS;
-        }
-
         /**
          * Map a variable tree into a new declaration using implicit type.
          */
@@ -401,7 +397,7 @@ public class Analyzer {
 
         boolean match(JCVariableDecl tree){
             return tree.sym.owner.kind == Kind.MTH &&
-                    tree.init != null && !isImplicitlyTyped(tree) &&
+                    tree.init != null && !tree.declaredUsingVar() &&
                     attr.canInferLocalVarType(tree) == null;
         }
         @Override
@@ -425,7 +421,7 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return !isImplicitlyTyped(tree.var);
+            return !tree.var.declaredUsingVar();
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
@@ -730,7 +726,7 @@ public class Analyzer {
          * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
          */
         Log.DeferredDiagnosticHandler diagHandler() {
-            return new Log.DeferredDiagnosticHandler(log, d -> {
+            return log.new DeferredDiagnosticHandler(d -> {
                 if (d.getType() == DiagnosticType.ERROR) {
                     erroneous = true;
                 }

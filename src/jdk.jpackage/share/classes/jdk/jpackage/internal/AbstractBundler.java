@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,6 @@ import jdk.jpackage.internal.util.FileUtils;
  * The concrete implementations are in the platform specific bundlers.
  */
 abstract class AbstractBundler implements Bundler {
-
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new StandardBundlerParam<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
 
     @Override
     public String toString() {

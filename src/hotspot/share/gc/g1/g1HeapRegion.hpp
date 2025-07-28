@@ -316,6 +316,7 @@ public:
   }
 
   static size_t max_region_size();
+  static size_t max_ergonomics_size();
   static size_t min_region_size_in_words();
 
   // It sets up the heap region size (GrainBytes / GrainWords), as well as

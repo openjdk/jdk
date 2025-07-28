@@ -219,11 +219,34 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
     This option can be used multiple times.
 
+    Value can contain substrings that will be expanded at runtime.
+    Two types of such substrings are supported: environment variables
+    and "APPDIR", "BINDIR", and "ROOTDIR" tokens.
+
+    An expandable substring should be enclosed between the dollar
+    sign character ($) and the first following non-alphanumeric
+    character. Alternatively, it can be enclosed between "${" and "}"
+    substrings.
+
+    Expandable substrings are case-sensitive on Unix and
+    case-insensitive on Windows. No string expansion occurs if the
+    referenced environment variable is undefined.
+
+    Environment variables with names "APPDIR", "BINDIR", and "ROOTDIR"
+    will be ignored, and these expandable substrings will be
+    replaced by values calculated by the app launcher.
+
+    Prefix the dollar sign character with the backslash character (\\)
+    to prevent substring expansion.
+
 <a id="option-java-options">`--java-options` *options*</a>
 
 :   Options to pass to the Java runtime
 
     This option can be used multiple times.
+
+    Value can contain substrings that will be substituted at runtime,
+    such as for the --arguments option.
 
 <a id="option-main-class">`--main-class` *class-name*</a>
 
@@ -423,7 +446,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 :   Menu group this application is placed in
 
-<a id="option-linux-package-deps">`--linux-package-deps`</a>
+<a id="option-linux-package-deps">`--linux-package-deps` *package-dep-string*</a>
 
 :   Required packages or capabilities for the application
 

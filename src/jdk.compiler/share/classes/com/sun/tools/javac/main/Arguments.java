@@ -503,8 +503,7 @@ public class Arguments {
                     }
                 } else {
                     // single-module or legacy mode
-                    boolean lintPaths = options.isUnset(Option.XLINT_CUSTOM,
-                            "-" + LintCategory.PATH.option);
+                    boolean lintPaths = !options.isLintDisabled(LintCategory.PATH);
                     if (lintPaths) {
                         Path outDirParent = outDir.getParent();
                         if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
@@ -577,7 +576,7 @@ public class Arguments {
             reportDiag(Errors.SourcepathModulesourcepathConflict);
         }
 
-        boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
+        boolean lintOptions = !options.isLintDisabled(LintCategory.OPTIONS);
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {

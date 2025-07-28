@@ -27,9 +27,9 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "runtime/mutex.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "runtime/mutex.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;

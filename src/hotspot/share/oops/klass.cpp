@@ -678,7 +678,7 @@ void Klass::append_to_sibling_list() {
   if (Universe::is_fully_initialized()) {
     assert_locked_or_safepoint(Compile_lock);
   }
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
   if (super == nullptr) return;     // special case: class Object
@@ -703,7 +703,7 @@ void Klass::append_to_sibling_list() {
       return;
     }
   }
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
 }
 
 void Klass::clean_subklass() {
@@ -749,21 +749,24 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
   }
 }
 
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
+  }
+}
+
 void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(Klass): %p (%s)", this, external_name());
   }
 
   it->push(&_name);
@@ -792,9 +795,9 @@ void Klass::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(),
           "only called during CDS dump time");
   JFR_ONLY(REMOVE_ID(this);)
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm;
-    log_trace(cds, unshareable)("remove: %s", external_name());
+    log_trace(aot, unshareable)("remove: %s", external_name());
   }
 
   // _secondary_super_cache may be updated by an is_subtype_of() call
@@ -810,17 +813,25 @@ void Klass::remove_unshareable_info() {
   set_class_loader_data(nullptr);
   set_is_shared();
 
-  // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
-  // Even though the bitmaps always match, the canonical order of elements in the table
-  // is not guaranteed to stay the same (see tie breaker during Robin Hood hashing in Klass::hash_insert).
-  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _secondary_supers_bitmap, "broken table");
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // "Classic" static archives are required to have deterministic contents.
+    // The elements in _secondary_supers are addresses in the ArchiveBuilder
+    // output buffer, so they should have deterministic values. If we rehash
+    // _secondary_supers, its elements will appear in a deterministic order.
+    //
+    // Note that the bitmap is guaranteed to be deterministic, regardless of the
+    // actual addresses of the elements in _secondary_supers. So rehashing shouldn't
+    // change it.
+    uintx bitmap = hash_secondary_supers(secondary_supers(), true);
+    assert(bitmap == _secondary_supers_bitmap, "bitmap should not be changed due to rehashing");
+  }
 }
 
 void Klass::remove_java_mirror() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm;
-    log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
+    log_trace(aot, unshareable)("remove java_mirror: %s", external_name());
   }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -828,9 +839,21 @@ void Klass::remove_java_mirror() {
   if (CDSConfig::is_dumping_heap()) {
     Klass* src_k = ArchiveBuilder::current()->get_source_addr(this);
     oop orig_mirror = src_k->java_mirror();
-    oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
-    if (scratch_mirror != nullptr) {
-      _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+    if (orig_mirror == nullptr) {
+      assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+      if (is_instance_klass()) {
+        assert(InstanceKlass::cast(this)->defined_by_other_loaders(), "sanity");
+      } else {
+        precond(is_objArray_klass());
+        Klass *k = ObjArrayKlass::cast(this)->bottom_klass();
+        precond(k->is_instance_klass());
+        assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
+      }
+    } else {
+      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      if (scratch_mirror != nullptr) {
+        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+      }
     }
   }
 #endif
@@ -844,10 +867,10 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_shared(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
-    log_trace(cds, unshareable)("restore: %s with class loader: %s", external_name(),
+    log_trace(aot, unshareable)("restore: %s with class loader: %s", external_name(),
       class_loader != nullptr ? class_loader->klass()->external_name() : "boot");
   }
 
@@ -876,11 +899,11 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
   // Obtain java.lang.Module, if available
-  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module() : (oop)nullptr));
+  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr));
 
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
-    log_debug(cds, mirror)("%s has raw archived mirror", external_name());
+    log_debug(aot, mirror)("%s has raw archived mirror", external_name());
     if (ArchiveHeapLoader::is_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
@@ -891,7 +914,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     }
 
     // No archived mirror data
-    log_debug(cds, mirror)("No archived mirror data for %s", external_name());
+    log_debug(aot, mirror)("No archived mirror data for %s", external_name());
     clear_java_mirror_handle();
     this->clear_archived_mirror_index();
   }
@@ -900,7 +923,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == nullptr) {
     ResourceMark rm(THREAD);
-    log_trace(cds, mirror)("Recreate mirror for %s", external_name());
+    log_trace(aot, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }
 }

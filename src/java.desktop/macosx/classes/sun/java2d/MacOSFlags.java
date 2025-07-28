@@ -29,7 +29,7 @@ import sun.java2d.metal.MTLGraphicsConfig;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
 
-public class MacOSFlags {
+public final class MacOSFlags {
 
     /**
      * Description of command-line flags.  All flags with [true|false]

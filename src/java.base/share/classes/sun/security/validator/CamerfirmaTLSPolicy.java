@@ -43,26 +43,14 @@ final class CamerfirmaTLSPolicy {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    // SHA-256 certificate fingerprints of distrusted roots
-    private static final Set<String> FINGERPRINTS = Set.of(
-        // cacerts alias: camerfirmachamberscommerceca
-        // DN: CN=Chambers of Commerce Root,
-        //     OU=http://www.chambersign.org,
-        //     O=AC Camerfirma SA CIF A82743287, C=EU
-        "0C258A12A5674AEF25F28BA7DCFAECEEA348E541E6F5CC4EE63B71B361606AC3",
-        // cacerts alias: camerfirmachambersca
-        // DN: CN=Chambers of Commerce Root - 2008,
-        //     O=AC Camerfirma S.A., SERIALNUMBER=A82743287,
-        //     L=Madrid (see current address at www.camerfirma.com/address),
-        //     C=EU
-        "063E4AFAC491DFD332F3089B8542E94617D893D7FE944E10A7937EE29D9693C0",
-        // cacerts alias: camerfirmachambersignca
-        // DN: CN=Global Chambersign Root - 2008,
-        //     O=AC Camerfirma S.A., SERIALNUMBER=A82743287,
-        //     L=Madrid (see current address at www.camerfirma.com/address),
-        //     C=EU
-        "136335439334A7698016A0D324DE72284E079D7B5220BB8FBD747816EEBEBACA"
-    );
+    // SHA-256 certificate fingerprint of distrusted root for TLS
+    // cacerts alias: camerfirmachambersca
+    // DN: CN=Chambers of Commerce Root - 2008,
+    //     O=AC Camerfirma S.A., SERIALNUMBER=A82743287,
+    //     L=Madrid (see current address at www.camerfirma.com/address),
+    //     C=EU
+    private static final String FINGERPRINT =
+            "063E4AFAC491DFD332F3089B8542E94617D893D7FE944E10A7937EE29D9693C0";
 
     // Any TLS Server certificate that is anchored by one of the Camerfirma
     // roots above and is issued after this date will be distrusted.
@@ -85,7 +73,7 @@ final class CamerfirmaTLSPolicy {
             throw new ValidatorException("Cannot generate fingerprint for "
                 + "trust anchor of TLS server certificate");
         }
-        if (FINGERPRINTS.contains(fp)) {
+        if (FINGERPRINT.equalsIgnoreCase(fp)) {
             Date notBefore = chain[0].getNotBefore();
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);

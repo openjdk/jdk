@@ -39,6 +39,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
@@ -250,7 +251,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
+          permit_forbidden_function::free(demangled_name);
         }
       }
     } else {
@@ -1081,7 +1082,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
       if (g_handletable_used == max_handletable) {
         // No place in array anymore; increase array.
         unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
-        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        struct handletableentry* new_tab = (struct handletableentry*) permit_forbidden_function::realloc(p_handletable, new_max * sizeof(struct handletableentry));
         assert(new_tab != nullptr, "no more memory for handletable");
         if (new_tab == nullptr) {
           *error_report = "dlopen: no more memory for handletable";

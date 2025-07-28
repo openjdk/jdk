@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 /*
- * @test
- * @summary Dump time resolution of constant pool entries.
+ * @test id=static
+ * @summary Dump time resolution of constant pool entries (Static CDS archive).
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
@@ -36,12 +36,32 @@
  *                 MyInterface InterfaceWithClinit NormalClass
  *                 OldProvider OldClass OldConsumer SubOfOldClass
  *                 StringConcatTest StringConcatTestOld
- * @run driver ResolvedConstants
+ * @run driver ResolvedConstants STATIC
+ */
+
+/*
+ * @test id=dynamic
+ * @summary Dump time resolution of constant pool entries (Dynamic CDS archive)
+ * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.compMode != "Xcomp"
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @build OldProvider OldClass OldConsumer StringConcatTestOld
+ * @build ResolvedConstants
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ *                 MyInterface InterfaceWithClinit NormalClass
+ *                 OldProvider OldClass OldConsumer SubOfOldClass
+ *                 StringConcatTest StringConcatTestOld
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Dcds.app.tester.workflow=DYNAMIC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ResolvedConstants DYNAMIC
  */
 
 import java.util.function.Consumer;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -52,33 +72,33 @@ public class ResolvedConstants {
 
     static boolean aotClassLinking;
     public static void main(String[] args) throws Exception {
-        test(false);
-        test(true);
+        test(args, false);
+        test(args, true);
     }
 
-    static void test(boolean testMode) throws Exception {
+    static void test(String[] args, boolean testMode) throws Exception {
         aotClassLinking = testMode;
-        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("Hello ResolvedConstantsApp");
-            });
 
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
-                       "-cp", appJar,
-                       "-Xlog:cds+resolve=trace",
-                       "-Xlog:cds+class=debug");
-        if (aotClassLinking) {
-            opts.addPrefix("-XX:+AOTClassLinking");
-        } else {
-            opts.addPrefix("-XX:-AOTClassLinking");
-        }
+        SimpleCDSAppTester.of("ResolvedConstantsApp" + (aotClassLinking ? "1" : "0"))
+            .addVmArgs(aotClassLinking ? "-XX:+AOTClassLinking" : "-XX:-AOTClassLinking",
+                       "-Xlog:aot+resolve=trace",
+                       "-Xlog:aot+class=debug",
+                       "-Xlog:cds+class=debug")
+            .classpath(appJar)
+            .appCommandLine(mainClass)
+            .setAssemblyChecker((OutputAnalyzer out) -> {
+                    checkAssemblyOutput(args, out);
+                })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                    out.shouldContain("Hello ResolvedConstantsApp");
+                })
+            .run(args);
+    }
 
-        OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(opts);
-          // Class References ---
-
+    static void checkAssemblyOutput(String args[], OutputAnalyzer out) {
+        testGroup("Class References", out)
             // Always resolve reference when a class references itself
-        out.shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
 
             // Always resolve reference when a class references a super class
             .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Object boot"))
@@ -92,10 +112,9 @@ public class ResolvedConstants {
             //   Even though System is in the vmClasses list, when ResolvedConstantsApp looks up
             //   "java/lang/System" in its ConstantPool, the app loader may not have resolved the System
             //   class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
-            .shouldMatch(AOTLINK_ONLY("klass.* ResolvedConstantsApp .*java/lang/System"))
+            .shouldMatch(AOTLINK_ONLY("klass.* ResolvedConstantsApp .*java/lang/System"));
 
-          // Field References ---
-
+        testGroup("Field References", out)
             // Always resolve references to fields in the current class or super class(es)
             .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I"))
             .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I"))
@@ -108,10 +127,14 @@ public class ResolvedConstants {
 
             // Resolve field references to unrelated classes ONLY when using -XX:+AOTClassLinking
             .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.a:I"))
-            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.b:I"))
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.b:I"));
 
-          // Method References ---
+        if (args[0].equals("DYNAMIC")) {
+            // AOT resolution of CP methods/indy references is not implemeted
+            return;
+        }
 
+        testGroup("Method References", out)
             // Should resolve references to own constructor
             .shouldMatch(ALWAYS("method.* ResolvedConstantsApp ResolvedConstantsApp.<init>:"))
             // Should resolve references to super constructor
@@ -148,7 +171,8 @@ public class ResolvedConstants {
 
         // Indy References ---
         if (aotClassLinking) {
-            out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
+            testGroup("Indy References", out)
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit")
@@ -160,15 +184,20 @@ public class ResolvedConstants {
     }
 
     static String ALWAYS(String s) {
-        return "cds,resolve.*archived " + s;
+        return ",resolve.*archived " + s;
     }
 
     static String AOTLINK_ONLY(String s) {
         if (aotClassLinking) {
             return ALWAYS(s);
         } else {
-            return "cds,resolve.*reverted " + s;
+            return ",resolve.*reverted " + s;
         }
+    }
+
+    static OutputAnalyzer testGroup(String name, OutputAnalyzer out) {
+        System.out.println("Checking for: " + name);
+        return out;
     }
 }
 

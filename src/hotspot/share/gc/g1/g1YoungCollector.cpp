@@ -32,9 +32,9 @@
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -49,9 +49,9 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -486,7 +486,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
   if (collector_state()->in_concurrent_start_gc()) {
+    Ticks start = Ticks::now();
     concurrent_mark()->pre_concurrent_start(_gc_cause);
+    phase_times()->record_prepare_concurrent_task_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
   // Please see comment in g1CollectedHeap.hpp and
@@ -494,7 +496,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-  _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
+  _evac_failure_regions.pre_collection(_g1h->max_num_regions());
 
   _g1h->gc_prologue(false);
 
@@ -743,11 +745,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
                                                       bool has_optional_evacuation_work) {
   G1GCPhaseTimes* p = phase_times();
 
-  {
-    Ticks start = Ticks::now();
-    rem_set()->merge_heap_roots(true /* initial_evacuation */);
-    p->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
-  }
+  rem_set()->merge_heap_roots(true /* initial_evacuation */);
 
   Tickspan task_time;
   const uint num_workers = workers()->active_workers();
@@ -812,15 +810,16 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
   Tickspan total_processing = Ticks::now() - start_processing;
 
   G1GCPhaseTimes* p = phase_times();
+  p->record_or_add_optional_evac_time(task_time.seconds() * 1000.0);
   p->record_or_add_nmethod_list_cleanup_time((total_processing - task_time).seconds() * 1000.0);
 }
 
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
-  const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
+  const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
-    double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
+    double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
 
     if (time_left_ms < 0 ||
@@ -830,17 +829,9 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
       break;
     }
 
-    {
-      Ticks start = Ticks::now();
-      rem_set()->merge_heap_roots(false /* initial_evacuation */);
-      phase_times()->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
-    }
+    rem_set()->merge_heap_roots(false /* initial_evacuation */);
 
-    {
-      Ticks start = Ticks::now();
-      evacuate_next_optional_regions(per_thread_states);
-      phase_times()->record_or_add_optional_evac_time((Ticks::now() - start).seconds() * 1000.0);
-    }
+    evacuate_next_optional_regions(per_thread_states);
 
     rem_set()->complete_evac_phase(true /* has_more_than_one_evacuation_phase */);
   }
@@ -980,12 +971,9 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   ReferenceProcessor* rp = ref_processor_stw();
   assert(rp->discovery_enabled(), "should have been enabled");
 
-  uint no_of_gc_workers = workers()->active_workers();
-  rp->set_active_mt_degree(no_of_gc_workers);
-
   G1STWRefProcProxyTask task(rp->max_num_queues(), *_g1h, *per_thread_states, *task_queues());
   ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
-  ReferenceProcessorStats stats = rp->process_discovered_references(task, pt);
+  ReferenceProcessorStats stats = rp->process_discovered_references(task, _g1h->workers(), pt);
 
   gc_tracer_stw()->report_gc_reference_stats(stats);
 
@@ -1071,7 +1059,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->gc_epilogue(false);
 
-  _g1h->expand_heap_after_young_collection();
+  _g1h->resize_heap_after_young_collection(_allocation_word_size);
 }
 
 bool G1YoungCollector::evacuation_failed() const {
@@ -1086,9 +1074,11 @@ bool G1YoungCollector::evacuation_alloc_failed() const {
   return _evac_failure_regions.has_regions_alloc_failed();
 }
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
+                                   size_t allocation_word_size) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
+  _allocation_word_size(allocation_word_size),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {

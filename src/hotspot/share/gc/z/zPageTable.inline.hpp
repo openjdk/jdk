@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,9 @@ inline bool ZGenerationPagesIterator::next(ZPage** page) {
 template <typename Function>
 inline void ZGenerationPagesIterator::yield(Function function) {
   _page_allocator->disable_safe_destroy();
-  _page_allocator->disable_safe_recycle();
 
   function();
 
-  _page_allocator->enable_safe_recycle();
   _page_allocator->enable_safe_destroy();
 }
 

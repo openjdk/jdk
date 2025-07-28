@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,19 +27,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahGenerationSizer.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -122,9 +122,9 @@ typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
-// Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
-// to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
-// See ShenandoahControlThread for GC cycle structure.
+// Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
+// for concurent evacuation and a snapshot-at-the-beginning write barrier for
+// concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
@@ -158,6 +158,10 @@ private:
   // In that sense, it's a stable snapshot of _gc_generation that is
   // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
+
+protected:
+  void print_tracing_info() const override;
+  void stop() override;
 
 public:
   ShenandoahHeapLock* lock() {
@@ -202,12 +206,9 @@ public:
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
-  void print_on(outputStream* st)              const override;
-  void print_extended_on(outputStream *st)     const override;
-  void print_tracing_info()                    const override;
+  void print_heap_on(outputStream* st)         const override;
+  void print_gc_on(outputStream *st)           const override;
   void print_heap_regions_on(outputStream* st) const;
-
-  void stop() override;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
@@ -556,6 +557,10 @@ public:
 
   ShenandoahEvacOOMHandler*  oom_evac_handler()        { return &_oom_evac_handler; }
 
+  ShenandoahEvacuationTracker* evac_tracker() const {
+    return _evac_tracker;
+  }
+
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
@@ -614,8 +619,6 @@ private:
 // and can be stubbed out.
 //
 public:
-  bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
-
   // Check the pointer is in active part of Java heap.
   // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
@@ -742,7 +745,7 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
+  // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 
   template<class T>
@@ -790,6 +793,10 @@ private:
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
 
+protected:
+  // Used primarily to look for failed evacuation attempts.
+  ShenandoahEvacuationTracker*  _evac_tracker;
+
 public:
   static address in_cset_fast_test_addr();
 
@@ -830,7 +837,7 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
-  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
   static inline void increase_object_age(oop obj, uint additional_age);
 

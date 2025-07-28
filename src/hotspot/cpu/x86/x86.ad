@@ -210,8 +210,6 @@ reg_def XMM7n( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(13));
 reg_def XMM7o( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(14));
 reg_def XMM7p( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(15));
 
-#ifdef _LP64
-
 reg_def XMM8 ( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg());
 reg_def XMM8b( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(1));
 reg_def XMM8c( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(2));
@@ -620,13 +618,7 @@ reg_def XMM31n( SOC, SOC, Op_RegF, 31, xmm31->as_VMReg()->next(13));
 reg_def XMM31o( SOC, SOC, Op_RegF, 31, xmm31->as_VMReg()->next(14));
 reg_def XMM31p( SOC, SOC, Op_RegF, 31, xmm31->as_VMReg()->next(15));
 
-#endif // _LP64
-
-#ifdef _LP64
 reg_def RFLAGS(SOC, SOC, 0, 16, VMRegImpl::Bad());
-#else
-reg_def RFLAGS(SOC, SOC, 0, 8, VMRegImpl::Bad());
-#endif // _LP64
 
 // AVX3 Mask Registers.
 reg_def K1   (SOC, SOC, Op_RegI,  1, k1->as_VMReg());
@@ -658,17 +650,16 @@ alloc_class chunk1(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,
                    XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,  XMM4i,  XMM4j,  XMM4k,  XMM4l,  XMM4m,  XMM4n,  XMM4o,  XMM4p,
                    XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,  XMM5i,  XMM5j,  XMM5k,  XMM5l,  XMM5m,  XMM5n,  XMM5o,  XMM5p,
                    XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,  XMM6i,  XMM6j,  XMM6k,  XMM6l,  XMM6m,  XMM6n,  XMM6o,  XMM6p,
-                   XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p
-#ifdef _LP64
-                  ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
+                   XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p,
+                   XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
                    XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,  XMM9i,  XMM9j,  XMM9k,  XMM9l,  XMM9m,  XMM9n,  XMM9o,  XMM9p,
                    XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h, XMM10i, XMM10j, XMM10k, XMM10l, XMM10m, XMM10n, XMM10o, XMM10p,
                    XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h, XMM11i, XMM11j, XMM11k, XMM11l, XMM11m, XMM11n, XMM11o, XMM11p,
                    XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h, XMM12i, XMM12j, XMM12k, XMM12l, XMM12m, XMM12n, XMM12o, XMM12p,
                    XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h, XMM13i, XMM13j, XMM13k, XMM13l, XMM13m, XMM13n, XMM13o, XMM13p,
                    XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h, XMM14i, XMM14j, XMM14k, XMM14l, XMM14m, XMM14n, XMM14o, XMM14p,
-                   XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p
-                  ,XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h, XMM16i, XMM16j, XMM16k, XMM16l, XMM16m, XMM16n, XMM16o, XMM16p,
+                   XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p,
+                   XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h, XMM16i, XMM16j, XMM16k, XMM16l, XMM16m, XMM16n, XMM16o, XMM16p,
                    XMM17, XMM17b, XMM17c, XMM17d, XMM17e, XMM17f, XMM17g, XMM17h, XMM17i, XMM17j, XMM17k, XMM17l, XMM17m, XMM17n, XMM17o, XMM17p,
                    XMM18, XMM18b, XMM18c, XMM18d, XMM18e, XMM18f, XMM18g, XMM18h, XMM18i, XMM18j, XMM18k, XMM18l, XMM18m, XMM18n, XMM18o, XMM18p,
                    XMM19, XMM19b, XMM19c, XMM19d, XMM19e, XMM19f, XMM19g, XMM19h, XMM19i, XMM19j, XMM19k, XMM19l, XMM19m, XMM19n, XMM19o, XMM19p,
@@ -683,9 +674,7 @@ alloc_class chunk1(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,
                    XMM28, XMM28b, XMM28c, XMM28d, XMM28e, XMM28f, XMM28g, XMM28h, XMM28i, XMM28j, XMM28k, XMM28l, XMM28m, XMM28n, XMM28o, XMM28p,
                    XMM29, XMM29b, XMM29c, XMM29d, XMM29e, XMM29f, XMM29g, XMM29h, XMM29i, XMM29j, XMM29k, XMM29l, XMM29m, XMM29n, XMM29o, XMM29p,
                    XMM30, XMM30b, XMM30c, XMM30d, XMM30e, XMM30f, XMM30g, XMM30h, XMM30i, XMM30j, XMM30k, XMM30l, XMM30m, XMM30n, XMM30o, XMM30p,
-                   XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h, XMM31i, XMM31j, XMM31k, XMM31l, XMM31m, XMM31n, XMM31o, XMM31p
-#endif
-                      );
+                   XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h, XMM31i, XMM31j, XMM31k, XMM31l, XMM31m, XMM31n, XMM31o, XMM31p);
 
 alloc_class chunk2(K7, K7_H,
                    K6, K6_H,
@@ -726,18 +715,15 @@ reg_class float_reg_legacy(XMM0,
                     XMM4,
                     XMM5,
                     XMM6,
-                    XMM7
-#ifdef _LP64
-                   ,XMM8,
+                    XMM7,
+                    XMM8,
                     XMM9,
                     XMM10,
                     XMM11,
                     XMM12,
                     XMM13,
                     XMM14,
-                    XMM15
-#endif
-                    );
+                    XMM15);
 
 // Class for evex float registers
 reg_class float_reg_evex(XMM0,
@@ -747,9 +733,8 @@ reg_class float_reg_evex(XMM0,
                     XMM4,
                     XMM5,
                     XMM6,
-                    XMM7
-#ifdef _LP64
-                   ,XMM8,
+                    XMM7,
+                    XMM8,
                     XMM9,
                     XMM10,
                     XMM11,
@@ -772,9 +757,7 @@ reg_class float_reg_evex(XMM0,
                     XMM28,
                     XMM29,
                     XMM30,
-                    XMM31
-#endif
-                    );
+                    XMM31);
 
 reg_class_dynamic float_reg(float_reg_evex, float_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic float_reg_vl(float_reg_evex, float_reg_legacy, %{ VM_Version::supports_evex() && VM_Version::supports_avx512vl() %} );
@@ -787,18 +770,15 @@ reg_class double_reg_legacy(XMM0,  XMM0b,
                      XMM4,  XMM4b,
                      XMM5,  XMM5b,
                      XMM6,  XMM6b,
-                     XMM7,  XMM7b
-#ifdef _LP64
-                    ,XMM8,  XMM8b,
+                     XMM7,  XMM7b,
+                     XMM8,  XMM8b,
                      XMM9,  XMM9b,
                      XMM10, XMM10b,
                      XMM11, XMM11b,
                      XMM12, XMM12b,
                      XMM13, XMM13b,
                      XMM14, XMM14b,
-                     XMM15, XMM15b
-#endif
-                     );
+                     XMM15, XMM15b);
 
 // Class for evex double registers
 reg_class double_reg_evex(XMM0,  XMM0b,
@@ -808,9 +788,8 @@ reg_class double_reg_evex(XMM0,  XMM0b,
                      XMM4,  XMM4b,
                      XMM5,  XMM5b,
                      XMM6,  XMM6b,
-                     XMM7,  XMM7b
-#ifdef _LP64
-                    ,XMM8,  XMM8b,
+                     XMM7,  XMM7b,
+                     XMM8,  XMM8b,
                      XMM9,  XMM9b,
                      XMM10, XMM10b,
                      XMM11, XMM11b,
@@ -833,9 +812,7 @@ reg_class double_reg_evex(XMM0,  XMM0b,
                      XMM28, XMM28b,
                      XMM29, XMM29b,
                      XMM30, XMM30b,
-                     XMM31, XMM31b
-#endif
-                     );
+                     XMM31, XMM31b);
 
 reg_class_dynamic double_reg(double_reg_evex, double_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic double_reg_vl(double_reg_evex, double_reg_legacy, %{ VM_Version::supports_evex() && VM_Version::supports_avx512vl() %} );
@@ -848,18 +825,15 @@ reg_class vectors_reg_legacy(XMM0,
                       XMM4,
                       XMM5,
                       XMM6,
-                      XMM7
-#ifdef _LP64
-                     ,XMM8,
+                      XMM7,
+                      XMM8,
                       XMM9,
                       XMM10,
                       XMM11,
                       XMM12,
                       XMM13,
                       XMM14,
-                      XMM15
-#endif
-                      );
+                      XMM15);
 
 // Class for evex 32bit vector registers
 reg_class vectors_reg_evex(XMM0,
@@ -869,9 +843,8 @@ reg_class vectors_reg_evex(XMM0,
                       XMM4,
                       XMM5,
                       XMM6,
-                      XMM7
-#ifdef _LP64
-                     ,XMM8,
+                      XMM7,
+                      XMM8,
                       XMM9,
                       XMM10,
                       XMM11,
@@ -894,9 +867,7 @@ reg_class vectors_reg_evex(XMM0,
                       XMM28,
                       XMM29,
                       XMM30,
-                      XMM31
-#endif
-                      );
+                      XMM31);
 
 reg_class_dynamic vectors_reg(vectors_reg_evex, vectors_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic vectors_reg_vlbwdq(vectors_reg_evex, vectors_reg_legacy, %{ VM_Version::supports_avx512vlbwdq() %} );
@@ -909,18 +880,15 @@ reg_class vectord_reg_legacy(XMM0,  XMM0b,
                       XMM4,  XMM4b,
                       XMM5,  XMM5b,
                       XMM6,  XMM6b,
-                      XMM7,  XMM7b
-#ifdef _LP64
-                     ,XMM8,  XMM8b,
+                      XMM7,  XMM7b,
+                      XMM8,  XMM8b,
                       XMM9,  XMM9b,
                       XMM10, XMM10b,
                       XMM11, XMM11b,
                       XMM12, XMM12b,
                       XMM13, XMM13b,
                       XMM14, XMM14b,
-                      XMM15, XMM15b
-#endif
-                      );
+                      XMM15, XMM15b);
 
 // Class for all 64bit vector registers
 reg_class vectord_reg_evex(XMM0,  XMM0b,
@@ -930,9 +898,8 @@ reg_class vectord_reg_evex(XMM0,  XMM0b,
                       XMM4,  XMM4b,
                       XMM5,  XMM5b,
                       XMM6,  XMM6b,
-                      XMM7,  XMM7b
-#ifdef _LP64
-                     ,XMM8,  XMM8b,
+                      XMM7,  XMM7b,
+                      XMM8,  XMM8b,
                       XMM9,  XMM9b,
                       XMM10, XMM10b,
                       XMM11, XMM11b,
@@ -955,9 +922,7 @@ reg_class vectord_reg_evex(XMM0,  XMM0b,
                       XMM28, XMM28b,
                       XMM29, XMM29b,
                       XMM30, XMM30b,
-                      XMM31, XMM31b
-#endif
-                      );
+                      XMM31, XMM31b);
 
 reg_class_dynamic vectord_reg(vectord_reg_evex, vectord_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic vectord_reg_vlbwdq(vectord_reg_evex, vectord_reg_legacy, %{ VM_Version::supports_avx512vlbwdq() %} );
@@ -970,18 +935,15 @@ reg_class vectorx_reg_legacy(XMM0,  XMM0b,  XMM0c,  XMM0d,
                       XMM4,  XMM4b,  XMM4c,  XMM4d,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,
                       XMM10, XMM10b, XMM10c, XMM10d,
                       XMM11, XMM11b, XMM11c, XMM11d,
                       XMM12, XMM12b, XMM12c, XMM12d,
                       XMM13, XMM13b, XMM13c, XMM13d,
                       XMM14, XMM14b, XMM14c, XMM14d,
-                      XMM15, XMM15b, XMM15c, XMM15d
-#endif
-                      );
+                      XMM15, XMM15b, XMM15c, XMM15d);
 
 // Class for all 128bit vector registers
 reg_class vectorx_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,
@@ -991,9 +953,8 @@ reg_class vectorx_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,
                       XMM4,  XMM4b,  XMM4c,  XMM4d,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,
                       XMM10, XMM10b, XMM10c, XMM10d,
                       XMM11, XMM11b, XMM11c, XMM11d,
@@ -1016,9 +977,7 @@ reg_class vectorx_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,
                       XMM28, XMM28b, XMM28c, XMM28d,
                       XMM29, XMM29b, XMM29c, XMM29d,
                       XMM30, XMM30b, XMM30c, XMM30d,
-                      XMM31, XMM31b, XMM31c, XMM31d
-#endif
-                      );
+                      XMM31, XMM31b, XMM31c, XMM31d);
 
 reg_class_dynamic vectorx_reg(vectorx_reg_evex, vectorx_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic vectorx_reg_vlbwdq(vectorx_reg_evex, vectorx_reg_legacy, %{ VM_Version::supports_avx512vlbwdq() %} );
@@ -1031,18 +990,15 @@ reg_class vectory_reg_legacy(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0
                       XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,
                       XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h,
                       XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h,
                       XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h,
                       XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h,
                       XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h,
-                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h
-#endif
-                      );
+                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h);
 
 // Class for all 256bit vector registers
 reg_class vectory_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,
@@ -1052,9 +1008,8 @@ reg_class vectory_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,
                       XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,
                       XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h,
                       XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h,
@@ -1077,9 +1032,7 @@ reg_class vectory_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,
                       XMM28, XMM28b, XMM28c, XMM28d, XMM28e, XMM28f, XMM28g, XMM28h,
                       XMM29, XMM29b, XMM29c, XMM29d, XMM29e, XMM29f, XMM29g, XMM29h,
                       XMM30, XMM30b, XMM30c, XMM30d, XMM30e, XMM30f, XMM30g, XMM30h,
-                      XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h
-#endif
-                      );
+                      XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h);
 
 reg_class_dynamic vectory_reg(vectory_reg_evex, vectory_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic vectory_reg_vlbwdq(vectory_reg_evex, vectory_reg_legacy, %{ VM_Version::supports_avx512vlbwdq() %} );
@@ -1092,17 +1045,16 @@ reg_class vectorz_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,
                       XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,  XMM4i,  XMM4j,  XMM4k,  XMM4l,  XMM4m,  XMM4n,  XMM4o,  XMM4p,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,  XMM5i,  XMM5j,  XMM5k,  XMM5l,  XMM5m,  XMM5n,  XMM5o,  XMM5p,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,  XMM6i,  XMM6j,  XMM6k,  XMM6l,  XMM6m,  XMM6n,  XMM6o,  XMM6p,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,  XMM9i,  XMM9j,  XMM9k,  XMM9l,  XMM9m,  XMM9n,  XMM9o,  XMM9p,
                       XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h, XMM10i, XMM10j, XMM10k, XMM10l, XMM10m, XMM10n, XMM10o, XMM10p,
                       XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h, XMM11i, XMM11j, XMM11k, XMM11l, XMM11m, XMM11n, XMM11o, XMM11p,
                       XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h, XMM12i, XMM12j, XMM12k, XMM12l, XMM12m, XMM12n, XMM12o, XMM12p,
                       XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h, XMM13i, XMM13j, XMM13k, XMM13l, XMM13m, XMM13n, XMM13o, XMM13p,
                       XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h, XMM14i, XMM14j, XMM14k, XMM14l, XMM14m, XMM14n, XMM14o, XMM14p,
-                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p
-                     ,XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h, XMM16i, XMM16j, XMM16k, XMM16l, XMM16m, XMM16n, XMM16o, XMM16p,
+                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p,
+                      XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h, XMM16i, XMM16j, XMM16k, XMM16l, XMM16m, XMM16n, XMM16o, XMM16p,
                       XMM17, XMM17b, XMM17c, XMM17d, XMM17e, XMM17f, XMM17g, XMM17h, XMM17i, XMM17j, XMM17k, XMM17l, XMM17m, XMM17n, XMM17o, XMM17p,
                       XMM18, XMM18b, XMM18c, XMM18d, XMM18e, XMM18f, XMM18g, XMM18h, XMM18i, XMM18j, XMM18k, XMM18l, XMM18m, XMM18n, XMM18o, XMM18p,
                       XMM19, XMM19b, XMM19c, XMM19d, XMM19e, XMM19f, XMM19g, XMM19h, XMM19i, XMM19j, XMM19k, XMM19l, XMM19m, XMM19n, XMM19o, XMM19p,
@@ -1117,9 +1069,7 @@ reg_class vectorz_reg_evex(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,
                       XMM28, XMM28b, XMM28c, XMM28d, XMM28e, XMM28f, XMM28g, XMM28h, XMM28i, XMM28j, XMM28k, XMM28l, XMM28m, XMM28n, XMM28o, XMM28p,
                       XMM29, XMM29b, XMM29c, XMM29d, XMM29e, XMM29f, XMM29g, XMM29h, XMM29i, XMM29j, XMM29k, XMM29l, XMM29m, XMM29n, XMM29o, XMM29p,
                       XMM30, XMM30b, XMM30c, XMM30d, XMM30e, XMM30f, XMM30g, XMM30h, XMM30i, XMM30j, XMM30k, XMM30l, XMM30m, XMM30n, XMM30o, XMM30p,
-                      XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h, XMM31i, XMM31j, XMM31k, XMM31l, XMM31m, XMM31n, XMM31o, XMM31p
-#endif
-                      );
+                      XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h, XMM31i, XMM31j, XMM31k, XMM31l, XMM31m, XMM31n, XMM31o, XMM31p);
 
 // Class for restricted 512bit vector registers
 reg_class vectorz_reg_legacy(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,  XMM0i,  XMM0j,  XMM0k,  XMM0l,  XMM0m,  XMM0n,  XMM0o,  XMM0p,
@@ -1129,18 +1079,15 @@ reg_class vectorz_reg_legacy(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0
                       XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,  XMM4i,  XMM4j,  XMM4k,  XMM4l,  XMM4m,  XMM4n,  XMM4o,  XMM4p,
                       XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,  XMM5i,  XMM5j,  XMM5k,  XMM5l,  XMM5m,  XMM5n,  XMM5o,  XMM5p,
                       XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,  XMM6i,  XMM6j,  XMM6k,  XMM6l,  XMM6m,  XMM6n,  XMM6o,  XMM6p,
-                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p
-#ifdef _LP64
-                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h,  XMM7i,  XMM7j,  XMM7k,  XMM7l,  XMM7m,  XMM7n,  XMM7o,  XMM7p,
+                      XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,  XMM8i,  XMM8j,  XMM8k,  XMM8l,  XMM8m,  XMM8n,  XMM8o,  XMM8p,
                       XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,  XMM9i,  XMM9j,  XMM9k,  XMM9l,  XMM9m,  XMM9n,  XMM9o,  XMM9p,
                       XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h, XMM10i, XMM10j, XMM10k, XMM10l, XMM10m, XMM10n, XMM10o, XMM10p,
                       XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h, XMM11i, XMM11j, XMM11k, XMM11l, XMM11m, XMM11n, XMM11o, XMM11p,
                       XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h, XMM12i, XMM12j, XMM12k, XMM12l, XMM12m, XMM12n, XMM12o, XMM12p,
                       XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h, XMM13i, XMM13j, XMM13k, XMM13l, XMM13m, XMM13n, XMM13o, XMM13p,
                       XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h, XMM14i, XMM14j, XMM14k, XMM14l, XMM14m, XMM14n, XMM14o, XMM14p,
-                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p
-#endif
-                      );
+                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p);
 
 reg_class_dynamic vectorz_reg   (vectorz_reg_evex, vectorz_reg_legacy, %{ VM_Version::supports_evex() %} );
 reg_class_dynamic vectorz_reg_vl(vectorz_reg_evex, vectorz_reg_legacy, %{ VM_Version::supports_evex() && VM_Version::supports_avx512vl() %} );
@@ -1199,21 +1146,10 @@ class HandlerImpl {
     return NativeJump::instruction_size;
   }
 
-#ifdef _LP64
   static uint size_deopt_handler() {
     // three 5 byte instructions plus one move for unreachable address.
     return 15+3;
   }
-#else
-  static uint size_deopt_handler() {
-    // NativeCall instruction size is the same as NativeJump.
-    // exception handler starts out as jump and can be patched to
-    // a call be deoptimization.  (4932387)
-    // Note that this value is also credited (in output.cpp) to
-    // the size of the code section.
-    return 5 + NativeJump::instruction_size; // pushl(); jmp;
-  }
-#endif
 };
 
 inline Assembler::AvxVectorLen vector_length_encoding(int bytes) {
@@ -1334,7 +1270,6 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
   int offset = __ offset();
 
-#ifdef _LP64
   address the_pc = (address) __ pc();
   Label next;
   // push a "the_pc" on the stack without destroying any registers
@@ -1345,10 +1280,6 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ bind(next);
   // adjust it so it matches "the_pc"
   __ subptr(Address(rsp, 0), __ offset() - offset);
-#else
-  InternalAddress here(__ pc());
-  __ pushptr(here.addr(), noreg);
-#endif
 
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
@@ -1372,17 +1303,10 @@ static Assembler::Width widthForType(BasicType bt) {
 //=============================================================================
 
   // Float masks come from different places depending on platform.
-#ifdef _LP64
   static address float_signmask()  { return StubRoutines::x86::float_sign_mask(); }
   static address float_signflip()  { return StubRoutines::x86::float_sign_flip(); }
   static address double_signmask() { return StubRoutines::x86::double_sign_mask(); }
   static address double_signflip() { return StubRoutines::x86::double_sign_flip(); }
-#else
-  static address float_signmask()  { return (address)float_signmask_pool; }
-  static address float_signflip()  { return (address)float_signflip_pool; }
-  static address double_signmask() { return (address)double_signmask_pool; }
-  static address double_signflip() { return (address)double_signflip_pool; }
-#endif
   static address vector_short_to_byte_mask() { return StubRoutines::x86::vector_short_to_byte_mask(); }
   static address vector_int_to_byte_mask() { return StubRoutines::x86::vector_int_to_byte_mask(); }
   static address vector_byte_perm_mask() { return StubRoutines::x86::vector_byte_perm_mask(); }
@@ -1404,7 +1328,6 @@ bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
-  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   switch (opcode) {
     case Op_AbsVL:
     case Op_StoreVectorScatter:
@@ -1445,11 +1368,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_AddReductionVL:
-      if (UseSSE < 2) { // requires at least SSE2
-        return false;
-      }
-      break;
     case Op_AbsVB:
     case Op_AbsVS:
     case Op_AbsVI:
@@ -1461,11 +1379,14 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_MaxHF:
+    case Op_MinHF:
+      if (!VM_Version::supports_avx512vlbw()) {
+        return false;
+      }  // fallthrough
     case Op_AddHF:
     case Op_DivHF:
     case Op_FmaHF:
-    case Op_MaxHF:
-    case Op_MinHF:
     case Op_MulHF:
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
@@ -1506,7 +1427,7 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopulateIndex:
-      if (!is_LP64 || (UseAVX < 2)) {
+      if (UseAVX < 2) {
         return false;
       }
       break;
@@ -1521,9 +1442,7 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_CompareAndSwapL:
-#ifdef _LP64
     case Op_CompareAndSwapP:
-#endif
       break;
     case Op_StrIndexOf:
       if (!UseSSE42Intrinsics) {
@@ -1552,7 +1471,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-#ifdef _LP64
     case Op_MaxD:
     case Op_MaxF:
     case Op_MinD:
@@ -1561,7 +1479,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-#endif
     case Op_CacheWB:
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
@@ -1604,7 +1521,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_VectorCmpMasked:
     case Op_VectorMaskGen:
-      if (!is_LP64  || UseAVX < 3 || !VM_Version::supports_bmi2()) {
+      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
       }
       break;
@@ -1612,60 +1529,25 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskLastTrue:
     case Op_VectorMaskTrueCount:
     case Op_VectorMaskToLong:
-      if (!is_LP64 || UseAVX < 1) {
+      if (UseAVX < 1) {
          return false;
       }
       break;
     case Op_RoundF:
     case Op_RoundD:
-      if (!is_LP64) {
-        return false;
-      }
       break;
     case Op_CopySignD:
     case Op_CopySignF:
-      if (UseAVX < 3 || !is_LP64)  {
+      if (UseAVX < 3)  {
         return false;
       }
       if (!VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
-#ifndef _LP64
-    case Op_AddReductionVF:
-    case Op_AddReductionVD:
-    case Op_MulReductionVF:
-    case Op_MulReductionVD:
-      if (UseSSE < 1) { // requires at least SSE
-        return false;
-      }
-      break;
-    case Op_MulAddVS2VI:
-    case Op_RShiftVL:
-    case Op_AbsVD:
-    case Op_NegVD:
-      if (UseSSE < 2) {
-        return false;
-      }
-      break;
-#endif // !LP64
     case Op_CompressBits:
-      if (!VM_Version::supports_bmi2() || (!is_LP64 && UseSSE < 2)) {
-        return false;
-      }
-      break;
     case Op_ExpandBits:
-      if (!VM_Version::supports_bmi2() || (!is_LP64 && (UseSSE < 2 || !VM_Version::supports_bmi1()))) {
-        return false;
-      }
-      break;
-    case Op_SignumF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
-    case Op_SignumD:
-      if (UseSSE < 2) {
+      if (!VM_Version::supports_bmi2()) {
         return false;
       }
       break;
@@ -1673,21 +1555,6 @@ bool Matcher::match_rule_supported(int opcode) {
       if (!VM_Version::supports_avx512vl() || !VM_Version::supports_bmi2()) {
         return false;
       }
-      break;
-    case Op_SqrtF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
-    case Op_SqrtD:
-#ifdef _LP64
-      if (UseSSE < 2) {
-        return false;
-      }
-#else
-      // x86_32.ad has a special match rule for SqrtD.
-      // Together with common x86 rules, this handles all UseSSE cases.
-#endif
       break;
     case Op_ConvF2HF:
     case Op_ConvHF2F:
@@ -1719,7 +1586,6 @@ bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, Basi
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   if (!match_rule_supported(opcode)) {
     return false;
   }
@@ -1740,6 +1606,24 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   //   * 128bit vroundpd instruction is present only in AVX1
   int size_in_bits = vlen * type2aelembytes(bt) * BitsPerByte;
   switch (opcode) {
+    case Op_MaxVHF:
+    case Op_MinVHF:
+      if (!VM_Version::supports_avx512bw()) {
+        return false;
+      }
+    case Op_AddVHF:
+    case Op_DivVHF:
+    case Op_FmaVHF:
+    case Op_MulVHF:
+    case Op_SubVHF:
+    case Op_SqrtVHF:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      break;
     case Op_AbsVF:
     case Op_NegVF:
       if ((vlen == 16) && (VM_Version::supports_avx512dq() == false)) {
@@ -1766,7 +1650,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_ClearArray:
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
-      if (!is_LP64 || !VM_Version::supports_avx512bw()) {
+      if (!VM_Version::supports_avx512bw()) {
         return false;
       }
       if ((size_in_bits != 512) && !VM_Version::supports_avx512vl()) {
@@ -1816,19 +1700,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (is_subword_type(bt) && (UseSSE < 4)) {
         return false;
       }
-#ifndef _LP64
-      if (bt == T_BYTE || bt == T_LONG) {
-        return false;
-      }
-#endif
       break;
-#ifndef _LP64
-    case Op_VectorInsert:
-      if (bt == T_LONG || bt == T_DOUBLE) {
-        return false;
-      }
-      break;
-#endif
     case Op_MinReductionV:
     case Op_MaxReductionV:
       if ((bt == T_INT || is_subword_type(bt)) && UseSSE < 4) {
@@ -1843,11 +1715,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (UseAVX > 2 && (!VM_Version::supports_avx512dq() && size_in_bits == 512)) {
         return false;
       }
-#ifndef _LP64
-      if (bt == T_BYTE || bt == T_LONG) {
-        return false;
-      }
-#endif
       break;
     case Op_VectorTest:
       if (UseSSE < 4) {
@@ -1932,10 +1799,9 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       if (is_subword_type(bt) &&
-         (!is_LP64                                                ||
-         (size_in_bits > 256 && !VM_Version::supports_avx512bw()) ||
-         (size_in_bits < 64)                                      ||
-         (bt == T_SHORT && !VM_Version::supports_bmi2()))) {
+         ((size_in_bits > 256 && !VM_Version::supports_avx512bw()) ||
+          (size_in_bits < 64)                                      ||
+          (bt == T_SHORT && !VM_Version::supports_bmi2()))) {
         return false;
       }
       break;
@@ -2004,14 +1870,11 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (is_subword_type(bt) && !VM_Version::supports_avx512_vbmi2()) {
         return false;
       }
-      if (!is_LP64 && !VM_Version::supports_avx512vl() && size_in_bits < 512) {
-        return false;
-      }
       if (size_in_bits < 128 ) {
         return false;
       }
     case Op_VectorLongToMask:
-      if (UseAVX < 1 || !is_LP64) {
+      if (UseAVX < 1) {
         return false;
       }
       if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
@@ -2059,7 +1922,6 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
     return false;
   }
 
-  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   int size_in_bits = vlen * type2aelembytes(bt) * BitsPerByte;
   if (size_in_bits != 512 && !VM_Version::supports_avx512vl()) {
     return false;
@@ -2162,7 +2024,7 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
-      if (is_floating_point_type(bt)) {
+      if (is_floating_point_type(bt) && !VM_Version::supports_avx10_2()) {
         return false; // Implementation limitation
       }
       return true;
@@ -2304,7 +2166,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 // Max vector size in bytes. 0 if not supported.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
-  if (UseSSE < 2) return 0;
   // SSE2 supports 128bit vectors for all types.
   // AVX2 supports 256bit vectors for all types.
   // AVX2/EVEX supports 512bit vectors for all types.
@@ -2395,7 +2256,6 @@ static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, 
     address_visited.set(shift->_idx); // Flag as address_visited
     mstack.push(shift->in(2), Matcher::Visit);
     Node *conv = shift->in(1);
-#ifdef _LP64
     // Allow Matcher to match the rule which bypass
     // ConvI2L operation for an array index on LP64
     // if the index value is positive.
@@ -2405,9 +2265,9 @@ static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, 
         !matcher->is_visited(conv)) {
       address_visited.set(conv->_idx); // Flag as address_visited
       mstack.push(conv->in(1), Matcher::Pre_Visit);
-    } else
-#endif
+    } else {
       mstack.push(conv, Matcher::Pre_Visit);
+    }
     return true;
   }
   return false;
@@ -2545,7 +2405,7 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
         !adr->in(AddPNode::Offset)->is_Con() &&
-        LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
+        off->get_long() == (int) (off->get_long()) && // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
       address_visited.set(adr->_idx); // Flag as address_visited
@@ -2619,26 +2479,18 @@ static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
     case Op_VecS: // copy whole register
     case Op_VecD:
     case Op_VecX:
-#ifndef _LP64
-      __ movdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
-#else
       if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
         __ movdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       } else {
         __ vextractf32x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
      }
-#endif
       break;
     case Op_VecY:
-#ifndef _LP64
-      __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
-#else
       if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
         __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       } else {
         __ vextractf64x4(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 0x0);
      }
-#endif
       break;
     case Op_VecZ:
       __ evmovdquq(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 2);
@@ -2677,28 +2529,20 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
         __ movq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         break;
       case Op_VecX:
-#ifndef _LP64
-        __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
-#else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         } else {
           __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
           __ vinsertf32x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
         }
-#endif
         break;
       case Op_VecY:
-#ifndef _LP64
-        __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
-#else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         } else {
           __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
           __ vinsertf64x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
         }
-#endif
         break;
       case Op_VecZ:
         __ evmovdquq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
@@ -2715,28 +2559,20 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
         __ movq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         break;
       case Op_VecX:
-#ifndef _LP64
-        __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
-#else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         }
         else {
           __ vextractf32x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
         }
-#endif
         break;
       case Op_VecY:
-#ifndef _LP64
-        __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
-#else
         if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
           __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         }
         else {
           __ vextractf64x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
         }
-#endif
         break;
       case Op_VecZ:
         __ evmovdquq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
@@ -3030,7 +2866,8 @@ instruct ShouldNotReachHere() %{
   format %{ "stop\t# ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(pipe_slow);
@@ -3039,7 +2876,7 @@ instruct ShouldNotReachHere() %{
 // ============================================================================
 
 instruct addF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst src));
 
   format %{ "addss   $dst, $src" %}
@@ -3051,7 +2888,7 @@ instruct addF_reg(regF dst, regF src) %{
 %}
 
 instruct addF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst (LoadF src)));
 
   format %{ "addss   $dst, $src" %}
@@ -3063,7 +2900,7 @@ instruct addF_mem(regF dst, memory src) %{
 %}
 
 instruct addF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst con));
   format %{ "addss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3110,7 +2947,7 @@ instruct addF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct addD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst src));
 
   format %{ "addsd   $dst, $src" %}
@@ -3122,7 +2959,7 @@ instruct addD_reg(regD dst, regD src) %{
 %}
 
 instruct addD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst (LoadD src)));
 
   format %{ "addsd   $dst, $src" %}
@@ -3134,7 +2971,7 @@ instruct addD_mem(regD dst, memory src) %{
 %}
 
 instruct addD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst con));
   format %{ "addsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3181,7 +3018,7 @@ instruct addD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct subF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst src));
 
   format %{ "subss   $dst, $src" %}
@@ -3193,7 +3030,7 @@ instruct subF_reg(regF dst, regF src) %{
 %}
 
 instruct subF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst (LoadF src)));
 
   format %{ "subss   $dst, $src" %}
@@ -3205,7 +3042,7 @@ instruct subF_mem(regF dst, memory src) %{
 %}
 
 instruct subF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst con));
   format %{ "subss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3252,7 +3089,7 @@ instruct subF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct subD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst src));
 
   format %{ "subsd   $dst, $src" %}
@@ -3264,7 +3101,7 @@ instruct subD_reg(regD dst, regD src) %{
 %}
 
 instruct subD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst (LoadD src)));
 
   format %{ "subsd   $dst, $src" %}
@@ -3276,7 +3113,7 @@ instruct subD_mem(regD dst, memory src) %{
 %}
 
 instruct subD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst con));
   format %{ "subsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3323,7 +3160,7 @@ instruct subD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct mulF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst src));
 
   format %{ "mulss   $dst, $src" %}
@@ -3335,7 +3172,7 @@ instruct mulF_reg(regF dst, regF src) %{
 %}
 
 instruct mulF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst (LoadF src)));
 
   format %{ "mulss   $dst, $src" %}
@@ -3347,7 +3184,7 @@ instruct mulF_mem(regF dst, memory src) %{
 %}
 
 instruct mulF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst con));
   format %{ "mulss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3394,7 +3231,7 @@ instruct mulF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct mulD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst src));
 
   format %{ "mulsd   $dst, $src" %}
@@ -3406,7 +3243,7 @@ instruct mulD_reg(regD dst, regD src) %{
 %}
 
 instruct mulD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst (LoadD src)));
 
   format %{ "mulsd   $dst, $src" %}
@@ -3418,7 +3255,7 @@ instruct mulD_mem(regD dst, memory src) %{
 %}
 
 instruct mulD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst con));
   format %{ "mulsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3465,7 +3302,7 @@ instruct mulD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct divF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst src));
 
   format %{ "divss   $dst, $src" %}
@@ -3477,7 +3314,7 @@ instruct divF_reg(regF dst, regF src) %{
 %}
 
 instruct divF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst (LoadF src)));
 
   format %{ "divss   $dst, $src" %}
@@ -3489,7 +3326,7 @@ instruct divF_mem(regF dst, memory src) %{
 %}
 
 instruct divF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst con));
   format %{ "divss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3536,7 +3373,7 @@ instruct divF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct divD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst src));
 
   format %{ "divsd   $dst, $src" %}
@@ -3548,7 +3385,7 @@ instruct divD_reg(regD dst, regD src) %{
 %}
 
 instruct divD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst (LoadD src)));
 
   format %{ "divsd   $dst, $src" %}
@@ -3560,7 +3397,7 @@ instruct divD_mem(regD dst, memory src) %{
 %}
 
 instruct divD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst con));
   format %{ "divsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3607,7 +3444,7 @@ instruct divD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct absF_reg(regF dst) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AbsF dst));
   ins_cost(150);
   format %{ "andps   $dst, [0x7fffffff]\t# abs float by sign masking" %}
@@ -3631,7 +3468,7 @@ instruct absF_reg_reg(vlRegF dst, vlRegF src) %{
 %}
 
 instruct absD_reg(regD dst) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AbsD dst));
   ins_cost(150);
   format %{ "andpd   $dst, [0x7fffffffffffffff]\t"
@@ -3657,7 +3494,7 @@ instruct absD_reg_reg(vlRegD dst, vlRegD src) %{
 %}
 
 instruct negF_reg(regF dst) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (NegF dst));
   ins_cost(150);
   format %{ "xorps   $dst, [0x80000000]\t# neg float by sign flipping" %}
@@ -3680,7 +3517,7 @@ instruct negF_reg_reg(vlRegF dst, vlRegF src) %{
 %}
 
 instruct negD_reg(regD dst) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (NegD dst));
   ins_cost(150);
   format %{ "xorpd   $dst, [0x8000000000000000]\t"
@@ -3707,7 +3544,6 @@ instruct negD_reg_reg(vlRegD dst, vlRegD src) %{
 // sqrtss instruction needs destination register to be pre initialized for best performance
 // Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
 instruct sqrtF_reg(regF dst) %{
-  predicate(UseSSE>=1);
   match(Set dst (SqrtF dst));
   format %{ "sqrtss  $dst, $dst" %}
   ins_encode %{
@@ -3719,7 +3555,6 @@ instruct sqrtF_reg(regF dst) %{
 // sqrtsd instruction needs destination register to be pre initialized for best performance
 // Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
 instruct sqrtD_reg(regD dst) %{
-  predicate(UseSSE>=2);
   match(Set dst (SqrtD dst));
   format %{ "sqrtsd  $dst, $dst" %}
   ins_encode %{
@@ -3967,7 +3802,6 @@ instruct reinterpret_shrink(vec dst, legVec src) %{
 
 // ----------------------------------------------------------------------------------------------------
 
-#ifdef _LP64
 instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   match(Set dst (RoundDoubleMode src rmode));
   format %{ "roundsd $dst,$src" %}
@@ -4038,7 +3872,6 @@ instruct vround8D_mem(vec dst, memory mem, immU8 rmode) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif // _LP64
 
 instruct onspinwait() %{
   match(OnSpinWait);
@@ -4190,24 +4023,24 @@ instruct evgather_masked(vec dst, memory mem, vec idx, kReg mask, kReg ktmp, rRe
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_subwordLE8B(vec dst, memory mem, rRegP idx_base, immI_0 offset, rRegP tmp, rRegI rtmp) %{
+instruct vgather_subwordLE8B(vec dst, memory mem, rRegP idx_base, rRegP tmp, rRegI rtmp) %{
   predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  match(Set dst (LoadVectorGather mem idx_base));
   effect(TEMP tmp, TEMP rtmp);
   format %{ "vector_gatherLE8 $dst, $mem, $idx_base\t! using $tmp and $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ lea($tmp$$Register, $mem$$Address);
-    __ vgather8b_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp$$Register, vlen_enc);
+    __ vgather8b(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_subwordGT8B(vec dst, memory mem, rRegP idx_base, immI_0 offset, rRegP tmp, rRegP idx_base_temp,
+instruct vgather_subwordGT8B(vec dst, memory mem, rRegP idx_base, rRegP tmp, rRegP idx_base_temp,
                              vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI length, rFlagsReg cr) %{
   predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  match(Set dst (LoadVectorGather mem idx_base));
   effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP length, KILL cr);
   format %{ "vector_gatherGT8 $dst, $mem, $idx_base\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp and $length as TEMP" %}
   ins_encode %{
@@ -4216,50 +4049,15 @@ instruct vgather_subwordGT8B(vec dst, memory mem, rRegP idx_base, immI_0 offset,
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ lea($tmp$$Register, $mem$$Address);
     __ movptr($idx_base_temp$$Register, $idx_base$$Register);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, noreg, $xtmp1$$XMMRegister,
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, $xtmp1$$XMMRegister,
                        $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, noreg, $length$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_subwordLE8B_off(vec dst, memory mem, rRegP idx_base, rRegI offset, rRegP tmp, rRegI rtmp, rFlagsReg cr) %{
-  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
-  effect(TEMP tmp, TEMP rtmp, KILL cr);
-  format %{ "vector_gatherLE8_off $dst, $mem, $idx_base, $offset\t! using $tmp and $rtmp as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ vgather8b_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register, $rtmp$$Register, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-
-instruct vgather_subwordGT8B_off(vec dst, memory mem, rRegP idx_base, rRegI offset, rRegP tmp, rRegP idx_base_temp,
-                                 vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI length, rFlagsReg cr) %{
-  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP length, KILL cr);
-  format %{ "vector_gatherGT8_off $dst, $mem, $idx_base, $offset\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp and $length as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    int vector_len = Matcher::vector_length(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, noreg, $xtmp1$$XMMRegister,
-                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, noreg, $length$$Register, vector_len, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-
-#ifdef _LP64
-instruct vgather_masked_subwordLE8B_avx3(vec dst, memory mem, rRegP idx_base, immI_0 offset, kReg mask, rRegL mask_idx, rRegP tmp, rRegI rtmp, rRegL rtmp2, rFlagsReg cr) %{
+instruct vgather_masked_subwordLE8B_avx3(vec dst, memory mem, rRegP idx_base, kReg mask, rRegL mask_idx, rRegP tmp, rRegI rtmp, rRegL rtmp2, rFlagsReg cr) %{
   predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base mask)));
   effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
   format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
   ins_encode %{
@@ -4268,15 +4066,15 @@ instruct vgather_masked_subwordLE8B_avx3(vec dst, memory mem, rRegP idx_base, im
     __ xorq($mask_idx$$Register, $mask_idx$$Register);
     __ lea($tmp$$Register, $mem$$Address);
     __ kmovql($rtmp2$$Register, $mask$$KRegister);
-    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+    __ vgather8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_masked_subwordGT8B_avx3(vec dst, memory mem, rRegP idx_base, immI_0 offset, kReg mask, rRegP tmp, rRegP idx_base_temp,
+instruct vgather_masked_subwordGT8B_avx3(vec dst, memory mem, rRegP idx_base, kReg mask, rRegP tmp, rRegP idx_base_temp,
                                          vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegL rtmp2, rRegL mask_idx, rRegI length, rFlagsReg cr) %{
   predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base mask)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
   format %{ "vector_gatherGT8_masked $dst, $mem, $idx_base, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
   ins_encode %{
@@ -4287,52 +4085,15 @@ instruct vgather_masked_subwordGT8B_avx3(vec dst, memory mem, rRegP idx_base, im
     __ lea($tmp$$Register, $mem$$Address);
     __ movptr($idx_base_temp$$Register, $idx_base$$Register);
     __ kmovql($rtmp2$$Register, $mask$$KRegister);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, $rtmp2$$Register, $xtmp1$$XMMRegister,
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
                        $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_masked_subwordLE8B_off_avx3(vec dst, memory mem, rRegP idx_base, rRegI offset, kReg mask, rRegL mask_idx, rRegP tmp, rRegI rtmp, rRegL rtmp2, rFlagsReg cr) %{
-  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
-  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
-  format %{ "vector_masked_gatherLE8_off $dst, $mem, $idx_base, $offset, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ xorq($mask_idx$$Register, $mask_idx$$Register);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ kmovql($rtmp2$$Register, $mask$$KRegister);
-    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register,
-                                $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vgather_masked_subwordGT8B_off_avx3(vec dst, memory mem, rRegP idx_base, rRegI offset, kReg mask, rRegP tmp, rRegP idx_base_temp,
-                                             vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegL rtmp2, rRegL mask_idx, rRegI length, rFlagsReg cr) %{
-  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
-  format %{ "vector_gatherGT8_masked_off $dst, $mem, $idx_base, $offset, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    int vector_len = Matcher::vector_length(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ xorq($mask_idx$$Register, $mask_idx$$Register);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
-    __ kmovql($rtmp2$$Register, $mask$$KRegister);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
-                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, immI_0 offset, vec mask, rRegI mask_idx, rRegP tmp, rRegI rtmp, rRegI rtmp2, rFlagsReg cr) %{
+instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, vec mask, rRegI mask_idx, rRegP tmp, rRegI rtmp, rRegI rtmp2, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base mask)));
   effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
   format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
   ins_encode %{
@@ -4345,15 +4106,15 @@ instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, im
       __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
     }
     __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+    __ vgather8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vgather_masked_subwordGT8B_avx2(vec dst, memory mem, rRegP idx_base, immI_0 offset, vec mask, rRegP tmp, rRegP idx_base_temp,
+instruct vgather_masked_subwordGT8B_avx2(vec dst, memory mem, rRegP idx_base, vec mask, rRegP tmp, rRegP idx_base_temp,
                                          vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI rtmp2, rRegI mask_idx, rRegI length, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base mask)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
   format %{ "vector_gatherGT8_masked $dst, $mem, $idx_base, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
   ins_encode %{
@@ -4368,58 +4129,11 @@ instruct vgather_masked_subwordGT8B_avx2(vec dst, memory mem, rRegP idx_base, im
       __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
     }
     __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, $rtmp2$$Register, $xtmp1$$XMMRegister,
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
                        $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
-
-instruct vgather_masked_subwordLE8B_off_avx2(vec dst, memory mem, rRegP idx_base, rRegI offset, vec mask, rRegI mask_idx, rRegP tmp, rRegI rtmp, rRegI rtmp2, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
-  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
-  format %{ "vector_masked_gatherLE8_off $dst, $mem, $idx_base, $offset, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
-    if (elem_bt == T_SHORT) {
-      __ movl($mask_idx$$Register, 0x55555555);
-      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
-    }
-    __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register,
-                                $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vgather_masked_subwordGT8B_off_avx2(vec dst, memory mem, rRegP idx_base, rRegI offset, vec mask, rRegP tmp, rRegP idx_base_temp,
-                                             vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI rtmp2, rRegI mask_idx, rRegI length, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
-  format %{ "vector_gatherGT8_masked_off $dst, $mem, $idx_base, $offset, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    int vector_len = Matcher::vector_length(this);
-    BasicType elem_bt = Matcher::vector_element_basic_type(this);
-    __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ lea($tmp$$Register, $mem$$Address);
-    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
-    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
-    if (elem_bt == T_SHORT) {
-      __ movl($mask_idx$$Register, 0x55555555);
-      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
-    }
-    __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
-                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-#endif
 
 // ====================Scatter=======================================
 
@@ -4535,7 +4249,6 @@ instruct vReplS_reg(vec dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
   match(Set dst (Replicate con));
   effect(TEMP rtmp);
@@ -4562,7 +4275,6 @@ instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 instruct ReplS_mem(vec dst, memory mem) %{
   predicate(UseAVX >= 2 && Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -4647,7 +4359,7 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
 %}
 
 instruct ReplI_M1(vec dst, immI_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::is_non_long_integral_vector(n));
+  predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -4659,7 +4371,6 @@ instruct ReplI_M1(vec dst, immI_M1 con) %{
 
 // ====================ReplicateL=======================================
 
-#ifdef _LP64
 // Replicate long (8 byte) scalar to be vector
 instruct ReplL_reg(vec dst, rRegL src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
@@ -4680,61 +4391,6 @@ instruct ReplL_reg(vec dst, rRegL src) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#else // _LP64
-// Replicate long (8 byte) scalar to be vector
-instruct ReplL_reg(vec dst, eRegL src, vec tmp) %{
-  predicate(Matcher::vector_length(n) <= 4 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (Replicate src));
-  effect(TEMP dst, USE src, TEMP tmp);
-  format %{ "replicateL $dst,$src" %}
-  ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen == 2) {
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-      __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    } else if (VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
-      int vlen_enc = Assembler::AVX_256bit;
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-      __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-      __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplL_reg_leg(legVec dst, eRegL src, legVec tmp) %{
-  predicate(Matcher::vector_length(n) == 8 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (Replicate src));
-  effect(TEMP dst, USE src, TEMP tmp);
-  format %{ "replicateL $dst,$src" %}
-  ins_encode %{
-    if (VM_Version::supports_avx512vl()) {
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-      __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-      __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
-    } else {
-      int vlen_enc = Assembler::AVX_512bit;
-      __ movdl($dst$$XMMRegister, $src$$Register);
-      __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-      __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-#endif // _LP64
 
 instruct ReplL_mem(vec dst, memory mem) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
@@ -4783,7 +4439,7 @@ instruct ReplL_zero(vec dst, immL0 zero) %{
 %}
 
 instruct ReplL_M1(vec dst, immL_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::vector_element_basic_type(n) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -5008,7 +4664,6 @@ instruct insert64(vec dst, vec src, rRegI val, immU8 idx, legVec vtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct insert2L(vec dst, rRegL val, immU8 idx) %{
   predicate(Matcher::vector_length(n) == 2);
   match(Set dst (VectorInsert (Binary dst val) idx));
@@ -5059,7 +4714,6 @@ instruct insert8L(vec dst, vec src, rRegL val, immU8 idx, legVec vtmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 instruct insertF(vec dst, regF val, immU8 idx) %{
   predicate(Matcher::vector_length(n) < 8);
@@ -5105,7 +4759,6 @@ instruct vinsertF(vec dst, vec src, regF val, immU8 idx, vec vtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct insert2D(vec dst, regD val, immU8 idx, rRegL tmp) %{
   predicate(Matcher::vector_length(n) == 2);
   match(Set dst (VectorInsert (Binary dst val) idx));
@@ -5160,7 +4813,6 @@ instruct insert8D(vec dst, vec src, regD val, immI idx, rRegL tmp, legVec vtmp) 
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 // ====================REDUCTION ARITHMETIC=======================================
 
@@ -5187,7 +4839,6 @@ instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
 
 // =======================Long Reduction==========================================
 
-#ifdef _LP64
 instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG && !VM_Version::supports_avx512dq());
   match(Set dst (AddReductionVL src1 src2));
@@ -5225,7 +4876,6 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
   %}
   ins_pipe( pipe_slow );
 %}
-#endif // _LP64
 
 // =======================Float Reduction==========================================
 
@@ -5437,7 +5087,6 @@ instruct unordered_reduction8D(regD dst, regD src1, legVec src2, legVec vtmp1, l
 
 // =======================Byte Reduction==========================================
 
-#ifdef _LP64
 instruct reductionB(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE && !VM_Version::supports_avx512bw());
   match(Set dst (AddReductionVI src1 src2));
@@ -5473,7 +5122,6 @@ instruct reductionB_avx512bw(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtm
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 // =======================Short Reduction==========================================
 
@@ -5528,9 +5176,9 @@ instruct mul_reduction64B(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legV
 
 //--------------------Min/Max Float Reduction --------------------
 // Float Min Reduction
-instruct minmax_reduction2F(legRegF dst, immF src1, legVec src2, legVec tmp,
-                            legVec atmp, legVec btmp, legVec xmm_1, rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+instruct minmax_reduction2F(legRegF dst, immF src1, legVec src2, legVec tmp, legVec atmp,
+                            legVec btmp, legVec xmm_1, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
             Matcher::vector_length(n->in(2)) == 2);
@@ -5551,7 +5199,7 @@ instruct minmax_reduction2F(legRegF dst, immF src1, legVec src2, legVec tmp,
 
 instruct minmax_reductionF(legRegF dst, immF src1, legVec src2, legVec tmp, legVec atmp,
                            legVec btmp, legVec xmm_0, legVec xmm_1, rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
             Matcher::vector_length(n->in(2)) >= 4);
@@ -5570,9 +5218,9 @@ instruct minmax_reductionF(legRegF dst, immF src1, legVec src2, legVec tmp, legV
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2F_av(legRegF dst, legVec src, legVec tmp,
-                               legVec atmp, legVec btmp, legVec xmm_1, rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+instruct minmax_reduction2F_av(legRegF dst, legVec src, legVec tmp, legVec atmp,
+                               legVec btmp, legVec xmm_1, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
   match(Set dst (MaxReductionV dst src));
@@ -5590,9 +5238,9 @@ instruct minmax_reduction2F_av(legRegF dst, legVec src, legVec tmp,
 %}
 
 
-instruct minmax_reductionF_av(legRegF dst, legVec src, legVec tmp,
-                              legVec atmp, legVec btmp, legVec xmm_0, legVec xmm_1, rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+instruct minmax_reductionF_av(legRegF dst, legVec src, legVec tmp, legVec atmp, legVec btmp,
+                              legVec xmm_0, legVec xmm_1, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
   match(Set dst (MaxReductionV dst src));
@@ -5609,12 +5257,78 @@ instruct minmax_reductionF_av(legRegF dst, legVec src, legVec tmp,
   ins_pipe( pipe_slow );
 %}
 
+instruct minmax_reduction2F_avx10(regF dst, immF src1, vec src2, vec xtmp1) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+            ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
+             (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
+            Matcher::vector_length(n->in(2)) == 2);
+  match(Set dst (MinReductionV src1 src2));
+  match(Set dst (MaxReductionV src1 src2));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_minmax_reduction $dst, $src1, $src2 \t; using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ reduceFloatMinMax(opcode, vlen, false, $dst$$XMMRegister, $src2$$XMMRegister,
+                         xnoreg, xnoreg, xnoreg, $xtmp1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reductionF_avx10(regF dst, immF src1, vec src2, vec xtmp1, vec xtmp2) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+            ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
+             (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
+            Matcher::vector_length(n->in(2)) >= 4);
+  match(Set dst (MinReductionV src1 src2));
+  match(Set dst (MaxReductionV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_minmax_reduction $dst, $src1, $src2 \t; using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ reduceFloatMinMax(opcode, vlen, false, $dst$$XMMRegister, $src2$$XMMRegister, xnoreg, xnoreg,
+                         xnoreg, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reduction2F_avx10_av(regF dst, vec src, vec xtmp1) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+            Matcher::vector_length(n->in(2)) == 2);
+  match(Set dst (MinReductionV dst src));
+  match(Set dst (MaxReductionV dst src));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_minmax2F_reduction $dst, $src \t; using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src);
+    __ reduceFloatMinMax(opcode, vlen, true, $dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg,
+                         $xtmp1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reductionF_avx10_av(regF dst, vec src, vec xtmp1, vec xtmp2) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
+            Matcher::vector_length(n->in(2)) >= 4);
+  match(Set dst (MinReductionV dst src));
+  match(Set dst (MaxReductionV dst src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_minmax2F_reduction $dst, $src \t; using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src);
+    __ reduceFloatMinMax(opcode, vlen, true, $dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg,
+                         $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 //--------------------Min Double Reduction --------------------
-instruct minmax_reduction2D(legRegD dst, immD src1, legVec src2,
-                            legVec tmp1, legVec tmp2, legVec tmp3, legVec tmp4, // TEMPs
-                            rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+instruct minmax_reduction2D(legRegD dst, immD src1, legVec src2, legVec tmp1, legVec tmp2,
+                            legVec tmp3, legVec tmp4, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
             Matcher::vector_length(n->in(2)) == 2);
@@ -5633,10 +5347,9 @@ instruct minmax_reduction2D(legRegD dst, immD src1, legVec src2,
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD(legRegD dst, immD src1, legVec src2,
-                           legVec tmp1, legVec tmp2, legVec tmp3, legVec tmp4, legVec tmp5, // TEMPs
-                           rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+instruct minmax_reductionD(legRegD dst, immD src1, legVec src2, legVec tmp1, legVec tmp2,
+                           legVec tmp3, legVec tmp4, legVec tmp5, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
             Matcher::vector_length(n->in(2)) >= 4);
@@ -5656,10 +5369,9 @@ instruct minmax_reductionD(legRegD dst, immD src1, legVec src2,
 %}
 
 
-instruct minmax_reduction2D_av(legRegD dst, legVec src,
-                               legVec tmp1, legVec tmp2, legVec tmp3, legVec tmp4, // TEMPs
-                               rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+instruct minmax_reduction2D_av(legRegD dst, legVec src, legVec tmp1, legVec tmp2,
+                               legVec tmp3, legVec tmp4, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
   match(Set dst (MaxReductionV dst src));
@@ -5676,10 +5388,9 @@ instruct minmax_reduction2D_av(legRegD dst, legVec src,
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD_av(legRegD dst, legVec src,
-                              legVec tmp1, legVec tmp2, legVec tmp3, legVec tmp4, legVec tmp5, // TEMPs
-                              rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+instruct minmax_reductionD_av(legRegD dst, legVec src, legVec tmp1, legVec tmp2, legVec tmp3,
+                              legVec tmp4, legVec tmp5, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
   match(Set dst (MaxReductionV dst src));
@@ -5692,6 +5403,75 @@ instruct minmax_reductionD_av(legRegD dst, legVec src,
     int vlen = Matcher::vector_length(this, $src);
     __ reduceDoubleMinMax(opcode, vlen, true, $dst$$XMMRegister, $src$$XMMRegister,
                           $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister, $tmp4$$XMMRegister, $tmp5$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reduction2D_avx10(regD dst, immD src1, vec src2, vec xtmp1) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+            ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
+             (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
+            Matcher::vector_length(n->in(2)) == 2);
+  match(Set dst (MinReductionV src1 src2));
+  match(Set dst (MaxReductionV src1 src2));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_minmax2D_reduction $dst, $src1, $src2 ; using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ reduceDoubleMinMax(opcode, vlen, false, $dst$$XMMRegister, $src2$$XMMRegister, xnoreg,
+                          xnoreg, xnoreg, $xtmp1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reductionD_avx10(regD dst, immD src1, vec src2, vec xtmp1, vec xtmp2) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+            ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
+             (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
+            Matcher::vector_length(n->in(2)) >= 4);
+  match(Set dst (MinReductionV src1 src2));
+  match(Set dst (MaxReductionV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_minmaxD_reduction $dst, $src1, $src2 ; using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ reduceDoubleMinMax(opcode, vlen, false, $dst$$XMMRegister, $src2$$XMMRegister, xnoreg, xnoreg,
+                          xnoreg, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct minmax_reduction2D_av_avx10(regD dst, vec src, vec xtmp1) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+            Matcher::vector_length(n->in(2)) == 2);
+  match(Set dst (MinReductionV dst src));
+  match(Set dst (MaxReductionV dst src));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_minmax2D_reduction $dst, $src ; using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src);
+    __ reduceDoubleMinMax(opcode, vlen, true, $dst$$XMMRegister, $src$$XMMRegister,
+                          xnoreg, xnoreg, xnoreg, $xtmp1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct minmax_reductionD_av_avx10(regD dst, vec src, vec xtmp1, vec xtmp2) %{
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
+            Matcher::vector_length(n->in(2)) >= 4);
+  match(Set dst (MinReductionV dst src));
+  match(Set dst (MaxReductionV dst src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_minmaxD_reduction $dst, $src ; using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src);
+    __ reduceDoubleMinMax(opcode, vlen, true, $dst$$XMMRegister, $src$$XMMRegister,
+                          xnoreg, xnoreg, xnoreg, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6583,8 +6363,24 @@ instruct vminmaxL_reg_evex(vec dst, vec src1, vec src2) %{
 %}
 
 // Float/Double vector Min/Max
+instruct minmaxFP_avx10_reg(vec dst, vec a, vec b) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
+  match(Set dst (MinV a b));
+  match(Set dst (MaxV a b));
+  format %{ "vector_minmaxFP  $dst, $a, $b" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vminmax_fp(opcode, elem_bt, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Float/Double vector Min/Max
 instruct minmaxFP_reg(legVec dst, legVec a, legVec b, legVec tmp, legVec atmp, legVec btmp) %{
-  predicate(Matcher::vector_length_in_bytes(n) <= 32 &&
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) <= 32 &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) && // T_FLOAT, T_DOUBLE
             UseAVX > 0);
   match(Set dst (MinV a b));
@@ -6605,8 +6401,8 @@ instruct minmaxFP_reg(legVec dst, legVec a, legVec b, legVec tmp, legVec atmp, l
   ins_pipe( pipe_slow );
 %}
 
-instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktmp) %{
-  predicate(Matcher::vector_length_in_bytes(n) == 64 &&
+instruct evminmaxFP_reg_evex(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktmp) %{
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) == 64 &&
             is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
   match(Set dst (MaxV a b));
@@ -6774,7 +6570,6 @@ instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
 // Result going from high bit to low bit is 0x11100100 = 0xe4
 // ---------------------------------------
 
-#ifdef _LP64
 instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
   match(Set dst (CopySignF dst src));
   effect(TEMP tmp1, TEMP tmp2);
@@ -6799,8 +6594,6 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   %}
   ins_pipe( pipe_slow );
 %}
-
-#endif // _LP64
 
 //----------------------------- CompressBits/ExpandBits ------------------------
 
@@ -7166,7 +6959,6 @@ instruct vshiftL_arith_reg(vec dst, vec src, vec shift, vec tmp) %{
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
       __ psrlq($dst$$XMMRegister, $shift$$XMMRegister);
       __ movdqu($tmp$$XMMRegister, ExternalAddress(vector_long_sign_mask()), noreg);
@@ -7974,7 +7766,6 @@ instruct vucast(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct vround_float_avx(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n) < 64 &&
@@ -8023,8 +7814,6 @@ instruct vround_reg_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg
   %}
   ins_pipe( pipe_slow );
 %}
-
-#endif // _LP64
 
 // --------------------------------- VectorMaskCmp --------------------------------------
 
@@ -8235,9 +8024,7 @@ instruct extractI(rRegI dst, legVec src, immU8 idx) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) <= 16); // src
   match(Set dst (ExtractI src idx));
   match(Set dst (ExtractS src idx));
-#ifdef _LP64
   match(Set dst (ExtractB src idx));
-#endif
   format %{ "extractI $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)Matcher::vector_length(this, $src), "out of bounds");
@@ -8253,9 +8040,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
             Matcher::vector_length_in_bytes(n->in(1)) == 64);  // src
   match(Set dst (ExtractI src idx));
   match(Set dst (ExtractS src idx));
-#ifdef _LP64
   match(Set dst (ExtractB src idx));
-#endif
   effect(TEMP vtmp);
   format %{ "vextractI $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
@@ -8268,7 +8053,6 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct extractL(rRegL dst, legVec src, immU8 idx) %{
   predicate(Matcher::vector_length(n->in(1)) <= 2); // src
   match(Set dst (ExtractL src idx));
@@ -8296,7 +8080,6 @@ instruct vextractL(rRegL dst, legVec src, immU8 idx, legVec vtmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 instruct extractF(legRegF dst, legVec src, immU8 idx, legVec vtmp) %{
   predicate(Matcher::vector_length(n->in(1)) <= 4);
@@ -8549,7 +8332,6 @@ instruct vabsnegD(vec dst, vec src) %{
     int opcode = this->ideal_Opcode();
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ vabsnegd(opcode, $dst$$XMMRegister, $src$$XMMRegister);
     } else {
       int vlen_enc = vector_length_encoding(this);
@@ -8561,7 +8343,6 @@ instruct vabsnegD(vec dst, vec src) %{
 
 //------------------------------------- VectorTest --------------------------------------------
 
-#ifdef _LP64
 instruct vptest_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) < 16);
   match(Set cr (VectorTest src1 src2));
@@ -8629,7 +8410,6 @@ instruct ktest_ge8(rFlagsRegU cr, kReg src1, kReg src2) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 //------------------------------------- LoadMask --------------------------------------------
 
@@ -8880,7 +8660,6 @@ instruct loadIotaIndices(vec dst, immI_0 src) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp) %{
   match(Set dst (PopulateIndex src1 src2));
   effect(TEMP dst, TEMP vtmp);
@@ -8912,7 +8691,7 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
+
 //-------------------------------- Rearrange ----------------------------------
 
 // LoadShuffle/Rearrange for Byte
@@ -9493,7 +9272,6 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct verify_vector_alignment(rRegP addr, immL32 mask, rFlagsReg cr) %{
   match(Set addr (VerifyVectorAlignment addr mask));
   effect(KILL cr);
@@ -9707,7 +9485,6 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp,
 %}
 
 // --------------------------------- Compress/Expand Operations ---------------------------
-#ifdef _LP64
 instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratch, vec perm, vec xtmp, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
   match(Set dst (CompressV src mask));
@@ -9723,7 +9500,6 @@ instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratc
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 instruct vcompress_expand_reg_evex(vec dst, vec src, kReg mask) %{
   predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
@@ -9750,8 +9526,6 @@ instruct vcompress_mask_reg_evex(kReg dst, kReg mask, rRegL rtmp1, rRegL rtmp2, 
   %}
   ins_pipe( pipe_slow );
 %}
-
-#endif // _LP64
 
 // -------------------------------- Bit and Byte Reversal Vector Operations ------------------------
 
@@ -10473,7 +10247,6 @@ instruct mask_all_evexI_LE32(kReg dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct mask_not_immLT8(kReg dst, kReg src, rRegI rtmp, kReg ktmp, immI_M1 cnt) %{
   predicate(Matcher::vector_length(n) < 8 && VM_Version::supports_avx512dq());
   match(Set dst (XorVMask src (MaskAll cnt)));
@@ -10538,7 +10311,6 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
 
 instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
   match(Set dst (AndVMask src1 src2));
@@ -10891,6 +10663,16 @@ instruct reinterpretS2HF(regF dst, rRegI src)
   ins_pipe(pipe_slow);
 %}
 
+instruct reinterpretHF2S(rRegI dst, regF src)
+%{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "vmovw $dst, $src" %}
+  ins_encode %{
+    __ vmovw($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convF2HFAndS2HF(regF dst, regF src)
 %{
   match(Set dst (ReinterpretS2HF (ConvF2HF src)));
@@ -10911,16 +10693,6 @@ instruct convHF2SAndHF2F(regF dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct reinterpretHF2S(rRegI dst, regF src)
-%{
-  match(Set dst (ReinterpretHF2S src));
-  format %{ "vmovw $dst, $src" %}
-  ins_encode %{
-    __ vmovw($dst$$Register, $src$$XMMRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct scalar_sqrt_HF_reg(regF dst, regF src)
 %{
   match(Set dst (SqrtHF src));
@@ -10935,8 +10707,6 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (AddHF src1 src2));
   match(Set dst (DivHF src1 src2));
-  match(Set dst (MaxHF src1 src2));
-  match(Set dst (MinHF src1 src2));
   match(Set dst (MulHF src1 src2));
   match(Set dst (SubHF src1 src2));
   format %{ "scalar_binop_fp16 $dst, $src1, $src2" %}
@@ -10947,6 +10717,34 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
+instruct scalar_minmax_HF_avx10_reg(regF dst, regF src1, regF src2)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxHF src1 src2));
+  match(Set dst (MinHF src1 src2));
+  format %{ "scalar_min_max_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int function = this->ideal_Opcode() == Op_MinHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    __ eminmaxsh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, function);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xtmp1, regF xtmp2)
+%{
+  predicate(!VM_Version::supports_avx10_2());
+  match(Set dst (MaxHF src1 src2));
+  match(Set dst (MinHF src1 src2));
+  effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
+  format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (FmaHF  src2 (Binary dst src1)));
@@ -10954,6 +10752,126 @@ instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
   format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct vector_sqrt_HF_reg(vec dst, vec src)
+%{
+  match(Set dst (SqrtVHF src));
+  format %{ "vector_sqrt_fp16 $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_sqrt_HF_mem(vec dst, memory src)
+%{
+  match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
+  format %{ "vector_sqrt_fp16_mem $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (AddVHF src1 src2));
+  match(Set dst (DivVHF src1 src2));
+  match(Set dst (MulVHF src1 src2));
+  match(Set dst (SubVHF src1 src2));
+  format %{ "vector_binop_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
+%{
+  match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (SubVHF src1 (VectorReinterpret (LoadVector src2))));
+  format %{ "vector_binop_fp16_mem $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst src1)));
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_avx10_mem(vec dst, vec src1, memory src2)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MaxVHF src1 (VectorReinterpret (LoadVector src2))));
+  format %{ "vector_min_max_fp16_mem $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$Address, true, function, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
+  format %{ "vector_min_max_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$XMMRegister, true, function, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1, vec xtmp2)
+%{
+  predicate(!VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
+  effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ vector_max_min_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

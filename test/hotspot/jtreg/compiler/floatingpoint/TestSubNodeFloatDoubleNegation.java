@@ -53,9 +53,13 @@ public class TestSubNodeFloatDoubleNegation {
     }
 
     @Test
-    // Match a generic SubNode, because scalar Float16 operations are often
-    // performed as float operations.
-    @IR(counts = { IRNode.SUB, "2" })
+    @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"avx512_fp16", "false"})
+    @IR(counts = { IRNode.SUB_HF, "2" }, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"avx512_fp16", "true"})
+    @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"aarch64", "true"}, applyIfCPUFeatureAnd = {"fphp", "false", "asimdhp", "false"})
+    @IR(counts = { IRNode.SUB_HF, "2" }, applyIfPlatform = {"aarch64", "true"}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zfh", "false"})
+    @IR(counts = { IRNode.SUB_HF, "2" }, applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zfh", "true"})
+    @IR(counts = { IRNode.SUB, "2" }, applyIfPlatformAnd = {"x64", "false", "aarch64", "false", "riscv64", "false"})
     // Checks that the subtractions in 0 - (0 - hf) do not get eliminiated
     public static Float16 testHalfFloat(Float16 hf) {
         return Float16.subtract(

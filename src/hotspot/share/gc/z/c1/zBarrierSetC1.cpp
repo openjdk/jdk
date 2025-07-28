@@ -21,12 +21,12 @@
  * questions.
  */
 
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_MacroAssembler.hpp"
-#include "c1/c1_CodeStubs.hpp"
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
@@ -506,7 +506,7 @@ public:
 
 static address generate_c1_load_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   ZLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
-  CodeBlob* const code_blob = Runtime1::generate_blob(blob, C1StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return (code_blob != nullptr) ? code_blob->code_begin() : nullptr;
 }
 
@@ -526,7 +526,7 @@ public:
 
 static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healing, const char* name) {
   ZStoreBarrierRuntimeStubCodeGenClosure cl(self_healing);
-  CodeBlob* const code_blob = Runtime1::generate_blob(blob, C1StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return (code_blob != nullptr) ? code_blob->code_begin() : nullptr;
 }
 

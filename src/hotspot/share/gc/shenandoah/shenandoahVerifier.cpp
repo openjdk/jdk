@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,11 +27,11 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -149,15 +149,21 @@ private:
               "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
+    check(ShenandoahAsserts::_safe_unknown, obj, os::is_readable_pointer(obj),
+              "oop must be accessible");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+    narrowKlass nk = 0;
+    const Klass* obj_klass = nullptr;
+    const bool klass_valid = ShenandoahAsserts::extract_klass_safely(obj, nk, obj_klass);
+
+    check(ShenandoahAsserts::_safe_unknown, obj, klass_valid,
+           "Object klass pointer unreadable or invalid");
 
     // Verify that obj is not in dead space:
     {
       // Do this before touching obj->size()
-      check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != nullptr,
-             "Object klass pointer should not be null");
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 
@@ -244,18 +250,20 @@ private:
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
-    // We want to check class loading/unloading did not corrupt them.
+    // We want to check class loading/unloading did not corrupt them. We can only reasonably
+    // trust the forwarded objects, as the from-space object can have the klasses effectively
+    // dead.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
-            "Instance class mirror should point to Metaspace");
+            "Mirrored instance class should point to Metaspace");
 
-      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
-            "Array class mirror should point to Metaspace");
+            "Mirrored array class should point to Metaspace");
     }
 
     // ------------ obj and fwd are safe at this point --------------
@@ -268,12 +276,12 @@ private:
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
       case ShenandoahVerifier::_verify_marked_complete_satb_empty:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -701,7 +709,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context()->is_marked(cast_to_oop(obj))) {
+    if (_heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed, memory_order_relaxed);
@@ -709,7 +717,7 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    ShenandoahMarkingContext* ctx = _heap->complete_marking_context();
+    ShenandoahMarkingContext* ctx = _heap->gc_generation()->complete_marking_context();
     HeapWord* tams = ctx->top_at_mark_start(r);
 
     // Bitmaps, before TAMS
@@ -788,9 +796,11 @@ public:
 
 void ShenandoahVerifier::verify_at_safepoint(const char* label,
                                              VerifyRememberedSet remembered,
-                                             VerifyForwarded forwarded, VerifyMarked marked,
+                                             VerifyForwarded forwarded,
+                                             VerifyMarked marked,
                                              VerifyCollectionSet cset,
-                                             VerifyLiveness liveness, VerifyRegions regions,
+                                             VerifyLiveness liveness,
+                                             VerifyRegions regions,
                                              VerifySize sizeness,
                                              VerifyGCState gcstate) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
@@ -989,7 +999,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         (marked == _verify_marked_complete ||
          marked == _verify_marked_complete_except_references ||
          marked == _verify_marked_complete_satb_empty)) {
-    guarantee(_heap->marking_context()->is_complete(), "Marking context should be complete");
+    guarantee(_heap->gc_generation()->is_mark_complete(), "Marking context should be complete");
     ShenandoahVerifierMarkedRegionTask task(_verification_bit_map, ld, label, options);
     _heap->workers()->run_task(&task);
     count_marked = task.processed();
@@ -1186,7 +1196,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
           "After Full GC",
           _verify_remembered_after_full_gc,  // verify read-write remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_complete,     // all objects are marked in complete bitmap
+          _verify_marked_incomplete,   // all objects are marked in incomplete bitmap
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
@@ -1294,7 +1304,7 @@ void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, Shenandoah
   ShenandoahOldGeneration* old_gen = _heap->old_generation();
   assert(old_gen->is_mark_complete() || old_gen->is_parsable(), "Sanity");
 
-  ShenandoahMarkingContext* ctx = old_gen->is_mark_complete() ?old_gen->complete_marking_context() : nullptr;
+  ShenandoahMarkingContext* ctx = old_gen->is_mark_complete() ? old_gen->complete_marking_context() : nullptr;
   ShenandoahVerifyRemSetClosure<Scanner> check_interesting_pointers(scanner, message);
   HeapWord* from = r->bottom();
   HeapWord* obj_addr = from;

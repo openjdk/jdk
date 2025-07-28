@@ -2304,7 +2304,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // Get oop result if there is one and reset the value in the thread.
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 
   _last_calls_return_pc = return_pc;  // Wipe out other (error handling) calls.
@@ -3679,9 +3679,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_index  = r_temp3,
     r_bitmap       = noreg; // unused
 
-  const Register r_one = Z_R0_scratch;
-  z_lghi(r_one, 1); // for locgr down there, to a load result for failure
-
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
   Label L_passed, L_failure;
@@ -3697,7 +3694,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register r_linear_result = r_array_index; // reuse
   z_chi(r_array_length, 0);
-  z_locgr(r_linear_result, r_one, bcondNotHigh); // load failure if array_length <= 0
+  load_on_condition_imm_32(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
   z_brc(bcondNotHigh, L_failure);
   repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
   bind(L_failure);
@@ -3705,13 +3702,20 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   z_cr(r_result, r_linear_result);
   z_bre(L_passed);
 
-  assert_different_registers(Z_ARG1, r_sub_klass, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG1, r_super_klass);
-  assert_different_registers(Z_ARG2, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG2, r_sub_klass);
-  assert_different_registers(Z_ARG3, r_result);
-  z_lgr(Z_ARG3, r_linear_result);
+  // report fatal error and terminate VM
+
+  // Argument shuffle
+  // Z_F1, Z_F3, Z_F5 are volatile regs
+  z_ldgr(Z_F1, r_super_klass);
+  z_ldgr(Z_F3, r_sub_klass);
+  z_ldgr(Z_F5, r_linear_result);
+
   z_lgr(Z_ARG4, r_result);
+
+  z_lgdr(Z_ARG1, Z_F1); // r_super_klass
+  z_lgdr(Z_ARG2, Z_F3); // r_sub_klass
+  z_lgdr(Z_ARG3, Z_F5); // r_linear_result
+
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
 
@@ -4063,22 +4067,22 @@ void MacroAssembler::set_thread_state(JavaThreadState new_state) {
   store_const(Address(Z_thread, JavaThread::thread_state_offset()), new_state, Z_R0, false);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
-  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
+  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(void*));
 
   verify_oop(oop_result, FILE_AND_LINE);
 }
 
-void MacroAssembler::get_vm_result_2(Register result) {
-  z_lg(result, Address(Z_thread, JavaThread::vm_result_2_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_metadata(Register result) {
+  z_lg(result, Address(Z_thread, JavaThread::vm_result_metadata_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(void*));
 }
 
 // We require that C code which does not return a value in vm_result will
 // leave it undisturbed.
 void MacroAssembler::set_vm_result(Register oop_result) {
-  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
+  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
 }
 
 // Explicit null checks (used for method handle code).
@@ -6359,9 +6363,15 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   z_lg(mark, Address(obj, mark_offset));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
     z_mvghi(om_cache_addr, 0);
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(temp1, obj);
+    z_tm(Address(temp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+    z_brne(slow);
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
@@ -6497,7 +6507,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   NearLabel slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
   }
 
@@ -6943,4 +6953,30 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_with_ext3");
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)
+void MacroAssembler::load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_lochi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_lochi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lhi(dst, i2);
+    bind(done);
+  }
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (64 <- 16)
+void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_locghi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_locghi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lghi(dst, i2);
+    bind(done);
+  }
 }

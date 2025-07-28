@@ -22,8 +22,10 @@
  *
  */
 
+#include "cds/aotClassFilter.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/lambdaFormInvokers.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
@@ -81,36 +83,45 @@ void LambdaFormInvokers::append(char* line) {
 class PrintLambdaFormMessage {
  public:
   PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...");
+    log_info(aot)("Regenerate MethodHandle Holder classes...");
   }
   ~PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...done");
+    log_info(aot)("Regenerate MethodHandle Holder classes...done");
+  }
+};
+
+class LambdaFormInvokersClassFilterMark : public AOTClassFilter::FilterMark {
+public:
+  bool is_aot_tooling_class(InstanceKlass* ik) {
+    if (ik->name()->index_of_at(0, "$Species_", 9) > 0) {
+      // Classes like java.lang.invoke.BoundMethodHandle$Species_L should be included in AOT cache
+      return false;
+    }
+    if (LambdaFormInvokers::may_be_regenerated_class(ik->name())) {
+      // Regenerated holder classes should be included in AOT cache.
+      return false;
+    }
+    // Treat all other classes loaded during LambdaFormInvokers::regenerate_holder_classes() as
+    // "AOT tooling classes".
+    return true;
   }
 };
 
 void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
+  if (!CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
+    return;
+  }
+
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
-    log_info(cds)("Nothing to regenerate for holder classes");
-    return;
-  }
-
-  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_method_handles()) {
-    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
-    log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
-    return;
-  }
-
-  if (CDSConfig::is_dumping_dynamic_archive() && CDSConfig::is_dumping_aot_linked_classes() &&
-      CDSConfig::is_using_aot_linked_classes()) {
-    // The base archive may have some pre-resolved CP entries that point to the lambda form holder
-    // classes in the base archive. If we generate new versions of these classes, those CP entries
-    // will be pointing to invalid classes.
-    log_info(cds)("Base archive already has aot-linked lambda form holder classes. Cannot regenerate.");
+    log_info(aot)("Nothing to regenerate for holder classes");
     return;
   }
 
   ResourceMark rm(THREAD);
+
+  // Filter out AOT tooling classes like java.lang.invoke.GenerateJLIClassesHelper, etc.
+  LambdaFormInvokersClassFilterMark filter_mark;
 
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
@@ -139,12 +150,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+      log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       if (CDSConfig::is_dumping_static_archive()) {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
       } else {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
       }
       CLEAR_PENDING_EXCEPTION;
     }
@@ -213,9 +224,10 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
 
   result->set_is_generated_shared_class();
   if (!klass->is_shared()) {
+    log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
-  log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
+  log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
 }
 
@@ -245,7 +257,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
       assert(index == count, "Should match");
     }
-    log_debug(cds)("Total LF lines stored into static archive: %d", count);
+    log_debug(aot)("Total LF lines stored into %s: %d", CDSConfig::type_of_archive_being_written(), count);
   }
 }
 
@@ -257,14 +269,20 @@ void LambdaFormInvokers::read_static_archive_invokers() {
       char* str = line->adr_at(0);
       append(str);
     }
-    log_debug(cds)("Total LF lines read from static archive: %d", _static_archive_invokers->length());
+    log_debug(aot)("Total LF lines read from %s: %d", CDSConfig::type_of_archive_being_loaded(), _static_archive_invokers->length());
   }
 }
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
   if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
-    LambdaFormInvokers::read_static_archive_invokers();
+    if (!CDSConfig::is_dumping_aot_linked_classes()) {
+      // See CDSConfig::is_dumping_regenerated_lambdaform_invokers() -- a dynamic archive can
+      // regenerate lambda form invokers only if the base archive does not contain aot-linked classes.
+      // If so, we copy the contents of _static_archive_invokers (from the preimage) into
+      //_lambdaform_lines, which will be written as _static_archive_invokers into final static archive.
+      LambdaFormInvokers::read_static_archive_invokers();
+    }
     _static_archive_invokers = nullptr;
   }
 }

@@ -128,7 +128,7 @@ Matcher::Matcher()
   idealreg2mhdebugmask[Op_RegFlags] = nullptr;
   idealreg2mhdebugmask[Op_RegVectMask] = nullptr;
 
-  debug_only(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
+  DEBUG_ONLY(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
 }
 
 //------------------------------warp_incoming_stk_arg------------------------
@@ -1184,7 +1184,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
                                                   n->_idx);
             C->set_node_notes_at(m->_idx, nn);
           }
-          debug_only(match_alias_type(C, n, m));
+          DEBUG_ONLY(match_alias_type(C, n, m));
         }
         n = m;    // n is now a new-space node
         mstack.set_node(n);
@@ -1591,7 +1591,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
     }
   }
 
-  debug_only( _mem_node = save_mem_node; )
+  DEBUG_ONLY( _mem_node = save_mem_node; )
   return m;
 }
 
@@ -1965,9 +1965,9 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
     assert(newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
     mach->_opnds[1] = s->MachOperGenerator(_reduceOp[catch_op]);
     Node *mem1 = (Node*)1;
-    debug_only(Node *save_mem_node = _mem_node;)
+    DEBUG_ONLY(Node *save_mem_node = _mem_node;)
     mach->add_req( ReduceInst(s, newrule, mem1) );
-    debug_only(_mem_node = save_mem_node;)
+    DEBUG_ONLY(_mem_node = save_mem_node;)
   }
   return;
 }
@@ -1979,7 +1979,7 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
     assert( mem == (Node*)1 || mem == mem2, "multiple Memories being matched at once?" );
-    debug_only( if( mem == (Node*)1 ) _mem_node = s->_leaf;)
+    DEBUG_ONLY( if( mem == (Node*)1 ) _mem_node = s->_leaf;)
     mem = mem2;
   }
   if( s->_leaf->in(0) != nullptr && s->_leaf->req() > 1) {
@@ -2023,9 +2023,9 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
         //             --> ReduceInst( newrule )
         mach->_opnds[num_opnds++] = s->MachOperGenerator(_reduceOp[catch_op]);
         Node *mem1 = (Node*)1;
-        debug_only(Node *save_mem_node = _mem_node;)
+        DEBUG_ONLY(Node *save_mem_node = _mem_node;)
         mach->add_req( ReduceInst( newstate, newrule, mem1 ) );
-        debug_only(_mem_node = save_mem_node;)
+        DEBUG_ONLY(_mem_node = save_mem_node;)
       }
     }
     assert( mach->_opnds[num_opnds-1], "" );
@@ -2056,7 +2056,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
   if( s->_leaf->is_Load() ) {
     assert( mem == (Node*)1, "multiple Memories being matched at once?" );
     mem = s->_leaf->in(MemNode::Memory);
-    debug_only(_mem_node = s->_leaf;)
+    DEBUG_ONLY(_mem_node = s->_leaf;)
   }
 
   handle_precedence_edges(s->_leaf, mach);
@@ -2085,9 +2085,9 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
       // Reduce the instruction, and add a direct pointer from this
       // machine instruction to the newly reduced one.
       Node *mem1 = (Node*)1;
-      debug_only(Node *save_mem_node = _mem_node;)
+      DEBUG_ONLY(Node *save_mem_node = _mem_node;)
       mach->add_req( ReduceInst( kid, newrule, mem1 ) );
-      debug_only(_mem_node = save_mem_node;)
+      DEBUG_ONLY(_mem_node = save_mem_node;)
     }
   }
 }
@@ -2307,6 +2307,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaHF:
     case Op_FmaVD:
     case Op_FmaVF:
+    case Op_FmaVHF:
     case Op_MacroLogicV:
     case Op_VectorCmpMasked:
     case Op_CompressV:
@@ -2479,7 +2480,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     case Op_FmaF:
     case Op_FmaHF:
     case Op_FmaVD:
-    case Op_FmaVF: {
+    case Op_FmaVF:
+    case Op_FmaVHF: {
       // Restructure into a binary tree for Matching.
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(2, pair);
@@ -2515,22 +2517,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_LoadVectorGather:
-      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
-        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
-        n->set_req(MemNode::ValueIn, pair);
-        n->del_req(MemNode::ValueIn+1);
-      }
-      break;
-    case Op_LoadVectorGatherMasked:
-      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
-        Node* pair2 = new BinaryNode(n->in(MemNode::ValueIn + 1), n->in(MemNode::ValueIn + 2));
-        Node* pair1 = new BinaryNode(n->in(MemNode::ValueIn), pair2);
-        n->set_req(MemNode::ValueIn, pair1);
-        n->del_req(MemNode::ValueIn+2);
-        n->del_req(MemNode::ValueIn+1);
-        break;
-      } // fall-through
+    case Op_LoadVectorGatherMasked: // fall-through
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);

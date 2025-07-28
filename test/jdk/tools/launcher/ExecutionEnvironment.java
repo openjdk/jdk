@@ -141,7 +141,6 @@ public class ExecutionEnvironment extends TestHelper {
                     String libPath = LD_LIBRARY_PATH + "=" +
                         jvmroot + "/lib/server" + System.getProperty("path.separator") +
                         jvmroot + "/lib" + System.getProperty("path.separator") +
-                        jvmroot + "/../lib" + System.getProperty("path.separator") +
                         LD_LIBRARY_PATH_VALUE;
                     if (!tr.matches(libPath)) {
                         flagError(tr, "FAIL: did not get <" + libPath + ">");

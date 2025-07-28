@@ -131,11 +131,11 @@ import jdk.internal.misc.Unsafe;
  * (including the case where a task was cancelled without executing);
  * {@link #isCompletedNormally} is true if a task completed without
  * cancellation or encountering an exception; {@link #isCancelled} is
- * true if the task was cancelled (in which case {@link #getException}
+ * true if the task was cancelled (in which case {@link #getException()}
  * returns a {@link CancellationException}); and
  * {@link #isCompletedAbnormally} is true if a task was either
  * cancelled or encountered an exception, in which case {@link
- * #getException} will return either the encountered exception or
+ * #getException()} will return either the encountered exception or
  * {@link CancellationException}.
  *
  * <p>The ForkJoinTask class is not usually directly subclassed.

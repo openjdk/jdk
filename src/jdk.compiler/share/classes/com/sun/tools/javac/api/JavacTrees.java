@@ -357,8 +357,7 @@ public class JavacTrees extends DocTrees {
         if (tree instanceof DCReference dcReference) {
             JCTree qexpr = dcReference.qualifierExpression;
             if (qexpr != null) {
-                Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                        new Log.DeferredDiagnosticHandler(log);
+                Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
                     Type t = attr.attribType(dcReference.qualifierExpression, env);
@@ -388,8 +387,7 @@ public class JavacTrees extends DocTrees {
             // module name and member name without type
             return null;
         }
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                new Log.DeferredDiagnosticHandler(log);
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
         try {
             final TypeSymbol tsym;
             final Name memberName;
@@ -1326,7 +1324,7 @@ public class JavacTrees extends DocTrees {
             switch (kind) {
                 case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
                 case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.warning(DiagnosticFlag.MANDATORY, pos, Warnings.ProcMessager(msg.toString()));
                 default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {

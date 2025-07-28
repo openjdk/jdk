@@ -250,7 +250,7 @@ public class Flags {
     /**
      * Flag that marks either a default method or an interface containing default methods.
      */
-    public static final long DEFAULT = 1L<<43;
+    public static final long DEFAULT = 1L<<43; // part of ExtendedStandardFlags, cannot be reused
 
     /**
      * Flag that marks class as auxiliary, ie a non-public class following
@@ -278,9 +278,10 @@ public class Flags {
      */
     public static final long THROWS = 1L<<47;
 
-    /*
-     * Currently available: Bit 48.
+    /**
+     * Flag to indicate sealed class/interface declaration.
      */
+    public static final long SEALED = 1L<<48; // part of ExtendedStandardFlags, cannot be reused
 
     /**
      * Flag that marks a synthetic method body for a lambda expression
@@ -390,14 +391,14 @@ public class Flags {
     public static final int GENERATED_MEMBER = 1<<24; // MethodSymbols and VarSymbols
 
     /**
-     * Flag to indicate sealed class/interface declaration.
-     */
-    public static final long SEALED = 1L<<62; // ClassSymbols
-
-    /**
      * Flag to indicate restricted method declaration.
      */
     public static final long RESTRICTED = 1L<<62; // MethodSymbols
+
+    /**
+     * Flag to indicate parameters that require identity.
+     */
+    public static final long REQUIRES_IDENTITY = 1L<<62; // VarSymbols (parameters)
 
     /**
      * Flag to indicate type annotations have been queued for field initializers.
@@ -407,7 +408,7 @@ public class Flags {
     /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
-    public static final long NON_SEALED = 1L<<63; // ClassSymbols
+    public static final long NON_SEALED = 1L<<63;  // part of ExtendedStandardFlags, cannot be reused
 
     /**
      * Describe modifier flags as they might appear in source code, i.e.,
@@ -438,6 +439,7 @@ public class Flags {
         RecordMethodFlags                 = AccessFlags | ABSTRACT | STATIC |
                                             SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
+        //NOTE: flags in ExtendedStandardFlags cannot be overlayed across Symbol kinds:
         ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
         ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
         ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
@@ -545,7 +547,7 @@ public class Flags {
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
         HAS_RESOURCE(Flags.HAS_RESOURCE),
-        // Bit 48 is currently available
+        SEALED(Flags.SEALED),
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
@@ -554,7 +556,7 @@ public class Flags {
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),
         RECOVERABLE(Flags.RECOVERABLE),
-        SEALED(Flags.SEALED),
+        RESTRICTED(Flags.RESTRICTED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override
             public String toString() {

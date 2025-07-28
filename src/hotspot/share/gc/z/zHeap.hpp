@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zTLABUsage.hpp"
 
 class OopFieldClosure;
 
@@ -55,7 +56,13 @@ private:
   ZGenerationOld          _old;
   ZGenerationYoung        _young;
 
+  ZTLABUsage              _tlab_usage;
+
   bool                    _initialized;
+
+  // Page allocation accounting
+  void account_alloc_page(ZPage* page);
+  void account_undo_alloc_page(ZPage* page);
 
 public:
   static ZHeap* heap();
@@ -67,7 +74,6 @@ public:
   void out_of_memory();
 
   // Heap metrics
-  size_t initial_capacity() const;
   size_t min_capacity() const;
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
@@ -82,6 +88,7 @@ public:
   size_t tlab_used() const;
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc() const;
+  void reset_tlab_used();
 
   bool is_in(uintptr_t addr) const;
   bool is_in_page_relaxed(const ZPage* page, zaddress addr) const;
@@ -104,8 +111,8 @@ public:
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page, bool allow_defragment);
-  size_t free_empty_pages(const ZArray<ZPage*>* pages);
+  void free_page(ZPage* page);
+  size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
 
   // Object allocation
   bool is_alloc_stalling() const;
@@ -131,8 +138,10 @@ public:
   ZServiceabilityCounters* serviceability_counters();
 
   // Printing
-  void print_on(outputStream* st) const;
-  void print_extended_on(outputStream* st) const;
+  void print_usage_on(outputStream* st) const;
+  void print_gc_on(outputStream* st) const;
+  void print_globals_on(outputStream* st) const;
+  void print_page_table_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
   bool print_location(outputStream* st, zaddress addr) const;
   bool print_location(outputStream* st, zpointer ptr) const;

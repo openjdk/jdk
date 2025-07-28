@@ -25,7 +25,7 @@
  * @test
  * @bug     6421111
  * @summary NullPointerException thrown when retrieving bounds for the type parameter
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

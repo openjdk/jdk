@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.function.Predicate;
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
+import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
 
@@ -141,12 +143,26 @@ final class Scrub extends Command {
         try (RecordingFile rf = new RecordingFile(input)) {
             List<EventType> types = rf.readEventTypes();
             Predicate<RecordedEvent> filter = createFilter(options, types);
-            rf.write(output, filter);
+            List<RemovedEvents> result = JdkJfrConsumer.instance().write(rf, output, filter);
+            println("Scrubbed recording file written to:");
+            println(output.toRealPath().toString());
+            if (result.isEmpty()) {
+                println("No events removed.");
+                return;
+            }
+            int maxName = 0;
+            int maxShare = 0;
+            for (RemovedEvents re : result) {
+                maxName = Math.max(maxName, re.getName().length());
+                maxShare = Math.max(maxShare, re.share().length());
+            }
+            println("Removed events:");
+            for (RemovedEvents re : result) {
+                printf("%-" + maxName + "s %" + maxShare + "s\n", re.getName(), re.share());
+            }
         } catch (IOException ioe) {
             couldNotReadError(input, ioe);
         }
-        println("Scrubbed recording file written to:");
-        println(output.toAbsolutePath().toString());
     }
 
     private Predicate<RecordedEvent> createFilter(Deque<String> options, List<EventType> types) throws UserSyntaxException, UserDataException {

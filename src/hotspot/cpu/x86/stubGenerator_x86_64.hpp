@@ -98,19 +98,19 @@ class StubGenerator: public StubCodeGenerator {
   address generate_vector_reverse_byte_perm_mask_short();
   address generate_vector_byte_shuffle_mask();
 
-  address generate_fp_mask(StubGenStubId stub_id, int64_t mask);
+  address generate_fp_mask(StubId stub_id, int64_t mask);
 
-  address generate_compress_perm_table(StubGenStubId stub_id);
+  address generate_compress_perm_table(StubId stub_id);
 
-  address generate_expand_perm_table(StubGenStubId stub_id);
+  address generate_expand_perm_table(StubId stub_id);
 
-  address generate_vector_mask(StubGenStubId stub_id, int64_t mask);
+  address generate_vector_mask(StubId stub_id, int64_t mask);
 
   address generate_vector_byte_perm_mask();
 
-  address generate_vector_fp_mask(StubGenStubId stub_id, int64_t mask);
+  address generate_vector_fp_mask(StubId stub_id, int64_t mask);
 
-  address generate_vector_custom_i32(StubGenStubId stub_id, Assembler::AvxVectorLen len,
+  address generate_vector_custom_i32(StubId stub_id, Assembler::AvxVectorLen len,
                                      int32_t val0, int32_t val1, int32_t val2, int32_t val3,
                                      int32_t val4 = 0, int32_t val5 = 0, int32_t val6 = 0, int32_t val7 = 0,
                                      int32_t val8 = 0, int32_t val9 = 0, int32_t val10 = 0, int32_t val11 = 0,
@@ -180,9 +180,9 @@ class StubGenerator: public StubCodeGenerator {
   // - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
   //   64 byte vector registers (ZMMs).
 
-  address generate_disjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry);
+  address generate_disjoint_copy_avx3_masked(StubId stub_id, address* entry);
 
-  address generate_conjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry,
+  address generate_conjoint_copy_avx3_masked(StubId stub_id, address* entry,
                                              address nooverlap_target);
 
   void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
@@ -230,14 +230,14 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_disjoint_short_copy(address *entry);
 
-  address generate_fill(StubGenStubId stub_id);
+  address generate_fill(StubId stub_id);
 
   address generate_conjoint_short_copy(address nooverlap_target, address *entry);
-  address generate_disjoint_int_oop_copy(StubGenStubId stub_id, address* entry);
-  address generate_conjoint_int_oop_copy(StubGenStubId stub_id, address nooverlap_target,
+  address generate_disjoint_int_oop_copy(StubId stub_id, address* entry);
+  address generate_conjoint_int_oop_copy(StubId stub_id, address nooverlap_target,
                                          address *entry);
-  address generate_disjoint_long_oop_copy(StubGenStubId stub_id, address* entry);
-  address generate_conjoint_long_oop_copy(StubGenStubId stub_id, address nooverlap_target,
+  address generate_disjoint_long_oop_copy(StubId stub_id, address* entry);
+  address generate_conjoint_long_oop_copy(StubId stub_id, address nooverlap_target,
                                           address *entry);
 
   // Helper for generating a dynamic type check.
@@ -248,7 +248,7 @@ class StubGenerator: public StubCodeGenerator {
                            Label& L_success);
 
   // Generate checkcasting array copy stub
-  address generate_checkcast_copy(StubGenStubId stub_id, address *entry);
+  address generate_checkcast_copy(StubId stub_id, address *entry);
 
   // Generate 'unsafe' array copy stub
   // Though just as safe as the other stubs, it takes an unscaled
@@ -294,19 +294,19 @@ class StubGenerator: public StubCodeGenerator {
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.MD5.implCompress(byte[] b, int ofs)
-  address generate_md5_implCompress(StubGenStubId stub_id);
+  address generate_md5_implCompress(StubId stub_id);
 
 
   // SHA stubs
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha1_implCompress(StubGenStubId stub_id);
+  address generate_sha1_implCompress(StubId stub_id);
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha256_implCompress(StubGenStubId stub_id);
-  address generate_sha512_implCompress(StubGenStubId stub_id);
+  address generate_sha256_implCompress(StubId stub_id);
+  address generate_sha512_implCompress(StubId stub_id);
 
   // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
   address generate_pshuffle_byte_flip_mask_sha512();
@@ -489,10 +489,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // SHA3 stubs
   void generate_sha3_stubs();
-  address generate_sha3_implCompress(StubGenStubId stub_id);
+
+  // Kyber stubs
+  void generate_kyber_stubs();
+
+  // Dilithium stubs
+  void generate_dilithium_stubs();
 
   // BASE64 stubs
-
   address base64_shuffle_addr();
   address base64_avx2_shuffle_addr();
   address base64_avx2_input_mask_addr();
@@ -552,6 +556,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmCos();
   address generate_libmTan();
   address generate_libmTanh();
+  address generate_libmCbrt();
   address generate_libmExp();
   address generate_libmPow();
   address generate_libmLog();
@@ -585,7 +590,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_string_indexof(address *fnptrs);
 #endif
 
-  address generate_cont_thaw(StubGenStubId stub_id);
+  address generate_cont_thaw(StubId stub_id);
   address generate_cont_thaw();
 
   // TODO: will probably need multiple return barriers depending on return type
@@ -629,13 +634,14 @@ class StubGenerator: public StubCodeGenerator {
   void create_control_words();
 
   // Initialization
+  void generate_preuniverse_stubs();
   void generate_initial_stubs();
   void generate_continuation_stubs();
   void generate_compiler_stubs();
   void generate_final_stubs();
 
 public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id);
+  StubGenerator(CodeBuffer* code, BlobId blob_id);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP
