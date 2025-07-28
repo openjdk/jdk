@@ -57,9 +57,9 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -266,7 +266,7 @@ char* VMError::error_string(char* buf, int buflen) {
   if (signame) {
     jio_snprintf(buf, buflen,
                  "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=%zu",
-                 signame, _id, _pc,
+                 signame, _id, p2i(_pc),
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != nullptr && _lineno > 0) {
     // skip directory names

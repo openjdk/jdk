@@ -72,6 +72,9 @@ public:
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
 
+  void vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                  XMMRegister src1, XMMRegister src2, int vlen_enc);
+
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
   void evminmax_fp(int opcode, BasicType elem_bt,
@@ -492,15 +495,14 @@ public:
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
-                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register mask,
+                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                        Register midx, Register length, int vector_len, int vlen_enc);
 
-  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
-
-  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                              Register offset, Register rtmp, int vlen_enc);
+  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                        Register mask, Register midx, Register rtmp, int vlen_enc);
+  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                 Register rtmp, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 

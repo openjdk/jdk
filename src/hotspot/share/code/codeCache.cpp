@@ -882,6 +882,7 @@ void CodeCache::do_unloading(bool unloading_occurred) {
 
 void CodeCache::verify_clean_inline_caches() {
 #ifdef ASSERT
+  if (!VerifyInlineCaches) return;
   NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
