@@ -560,9 +560,6 @@ public class WhiteBox {
   // Force Full GC
   public native void fullGC();
 
-  // Force a controlled crash (debug builds only)
-  public native void controlledCrash(int how);
-
   // Infrastructure for waitForReferenceProcessing()
   private static volatile Method waitForReferenceProcessingMethod = null;
 
@@ -854,4 +851,7 @@ public class WhiteBox {
   public native long rss();
 
   public native boolean isStatic();
+
+  // Force a controlled crash (debug builds only)
+  public native void controlledCrash(int how);
 }
