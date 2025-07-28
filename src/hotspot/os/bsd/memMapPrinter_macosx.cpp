@@ -236,7 +236,7 @@ public:
       st->print_cr("             vsize: %llu (%llu%s)", vm_info.virtual_size, byte_size_in_proper_unit(vm_info.virtual_size), proper_unit_for_byte_size(vm_info.virtual_size));
       st->print_cr("               rss: %llu (%llu%s)", vm_info.resident_size, byte_size_in_proper_unit(vm_info.resident_size), proper_unit_for_byte_size(vm_info.resident_size));
       st->print_cr("          peak rss: %llu (%llu%s)", vm_info.resident_size_peak, byte_size_in_proper_unit(vm_info.resident_size_peak), proper_unit_for_byte_size(vm_info.resident_size_peak));
-      st->print_cr("         page size: %d (" PROPERFMT ")", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
+      st->print_cr("         page size: %d (%d%s)", vm_info.page_size, byte_size_in_proper_unit(vm_info.page_size), proper_unit_for_byte_size(vm_info.page_size));
     } else {
       st->print_cr("error getting vm_info %d", err);
     }
