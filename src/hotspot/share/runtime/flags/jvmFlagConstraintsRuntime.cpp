@@ -39,6 +39,14 @@ JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error AOTCacheOutputConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCacheOutput cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error AOTConfigurationConstraintFunc(ccstr value, bool verbose) {
   if (value == nullptr) {
     JVMFlag::printError(verbose, "AOTConfiguration cannot be empty\n");
