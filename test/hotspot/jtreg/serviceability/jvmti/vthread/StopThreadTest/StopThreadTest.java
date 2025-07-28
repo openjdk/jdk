@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,6 @@
 
 import jdk.test.lib.Platform;
 import java.lang.AssertionError;
-
-import com.sun.management.HotSpotDiagnosticMXBean;
-import java.lang.management.ManagementFactory;
 
 /*
  *     The test exercises the JVMTI function: StopThread(jthread).
@@ -277,8 +274,6 @@ public class StopThreadTest {
     }
 
     static boolean preemptableVirtualThread() {
-        boolean legacyLockingMode = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                                        .getVMOption("LockingMode").getValue().equals("1");
-        return is_virtual && !isBoundVThread && !legacyLockingMode;
+        return is_virtual && !isBoundVThread;
     }
 }

@@ -3789,6 +3789,13 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
 void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
+    // The method_idnum should be within the range of 1..number-of-methods
+    // until incremented later for obsolete methods.
+    // The increment is so if a jmethodID is created for an old obsolete method
+    // it gets a new jmethodID cache slot in the InstanceKlass.
+    // They're cleaned out later when all methods of the previous version are purged.
+    assert(old_method->method_idnum() <= _old_methods->length(),
+           "shouldn't be incremented yet for obsolete methods");
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != nullptr) {
       // There is a jmethodID, change it to point to the new method
