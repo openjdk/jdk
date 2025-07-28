@@ -2761,42 +2761,11 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 #if INCLUDE_CDS_JAVA_HEAP
   // CDS wants a continuous memory range to load a bunch of objects.
-  // This effectively bypasses normal allocation paths, and requires
-  // a bit of massaging to unbreak GC invariants.
-
-  // CDS code would guarantee no objects straddle multiple regions, as long as
+  // CDS would guarantee no objects straddle multiple regions, as long as
   // regions are as large as MIN_GC_REGION_ALIGNMENT.
-  assert(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Should be");
-
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
-
-  HeapWord* mem = allocate_memory(req);
-
-  // Easy case: a single regular region, no further adjustments needed.
-  if (!ShenandoahHeapRegion::requires_humongous(size)) {
-    return mem;
-  }
-
-  // Hard case: the requested size would cause a humongous allocation.
-  // We need to make sure it looks like regular allocation to the rest of GC.
-
-  size_t start_idx = heap_region_index_containing(mem);
-  size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-
-  // Flip humongous -> regular.
-  {
-    ShenandoahHeapLocker locker(lock(), false);
-    // The 'waste' in the last region is no longer wasted at this point,
-    // so we must stop treating it as such.
-    ShenandoahHeapRegion* last = get_region(start_idx + num_regions - 1);
-    last->decrement_humongous_waste();
-    for (size_t c = start_idx; c < start_idx + num_regions; c++) {
-      ShenandoahHeapRegion* r = get_region(c);
-      r->make_regular_bypass();
-    }
-  }
-
-  return mem;
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Should be");
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
+  return allocate_memory(req);
 #else
   assert(false, "Archive heap loader should not be available, should not be here");
   return nullptr;
@@ -2814,7 +2783,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = start;
   while (cur < end) {
     oop oop = cast_to_oop(cur);
-    shenandoah_assert_correct(nullptr, oop);
+    shenandoah_assert_in_correct_region(nullptr, oop);
     cur += oop->size();
   }
 
@@ -2823,25 +2792,22 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
          "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
          p2i(cur), p2i(end));
 
+  // All regions in contiguous space have good state.
   size_t begin_reg_idx = heap_region_index_containing(start);
   size_t end_reg_idx   = heap_region_index_containing(end);
-  for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
-    ShenandoahHeapRegion* r = get_region(idx);
-    assert(r->is_regular(), "Must be");
-    assert(r->get_update_watermark() == r->bottom(), "Must be");
-    assert(idx == end_reg_idx || r->top() == r->end(), "Must be");
-    assert(r->affiliation() == YOUNG_GENERATION, "Should be young");
-  }
-
-  // Region bounds are good.
   ShenandoahHeapRegion* begin_reg = get_region(begin_reg_idx);
   ShenandoahHeapRegion* end_reg = get_region(end_reg_idx);
-  assert(begin_reg->bottom() == start,
-         "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
-         p2i(start), p2i(begin_reg->bottom()));
-  assert(end_reg->top() == end,
-         "Must agree: archive-space-end: " PTR_FORMAT ", end-region-top: " PTR_FORMAT,
-         p2i(end), p2i(end_reg->top()));
+
+  for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
+    ShenandoahHeapRegion* r = get_region(idx);
+    assert(r->is_regular(), "Must be regular");
+    assert(r->get_update_watermark() == r->bottom(), "Must be reset");
+    assert(r->affiliation() == YOUNG_GENERATION, "Must be young");
+    assert(idx == end_reg_idx   || r->top() == r->end(), "All regions except for last should be full");
+    assert(idx != begin_reg_idx || r->bottom() == start, "Archive space start should be at the bottom of first region");
+    assert(idx != end_reg_idx   || r->top() == end, "Archive space end should be at the top of the last region");
+  }
+
 #endif
 }
 
