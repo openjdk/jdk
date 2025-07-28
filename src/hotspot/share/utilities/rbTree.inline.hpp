@@ -25,12 +25,13 @@
 #ifndef SHARE_UTILITIES_RBTREE_INLINE_HPP
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
+#include "utilities/rbTree.hpp"
+
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/rbTree.hpp"
 
 inline void IntrusiveRBNode::replace_child(IntrusiveRBNode* old_child, IntrusiveRBNode* new_child) {
   if (_left == old_child) {
