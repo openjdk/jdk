@@ -2764,33 +2764,35 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   // This effectively bypasses normal allocation paths, and requires
   // a bit of massaging to unbreak GC invariants.
 
+  // CDS code would guarantee no objects straddle multiple regions, as long as
+  // regions are as large as MIN_GC_REGION_ALIGNMENT.
+  assert(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Should be");
+
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
+
+  HeapWord* mem = allocate_memory(req);
 
   // Easy case: a single regular region, no further adjustments needed.
   if (!ShenandoahHeapRegion::requires_humongous(size)) {
-    return allocate_memory(req);
+    return mem;
   }
 
   // Hard case: the requested size would cause a humongous allocation.
   // We need to make sure it looks like regular allocation to the rest of GC.
 
-  // CDS code would guarantee no objects straddle multiple regions, as long as
-  // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
-  // point to deal with case when Shenandoah runs with smaller regions.
-  // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
-  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
-    return nullptr;
-  }
-
-  HeapWord* mem = allocate_memory(req);
   size_t start_idx = heap_region_index_containing(mem);
   size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
   // Flip humongous -> regular.
   {
     ShenandoahHeapLocker locker(lock(), false);
+    // The 'waste' in the last region is no longer wasted at this point,
+    // so we must stop treating it as such.
+    ShenandoahHeapRegion* last = get_region(start_idx + num_regions - 1);
+    last->decrement_humongous_waste();
     for (size_t c = start_idx; c < start_idx + num_regions; c++) {
-      get_region(c)->make_regular_bypass();
+      ShenandoahHeapRegion* r = get_region(c);
+      r->make_regular_bypass();
     }
   }
 
@@ -2812,7 +2814,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = start;
   while (cur < end) {
     oop oop = cast_to_oop(cur);
-    shenandoah_assert_in_correct_region(nullptr, oop);
+    shenandoah_assert_correct(nullptr, oop);
     cur += oop->size();
   }
 
@@ -2821,11 +2823,19 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
          "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
          p2i(cur), p2i(end));
 
+  size_t begin_reg_idx = heap_region_index_containing(start);
+  size_t end_reg_idx   = heap_region_index_containing(end);
+  for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
+    ShenandoahHeapRegion* r = get_region(idx);
+    assert(r->is_regular(), "Must be");
+    assert(r->get_update_watermark() == r->bottom(), "Must be");
+    assert(idx == end_reg_idx || r->top() == r->end(), "Must be");
+    assert(r->affiliation() == YOUNG_GENERATION, "Should be young");
+  }
+
   // Region bounds are good.
-  ShenandoahHeapRegion* begin_reg = heap_region_containing(start);
-  ShenandoahHeapRegion* end_reg = heap_region_containing(end);
-  assert(begin_reg->is_regular(), "Must be");
-  assert(end_reg->is_regular(), "Must be");
+  ShenandoahHeapRegion* begin_reg = get_region(begin_reg_idx);
+  ShenandoahHeapRegion* end_reg = get_region(end_reg_idx);
   assert(begin_reg->bottom() == start,
          "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
          p2i(start), p2i(begin_reg->bottom()));
