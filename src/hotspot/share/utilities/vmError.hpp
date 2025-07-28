@@ -223,8 +223,8 @@ public:
 
   static bool was_assert_poison_crash(const void* sigInfo);
 
-  static void set_handshake_timed_out_thread(intptr_t x);
-  static void set_safepoint_timed_out_thread(intptr_t x);
+  static void set_handshake_timed_out_thread(intptr_t thread_addr);
+  static void set_safepoint_timed_out_thread(intptr_t thread_addr);
 };
 
 class VMErrorCallback {
