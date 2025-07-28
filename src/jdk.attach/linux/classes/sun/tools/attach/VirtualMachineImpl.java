@@ -34,17 +34,28 @@ import java.net.SocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.SocketChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.channels.Channels;
-import java.nio.channels.SocketChannel;
-
-
-import java.util.Map;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+
 import jdk.internal.misc.VM;
+import sun.nio.fs.UnixUserPrincipals;
+
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -62,11 +73,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final Path STATUS   = Path.of("status");
     private static final Path ROOT_TMP = Path.of("root/tmp");
 
-    private static final long ROOT_UID = 0L;
-    private static final int S_IRGRP = 0040;
-    private static final int S_IWGRP = 0020;
-    private static final int S_IROTH = 0004;
-    private static final int S_IWOTH = 002;
+    private static final Set<PosixFilePermission> NOT_EXPECTED_PERMISSIONS = EnumSet.of(GROUP_READ, GROUP_WRITE, OTHERS_READ, OTHERS_WRITE);
 
     Path socket_path;
     private SocketAddress socket_address;
@@ -369,18 +376,31 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private static void checkPermissions(Path path) throws IOException {
-        long processUid = VM.geteuid();
-        long processGid = VM.getegid();
-        Map<String, Object> attributes = Files.readAttributes(path, "unix:uid,gid,mode");
-        int fileUid = (int) attributes.get("uid");
-        int fileGid = (int) attributes.get("gid");
-        int mode = (int) attributes.get("mode");
-        if (fileUid != processUid && processUid != ROOT_UID) {
-            throwFileNotSecure(path, "file should be owned by the current user (which is " + processUid + ") but is owned by " + fileUid);
-        } else if (fileGid != processGid && processUid != ROOT_UID) {
-            throwFileNotSecure(path, "file's group should be the current group (which is " + processGid + ") but the group is " + fileGid);
-        } else if ((mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) != 0) {
-            throwFileNotSecure(path, "file should only be readable and writable by the owner but has " + String.format("0%03o", mode & 0777) + " access");
+        UserPrincipal processUser = UnixUserPrincipals.fromUid((int) VM.geteuid());
+        GroupPrincipal processGroup = UnixUserPrincipals.fromGid((int) VM.getegid());
+
+        PosixFileAttributes attributes = Files.readAttributes(path, PosixFileAttributes.class);
+        UserPrincipal root = path.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("root");
+        boolean isRoot = root.equals(processUser);
+
+        Set<PosixFilePermission> permissions = attributes.permissions();
+        UserPrincipal fileOwner = attributes.owner();
+        GroupPrincipal fileGroup = attributes.group();
+
+        if (!fileOwner.equals(processUser) && !isRoot) {
+            throwFileNotSecure(path,
+                "file should be owned by the current user (which is " + processUser + ") but is owned by " + fileOwner);
+        } else if (!fileGroup.equals(processGroup) && !isRoot) {
+            throwFileNotSecure(path,
+                "file's group should be the current group (which is " + fileGroup + ") but the group is " + processGroup);
+        } else if (!permissions.isEmpty()) {
+            Set<PosixFilePermission> intersection = EnumSet.copyOf(permissions);
+            intersection.retainAll(NOT_EXPECTED_PERMISSIONS);
+            if (!intersection.isEmpty()) {
+                throwFileNotSecure(path, "file should only be readable and writable by the owner but has "
+                    + PosixFilePermissions.toString(permissions) + " access");
+
+            }
         }
     }
 
