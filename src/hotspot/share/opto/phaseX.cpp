@@ -2563,6 +2563,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvF2I->ConvI2F->ConvF2I
   // ConvF2L->ConvL2F->ConvF2L
   // ConvI2F->ConvF2I->ConvI2F
+  // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
+  // are the only ones that are known to trigger missed optimizations otherwise
   if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
       (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
       (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
