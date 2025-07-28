@@ -902,6 +902,9 @@ public class JPEGImageReader extends ImageReader {
     @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
+        if (imageIndex != 0) {
+            throw new IndexOutOfBoundsException("imageIndex != 0!");
+        }
         setThreadLock();
         try {
             return getImageTypesOnThread(imageIndex);
