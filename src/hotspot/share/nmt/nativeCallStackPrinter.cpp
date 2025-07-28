@@ -24,9 +24,9 @@
  */
 
 #include "logging/log.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 NativeCallStackPrinter::NativeCallStackPrinter(outputStream* out) :

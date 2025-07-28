@@ -58,6 +58,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/mallocSiteTable.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -100,7 +101,6 @@
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"

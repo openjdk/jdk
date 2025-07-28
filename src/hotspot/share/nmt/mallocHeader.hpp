@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +27,9 @@
 #define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "nmt/memTag.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 class outputStream;
 

@@ -28,9 +28,9 @@
 
 #include "nmt/mallocHeader.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 class outputStream;
 struct malloclimit;

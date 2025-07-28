@@ -27,7 +27,7 @@
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "utilities/nativeCallStack.hpp"
+#include "nmt/nativeCallStack.hpp"
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 

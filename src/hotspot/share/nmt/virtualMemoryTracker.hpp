@@ -26,10 +26,10 @@
 #define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
 #include "nmt/allocationSite.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "nmt/vmatree.hpp"
 #include "nmt/regionsTree.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 // VirtualMemoryTracker (VMT) is an internal class of the MemTracker.

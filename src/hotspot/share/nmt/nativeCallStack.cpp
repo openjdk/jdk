@@ -22,10 +22,10 @@
  *
  */
 
+#include "nmt/nativeCallStack.hpp"
 #include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
 

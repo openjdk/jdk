@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,13 +26,12 @@
 #ifndef SHARE_NMT_MALLOCHEADER_INLINE_HPP
 #define SHARE_NMT_MALLOCHEADER_INLINE_HPP
 
-#include "nmt/mallocHeader.hpp"
-
 #include "jvm_io.h"
+#include "nmt/mallocHeader.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker)
   : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag),

@@ -26,10 +26,10 @@
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 // The malloc header, as well as the coming VMATree implementation, rely on MemTag

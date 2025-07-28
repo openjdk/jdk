@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 #define SHARE_NMT_THREADSTACKTRACKER_HPP
 
 #include "memory/allStatic.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 class ThreadStackTracker : AllStatic {
 private:

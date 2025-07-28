@@ -26,6 +26,7 @@
 #define SHARE_NMT_MEMORYFILETRACKER_HPP
 
 #include "memory/allocation.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
@@ -33,7 +34,6 @@
 #include "runtime/os.inline.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 // The MemoryFileTracker tracks memory of 'memory files',

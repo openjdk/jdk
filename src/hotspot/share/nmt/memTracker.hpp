@@ -28,14 +28,14 @@
 #include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
-#include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeCallStack.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)

@@ -32,12 +32,12 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileTask.hpp"
+#include "nmt/nativeCallStack.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #endif
 #include "runtime/os.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 int CompilationFailureInfo::current_compile_id_or_0() {

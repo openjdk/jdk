@@ -25,11 +25,11 @@
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeCallStack.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 DeferredStatic<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
