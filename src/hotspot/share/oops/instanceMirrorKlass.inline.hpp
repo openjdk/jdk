@@ -65,13 +65,13 @@ void InstanceMirrorKlass::do_metadata(oop obj, OopClosureType* closure) {
     }
   } else {
     // Java mirror -> Klass* "nullptr" backlink means either:
-    // 1. obj is a Java mirror for a primitive class, we do not need to follow it,
+    // 1. This is a Java mirror for a primitive class. We do not need to follow it,
     //    these mirrors are always strong roots.
-    // 2. obj is a Java mirror for a newly allocated non-primitive class, and we
+    // 2. This is a Java mirror for a newly allocated non-primitive class, and we
     //    somehow managed to reach the newly allocated Java mirror with not yet
-    //    installed backlink. This case should be made benign by GC itself for
-    //    this and any other Java mirror usage path, we cannot do anything here.
-    // Unfortunately, the existence of corner case (2) precludes asserting (1).
+    //    installed backlink. We cannot do anything here, this case would be handled
+    //    separately by GC, e.g. by keeping the relevant metadata alive during the GC.
+    // Unfortunately, the existence of corner case (2) prevents us from asserting (1).
   }
 }
 
