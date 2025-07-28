@@ -579,7 +579,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #endif
 
 void ShenandoahHeap::print_heap_on(outputStream* st) const {
-  bool is_generational = mode()->is_generational();
+  const bool is_generational = mode()->is_generational();
+  const char* front_spacing = "";
   if (is_generational) {
     st->print_cr("Generational Shenandoah Heap");
     st->print_cr(" Young:");
@@ -589,6 +590,7 @@ void ShenandoahHeap::print_heap_on(outputStream* st) const {
     st->print_cr(" Entire heap:");
     st->print_cr("  " PROPERFMT " soft max, " PROPERFMT " committed",
                 PROPERFMTARGS(soft_max_capacity()), PROPERFMTARGS(committed()));
+    front_spacing = " ";
   } else {
     st->print_cr("Shenandoah Heap");
     st->print_cr("  " PROPERFMT " max, " PROPERFMT " soft max, " PROPERFMT " committed, " PROPERFMT " used",
@@ -597,10 +599,11 @@ void ShenandoahHeap::print_heap_on(outputStream* st) const {
       PROPERFMTARGS(committed()),
       PROPERFMTARGS(used())
     );
-    st->print_cr(" %zu x " PROPERFMT " regions",
-                num_regions(),
-                PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
   }
+  st->print_cr("%s %zu x " PROPERFMT " regions",
+          front_spacing,
+          num_regions(),
+          PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
 
   st->print("Status: ");
   if (has_forwarded_objects())                 st->print("has forwarded objects, ");
