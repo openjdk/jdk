@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/bitMap.hpp"
