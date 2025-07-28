@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
                                 const char* category_name, Handle loader, TRAPS);
   static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
   static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
+  static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
 
@@ -63,6 +64,8 @@ public:
   static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
 
+  static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
+  static bool class_preloading_finished();
   static bool is_pending_aot_linked_class(Klass* k) NOT_CDS_RETURN_(false);
 };
 

@@ -107,7 +107,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   andr(tmp2, cnt, unroll_factor - 1);
   adr(tmp1, BR_BASE);
-  sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
+  // For Cortex-A53 offset is 4 because 2 nops are generated.
+  sub(tmp1, tmp1, tmp2, ext::sxtw, VM_Version::supports_a53mac() ? 4 : 3);
   movw(tmp2, 0x1f);
   br(tmp1);
 
@@ -115,6 +116,11 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   for (size_t i = 0; i < unroll_factor; ++i) {
     load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
     maddw(result, result, tmp2, tmp1);
+    // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    // Generate 2nd nop to have 4 instructions per iteration.
+    if (VM_Version::supports_a53mac()) {
+      nop();
+    }
   }
   bind(BR_BASE);
   subsw(cnt, cnt, unroll_factor);
@@ -1772,19 +1778,21 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
 void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
                                            FloatRegister src, BasicType src_bt, bool is_unsigned) {
   if (src_bt == T_BYTE) {
-    if (dst_bt == T_SHORT) {
-      // 4B/8B to 4S/8S
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
-    } else {
-      // 4B to 4I
-      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    // 4B to 4S/4I, 8B to 8S
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_SHORT || dst_bt == T_INT, "unsupported");
+    _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    if (dst_bt == T_INT) {
       _xshll(is_unsigned, dst, T4S, dst, T4H, 0);
     }
   } else if (src_bt == T_SHORT) {
-    // 4S to 4I
-    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    // 2S to 2I/2L, 4S to 4I
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_LONG, "unsupported");
     _xshll(is_unsigned, dst, T4S, src, T4H, 0);
+    if (dst_bt == T_LONG) {
+      _xshll(is_unsigned, dst, T2D, dst, T2S, 0);
+    }
   } else if (src_bt == T_INT) {
     // 2I to 2L
     assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
@@ -1804,18 +1812,21 @@ void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
     assert(dst_bt == T_BYTE, "unsupported");
     xtn(dst, T8B, src, T8H);
   } else if (src_bt == T_INT) {
-    // 4I to 4B/4S
-    assert(src_vlen_in_bytes == 16, "unsupported");
+    // 2I to 2S, 4I to 4B/4S
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
     assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T4H, src, T4S);
     if (dst_bt == T_BYTE) {
       xtn(dst, T8B, dst, T8H);
     }
   } else if (src_bt == T_LONG) {
-    // 2L to 2I
+    // 2L to 2S/2I
     assert(src_vlen_in_bytes == 16, "unsupported");
-    assert(dst_bt == T_INT, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T2S, src, T2D);
+    if (dst_bt == T_SHORT) {
+      xtn(dst, T4H, dst, T4S);
+    }
   } else {
     ShouldNotReachHere();
   }

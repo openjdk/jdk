@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
+class CompileTrainingData;
 class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
@@ -80,8 +82,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
  private:
-  static CompileTask*  _task_free_list;
-  Monitor*             _lock;
+  static int           _active_tasks;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -98,39 +99,28 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
-  int                  _waiting_count;  // See waiting_for_completion_count()
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
-  bool                 _is_free;
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
-  Method*              _hot_method;   // which method actually triggered this task
-  jobject              _hot_method_holder;
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  CompileTrainingData* _training_data;
   size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
-  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
-    // May hold MethodCompileQueue_lock
-    _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
-  }
-
-  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-                  const methodHandle& hot_method, int hot_count,
-                  CompileTask::CompileReason compile_reason, bool is_blocking);
-
-  static CompileTask* allocate();
-  static void         free(CompileTask* task);
+  CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+              int hot_count, CompileReason compile_reason, bool is_blocking);
+  ~CompileTask();
+  static void wait_for_no_active_tasks();
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
-  Method*      hot_method() const                { return _hot_method; }
   int          osr_bci() const                   { return _osr_bci; }
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
@@ -173,25 +163,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 #endif
 
-  Monitor*     lock() const                      { return _lock; }
-
-  // See how many threads are waiting for this task. Must have lock to read this.
-  int waiting_for_completion_count() {
-    assert(_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
-    return _waiting_count;
-  }
-  // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
-  void inc_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
-    _waiting_count++;
-  }
-  // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
-  void dec_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
-    assert(_waiting_count > 0, "waiting count is not positive");
-    _waiting_count--;
-  }
-
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
   void         mark_started(jlong time)          { _time_started = time; }
@@ -211,9 +182,10 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_next(CompileTask* next)       { _next = next; }
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
-  bool         is_free() const                   { return _is_free; }
-  void         set_is_free(bool val)             { _is_free = val; }
   bool         is_unloaded() const;
+
+  CompileTrainingData* training_data() const      { return _training_data; }
+  void set_training_data(CompileTrainingData* td) { _training_data = td;   }
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);

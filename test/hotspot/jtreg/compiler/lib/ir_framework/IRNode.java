@@ -99,11 +99,9 @@ public class IRNode {
 
     private static final String POSTFIX = "#_";
 
-    private static final String START = "(\\d+(\\s){2}(";
-    private static final String MID = ".*)+(\\s){2}===.*";
-    private static final String END = ")";
-    private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
-    private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
+    public static final String START = "(\\d+(\\s){2}(";
+    public static final String MID = ".*)+(\\s){2}===.*";
+    public static final String END = ")";
 
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
@@ -649,6 +647,11 @@ public class IRNode {
         fromAfterCountedLoops(COUNTED_LOOP_MAIN, regex);
     }
 
+    public static final String DECODE_HEAP_OOP_NOT_NULL = PREFIX + "DECODE_HEAP_OOP_NOT_NULL" + POSTFIX;
+    static {
+        machOnly(DECODE_HEAP_OOP_NOT_NULL, "decodeHeapOop_not_null");
+    }
+
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
@@ -868,6 +871,12 @@ public class IRNode {
     public static final String IS_INFINITE_F = PREFIX + "IS_INFINITE_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(IS_INFINITE_F, "IsInfiniteF");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P = PREFIX + "LEA_P" + POSTFIX;
+    static {
+        machOnly(LEA_P, "leaP(CompressedOopOffset|(8|32)Narrow)");
     }
 
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
@@ -1208,6 +1217,11 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
     }
 
+    public static final String MEM_TO_REG_SPILL_COPY = PREFIX + "MEM_TO_REG_SPILL_COPY" + POSTFIX;
+    static {
+        machOnly(MEM_TO_REG_SPILL_COPY, "MemToRegSpillCopy");
+    }
+
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
@@ -1499,6 +1513,11 @@ public class IRNode {
         trapNodes(NULL_ASSERT_TRAP, "null_assert");
     }
 
+    public static final String NULL_CHECK = PREFIX + "NULL_CHECK" + POSTFIX;
+    static {
+        machOnlyNameRegex(NULL_CHECK, "NullCheck");
+    }
+
     public static final String NULL_CHECK_TRAP = PREFIX + "NULL_CHECK_TRAP" + POSTFIX;
     static {
         trapNodes(NULL_CHECK_TRAP, "null_check");
@@ -1642,6 +1661,11 @@ public class IRNode {
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
     static {
         trapNodes(RANGE_CHECK_TRAP, "range_check");
+    }
+
+    public static final String SHORT_RUNNING_LOOP_TRAP = PREFIX + "SHORT_RUNNING_LOOP_TRAP" + POSTFIX;
+    static {
+        trapNodes(SHORT_RUNNING_LOOP_TRAP, "short_running_loop");
     }
 
     public static final String REINTERPRET_S2HF = PREFIX + "REINTERPRET_S2HF" + POSTFIX;
@@ -2466,9 +2490,19 @@ public class IRNode {
         machOnlyNameRegex(VFMSB_MASKED, "vfmsb_masked");
     }
 
+    public static final String RISCV_VFNMSUB_MASKED = PREFIX + "RISCV_VFNMSUB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFNMSUB_MASKED, "vfnmsub_masked");
+    }
+
     public static final String VFNMAD_MASKED = PREFIX + "VFNMAD_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VFNMAD_MASKED, "vfnmad_masked");
+    }
+
+    public static final String RISCV_VFNMADD_MASKED = PREFIX + "RISCV_VFNMADD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFNMADD_MASKED, "vfnmadd_masked");
     }
 
     public static final String VFNMSB_MASKED = PREFIX + "VFNMSB_MASKED" + POSTFIX;
@@ -2476,9 +2510,19 @@ public class IRNode {
         machOnlyNameRegex(VFNMSB_MASKED, "vfnmsb_masked");
     }
 
+    public static final String RISCV_VFMSUB_MASKED = PREFIX + "RISCV_VFMSUB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFMSUB_MASKED, "vfmsub_masked");
+    }
+
     public static final String VFMAD_MASKED = PREFIX + "VFMAD_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VFMAD_MASKED, "vfmad_masked");
+    }
+
+    public static final String RISCV_VFMADD_MASKED = PREFIX + "RISCV_VFMADD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
     }
 
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
@@ -2509,6 +2553,16 @@ public class IRNode {
     public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
     static {
         machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
+    }
+
+    public static final String FMA_F = PREFIX + "FMA_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_F, "FmaF");
+    }
+
+    public static final String FMA_D = PREFIX + "FMA_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;
@@ -2918,13 +2972,25 @@ public class IRNode {
                                                                           CompilePhase.AFTER_LOOP_OPTS));
     }
 
+    // Typename in load/store have the structure:
+    // @fully/qualified/package/name/to/TheClass+12 *
+    // And variation:
+    // - after @, we can have "stable:" or other labels, with optional space after ':'
+    // - the class can actually be a subclass, with $ separator (and it must be ok to give only the deepest one
+    // - after the class name, we can have a comma-separated list of implemented interfaces enclosed in parentheses
+    // - before the offset, we can have something like ":NotNull", either way, seeing "+" or ":" means the end of the type
+    // Worst case, it can be something like:
+    // @bla: bli:a/b/c$d$e (f/g,h/i/j):NotNull+24 *
+    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)*[\\w/\\$]*\\b";
+    private static final String LOAD_STORE_SUFFIX = "( \\([^\\)]+\\))?(:|\\+)\\S* \\*";
+
     private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 

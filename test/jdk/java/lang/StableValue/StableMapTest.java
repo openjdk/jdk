@@ -248,6 +248,37 @@ final class StableMapTest {
         assertEquals(KEYS, encountered);
     }
 
+    @Test
+    void stableEntry() {
+        var map = newMap();
+        var entry = map.entrySet().stream()
+                .filter(e -> e.getKey().equals(KEY))
+                .findAny()
+                .orElseThrow();
+
+        assertEquals(KEY + "=.unset", entry.toString());
+        var otherDifferent = Map.entry(-1, -1);
+        assertNotEquals(entry, otherDifferent);
+        assertEquals(KEY + "=.unset", entry.toString());
+        var otherEqual = Map.entry(KEY, KEY);
+        assertEquals(entry, otherEqual);
+        assertEquals(KEY + "=" + KEY, entry.toString());
+        assertEquals(entry.hashCode(), otherEqual.hashCode());
+    }
+
+    @Test
+    void stableForEachEntry() {
+        var map = newMap();
+        // Only touch the key.
+        map.entrySet().iterator().forEachRemaining(Map.Entry::getKey);
+        map.entrySet().iterator()
+                .forEachRemaining(e -> assertTrue(e.toString().contains(".unset")));
+        // Only touch the value.
+        map.entrySet().iterator().forEachRemaining(Map.Entry::getValue);
+        map.entrySet().iterator()
+                .forEachRemaining(e -> assertFalse(e.toString().contains(".unset")));
+    }
+
     // Immutability
     @ParameterizedTest
     @MethodSource("unsupportedOperations")

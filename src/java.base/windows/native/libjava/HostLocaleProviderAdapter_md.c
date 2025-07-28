@@ -134,7 +134,7 @@ WCHAR * fixes[2][2][3][16] =
                 L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
             },
             { // currency
-                L"\xA4", L"", L"\xA4 ", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
+                L"¤", L"", L"¤ ", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
             },
             { // percent
                 L"", L"", L"%", L"% ", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
@@ -145,7 +145,7 @@ WCHAR * fixes[2][2][3][16] =
                 L"(", L"-", L"- ", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
             },
             { //currency
-                L"(\xA4", L"-\xA4", L"\xA4-", L"\xA4", L"(", L"-", L"", L"", L"-", L"-\xA4 ", L"", L"\xA4 ", L"\xA4 -", L"", L"(\xA4 ", L"("
+                L"(¤", L"-¤", L"¤-", L"¤", L"(", L"-", L"", L"", L"-", L"-¤ ", L"", L"¤ ", L"¤ -", L"", L"(¤ ", L"("
             },
             { // percent
                 L"-", L"-", L"-%", L"%-", L"%", L"", L"", L"-% ", L"", L"% ", L"% -", L"", L"", L"", L"", L"",
@@ -158,7 +158,7 @@ WCHAR * fixes[2][2][3][16] =
                 L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L""
             },
             { // currency
-                L"", L"\xA4 ", L"", L" \xA4", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
+                L"", L"¤ ", L"", L" ¤", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
             },
             { // percent
                 L" %", L"%", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
@@ -169,7 +169,7 @@ WCHAR * fixes[2][2][3][16] =
                 L")", L"", L" ", L"-", L" -", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"", L"",
             },
             { //currency
-                L")", L"", L"", L"-", L"\xA4)", L"\xA4", L"-\xA4", L"\xA4-", L" \xA4", L"", L" \xA4-", L"-", L"", L"- \xA4", L")", L" \xA4)"
+                L")", L"", L"", L"-", L"¤)", L"¤", L"-¤", L"¤-", L" ¤", L"", L" ¤-", L"-", L"", L"- ¤", L")", L" ¤)"
             },
             { // percent
                 L" %", L"%", L"", L"", L"-", L"-%", L"%-", L"", L" %-", L"-", L"", L"- %", L"", L"", L"", L"",
@@ -965,29 +965,34 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
 void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BOOL prefix, WCHAR * ret) {
     DWORD pattern = 0;
     int style = numberStyle;
-    int got = 0;
+ // int got = 0;
 
     if (positive) {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-            got = getLocaleInfoWrapper(langtag,
+         // got =
+                  getLocaleInfoWrapper(langtag,
                 LOCALE_ICURRENCY | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-            got = getLocaleInfoWrapper(langtag,
+         // got =
+                  getLocaleInfoWrapper(langtag,
                 LOCALE_IPOSITIVEPERCENT | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         }
     } else {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-            got = getLocaleInfoWrapper(langtag,
+         // got =
+                  getLocaleInfoWrapper(langtag,
                 LOCALE_INEGCURR | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-            got = getLocaleInfoWrapper(langtag,
+         // got =
+                  getLocaleInfoWrapper(langtag,
                 LOCALE_INEGATIVEPERCENT | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else {
-            got = getLocaleInfoWrapper(langtag,
+         // got =
+                  getLocaleInfoWrapper(langtag,
                 LOCALE_INEGNUMBER | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         }

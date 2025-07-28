@@ -128,10 +128,9 @@ define SetupSourceFiles
   # Extract the C/C++ files.
   ifneq ($$($1_EXCLUDE_PATTERNS), )
     # We must not match the exclude pattern against the src root(s).
-    $1_SRCS_WITHOUT_ROOTS := $$($1_SRCS)
-    $$(foreach i, $$($1_SRC), $$(eval $1_SRCS_WITHOUT_ROOTS := $$(patsubst \
-        $$i/%,%, $$($1_SRCS_WITHOUT_ROOTS))))
-    $1_ALL_EXCLUDE_FILES :=  $$(call containing, $$($1_EXCLUDE_PATTERNS), \
+    $1_SRCS_WITHOUT_ROOTS := $$(foreach i, $$($1_SRC), \
+        $$(patsubst $$i/%,%, $$(filter $$i/%, $$($1_SRCS))))
+    $1_ALL_EXCLUDE_FILES := $$(call containing, $$($1_EXCLUDE_PATTERNS), \
         $$($1_SRCS_WITHOUT_ROOTS))
   endif
   ifneq ($$($1_EXCLUDE_FILES), )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,7 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
 
         @Override
         @SuppressWarnings("deprecation")
-        public SecretKey deriveKey(String algorithm,
-                AlgorithmParameterSpec params) throws IOException {
-
+        public SecretKey deriveKey(String typeNotUsed) throws IOException {
             CipherSuite cipherSuite = context.negotiatedCipherSuite;
             ProtocolVersion protocolVersion = context.negotiatedProtocol;
 

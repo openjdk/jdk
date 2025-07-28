@@ -101,6 +101,14 @@ public final class Bytecode {
         };
     }
 
+    public static String internalName(String className) {
+        return className != null ? className.replace(".", "/") : null;
+    }
+
+    public static String descriptorName(String className) {
+        return className != null ? ("L" + internalName(className) + ";") : null;
+    }
+
     public static ClassDesc classDesc(Class<?> clazz) {
         return ClassDesc.ofDescriptor(clazz.descriptorString());
     }

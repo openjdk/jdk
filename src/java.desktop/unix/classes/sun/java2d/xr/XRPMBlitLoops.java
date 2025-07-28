@@ -162,11 +162,12 @@ public final class XRPMBlitLoops {
     }
 }
 
-class XRPMBlit extends Blit {
+final class XRPMBlit extends Blit {
     public XRPMBlit(SurfaceType srcType, SurfaceType dstType) {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
         try {
             SunToolkit.awtLock();
@@ -185,11 +186,12 @@ class XRPMBlit extends Blit {
     }
 }
 
-class XRPMScaledBlit extends ScaledBlit {
+final class XRPMScaledBlit extends ScaledBlit {
     public XRPMScaledBlit(SurfaceType srcType, SurfaceType dstType) {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
 
+    @Override
     @SuppressWarnings("cast")
     public void Scale(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx1, int sy1, int sx2, int sy2, double dx1, double dy1,
             double dx2, double dy2) {
@@ -229,7 +231,7 @@ class XRPMScaledBlit extends ScaledBlit {
  *
  * @author Clemens Eisserer
  */
-class XRPMTransformedBlit extends TransformBlit {
+final class XRPMTransformedBlit extends TransformBlit {
     final Rectangle compositeBounds = new Rectangle();
     final double[] srcCoords = new double[8];
     final double[] dstCoords = new double[8];
@@ -290,6 +292,7 @@ class XRPMTransformedBlit extends TransformBlit {
         compositeBounds.height = (int) (maxY - minY);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform,
             int hint, int srcx, int srcy, int dstx, int dsty, int width, int height) {
         try {
@@ -346,7 +349,7 @@ class XRPMTransformedBlit extends TransformBlit {
     }
 }
 
-class XrSwToPMBlit extends Blit {
+final class XrSwToPMBlit extends Blit {
     Blit pmToSurfaceBlit;
 
     XrSwToPMBlit(SurfaceType srcType, SurfaceType dstType) {
@@ -354,6 +357,7 @@ class XrSwToPMBlit extends Blit {
         pmToSurfaceBlit = new XRPMBlit(dstType, dstType);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
         try {
             SunToolkit.awtLock();
@@ -366,7 +370,7 @@ class XrSwToPMBlit extends Blit {
     }
 }
 
-class XrSwToPMScaledBlit extends ScaledBlit {
+final class XrSwToPMScaledBlit extends ScaledBlit {
     ScaledBlit pmToSurfaceBlit;
 
     XrSwToPMScaledBlit(SurfaceType srcType, SurfaceType dstType) {
@@ -374,6 +378,7 @@ class XrSwToPMScaledBlit extends ScaledBlit {
         pmToSurfaceBlit = new XRPMScaledBlit(dstType, dstType);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx1, int sy1, int sx2, int sy2, double dx1, double dy1,
             double dx2, double dy2) {
         {
@@ -391,7 +396,7 @@ class XrSwToPMScaledBlit extends ScaledBlit {
     }
 }
 
-class XrSwToPMTransformedBlit extends TransformBlit {
+final class XrSwToPMTransformedBlit extends TransformBlit {
     TransformBlit pmToSurfaceBlit;
 
     XrSwToPMTransformedBlit(SurfaceType srcType, SurfaceType dstType) {
@@ -399,6 +404,7 @@ class XrSwToPMTransformedBlit extends TransformBlit {
         pmToSurfaceBlit = new XRPMTransformedBlit(dstType, dstType);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform, int hint, int sx, int sy, int dstx,
             int dsty, int w, int h) {
         try {

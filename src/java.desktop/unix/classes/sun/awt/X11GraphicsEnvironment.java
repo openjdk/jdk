@@ -179,6 +179,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
      */
     private static native void initDisplay(boolean glxRequested);
 
+    @Override
     protected native int getNumScreens();
 
     private native int getDefaultScreenNum();
@@ -267,6 +268,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                 "should not be called in this implementation");
     }
 
+    @Override
     public boolean isDisplayLocal() {
         if (isDisplayLocal == null) {
             SunToolkit.awtLock();

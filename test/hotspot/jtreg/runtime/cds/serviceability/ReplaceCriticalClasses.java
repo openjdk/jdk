@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,7 @@ public class ReplaceCriticalClasses {
             .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa")
             .setUseVersion(false)
             .addSuffix("-showversion",
+                       "-Xlog:aot",
                        "-Xlog:cds",
                        "-XX:+UnlockDiagnosticVMOptions",
                        agent);
@@ -173,7 +174,7 @@ public class ReplaceCriticalClasses {
             opts.addSuffix("-XX:+WhiteBoxAPI",
                            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
         }
-        opts.addSuffix("-Xlog:cds,cds+heap");
+        opts.addSuffix("-Xlog:aot,aot+heap,cds");
         opts.addSuffix("ReplaceCriticalClasses",
                        "child",
                        shared,

@@ -30,6 +30,7 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
@@ -159,12 +160,12 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  static void begin_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->begin_evacuation(bytes);
+  static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->begin_evacuation(bytes, from, to);
   }
 
-  static void end_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->end_evacuation(bytes);
+  static void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes, from, to);
   }
 
   static void record_age(Thread* thread, size_t bytes, uint age) {
@@ -172,7 +173,6 @@ public:
   }
 
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
-    shenandoah_assert_generational();
     return data(thread)->_evacuation_stats;
   }
 

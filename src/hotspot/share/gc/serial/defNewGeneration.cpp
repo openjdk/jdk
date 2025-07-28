@@ -631,7 +631,7 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
     ReferenceProcessor* rp = ref_processor();
     ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
-    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, nullptr, pt);
     _gc_tracer->report_gc_reference_stats(stats);
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
     pt.print_all_references();
@@ -814,7 +814,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -830,7 +830,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
   st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
   _virtual_space.print_space_boundaries_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   eden()->print_on(st, "eden ");
   from()->print_on(st, "from ");
   to()->print_on(st, "to   ");

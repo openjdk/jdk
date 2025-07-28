@@ -72,6 +72,7 @@ public class Handler extends URLStreamHandler {
         /* If you reach here, it implies that you have a hostname
            so attempt an ftp connection.
          */
+        FileURLConnection.requireFtpFallbackEnabled();
         URLConnection uc;
         URL ru;
 
