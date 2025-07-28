@@ -26,6 +26,7 @@
 package java.lang.ref;
 
 import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
@@ -42,7 +43,7 @@ import jdk.internal.access.SharedSecrets;
  * @since    1.2
  * @sealedGraph
  */
-
+@AOTSafeClassInitializer
 public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 

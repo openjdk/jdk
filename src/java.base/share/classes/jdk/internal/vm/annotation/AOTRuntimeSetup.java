@@ -35,8 +35,17 @@ import java.lang.annotation.Target;
 /// be executed instead of the static initializer in the production run.  In
 /// contrast, other "initialized" classes skip initialization methods altogether.
 ///
+/// Another similar concept is `resetArchivedStates`, which allows handling
+/// before storing into the AOT cache in the "initialized" state in an assembly
+/// run. This is currently only used by [Class] to clear up a cache field, but
+/// may be expanded to other classes and interfaces later on.
+///
+/// Note that for a class to be stored initialized, it must be qualified as
+/// [AOTSafeClassInitializer].
+///
 /// `classFileParser.cpp` performs checks on the annotated method - if the
-/// annotated method's signature differs from that described above, a
+/// annotated method's signature differs from that described above, or in the
+/// assembly phase, the class is not marked to have an AOT-safe initializer, a
 /// [ClassFormatError] will be thrown.
 ///
 /// This annotation is only recognized on privileged code and is ignored elsewhere.

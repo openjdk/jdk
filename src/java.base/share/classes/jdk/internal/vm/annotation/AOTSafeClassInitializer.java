@@ -73,7 +73,9 @@ import java.lang.annotation.Target;
 /// In the assembly phase, `classFileParser.cpp` performs checks on the annotated
 /// classes, to ensure all supertypes of this class that must be initialized when
 /// this class is initialized have the `@AOTSafeClassInitializer` annotation.
-/// Otherwise, a [ClassFormatError] will be thrown.
+/// Otherwise, a [ClassFormatError] will be thrown. (This assembly phase restriction
+/// allows module patching and instrumentation to work on annotated classes when
+/// AOT is not enabled)
 ///
 /// This annotation is only recognized on privileged code and is ignored elsewhere.
 ///
