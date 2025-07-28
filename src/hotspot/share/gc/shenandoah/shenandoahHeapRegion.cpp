@@ -142,10 +142,9 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (!Universe::is_fully_initialized() ||
-          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() ||
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-          "Only for STW GC or when Universe is initializing (CDS)");
+          "Only for STW GC");
   reset_age();
   switch (state()) {
     case _empty_uncommitted:

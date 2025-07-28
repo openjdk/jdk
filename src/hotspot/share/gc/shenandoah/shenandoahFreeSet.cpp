@@ -1264,19 +1264,19 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     } else {
       used_words = ShenandoahHeapRegion::region_size_words();
     }
-    r->set_top(r->bottom() + used_words);
     r->set_update_watermark(r->bottom());
+    r->set_top(r->bottom() + used_words);
   }
   generation->increase_affiliated_region_count(num);
 
   // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
   _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
 
-  size_t size = is_humongous ? ShenandoahHeapRegion::region_size_bytes() * num : words_size;
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, size);
+  size_t total_contiguous_size = ShenandoahHeapRegion::region_size_bytes() * num;
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_contiguous_size);
   _partitions.assert_bounds();
   req.set_actual_size(words_size);
-  if (remainder != 0 && is_humongous) {
+  if (remainder != 0) {
     req.set_waste(ShenandoahHeapRegion::region_size_words() - remainder);
   }
   return _heap->get_region(beg)->bottom();

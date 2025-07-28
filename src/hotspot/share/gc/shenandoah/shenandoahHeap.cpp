@@ -2760,11 +2760,21 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 
 HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 #if INCLUDE_CDS_JAVA_HEAP
-  // CDS wants a continuous memory range to load a bunch of objects.
-  // CDS would guarantee no objects straddle multiple regions, as long as
-  // regions are as large as MIN_GC_REGION_ALIGNMENT.
-  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Should be");
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
+  // CDS wants a raw continuous memory range to load a bunch of objects itself.
+  // This is an unusual request, since all requested regions should be regular, not humongous.
+  // Plus, the objects loaded by CDS are likely old and would survive lots of collections.
+  //
+  // We handle the whole thing by allocating the contiguous set of full regions for CDS load.
+  // This simplifies accounting in GC code, and makes sure the CDS loaded object are segregated
+  // by age from the rest of the allocations. We will insert the filler object when load
+  // is complete.
+  //
+  // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
+  // as MIN_GC_REGION_ALIGNMENT.
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
+
+  size_t aligned_size = ShenandoahHeapRegion::required_regions(size) * ShenandoahHeapRegion::region_size_bytes();
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(aligned_size);
   return allocate_memory(req);
 #else
   assert(false, "Archive heap loader should not be available, should not be here");
@@ -2773,11 +2783,17 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 }
 
 void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
-  // Nothing to do here, except checking that heap looks fine.
-#ifdef ASSERT
   HeapWord* start = archive_space.start();
   HeapWord* end = archive_space.end();
 
+  // Fill the tail with the filler object.
+  HeapWord* aligned_end = align_up(end, ShenandoahHeapRegion::region_size_words());
+  if (aligned_end > end) {
+    fill_with_dummy_object(end, aligned_end, false);
+  }
+
+  // Nothing else to do here, except checking that heap looks fine.
+#ifdef ASSERT
   // No unclaimed space between the objects.
   // Objects are properly allocated in correct regions.
   HeapWord* cur = start;
@@ -2788,24 +2804,23 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   }
 
   // No unclaimed tail at the end of archive space.
-  assert(cur == end,
+  assert(cur >= end,
          "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
          p2i(cur), p2i(end));
 
   // All regions in contiguous space have good state.
   size_t begin_reg_idx = heap_region_index_containing(start);
   size_t end_reg_idx   = heap_region_index_containing(end);
-  ShenandoahHeapRegion* begin_reg = get_region(begin_reg_idx);
-  ShenandoahHeapRegion* end_reg = get_region(end_reg_idx);
 
   for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
     ShenandoahHeapRegion* r = get_region(idx);
     assert(r->is_regular(), "Must be regular");
-    assert(r->get_update_watermark() == r->bottom(), "Must be reset");
-    assert(r->affiliation() == YOUNG_GENERATION, "Must be young");
-    assert(idx == end_reg_idx   || r->top() == r->end(), "All regions except for last should be full");
-    assert(idx != begin_reg_idx || r->bottom() == start, "Archive space start should be at the bottom of first region");
-    assert(idx != end_reg_idx   || r->top() == end, "Archive space end should be at the top of the last region");
+    assert(r->is_young(), "Must be young");
+    assert(r->top() == r->end(), "All regions should be full");
+    assert(idx != begin_reg_idx || r->bottom() == start,
+           "Archive space start should be at the bottom of first region");
+    assert(idx != end_reg_idx || (r->bottom() < end && end <= r->top()),
+           "Archive space end should be in the last region");
   }
 
 #endif
