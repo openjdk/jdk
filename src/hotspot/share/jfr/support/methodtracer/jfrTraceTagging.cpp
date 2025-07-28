@@ -128,8 +128,6 @@ void JfrTraceTagging::on_klass_redefinition(const InstanceKlass* ik, const Insta
 
   const Array<Method*>* new_methods = ik->methods();
   assert(new_methods != nullptr, "invariant");
-  const Array<Method*>* old_methods = scratch_klass->methods();
-  assert(old_methods != nullptr, "invariant");
 
   const int len = new_methods->length(); // Can be shorter, equal to, or longer than old methods length.
 
