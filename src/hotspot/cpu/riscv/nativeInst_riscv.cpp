@@ -73,10 +73,8 @@ address NativeCall::reloc_destination() {
   address stub_addr = nullptr;
   if (code->is_nmethod()) {
     stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
-  }
-
-  if (stub_addr != nullptr) {
-    stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
+    assert(stub_addr != nullptr, "Sanity");
+    return stub_addr;
   }
 
   return stub_addr;
@@ -113,12 +111,9 @@ bool NativeCall::reloc_set_destination(address dest) {
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
-  address stub_addr = nullptr;
   if (code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
-  }
-  if (stub_addr != nullptr) {
-    MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
+    assert(dest != nullptr, "Sanity");
+    MacroAssembler::pd_patch_instruction_size(call_addr, dest);
   }
 
   return true;
