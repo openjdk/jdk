@@ -1088,11 +1088,16 @@ public abstract class SSLEngine {
 
 
     /**
-     * Initiates handshaking (initial or renegotiation) on this SSLEngine.
+     * Initiates handshaking on this SSLEngine. Common reasons include a need
+     * to initiate a new session, to use new encryption keys or to change
+     * cipher suites. To force complete reauthentication, the current session
+     * could be invalidated before starting this handshake.
      * <P>
-     * For TLSv1.3 and later versions calling this method after the connection
-     * has been established will force producing a KeyUpdate message. For prior
-     * TLS versions it will force a renegotiation (re-handshake).
+     * The behavior of this method is protocol (and possibly implementation)
+     * dependent. For example, in TLSv1.3 and later versions calling this
+     * method after the connection has been established will force producing
+     * a KeyUpdate message. For prior TLS versions it will force a
+     * renegotiation (re-handshake).
      * <P>
      * This method is not needed for the initial handshake, as the
      * {@code wrap()} and {@code unwrap()} methods will
