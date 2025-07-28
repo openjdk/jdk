@@ -2152,10 +2152,6 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   delete[] _compiled_ic_data;
 
-  if (_immutable_data != blob_end()) {
-    os::free(_immutable_data);
-    _immutable_data = blob_end(); // Valid not null address
-  }
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
