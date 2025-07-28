@@ -360,7 +360,7 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest configureHelloApp(String javaAppDesc) {
         addHelloAppInitializer(javaAppDesc);
-        addInstallVerifier(JPackageCommand::executeLaunchers);
+        addInstallVerifier(LauncherVerifier::executeMainLauncherAndVerifyOutput);
         return this;
     }
 
@@ -773,6 +773,10 @@ public final class PackageTest extends RunnablePackageTest {
                 if (isOfType(cmd, WINDOWS) && !cmd.isPackageUnpacked("Not verifying desktop integration")) {
                     WindowsHelper.verifyDeployedDesktopIntegration(cmd, true);
                 }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopFiles(cmd, true);
+                }
             }
 
             if (isOfType(cmd, LauncherAsServiceVerifier.SUPPORTED_PACKAGES)) {
@@ -849,6 +853,10 @@ public final class PackageTest extends RunnablePackageTest {
 
                 if (isOfType(cmd, WINDOWS)) {
                     WindowsHelper.verifyDeployedDesktopIntegration(cmd, false);
+                }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopFiles(cmd, false);
                 }
             }
 

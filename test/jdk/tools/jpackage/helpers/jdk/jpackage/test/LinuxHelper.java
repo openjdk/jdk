@@ -23,12 +23,14 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -345,8 +347,7 @@ public final class LinuxHelper {
         }
     }
 
-    static void addBundleDesktopIntegrationVerifier(PackageTest test,
-            boolean integrated) {
+    static void addBundleDesktopIntegrationVerifier(PackageTest test, boolean integrated) {
         final String xdgUtils = "xdg-utils";
 
         Function<List<String>, String> verifier = (lines) -> {
@@ -392,22 +393,50 @@ public final class LinuxHelper {
         });
 
         test.addInstallVerifier(cmd -> {
-            // Verify .desktop files.
-            try (var files = Files.list(cmd.appLayout().desktopIntegrationDirectory())) {
-                List<Path> desktopFiles = files
-                        .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .toList();
-                if (!integrated) {
-                    TKit.assertStringListEquals(List.of(),
-                            desktopFiles.stream().map(Path::toString).collect(
-                                    Collectors.toList()),
-                            "Check there are no .desktop files in the package");
-                }
+            if (!integrated) {
+                TKit.assertStringListEquals(
+                        List.of(),
+                        getDesktopFiles(cmd).stream().map(Path::toString).toList(),
+                        "Check there are no .desktop files in the package");
+            }
+        });
+    }
+
+    static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
+        final var desktopFiles = getDesktopFiles(cmd);
+        try {
+            if (installed) {
                 for (var desktopFile : desktopFiles) {
                     verifyDesktopFile(cmd, desktopFile);
                 }
+
+                if (!cmd.isPackageUnpacked("Not verifying system .desktop files")) {
+                    for (var desktopFile : desktopFiles) {
+                        Path systemDesktopFile = LinuxHelper.getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                            TKit.assertFileExists(systemDesktopFile);
+                            TKit.assertStringListEquals(
+                                    Files.readAllLines(desktopFile),
+                                    Files.readAllLines(systemDesktopFile),
+                                    String.format("Check [%s] and [%s] files are equal", desktopFile, systemDesktopFile));
+                    }
+                }
+            } else {
+                for (var desktopFile : getDesktopFiles(cmd)) {
+                    Path systemDesktopFile = LinuxHelper.getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                    TKit.assertPathExists(systemDesktopFile, false);
+                }
             }
-        });
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
+        var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
+        var packageDir = cmd.pathToPackageFile(unpackedDir);
+        return getPackageFiles(cmd).filter(path -> {
+            return path.getParent().equals(packageDir) && path.getFileName().toString().endsWith(".desktop");
+        }).map(Path::getFileName).map(unpackedDir::resolve).toList();
     }
 
     private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
