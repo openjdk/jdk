@@ -343,7 +343,7 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
 }
 
 #if NEEDS_CLASS_SPACE
-// On AIX, we cannot mprotect archive space or cwviedwlass space since they are reserved with SystemV shm.
+// On AIX, we cannot mprotect archive space or class space since they are reserved with SystemV shm.
 static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
 
 // Protect a zone a the start of the encoding range
