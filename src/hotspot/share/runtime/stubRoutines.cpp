@@ -144,8 +144,8 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print_cr("%s\t not generated", buffer_name);
-      return nullptr;
     }
+    return nullptr;
   }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
