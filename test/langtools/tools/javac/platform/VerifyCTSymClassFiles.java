@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8331027, 8356645
+ * @bug 8331027 8356645
  * @summary Verify classfile inside ct.sym
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
