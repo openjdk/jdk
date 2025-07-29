@@ -2007,11 +2007,8 @@ class MutableBigInteger {
                  * so ex ≤ ME - P ⇔ bl-(sh-ex) ≤ ME.
                  *
                  * Recalling x < 2^bl:
-                 * x / 2^(sh-ex) < 2^bl / 2^(sh-ex) = 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
-                 *
-                 * Thus, x / 2^(sh-ex) is in the range of finite doubles.
-                 * All the more so, this holds for x >> (sh-ex) ≤ x / 2^(sh-ex),
-                 * which is what is computed below.
+                 * x >> (sh-ex) < 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
+                 * Thus, x >> (sh-ex) is in the range of finite doubles.
                  *
                  * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
                  * which shows that x >> (sh-ex) has at least P bits of precision,
