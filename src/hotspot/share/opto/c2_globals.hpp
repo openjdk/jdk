@@ -265,6 +265,10 @@
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \
+  product(uint, IFGEdgesLimit, 10000000, DIAGNOSTIC,                        \
+          "Maximum allowed edges in the interference graphs")               \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \
@@ -867,6 +871,15 @@
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \
+                                                                            \
+  product(bool, ShortRunningLongLoop, true, DIAGNOSTIC,                     \
+          "long counted loop/long range checks: don't create loop nest if " \
+          "loop runs for small enough number of iterations. Long loop is "  \
+          "converted to a single int loop.")                                \
+                                                                            \
+  develop(bool, StressShortRunningLongLoop, false,                          \
+          "Speculate all long counted loops are short running when bounds " \
+          "are unknown even if profile data doesn't say so.")               \
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \

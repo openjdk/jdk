@@ -557,6 +557,10 @@ public:
 
   ShenandoahEvacOOMHandler*  oom_evac_handler()        { return &_oom_evac_handler; }
 
+  ShenandoahEvacuationTracker* evac_tracker() const {
+    return _evac_tracker;
+  }
+
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
@@ -789,6 +793,10 @@ private:
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
 
+protected:
+  // Used primarily to look for failed evacuation attempts.
+  ShenandoahEvacuationTracker*  _evac_tracker;
+
 public:
   static address in_cset_fast_test_addr();
 
@@ -829,7 +837,7 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
-  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
   static inline void increase_object_age(oop obj, uint additional_age);
 

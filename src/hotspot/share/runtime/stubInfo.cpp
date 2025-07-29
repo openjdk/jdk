@@ -156,17 +156,33 @@ int StubInfo::span(EntryId second, EntryId first) {
 }
 
 int StubInfo::span(StubId second, StubId first) {
+  // normally when the two ids are equal the entry span is 1 but we
+  // have a special case when the base and max are both NO_STUBID in
+  // which case the entry count is 0. n.b. that only happens in the
+  // case where a stub group is empty e.g. when either C1 or C2 is
+  // omitted from the build
   int idx1 = static_cast<int>(first);
   int idx2 = static_cast<int>(second);
-  assert(idx2 >= 0 && idx2 >= idx1, "bad stub ids first %d and second %d", idx1, idx2);
+  assert((idx1 < 0 && idx2  < 0) || (idx1 >= 0 && idx2 >= idx1), "bad stub ids first %d and second %d", idx1, idx2);
+  if (idx1 < 0) {
+    return 0;
+  }
   // span is inclusive of first and second
   return idx2 + 1 - idx1;
 }
 
 int StubInfo::span(BlobId second, BlobId first) {
+  // normally when the two ids are equal the entry span is 1 but we
+  // have a special case when the base and max are both NO_BLOBID in
+  // which case the entry count is 0. n.b. that only happens in the
+  // case where a stub group is empty e.g. when either C1 or C2 is
+  // omitted from the build
   int idx1 = static_cast<int>(first);
   int idx2 = static_cast<int>(second);
-  assert(idx2 >= 0 && idx2 >= idx1, "bad blob ids first %d and second %d", idx1, idx2);
+  assert((idx1 < 0 && idx2  < 0) || (idx1 >= 0 && idx2 >= idx1), "bad blob ids first %d and second %d", idx1, idx2);
+  if (idx1 < 0) {
+    return 0;
+  }
   // span is inclusive of first and second
   return idx2 + 1 - idx1;
 }
@@ -777,9 +793,16 @@ void StubInfo::dump_group_table(LogStream& ls) {
     GroupDetails& g = _group_table[i];
     ls.print_cr("%1d: %-8s", i, g._name);
     if (g._base == g._max) {
-      ls.print_cr("  blobs: %s(%d)",
-                  blob_details(g._base)._name,
-                  static_cast<int>(g._base));
+      // some groups don't have a blob
+      if (g._base == BlobId::NO_BLOBID) {
+        ls.print_cr("  blobs: %s(%d)",
+                    "no_blobs",
+                    static_cast<int>(g._base));
+      } else {
+        ls.print_cr("  blobs: %s(%d)",
+                    blob_details(g._base)._name,
+                    static_cast<int>(g._base));
+      }
     } else {
       ls.print_cr(" blobs: %s(%d) ... %s(%d)",
                   blob_details(g._base)._name,
@@ -796,9 +819,16 @@ void StubInfo::dump_blob_table(LogStream& ls) {
     BlobDetails& b = _blob_table[i];
     ls.print_cr("%-3d: %s", i, b._name);
     if (b._base == b._max) {
-      ls.print_cr("  stubs: %s(%d)",
-                  stub_details(b._base)._name,
-                  static_cast<int>(b._base));
+      // some blobs don't have a stub
+      if (b._base == StubId::NO_STUBID) {
+        ls.print_cr("  stubs: %s(%d)",
+                    "no_stubs",
+                    static_cast<int>(b._base));
+      } else {
+        ls.print_cr("  stubs: %s(%d)",
+                    stub_details(b._base)._name,
+                    static_cast<int>(b._base));
+      }
     } else {
       ls.print_cr("  stubs: %s(%d) ... %s(%d)",
                   stub_details(b._base)._name,
@@ -905,13 +935,13 @@ int StubInfo::blob_count(StubGroup stub_group) {
 }
 
 StubId StubInfo::stub_base(StubGroup stub_group) {
-  // delegate
-  return stub_base(blob_base(stub_group));
+  BlobId base = blob_base(stub_group);
+  return (base == BlobId::NO_BLOBID ? StubId::NO_STUBID : stub_base(base));
 }
 
 StubId StubInfo::stub_max(StubGroup stub_group) {
-  // delegate
-  return stub_max(blob_max(stub_group));
+  BlobId base = blob_max(stub_group);
+  return (base == BlobId::NO_BLOBID ? StubId::NO_STUBID : stub_max(base));
 }
 
 int StubInfo::stub_count(StubGroup stub_group) {

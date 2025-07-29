@@ -37,7 +37,7 @@
 // - NativeInstruction
 // - - NativeCall
 // - - NativeMovConstReg
-// - - NativeMovRegMem
+// - - NativeMovRegMem - Unimplemented
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
@@ -111,6 +111,7 @@ NativeCall* nativeCall_before(address return_address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
+// NativeCall is reloc call on RISC-V. See MacroAssembler::reloc_call.
 class NativeCall: private NativeInstruction {
  // private: when common code is using byte_size()
  private:
@@ -118,34 +119,44 @@ class NativeCall: private NativeInstruction {
     // Use byte_size() as it can be changed in runtime
     // Since instruction_size exists on NativeInstruction we need
     // to overload and hide it.
-    instruction_size = 3 * Assembler::instruction_size // auipc + ld + jalr
+    instruction_size = 3 * NativeInstruction::instruction_size // auipc + ld + jalr
   };
  public:
 
   static int byte_size() {
-    return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
+    return NativeCall::instruction_size; // auipc + ld + jalr
   }
 
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);
 
-  address instruction_address() const;
-  address next_instruction_address() const;
-  address return_address() const;
+  address instruction_address() const      { return addr_at(0); }
+  address next_instruction_address() const { return addr_at(NativeCall::instruction_size); }
+  address return_address() const           { return addr_at(NativeCall::instruction_size); }
   address destination() const;
-  address reloc_destination(address orig_address);
+  address reloc_destination();
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
-  void set_destination(address dest);
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  void set_destination(address dest) { Unimplemented(); }
+  // patch stub to target address of the reloc call
+  bool set_destination_mt_safe(address dest);
+  // patch reloc call to stub address
   bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
+
+ private:
+  // return stub address, without checking stub address in locs
+  address stub_address();
+  // set target address at stub
+  static void set_stub_address_destination_at(address dest, address value);
+  // return target address at stub
+  static address stub_address_destination_at(address src);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
@@ -218,38 +229,18 @@ inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
 // NativeMovRegMem to keep some compilers happy.
 class NativeMovRegMem: public NativeInstruction {
  public:
-  enum RISCV_specific_constants {
-    instruction_size            =    NativeInstruction::instruction_size,
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    NativeInstruction::instruction_size
-  };
+  int num_bytes_to_end_of_patch() const { Unimplemented(); return 0; }
 
-  int instruction_start() const { return instruction_offset; }
+  int offset() const { Unimplemented(); return 0; }
 
-  address instruction_address() const { return addr_at(instruction_offset); }
+  void set_offset(int x) { Unimplemented(); }
 
-  int num_bytes_to_end_of_patch() const { return instruction_offset + instruction_size; }
-
-  int offset() const;
-
-  void set_offset(int x);
-
-  void add_offset_in_bytes(int add_offset) {
-    set_offset(offset() + add_offset);
-  }
-
-  void verify();
-  void print();
-
- private:
-  inline friend NativeMovRegMem* nativeMovRegMem_at(address addr);
+  void add_offset_in_bytes(int add_offset) { Unimplemented(); }
 };
 
 inline NativeMovRegMem* nativeMovRegMem_at(address addr) {
-  NativeMovRegMem* test = (NativeMovRegMem*)(addr - NativeMovRegMem::instruction_offset);
-  DEBUG_ONLY(test->verify());
-  return test;
+  Unimplemented();
+  return (NativeMovRegMem*)nullptr;
 }
 
 class NativeJump: public NativeInstruction {
