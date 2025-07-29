@@ -317,7 +317,7 @@ public final class Utils {
         Map<String, Field> mirrorFields = new HashMap<>();
         while (cMirror != null) {
             for (Field f : cMirror.getDeclaredFields()) {
-                if (isSupportedType(f.getType())) {
+                if (isSupportedField(f)) {
                     mirrorFields.put(f.getName(), f);
                 }
             }
@@ -325,7 +325,7 @@ public final class Utils {
         }
         while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
-                if (isSupportedType(realField.getType()) && !realField.isSynthetic()) {
+                if (isSupportedField(realField)) {
                     String fieldName = realField.getName();
                     Field mirrorField = mirrorFields.get(fieldName);
                     if (mirrorField == null) {
@@ -348,11 +348,15 @@ public final class Utils {
         }
     }
 
-    private static boolean isSupportedType(Class<?> type) {
-        if (Modifier.isTransient(type.getModifiers()) || Modifier.isStatic(type.getModifiers())) {
+    private static boolean isSupportedField(Field field) {
+        if (field.isSynthetic()) {
             return false;
         }
-        return Type.isValidJavaFieldType(type.getName());
+        int modifiers = field.getModifiers();
+        if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) {
+            return false;
+        }
+        return Type.isValidJavaFieldType(field.getType().getName());
     }
 
     public static void notifyFlush() {
