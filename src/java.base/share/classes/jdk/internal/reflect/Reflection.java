@@ -82,10 +82,8 @@ public class Reflection {
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
     public static int getClassAccessFlags(Class<?> c) {
-        class Holder {
-            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-        }
-        return Holder.JLA.getClassFileAccessFlags(c);
+        JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+        return JLA.getClassFileAccessFlags(c);
     }
 
 

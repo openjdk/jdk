@@ -4139,8 +4139,7 @@ public final class Class<T> implements java.io.Serializable,
       * If this {@code Class} object represents a primitive type or
       * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
       * {@code FINAL}.
-      * If this {@code Class} object represents an array type return 0. This
-      * is not called in Class but can be called with an array type in Reflection.
+      * If this {@code Class} object represents an array type, return 0.
       */
      int getClassFileAccessFlags() {
          return classFileAccessFlags;
