@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
@@ -886,17 +885,16 @@ public class LocaleResources {
      * @param scope "generic", "date", "number", etc.
      * @param sample "-", ",", etc.
      */
-    @SuppressWarnings("unchecked")
-    public Optional<String> getParseLenient(String scope, String sample) {
+    public String getParseLenient(String scope, String sample) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(sample);
-        Optional<String> lenient = Optional.empty();
+        String lenient = "";
         String cacheKey = PARSE_LENIENT + scope + "." + sample;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
 
-        if (data == null || ((lenient = (Optional<String>) data.get()) == null)) {
+        if (data == null || ((lenient = (String) data.get()) == null)) {
             var rbKey = "ParseLenient_" + scope;
             var rb = localeData.getDateFormatData(locale);
             if (rb.containsKey(rbKey)) {
@@ -904,11 +902,13 @@ public class LocaleResources {
                     .peek(e -> {
                         var kv = e.split(":", 2);
                         var key = PARSE_LENIENT + scope + "." + kv[0];
-                        cache.put(key, new ResourceReference(key, Optional.of(kv[1]), referenceQueue));
+                        cache.put(key, new ResourceReference(key, kv[1], referenceQueue));
                     })
                     .filter(e -> e.startsWith(sample))
-                    .map(e -> e.replaceFirst("\\" + sample + ":", ""))
-                    .findFirst();
+                    .map(e -> e.replaceFirst("\\" + sample + ":\\[", ""))
+                    .map(e -> e.replaceFirst("]$", ""))
+                    .findFirst()
+                    .orElse("");
             } else {
                 cache.put(cacheKey, new ResourceReference(cacheKey, lenient, referenceQueue));
             }

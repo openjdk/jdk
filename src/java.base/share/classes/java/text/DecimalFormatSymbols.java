@@ -717,6 +717,13 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         this.minusSign = findNonFormatChar(minusSignText, '-');
     }
 
+    /**
+     * {@return the lenient minus signs}
+     */
+    String getLenientMinusSign() {
+        return lenientMinusSign;
+    }
+
     //------------------------------------------------------------
     // END     Package Private methods ... to be made public later
     //------------------------------------------------------------
@@ -846,6 +853,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         perMill = findNonFormatChar(perMillText, '\u2030');
         infinity  = numberElements[9];
         NaN = numberElements[10];
+        lenientMinusSign = numberElements[11];
 
         // monetary decimal/grouping separators may be missing in resource bundles
         monetarySeparator = numberElements.length < 12 || numberElements[11].isEmpty() ?
@@ -858,8 +866,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         currencySymbol = (String) data[2];
 
         // lenient minus sign
-        var l = adapter.getLocaleResources(override).getParseLenient("number", "-").orElse("");
-        lenientMinusSign = l.isEmpty() ? Set.of() : Set.of(l.substring(0, l.length() - 1).split(""));
+//        lenientMinusSign = adapter.getLocaleResources(override).getParseLenient("number", "-");
     }
 
     /**
@@ -942,6 +949,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@code minusSign} respectively.
      * If {@code serialVersionOnStream} is less than 5, it initializes
      * {@code monetaryGroupingSeparator} using {@code groupingSeparator}.
+     * If {@code serialVersionOnStream} is less than 6, it initializes
+     * {@code lenientMinusSign} with "-" (Hyphen-Minus).
      * Sets {@code serialVersionOnStream} back to the maximum allowed value so that
      * default serialization will work properly if this object is streamed out again.
      * Initializes the currency from the intlCurrencySymbol field.
@@ -987,6 +996,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         if (serialVersionOnStream < 5) {
             // didn't have monetaryGroupingSeparator. Create one using groupingSeparator
             monetaryGroupingSeparator = groupingSeparator;
+        }
+        if (serialVersionOnStream < 6) {
+            // didn't have lenientMinusSign
+            lenientMinusSign = "-";
         }
 
         serialVersionOnStream = currentSerialVersion;
@@ -1173,8 +1186,13 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     private  char    monetaryGroupingSeparator;
 
-    // lenient sign patterns. package private access
-    transient Set<String> lenientMinusSign;
+    /**
+     * The grouping separator used when formatting currency values.
+     *
+     * @serial
+     * @since 26
+     */
+    private String lenientMinusSign;
 
     // currency; only the ISO code is serialized.
     private transient Currency currency;
@@ -1198,7 +1216,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // - 4 for version from Java SE 13, which includes perMillText, percentText,
     //      and minusSignText field.
     // - 5 for version from Java SE 15, which includes monetaryGroupingSeparator.
-    private static final int currentSerialVersion = 5;
+    // - 6 for version from Java SE 26, which includes lenientMinusSign.
+    private static final int currentSerialVersion = 6;
 
     /**
      * Describes the version of {@code DecimalFormatSymbols} present on the stream.
