@@ -10,20 +10,19 @@
 
 KlassInfoTable* ObjectCountClosure::cit = nullptr;
 
-void ObjectCountClosure::reset_table(KlassInfoEntry* entry) {
-    if (!check_table_exists()) {
-        return;
-    }
-    cit->delete_entry(entry);
-  }
-
-
-bool ObjectCountClosure::check_table_exists() {
+bool ObjectCountClosure::initialize_table() {
     if (cit == nullptr) {
         static KlassInfoTable temp_table(false);
         cit = &temp_table;
     }
     return !cit->allocation_failed();
+}
+
+bool ObjectCountClosure::check_table_exists() {
+    if (cit == nullptr) {
+        initialize_table();
+    }
+    return cit != nullptr && !cit->allocation_failed();
 }
 
 bool ObjectCountClosure::record_object(oop o) {
@@ -37,6 +36,12 @@ KlassInfoTable* ObjectCountClosure::get_table() {
     return check_table_exists() ? cit : nullptr;
 }
 
+void ObjectCountClosure::reset_table(KlassInfoEntry* entry) {
+    if (!check_table_exists()) {
+        return;
+    }
+    cit->delete_entry(entry);
+}
 
 template <class Event>
 bool ObjectCountClosure::should_send_event() {

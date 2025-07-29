@@ -13,10 +13,12 @@
 class KlassInfoEntry;
 class Klass;
 
-class ObjectCountClosure : public AllStatic {
+class ObjectCountClosure : public StackObj {
     static KlassInfoTable* cit;
 
 public:
+    // Initialize the KlassInfoTable
+    static bool initialize_table();
     // Return false if allocation of KlassInfoTable failed.
     static bool check_table_exists();
     // Return false if object could not be recorded in the KlassInfoTable.
@@ -25,6 +27,7 @@ public:
     static KlassInfoTable* get_table();
     // Clear entries of the KlassInfoTable
     static void reset_table(KlassInfoEntry* entry);
+
 
     // Returns true if event is enabled
     template <class Event>
