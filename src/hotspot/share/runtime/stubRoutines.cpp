@@ -144,8 +144,8 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print_cr("%s\t not generated", buffer_name);
-      return nullptr;
     }
+    return nullptr;
   }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
@@ -158,7 +158,9 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+  assert(code_size == 0 || buffer.insts_remaining() > 200,
+         "increase %s, code_size: %d, used: %d, free: %d",
+         assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
@@ -167,6 +169,7 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+
   return stubs_code;
 }
 

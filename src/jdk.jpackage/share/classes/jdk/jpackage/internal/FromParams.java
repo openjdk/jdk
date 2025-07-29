@@ -41,12 +41,12 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.LIMIT_MODULES;
 import static jdk.jpackage.internal.StandardBundlerParam.MODULE_PATH;
 import static jdk.jpackage.internal.StandardBundlerParam.NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
@@ -143,7 +143,8 @@ final class FromParams {
         VERSION.copyInto(params, builder::version);
         ABOUT_URL.copyInto(params, builder::aboutURL);
         LICENSE_FILE.findIn(params).map(Path::of).ifPresent(builder::licenseFile);
-        builder.predefinedAppImage(getPredefinedAppImage(params));
+        PREDEFINED_APP_IMAGE.findIn(params).ifPresent(builder::predefinedAppImage);
+        PREDEFINED_RUNTIME_IMAGE.findIn(params).ifPresent(builder::predefinedAppImage);
         INSTALL_DIR.findIn(params).map(Path::of).ifPresent(builder::installDir);
 
         return builder;
