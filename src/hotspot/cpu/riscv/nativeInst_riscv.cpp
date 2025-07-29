@@ -112,6 +112,8 @@ bool NativeCall::reloc_set_destination(address dest) {
 
   if (code->is_nmethod()) {
     assert(dest != nullptr, "Sanity");
+    assert(dest == trampoline_stub_Relocation::get_trampoline_for(call_addr,
+                                                          code->as_nmethod()), "Sanity");
     MacroAssembler::pd_patch_instruction_size(call_addr, dest);
   }
 
