@@ -1137,10 +1137,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
   }
 
-  static const size_t min_capacity = (size_t) (ShenandoahHeapRegion::region_size_bytes() * (1.0 - 1.0 / ShenandoahEvacWaste));
   size_t ac = alloc_capacity(r);
-
-  if (((result == nullptr) && (ac < min_capacity)) || (alloc_capacity(r) < PLAB::min_size() * HeapWordSize)) {
+  if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
     // Note that retire_from_partition() increases used to account for waste.
 
