@@ -691,6 +691,10 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
     size_t fill_words = fill_padding / HeapWordSize;
     ShenandoahHeapRegion*r = ShenandoahHeap::heap()->get_region(idx);
     if (fill_words >= ShenandoahHeap::min_fill_size()) {
+      if (r->is_old()) {
+        // We hold the heap lock already
+        old_generation()->card_scan()->register_object(r->top());
+      }
       r->allocate_fill(fill_words);
     }
 #ifdef KELVIN_USED_PARTITION
