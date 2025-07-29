@@ -51,7 +51,6 @@ public class ImageIconTest {
         }
         File file = new File(imgName);
         file.deleteOnExit();
-        String fileName = file.getName();
 
         for (ArgType a : ArgType.values()) {
             for (final ArgVal v : ArgVal.values()) {
@@ -62,7 +61,7 @@ public class ImageIconTest {
                     switch (a) {
                        case FILE :
                            expected = false;
-                           String s = (v == ArgVal.NULL) ? null : fileName;
+                           String s = (v == ArgVal.NULL) ? null : imgName;
                            new ImageIcon(s);
                            passed = true; // no exception expected for this case
                            break;
@@ -90,7 +89,7 @@ public class ImageIconTest {
                                new ImageIcon((Image)null);
                            } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
-                               new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(fileName), "gif");
+                               new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(imgName), "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
@@ -100,7 +99,7 @@ public class ImageIconTest {
                                 ii.setImage((Image)null);
                             } else if (v == ArgVal.INVALID_DATA) {
                                 expected = false;
-                                ii.setImage((Image)Toolkit.getDefaultToolkit().createImage(fileName));
+                                ii.setImage((Image)Toolkit.getDefaultToolkit().createImage(imgName));
                                 passed = true; // no exception expected for this case
                             }
                             break;
