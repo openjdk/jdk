@@ -61,7 +61,7 @@ class Jfr : AllStatic {
   static void include_thread(Thread* thread);
   static void exclude_thread(Thread* thread);
   static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
-  static void on_klass_redefinition(const InstanceKlass* ik, Thread* thread);
+  static void on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass);
   static void on_thread_start(Thread* thread);
   static void on_thread_exit(Thread* thread);
   static void on_resolution(const CallInfo& info, TRAPS);
