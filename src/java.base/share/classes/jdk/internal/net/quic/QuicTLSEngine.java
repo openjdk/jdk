@@ -38,13 +38,6 @@ import java.util.function.Function;
 /**
  * One instance of these per QUIC connection. Configuration methods not shown
  * but would be similar to SSLEngine.
- * <p>
- * It is assumed that the implementation of this class maintains all state
- * relating to current keys and encryption levels except where KeyContext
- * objects are returned. KeyContexts are used by the caller to re-transmit
- * frames that were not acknowledged by the peer. In this case, the keys in
- * force when the frame was originally encrypted must be used again, and this
- * state is maintained in the KeyContext object.
  */
 public interface QuicTLSEngine {
 
