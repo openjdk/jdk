@@ -71,7 +71,7 @@ public final class ClientConnection implements AutoCloseable {
         assert conn instanceof QuicConnectionImpl : "unexpected QUIC connection type: "
                 + conn.getClass();
         final CompletableFuture<QuicEndpoint> handshakeCf =
-                ((QuicConnectionImpl) conn).startHandshake();
+                conn.startHandshake();
         final QuicEndpoint endpoint;
         try {
             endpoint = handshakeCf.get();

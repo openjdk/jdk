@@ -56,7 +56,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.ConnectionTerminator;
-import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.QuicConnection;
 
@@ -426,11 +425,9 @@ abstract class HttpQuicConnection extends HttpConnection {
         public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
             var request = exchange.request();
             var uri = request.uri();
-            assert quicConnection instanceof QuicConnectionImpl
-                    : "unexpected QUIC connection type: " + quicConnection.getClass();
             // Adapt HandshakeCF to CompletableFuture<Void>
             CompletableFuture<CompletableFuture<Void>> handshakeCfCf =
-                    ((QuicConnectionImpl) quicConnection).startHandshake()
+                    quicConnection.startHandshake()
                     .handle((r, t) -> {
                         if (t == null) {
                             // successful handshake

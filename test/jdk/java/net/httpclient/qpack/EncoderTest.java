@@ -37,6 +37,7 @@ import jdk.internal.net.http.qpack.writers.StringWriter;
 import jdk.internal.net.http.qpack.StaticTable;
 import jdk.internal.net.http.quic.ConnectionTerminator;
 import jdk.internal.net.http.quic.QuicConnection;
+import jdk.internal.net.http.quic.QuicEndpoint;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicReceiverStream;
@@ -354,6 +355,8 @@ public class EncoderTest {
         public InetSocketAddress peerAddress() {return null;}
         @Override
         public SocketAddress localAddress() {return null;}
+        @Override
+        public CompletableFuture<QuicEndpoint> startHandshake() {return null;}
         @Override
         public CompletableFuture<QuicBidiStream> openNewLocalBidiStream(Duration duration) {
             return null;

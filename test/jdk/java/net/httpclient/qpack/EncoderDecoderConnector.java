@@ -36,6 +36,7 @@ import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.quic.ConnectionTerminator;
 import jdk.internal.net.http.quic.QuicConnection;
+import jdk.internal.net.http.quic.QuicEndpoint;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicReceiverStream;
@@ -247,6 +248,11 @@ public class EncoderDecoderConnector {
 
         @Override
         public SocketAddress localAddress() {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<QuicEndpoint> startHandshake() {
             return null;
         }
 

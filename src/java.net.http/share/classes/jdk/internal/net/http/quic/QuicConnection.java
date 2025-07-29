@@ -62,6 +62,14 @@ import jdk.internal.net.quic.QuicTLSEngine;
 public abstract class QuicConnection {
 
     /**
+     * Starts the Quic Handshake.
+     * @return A completable future which will be completed when the
+     *         handshake is completed.
+     * @throws UnsupportedOperationException If this connection isn't a client connection
+     */
+    public abstract CompletableFuture<QuicEndpoint> startHandshake();
+
+    /**
      * Creates a new locally initiated bidirectional stream.
      * <p>
      * Creation of streams is limited to the maximum limit advertised by the peer. If a new stream
