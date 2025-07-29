@@ -72,6 +72,7 @@ address NativeCall::reloc_destination() {
 
   address stub_addr = nullptr;
   if (code->is_nmethod()) {
+    // TODO: Need to revisit this when porting the AOT features.
     stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
     assert(stub_addr != nullptr, "Sanity");
   }
@@ -111,6 +112,7 @@ bool NativeCall::reloc_set_destination(address dest) {
   assert(code != nullptr, "Could not find the containing code blob");
 
   if (code->is_nmethod()) {
+    // TODO: Need to revisit this when porting the AOT features.
     assert(dest != nullptr, "Sanity");
     assert(dest == trampoline_stub_Relocation::get_trampoline_for(call_addr,
                                                           code->as_nmethod()), "Sanity");
