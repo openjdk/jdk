@@ -2007,10 +2007,10 @@ class MutableBigInteger {
                  * so ex ≤ ME - P ⇔ bl-(sh-ex) ≤ ME.
                  *
                  * Recalling x < 2^bl:
-                 * x / 2^(sh-ex) ≤ 2^bl / 2^(sh-ex) = 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
+                 * x / 2^(sh-ex) < 2^bl / 2^(sh-ex) = 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
                  *
                  * Thus, x / 2^(sh-ex) is in the range of finite doubles.
-                 * All the more so, this holds for  x >> (sh-ex) ≤ x / 2^(sh-ex),
+                 * All the more so, this holds for x >> (sh-ex) ≤ x / 2^(sh-ex),
                  * which is what is computed below.
                  *
                  * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
@@ -2033,6 +2033,7 @@ class MutableBigInteger {
             }
 
             // Use the root of the shifted value as an estimate.
+            // rad < 2^ME, so Math.nextUp(rad) ≤ 2^ME < Double.MAX_VALUE
             rad = Math.nextUp(rad);
             double approx = nthRootApprox(rad, n);
             int rootSh = (int) (sh / n);
