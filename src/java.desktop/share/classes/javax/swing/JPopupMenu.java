@@ -126,20 +126,15 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     transient  Popup popup;
     transient  Frame frame;
     private    int desiredLocationX,desiredLocationY;
-    transient private PropertyChangeListener propListener =
-        new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent e) {
-                String propertyName = e.getPropertyName();
-                if (propertyName == "ancestor") {
-                    if (e.getOldValue() != null &&
-                            e.getNewValue() == null) {
-                        if (isVisible()) {
-                            setVisible(false);
-                        }
-                    }
+
+    private transient PropertyChangeListener propListener =
+            (e) -> {
+                if (e.getOldValue() != null
+                    && e.getNewValue() == null
+                    && isVisible()) {
+                    setVisible(false);
                 }
-            }
-        };
+            };
 
     private    String     label                   = null;
     private    boolean   paintBorder              = true;
@@ -955,14 +950,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     public void setInvoker(Component invoker) {
         Component oldInvoker = this.invoker;
         this.invoker = invoker;
-        PropertyChangeListener oldPropListener = propListener;
 
         if ((oldInvoker != this.invoker) && (ui != null)) {
             ui.uninstallUI(this);
             if (oldInvoker != null) {
-                oldInvoker.removePropertyChangeListener(oldPropListener);
+                oldInvoker.removePropertyChangeListener("ancestor", propListener);
             }
-            invoker.addPropertyChangeListener(propListener);
+            invoker.addPropertyChangeListener("ancestor", propListener);
             ui.installUI(this);
         }
         invalidate();
@@ -1426,7 +1420,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             indexCounter++;
         }
         if(indexCounter < maxCounter && values.elementAt(indexCounter).
-                equals("propListener")) {
+           equals("propListener")) {
             propListener = (PropertyChangeListener) values.elementAt(++indexCounter);
             indexCounter++;
         }

@@ -29,30 +29,57 @@
  * @run main TestPopupInvoker
  */
 
-import java.awt.Container;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
 import java.awt.BorderLayout;
-import javax.swing.JPopupMenu;
+import java.awt.Container;
+import java.awt.Robot;
+import java.util.concurrent.CountDownLatch;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TestPopupInvoker {
-    static JPopupMenu jpm;
+    static JPopupMenu popupMenu;
     static JFrame frame;
     static JLabel label;
     static Container pane;
-    static volatile boolean isVisible;
+
+    private static final CountDownLatch popupShown = new CountDownLatch(1);
+    private static final CountDownLatch popupHidden = new CountDownLatch(1);
 
     private static void createUI() {
-        frame = new JFrame("My frame");
+        frame = new JFrame("TestPopupInvoker");
         pane = frame.getContentPane();
         pane.setLayout(new BorderLayout());
         label = new JLabel("Popup Invoker");
         pane.add(label, BorderLayout.CENTER);
+
+        popupMenu = new JPopupMenu("Popup");
+        popupMenu.add("One");
+        popupMenu.add("Two");
+        popupMenu.add("Three");
+
+        popupMenu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                popupShown.countDown();
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                popupHidden.countDown();
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+            }
+        });
+
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -65,23 +92,19 @@ public class TestPopupInvoker {
             robot.waitForIdle();
             robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> {
-                jpm = new JPopupMenu("Popup");
-                jpm.add("One");
-                jpm.add("Two");
-                jpm.add("Three");
-                jpm.show(label, 0, 0);
-            });
+            SwingUtilities.invokeAndWait(() -> popupMenu.show(label, 0, 0));
+
+            if (!popupShown.await(2, SECONDS)) {
+                throw new RuntimeException("Popup isn't displayed");
+            }
             robot.waitForIdle();
-            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 pane.remove(label);
                 pane.repaint();
-                isVisible = jpm.isVisible();
             });
-            if (isVisible) {
-                throw new RuntimeException("popup is visible after component is removed");
+            if (!popupHidden.await(1, SECONDS)) {
+                throw new RuntimeException("Popup is visible after component is removed");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
