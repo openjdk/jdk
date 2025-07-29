@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,32 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8343780
- * @summary Test for `@since` in jdk.jsobject module
- * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker jdk.jsobject
- */
+#include "spin_wait_aarch64.hpp"
+#include "utilities/debug.hpp"
+
+#include <string.h>
+
+bool SpinWait::supports(const char *name) {
+  return name != nullptr &&
+         (strcmp(name, "nop")   == 0 ||
+          strcmp(name, "isb")   == 0 ||
+          strcmp(name, "yield") == 0 ||
+          strcmp(name, "sb")    == 0 ||
+          strcmp(name, "none")  == 0);
+}
+
+SpinWait::Inst SpinWait::from_name(const char* name) {
+  assert(supports(name), "checked by OnSpinWaitInstNameConstraintFunc");
+
+  if (strcmp(name, "nop") == 0) {
+    return SpinWait::NOP;
+  } else if (strcmp(name, "isb") == 0) {
+    return SpinWait::ISB;
+  } else if (strcmp(name, "yield") == 0) {
+    return SpinWait::YIELD;
+  } else if (strcmp(name, "sb") == 0) {
+    return SpinWait::SB;
+  }
+
+  return SpinWait::NONE;
+}

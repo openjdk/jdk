@@ -36,16 +36,16 @@ class InstanceKlass;
 class JfrInstrumentedClass {
  private:
   traceid              _trace_id;
-  const InstanceKlass* _instance_klass;
+  const InstanceKlass* _ik;
   bool                 _unloaded;
 
  public:
-  JfrInstrumentedClass(traceid trace_id = 0, const InstanceKlass* instance_klass = nullptr, bool unloaded = false) :
-    _trace_id(trace_id), _instance_klass(instance_klass), _unloaded(unloaded) {
+  JfrInstrumentedClass(traceid trace_id = 0, const InstanceKlass* ik = nullptr, bool unloaded = false) :
+    _trace_id(trace_id), _ik(ik), _unloaded(unloaded) {
   }
 
   const InstanceKlass* instance_klass() const {
-    return _instance_klass;
+    return _ik;
   }
 
   traceid trace_id() const {

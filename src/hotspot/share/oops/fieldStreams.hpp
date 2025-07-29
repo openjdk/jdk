@@ -25,8 +25,8 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_HPP
 #define SHARE_OOPS_FIELDSTREAMS_HPP
 
-#include "oops/instanceKlass.hpp"
 #include "oops/fieldInfo.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/fieldDescriptor.hpp"
 
 // The is the base class for iteration over the fields array
