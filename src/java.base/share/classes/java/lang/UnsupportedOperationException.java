@@ -45,7 +45,7 @@ public class UnsupportedOperationException extends RuntimeException {
     }
 
     /**
-     * Constructs an UnsupportedOperationException with the specified
+     * Constructs a new {@code UnsupportedOperationException} with the specified
      * detail message.
      *
      * @param message the detail message
@@ -55,7 +55,7 @@ public class UnsupportedOperationException extends RuntimeException {
     }
 
     /**
-     * Constructs a new exception with the specified detail message and
+     * Constructs a new {@code UnsupportedOperationException} with the specified detail message and
      * cause.
      *
      * <p>Note that the detail message associated with {@code cause} is
@@ -75,7 +75,7 @@ public class UnsupportedOperationException extends RuntimeException {
     }
 
     /**
-     * Constructs a new exception with the specified cause and a detail
+     * Constructs a new {@code UnsupportedOperationException} with the specified cause and a detail
      * message of {@code (cause==null ? null : cause.toString())} (which
      * typically contains the class and detail message of {@code cause}).
      * This constructor is useful for exceptions that are little more than
