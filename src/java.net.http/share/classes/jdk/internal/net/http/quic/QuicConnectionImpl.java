@@ -383,14 +383,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 NEW = 0,           // the connection is new
                 HISENT = 1,        // first initial hello packet sent
                 HSCOMPLETE = 16,   // handshake completed
-                HSCONFIRMED = 32,  // handshake confirmed
                 CLOSING = 128,     // connection has entered "Closing" state as defined in RFC-9000
                 DRAINING = 256,    // connection has entered "Draining" state as defined in RFC-9000
                 CLOSED = 512;      // CONNECTION_CLOSE ACK sent or received
         public abstract int state();
         public boolean helloSent() {return isMarked(HISENT);}
         public boolean handshakeComplete() { return isMarked(HSCOMPLETE);}
-        public boolean handshakeConfirmed() { return isMarked(HSCONFIRMED);}
         public boolean closing() { return isMarked(CLOSING);}
         public boolean draining() { return isMarked(DRAINING);}
         public boolean opened() { return (state() & (CLOSED | DRAINING | CLOSING)) == 0; }
@@ -413,7 +411,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             if (isMarked(state, CLOSED)) return "closed";
             if (isMarked(state, DRAINING)) return "draining";
             if (isMarked(state, CLOSING)) return "closing";
-            if (isMarked(state, HSCONFIRMED)) return "handshakeConfirmed";
             if (isMarked(state, HSCOMPLETE)) return "handshakeComplete";
             List<String> states = new ArrayList<>();
             if (isMarked(state, HISENT)) states.add("helloSent");
@@ -569,7 +566,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
         public boolean markHelloSent() { return mark(HISENT); }
         public boolean markHandshakeComplete() { return mark(HSCOMPLETE); }
-        public boolean markHandshakeConfirmed() { return mark(HSCONFIRMED); }
     }
 
     /**
