@@ -2067,6 +2067,14 @@ class MutableBigInteger {
                 }
                 s.copyValue(valueOf(approx + 1.0));
 
+                /* The Newton's recurrence roughly duplicates the correct bits at each iteration.
+                 * Instead of shifting the approximate root into the original range right now,
+                 * we only duplicate its bit length and then refine it with Newton's recurrence,
+                 * using the correct shifted radicand, in order to avoid computing and
+                 * carrying trash bits in the approximate root.
+                 * The shifted radicand is determined by the same reasoning used to get the
+                 * initial estimate.
+                 */
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
                 for (int rootBits = (int) s.bitLength(); rootSh > rootBits; rootBits <<= 1) {
