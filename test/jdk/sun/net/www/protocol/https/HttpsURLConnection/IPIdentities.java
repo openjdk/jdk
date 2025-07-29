@@ -239,6 +239,7 @@ public class IPIdentities {
                 .addExtension(new AuthorityKeyIdentifierExtension(kid, gns,
                         new SerialNumber(serialNumber)))
                 .addBasicConstraintsExt(true, true, -1)
+                .setOneHourValidity()
                 .build(null, caKeys.getPrivate(), "MD5WithRSA");
     }
 
@@ -261,6 +262,7 @@ public class IPIdentities {
                 KeyUsage.DIGITAL_SIGNATURE, KeyUsage.NONREPUDIATION, KeyUsage.KEY_ENCIPHERMENT)
                 .addBasicConstraintsExt(false, false, -1)
                 .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
+                .setOneHourValidity()
                 .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
         if (debug) {
             System.out.println("----------- Server Cert -----------");
@@ -273,6 +275,7 @@ public class IPIdentities {
                 KeyUsage.DIGITAL_SIGNATURE, KeyUsage.NONREPUDIATION, KeyUsage.KEY_ENCIPHERMENT)
                 .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
                 .addBasicConstraintsExt(false, false, -1)
+                .setOneHourValidity()
                 .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
         if (debug) {
             System.out.println("----------- Client Cert -----------");

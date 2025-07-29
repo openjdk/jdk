@@ -94,8 +94,7 @@ public class CertificateBuilder {
 
     /**
      * Create a new CertificateBuilder instance. This method sets the subject name,
-     * public key, authority key id, and serial number. Certificates built with this
-     * builder will be valid for one hour.
+     * public key, authority key id, and serial number.
      *
      * @param subjectName entity associated with the public key
      * @param publicKey the entity's public key
@@ -118,8 +117,6 @@ public class CertificateBuilder {
         CertificateBuilder builder = new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
-                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
-                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
                 .addSubjectKeyIdExt(publicKey)
                 .addAuthorityKeyIdExt(caKey);
@@ -241,6 +238,11 @@ public class CertificateBuilder {
      */
     public CertificateBuilder setValidity(Date nbDate, Date naDate) {
         return setNotBefore(nbDate).setNotAfter(naDate);
+    }
+
+    public CertificateBuilder setOneHourValidity() {
+        return setNotBefore(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
     }
 
     /**
