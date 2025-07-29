@@ -98,18 +98,6 @@ class Klass;
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
-// On 32-bit, we support traditional "compressed" class pointer mode with 32-bit narrowKlass, but that
-// is mostly the same as the old uncompressed mode:
-// we treat the uncompressed Klass* in the header as narrowKlass with unscaled encoding.
-// This means on 32-bit, we can set +UseCompressedClassPointers, but have no class space, since the purpose
-// of the class space is to confine Klass structures to an encoding range reachable by narrowKlass, and
-// with a 32-bit narrowKlass we can reach the whole 32-bit address space.
-#ifdef _LP64
-#define NEEDS_CLASS_SPACE 1
-#else
-#define NEEDS_CLASS_SPACE 0
-#endif
-
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
@@ -149,14 +137,12 @@ class CompressedKlassPointers : public AllStatic {
   // Protection zone size (0 if not set up)
   static size_t _protection_zone_size;
 
-#if NEEDS_CLASS_SPACE
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
   static char* reserve_address_space_below_4G(size_t size, bool aslr);
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
-#endif //  NEEDS_CLASS_SPACE
 
   static void calc_lowest_highest_narrow_klass_id();
 
@@ -206,10 +192,12 @@ public:
   // resulting from the current encoding settings (base, shift), capped to a certain max. value.
   static size_t max_klass_range_size();
 
-  // 32-bit needs no class space.
-  static constexpr bool needs_class_space() { return NEEDS_CLASS_SPACE; }
+  // On 64-bit, we need the class space to confine Klass structures to the encoding range, which is determined
+  // by bit size of narrowKlass IDs and the shift. On 32-bit, we support compressed class pointer only
+  // "pro-forma": narrowKlass have the same size as addresses (32 bits), and therefore the encoding range is
+  // equal to the address space size. Here, we don't need a class space.
+  static constexpr bool needs_class_space() { return LP64_ONLY(true) NOT_LP64(false); }
 
-#if NEEDS_CLASS_SPACE
   // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
   // If optimize_for_zero_base is true, the implementation will attempt to reserve optimized for zero-based encoding.
   static char* reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base);
@@ -220,7 +208,6 @@ public:
   // us from CDS.
   // Note: CDS with +UCCP for 32-bit currently unsupported.
   static void initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift);
-#endif // NEEDS_CLASS_SPACE
 
   // Given an address range [addr, addr+len) which the encoding is supposed to
   //  cover, choose base, shift and range.
@@ -285,10 +272,8 @@ public:
         is_aligned(addr, klass_alignment_in_bytes());
   }
 
-#if NEEDS_CLASS_SPACE
   // Protect a zone a the start of the encoding range
   static void establish_protection_zone(address addr, size_t size);
-#endif // NEEDS_CLASS_SPACE
 
   // Returns true if address points into protection zone (for error reporting)
   static bool is_in_protection_zone(address addr);

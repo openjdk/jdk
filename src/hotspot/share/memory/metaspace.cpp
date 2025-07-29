@@ -746,7 +746,7 @@ void Metaspace::global_initialize() {
   }
 #endif // INCLUDE_CDS
 
-#if NEEDS_CLASS_SPACE
+#ifdef _LP64
 
   if (using_class_space() && !class_space_is_initialized()) {
     assert(!CDSConfig::is_using_archive(), "CDS archive is not mapped at this point");
@@ -841,7 +841,7 @@ void Metaspace::global_initialize() {
     const address end = (address)CompressedKlassPointers::max_klass_range_size();
     CompressedKlassPointers::initialize(start, end - start);
   }
-#endif // NEEDS_CLASS_SPACE
+#endif // __LP64
 
   // Initialize non-class virtual space list, and its chunk manager:
   MetaspaceContext::initialize_nonclass_space_context();

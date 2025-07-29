@@ -93,10 +93,9 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   ASSERT_HERE(_base != (address)-1);
   ASSERT_HERE(_shift != -1);
 
-  // COH only with class space
-  if (UseCompactObjectHeaders) {
-    ASSERT_HERE(NEEDS_CLASS_SPACE);
-  }
+  // We should need a class space if address space is larger than what narrowKlass can address
+  const bool should_need_class_space = (BytesPerWord * BitsPerByte) > narrow_klass_pointer_bits();
+  ASSERT_HERE(should_need_class_space == needs_class_space());
 
   const size_t klass_align = klass_alignment_in_bytes();
 
@@ -167,8 +166,6 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   _highest_valid_narrow_klass_id = (narrowKlass) ((uintptr_t)(highest_possible_klass_location - _base) >> _shift);
 }
 
-#if NEEDS_CLASS_SPACE
-
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
@@ -222,7 +219,6 @@ char* CompressedKlassPointers::reserve_address_space_for_zerobased_encoding(size
 char* CompressedKlassPointers::reserve_address_space_for_16bit_move(size_t size, bool aslr) {
   return reserve_address_space_X(nth_bit(32), nth_bit(48), size, nth_bit(32), aslr);
 }
-#endif // NEEDS_CLASS_SPACE
 
 void CompressedKlassPointers::initialize(address addr, size_t len) {
 
@@ -342,7 +338,6 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
   }
 }
 
-#if NEEDS_CLASS_SPACE
 // On AIX, we cannot mprotect archive space or class space since they are reserved with SystemV shm.
 static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
 
@@ -363,7 +358,6 @@ void CompressedKlassPointers::establish_protection_zone(address addr, size_t siz
   }
   _protection_zone_size = size;
 }
-#endif // NEEDS_CLASS_SPACE
 
 bool CompressedKlassPointers::is_in_protection_zone(address addr) {
   return _protection_zone_size > 0 ?
