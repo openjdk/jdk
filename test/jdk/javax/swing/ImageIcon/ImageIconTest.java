@@ -25,7 +25,7 @@
  * @test
  * @bug 8159055
  * @summary Verifies null parameter and invalid data handling of
- *          ImageIcon constructor and setImage method
+ *          ImageIcon constructors and setImage method
  * @run main ImageIconTest
  */
 
