@@ -713,7 +713,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::allocatable_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -732,7 +732,7 @@ static bool is_allocatable(size_t s) {
 #endif // !_LP64
 
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
+bool os::allocatable_memory_limit(size_t* limit) {
   // On POSIX systems, the amount of allocatable memory is limited by the
   // size of the virtual address space.
   *limit = address_space_limit();
