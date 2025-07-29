@@ -616,7 +616,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 var state = receivingState;
                 if (state == RESET_RECVD) {
                     increaseProcessedData(knownSize);
-                    switchReceivingState(RESET_READ);
                 }
                 checkReset();
                 // unfulfilled = maxStreamData - received;
@@ -656,8 +655,8 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         private void checkReset() throws IOException {
             var state = receivingState;
             if (state == RESET_READ || state == RESET_RECVD) {
-                if (state == RESET_READ) {
-                    switchReceivingState(RESET_RECVD);
+                if (state == RESET_RECVD) {
+                    switchReceivingState(RESET_READ);
                 }
                 if (requestedStopSending) {
                     throw new IOException("Stream %s closed".formatted(streamId()));
