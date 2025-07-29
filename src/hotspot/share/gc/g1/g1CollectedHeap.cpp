@@ -959,7 +959,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   HeapWord* result =
     satisfy_failed_allocation_helper(word_size,
                                      true,  /* do_gc */
-                                     false, /* maximum_collection */
+                                     false, /* maximal_compaction */
                                      false /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
@@ -969,7 +969,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   // Attempts to allocate followed by Full GC that will collect all soft references.
   result = satisfy_failed_allocation_helper(word_size,
                                             true, /* do_gc */
-                                            true, /* maximum_collection */
+                                            true, /* maximal_compaction */
                                             true /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
@@ -979,7 +979,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   // Attempts to allocate, no GC
   result = satisfy_failed_allocation_helper(word_size,
                                             false, /* do_gc */
-                                            false, /* maximum_collection */
+                                            false, /* maximal_compaction */
                                             true  /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
