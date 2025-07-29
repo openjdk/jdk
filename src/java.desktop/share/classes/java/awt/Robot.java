@@ -136,9 +136,6 @@ public class Robot {
      */
     public final int DEFAULT_STEP_LENGTH = 2;
 
-    private int stepDelay = DEFAULT_STEP_DELAY;
-    private int stepLength = DEFAULT_STEP_LENGTH;
-
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
      *
@@ -847,17 +844,17 @@ public class Robot {
     /**
      * A convenience method that moves the mouse in multiple
      * steps from its current location to the destination coordinates. Invokes
-     * {@link #mouseMove(int, int) mouseMove} with a {@link #getGlideStepLength() step-length}
-     * and {@link #getGlideStepDelay() step-delay}.
+     * {@link #mouseMove(int, int) mouseMove} with a default {@link #DEFAULT_STEP_LENGTH step-length}
+     * and {@link #DEFAULT_STEP_DELAY step-delay}.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
      *
      * @throws  IllegalThreadStateException if called on the AWT event dispatching
      *          thread and {@code isAutoWaitForIdle} would return true
-     * @see     #getGlideStepLength
-     * @see     #getGlideStepDelay
-     * @see     #glide(int, int, int, int)
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_STEP_DELAY
+     * @see     #glide(int, int, int, int, int, int)
      * @since   26
      */
     public void glide(int x, int y) {
@@ -866,27 +863,56 @@ public class Robot {
     }
 
     /**
-     * A convenience method that moves the mouse in multiple
-     * steps from the source coordinates to the destination coordinates. Invokes
-     * {@link #mouseMove(int, int) mouseMove} with a {@link #getGlideStepLength() step-length}
-     * and {@link #getGlideStepDelay() step-delay}.
+     * A convenience method that moves the mouse in multiple steps
+     * from source coordinates to the destination coordinates. Invokes
+     * {@link #mouseMove(int, int) mouseMove} with a default {@link #DEFAULT_STEP_LENGTH step-length}
+     * and {@link #DEFAULT_STEP_DELAY step-delay}.
      *
-     * @param   srcX   Source point x coordinate
-     * @param   srcY   Source point y coordinate
-     * @param   destX  Destination point x coordinate
-     * @param   destY  Destination point y coordinate
+     * @param   fromX   Source point x coordinate
+     * @param   fromY   Source point y coordinate
+     * @param   toX     Destination point x coordinate
+     * @param   toY     Destination point y coordinate
      *
-     * @throws  IllegalArgumentException if {@code stepLength} is greater than the distance
-     *          between source and destination points
      * @throws  IllegalThreadStateException if called on the AWT event dispatching
      *          thread and {@code isAutoWaitForIdle} would return true
-     * @see     #getGlideStepLength
-     * @see     #getGlideStepDelay
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_STEP_DELAY
+     * @see     #glide(int, int, int, int, int, int)
+     * @since   26
+     */
+    public void glide(int fromX, int fromY, int toX, int toY) {
+        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple
+     * steps from source point to the destination point with a
+     * given {@code stepLength} and {@code stepDelay}.
+     *
+     * @param   srcX        Source point x coordinate
+     * @param   srcY        Source point y coordinate
+     * @param   destX       Destination point x coordinate
+     * @param   destY       Destination point y coordinate
+     * @param   stepLength  Preferred length of one step in pixels
+     * @param   stepDelay   Delay between steps in milliseconds
+     *
+     * @throws  IllegalArgumentException if {@code stepLength} is not greater than zero
+     * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #mouseMove(int, int)
      * @see     #delay(int)
      * @since   26
      */
-    public void glide(int srcX, int srcY, int destX, int destY) {
+    public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int stepDelay) {
+        if (stepLength <= 0) {
+            throw new IllegalArgumentException("Step length must be greater than zero");
+        }
+        if (stepDelay <= 0 || stepDelay > 60000) {
+            throw new IllegalArgumentException("Step delay must be between 0 and 60,000 milliseconds");
+        }
+
         int stepNum;
         double tDx, tDy;
         double dx, dy, ds;
@@ -918,63 +944,6 @@ public class Robot {
         if (x != destX || y != destY) {
             mouseMove(destX, destY);
         }
-    }
-
-    /**
-     * Gets the current step-length of {@link #glide(int, int, int, int) glide}.
-     * The initial value is {@link #DEFAULT_STEP_LENGTH}.
-     *
-     * @return  Current step-length of {@link #glide(int, int, int, int) glide}
-     * @see     #glide(int, int, int, int)
-     * @since   26
-     */
-    public int getGlideStepLength() {
-        return stepLength;
-    }
-
-    /**
-     * Sets the step-length of {@link #glide(int, int, int, int) glide}.
-     *
-     * @param   stepLength   Step-length in pixels for {@link #glide(int, int, int, int) glide}
-     *
-     * @throws  IllegalArgumentException if {@code stepLength} is not greater than zero
-     * @see     #glide(int, int, int, int)
-     * @since   26
-     */
-    public void setGlideStepLength(int stepLength) {
-        if (stepLength <= 0) {
-            throw new IllegalArgumentException("Step-length must be greater than zero");
-        }
-        this.stepLength = stepLength;
-    }
-
-    /**
-     * Gets the current step-delay in milliseconds of {@link #glide(int, int, int, int) glide}.
-     * The initial value is {@link #DEFAULT_STEP_DELAY}.
-     *
-     * @return  Current step-delay of {@link #glide(int, int, int, int) glide}
-     * @see     #glide(int, int, int, int)
-     * @since   26
-     */
-    public int getGlideStepDelay() {
-        return stepDelay;
-    }
-
-    /**
-     * Sets the step-delay in milliseconds of {@link #glide(int, int, int, int) glide}.
-     *
-     * @param   stepDelay   Step-delay in milliseconds for {@link #glide(int, int, int, int) glide}
-     *
-     * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
-     *          and {@code 60,000} milliseconds inclusive
-     * @see     #glide(int, int, int, int)
-     * @since   26
-     */
-    public void setGlideStepDelay(int stepDelay) {
-        if (stepDelay < 0 || stepDelay > 60000) {
-            throw new IllegalArgumentException("Step delay must be between 0 and 60,000");
-        }
-        this.stepDelay = stepDelay;
     }
 
     /**
