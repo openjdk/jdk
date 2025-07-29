@@ -394,27 +394,17 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         public boolean opened() { return (state() & (CLOSED | DRAINING | CLOSING)) == 0; }
         public boolean isMarked(int mask) { return isMarked(state(), mask); }
         public String toString() { return toString(state()); }
-        public QuicConnectionState snapshot() {
-            return ConnectionStateSnapshot.of(state());
-        }
-        boolean assertState(Predicate<QuicConnectionState> predicate) {
-            QuicConnectionState state = snapshot();
-            boolean test = predicate.test(state);
-            assert test : state;
-            return test;
-        }
         public static boolean isMarked(int state, int mask) {
             return mask == 0 ? state == 0 : (state & mask) == mask;
         }
         public static String toString(int state) {
-            if (state == NEW)  return "new";
+            if (state == NEW) return "new";
             if (isMarked(state, CLOSED)) return "closed";
             if (isMarked(state, DRAINING)) return "draining";
             if (isMarked(state, CLOSING)) return "closing";
             if (isMarked(state, HSCOMPLETE)) return "handshakeComplete";
-            List<String> states = new ArrayList<>();
-            if (isMarked(state, HISENT)) states.add("helloSent");
-            return String.join("+", states);
+            if (isMarked(state, HISENT)) return "helloSent";
+            return "Unknown(" + state + ")";
         }
     }
 
@@ -521,21 +511,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
         private Deadline now() {
             return QuicConnectionImpl.this.endpoint().timeSource().instant();
-        }
-    }
-
-    /**
-     * A concrete implementation of {@link QuicConnectionState} that
-     * represents an immutable state snapshot.
-     */
-    static final class ConnectionStateSnapshot extends QuicConnectionState {
-        private final int state;
-        ConnectionStateSnapshot(int state) {
-            this.state = state;
-        }
-        @Override public int state() { return state; }
-        public static QuicConnectionState of(int state) {
-            return new ConnectionStateSnapshot(state);
         }
     }
 
@@ -1615,14 +1590,14 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 if (debug.on()) {
                     debug.log("%s Too many probe time outs: %s", packetNumberSpace, backoff);
                     debug.log(String.valueOf(rttEstimator.state()));
-                    debug.log("State: %s", stateHandle().snapshot().toString());
+                    debug.log("State: %s", stateHandle().toString());
                 }
                 if (Log.quicRetransmit() || Log.quicCC()) {
                     Log.logQuic("%s OUT: %s: Too many probe timeouts %s"
                             .formatted(logTag(), packetNumberSpace,
                                     rttEstimator.state()));
                     StringBuilder sb = new StringBuilder(logTag());
-                    sb.append(" State: ").append(stateHandle().snapshot().toString());
+                    sb.append(" State: ").append(stateHandle().toString());
                     for (PacketNumberSpace sp : PacketNumberSpace.values()) {
                         if (sp == PacketNumberSpace.NONE) continue;
                         if (packetSpaces.get(sp) instanceof PacketSpaceManager m) {
@@ -2574,7 +2549,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 return;
             }
             // we shouldn't receive unsolicited version negotiation packets
-            assert stateHandle.assertState(QuicConnectionState::helloSent);
+            assert stateHandle.helloSent();
             if (!(quicPacket instanceof VersionNegotiationPacket negotiate)) {
                 if (debug.on()) {
                     debug.log("Bad packet type %s for %s",
