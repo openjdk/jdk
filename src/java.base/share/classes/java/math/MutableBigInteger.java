@@ -2022,7 +2022,8 @@ class MutableBigInteger {
                 // x >> sh < 2^(bl-sh) = 2^(bl-(bl-P)) = 2^P < Double.MAX_VALUE
                 rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
                 // Complete the shift to a multiple of n,
-                // avoiding to lose more bits than necessary.
+                // avoiding to lose more bits (possibly all) than necessary.
+                // The instruction rad = Math.nextUp(rad) below ensures rad > 0.0
                 int shLack = n - shExcess;
                 sh += shLack; // sh is long, no overflow
                 rad = Math.scalb(rad, -shLack);
@@ -2045,10 +2046,21 @@ class MutableBigInteger {
                     radExp = Double.MIN_EXPONENT;
 
                 if (radExp >= Double.PRECISION - 1) { // Discard wrong integer bits
+                    // The radicand has radExp+1 integer bits, but only
+                    // the first Double.PRECISION leftmost bits are correct
+                    // We scale the corresponding wrong bits of approx in the fraction part.
                     int wrongBits = ((radExp + 1) - Double.PRECISION) / n;
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
-                } else { // Avoid to discard correct fraction bits
+                } else { // Save correct fraction bits
+                    /* Some correct bits of the radicand are fraction bits.
+                     * If radExp >= 0, there are (Double.PRECISION - 1) - radExp
+                     * correct fraction bits in the radicand.
+                     * If radExp < 0, there are (Double.PRECISION - 1) + |radExp|
+                     * correct fraction bits in the radicand.
+                     * We scale the corresponding bits of approx in the integer part,
+                     * rounding up correctBits for simmetry with then-case.
+                     */
                     int correctBits = ((Double.PRECISION - 1) - radExp - 1) / n + 1;
                     rootSh -= correctBits;
                     approx = Math.scalb(approx, correctBits);
