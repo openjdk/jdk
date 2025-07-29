@@ -735,10 +735,11 @@ static bool is_allocatable(size_t s) {
 bool os::has_allocatable_memory_limit(size_t* limit) {
   // On POSIX systems, the amount of allocatable memory is limited by the
   // size of the virtual address space.
-  bool result = has_limited_virtual_address_space(limit);
+  *limit = address_space_limit();
+  bool is_limited = *limit != SIZE_MAX;
 
 #ifdef _LP64
-  return result;
+  return is_limited;
 #else
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
@@ -789,23 +790,22 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 #endif
 }
 
-bool os::has_limited_virtual_address_space(size_t* limit) {
+size_t os::address_space_limit() {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
 
   // If there was an error calling getrlimit, conservatively assume no limit.
   if (getrlimit_res != 0) {
-    return false;
+    return SIZE_MAX;
   }
 
   // If the current limit is not infinity, there is a limit.
   if (rlim.rlim_cur != RLIM_INFINITY) {
-    *limit = (size_t)rlim.rlim_cur;
-    return true;
+    return (size_t)rlim.rlim_cur;
   }
 
   // No limit
-  return false;
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {

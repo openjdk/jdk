@@ -905,9 +905,9 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   return true;
 }
 
-bool os::has_limited_virtual_address_space(size_t* limit) {
+size_t os::address_space_limit() {
   // Virtual address space cannot be limited on Windows.
-  return false;
+  return SIZE_MAX;
 }
 
 int os::active_processor_count() {

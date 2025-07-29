@@ -449,7 +449,7 @@ class os: AllStatic {
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
 
-  static bool has_limited_virtual_address_space(size_t* limit);
+  static size_t address_space_limit();
 
   inline static size_t cds_core_region_alignment();
 
