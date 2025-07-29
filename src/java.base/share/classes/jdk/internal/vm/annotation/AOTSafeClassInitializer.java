@@ -30,45 +30,96 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates that the static initializer of this class or interface is
-/// considered "safe" for AOT assembly. I.e., if this class or interface
-/// has been initialized in the AOT assembly phase, then this class or interface
-/// can be safely stored in the AOT cache in the "initialized" state:
+/// Indicates that the static initializer of this class or interface
+/// (its `<clinit>` method) is allowed to be _AOT-initialized_,
+/// because its author considers it safe to execute during the AOT
+/// assembly phase.
 ///
-/// 1. During the production run, the static initializer of this class or
-///    interface will not be executed.
-/// 2. The values of the static fields of this class or interface will be the same
-///    as their values at the end of the assembly phase.
+/// This annotation directs the VM to expect that normal execution of Java code
+/// during the assembly phase could trigger initialization of this class,
+/// and if that happens, to store the resulting static field values in the
+/// AOT cache.  (These fields happen to be allocated in the `Class` mirror.)
 ///
-/// Currently, this annotation is used only for supporting AOT linking of
-/// java.lang.invoke primitives.
+/// During the production run, the static initializer (`<clinit>`) of
+/// this class or interface will not be executed, if it was already
+/// executed during the assembling of the AOT being used to start the
+/// production run.  In that case the resulting static field states
+/// (within the `Class` mirror) were already stored in the AOT cache.
 ///
-/// The AOT assembly phase performs the following:
+/// Currently, this annotation is used mainly for supporting AOT
+/// linking of APIs, including bootstrap methods, in the
+/// `java.lang.invoke` package.
 ///
-/// 1. Load and link (but does not initialize) all classes that were loaded
+/// In more detail, the AOT assembly phase performs the following:
+///
+/// 1. It loads and links (but does not initialize) the classes that were loaded
 ///    during the application's training run.
-/// 2. During linking of these classes, we resolve constant pool
-///    entries when it's safe and beneficial to do so.
+/// 2. During linking of these classes, it resolves their constant pool
+///    entries, when it is safe and beneficial to do so.
+/// 3. As part of those resolutions, bootstrap methods may be called and may
+///    create graphs of Java objects to support linkage states.
+/// 4. Every object within those graphs must have its class AOT-initialized,
+///    along with every relevant superclass and implemented interface, along
+///    with classes for every object created during the course of static
+///    initialization (running `<clinit>` for each such class or interface).
 ///
-/// An AOT-resolved constant pool entry for an invokedynamic or invokehandle bytecode can
-/// have direct or indirect references to Java objects. To ensure the correctness
-/// of the AOT-resolved constant pool entrties, we store the classes of such Java objects
-/// in the AOT cache in the initialized state (as described above).
+/// Thus, in order to determine that a class or interface _X_ is safe to
+/// AOT-initialize requires evaluating every other class or interface _Y_ that
+/// the `<clinit>` of _X_ will initialize (during AOT cache assembly), and
+/// ensuring that each such _Y_ is (recursively) safe to AOT-initialize.
 ///
-/// However, such Java objects may have references to static fields whose object identity
-/// is important. For example, `PrimitiveClassDescImpl::CD_void`. To ensure correctness,
-/// we must also store classes like `PrimitiveClassDescImpl` in the initialized state.
-/// We require the implementors of java.lang.invoke to manually annotate such classes with
-/// `@AOTSafeClassInitializer`. This should be done when:
+/// For example, an AOT-resolved constant pool entry for an invokedynamic or
+/// invokehandle bytecode can have direct or indirect references to Java objects.
+/// To ensure the correctness of the AOT-resolved constant pool entrties, the VM
+/// must AOT-initialize the classes of such Java objects.
 ///
-/// 1. It's possible for an artifact used in the linking java.lang.invoke primitives
-///    (usually a MethodHandle) to directly or indirectly remember the value of a static
-///    field in this class.
-/// 2. You have validated that the static initializer of this class doesn't depend on
-///    transient states (i.e., names of temporary directories) that cannot be carried over
-///    to a future production run.
-/// 3. All supertypes of this class must also have the `@AOTSafeClassInitializer`
-///    annotation.
+/// In addition, such Java objects may have references to static fields whose
+/// object identity is important. For example, `PrimitiveClassDescImpl::CD_void`.
+/// To ensure correctness, we must also store classes like `PrimitiveClassDescImpl`
+/// in the initialized state. The VM requires implementor to manually annotate
+/// such classes with `@AOTSafeClassInitializer`.
+///
+/// There is one more requirement for a class to be safe for
+/// AOT initialization, and that is compatibility with all eventual production
+/// runs.  The state of an AOT-initialized class _X_ must not contain any data
+/// (anything reachable from _X_) that is incompatible with the eventual
+/// production run.
+///
+/// In general, if some sort of computed datum, environmental setting, or
+/// variable behavior may differ between the AOT assembly phase and the
+/// production run, it may not be immutably bound to _X_, if _X_ is to be
+/// marked AOT-initialized.  Here are specific examples:
+///
+///  - The value of an environment string (if it may differ in the production run).
+///
+///  - A transient configuration parameter specific to this VM run, such as
+///    wall clock time, process ID, host name, temporary directory names, etc.
+///
+///  - A random seed or key that may need to be re-sampled at production
+///    startup.
+///
+/// What is more, if the initialization of _X_ computes with some value _V_
+/// obtained from some other class _Y_, _Y_ should also be safe for AOT
+/// initialization, if there is any way for _X_ to detect a mismatch between
+/// the version of _V_ produced at AOT time, and the version of _V_ produced in
+/// the production run.  Specifically, if _V_ has an object identity, _X_
+/// should not test that identity (compare it against another or get its
+/// hashcode) unless _Y_ is also marked for AOT initialization.
+///
+/// Thus, to support AOT-time linkage, a class _X_ should be marked for (possible)
+/// AOT initialization whenever objects it creates (such as `MethodHandle`s)
+/// may be required to execute a `java.lang.invoke` API request, or (more
+/// remotely) if the execution of such an API touches _X_ for initialization,
+/// or even if such an API request is in any way sensitive to values stored in
+/// the fields of _X_, even if the sensitivity is a simple reference identity
+/// test.  As noted above, all supertypes of _X_ must also have the
+/// `@AOTSafeClassInitializer` annotation, and must also be safe for AOT
+/// initialization.
+///
+/// The author of an AOT-initialized class may elect to patch some states at
+/// production startup, using an [AOTRuntimeSetup] method, as long as the
+/// pre-patched field values (present during AOT assembly) are determined to be
+/// compatible with the post-patched values that apply to the production run.
 ///
 /// In the assembly phase, `classFileParser.cpp` performs checks on the annotated
 /// classes, to ensure all supertypes of this class that must be initialized when

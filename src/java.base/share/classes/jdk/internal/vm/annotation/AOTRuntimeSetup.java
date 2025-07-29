@@ -30,22 +30,48 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates that if this class or interface is stored in the AOT cache in the
-/// "initialized" state, the `private static void runtimeSetup()` method will
-/// be executed instead of the static initializer in the production run.  In
-/// contrast, other "initialized" classes skip initialization methods altogether.
+/// Indicates that if the enclosing class or interface is present in the AOT
+/// cache in the AOT-initialized state, the annotated method must be executed
+/// before bootstrap phase 3 (that is, before [System#initPhase3]).
 ///
-/// Another similar concept is `resetArchivedStates`, which allows handling
-/// before storing into the AOT cache in the "initialized" state in an assembly
-/// run. This is currently only used by [Class] to clear up a cache field, but
-/// may be expanded to other classes and interfaces later on.
+/// The annotated method must be declared `private` and `static`, must be named
+/// `runtimeSetup`, and must have no arguments or return value.  The enclosing
+/// class must be annotated with [AOTSafeClassInitializer], meaning that it is
+/// allowed to be stored in the AOT-initialized state.
 ///
-/// Note that for a class to be stored initialized, it must be qualified as
-/// [AOTSafeClassInitializer].
+/// The annotated method will be executed if and only if the class was loaded
+/// in the AOT-initialized state from the AOT cache.
 ///
-/// `classFileParser.cpp` performs checks on the annotated method - if the
-/// annotated method's signature differs from that described above, or in the
-/// assembly phase, the class is not marked to have an AOT-safe initializer, a
+/// The author of the class is responsible for deciding whether some or all of
+/// a class's initialization state should be re-initialized in any way.  In all
+/// cases, the static initializer (`<clinit>` method) of any given class or
+/// interface is run at most once, either in the assembly phase (only for an
+/// AOT-initialized class) or in the production run.
+///
+/// After a `static` `final` field is assigned a value in an AOT-initialized
+/// class, its value may never be changed, as such values are always immutable
+/// runtime constants.  (...Barring `System.out` and its two siblings.)
+/// Rarely, a `static` field may require differing values in the assembly phase
+/// for an AOT cache, and for the production run.  Such variables must be
+/// marked non-`final`, and should be adjusted by the `runtimeSetup` method.
+/// Full constant folding (as if with a `final` field) may usually be recovered
+/// by also marking the field as [Stable].  That annotation instructs the JIT
+/// to perform constant folding, and _only_ during the production run, after
+/// `runtimeSetup` has had a chance to give the field its "finally final"
+/// value.
+///
+/// A related method is `resetArchivedStates`, which allows special handling of
+/// an AOT-initialized class, at the end of the assembly phase run which builds
+/// an AOT cache.  The `resetArchivedStates` may "tear down" state that should
+/// not be stored in the AOT cache, which the `runtimeSetup` method may then
+/// "build up again" as the production run begins.  This additional method is
+/// currently only used by [Class] to reset a cache field, but it may be
+/// expanded to other classes and interfaces later on, using more
+/// annotation-driven logic.
+///
+/// The logic in `classFileParser.cpp` performs checks on the annotated method: If the
+/// annotated method's signature differs from that described above, or if (during the
+/// assembly phase) the class is not marked to have an AOT-safe initializer, a
 /// [ClassFormatError] will be thrown.
 ///
 /// This annotation is only recognized on privileged code and is ignored elsewhere.
