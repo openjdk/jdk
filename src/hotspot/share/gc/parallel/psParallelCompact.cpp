@@ -958,18 +958,10 @@ void PSParallelCompact::summary_phase()
   }
 }
 
-// This method should contain all heap-specific policy for invoking a full
-// collection.  invoke_no_policy() will only attempt to compact the heap; it
-// will do nothing further.  If we need to bail out for policy reasons, scavenge
-// before full gc, or any other specialized behavior, it needs to be added here.
-//
+// This method invokes a full collection. The argument controls whether
+// soft-refs should be cleared or not.
 // Note that this method should only be called from the vm_thread while at a
 // safepoint.
-//
-// Note that the all_soft_refs_clear flag in the soft ref policy
-// may be true because this method can be called without intervening
-// activity.  For example when the heap space is tight and full measure
-// are being taken to free space.
 bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
