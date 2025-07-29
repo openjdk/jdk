@@ -53,8 +53,15 @@ import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
 /*
- * Layer that adds algorithm constraints and certificate checking to a key
- * manager.
+ * Layer that adds algorithm constraints and certificate checking functionality
+ * to a key manager:
+ * 1) Check against peer supported certificate signature algorithms (sent with
+ *    "signature_algorithms_cert" TLS extension).
+ * 2) Check against local TLS algorithm constraints ("java.security" config
+ *    file).
+ * 3) Mark alias results based on validity period and certificate extensions,
+ *    so results can be sorted to find the best match. See "CheckResult" and
+ *    "EntryStatus" for details.
  */
 
 abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
@@ -170,6 +177,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                     String[] peerSupportedSignAlgs = null;
 
                     if (session instanceof ExtendedSSLSession extSession) {
+                        // Peer supported certificate signature algorithms
+                        // sent with "signature_algorithms_cert" TLS extension.
                         peerSupportedSignAlgs =
                                 extSession.getPeerSupportedSignatureAlgorithms();
                     }
@@ -199,6 +208,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                     String[] peerSupportedSignAlgs = null;
 
                     if (session instanceof ExtendedSSLSession extSession) {
+                        // Peer supported certificate signature algorithms
+                        // sent with "signature_algorithms_cert" TLS extension.
                         peerSupportedSignAlgs =
                                 extSession.getPeerSupportedSignatureAlgorithms();
                     }

@@ -37,7 +37,6 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
@@ -81,7 +80,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     X509KeyManagerImpl(List<Builder> builders) {
         this.builders = builders;
         uidCounter = new AtomicLong();
-        entryCacheMap = new ConcurrentHashMap<>();
+        entryCacheMap = Collections.synchronizedMap(new SizedMap<>());
     }
 
     @Override
@@ -89,8 +88,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         return false;
     }
 
-    // LinkedHashMap with a max size of 10
-    // see LinkedHashMap JavaDocs
+    // LinkedHashMap with a max size of 10, see LinkedHashMap JavaDocs
     private static class SizedMap<K,V> extends LinkedHashMap<K,V> {
         @java.io.Serial
         private static final long serialVersionUID = -8211222668790986062L;

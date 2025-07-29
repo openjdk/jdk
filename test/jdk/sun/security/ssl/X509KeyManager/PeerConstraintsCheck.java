@@ -111,6 +111,14 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
             new PeerConstraintsCheck(kmAlg).run();
         } else {
+            // "jdk.tls.client.SignatureSchemes" and
+            // "jdk.tls.server.SignatureSchemes" system properties set
+            // signature schemes for both "signature_algorithms" and
+            // "signature_algorithms_cert" extensions. Then we fail because
+            // server's certificate is signed with "SHA256withECDSA" while
+            // "signature_algorithms_cert" extension only contains an
+            // "ecdsa_secp384r1_sha384" signature scheme corresponding to
+            // "SHA384withECDSA" certificate signature.
             runAndCheckException(
                     () -> new PeerConstraintsCheck(kmAlg).run(),
                     ex -> {

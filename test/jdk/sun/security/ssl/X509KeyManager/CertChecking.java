@@ -105,9 +105,9 @@ public class CertChecking {
             new boolean[]{true, true, true, true, true, true};
     private static final boolean[] NONE_KEY_USAGES =
             new boolean[]{false, false, false, false, false, false};
-    private static final boolean[] NO_DG_USAGE =
+    private static final boolean[] NO_DS_USAGE =
             new boolean[]{false, true, true, true, true, true};
-    private static final boolean[] NO_DG_NO_KE_USAGE =
+    private static final boolean[] NO_DS_NO_KE_USAGE =
             new boolean[]{false, true, false, true, true, true};
     private static final boolean[] NO_KA_USAGE =
             new boolean[]{true, true, true, true, false, true};
@@ -125,31 +125,34 @@ public class CertChecking {
 
         // --- Usage and expired test cases --
 
-        // Both should fail with no usages at all
+        // Both client and server should be checked with no usages at all
         usageTestCase(enabled, kmAlg, "RSA", NONE_KEY_USAGES, true, true);
 
-        // Only client should fail with RSA algorithm and
+        // Only client should be checked with RSA algorithm and
         // no digital signature bit set
-        usageTestCase(enabled, kmAlg, "RSA", NO_DG_USAGE, false, true);
+        usageTestCase(enabled, kmAlg, "RSA", NO_DS_USAGE, false, true);
 
-        // Only server should fail with RSA algorithm and
+        // Only server should be checked with RSA algorithm and
         // no digital signature bit set
-        usageTestCase(enabled, kmAlg, "RSASSA-PSS", NO_DG_USAGE, true, false);
+        usageTestCase(enabled, kmAlg, "RSASSA-PSS", NO_DS_USAGE, true, false);
 
-        // Both should fail with DSA algorithm and no digital signature bit set
-        usageTestCase(enabled, kmAlg, "DSA", NO_DG_USAGE, true, true);
+        // Both client and server should be checked with DSA algorithm and no
+        // digital signature bit set
+        usageTestCase(enabled, kmAlg, "DSA", NO_DS_USAGE, true, true);
 
-        // Both should fail with EC algorithm and no digital signature bit set
-        usageTestCase(enabled, kmAlg, "EC", NO_DG_USAGE, true, true);
+        // Both client and server should be checked with EC algorithm and no
+        // digital signature bit set
+        usageTestCase(enabled, kmAlg, "EC", NO_DS_USAGE, true, true);
 
-        // Both should fail with RSA algorithm and missing digital signature and
-        // key encipherment bits.
-        usageTestCase(enabled, kmAlg, "RSA", NO_DG_NO_KE_USAGE, true, true);
+        // Both client and server should be checked with RSA algorithm and
+        // missing digital signature and key encipherment bits.
+        usageTestCase(enabled, kmAlg, "RSA", NO_DS_NO_KE_USAGE, true, true);
 
-        // Both should fail with DH algorithm and no key agreement bit set.
+        // Both client and server should be checked with DH algorithm and no
+        // key agreement bit set.
         usageTestCase(enabled, kmAlg, "DH", NO_KA_USAGE, true, true);
 
-        // Only server should fail with EC algorithm and
+        // Only server should be checked with EC algorithm and
         // no digital signature bit set
         usageTestCase(enabled, kmAlg, "EC", NO_KA_USAGE, true, false);
 
