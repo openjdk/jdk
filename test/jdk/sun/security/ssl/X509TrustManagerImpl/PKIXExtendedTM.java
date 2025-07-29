@@ -30,7 +30,10 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
+ * @run main/othervm PKIXExtendedTM 0
+ * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
+ * @run main/othervm PKIXExtendedTM 3
  */
 
 import java.io.*;

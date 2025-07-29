@@ -26,7 +26,6 @@
 # If this properties file fails to load, the JDK implementation will throw
 # an unspecified error when initializing the java.security.Security class.
 # Properties in this file are typically parsed only once. If any of the
-# Properties in this file are typically parsed only once. If any of the
 # properties are modified, applications should be restarted to ensure the
 # changes are properly reflected.
 #
