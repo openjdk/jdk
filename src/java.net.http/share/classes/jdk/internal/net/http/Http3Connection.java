@@ -287,8 +287,8 @@ public final class Http3Connection implements AutoCloseable {
             if (debug.on())
                 debug.log("%s: Connection is not an HttpQuicConnection: %s", where, connection);
             if (request.isHttp3Only(exchange.version())) {
-                // should not happen unless HttpConnection.getConnection() returns null, which
-                // should not happen.
+                assert connection == null;
+                // may happen if the client doesn't support HTTP3
                 return MinimalFuture.failedFuture(new UnsupportedProtocolVersionException(
                         "cannot establish exchange to requested origin with HTTP/3"));
             }
