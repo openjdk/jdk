@@ -85,7 +85,7 @@ public class Reflection {
         class Holder {
             static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
         }
-        return Holder.JLA.getRawClassAccessFlags(c);
+        return Holder.JLA.getClassFileAccessFlags(c);
     }
 
 

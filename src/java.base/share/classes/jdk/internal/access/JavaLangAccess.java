@@ -115,7 +115,7 @@ public interface JavaLangAccess {
     /**
      * Get the int value of the Class's class-file access flags.
      */
-    int getRawClassAccessFlags(Class<?> klass);
+    int getClassFileAccessFlags(Class<?> klass);
 
     /**
      * Returns the elements of an enum class or null if the

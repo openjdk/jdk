@@ -1526,7 +1526,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false); \
   macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
-  macro(_raw_access_flags_offset,    k, "rawAccessFlags",      char_signature,    false); \
+  macro(_raw_access_flags_offset,    k, "classFileAccessFlags",      char_signature,    false); \
   macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
   macro(_is_primitive_offset,        k, "primitive",           bool_signature,         false);
 
