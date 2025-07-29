@@ -53,7 +53,7 @@ size_t CompressedKlassPointers::max_klass_range_size() {
   // 32-bit: only 32-bit "narrow" Klass pointers allowed. If we ever support smaller narrow
   // Klass pointers here, coding needs to be revised.
   // We keep one page safety zone free to guard against size_t overflows on 32-bit. In practice
-  // this is irrelevant, since these upper address space parts are not user-addressable on
+  // this is irrelevant because these upper address space parts are not user-addressable on
   // any of our 32-bit platforms.
   return align_down(UINT_MAX, os::vm_page_size());
 #endif
