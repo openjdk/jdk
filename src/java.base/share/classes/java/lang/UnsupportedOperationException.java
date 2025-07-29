@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,9 @@ package java.lang;
  */
 public class UnsupportedOperationException extends RuntimeException {
     /**
-     * Constructs an UnsupportedOperationException with no detail message.
+     * Constructs a new {@code UnsupportedOperationException} with {@code null} as its
+     * detail message. The cause is not initialized, and may subsequently be
+     * initialized by a call to {@link #initCause(Throwable)}.
      */
     public UnsupportedOperationException() {
     }
