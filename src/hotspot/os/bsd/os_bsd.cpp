@@ -76,7 +76,6 @@
 # include <fcntl.h>
 # include <fenv.h>
 # include <inttypes.h>
-# include <libproc.h>
 # include <mach/mach.h>
 # include <poll.h>
 # include <pthread.h>
@@ -105,6 +104,7 @@
 #endif
 
 #ifdef __APPLE__
+  #include <libproc.h>
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
 #endif
@@ -2506,7 +2506,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 } // end: os::pd_dll_unload()
 
 #ifdef __APPLE__
-bool os::print_open_file_descriptors(outputStream* st) {
+void os::print_open_file_descriptors(outputStream* st) {
   pid_t my_pid;
   struct proc_bsdinfo bsdinfo;
   struct proc_fdinfo* fds;
@@ -2517,31 +2517,30 @@ bool os::print_open_file_descriptors(outputStream* st) {
 
   kres = pid_for_task(mach_task_self(), &my_pid);
   if (kres != KERN_SUCCESS) {
-    return false;
+    st->print_cr("OpenFileDescriptorCount = unknown");
   }
 
   res = proc_pidinfo(my_pid, PROC_PIDTBSDINFO, 0, &bsdinfo, PROC_PIDTBSDINFO_SIZE);
   if (res <= 0) {
-    return false;
+    st->print_cr("OpenFileDescriptorCount = unknown");
   }
 
   // Allocate memory to hold the fd info
   fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
   fds = (struct proc_fdinfo*)os::malloc(fds_size, mtInternal);
   if (fds == nullptr) {
-    return false;
+    st->print_cr("OpenFileDescriptorCount = unknown");
   }
 
   res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, fds_size);
   if (res <= 0) {
     free(fds);
-    return false;
+    st->print_cr("OpenFileDescriptorCount = unknown");
   }
 
   nfiles = res / sizeof(struct proc_fdinfo);
   free(fds);
 
   st->print_cr("OpenFileDescriptorCount = %d", nfiles);
-  return true;
 }
 #endif // __APPLE__

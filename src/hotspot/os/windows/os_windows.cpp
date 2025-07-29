@@ -6262,12 +6262,10 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
 
 bool os::print_open_file_descriptors(outputStream* st) {
   // File descriptor counting not supported on Windows.
-  return false;
 }
 
 bool os::print_max_file_descriptor_count(outputStream* st) {
   // File descriptor counting not supported on Windows.
-  return false;
 }
 
 /*

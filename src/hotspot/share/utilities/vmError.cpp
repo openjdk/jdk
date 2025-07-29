@@ -1558,9 +1558,9 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("printing file descriptor info")
 
-  if (os::print_open_file_descriptors(st)) st->cr();
-
-  if (os::print_max_file_descriptor_count(st)) st->cr();
+  os::print_open_file_descriptors(st);
+  os::print_max_file_descriptor_count(st));
+  st->cr();
 
   // STEP("printing internal vm info")
 

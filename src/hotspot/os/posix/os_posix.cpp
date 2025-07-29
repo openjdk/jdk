@@ -2305,12 +2305,12 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   return nullptr;
 }
 
-bool os::print_max_file_descriptor_count(outputStream* st) {
+void os::print_max_file_descriptor_count(outputStream* st) {
     struct rlimit rlp;
     if (getrlimit(RLIMIT_NOFILE, &rlp) == 0) {
         st->print_cr("MaxFileDescriptorCount = %ld", (long)rlp.rlim_cur);
-        return true;
+    } else {
+        st->print_cr("MaxFileDescriptorCount = unknown");
     }
-    return false;
 }
 
