@@ -383,7 +383,7 @@ void JavaThread::check_possible_safepoint() {
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
-    assert_wx_state(WXWrite);
+    // assert_wx_state(WXWrite);
   }
 #endif
 }
@@ -519,8 +519,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _last_freeze_fail_result(freeze_ok),
 #endif
 
+  _cur_wx_enable(nullptr),
+  _cur_wx_mode(0),
+
   _lock_stack(this),
-  _om_cache(this) {
+  _om_cache(this)  {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI

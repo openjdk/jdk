@@ -30,19 +30,54 @@
 
 #if defined(__APPLE__) && defined(AARCH64)
 
+#include "classfile/classLoader.hpp"
+#include "runtime/perfData.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 class ThreadWXEnable  {
-  Thread* _thread;
+  Thread *_thread;
   WXMode _old_mode;
+  WXMode *_this_wx_mode;
+  ThreadWXEnable *_prev;
 public:
+  ThreadWXEnable(WXMode* new_mode, Thread* thread) :
+    _thread(thread), _this_wx_mode(new_mode) {
+    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    JavaThread *javaThread
+      = _thread && _thread->is_Java_thread()
+                ? JavaThread::cast(_thread) : nullptr;
+    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread ? _thread->enable_wx(*new_mode) : WXWrite;
+    if (javaThread) {
+      javaThread->_cur_wx_enable = this;
+      javaThread->_cur_wx_mode = new_mode;
+    }
+  }
   ThreadWXEnable(WXMode new_mode, Thread* thread) :
-    _thread(thread),
-    _old_mode(_thread ? _thread->enable_wx(new_mode) : WXWrite)
-  { }
+    _thread(thread), _this_wx_mode(nullptr) {
+    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    JavaThread *javaThread
+      = _thread && _thread->is_Java_thread()
+        ? JavaThread::cast(_thread) : nullptr;
+    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread ? _thread->enable_wx(new_mode) : WXWrite;
+    if (javaThread) {
+      javaThread->_cur_wx_enable = this;
+      javaThread->_cur_wx_mode = nullptr;
+    }
+  }
+
   ~ThreadWXEnable() {
+    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     if (_thread) {
       _thread->enable_wx(_old_mode);
+      JavaThread *javaThread
+        = _thread && _thread->is_Java_thread()
+          ? JavaThread::cast(_thread) : nullptr;
+      if (javaThread) {
+        javaThread->_cur_wx_enable = _prev;
+        javaThread->_cur_wx_mode = _prev ? _prev->_this_wx_mode : nullptr;
+      }
     }
   }
 };

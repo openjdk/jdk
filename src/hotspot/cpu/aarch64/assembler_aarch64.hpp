@@ -4296,6 +4296,7 @@ public:
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   }
 
   // Stack overflow checking

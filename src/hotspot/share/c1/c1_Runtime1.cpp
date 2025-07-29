@@ -543,6 +543,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // Reset method handle flag.
   current->set_is_method_handle_return(false);
 
+  MACOS_AARCH64_ONLY(current->wx_enable_write());
   Handle exception(current, ex);
 
   // This function is called when we are about to throw an exception. Therefore,

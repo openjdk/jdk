@@ -233,18 +233,32 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-  // Enable WXWrite: this function is called by the signal handler at arbitrary
-  // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
-
   // decide if this trap can be handled by a stub
   address stub = nullptr;
-
-  address pc          = nullptr;
+  address pc   = nullptr;
 
   //%note os_trap_1
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
+
+#ifdef __APPLE__
+    // If we got a SIGBUS because we tried to write into the code
+    // cache, try enabling WXWrite mode.
+    if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
+      if (thread->_cur_wx_mode) {
+        if (TraceWXHealing) {
+          fprintf(stderr, "Healing pointer at %p to WXWrite\n", thread->_cur_wx_mode);
+        }
+        *(thread->_cur_wx_mode) = WXWrite;
+      }
+      return thread->wx_enable_write();
+    }
+#endif
+
+    // Enable WXWrite for the duration of this handler: this function
+    // is called by the signal handler at arbitrary point of
+    // execution.
+    ThreadWXEnable wx(WXWrite, thread);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -515,11 +529,73 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#ifdef __APPLE__
-void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+// DEBUG CODE: REMOVE BEFORE SHIPPING
+#if defined(__APPLE__) && defined(AARCH64)
+
+#ifndef PRODUCT
+
+long pthread_jit_write_protect_np_counter;
+long pthread_jit_write_protect_not_counter;
+
+bool aph_do_trace;
+FILE *aph_do_trace_file;
+
+void poo() __attribute__((constructor));
+void poo() {
+  atexit([]() {
+    fclose(aph_do_trace_file);
+    if (getenv("JDK_PRINT_WX_COUNTER")) {
+      printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter);
+      printf("pthread_jit_write_protect_not_counter == %ld\n", pthread_jit_write_protect_not_counter);
+    }
+  });
+  aph_do_trace = getenv("APH_DO_TRACE");
+  if (aph_do_trace) {
+    errno = 0;
+    aph_do_trace_file = fopen("/Users/aph/aph_trace", "w+");
+    if (errno) {
+      perror("fopen failed\n");
+    }
+  }
 }
-#endif
+
+#endif // ! PRODUCT
+
+static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
+// This is a wrapper around the standard library function
+// pthread_jit_write_protect_np(3). We keep track of the state of
+// per-thread write protection on the MAP_JIT region in the
+// thread-local variable os_bsd_jit_exec_enabled.
+void os::current_thread_enable_wx(WXMode mode) {
+  bool exec_enabled = mode != WXWrite;
+  if (exec_enabled != os_bsd_jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == 0)) {
+    permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
+    os_bsd_jit_exec_enabled = exec_enabled;
+    NOT_PRODUCT(pthread_jit_write_protect_np_counter++);
+  } else {
+    NOT_PRODUCT(pthread_jit_write_protect_not_counter++);
+  }
+}
+
+// If the current thread is in the WX state WXArmedForWrite, change
+// the state to WXWrite.
+bool Thread::wx_enable_write() {
+  if (_wx_state == WXArmedForWrite) {
+    _wx_state = WXWrite;
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// A wrapper around wx_enable_write() for when the current thread is
+// not known.
+void os::thread_wx_enable_write() {
+  Thread::current()->wx_enable_write();
+}
+
+#endif // defined(__APPLE__) && defined(AARCH64)
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;

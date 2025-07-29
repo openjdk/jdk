@@ -127,6 +127,11 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
+  develop(bool, TraceWXHealing, false,                                  \
+          "track occurrences of W^X mode healing")                      \
+  develop(int, DefaultWXWriteMode, 2,                                   \
+          "default WX setting")                                         \
+          range(0, 2)
 
 // end of ARCH_FLAGS
 
