@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Set;
 
 /*
  * @test
- * @bug 8038084
+ * @bug 8038084 8355379
  * @summary Basic testing for URICertStoreParameters
  * @run main TestBasic
  */
@@ -40,7 +40,6 @@ public class TestBasic {
         String str2 = "ldap://myownhost:5000/cn=foo";
         test(str1, str2);
         testRepeatedHashCode(str1);
-        testHashUniqueness();
         System.out.println("Test passed");
     }
 
@@ -82,20 +81,5 @@ public class TestBasic {
             throw new Exception("hashCode inconsistent across calls");
         }
         System.out.println("hashCode consistency verified");
-    }
-
-    private static void testHashUniqueness() throws Exception {
-        System.out.println("Testing hashCode uniqueness across multiple URIs");
-        Set<Integer> seen = new HashSet<>();
-        int collisions = 0;
-        for (int i = 0; i < 500; i++) {
-            URI uri = new URI("ldap://host" + i + ":389/dn=" + i);
-            URICertStoreParameters param = new URICertStoreParameters(uri);
-            if (!seen.add(param.hashCode())) {
-                System.out.println("Collision for: " + uri);
-                collisions++;
-            }
-        }
-        System.out.println("Hash uniqueness test complete with " + collisions + " collision(s)");
     }
 }
