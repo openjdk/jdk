@@ -196,8 +196,8 @@ public:
   }
 };
 
-ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity)
-  : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity),
+ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity)
+  : ShenandoahGeneration(OLD, max_queues, max_capacity),
     _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
     _old_heuristics(nullptr),
     _region_balance(0),

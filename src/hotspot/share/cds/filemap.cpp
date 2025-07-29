@@ -409,7 +409,7 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
-      aot_log_info(aot)("Specified %s not found (%s)", CDSConfig::type_of_archive_being_loaded(), _archive_name);
+      MetaspaceShared::report_loading_error("Specified %s not found (%s)", CDSConfig::type_of_archive_being_loaded(), _archive_name);
       return false;
     }
     return initialize(_fd);
@@ -1218,8 +1218,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // can't mmap into a ReservedSpace, so we just ::read() the data. We're going to patch all the
     // regions anyway, so there's no benefit for mmap anyway.
     if (!read_region(i, requested_addr, size, /* do_commit = */ true)) {
-      aot_log_info(aot)("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
-                    shared_region_name[i], p2i(requested_addr));
+      MetaspaceShared::report_loading_error("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
+                                            shared_region_name[i], p2i(requested_addr));
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
@@ -1232,8 +1232,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
                             requested_addr, size, r->read_only(),
                             r->allow_exec(), mtClassShared);
     if (base != requested_addr) {
-      aot_log_info(aot)("Unable to map %s shared space at " INTPTR_FORMAT,
-                    shared_region_name[i], p2i(requested_addr));
+      MetaspaceShared::report_loading_error("Unable to map %s shared space at " INTPTR_FORMAT,
+                                            shared_region_name[i], p2i(requested_addr));
       _memory_mapping_failed = true;
       return MAP_ARCHIVE_MMAP_FAILURE;
     }
@@ -1298,8 +1298,8 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
   char* mapped_base;
   if (MetaspaceShared::use_windows_memory_mapping()) {
     if (!read_region(MetaspaceShared::ac, requested_base, r->used_aligned(), /* do_commit = */ true)) {
-      aot_log_info(aot)("Failed to read aot code shared space into reserved space at " INTPTR_FORMAT,
-                    p2i(requested_base));
+      MetaspaceShared::report_loading_error("Failed to read aot code shared space into reserved space at " INTPTR_FORMAT,
+                                            p2i(requested_base));
       return false;
     }
     mapped_base = requested_base;
@@ -1311,7 +1311,7 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
                              requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
   }
   if (mapped_base == nullptr) {
-    aot_log_info(aot)("failed to map aot code region");
+    MetaspaceShared::report_loading_error("failed to map aot code region");
     return false;
   } else {
     assert(mapped_base == requested_base, "must be");
@@ -1687,9 +1687,9 @@ bool FileMapInfo::map_heap_region_impl() {
                       r->allow_exec(), mtJavaHeap);
     if (base == nullptr || base != addr) {
       dealloc_heap_region();
-      aot_log_info(aot)("UseSharedSpaces: Unable to map at required address in java heap. "
-                    INTPTR_FORMAT ", size = %zu bytes",
-                    p2i(addr), _mapped_heap_memregion.byte_size());
+      MetaspaceShared::report_loading_error("UseSharedSpaces: Unable to map at required address in java heap. "
+                                            INTPTR_FORMAT ", size = %zu bytes",
+                                            p2i(addr), _mapped_heap_memregion.byte_size());
       return false;
     }
 
@@ -1925,16 +1925,16 @@ int FileMapHeader::compute_crc() {
 bool FileMapHeader::validate() {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_obj_alignment != ObjectAlignmentInBytes) {
-    aot_log_info(aot)("The %s's ObjectAlignmentInBytes of %d"
-                  " does not equal the current ObjectAlignmentInBytes of %d.",
-                  file_type, _obj_alignment, ObjectAlignmentInBytes);
+    MetaspaceShared::report_loading_error("The %s's ObjectAlignmentInBytes of %d"
+                                          " does not equal the current ObjectAlignmentInBytes of %d.",
+                                          file_type, _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
   if (_compact_strings != CompactStrings) {
-    aot_log_info(aot)("The %s's CompactStrings setting (%s)"
-                  " does not equal the current CompactStrings setting (%s).", file_type,
-                  _compact_strings ? "enabled" : "disabled",
-                  CompactStrings   ? "enabled" : "disabled");
+    MetaspaceShared::report_loading_error("The %s's CompactStrings setting (%s)"
+                                          " does not equal the current CompactStrings setting (%s).", file_type,
+                                          _compact_strings ? "enabled" : "disabled",
+                                          CompactStrings   ? "enabled" : "disabled");
     return false;
   }
   bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();
@@ -2018,8 +2018,9 @@ bool FileMapHeader::validate() {
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
     if (has_aot_linked_classes()) {
-      aot_log_error(aot)("%s has aot-linked classes. It cannot be used when the "
-                     "java.system.class.loader property is specified.", CDSConfig::type_of_archive_being_loaded());
+      MetaspaceShared::report_loading_error("%s has aot-linked classes. It cannot be used when the "
+                                            "java.system.class.loader property is specified.",
+                                            CDSConfig::type_of_archive_being_loaded());
       return false;
     }
     aot_log_warning(aot)("Archived non-system classes are disabled because the "
@@ -2031,10 +2032,10 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local && BytecodeVerificationLocal) {
     //  we cannot load boot classes, so there's no point of using the CDS archive
-    aot_log_info(aot)("The %s's BytecodeVerificationLocal setting (%s)"
-                               " does not equal the current BytecodeVerificationLocal setting (%s).", file_type,
-                               _verify_local ? "enabled" : "disabled",
-                               BytecodeVerificationLocal ? "enabled" : "disabled");
+    MetaspaceShared::report_loading_error("The %s's BytecodeVerificationLocal setting (%s)"
+                                          " does not equal the current BytecodeVerificationLocal setting (%s).", file_type,
+                                          _verify_local ? "enabled" : "disabled",
+                                          BytecodeVerificationLocal ? "enabled" : "disabled");
     return false;
   }
 
@@ -2055,8 +2056,8 @@ bool FileMapHeader::validate() {
   // Note: _allow_archiving_with_java_agent is set in the shared archive during dump time
   // while AllowArchivingWithJavaAgent is set during the current run.
   if (_allow_archiving_with_java_agent && !AllowArchivingWithJavaAgent) {
-    aot_log_warning(aot)("The setting of the AllowArchivingWithJavaAgent is different "
-                               "from the setting in the %s.", file_type);
+    MetaspaceShared::report_loading_error("The setting of the AllowArchivingWithJavaAgent is different "
+                                          "from the setting in the %s.", file_type);
     return false;
   }
 

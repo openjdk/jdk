@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import jdk.jshell.execution.impl.RestartableInputStream;
 
 /**
  * Miscellaneous utility methods for setting-up implementations of
@@ -62,6 +63,7 @@ public class Util {
     private static final int TAG_DATA = 0;
     private static final int TAG_CLOSED = 1;
     private static final int TAG_EXCEPTION = 2;
+    private static final int TAG_EOF = 3;
 
     // never instantiated
     private Util() {}
@@ -122,6 +124,7 @@ public class Util {
                         switch (tag) {
                             case TAG_DATA: return super.read();
                             case TAG_CLOSED: close(); return -1;
+                            case TAG_EOF: return -1;
                             case TAG_EXCEPTION:
                                 int len = (super.read() << 0) + (super.read() << 8) + (super.read() << 16) + (super.read() << 24);
                                 byte[] message = new byte[len];
@@ -183,7 +186,11 @@ public class Util {
                     try {
                         int r = in.read();
                         if (r == (-1)) {
-                            inTarget.write(TAG_CLOSED);
+                            if (in instanceof RestartableInputStream ris && !ris.isClosed()) {
+                                inTarget.write(TAG_EOF);
+                            } else {
+                                inTarget.write(TAG_CLOSED);
+                            }
                         } else {
                             inTarget.write(new byte[] {TAG_DATA, (byte) r});
                         }

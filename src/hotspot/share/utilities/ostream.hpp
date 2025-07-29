@@ -182,7 +182,7 @@ class StreamIndentor {
   NONCOPYABLE(StreamIndentor);
 
  public:
-  StreamIndentor(outputStream* os, int indentation) :
+  StreamIndentor(outputStream* os, int indentation = 2) :
     _stream(os),
     _indentation(indentation),
     _old_autoindent(_stream->set_autoindent(true)) {
