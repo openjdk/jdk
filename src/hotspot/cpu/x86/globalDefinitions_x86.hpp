@@ -54,6 +54,4 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
-#define CPU_INFO_BUF_SIZE 2048
-
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

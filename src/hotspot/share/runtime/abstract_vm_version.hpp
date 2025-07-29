@@ -41,14 +41,6 @@ typedef enum {
   PowerKVM
 } VirtualizationType;
 
-#ifndef CPU_INFO_BUF_SIZE
-#define CPU_INFO_BUF_SIZE 1024
-#endif // CPU_INFO_BUF_SIZE
-
-template<size_t bufsz> class FormatBuffer;
-
-using CpuInfoBuffer = FormatBuffer<CPU_INFO_BUF_SIZE>;
-
 class outputStream;
 enum class vmIntrinsicID;
 

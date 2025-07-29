@@ -1101,16 +1101,15 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  CpuInfoBuffer info_buffer("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-                            cores_per_cpu(), threads_per_core(),
-                            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  assert(!info_buffer.overflow(), "not enough buffer size");
-  info_buffer.append(", ");
-  assert(!info_buffer.overflow(), "not enough buffer size");
-  int features_offset = info_buffer.length();
-  insert_features_names(_features, info_buffer);
+  stringStream ss(2048);
+  ss.print("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
+           cores_per_cpu(), threads_per_core(),
+           cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  ss.print(", ");
+  int features_offset = ss.size();
+  insert_features_names(_features, ss);
 
-  _cpu_info_string = os::strdup(info_buffer);
+  _cpu_info_string = ss.as_string(true);
   _features_string = _cpu_info_string + features_offset;
 
   // Use AES instructions if available.
@@ -3293,13 +3292,15 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   return true;
 }
 
-void VM_Version::insert_features_names(VM_Version::VM_Features features, CpuInfoBuffer& info_buffer) {
-  info_buffer.insert_string_list(0, MAX_CPU_FEATURES, [&](int i) {
-    const char* result = nullptr;
-    if (features.supports_feature((VM_Version::Feature_Flag)i)) {
-      result = _features_names[i];
+void VM_Version::insert_features_names(VM_Version::VM_Features features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (_features.supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
     }
-    return result;
-  });
-  assert(!info_buffer.overflow(), "not enough buffer size");
+    return (const char*)nullptr;
+  }, ", ");
 }

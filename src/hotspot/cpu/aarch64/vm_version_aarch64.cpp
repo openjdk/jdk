@@ -649,27 +649,30 @@ void VM_Version::initialize() {
   }
 
   // Construct the "features" string
-  CpuInfoBuffer info_buffer("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  stringStream ss(512);
+  ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) {
-    info_buffer.append("(0x%03x)", _model2);
+    ss.print("(0x%03x)", _model2);
   }
-  info_buffer.append(", ");
-  int features_offset = info_buffer.length();
-  insert_features_names(_features, info_buffer);
+  ss.print(", ");
+  int features_offset = ss.size();
+  insert_features_names(_features, ss);
 
-  _cpu_info_string = os::strdup(info_buffer);
+  _cpu_info_string = ss.as_string(true);
   _features_string = _cpu_info_string + features_offset;
 }
 
-void VM_Version::insert_features_names(uint64_t features, CpuInfoBuffer& info_buffer) {
-  info_buffer.insert_string_list(0, MAX_CPU_FEATURES, [&](int i) {
-    if (supports_feature((VM_Version::Feature_Flag)i)) {
-      return _features_names[i];
-    } else {
-      return (const char*)nullptr;
+void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
     }
-  });
-  assert(!info_buffer.overflow(), "not enough buffer size");
+    return (const char*)nullptr;
+  }, ", ");
 }
 
 #if defined(LINUX)

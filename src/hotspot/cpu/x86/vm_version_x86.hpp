@@ -922,7 +922,7 @@ public:
 
   static bool is_intel_tsc_synched_at_init();
 
-  static void insert_features_names(VM_Version::VM_Features features, CpuInfoBuffer& info_buffer);
+  static void insert_features_names(VM_Version::VM_Features features, stringStream& ss);
 
   // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode

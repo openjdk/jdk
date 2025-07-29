@@ -68,7 +68,7 @@ public:
   static void initialize();
   static void check_virtualizations();
 
-  static void insert_features_names(uint64_t features, CpuInfoBuffer& info_buffer);
+  static void insert_features_names(uint64_t features, stringStream& ss);
 
   static void print_platform_virtualization_info(outputStream*);
 
