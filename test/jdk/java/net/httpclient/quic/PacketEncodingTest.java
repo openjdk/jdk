@@ -277,12 +277,12 @@ public class PacketEncodingTest {
         }
 
         @Override
-        public void setClientMode(boolean mode) {
+        public void setUseClientMode(boolean mode) {
             throw new AssertionError("should not come here!");
         }
 
         @Override
-        public boolean isClientMode() {
+        public boolean getUseClientMode() {
             throw new AssertionError("should not come here!");
         }
 

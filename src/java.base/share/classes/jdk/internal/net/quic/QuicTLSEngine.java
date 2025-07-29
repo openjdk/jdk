@@ -100,13 +100,13 @@ public interface QuicTLSEngine {
      * @param mode true to make this QuicTLSEngine operate in client
      *         mode, false otherwise
      */
-    void setClientMode(boolean mode);
+    void setUseClientMode(boolean mode);
 
     /**
      * {@return true if this QuicTLSEngine is operating in client mode, false
      * otherwise}
      */
-    boolean isClientMode();
+    boolean getUseClientMode();
 
     /**
      * {@return the SSLParameters in effect for this engine.}
@@ -426,7 +426,7 @@ public interface QuicTLSEngine {
     /**
      * Called to check if a {@code HANDSHAKE_DONE} frame needs to be sent by the
      * server. This method will only be called for a {@code QuicTLSEngine} which
-     * is in {@linkplain #isClientMode() server mode}. If the current TLS handshake
+     * is in {@linkplain #getUseClientMode() server mode}. If the current TLS handshake
      * state is
      * {@link  HandshakeState#NEED_SEND_HANDSHAKE_DONE
      * NEED_SEND_HANDSHAKE_DONE} then this method returns {@code true} and
@@ -444,7 +444,7 @@ public interface QuicTLSEngine {
     /**
      * Called when HANDSHAKE_DONE message is received from the server. This
      * method will only be called for a {@code QuicTLSEngine} which is in
-     * {@linkplain #isClientMode() client mode}. If the current TLS handshake state
+     * {@linkplain #getUseClientMode() client mode}. If the current TLS handshake state
      * is
      * {@link  HandshakeState#NEED_RECV_HANDSHAKE_DONE
      * NEED_RECV_HANDSHAKE_DONE} then this method returns {@code true} and

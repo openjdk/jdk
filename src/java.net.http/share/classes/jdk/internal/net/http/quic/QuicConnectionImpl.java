@@ -349,7 +349,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.codingContext = new QuicCodingContext();
         final QuicTLSEngine engine = this.quicInstance.getQuicTLSContext()
                 .createEngine(peerName, peerPort);
-        engine.setClientMode(isClientConn);
+        engine.setUseClientMode(isClientConn);
         engine.setSSLParameters(sslParameters);
         this.quicTLSEngine = engine;
         quicTLSEngine.setRemoteQuicTransportParametersConsumer(this::consumeQuicParameters);

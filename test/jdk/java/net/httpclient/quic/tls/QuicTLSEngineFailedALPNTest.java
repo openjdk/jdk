@@ -91,7 +91,7 @@ public class QuicTLSEngineFailedALPNTest {
 
     private static QuicTLSEngine createServerEngine(QuicTLSContext qctx) {
         QuicTLSEngine engine = qctx.createEngine();
-        engine.setClientMode(false);
+        engine.setUseClientMode(false);
         engine.setLocalQuicTransportParameters(ByteBuffer.allocate(0));
         engine.setRemoteQuicTransportParametersConsumer(params-> { });
         engine.versionNegotiated(QuicVersion.QUIC_V1);
@@ -100,7 +100,7 @@ public class QuicTLSEngineFailedALPNTest {
 
     private static QuicTLSEngine createClientEngine(QuicTLSContext qctx) {
         QuicTLSEngine engine = qctx.createEngine("localhost", 1234);
-        engine.setClientMode(true);
+        engine.setUseClientMode(true);
         engine.setLocalQuicTransportParameters(ByteBuffer.allocate(0));
         engine.setRemoteQuicTransportParametersConsumer(params-> { });
         engine.versionNegotiated(QuicVersion.QUIC_V1);

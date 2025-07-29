@@ -444,7 +444,7 @@ public class PacketEncryptionTest {
     private QuicTLSEngine getQuicV1Engine(SSLContext context, boolean mode) {
         final QuicTLSContext quicTLSContext = new QuicTLSContext(context);
         final QuicTLSEngine engine = quicTLSContext.createEngine();
-        engine.setClientMode(mode);
+        engine.setUseClientMode(mode);
         return engine;
     }
 }

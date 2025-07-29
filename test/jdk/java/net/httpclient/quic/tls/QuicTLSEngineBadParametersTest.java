@@ -97,7 +97,7 @@ public class QuicTLSEngineBadParametersTest {
 
     private static QuicTLSEngine createServerEngine(QuicTLSContext qctx) {
         QuicTLSEngine engine = qctx.createEngine();
-        engine.setClientMode(false);
+        engine.setUseClientMode(false);
         SSLParameters params = engine.getSSLParameters();
         params.setApplicationProtocols(new String[] { "test" });
         engine.setSSLParameters(params);
@@ -109,7 +109,7 @@ public class QuicTLSEngineBadParametersTest {
 
     private static QuicTLSEngine createClientEngine(QuicTLSContext qctx) {
         QuicTLSEngine engine = qctx.createEngine("localhost", 1234);
-        engine.setClientMode(true);
+        engine.setUseClientMode(true);
         SSLParameters params = engine.getSSLParameters();
         params.setApplicationProtocols(new String[] { "test" });
         engine.setSSLParameters(params);

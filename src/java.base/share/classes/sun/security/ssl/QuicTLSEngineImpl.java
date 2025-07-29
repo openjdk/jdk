@@ -55,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.*;
@@ -145,7 +144,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     }
 
     @Override
-    public void setClientMode(boolean mode) {
+    public void setUseClientMode(boolean mode) {
         conContext.setUseClientMode(mode);
         this.handshakeState = mode
                 ? HandshakeState.NEED_SEND_CRYPTO
@@ -153,7 +152,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     }
 
     @Override
-    public boolean isClientMode() {
+    public boolean getUseClientMode() {
         return conContext.sslConfig.isClientMode;
     }
 
@@ -460,7 +459,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 } else {
                     handshakeState = NEED_RECV_CRYPTO;
                 }
-            } else if (sendKeySpace == INITIAL && !isClientMode()) {
+            } else if (sendKeySpace == INITIAL && !getUseClientMode()) {
                 // Server sends handshake messages immediately after
                 // the initial server hello. Need to check the next key space.
                 sendKeySpace = conContext.outputRecord.getHandshakeMessageKeySpace();
@@ -624,7 +623,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     private void handleHandshakeMessage(KeySpace keySpace, ByteBuffer message)
             throws QuicTransportException {
         // message param contains one whole TLS message
-        boolean useClientMode = isClientMode();
+        boolean useClientMode = getUseClientMode();
         byte messageType = message.get();
         int messageSize = ((message.get() & 0xFF) << 16)
                 | ((message.get() & 0xFF) << 8)
@@ -696,7 +695,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         final byte[] connectionIdBytes = new byte[connectionId.remaining()];
         connectionId.get(connectionIdBytes);
         this.initialKeyManager.deriveKeys(quicVersion, connectionIdBytes,
-                isClientMode());
+                getUseClientMode());
     }
 
     @Override
@@ -720,14 +719,14 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         final QuicVersion quicVersion = getNegotiatedVersion();
         this.handshakeKeyManager.deriveKeys(quicVersion,
                 this.conContext.handshakeContext,
-                isClientMode());
+                getUseClientMode());
     }
 
     public void deriveOneRTTKeys() {
         final QuicVersion quicVersion = getNegotiatedVersion();
         this.oneRttKeyManager.deriveKeys(quicVersion,
                 this.conContext.handshakeContext,
-                isClientMode());
+                getUseClientMode());
     }
 
     // for testing (PacketEncryptionTest)
@@ -818,7 +817,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     @Override
     public boolean tryMarkHandshakeDone() {
-        if (isClientMode()) {
+        if (getUseClientMode()) {
             // not expected to be called on client
             throw new IllegalStateException(
                     "Not expected to be called in client mode");
@@ -836,7 +835,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     @Override
     public boolean tryReceiveHandshakeDone() {
-        final boolean isClient = isClientMode();
+        final boolean isClient = getUseClientMode();
         if (!isClient) {
             throw new IllegalStateException(
                     "Not expected to receive HANDSHAKE_DONE in server mode");
