@@ -1681,12 +1681,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
 
-    private volatile boolean connected;
-    @Override
-    public boolean connected() {
-        return connected;
-    }
-
     @Override
     public CompletableFuture<QuicBidiStream> openNewLocalBidiStream(final Duration limitIncreaseDuration) {
         if (!stateHandle.opened()) {
@@ -2898,12 +2892,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // idle timeout management for this connection
         this.idleTimeoutManager.start();
         return this.endpoint;
-    }
-
-    @Override
-    public CompletableFuture<Void> finishConnect() {
-        this.connected = true;
-        return MinimalFuture.completedFuture(null);
     }
 
     protected HandshakeFlow handshakeFlow() {

@@ -132,16 +132,21 @@ abstract class HttpQuicConnection extends HttpConnection {
      */
     public abstract CompletableFuture<Void> connectAsync(Exchange<?> exchange);
 
+    private volatile boolean connected;
     /**
      * Finishes the connection phase.
      *
      * Returns a CompletableFuture that completes when any additional,
-     * type specific, setup has been done. Must be called after connectAsync. */
-    public abstract CompletableFuture<Void> finishConnect();
+     * type specific, setup has been done. Must be called after connectAsync.
+     */
+    public CompletableFuture<Void> finishConnect() {
+        this.connected = true;
+        return MinimalFuture.completedFuture(null);
+    }
 
     /** Tells whether, or not, this connection is connected to its destination. */
     boolean connected() {
-        return quicConnection.connected();
+        return connected;
     }
 
     /** Tells whether, or not, this connection is secure ( over SSL ) */
@@ -544,11 +549,6 @@ abstract class HttpQuicConnection extends HttpConnection {
             return r;
         }
 
-
-        @Override
-        public CompletableFuture<Void> finishConnect() {
-            return quicConnection.finishConnect();
-        }
 
         @Override
         NetworkChannel /* DatagramChannel */ channel() {

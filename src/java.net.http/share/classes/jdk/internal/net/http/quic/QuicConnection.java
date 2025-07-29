@@ -49,33 +49,17 @@ import jdk.internal.net.quic.QuicTLSEngine;
  * protocol.
  *
  * <p> A typical call flow to establish a connection would be:
- * <pre>{@code
+ * {@snippet :
  *    AltService service = ...;
  *    QuicClient client = ...;
  *    QuicConnection connection = client.createConnectionFor(service);
- *    connection.startHandshake().thenCompose(r -> connection.finishConnect())
+ *    connection.startHandshake()
  *    .thenApply((r) ->  { ... })
  *    ...;
- * }</pre>
+ * }
  *
  */
 public abstract class QuicConnection {
-
-    /**
-     * Finishes the connection establishment.
-     * This method is called by the higher level protocol to
-     * finish the connection establishment, typically after the
-     * ALPN has been verified by the higher level API.
-     *
-     * @apiNote Implementations of {@code QuicConnection} typically
-     *          use this method to record that the connection state
-     *          is now "connected".
-     *
-     * @return A completable future that will be completed when the
-     *         connection is ready to be used by the higher level
-     *         protocol
-     */
-    public abstract CompletableFuture<Void> finishConnect();
 
     /**
      * Creates a new locally initiated bidirectional stream.
@@ -145,11 +129,6 @@ public abstract class QuicConnection {
      * @param streamConsumer the listener
      */
     public abstract void addRemoteStreamListener(Predicate<? super QuicReceiverStream> streamConsumer);
-
-    /**
-     * {@return {@code true} if this connection is connected}
-     */
-    public abstract boolean connected();
 
     /**
      * Removes a listener previously added with {@link #addRemoteStreamListener(Predicate)}

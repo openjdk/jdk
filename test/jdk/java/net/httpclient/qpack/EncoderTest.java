@@ -345,10 +345,6 @@ public class EncoderTest {
     private class TestQuicConnection extends QuicConnection {
         final TestQuicSenderStream sender = new TestQuicSenderStream();
         @Override
-        public CompletableFuture<Void> finishConnect() {
-            return MinimalFuture.completedFuture(null);
-        }
-        @Override
         public boolean isOpen() {return true;}
         @Override
         public TerminationCause terminationCause() {return null;}
@@ -358,8 +354,6 @@ public class EncoderTest {
         public InetSocketAddress peerAddress() {return null;}
         @Override
         public SocketAddress localAddress() {return null;}
-        @Override
-        public boolean connected() {return true;}
         @Override
         public CompletableFuture<QuicBidiStream> openNewLocalBidiStream(Duration duration) {
             return null;

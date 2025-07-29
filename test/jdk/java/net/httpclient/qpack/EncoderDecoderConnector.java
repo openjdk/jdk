@@ -226,11 +226,6 @@ public class EncoderDecoderConnector {
         final TestQuicSenderStream sender;
 
         @Override
-        public CompletableFuture<Void> finishConnect() {
-            return MinimalFuture.completedFuture(null);
-        }
-
-        @Override
         public boolean isOpen() {
             return true;
         }
@@ -253,11 +248,6 @@ public class EncoderDecoderConnector {
         @Override
         public SocketAddress localAddress() {
             return null;
-        }
-
-        @Override
-        public boolean connected() {
-            return true;
         }
 
         @Override
