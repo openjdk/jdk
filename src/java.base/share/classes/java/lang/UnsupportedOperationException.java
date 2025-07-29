@@ -46,7 +46,8 @@ public class UnsupportedOperationException extends RuntimeException {
 
     /**
      * Constructs a new {@code UnsupportedOperationException} with the specified
-     * detail message.
+     * detail message. The cause is not initialized, and may subsequently be
+     * initialized by a call to {@link #initCause(Throwable)}.
      *
      * @param message the detail message
      */
