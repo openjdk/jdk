@@ -618,7 +618,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     increaseProcessedData(knownSize);
                     switchReceivingState(RESET_READ);
                 }
-                checkReset(true);
+                checkReset();
                 // unfulfilled = maxStreamData - received;
                 // if we have received more than 1/4 of the buffer, update maxStreamData
                 if (!requestedStopSending && unfulfilled() < desiredBufferSize - desiredBufferSize / 4) {
@@ -629,7 +629,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
 
             if (requestedStopSending) {
                 // check reset again
-                checkReset(true);
+                checkReset();
                 return null;
             }
             increaseProcessedDataBy(buffer.capacity());
@@ -648,21 +648,12 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         }
 
         /**
-         * Check whether the stream was reset and throws an exception if
+         * Checks whether the stream was reset and throws an exception if
          * yes.
-         * If {@code throwIfClosed} is true and the state is DATA_READ
-         * also throws an exception.
          *
-         * @apiNote
-         * Typically - peek will call this method with `false` and just
-         * return null if all data has been read, while poll() will throw
-         * if it's called again after EOF.
-         *
-         * @param throwIfClosed whether an exception should be thrown
-         *                      when the stream state is DATA_READ
-         * @throws IOException if the stream is closed or reset
+         * @throws IOException if the stream is reset
          */
-        private void checkReset(boolean throwIfClosed) throws IOException {
+        private void checkReset() throws IOException {
             var state = receivingState;
             if (state == RESET_READ || state == RESET_RECVD) {
                 if (state == RESET_READ) {
@@ -674,9 +665,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     throw new IOException("Stream %s reset by peer".formatted(streamId()));
                 }
             }
-            if (state == DATA_READ && throwIfClosed) {
-                throw new IOException("Stream %s closed".formatted(streamId()));
-            }
             checkOpened();
         }
 
@@ -685,7 +673,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             checkConnected();
             var buffer = orderedQueue.peek();
             if (buffer == null) {
-                checkReset(false);
+                checkReset();
                 return eof ? EOF : null;
             }
             return buffer;
