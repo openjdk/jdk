@@ -1999,11 +1999,28 @@ class MutableBigInteger {
 
             // Try to shift as many bits as possible
             // without losing precision in double's representation.
-            if (bitLength - (sh - shExcess) <= Double.MAX_EXPONENT) {
+            if (shExcess <= Double.MAX_EXPONENT - Double.PRECISION) {
+                /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
+                 * bl = bitLength, ex = shExcess
+                 *
+                 * We have bl-(sh-ex) = bl-(bl-P-ex) = P + ex,
+                 * so ex ≤ ME - P ⇔ bl-(sh-ex) ≤ ME.
+                 *
+                 * Recalling x < 2^bl:
+                 * x / 2^(sh-ex) ≤ 2^bl / 2^(sh-ex) = 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
+                 *
+                 * Thus, x / 2^(sh-ex) is in the range of finite doubles.
+                 * All the more so, this holds for  x >> (sh-ex) ≤ x / 2^(sh-ex),
+                 * which is what is computed below.
+                 *
+                 * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
+                 * which shows that x >> (sh-ex) has at least P bits of precision,
+                 * since bl-(sh-ex) is its bit length.
+                 */
                 sh -= shExcess; // Adjust shift to a multiple of n
                 // Shift the value into finite double range
                 rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
-            } else { // this >> (sh - shExcess) could exceed finite double range, may lose precision
+            } else { // x >> (sh-ex) could exceed finite double range, may lose precision
                 // Shift the value into finite double range
                 rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
                 // Complete the shift to a multiple of n,
