@@ -2117,9 +2117,6 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   jlong nanos_remaining = nanos;
 
   for (;;) {
-    if (has_async_exception_condition()) {
-      return false;
-    }
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;
