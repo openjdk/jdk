@@ -455,8 +455,8 @@ final class FdLibm {
             pio4  =  0x1.921fb54442d18p-1,  // 7.85398163397448278999e-01
             pio4lo=  0x1.1a62633145c07p-55; // 3.06161699786838301793e-17
         @Stable
-        private static final double
-            T[] = {
+        private static final double[]
+            T = {
              0x1.5555555555563p-2,  //  3.33333333333334091986e-01
              0x1.111111110fe7ap-3,  //  1.33333333333201242699e-01
              0x1.ba1ba1bb341fep-5,  //  5.39682539762260521377e-02
@@ -2445,15 +2445,15 @@ final class FdLibm {
     static final class Exp {
         private Exp() {throw new UnsupportedOperationException();}
 
-        @Stable
-        private static final double[] half = {0.5, -0.5,};
+        // @Stable
+        // private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
         private static final double o_threshold=  0x1.62e42fefa39efp9;     //  7.09782712893383973096e+02
         private static final double u_threshold= -0x1.74910d52d3051p9;     // -7.45133219101941108420e+02;
-        @Stable
-        private static final double[] ln2HI   ={  0x1.62e42feep-1,         //  6.93147180369123816490e-01
-                                                 -0x1.62e42feep-1};        // -6.93147180369123816490e-01
+        //@Stable
+        private static final double ln2HI   =     0x1.62e42feep-1;         //  6.93147180369123816490e-01
+        //                                       -0x1.62e42feep-1          // -6.93147180369123816490e-01
         @Stable
         private static final double[] ln2LO   ={  0x1.a39ef35793c76p-33,   //  1.90821492927058770002e-10
                                                  -0x1.a39ef35793c76p-33};  // -1.90821492927058770002e-10
@@ -2496,13 +2496,13 @@ final class FdLibm {
             /* argument reduction */
             if (hx > 0x3fd62e42) {           /* if  |x| > 0.5 ln2 */
                 if(hx < 0x3FF0A2B2) {       /* and |x| < 1.5 ln2 */
-                    hi = x - ln2HI[xsb];
+                    hi = x - ln2HI*(1 - 2*xsb); /* +/- ln2HI */
                     lo=ln2LO[xsb];
                     k = 1 - xsb - xsb;
                 } else {
-                    k  = (int)(invln2 * x + half[xsb]);
+                    k  = (int)(invln2 * x + 0.5 * (1 - 2*xsb) /* +/- 0.5 */  );
                     t  = k;
-                    hi = x - t*ln2HI[0];    /* t*ln2HI is exact here */
+                    hi = x - t*ln2HI;    /* t*ln2HI is exact here */
                     lo = t*ln2LO[0];
                 }
                 x  = hi - lo;
