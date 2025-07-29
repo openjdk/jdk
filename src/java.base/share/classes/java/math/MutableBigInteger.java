@@ -2019,14 +2019,13 @@ class MutableBigInteger {
                 rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
             } else { // x >> (sh-ex) could exceed finite double range, may lose precision
                 // Shift the value into finite double range
+                // x >> sh < 2^(bl-sh) = 2^(bl-(bl-P)) = 2^P < Double.MAX_VALUE
                 rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
                 // Complete the shift to a multiple of n,
                 // avoiding to lose more bits than necessary.
-                if (shExcess != 0) {
-                    int shLack = n - shExcess;
-                    sh += shLack; // sh is long, no overflow
-                    rad = Math.scalb(rad, -shLack);
-                }
+                int shLack = n - shExcess;
+                sh += shLack; // sh is long, no overflow
+                rad = Math.scalb(rad, -shLack);
             }
 
             // Use the root of the shifted value as an estimate.
