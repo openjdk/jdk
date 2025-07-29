@@ -1616,13 +1616,16 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           klass_range_start, klass_range_size,
           klass_range_start, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
+        assert(CompressedKlassPointers::base() == klass_range_start, "must be");
       } else {
         // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
-        // Establish protection zone, but only if needed
-        if (CompressedKlassPointers::base() == klass_range_start) {
-          CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
-        }
+        assert(CompressedKlassPointers::base() == nullptr ||
+               CompressedKlassPointers::base() == klass_range_start, "must be");
+      }
+      // Establish protection zone, but only if we need one
+      if (CompressedKlassPointers::base() == klass_range_start) {
+        CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
       }
 
       // map_or_load_heap_region() compares the current narrow oop and klass encodings
