@@ -245,7 +245,6 @@ public class IPIdentities {
 
     private static void setupCertificates() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(1024);
         KeyPair caKeys = kpg.generateKeyPair();
         serverKeys = kpg.generateKeyPair();
         clientKeys = kpg.generateKeyPair();
@@ -390,7 +389,7 @@ public class IPIdentities {
             X509Certificate keyCert, KeyPair key, char[] passphrase) throws Exception {
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trused cert
