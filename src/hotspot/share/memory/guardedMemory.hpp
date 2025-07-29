@@ -132,12 +132,17 @@ protected:
 
   /**
    * Header guard and size
+   *
+   * NB: the size of the GuardHeader must be such that the user-ptr
+   * is maximally aligned i.e. 16-byte alignment for x86 ABI for
+   * stack alignment and use of vector (xmm) instructions.
    */
   class GuardHeader : Guard {
     friend class GuardedMemory;
+
+    void* padding; // Ensures 16-byte alignment
+
    protected:
-    // Take care in modifying fields here, will effect alignment
-    // e.g. x86 ABI 16 byte stack alignment
     union {
       uintptr_t __unused_full_word1;
       size_t _user_size;
@@ -154,6 +159,8 @@ protected:
     void set_tag2(const void* tag2) { _tag2 = (void*) tag2; }
     void* get_tag2() const { return _tag2; }
   }; // GuardedMemory::GuardHeader
+
+  static_assert(sizeof(GuardHeader) % 16 == 0, "GuardHeader must be 16-byte aligned");
 
   // Guarded Memory...
 
