@@ -244,7 +244,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final StateHandle stateHandle = new StateHandle();
     private final AtomicBoolean startHandshakeCalled = new AtomicBoolean();
     private final InetSocketAddress peerAddress;
-    private volatile String negotiatedAlpn;
     private final QuicInstance quicInstance;
     private final String dbgTag;
     private final QuicTLSEngine quicTLSEngine;
@@ -2937,10 +2936,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param result the result of the handshake
      */
     protected QuicEndpoint onHandshakeCompletion(final HandshakeState result) {
-        this.negotiatedAlpn = this.quicTLSEngine.getApplicationProtocol();
         if (debug.on()) {
             debug.log("Quic handshake successfully completed with %s(%s)",
-                    this.negotiatedAlpn, peerAddress());
+                    quicTLSEngine.getApplicationProtocol(), peerAddress());
         }
         // now that the handshake has successfully completed, start the
         // idle timeout management for this connection
@@ -3271,7 +3269,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             stateHandle.markHelloSent();
             if (debug.on()) {
                 debug.log("protecting initial quic hello packet for %s(%s) - %d bytes",
-                        this.negotiatedAlpn, peerAddress(), packet.size());
+                        Arrays.toString(quicTLSEngine.getSSLParameters().getApplicationProtocols()),
+                        peerAddress(), packet.size());
             }
             pushDatagram(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
             if (flow.localHandshake.remaining() > 0) {
@@ -3320,7 +3319,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             if (debug.on()) {
                 debug.log("protecting handshake quic hello packet for %s(%s) - %d bytes",
-                        this.negotiatedAlpn, peerAddress(), packet.size());
+                        Arrays.toString(quicTLSEngine.getSSLParameters().getApplicationProtocols()),
+                        peerAddress(), packet.size());
             }
             pushDatagram(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
             var handshakeState = quicTLSEngine.getHandshakeState();
