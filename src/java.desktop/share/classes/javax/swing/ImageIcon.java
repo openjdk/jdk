@@ -61,11 +61,13 @@ import sun.awt.AppContext;
  * from Images. Images that are created from a URL, filename or byte array
  * are preloaded using MediaTracker to monitor the loaded state
  * of the image.
+ *
+ * <p>
  * If the image source parameter to a constructor or method is non-null,
  * but does not reference valid accessible image data,
  * no exceptions will be thrown but the image will be unset,
  * as it will have no dimensions and never be drawn, and
- * {@code getImageLoadStatus()} will report {@see java.awt.MediaTracker#ERRORED}.
+ * {@link #getImageLoadStatus()} will report {@code MediaTracker.ERRORED}.
  *
  * <p>
  * For further information and examples of using image icons, see
@@ -183,7 +185,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * of the image.
      * @param location the URL for the image
      * @param description a brief textual description of the image
-     * @throws {@code NullPointerException} if (@code null) URL is passed.
+     * @throws NullPointerException if {@code location} is {@code null}
      * @see #ImageIcon(String)
      */
     public ImageIcon(URL location, String description) {
@@ -203,7 +205,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * The icon's description is initialized to be
      * a string representation of the URL.
      * @param location the URL for the image
-     * @throws {@code NullPointerException} if (@code null) URL is passed.
+     * @throws NullPointerException if {@code location} is {@code null}
      * @see #getDescription
      */
     public ImageIcon (URL location) {
@@ -214,7 +216,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from the image.
      * @param image the image
      * @param description a brief textual description of the image
-     * @throws {@code NullPointerException} if (@code null) Image is passed.
+     * @throws NullPointerException if {@code image} is {@code null}
      */
     public ImageIcon(Image image, String description) {
         this(image);
@@ -226,7 +228,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
-     * @throws {@code NullPointerException} if (@code null) Image is passed.
+     * @throws NullPointerException if {@code image} is {@code null}
      * @see #getDescription
      * @see java.awt.Image#getProperty
      */
@@ -250,7 +252,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param  imageData an array of pixels in an image format supported
      *         by the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
      * @param  description a brief textual description of the image
-     * @throws {@code NullPointerException} if (@code null) imageData is passed.
+     * @throws NullPointerException if {@code imageData} is {@code null}
      * @see    java.awt.Toolkit#createImage
      */
     public ImageIcon (byte[] imageData, String description) {
@@ -274,7 +276,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      *
      * @param  imageData an array of pixels in an image format supported by
      *             the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
-     * @throws {@code NullPointerException} if (@code null) imageData is passed.
+     * @throws NullPointerException if {@code imageData} is {@code null}
      * @see    java.awt.Toolkit#createImage
      * @see #getDescription
      * @see java.awt.Image#getProperty
@@ -379,7 +381,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     /**
      * Sets the image displayed by this icon.
      * @param image the image
-     * @throws {@code NullPointerException} if (@code null) Image is passed.
+     * @throws NullPointerException if {@code image} is {@code null}
      */
     public void setImage(Image image) {
         this.image = image;

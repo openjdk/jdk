@@ -49,7 +49,9 @@ public class ImageIconTest {
         try (FileOutputStream fos = new FileOutputStream(imgName)) {
             fos.write(invalidData);
         }
-        String fileName = (new File(System.getProperty("test.src", "."), imgName)).getName();
+        File file = new File(imgName);
+        file.deleteOnExit();
+        String fileName = file.getName();
 
         for (ArgType a : ArgType.values()) {
             for (final ArgVal v : ArgVal.values()) {
