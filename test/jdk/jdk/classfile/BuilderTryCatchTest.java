@@ -74,12 +74,12 @@ class BuilderTryCatchTest {
             });
             catchBuilder.catchingAll(tb -> tb.pop().loadConstant("all").areturn());
             assertThrows(IllegalArgumentException.class, () -> catchBuilder.catching(CD_int, handler));
-            assertThrows(IllegalArgumentException.class, () -> catchBuilder.catching(CD_NPE, handler));
-            assertThrows(IllegalArgumentException.class, () -> catchBuilder.catching(null, handler));
-            assertThrows(IllegalArgumentException.class, () -> catchBuilder.catchingMulti(List.of(), handler));
-            assertThrows(IllegalArgumentException.class, () -> catchBuilder.catchingMulti(List.of(CD_Exception, CD_IOOBE), handler));
+            assertDoesNotThrow(() -> catchBuilder.catching(CD_NPE, handler));
+            assertDoesNotThrow(() -> catchBuilder.catching(null, handler));
+            assertDoesNotThrow(() -> catchBuilder.catchingMulti(List.of(), handler));
+            assertDoesNotThrow(() -> catchBuilder.catchingMulti(List.of(CD_Exception, CD_IOOBE), handler));
             assertThrows(IllegalArgumentException.class, () -> catchBuilder.catchingMulti(List.of(CD_long, CD_Throwable), handler));
-            assertThrows(IllegalArgumentException.class, () -> catchBuilder.catchingAll(handler));
+            assertDoesNotThrow(() -> catchBuilder.catchingAll(handler));
         });
     }
 

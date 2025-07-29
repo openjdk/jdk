@@ -40,14 +40,12 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     final CodeBuilder b;
     final BlockCodeBuilderImpl tryBlock;
     final Label tryCatchEnd;
-    final Set<Integer> catchIndices;
     BlockCodeBuilderImpl catchBlock;
 
     public CatchBuilderImpl(CodeBuilder b, BlockCodeBuilderImpl tryBlock, Label tryCatchEnd) {
         this.b = b;
         this.tryBlock = tryBlock;
         this.tryCatchEnd = tryCatchEnd;
-        this.catchIndices = new HashSet<>();
     }
 
     @Override
@@ -63,16 +61,10 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         // nullable list of CP entries - null means catching all (0)
         List<ClassEntry> entries = new ArrayList<>(Math.max(1, exceptionTypes.size()));
         if (exceptionTypes.isEmpty()) {
-            if (!catchIndices.add(0)) {
-                throw new IllegalArgumentException("Existing catch block catches exception of all type");
-            }
             entries.add(null);
         } else {
             for (var exceptionType : exceptionTypes) {
                 var entry = b.constantPool().classEntry(exceptionType); // throws IAE
-                if (!catchIndices.add(entry.index())) {
-                    throw new IllegalArgumentException("Existing catch block catches exception of type: " + exceptionType);
-                }
                 entries.add(entry);
             }
         }
