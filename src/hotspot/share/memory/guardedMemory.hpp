@@ -42,9 +42,10 @@
  * |Offset             | Content              | Description    |
  * |------------------------------------------------------------
  * |base_addr          | 0xABABABABABABABAB   | Head guard     |
- * |+16                | <size_t:user_size>   | User data size |
- * |+sizeof(uintptr_t) | <tag>                | Tag word       |
- * |+sizeof(uintptr_t) | <tag2>               | Tag word       |
+ * |+16                | padding              | For alignment  |
+ * |+sizeof(void*)     | <size_t:user_size>   | User data size |
+ * |+sizeof(size_t)    | <tag>                | Tag word       |
+ * |+sizeof(void*)     | <tag2>               | Tag word       |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
  * |+user_size         | 0xABABABABABABABAB   | Tail guard     |
  * -------------------------------------------------------------
@@ -160,7 +161,8 @@ protected:
     void* get_tag2() const { return _tag2; }
   }; // GuardedMemory::GuardHeader
 
-  static_assert(sizeof(GuardHeader) % 16 == 0, "GuardHeader must be 16-byte aligned");
+  static_assert(sizeof(GuardHeader) % 16 == 0,
+                "GuardHeader size must ensure _base_addr is 16-byte aligned");
 
   // Guarded Memory...
 
