@@ -1452,11 +1452,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return this.quicVersion;
     }
 
-    public long allocateNextPN(PacketNumberSpace packetSpace) {
-        var space = packetSpaces.get(packetSpace);
-        return space.allocateNextPN();
-    }
-
     protected class QuicCodingContext implements CodingContext {
         @Override public long largestProcessedPN(PacketNumberSpace packetSpace) {
             return QuicConnectionImpl.this.largestProcessedPN(packetSpace);
