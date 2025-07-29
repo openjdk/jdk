@@ -82,8 +82,8 @@ public class LenientParsingTest {
     }
 
     @Nested
-    static class DecimalFormatTest {
-        private static final String PREFIX = "#;-#";
+    class DecimalFormatTest {
+        private static final String PREFIX = "#";
         private static final String SUFFIX = "#;#-";
 
         @ParameterizedTest
@@ -120,8 +120,8 @@ public class LenientParsingTest {
     }
 
     @Nested
-    static class CompactNumberFormatTest {
-        private static final String[] PREFIX = {"+0;-0"};
+    class CompactNumberFormatTest {
+        private static final String[] PREFIX = {"0"};
         private static final String[] SUFFIX = {"0+;0-"};
 
         @ParameterizedTest

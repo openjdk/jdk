@@ -3508,15 +3508,12 @@ public class DecimalFormat extends NumberFormat {
      * lenient minus signs as well. Package access from CompactNumberFormat
      */
     boolean matchAffix(String text, int position, String affix) {
-        var t = text;
-        var a = affix;
-
-        // Normalize signs before matching
-        if (!parseStrict && !symbols.lenientMinusSign.isEmpty()) {
-            t = t.replaceFirst(symbols.lenientMinusSign, "-");
-            a = a.replaceFirst(symbols.lenientMinusSign, "-");
+        if (!parseStrict && symbols.lenientMinusSign.contains(affix)) {
+            var p = text.substring(position, Math.min(text.length(), position + affix.length()));
+            return symbols.lenientMinusSign.contains(p);
+        } else {
+            return text.regionMatches(position, affix, 0, affix.length());
         }
-        return t.regionMatches(position, a, 0, a.length());
     }
 
     /**

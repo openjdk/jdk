@@ -46,6 +46,8 @@ import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
+
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
@@ -856,7 +858,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         currencySymbol = (String) data[2];
 
         // lenient minus sign
-        lenientMinusSign = adapter.getLocaleResources(override).getParseLenient("number", "-").orElse("");
+        var l = adapter.getLocaleResources(override).getParseLenient("number", "-").orElse("");
+        lenientMinusSign = l.isEmpty() ? Set.of() : Set.of(l.substring(0, l.length() - 1).split(""));
     }
 
     /**
@@ -1171,7 +1174,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private  char    monetaryGroupingSeparator;
 
     // lenient sign patterns. package private access
-    transient String  lenientMinusSign;
+    transient Set<String> lenientMinusSign;
 
     // currency; only the ISO code is serialized.
     private transient Currency currency;
