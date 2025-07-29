@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * finally (JVMS {@jvms 3.14}) blocks in Java source code compile to exception
  * table entries.  The order of exception table entries is significant: when an
  * exception is thrown in a method, execution branches to the first matching
- * exception handler if such a handler exists (JVMS {@jvms 2.4}). Delivered as
+ * exception handler if such a handler exists (JVMS {@jvms 2.10}). Delivered as
  * a {@link CodeElement} when traversing the contents of a {@link CodeModel}.
  * <p>
  * An exception table entry is composite:
