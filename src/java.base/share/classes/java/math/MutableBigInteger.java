@@ -2070,7 +2070,7 @@ class MutableBigInteger {
                 /* The Newton's recurrence roughly duplicates the correct bits at each iteration.
                  * Instead of shifting the approximate root into the original range right now,
                  * we only duplicate its bit length and then refine it with Newton's recurrence,
-                 * using the correct shifted radicand, in order to avoid computing and
+                 * using a congruent shifted radicand, in order to avoid computing and
                  * carrying trash bits in the approximate root.
                  * The shifted radicand is determined by the same reasoning used to get the
                  * initial estimate.
