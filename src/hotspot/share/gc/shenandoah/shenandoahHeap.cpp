@@ -2787,9 +2787,9 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* end = archive_space.end();
 
   // Fill the tail with the filler object.
-  HeapWord* aligned_end = align_up(end, ShenandoahHeapRegion::region_size_words());
-  if (aligned_end > end) {
-    fill_with_dummy_object(end, aligned_end, false);
+  HeapWord* regions_end = align_up(end, ShenandoahHeapRegion::region_size_bytes());
+  if (regions_end > end) {
+    fill_with_dummy_object(end, regions_end, false);
   }
 
   // Nothing else to do here, except checking that heap looks fine.
@@ -2797,11 +2797,15 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   // No unclaimed space between the objects.
   // Objects are properly allocated in correct regions.
   HeapWord* cur = start;
-  while (cur < end) {
+  while (cur < regions_end) {
     oop oop = cast_to_oop(cur);
     shenandoah_assert_in_correct_region(nullptr, oop);
     cur += oop->size();
   }
+
+  assert(cur == regions_end,
+         "Should allocate entire region space to maintain heap parsability: " PTR_FORMAT " " PTR_FORMAT,
+         p2i(cur), p2i(regions_end));
 
   // No unclaimed tail at the end of archive space.
   assert(cur >= end,
@@ -2816,11 +2820,15 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
     ShenandoahHeapRegion* r = get_region(idx);
     assert(r->is_regular(), "Must be regular");
     assert(r->is_young(), "Must be young");
-    assert(r->top() == r->end(), "All regions should be full");
+    assert(r->top() == r->end(),
+           "All regions should be full: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->top()), p2i(r->end()));
     assert(idx != begin_reg_idx || r->bottom() == start,
-           "Archive space start should be at the bottom of first region");
+           "Archive space start should be at the bottom of first region: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->bottom()), p2i(start));
     assert(idx != end_reg_idx || (r->bottom() < end && end <= r->top()),
-           "Archive space end should be in the last region");
+           "Archive space end should be in the last region: " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->bottom()), p2i(end), p2i(r->top()));
   }
 
 #endif
