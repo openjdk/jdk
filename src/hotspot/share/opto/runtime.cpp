@@ -1782,41 +1782,11 @@ static const TypeFunc* make_osr_end_Type() {
 
 #ifndef PRODUCT
 void OptoRuntime::debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
-  switch (parm->bottom_type()->basic_type()) {
-    case T_BOOLEAN:
-      fields[(*argp)++] = TypeInt::BOOL;
-      break;
-    case T_CHAR:
-      fields[(*argp)++] = TypeInt::CHAR;
-      break;
-    case T_FLOAT:
-      fields[(*argp)++] = Type::FLOAT;
-      break;
-    case T_DOUBLE:
-      fields[(*argp)++] = Type::DOUBLE;
-      fields[(*argp)++] = Type::HALF;
-      break;
-    case T_BYTE:
-      fields[(*argp)++] = TypeInt::BYTE;
-      break;
-    case T_SHORT:
-      fields[(*argp)++] = TypeInt::SHORT;
-      break;
-    case T_INT:
-      fields[(*argp)++] = TypeInt::INT;
-      break;
-    case T_LONG:
-      fields[(*argp)++] = TypeLong::LONG;
-      fields[(*argp)++] = Type::HALF;
-      break;
-    case T_OBJECT:
-      fields[(*argp)++] = TypePtr::NOTNULL;
-      break;
-    case T_VOID: // half of long/double
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
+  const Type *type = Type::get_const_basic_type(parm->bottom_type()->basic_type());
+  if (type == TypePtr::NULL_PTR) { // half of long and double
+    fields[(*argp)++] = Type::HALF;
+  } else {
+    fields[(*argp)++] = type;
   }
 }
 
