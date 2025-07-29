@@ -409,7 +409,7 @@ void InterpreterMacroAssembler::pop_i(Register r) {
 
 void InterpreterMacroAssembler::pop_l(Register lo, Register hi) {
   assert_different_registers(lo, hi);
-  assert(lo < hi, "lo must be < hi");
+  assert(lo->encoding() < hi->encoding(), "lo must be < hi");
   pop(RegisterSet(lo) | RegisterSet(hi));
 }
 
@@ -459,7 +459,7 @@ void InterpreterMacroAssembler::push_i(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register lo, Register hi) {
   assert_different_registers(lo, hi);
-  assert(lo < hi, "lo must be < hi");
+  assert(lo->encoding() < hi->encoding(), "lo must be < hi");
   push(RegisterSet(lo) | RegisterSet(hi));
 }
 

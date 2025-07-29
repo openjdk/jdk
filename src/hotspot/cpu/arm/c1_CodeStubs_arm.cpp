@@ -181,7 +181,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(2);
-  if (obj_reg < lock_reg) {
+  if (obj_reg->encoding() < lock_reg->encoding()) {
     __ stmia(SP, RegisterSet(obj_reg) | RegisterSet(lock_reg));
   } else {
     __ str(obj_reg, Address(SP));
