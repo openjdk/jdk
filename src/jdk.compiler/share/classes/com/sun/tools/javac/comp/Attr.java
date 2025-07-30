@@ -5296,7 +5296,7 @@ public class Attr extends JCTree.Visitor {
         annotate.flush();
 
         // Now that this tree is attributed, we can calculate the Lint configuration everywhere within it
-        lintMapper.calculateLints(env.toplevel.sourcefile, env.tree, env.toplevel.endPositions);
+        lintMapper.calculateLints(env.toplevel.sourcefile, env.tree);
     }
 
     public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {
