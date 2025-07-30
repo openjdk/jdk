@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,10 @@ closeDescriptors(void)
      * the lowest numbered file descriptor, just like open().  So
      * before calling opendir(), we close a couple explicitly, so that
      * opendir() can then use these lowest numbered closed file
-     * descriptors afresh.   */
+     * descriptors afresh.
+     *
+     * WARNING: We are not allowed to return with a failure until after
+     * these two closes are done. forkedChildProcess() relies on this. */
 
     close(from_fd);          /* for possible use by opendir() */
     close(from_fd + 1);      /* another one for good luck */
@@ -128,8 +131,10 @@ forkedChildProcess(const char *file, char *const argv[])
         JDI_ASSERT(max_fd != (rlim_t)-1); // -1 represents error
         /* close(), that we subsequently call, takes only int values */
         JDI_ASSERT(max_fd <= INT_MAX);
-        /* leave out standard input/output/error file descriptors */
-        rlim_t i = STDERR_FILENO + 1;
+        /* Leave out standard input/output/error file descriptors. Also,
+         * leave out STDERR_FILENO +1 and +2 since closeDescriptors()
+         * already closed them, even when returning an error. */
+        rlim_t i = STDERR_FILENO + 3;
         ERROR_MESSAGE(("failed to close file descriptors of"
                        " child process optimally, falling back to closing"
                        " %d file descriptors sequentially", (max_fd - i + 1)));

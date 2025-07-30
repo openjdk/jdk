@@ -580,20 +580,35 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #endif
 
 void ShenandoahHeap::print_heap_on(outputStream* st) const {
-  st->print_cr("Shenandoah Heap");
-  st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
-               byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
-               byte_size_in_proper_unit(soft_max_capacity()), proper_unit_for_byte_size(soft_max_capacity()),
-               byte_size_in_proper_unit(committed()),    proper_unit_for_byte_size(committed()),
-               byte_size_in_proper_unit(used()),         proper_unit_for_byte_size(used()));
-  st->print_cr(" %zu x %zu %s regions",
-               num_regions(),
-               byte_size_in_proper_unit(ShenandoahHeapRegion::region_size_bytes()),
-               proper_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
+  const bool is_generational = mode()->is_generational();
+  const char* front_spacing = "";
+  if (is_generational) {
+    st->print_cr("Generational Shenandoah Heap");
+    st->print_cr(" Young:");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " used", PROPERFMTARGS(young_generation()->max_capacity()), PROPERFMTARGS(young_generation()->used()));
+    st->print_cr(" Old:");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " used", PROPERFMTARGS(old_generation()->max_capacity()), PROPERFMTARGS(old_generation()->used()));
+    st->print_cr(" Entire heap:");
+    st->print_cr("  " PROPERFMT " soft max, " PROPERFMT " committed",
+                PROPERFMTARGS(soft_max_capacity()), PROPERFMTARGS(committed()));
+    front_spacing = " ";
+  } else {
+    st->print_cr("Shenandoah Heap");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " soft max, " PROPERFMT " committed, " PROPERFMT " used",
+      PROPERFMTARGS(max_capacity()),
+      PROPERFMTARGS(soft_max_capacity()),
+      PROPERFMTARGS(committed()),
+      PROPERFMTARGS(used())
+    );
+  }
+  st->print_cr("%s %zu x " PROPERFMT " regions",
+          front_spacing,
+          num_regions(),
+          PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
 
   st->print("Status: ");
   if (has_forwarded_objects())                 st->print("has forwarded objects, ");
-  if (!mode()->is_generational()) {
+  if (!is_generational) {
     if (is_concurrent_mark_in_progress())      st->print("marking,");
   } else {
     if (is_concurrent_old_mark_in_progress())    st->print("old marking, ");

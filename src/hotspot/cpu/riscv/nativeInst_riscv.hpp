@@ -93,7 +93,6 @@ class NativeInstruction {
   static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
 
  public:
-
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
@@ -121,8 +120,8 @@ class NativeCall: private NativeInstruction {
     // to overload and hide it.
     instruction_size = 3 * NativeInstruction::instruction_size // auipc + ld + jalr
   };
- public:
 
+ public:
   static int byte_size() {
     return NativeCall::instruction_size; // auipc + ld + jalr
   }
