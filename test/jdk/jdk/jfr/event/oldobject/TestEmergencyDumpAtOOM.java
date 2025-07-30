@@ -96,17 +96,12 @@ public class TestEmergencyDumpAtOOM {
 
             // Check OldObjectSample events
             if (oldObjects.get() > 0L) {
-                // Check shutdown reason
-                String expectedShutdownReason = shouldCrash
-                    ? "VM Error"
-                    : "No remaining non-daemon Java threads";
-                Asserts.assertEquals(expectedShutdownReason, shutdownReason.get());
-
-                // Check dump reason - it would appear on emergency dump only
                 if (shouldCrash) {
+                    Asserts.assertEquals("VM Error", shutdownReason.get());
                     Asserts.assertEquals("Out of Memory", dumpReason.get());
+                } else {
+                    Asserts.assertEquals("No remaining non-daemon Java threads", shutdownReason.get());
                 }
-
                 // Passed this test
                 return;
             }
