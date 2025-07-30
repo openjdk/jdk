@@ -803,6 +803,12 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
   // looks at the structure of the node in any other case.)
   if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
     return TypeInt::CC_LT;
+
+  const Type* joined = r0->join(r1);
+  if (joined == Type::TOP) {
+    return TypeInt::CC_NE;
+  }
+
   return TypeInt::CC;                   // else use worst case results
 }
 
@@ -944,6 +950,12 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC_LE;
   else if( r0->_lo == r1->_hi ) // Range is never low?
     return TypeInt::CC_GE;
+
+  const Type* joined = r0->join(r1);
+  if (joined == Type::TOP) {
+    return TypeInt::CC_NE;
+  }
+
   return TypeInt::CC;           // else use worst case results
 }
 
@@ -996,6 +1008,11 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
     } else if (hi0 <= lo1) {
       return TypeInt::CC_LE;
     }
+  }
+
+  const Type* joined = r0->join(r1);
+  if (joined == Type::TOP) {
+    return TypeInt::CC_NE;
   }
 
   return TypeInt::CC;                   // else use worst case results
