@@ -2520,6 +2520,7 @@ ArchivedAdapterTable AdapterHandlerLibrary::_aot_adapter_handler_table;
 #endif // INCLUDE_CDS
 static const int AdapterHandlerLibrary_size = 16*K;
 BufferBlob* AdapterHandlerLibrary::_buffer = nullptr;
+volatile uint AdapterHandlerLibrary::_id_counter = 0;
 
 BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   assert(_buffer != nullptr, "should be initialized");
@@ -2600,7 +2601,12 @@ void AdapterHandlerLibrary::initialize() {
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
-  return AdapterHandlerEntry::allocate(fingerprint);
+  uint id = (uint)AtomicAccess::add((int*)&_id_counter, 1);
+  if (id == 0) {
+    // id_counter overflow
+    return nullptr;
+  }
+  return AdapterHandlerEntry::allocate(id, fingerprint);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
@@ -2754,8 +2760,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 
 void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   ResourceMark rm;
-  const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-  const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+  const char* name = AdapterHandlerLibrary::name(handler);
+  const uint32_t id = AdapterHandlerLibrary::id(handler);
 
   CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
@@ -2850,8 +2856,8 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
   handler->set_adapter_blob(adapter_blob);
   if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
-    const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-    const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+    const char* name = AdapterHandlerLibrary::name(handler);
+    const uint32_t id = AdapterHandlerLibrary::id(handler);
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
@@ -2991,11 +2997,15 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  uint max_id = 0;
   assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
-  _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
+  _aot_adapter_handler_table.iterate([&](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
+    max_id = MAX2(max_id, entry->id());
   });
+  // Set adapter id to the maximum id found in the AOTCache
+  _id_counter = max_id;
 }
 
 // This method is called during production run to lookup simple adapters
@@ -3360,13 +3370,12 @@ bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   return found;
 }
 
-const char* AdapterHandlerLibrary::name(AdapterFingerPrint* fingerprint) {
-  return fingerprint->as_basic_args_string();
+const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {
+  return handler->fingerprint()->as_basic_args_string();
 }
 
-uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
-  unsigned int hash = fingerprint->compute_hash();
-  return hash;
+uint32_t AdapterHandlerLibrary::id(AdapterHandlerEntry* handler) {
+  return handler->id();
 }
 
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
