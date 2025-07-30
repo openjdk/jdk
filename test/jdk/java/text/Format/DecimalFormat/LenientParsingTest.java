@@ -29,6 +29,11 @@
  * @run junit LenientParsingTest
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -81,17 +86,36 @@ public class LenientParsingTest {
         assertThrows(ParseException.class, () -> nf.parse("-1,5"));
     }
 
+    @Test
+    void testReadObject() throws IOException, ClassNotFoundException {
+        // check if deserialized DFS still works. Using the Finnish example
+        var nf = NumberFormat.getInstance(FINNISH);
+        NumberFormat nfDeser;
+        byte[] serialized;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos)) {
+            out.writeObject(nf);
+            out.flush();
+            serialized = bos.toByteArray();
+        }
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
+             ObjectInputStream in = new ObjectInputStream(bis)) {
+            nfDeser = (NumberFormat) in.readObject();
+        }
+        assertDoesNotThrow(() -> nfDeser.parse("-1,5"));
+    }
+
     @Nested
     class DecimalFormatTest {
-        private static final String PREFIX = "#";
-        private static final String SUFFIX = "#;#-";
+        private static final String PREFIX = "+#;-#";
+        private static final String SUFFIX = "#+;#-";
 
         @ParameterizedTest
         @MethodSource("LenientParsingTest#minus")
         public void testLenientPrefix(String sign) throws ParseException {
             var df = new DecimalFormat(PREFIX, DFS);
             df.setStrict(false);
-            assertEquals(df.format(df.parse(sign + "1")), "-1");
+            assertEquals("-1", df.format(df.parse(sign + "1")));
         }
 
         @ParameterizedTest
@@ -99,7 +123,7 @@ public class LenientParsingTest {
         public void testLenientSuffix(String sign) throws ParseException {
             var df = new DecimalFormat(SUFFIX, DFS);
             df.setStrict(false);
-            assertEquals(df.format(df.parse("1" + sign)), "1-");
+            assertEquals("1-", df.format(df.parse("1" + sign)));
         }
 
         @ParameterizedTest
@@ -121,7 +145,7 @@ public class LenientParsingTest {
 
     @Nested
     class CompactNumberFormatTest {
-        private static final String[] PREFIX = {"0"};
+        private static final String[] PREFIX = {"+0;-0"};
         private static final String[] SUFFIX = {"0+;0-"};
 
         @ParameterizedTest
@@ -129,7 +153,7 @@ public class LenientParsingTest {
         public void testLenientPrefix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, PREFIX);
             cnf.setStrict(false);
-            assertEquals(cnf.format(cnf.parse(sign + "1")), "-1");
+            assertEquals("-1", cnf.format(cnf.parse(sign + "1")));
         }
 
         @ParameterizedTest
@@ -137,7 +161,7 @@ public class LenientParsingTest {
         public void testLenientSuffix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, SUFFIX);
             cnf.setStrict(false);
-            assertEquals(cnf.format(cnf.parse("1" + sign)), "1-");
+            assertEquals("1-", cnf.format(cnf.parse("1" + sign)));
         }
 
         @ParameterizedTest

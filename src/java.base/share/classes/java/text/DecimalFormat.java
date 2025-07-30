@@ -3518,13 +3518,23 @@ public class DecimalFormat extends NumberFormat {
             return false;
         }
 
-        if (!parseStrict && alen == 1) {
-            var a = affix.charAt(0);
-            var c = text.charAt(position);
-            if (symbols.getLenientMinusSign().indexOf(a) >= 0) {
-                return symbols.getLenientMinusSign().indexOf(c) >= 0;
+        if (!parseStrict) {
+            var lms = symbols.getLenientMinusSign();
+            if (alen == 1) {
+                var a = affix.charAt(0);
+                var c = text.charAt(position);
+                if (lms.indexOf(a) >= 0) {
+                    return lms.indexOf(c) >= 0;
+                } else {
+                    return a == c;
+                }
             } else {
-                return a == c;
+                // slow path. normalize lenient minus to "-" and compare
+                var lmsp = "[" + lms + "]";
+                var a = affix.replaceAll(lmsp, "-");
+                var t = text.substring(position, Math.min(tlen, position + alen))
+                    .replaceAll(lmsp, "-");
+                return t.regionMatches(0, a, 0, alen);
             }
         }
 

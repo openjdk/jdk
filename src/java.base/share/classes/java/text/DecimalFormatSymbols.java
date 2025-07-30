@@ -823,18 +823,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private void initialize( Locale locale ) {
         this.locale = locale;
 
-        // check for region override
-        Locale override = locale.getUnicodeLocaleType("nu") == null ?
-            CalendarDataUtility.findRegionOverride(locale) :
-            locale;
-
-        // get resource bundle data
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
-        // Avoid potential recursions
-        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
-            adapter = LocaleProviderAdapter.getResourceBundleBased();
-        }
-        Object[] data = adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
+        Object[] data = loadNumberData(locale);
         String[] numberElements = (String[]) data[0];
 
         decimalSeparator = numberElements[0].charAt(0);
@@ -860,11 +849,27 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             groupingSeparator : numberElements[12].charAt(0);
 
         // Lenient minus signs
-        lenientMinusSign = numberElements.length < 14 ? "" : numberElements[13];
+        lenientMinusSign = numberElements.length < 14 ? minusSignText : numberElements[13];
 
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
+    }
+
+    private Object[] loadNumberData(Locale locale) {
+        // check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null ?
+            CalendarDataUtility.findRegionOverride(locale) :
+            locale;
+
+        // get resource bundle data
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
+        // Avoid potential recursions
+        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+            adapter = LocaleProviderAdapter.getResourceBundleBased();
+        }
+
+        return adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
     }
 
     /**
@@ -947,8 +952,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@code minusSign} respectively.
      * If {@code serialVersionOnStream} is less than 5, it initializes
      * {@code monetaryGroupingSeparator} using {@code groupingSeparator}.
-     * If {@code serialVersionOnStream} is less than 6, it initializes
-     * {@code lenientMinusSign} with "-" (Hyphen-Minus).
      * Sets {@code serialVersionOnStream} back to the maximum allowed value so that
      * default serialization will work properly if this object is streamed out again.
      * Initializes the currency from the intlCurrencySymbol field.
@@ -995,9 +998,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             // didn't have monetaryGroupingSeparator. Create one using groupingSeparator
             monetaryGroupingSeparator = groupingSeparator;
         }
-        if (serialVersionOnStream < 6) {
-            // didn't have lenientMinusSign
-            lenientMinusSign = "-";
+
+        if (loadNumberData(locale) instanceof Object[] d &&
+            d[0] instanceof String[] numberElements) {
+            lenientMinusSign = numberElements.length < 14 ? minusSignText : numberElements[13];
         }
 
         serialVersionOnStream = currentSerialVersion;
@@ -1184,18 +1188,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     private  char    monetaryGroupingSeparator;
 
-    /**
-     * Used for lenient minus sign parsing, e.g., hyphen-minus (U+002D)
-     * for minus sign (U+2212)
-     *
-     * @serial
-     * @since 26
-     */
-    private String lenientMinusSign;
-
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
+
+    // Lenient minus. No need to be set by applications
+    private transient String lenientMinusSign;
 
     /**
      * Cached hash code.
@@ -1215,8 +1213,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // - 4 for version from Java SE 13, which includes perMillText, percentText,
     //      and minusSignText field.
     // - 5 for version from Java SE 15, which includes monetaryGroupingSeparator.
-    // - 6 for version from Java SE 26, which includes lenientMinusSign.
-    private static final int currentSerialVersion = 6;
+    private static final int currentSerialVersion = 5;
 
     /**
      * Describes the version of {@code DecimalFormatSymbols} present on the stream.

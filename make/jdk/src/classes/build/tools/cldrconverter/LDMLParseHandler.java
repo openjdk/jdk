@@ -1125,9 +1125,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "standard":
         case "daylight":
         case "exemplarCity":
-            if (zonePrefix != null && (currentContainer instanceof Entry<?> entry)) {
+            if (zonePrefix != null && (currentContainer instanceof Entry)) {
                 @SuppressWarnings("unchecked")
                 Map<String, String> valmap = (Map<String, String>) get(zonePrefix + getContainerKey());
+                Entry<?> entry = (Entry<?>) currentContainer;
                 if (qName.equals("exemplarCity")) {
                     put(CLDRConverter.EXEMPLAR_CITY_PREFIX + getContainerKey(), (String) entry.getValue());
                 } else {
@@ -1184,24 +1185,25 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     }
 
     private Object putIfEntry() {
-        if (currentContainer instanceof AliasEntry ae) {
-            String containerqName = ae.getParent().getqName();
+        if (currentContainer instanceof AliasEntry) {
+            Entry<?> entry = (Entry<?>) currentContainer;
+            String containerqName = entry.getParent().getqName();
             if (containerqName.equals("decimalFormatLength")) {
                 String srcKey = toJDKKey(containerqName, "", currentStyle);
-                String targetKey = getTarget(ae.getKey(), "", "", "");
+                String targetKey = getTarget(entry.getKey(), "", "", "");
                 CLDRConverter.aliases.put(srcKey, targetKey);
             } else if (containerqName.equals("currencyFormat") ||
                         containerqName.equals("percentFormat")) {
-                KeyContainer kc = (KeyContainer)ae.getParent();
+                KeyContainer kc = (KeyContainer)entry.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", kc.getKey()),
-                        getTarget(ae.getKey(), "", "", "")
+                        getTarget(entry.getKey(), "", "", "")
                 );
             } else if (containerqName.equals("listPattern")) {
-                var sae = (StringArrayEntry)ae.getParent();
+                var sae = (StringArrayEntry)entry.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", sae.getKey()),
-                        getTarget(ae.getKey(), "", "", "")
+                        getTarget(entry.getKey(), "", "", "")
                 );
             } else {
                 Set<String> keyNames = populateAliasKeys(containerqName, currentContext, currentWidth);
@@ -1211,7 +1213,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         String calType = currentCalendarType.lname();
                         String src = calType+"."+tmp[0];
                         String target = getTarget(
-                                    ae.getKey(),
+                                    entry.getKey(),
                                     calType,
                                     tmp[1].length()>0 ? tmp[1] : currentContext,
                                     tmp[2].length()>0 ? tmp[2] : currentWidth);
@@ -1223,10 +1225,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     }
                 }
             }
-        } else if (currentContainer instanceof Entry<?> e) {
-            Object value = e.getValue();
+        } else if (currentContainer instanceof Entry) {
+            Entry<?> entry = (Entry<?>) currentContainer;
+            Object value = entry.getValue();
             if (value != null) {
-                String key = e.getKey();
+                String key = entry.getKey();
                 // Tweak for MonthNames for the root locale, Needed for
                 // SimpleDateFormat.format()/parse() roundtrip.
                 if (id.equals("root") && key.startsWith("MonthNames")) {
