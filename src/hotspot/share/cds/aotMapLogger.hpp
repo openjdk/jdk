@@ -62,8 +62,8 @@ class AOTMapLogger : AllStatic {
   static intx _requested_to_mapped_metadata_delta;
   static bool _is_logging_at_bootstrap;
   static bool _is_logging_mapped_aot_cache;
-  static int _num_root_segments;
-  static int _num_obj_arrays_logged;
+  static size_t _num_root_segments;
+  static size_t _num_obj_arrays_logged;
   static GrowableArrayCHeap<FakeOop, mtClass>* _roots;
   static ArchiveHeapInfo* _dumptime_heap_info;
 

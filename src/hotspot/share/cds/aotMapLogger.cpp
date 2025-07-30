@@ -42,8 +42,8 @@ bool AOTMapLogger::_is_logging_at_bootstrap;
 bool AOTMapLogger::_is_logging_mapped_aot_cache;
 intx AOTMapLogger::_buffer_to_requested_delta;
 intx AOTMapLogger::_requested_to_mapped_metadata_delta;
-int AOTMapLogger::_num_root_segments;
-int AOTMapLogger::_num_obj_arrays_logged;
+size_t AOTMapLogger::_num_root_segments;
+size_t AOTMapLogger::_num_obj_arrays_logged;
 GrowableArrayCHeap<AOTMapLogger::FakeOop, mtClass>* AOTMapLogger::_roots;
 ArchiveHeapInfo* AOTMapLogger::_dumptime_heap_info;
 
@@ -564,9 +564,7 @@ public:
     return coder == java_lang_String::CODER_LATIN1;
   }
 
-  FakeTypeArray& value() {
-    return obj_field(java_lang_String::value_offset()).as_type_array();
-  }
+  FakeTypeArray value();
 
   int length();
   void print_on(outputStream* st, int max_length = MaxStringPrintSize);
@@ -633,6 +631,10 @@ void AOTMapLogger::FakeMirror::print_class_signature_on(outputStream* st) {
       st->print(" (aot-inited)");
     }
   }
+}
+
+AOTMapLogger::FakeTypeArray AOTMapLogger::FakeString::value() {
+  return obj_field(java_lang_String::value_offset()).as_type_array();
 }
 
 int AOTMapLogger::FakeString::length() {
@@ -717,7 +719,7 @@ void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
   address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
   intx n = requested_start - requested_base; // FIXME rename
-  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)0xdeadbeef;
+  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)((intptr_t)0xdeadbeef);
 
   FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
 
@@ -742,7 +744,7 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
 
   address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
   address requested_start = requested_base + r->mapping_offset();
-  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)0xdeadbeef;
+  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)((intptr_t)0xdeadbeef);
 
   FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
 
