@@ -177,13 +177,13 @@ class JfrThreadGroupLookup : public ResourceObj {
     return _iterator > invalid_iterator;
   }
 
-  Handle& next() const {
+  const Handle& next() const {
     assert(has_next(), "invariant");
     return _hierarchy->at(_iterator--);
   }
 };
 
-static const JfrThreadGroup* find_or_add(Handle& tg_oop, const JfrThreadGroup* parent) {
+static const JfrThreadGroup* find_or_add(const Handle& tg_oop, const JfrThreadGroup* parent) {
   assert(parent == nullptr || list().in_list(parent), "invariant");
   const JfrThreadGroup* tg = list().head();
   const JfrThreadGroup* result = nullptr;
