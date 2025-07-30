@@ -1123,8 +1123,6 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Returns an array of all {@code Frame}s created by this application.
-     * If called from an applet, the array includes only the {@code Frame}s
-     * accessible by that applet.
      * <p>
      * <b>Warning:</b> this method may return system created frames, such
      * as a shared, hidden frame which is used by Swing. Applications

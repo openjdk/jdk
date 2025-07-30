@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2021, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -66,7 +66,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
+  StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

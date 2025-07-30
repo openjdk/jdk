@@ -67,6 +67,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -1175,7 +1178,6 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -3794,6 +3796,13 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
 void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
+    // The method_idnum should be within the range of 1..number-of-methods
+    // until incremented later for obsolete methods.
+    // The increment is so if a jmethodID is created for an old obsolete method
+    // it gets a new jmethodID cache slot in the InstanceKlass.
+    // They're cleaned out later when all methods of the previous version are purged.
+    assert(old_method->method_idnum() <= _old_methods->length(),
+           "shouldn't be incremented yet for obsolete methods");
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != nullptr) {
       // There is a jmethodID, change it to point to the new method
@@ -4404,7 +4413,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
 
-  JFR_ONLY(ON_KLASS_REDEFINITION(the_class, current);)
+  JFR_ONLY(Jfr::on_klass_redefinition(the_class, scratch_class);)
 
   _timer_rsc_phase1.stop();
   if (log_is_enabled(Info, redefine, class, timer)) {

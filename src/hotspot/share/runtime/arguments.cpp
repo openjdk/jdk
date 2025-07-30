@@ -534,6 +534,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -548,6 +549,23 @@ static SpecialFlag const special_jvm_flags[] = {
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
+
+  { "AdaptiveSizeMajorGCDecayTimeScale",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyInitializingSteps",              JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyOutputInterval",                 JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizeThroughPutPolicy",                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveTimeWeight",                               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "PausePadding",                                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "SurvivorPadding",                                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeIncrement",                   JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplement",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplementDecay",             JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMajorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMinorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizeDecayMajorGCCost",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1582,7 +1600,7 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          aot_log_info(aot)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+          aot_log_info(aot)("UseCompressedOops disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
@@ -1842,15 +1860,6 @@ bool Arguments::check_vm_args_consistency() {
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
-  }
-#endif
-
-#ifndef _LP64
-  if (LockingMode == LM_LEGACY) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
-    // Self-forwarding in bit 3 of the mark-word conflicts
-    // with 4-byte-aligned stack-locks.
-    warning("Legacy locking not supported on this platform");
   }
 #endif
 
@@ -3778,9 +3787,6 @@ void Arguments::set_compact_headers_flags() {
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
-  }
-  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
-    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
