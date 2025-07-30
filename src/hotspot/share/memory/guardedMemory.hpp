@@ -136,7 +136,7 @@ protected:
    * NB: the size and placement of the GuardHeader must be such that the
    * user-ptr is maximally aligned i.e. 16-byte alignment for x86 ABI for
    * stack alignment and use of vector (xmm) instructions. We use alignas
-   * to achieve this,
+   * to achieve this.
    */
   class alignas(16) GuardHeader : Guard {
     friend class GuardedMemory;
