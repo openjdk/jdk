@@ -1185,7 +1185,7 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   st->print("%s, ", buf);
   size_t phys_mem = 0;
   if (!physical_memory(phys_mem)) {
-    log_debug(os)("os::physical_memory() failed");
+    //TODO add proper logging
   }
   size_t mem = phys_mem/G;
   if (mem == 0) {  // for low memory systems
@@ -1946,7 +1946,7 @@ bool os::is_server_class_machine() {
   const julong missing_memory   = 256UL * M;
   size_t phys_mem = 0;
   if (!os::physical_memory(phys_mem)) {
-    log_debug(os)("os::physical_memory() failed");
+    //TODO add proper logging
   }
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
@@ -2222,9 +2222,11 @@ bool os::used_memory(size_t& value) {
   }
 #endif
   size_t avail_mem = 0;
-  os::available_memory(avail_mem);
+  // Return value ignored - defaulting to 0 on failure.
+  static_cast<void>(os::available_memory(avail_mem));
   size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  // Return value ignored - defaulting to 0 on failure
+  static_cast<void>(os::physical_memory(phys_mem));
   value = phys_mem - avail_mem;
   return true;
 }

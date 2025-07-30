@@ -1360,7 +1360,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
     size_t avail_mem = 0;
     if (!os::available_memory(avail_mem)) {
-      log_debug(redefine, class, load)("os::available_memory() failed");
+      //TODO add proper logging
     }
     log_debug(redefine, class, load)
       ("loading name=%s kind=%d (avail_mem=%zuK)",
@@ -1529,7 +1529,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       }
     }
     if (!os::available_memory(avail_mem)) {
-      log_debug(redefine, class, load)("os::available_memory() failed");
+      //TODO add proper logging
     }
     log_debug(redefine, class, load)
       ("loaded name=%s (avail_mem=%zuK)", the_class->external_name(), avail_mem >> 10);
@@ -4442,7 +4442,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     // direct and indirect subclasses of the_class
     size_t avail_mem = 0;
     if (!os::available_memory(avail_mem)) {
-      log_debug(redefine, class, load)("os::available_memory() failed");
+      //TODO add proper logging
     }
     log_info(redefine, class, load)
       ("redefined name=%s, count=%d (avail_mem=%zuK)",

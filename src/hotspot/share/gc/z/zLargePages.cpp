@@ -33,11 +33,9 @@ void ZLargePages::initialize() {
   size_t phys_mem = 0;
   if (os::physical_memory(phys_mem)) {
     log_info_p(gc, init)("Memory: %zu%s", byte_size_in_proper_unit(phys_mem), proper_unit_for_byte_size(phys_mem));
-  }
-  else {
+  } else {
     log_info_p(gc, init)("Memory: NA");
   }
-  log_info_p(gc, init)("Memory: %zuM", phys_mem / M);
   log_info_p(gc, init)("Large Page Support: %s", to_string());
 }
 

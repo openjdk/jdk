@@ -1521,7 +1521,7 @@ void Arguments::set_heap_size() {
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
       if (!os::physical_memory(physical_mem_val)) {
-        log_debug(os)("os::physical_memory() failed");
+        //TODO add proper logging;
       }
 
       phys_mem = static_cast<julong>(physical_mem_val);
@@ -1531,7 +1531,7 @@ void Arguments::set_heap_size() {
     }
   } else {
     if (!os::physical_memory(physical_mem_val)) {
-      log_debug(os)("os::physical_memory() failed");
+      //TODO add proper logging
     }
     phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(physical_mem_val), (julong)MaxRAM)
                                        : (julong)MaxRAM;
@@ -1656,7 +1656,8 @@ jint Arguments::set_aggressive_heap_flags() {
   // calculations.
   julong initHeapSize;
   size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  // Return value ignored - defaulting to 0 on failure
+  static_cast<void>(os::physical_memory(phys_mem));
   julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {
