@@ -2050,7 +2050,6 @@ class MutableBigInteger {
                 if (n >= Double.PRECISION) {
                     // Set the initial estimate to 1
                     s.value[0] = 1;
-                    s.offset = 0;
                     s.intLen = 1;
                 } else {
                     // Discard wrong bits from the initial estimate
