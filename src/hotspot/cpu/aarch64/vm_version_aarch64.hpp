@@ -30,6 +30,8 @@
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
+class stringStream;
+
 #define BIT_MASK(flag) (1ULL<<(flag))
 
 class VM_Version : public Abstract_VM_Version {

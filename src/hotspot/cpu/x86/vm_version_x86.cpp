@@ -38,7 +38,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/formatBuffer.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -1106,7 +1106,7 @@ void VM_Version::get_processor_features() {
            cores_per_cpu(), threads_per_core(),
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
-  int features_offset = ss.size();
+  int features_offset = (int)ss.size();
   insert_features_names(_features, ss);
 
   _cpu_info_string = ss.as_string(true);
