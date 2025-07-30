@@ -2732,8 +2732,11 @@ class StubGenerator: public StubCodeGenerator {
     address entry_jlong_arraycopy;
     address entry_checkcast_arraycopy;
 
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
     generate_copy_longs(StubId::stubgen_copy_byte_f_id, IN_HEAP | IS_ARRAY, copy_f, r0, r1, r15);
     generate_copy_longs(StubId::stubgen_copy_byte_b_id, IN_HEAP | IS_ARRAY, copy_b, r0, r1, r15);

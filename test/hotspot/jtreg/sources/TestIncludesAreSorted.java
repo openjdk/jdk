@@ -43,12 +43,17 @@ public class TestIncludesAreSorted {
      * can be checked).
      */
     private static final String[] HOTSPOT_SOURCES_TO_CHECK = {
+                    "share/adlc",
                     "share/c1",
                     "share/ci",
                     "share/compiler",
                     "share/jvmci",
+                    "share/libadt",
+                    "share/metaprogramming",
                     "share/oops",
-                    "share/opto"
+                    "share/opto",
+                    "share/services",
+                    "share/utilities"
     };
 
     /**

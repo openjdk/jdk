@@ -389,6 +389,45 @@ public class TestSubwordTruncation {
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.CMP_LT_MASK, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testCmpLTMask(byte[] in) {
+        char[] res = new char[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (char) (in[i] >= 0 ? in[i] : 256 + in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.ROUND_F, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundF(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.F);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.ROUND_D, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundD(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.0);
+        }
+
+        return new Object[] { in, res };
+    }
+
     public static void main(String[] args) {
         TestFramework.run();
     }
