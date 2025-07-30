@@ -42,8 +42,7 @@
  * |Offset             | Content              | Description    |
  * |------------------------------------------------------------
  * |base_addr          | 0xABABABABABABABAB   | Head guard     |
- * |+16                | padding              | For alignment  |
- * |+sizeof(void*)     | <size_t:user_size>   | User data size |
+ * |+GUARD_SIZE        | <size_t:user_size>   | User data size |
  * |+sizeof(size_t)    | <tag>                | Tag word       |
  * |+sizeof(void*)     | <tag2>               | Tag word       |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
@@ -134,15 +133,13 @@ protected:
   /**
    * Header guard and size
    *
-   * NB: the size of the GuardHeader must be such that the user-ptr
-   * is maximally aligned i.e. 16-byte alignment for x86 ABI for
-   * stack alignment and use of vector (xmm) instructions.
+   * NB: the size and placement of the GuardHeader must be such that the
+   * user-ptr is maximally aligned i.e. 16-byte alignment for x86 ABI for
+   * stack alignment and use of vector (xmm) instructions. We use alignas
+   * to achieve this,
    */
-  class GuardHeader : Guard {
+  class alignas(16) GuardHeader : Guard {
     friend class GuardedMemory;
-
-    void* padding; // Ensures 16-byte alignment
-
    protected:
     union {
       uintptr_t __unused_full_word1;
@@ -160,9 +157,6 @@ protected:
     void set_tag2(const void* tag2) { _tag2 = (void*) tag2; }
     void* get_tag2() const { return _tag2; }
   }; // GuardedMemory::GuardHeader
-
-  static_assert(sizeof(GuardHeader) % 16 == 0,
-                "GuardHeader size must ensure _base_addr is 16-byte aligned");
 
   // Guarded Memory...
 
