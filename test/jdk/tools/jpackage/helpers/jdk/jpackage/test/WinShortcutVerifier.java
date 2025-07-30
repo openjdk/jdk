@@ -22,6 +22,9 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.groupingBy;
+import static jdk.jpackage.test.LauncherShortcut.WIN_DESKTOP_SHORTCUT;
+import static jdk.jpackage.test.LauncherShortcut.WIN_START_MENU_SHORTCUT;
 import static jdk.jpackage.test.WindowsHelper.getInstallationSubDirectory;
 
 import java.nio.file.Files;
@@ -35,14 +38,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.MsiDatabase.Shortcut;
 import jdk.jpackage.test.WindowsHelper.SpecialFolder;
 
 
-final class WinShortcutVerifier {
+public final class WinShortcutVerifier {
 
     static void verifyBundleShortcuts(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
@@ -51,7 +54,7 @@ final class WinShortcutVerifier {
             return;
         }
 
-        var actualShortcuts = WindowsHelper.getMsiShortcuts(cmd).stream().collect(Collectors.groupingBy(shortcut -> {
+        var actualShortcuts = WindowsHelper.getMsiShortcuts(cmd).stream().collect(groupingBy(shortcut -> {
             return PathUtils.replaceSuffix(shortcut.target().getFileName(), "").toString();
         }));
 
@@ -73,10 +76,10 @@ final class WinShortcutVerifier {
             var expectedLauncherShortcuts = sorter.apply(expectedShortcuts.get(name));
 
             TKit.assertEquals(expectedLauncherShortcuts.size(), actualLauncherShortcuts.size(),
-                    String.format("Check the number of shortcuts of [%s] launcher", name));
+                    String.format("Check the number of shortcuts of launcher [%s]", name));
 
             for (int i = 0; i != expectedLauncherShortcuts.size(); i++) {
-                TKit.trace(String.format("Verify shortcut #%d of [%s] launcher", i + 1, name));
+                TKit.trace(String.format("Verify shortcut #%d of launcher [%s]", i + 1, name));
                 actualLauncherShortcuts.get(i).assertEquals(expectedLauncherShortcuts.get(i));
                 TKit.trace("Done");
             }
@@ -94,6 +97,14 @@ final class WinShortcutVerifier {
             copyCmd.addArgument("--win-per-user-install");
         }
         verifyDeployedShortcutsInternal(copyCmd, false);
+    }
+
+    public static Collection<? extends InvokeShortcutSpec> getInvokeShortcutSpecs(JPackageCommand cmd) {
+        return expectShortcuts(cmd).entrySet().stream().map(e -> {
+            return e.getValue().stream().map(shortcut -> {
+                return convert(cmd, e.getKey(), shortcut);
+            });
+        }).flatMap(x -> x).toList();
     }
 
     private static void verifyDeployedShortcutsInternal(JPackageCommand cmd, boolean installed) {
@@ -184,43 +195,21 @@ final class WinShortcutVerifier {
         Objects.requireNonNull(cmd);
         Objects.requireNonNull(predefinedAppImage);
 
-        List<MsiDatabase.Shortcut> shortcuts = new ArrayList<>();
+        final List<Shortcut> shortcuts = new ArrayList<>();
 
-        var name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
+        final boolean isWinMenu = WIN_START_MENU_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).isPresent();
+        final boolean isDesktop = WIN_DESKTOP_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).isPresent();
 
-        boolean isWinMenu;
-        boolean isDesktop;
-        if (name.equals(cmd.name())) {
-            isWinMenu = cmd.hasArgument("--win-menu");
-            isDesktop = cmd.hasArgument("--win-shortcut");
-        } else {
-            var props = predefinedAppImage.map(v -> {
-                return v.launchers().get(name);
-            }).map(appImageFileLauncherProps -> {
-                Map<String, String> convProps = new HashMap<>();
-                for (var e : Map.of("menu", "win-menu", "shortcut", "win-shortcut").entrySet()) {
-                    Optional.ofNullable(appImageFileLauncherProps.get(e.getKey())).ifPresent(v -> {
-                        convProps.put(e.getValue(), v);
-                    });
-                }
-                return new AdditionalLauncher.PropertyFile(convProps);
-            }).orElseGet(() -> {
-                return AdditionalLauncher.getAdditionalLauncherProperties(cmd, launcherName);
-            });
-            isWinMenu = props.findBooleanProperty("win-menu").orElseGet(() -> cmd.hasArgument("--win-menu"));
-            isDesktop = props.findBooleanProperty("win-shortcut").orElseGet(() -> cmd.hasArgument("--win-shortcut"));
-        }
+        final var isUserLocalInstall = WindowsHelper.isUserLocalInstall(cmd);
 
-        var isUserLocalInstall = WindowsHelper.isUserLocalInstall(cmd);
-
-        SpecialFolder installRoot;
+        final SpecialFolder installRoot;
         if (isUserLocalInstall) {
             installRoot = SpecialFolder.LOCAL_APPLICATION_DATA;
         } else {
             installRoot = SpecialFolder.PROGRAM_FILES;
         }
 
-        var workDir = Path.of(installRoot.getMsiPropertyName()).resolve(getInstallationSubDirectory(cmd));
+        final var workDir = Path.of(installRoot.getMsiPropertyName()).resolve(getInstallationSubDirectory(cmd));
 
         if (isWinMenu) {
             ShortcutType type;
@@ -271,6 +260,25 @@ final class WinShortcutVerifier {
 
         return expectedShortcuts;
     }
+
+    private static InvokeShortcutSpec convert(JPackageCommand cmd, String launcherName, Shortcut shortcut) {
+        LauncherShortcut launcherShortcut;
+        if (Stream.of(ShortcutType.COMMON_START_MENU, ShortcutType.USER_START_MENU).anyMatch(type -> {
+            return shortcut.path().startsWith(Path.of(type.rootFolder().getMsiPropertyName()));
+        })) {
+            launcherShortcut = WIN_START_MENU_SHORTCUT;
+        } else {
+            launcherShortcut = WIN_DESKTOP_SHORTCUT;
+        }
+
+        var isUserLocalInstall = WindowsHelper.isUserLocalInstall(cmd);
+        return new InvokeShortcutSpec.Stub(
+                launcherName,
+                launcherShortcut,
+                resolvePath(shortcut.workDir(), !isUserLocalInstall),
+                List.of("cmd", "/c", "start", "/wait", PathUtils.addSuffix(resolvePath(shortcut.path(), !isUserLocalInstall), ".lnk").toString()));
+    }
+
 
     private static final Comparator<Shortcut> SHORTCUT_COMPARATOR = Comparator.comparing(Shortcut::target)
             .thenComparing(Comparator.comparing(Shortcut::path))
