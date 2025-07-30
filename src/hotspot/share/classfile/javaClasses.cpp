@@ -1887,7 +1887,7 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   JavaThread* java_thread = nullptr;
   oop thread_oop;
 
-  bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop, true/*use_carrier*/);
+  bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
   if (!has_java_thread) {
     return nullptr;
   }
