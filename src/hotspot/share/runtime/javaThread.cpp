@@ -523,7 +523,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _cur_wx_mode(0),
 
   _lock_stack(this),
-  _om_cache(this)  {
+  _om_cache(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
