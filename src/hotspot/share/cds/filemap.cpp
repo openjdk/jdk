@@ -75,13 +75,13 @@
 #include "utilities/classpathStream.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
-
-#include <errno.h>
-#include <sys/stat.h>
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #endif
+
+#include <errno.h>
+#include <sys/stat.h>
 
 #ifndef O_BINARY       // if defined (Win32) use binary files.
 #define O_BINARY 0     // otherwise do nothing.
