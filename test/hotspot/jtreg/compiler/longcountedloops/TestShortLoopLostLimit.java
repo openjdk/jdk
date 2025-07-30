@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,13 +22,32 @@
  */
 
 /**
- * Defines the API for the JavaScript Object.
- *
- * @moduleGraph
- * @since 9
- * @deprecated The jdk.jsobject module will be delivered with JavaFX.
+ * @test
+ * @bug 8342692
+ * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestShortLoopLostLimit
+ * @run main/othervm TestShortLoopLostLimit
  */
-@Deprecated(since = "24", forRemoval = true)
-module jdk.jsobject {
-    exports netscape.javascript;
+
+public class TestShortLoopLostLimit {
+    private static volatile int volatileField;
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test1(0, 100);
+            test2(0, 100);
+        }
+    }
+
+    private static void test1(int a, long b) {
+        for (long i = 0; i < a + b; i += 2) {
+            volatileField = 42;
+        }
+    }
+
+    private static void test2(int a, long b) {
+        for (long i = a + b; i > 0; i -= 2) {
+            volatileField = 42;
+        }
+    }
 }

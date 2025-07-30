@@ -124,7 +124,7 @@ class CompressedKlassPointers : public AllStatic {
   static address _base;
   static int _shift;
 
-  // Start and end of the Klass Range.
+  // Start and end of the Klass Range. Start includes the protection zone if one exists.
   // Note: guaranteed to be aligned to 1<<shift (klass_alignment_in_bytes)
   static address _klass_range_start;
   static address _klass_range_end;
@@ -250,6 +250,9 @@ public:
   // Given a narrow Klass ID, check that it is valid according to current encoding
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
+
+  // Given a narrow Klass ID, returns true if it appears to be valid
+  inline static bool is_valid_narrow_klass_id(narrowKlass nk);
 
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
