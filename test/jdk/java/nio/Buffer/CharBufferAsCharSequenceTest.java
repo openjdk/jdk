@@ -77,7 +77,7 @@ public class CharBufferAsCharSequenceTest {
     /**
      * Generates random content to use for populating <i>cb</i> then calling through
      * to {@code addCases(String, char[], CharBuffer, List)}
-     * 
+     *
      * @param type  String description of the type of CharBuffer under test.
      * @param cb    CharBuffer instance to populate as base of creating cases.
      * @param cases The {@code List} to populate with the cases for use from
