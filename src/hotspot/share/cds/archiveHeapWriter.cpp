@@ -162,6 +162,44 @@ oop ArchiveHeapWriter::buffered_addr_to_source_obj(address buffered_addr) {
   }
 }
 
+Klass* ArchiveHeapWriter::real_klass_of_buffered_oop(address buffered_addr) {
+  oop p = buffered_addr_to_source_obj(buffered_addr);
+  if (p != nullptr) {
+    return p->klass();
+  } else if (get_filler_size_at(buffered_addr) > 0) {
+    return Universe::fillerArrayKlass();
+  } else {
+    // This is one of the root segments
+    return Universe::objectArrayKlass();
+  }
+}
+
+size_t ArchiveHeapWriter::size_of_buffered_oop(address buffered_addr) {
+  oop p = buffered_addr_to_source_obj(buffered_addr);
+  if (p != nullptr) {
+    return p->size();
+  }
+
+  size_t nbytes = get_filler_size_at(buffered_addr);
+  if (nbytes > 0) {
+    assert((nbytes % BytesPerWord) == 0, "should be aligned");
+    return nbytes / BytesPerWord;
+  }
+
+  address hrs = buffer_bottom();
+  for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    nbytes = _heap_root_segments.size_in_bytes(seg_idx);
+    if (hrs == buffered_addr) {
+      assert((nbytes % BytesPerWord) == 0, "should be aligned");
+      return nbytes / BytesPerWord;
+    }
+    hrs += nbytes;
+  }
+
+  ShouldNotReachHere();
+  return 0;
+}
+
 address ArchiveHeapWriter::buffered_addr_to_requested_addr(address buffered_addr) {
   return _requested_bottom + buffered_address_to_offset(buffered_addr);
 }

@@ -315,6 +315,12 @@ public:
     return (T)(address(obj) + _buffer_to_requested_delta);
   }
 
+  template <typename T> T requested_to_buffered(T obj) const {
+    T b = (T)(address(obj) - _buffer_to_requested_delta);
+    assert(is_in_buffer_space(b), "must be");
+    return b;
+  }
+
   static intx get_buffer_to_requested_delta() {
     return current()->buffer_to_requested_delta();
   }

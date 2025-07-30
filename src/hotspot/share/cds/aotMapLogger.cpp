@@ -55,7 +55,15 @@ public:
     if (_raw_addr == nullptr) {
       return nullptr;
     }
-    return (Klass*)(_raw_addr + _requested_to_mapped_metadata_delta);
+
+    if (is_logging_mapped_aot_cache()) {
+      return (Klass*)(_raw_addr + _requested_to_mapped_metadata_delta);
+    } else {
+      ArchiveBuilder* builder = ArchiveBuilder::current();
+      address buffered_addr = builder->requested_to_buffered(_raw_addr);
+      address klass = builder->get_source_addr(buffered_addr);
+      return (Klass*)klass;
+    }
   }
 };
 
@@ -386,14 +394,7 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-void AOTMapLogger::log_heap_region(ArchiveHeapInfo* heap_info) {
-  MemRegion r = heap_info->buffer_region();
-  address start = address(r.start()); // start of the current oop inside the buffer
-  address end = address(r.end());
-  log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
-  log_oops(heap_info, start, end);
-}
-
+#if 0
 void AOTMapLogger::log_oops(ArchiveHeapInfo* heap_info, address start, address end) {
   LogStreamHandle(Debug, aot, map) st;
   if (!st.is_enabled()) {
@@ -630,9 +631,10 @@ void AOTMapLogger::print_oop_info_cr(outputStream* st, oop source_oop, bool prin
     }
   }
 }
+#endif
 
-// FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray) are used to traverse and print
-// the heap objects stored in the AOT cache. These objects are different than regular oops:
+// FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray, FakeTypeArray) are used to traverse 
+// and print the heap objects stored in the AOT cache. These objects are different than regular oops:
 // - They do not reside inside the range of the heap.
 // - For +UseCompressedOops: pointers may use a different narrowOop encoding: see FakeOop::read_oop_at(narrowOop*)
 // - For -UseCompressedOops: pointers are not direct: see FakeOop::read_oop_at(oop*)
@@ -642,7 +644,7 @@ void AOTMapLogger::print_oop_info_cr(outputStream* st, oop source_oop, bool prin
 class AOTMapLogger::FakeOop {
   static int _requested_shift;
   static intx _buffer_to_requested_delta;
-  static address _buffer_base;
+  static address _narrow_oop_base;
   static address _buffer_start;
   static address _buffer_end;
 
@@ -667,10 +669,10 @@ protected:
   oop raw_oop() { return cast_to_oop(_buffer_addr); }
 
 public:
-  static void init(address requested_start, int requested_shift, address buffer_base, address buffer_start, address buffer_end) {
+  static void init(address requested_start, int requested_shift, address narrow_oop_base, address buffer_start, address buffer_end) {
     _requested_shift = requested_shift;
     _buffer_to_requested_delta = requested_start - buffer_start;
-    _buffer_base = buffer_base;
+    _narrow_oop_base = narrow_oop_base;
     _buffer_start = buffer_start;
     _buffer_end = buffer_end;
   }
@@ -681,20 +683,27 @@ public:
     }
   }
 
-  Klass* real_klass() {
-    // TODO Dump time
-    assert(UseCompressedClassPointers, "heap archiving requires UseCompressedClassPointers");
-    return raw_oop()->klass();
-  }
-
   RequestedMetadataAddr klass() {
-    // TODO Dump time
     address rk = (address)real_klass();
     return RequestedMetadataAddr(rk - _requested_to_mapped_metadata_delta);
   }
 
+  Klass* real_klass() {
+    assert(UseCompressedClassPointers, "heap archiving requires UseCompressedClassPointers");
+    if (is_logging_mapped_aot_cache()) {
+      return raw_oop()->klass();
+    } else {
+      return ArchiveHeapWriter::real_klass_of_buffered_oop(_buffer_addr);
+    }
+  }
+
+  // in heap words
   size_t size() {
-    return raw_oop()->size_given_klass(real_klass());
+    if (is_logging_mapped_aot_cache()) {
+      return raw_oop()->size_given_klass(real_klass());
+    } else {
+      return ArchiveHeapWriter::size_of_buffered_oop(_buffer_addr);
+    }
   }
 
   bool is_array() { return real_klass()->is_array_klass(); }
@@ -714,11 +723,9 @@ public:
     if (_buffer_addr == nullptr) {
       return 0;
     }
-    uint64_t pd = (uint64_t)(pointer_delta((void*)_buffer_addr, (void*)_buffer_base, 1));
+    uint64_t pd = (uint64_t)(pointer_delta((void*)_buffer_addr, (void*)_narrow_oop_base, 1));
     return checked_cast<uint32_t>(pd >> _requested_shift);
   }
-
-  void print_string_on(outputStream* st);
 
   bool is_marked_as_native_pointer(int field_offset) {
     return false; // TODO
@@ -729,7 +736,7 @@ public:
     if (size_t(n) == 0) {
       return FakeOop(nullptr);
     } else {
-      address value = _buffer_base + (size_t(n) << _requested_shift);
+      address value = _narrow_oop_base + (size_t(n) << _requested_shift);
       return FakeOop(value);
     }
   }
@@ -759,17 +766,21 @@ public:
 
   FakeMirror& as_mirror();
   FakeObjArray& as_obj_array();
+  FakeString& as_string();
   FakeTypeArray& as_type_array();
 };
 
-class AOTMapLogger::FakeTypeArray : public AOTMapLogger::FakeOop {
-  typeArrayOop raw_typeArrayOop() {
-    return (typeArrayOop)raw_oop();
+class AOTMapLogger::FakeMirror : public AOTMapLogger::FakeOop {
+public:
+  void print_class_signature_on(outputStream* st);
+
+  Klass* real_mirrored_klass() {
+    RequestedMetadataAddr mirrored_klass = metadata_field(java_lang_Class::klass_offset());
+    return mirrored_klass.to_real_klass();
   }
 
-public:
-  void print_elements_on(outputStream* st) {
-    TypeArrayKlass::cast(real_klass())->oop_print_elements_on(raw_typeArrayOop(), st);
+  int static_oop_field_count() {
+    return java_lang_Class::static_oop_field_count(raw_oop());
   }
 };
 
@@ -791,18 +802,35 @@ public:
   }
 };
 
-class AOTMapLogger::FakeMirror : public AOTMapLogger::FakeOop {
+class AOTMapLogger::FakeString : public AOTMapLogger::FakeOop {
 public:
-  void print_class_signature_on(outputStream* st);
-
-  Klass* real_mirrored_klass() {
-    RequestedMetadataAddr mirrored_klass = metadata_field(java_lang_Class::klass_offset());
-    return mirrored_klass.to_real_klass();
+  bool is_latin1() {
+    jbyte coder = raw_oop()->byte_field(java_lang_String::coder_offset());
+    assert(CompactStrings || coder == java_lang_String::CODER_UTF16, "Must be UTF16 without CompactStrings");
+    return coder == java_lang_String::CODER_LATIN1;
   }
 
-  int static_oop_field_count() {
-    return java_lang_Class::static_oop_field_count(raw_oop());
+  FakeTypeArray& value() {
+    return obj_field(java_lang_String::value_offset()).as_type_array();
   }
+
+  int length();
+  void print_on(outputStream* st, int max_length = MaxStringPrintSize);
+};
+
+class AOTMapLogger::FakeTypeArray : public AOTMapLogger::FakeOop {
+  typeArrayOop raw_typeArrayOop() {
+    return (typeArrayOop)raw_oop();
+  }
+
+public:
+  void print_elements_on(outputStream* st) {
+    TypeArrayKlass::cast(real_klass())->oop_print_elements_on(raw_typeArrayOop(), st);
+  }
+
+  int length() { return raw_typeArrayOop()->length(); }
+  jbyte byte_at(int i) { return raw_typeArrayOop()->byte_at(i); }
+  jchar char_at(int i) { return raw_typeArrayOop()->char_at(i); }
 };
 
 AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
@@ -811,17 +839,18 @@ AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
 }
 
 AOTMapLogger::FakeObjArray& AOTMapLogger::FakeOop::as_obj_array() {
-  precond(raw_oop()->is_objArray());
+  precond(real_klass()->is_objArray_klass());
   return (FakeObjArray&)*this;
 }
 
 AOTMapLogger::FakeTypeArray& AOTMapLogger::FakeOop::as_type_array() {
-  precond(raw_oop()->is_typeArray());
+  precond(real_klass()->is_typeArray_klass());
   return (FakeTypeArray&)*this;
 }
 
-void AOTMapLogger::FakeOop::print_string_on(outputStream* st) {
-
+AOTMapLogger::FakeString& AOTMapLogger::FakeOop::as_string() {
+  precond(real_klass() == vmClasses::String_klass());
+  return (FakeString&)*this;
 }
 
 void AOTMapLogger::FakeMirror::print_class_signature_on(outputStream* st) {
@@ -849,6 +878,49 @@ void AOTMapLogger::FakeMirror::print_class_signature_on(outputStream* st) {
     if (real_klass->has_aot_initialized_mirror()) {
       st->print(" (aot-inited)");
     }
+  }
+}
+
+int AOTMapLogger::FakeString::length() {
+  FakeTypeArray v = value();
+  if (v.is_null()) {
+    return 0;
+  }
+  int arr_length = v.length();
+  if (!is_latin1()) {
+    assert((arr_length & 1) == 0, "should be even for UTF16 string");
+    arr_length >>= 1; // convert number of bytes to number of elements
+  }
+  return arr_length;
+}
+
+void AOTMapLogger::FakeString::print_on(outputStream* st, int max_length) {
+  FakeTypeArray v = value();
+  int length = this->length();
+  bool is_latin1 = this->is_latin1();
+  bool abridge = length > max_length;
+
+  st->print("\"");
+  for (int index = 0; index < length; index++) {
+    // If we need to abridge and we've printed half the allowed characters
+    // then jump to the tail of the string.
+    if (abridge && index >= max_length / 2) {
+      st->print(" ... (%d characters ommitted) ... ", length - 2 * (max_length / 2));
+      index = length - (max_length / 2);
+      abridge = false; // only do this once
+    }
+    jchar c = (!is_latin1) ?  v.char_at(index) :
+                             ((jchar) v.byte_at(index)) & 0xff;
+    if (c < ' ') {
+      st->print("\\x%02X", c); // print control characters e.g. \x0A
+    } else {
+      st->print("%c", c);
+    }
+  }
+  st->print("\"");
+
+  if (length > max_length) {
+    st->print(" (abridged) ");
   }
 }
 
@@ -911,7 +983,7 @@ public:
 
 int AOTMapLogger::FakeOop::_requested_shift;
 intx AOTMapLogger::FakeOop::_buffer_to_requested_delta;
-address AOTMapLogger::FakeOop::_buffer_base;
+address AOTMapLogger::FakeOop::_narrow_oop_base;
 address AOTMapLogger::FakeOop::_buffer_start;
 address AOTMapLogger::FakeOop::_buffer_end;
 
@@ -936,7 +1008,7 @@ void AOTMapLogger::new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, boo
 
       if (real_klass == vmClasses::String_klass()) {
         st->print(" ");
-        fake_oop.print_string_on(st);
+        fake_oop.as_string().print_on(st);
       } else if (real_klass == vmClasses::Class_klass()) {
         fake_oop.as_mirror().print_class_signature_on(st);
       }
@@ -963,9 +1035,9 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
 
   address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
   address requested_start = requested_base + r->mapping_offset();
-  address buffer_base = buffer_start - r->mapping_offset();
+  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)0xdeadbeef;
 
-  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), buffer_base, buffer_start, buffer_end);
+  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
 
   log_region("heap", buffer_start, buffer_end, requested_start);
   runtime_log_oops(buffer_start, buffer_end);
@@ -1004,6 +1076,7 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
 
       Klass* real_mirrored_klass = fake_mirror.real_mirrored_klass();
       if (real_mirrored_klass != nullptr && real_mirrored_klass->is_instance_klass()) {
+        //TODO ....
         //oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
         //st->print(" - archived_resolved_references: ");
         //print_oop_info_cr(&st, rr);
@@ -1013,6 +1086,23 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
       }
     }
   }
+}
+
+void AOTMapLogger::log_heap_region(ArchiveHeapInfo* heap_info) {
+  MemRegion r = heap_info->buffer_region();
+  address buffer_start = address(r.start()); // start of the current oop inside the buffer
+  address buffer_end = address(r.end());
+
+
+  address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
+  address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
+  intx n = requested_start - requested_base; // FIXME rename
+  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)0xdeadbeef;
+
+  FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
+
+  log_region("heap", buffer_start, buffer_end, requested_start);
+  runtime_log_oops(buffer_start, buffer_end);
 }
 
 void AOTMapLogger::runtime_log_oops(address buffer_start, address buffer_end) {

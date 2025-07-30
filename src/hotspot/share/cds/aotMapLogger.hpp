@@ -55,10 +55,12 @@ class AOTMapLogger : AllStatic {
   static bool _is_logging_at_bootstrap;
   static bool _is_logging_mapped_aot_cache;
 
-  class FakeMirror;
-  class FakeObjArray;
+  // FakeOop and subtypes
   class FakeOop;
-  class FakeTypeArray;
+  class   FakeMirror;
+  class   FakeObjArray;
+  class   FakeString;
+  class   FakeTypeArray;
 
   class RequestedMetadataAddr;
 
@@ -111,7 +113,7 @@ class AOTMapLogger : AllStatic {
   // - The C++ vtables for the buffered objects are not initialized
   // - Pointers such as ConstantPool::_tags are "requested addresses" that do not point
   //   to actual memory used by the current JVM.
-  static bool is_logging_metadata_details() { return is_logging_mapped_aot_cache(); } 
+  static bool is_logging_metadata_details() { return is_logging_mapped_aot_cache(); }
 public:
   static void ergo_initialize();
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
