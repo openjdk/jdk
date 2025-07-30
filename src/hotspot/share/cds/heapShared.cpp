@@ -505,9 +505,6 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
 
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
-  if (AOTClassInitializer::is_runtime_setup_required(ik)) {
-    ik->set_is_runtime_setup_required();
-  }
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {

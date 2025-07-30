@@ -255,7 +255,7 @@ public class SecureClassLoader extends ClassLoader {
                 for (CodeSourceKey key : pdcache.keySet()) {
                     System.out.println("Archiving ProtectionDomain " + key.cs + " for " + this);
                 }
-            }            
+            }
         } else {
             pdcache.clear();
         }

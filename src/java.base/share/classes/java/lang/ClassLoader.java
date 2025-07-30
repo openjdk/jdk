@@ -2604,7 +2604,7 @@ public abstract class ClassLoader {
                 for (Map.Entry<String, NamedPackage> entry : packages.entrySet()) {
                     String key = entry.getKey();
                     NamedPackage value = entry.getValue();
-                    System.out.println("Archiving " + 
+                    System.out.println("Archiving " +
                                        (value instanceof Package ? "Package" : "NamedPackage") +
                                        " \"" + key + "\" for " + this);
                 }

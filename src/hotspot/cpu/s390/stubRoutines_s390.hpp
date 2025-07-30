@@ -62,6 +62,7 @@ enum method_handles_platform_dependent_constants {
 
 class zarch {
  friend class StubGenerator;
+ friend class StubRoutines;
 
  public:
   enum { nof_instance_allocators = 10 };

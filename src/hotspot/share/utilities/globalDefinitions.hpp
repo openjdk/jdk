@@ -25,13 +25,12 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
+#include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
