@@ -37,12 +37,21 @@ class DumpRegion;
 class FileMapInfo;
 class outputStream;
 
-// Write detailed info to a mapfile to analyze contents of the archive.
-// static dump:
-//   java -Xshare:dump -Xlog:aot+map=trace,aot+map+oops=trace:file=aot.map:none:filesize=0
-// dynamic dump:
-//   java -cp MyApp.jar -XX:ArchiveClassesAtExit=MyApp.jsa \
-//        -Xlog:aot+map=trace:file=aot.map:none:filesize=0 MyApp
+// Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.
+// -Xlog:aot+map* can be used both when creating an AOT cache, or when using an AOT cache.
+//
+// Creating cache:
+//     java -XX:AOTCacheOutput=app.aot -Xlog:aot+map*=trace -cp app.jar App
+//
+// Using cache:
+//     java -XX:AOTCache=app.aot -Xlog:aot+map*=trace -cp app.jar App
+//
+// You can also print the map of a cache without executing the application by using the
+// --version flag:
+//     java -XX:AOTCache=app.aot -Xlog:aot+map*=trace --version
+//
+// Because the output can be large, it's best to save it to a file
+//     java -XX:AOTCache=app.aot -Xlog:aot+map*=trace:file=aot.map:none:filesize=0 --version
 class AOTMapLogger : AllStatic {
   struct ArchivedObjInfo {
     address _src_addr;
@@ -59,25 +68,23 @@ class AOTMapLogger : AllStatic {
   class   FakeString;
   class   FakeTypeArray;
 
-  static intx _requested_to_mapped_metadata_delta;
+  class RequestedMetadataAddr;
+  class GatherArchivedMetaspaceObjs;
+
   static bool _is_logging_at_bootstrap;
-  static bool _is_logging_mapped_aot_cache;
+  static bool _is_runtime_logging;
   static size_t _num_root_segments;
   static size_t _num_obj_arrays_logged;
   static GrowableArrayCHeap<FakeOop, mtClass>* _roots;
   static ArchiveHeapInfo* _dumptime_heap_info;
 
-  class RequestedMetadataAddr;
-
-  class GatherArchivedMetaspaceObjs;
-
-  // Translate the buffers used by the RW/RO regions to their requested locations
-  // at runtime.
   static intx _buffer_to_requested_delta;
+  static intx _requested_to_mapped_metadata_delta;
 
+  static void runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
+  static void runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void dumptime_log_metaspace_region(const char* name, DumpRegion* region,
                                             const ArchiveBuilder::SourceObjList* src_objs);
-  static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
 
   // Common code for dumptime/runtime
   static void log_file_header(FileMapInfo* mapinfo);
@@ -106,7 +113,6 @@ class AOTMapLogger : AllStatic {
   class ArchivedFieldPrinter; // to be replaced by ArchivedFieldPrinter2
 #endif
 
-  static bool is_logging_mapped_aot_cache() { return _is_logging_mapped_aot_cache; }
 public:
   static void ergo_initialize();
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
@@ -114,7 +120,7 @@ public:
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                            ArchiveHeapInfo* heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);
-  static void runtime_log(FileMapInfo* mapinfo);
+  static void runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo);
 };
 
 #endif // SHARE_CDS_AOTMAPLOGGER_HPP

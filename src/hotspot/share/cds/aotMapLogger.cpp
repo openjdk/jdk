@@ -39,7 +39,7 @@
 #include "utilities/growableArray.hpp"
 
 bool AOTMapLogger::_is_logging_at_bootstrap;
-bool AOTMapLogger::_is_logging_mapped_aot_cache;
+bool AOTMapLogger::_is_runtime_logging;
 intx AOTMapLogger::_buffer_to_requested_delta;
 intx AOTMapLogger::_requested_to_mapped_metadata_delta;
 size_t AOTMapLogger::_num_root_segments;
@@ -60,7 +60,7 @@ public:
       return nullptr;
     }
 
-    if (is_logging_mapped_aot_cache()) {
+    if (_is_runtime_logging) {
       return (Klass*)(_raw_addr + _requested_to_mapped_metadata_delta);
     } else {
       ArchiveBuilder* builder = ArchiveBuilder::current();
@@ -85,18 +85,12 @@ void AOTMapLogger::ergo_initialize() {
 void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                                 ArchiveHeapInfo* heap_info,
                                 char* bitmap, size_t bitmap_size_in_bytes) {
-  _is_logging_mapped_aot_cache = false;
+  _is_runtime_logging = false;
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
   _num_root_segments = mapinfo->heap_root_segments().count();
   _dumptime_heap_info = heap_info;
 
-  log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
-
-  address header = address(mapinfo->header());
-  address header_end = header + mapinfo->header()->header_size();
-  log_region_range("header", header, header_end, nullptr);
   log_file_header(mapinfo);
-  log_as_hex(header, header_end, nullptr);
 
   DumpRegion* rw_region = &builder->_rw_region;
   DumpRegion* ro_region = &builder->_ro_region;
@@ -154,39 +148,12 @@ public:
   }
 }; // AOTMapLogger::GatherArchivedMetaspaceObjs
 
-void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
-  _is_logging_mapped_aot_cache = true;
-  _requested_to_mapped_metadata_delta = mapinfo->relocation_delta();
-  _num_root_segments = mapinfo->heap_root_segments().count();
-
-  address header = address(mapinfo->header());
-  address header_end = header + mapinfo->header()->header_size();
-  log_region_range("header", header, header_end, nullptr);
-  log_file_header(mapinfo);
-  log_as_hex(header, header_end, nullptr);
-
-  runtime_log_metaspace_regions(mapinfo);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (mapinfo->has_heap_region()) {
-    runtime_log_heap_region(mapinfo);
-  }
-#endif
-}
-
-void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
-  FileMapRegion* rw = mapinfo->region_at(MetaspaceShared::rw);
-  FileMapRegion* ro = mapinfo->region_at(MetaspaceShared::ro);
-
-  address rw_base = address(rw->mapped_base());
-  address rw_end  = address(rw->mapped_end());
-  address ro_base = address(ro->mapped_base());
-  address ro_end  = address(ro->mapped_end());
+void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo) {
+  _is_runtime_logging = true;
+  _requested_to_mapped_metadata_delta = static_mapinfo->relocation_delta();
 
   ResourceMark rm;
   GatherArchivedMetaspaceObjs gatherer;
-  GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs = nullptr;
-  int first_ro_index = 0;
 
   if (log_is_enabled(Debug, aot, map)) {
     // The metaspace objects in the AOT cache are stored as a stream of bytes. For space
@@ -196,33 +163,36 @@ void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
     // However, we can rebuild our index by iterating over all the objects using
     // MetaspaceClosure, starting from the dictionary of Klasses in SystemDictionaryShared.
     GrowableArray<Klass*> klasses;
-    SystemDictionaryShared::get_all_archived_classes(mapinfo->is_static(), &klasses);
+    SystemDictionaryShared::get_all_archived_classes(/*is_static*/true, &klasses);
+    if (dynamic_mapinfo != nullptr) {
+      SystemDictionaryShared::get_all_archived_classes(/*is_static*/false, &klasses);
+    }
+
     for (int i = 0; i < klasses.length(); i++) {
       gatherer.push(klasses.adr_at(i));
     }
     gatherer.finish();
-
-    // Divide the objects into two parts: RW and RO
-    objs = gatherer.objs();
-    int i = 0;
-    for (; i < objs->length(); i++) {
-      if (objs->at(i)._src_addr >= ro_base) {
-        break;
-      }
-    }
-    // i is now the index of the first object in the ro region. TODO: this doesn't work for dynamic archive yet ...
-    first_ro_index = i;
   }
 
-  log_region_range("rw", rw_base, rw_end, rw_base - _requested_to_mapped_metadata_delta);
-  if (log_is_enabled(Debug, aot, map)) {
-    log_metaspace_objects_impl(rw_base, rw_end, objs, 0, first_ro_index);
+  runtime_log(static_mapinfo, gatherer.objs());
+  if (dynamic_mapinfo != nullptr) {
+    runtime_log(dynamic_mapinfo, gatherer.objs());
   }
+}
 
-  log_region_range("ro", ro_base, ro_end, ro_base - _requested_to_mapped_metadata_delta);
-  if (log_is_enabled(Debug, aot, map)) {
-    log_metaspace_objects_impl(ro_base, ro_end, objs, first_ro_index, objs->length());
+void AOTMapLogger::runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs) {
+  log_file_header(mapinfo);
+
+  runtime_log_metaspace_regions(mapinfo, objs);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (mapinfo->has_heap_region()) {
+    _num_root_segments = mapinfo->heap_root_segments().count();
+    runtime_log_heap_region(mapinfo);
   }
+#endif
+
+  log_info(aot, map)("[End of map]");
 }
 
 void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* region,
@@ -247,20 +217,91 @@ void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* r
   }
 }
 
-void AOTMapLogger::log_file_header(FileMapInfo* mapinfo) {
-  LogStreamHandle(Info, aot, map) lsh;
-  if (lsh.is_enabled()) {
-    mapinfo->print(&lsh);
+void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs) {
+  FileMapRegion* rw = mapinfo->region_at(MetaspaceShared::rw);
+  FileMapRegion* ro = mapinfo->region_at(MetaspaceShared::ro);
+
+  address rw_base = address(rw->mapped_base());
+  address rw_end  = address(rw->mapped_end());
+  address ro_base = address(ro->mapped_base());
+  address ro_end  = address(ro->mapped_end());
+
+  int first_rw_index = -1;
+  int first_ro_index = -1;
+  int last_ro_index = -1;
+
+  if (log_is_enabled(Debug, aot, map)) {
+    int i = 0;
+    for (; i < objs->length(); i++) {
+      address p = objs->at(i)._src_addr;
+      if (p < rw_base) {
+        // We are printing the dynamic archive but found an object in the static archive
+        precond(!mapinfo->is_static());
+        continue;
+      }
+      if (first_rw_index < 0) {
+        first_rw_index = i;
+        continue;
+      }
+      if (p < ro_base) {
+        continue;
+      }
+      if (first_ro_index < 0) {
+        first_ro_index = i;
+        continue;
+      }
+      if (p < ro_end) {
+        continue;
+      } else {
+        precond(mapinfo->is_static());
+        last_ro_index = i;
+        break;
+      }
+    }
   }
+
+  if (last_ro_index < 0) {
+    last_ro_index = objs->length();
+  }
+
+  log_region_range("rw", rw_base, rw_end, rw_base - _requested_to_mapped_metadata_delta);
+  if (log_is_enabled(Debug, aot, map)) {
+    log_metaspace_objects_impl(rw_base, rw_end, objs, first_rw_index, first_ro_index);
+  }
+
+  log_region_range("ro", ro_base, ro_end, ro_base - _requested_to_mapped_metadata_delta);
+  if (log_is_enabled(Debug, aot, map)) {
+    log_metaspace_objects_impl(ro_base, ro_end, objs, first_ro_index, last_ro_index);
+  }
+}
+
+void AOTMapLogger::log_file_header(FileMapInfo* mapinfo) {
+  const char* type;
+  if (mapinfo->is_static()) {
+    if (CDSConfig::new_aot_flags_used()) {
+      type = "AOT cache";
+    } else {
+      type = "Static CDS archive";
+    }
+  } else {
+    type = "Dynamic CDS archive";
+  }
+
+  log_info(aot, map)("%s map for %s", type, mapinfo->full_path());
+
+  address header = address(mapinfo->header());
+  address header_end = header + mapinfo->header()->header_size();
+
+  log_region_range("header", header, header_end, nullptr);
+  LogStreamHandle(Info, aot, map) lsh;
+  mapinfo->print(&lsh);
+  log_as_hex(header, header_end, nullptr);
 }
 
 // Log information about a region, whose address at dump time is [base .. top). At
 // runtime, this region will be mapped to requested_base. requested_base is nullptr if this
 // region will be mapped at os-selected addresses (such as the bitmap region), or will
 // be accessed with os::read (the header).
-//
-// Note: across -Xshare:dump runs, base may be different, but requested_base should
-// be the same as the archive contents should be deterministic.
 void AOTMapLogger::log_region_range(const char* name, address base, address top, address requested_base) {
   size_t size = top - base;
   base = requested_base;
@@ -453,7 +494,7 @@ public:
 
   Klass* real_klass() {
     assert(UseCompressedClassPointers, "heap archiving requires UseCompressedClassPointers");
-    if (is_logging_mapped_aot_cache()) {
+    if (_is_runtime_logging) {
       return raw_oop()->klass();
     } else {
       return ArchiveHeapWriter::real_klass_of_buffered_oop(_buffer_addr);
@@ -462,7 +503,7 @@ public:
 
   // in heap words
   size_t size() {
-    if (is_logging_mapped_aot_cache()) {
+    if (_is_runtime_logging) {
       return raw_oop()->size_given_klass(real_klass());
     } else {
       return ArchiveHeapWriter::size_of_buffered_oop(_buffer_addr);
@@ -855,7 +896,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
         InstanceKlass* real_mirrored_ik = InstanceKlass::cast(real_mirrored_klass);
 
         ConstantPoolCache* cp_cache = real_mirrored_ik->constants()->cache();
-        if (!is_logging_mapped_aot_cache()) {
+        if (!_is_runtime_logging) {
           cp_cache = ArchiveBuilder::current()->get_buffered_addr(cp_cache);
         }
         int rr_root_index = cp_cache->archived_references_index();

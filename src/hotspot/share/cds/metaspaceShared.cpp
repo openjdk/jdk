@@ -1950,6 +1950,7 @@ class CountSharedSymbols : public SymbolClosure {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables.
@@ -1965,21 +1966,21 @@ void MetaspaceShared::initialize_shared_spaces() {
   Universe::load_archived_object_instances();
   AOTCodeCache::initialize();
 
-  if (AOTMapLogger::is_logging_at_bootstrap()) {
-    AOTMapLogger::runtime_log(static_mapinfo);
-  }
-
-  // Close the mapinfo file
-  static_mapinfo->close();
-
-  static_mapinfo->unmap_region(MetaspaceShared::bm);
-
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
+  }
+
+  if (AOTMapLogger::is_logging_at_bootstrap()) {
+    AOTMapLogger::runtime_log(static_mapinfo, dynamic_mapinfo);
+  }
+
+  static_mapinfo->close();
+  static_mapinfo->unmap_region(MetaspaceShared::bm);
+
+  if (dynamic_mapinfo != nullptr) {
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
