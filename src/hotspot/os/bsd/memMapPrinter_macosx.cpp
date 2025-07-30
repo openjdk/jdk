@@ -234,7 +234,7 @@ public:
     kern_return_t err = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
     if (err == KERN_SUCCESS) {
       st->print_cr("             vsize: %llu (" PROPERFMT ")", vm_info.virtual_size, PROPERFMTARGS((size_t)vm_info.virtual_size));
-      st->print_cr("               rss: %llu (" PROPERFMT ")",   vm_info.resident_size, PROPERFMTARGS((size_t)vm_info.resident_size));
+      st->print_cr("               rss: %llu (" PROPERFMT ")", vm_info.resident_size, PROPERFMTARGS((size_t)vm_info.resident_size));
       st->print_cr("          peak rss: %llu (" PROPERFMT ")", vm_info.resident_size_peak, PROPERFMTARGS((size_t)vm_info.resident_size_peak));
       st->print_cr("         page size: %d (" PROPERFMT ")", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
     } else {
