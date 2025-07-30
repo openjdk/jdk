@@ -409,13 +409,14 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
-  size_t phys_mem = 0;
 #ifdef LINUX
   // We want the host memory, not the container limit.
   // os::physical_memory() would return the container limit.
   return os::Linux::physical_memory();
 #else
-  os::physical_memory(phys_mem);
+  size_t phys_mem = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  os::physical_memory(phys_mem);  
   return static_cast<jlong>(phys_mem);
 #endif
 JVM_END

@@ -1056,6 +1056,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
   // Now, we do the more expensive operations.
   size_t free_memory = 0;
+  // Return value ignored - defaulting to 0 on failure.
   os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),

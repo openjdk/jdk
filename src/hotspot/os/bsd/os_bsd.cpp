@@ -298,7 +298,7 @@ void os::Bsd::initialize_system_info() {
     // datasize rlimit restricts us anyway.
     struct rlimit limits;
     getrlimit(RLIMIT_DATA, &limits);
-    _physical_memory = MIN2(_physical_memory, (julong)limits.rlim_cur);
+    _physical_memory = MIN2(_physical_memory, static_cast<size_t>(limits.rlim_cur));
   }
 #endif
 }
@@ -1472,14 +1472,13 @@ void os::print_memory_info(outputStream* st) {
   st->print(" %zuk page", os::vm_page_size()>>10);
   size_t phys_mem = 0;
   if (!os::physical_memory(phys_mem)) {
-    log_debug(os, thread)("os::physical_memory() failed");
+    //TODO add proper logging
   }
   st->print(", physical %zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;
-  if (!os::available_memory(avail_mem))
-  {
-    log_debug(os, thread)("os::available_memory() failed");
+  if (!os::available_memory(avail_mem)) {
+    //TODO add proper logging
   }
   st->print("(%zuk free)",
             avail_mem >> 10);

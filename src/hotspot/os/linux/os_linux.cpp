@@ -2575,13 +2575,13 @@ void os::print_memory_info(outputStream* st) {
   sysinfo(&si);
   size_t phys_mem = 0;
   if (!os::physical_memory(phys_mem)) {
-    log_debug(os)("os::physical_memory() failed");
+    //TODO add proper logging
   }
   st->print(", physical %zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;
   if (!os::available_memory(avail_mem)) {
-    log_debug(os)("os::available_memory() failed");
+    //TODO add proper logging
   }
   st->print("(%zuk free)",
             avail_mem >> 10);

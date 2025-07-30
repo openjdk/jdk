@@ -896,8 +896,7 @@ bool os::free_swap_space(size_t& value) {
 
 bool os::physical_memory(size_t& value) {
   size_t phys_mem = win32::physical_memory();
-  if (phys_mem == std::numeric_limits<size_t>::max())
-  {
+  if (phys_mem == std::numeric_limits<size_t>::max()) {
     // indication that GlobalMemoryStatusEx failed
     return false;
   }
