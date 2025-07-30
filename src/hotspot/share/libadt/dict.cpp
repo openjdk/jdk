@@ -22,14 +22,12 @@
  *
  */
 
-// Dictionaries - An Abstract Data Type
-
-// %%%%% includes not needed with AVM framework - Ungar
-
 #include "libadt/dict.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <assert.h>
+// Dictionaries - An Abstract Data Type
+
+// %%%%% includes not needed with AVM framework - Ungar
 
 //------------------------------data-----------------------------------------
 // String hash tables
