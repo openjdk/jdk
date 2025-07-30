@@ -731,24 +731,28 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
-
-bool os::allocatable_memory_limit(size_t* limit) {
+bool os::allocatable_memory_limit(size_t& limit) {
   // On POSIX systems, the amount of allocatable memory is limited by the
   // size of the virtual address space.
-  *limit = address_space_limit();
-  bool is_limited = *limit != SIZE_MAX;
+  size_t as_limit = address_space_limit();
+  bool as_is_limited = as_limit != SIZE_MAX;
 
 #ifdef _LP64
-  return is_limited;
+  if (as_is_limited) {
+    limit = as_limit;
+    return true;
+  }
+
+  return false;
 #else
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
   // directly use it.
   const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
+  if (as_is_limited) {
+    as_limit = MIN2(as_limit, max_virtual_limit);
   } else {
-    *limit = max_virtual_limit;
+    as_limit = max_virtual_limit;
   }
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
@@ -763,15 +767,15 @@ bool os::allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = as_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    limit = upper_limit;
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -784,8 +788,9 @@ bool os::allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    limit = lower_limit;
   }
+
   return true;
 #endif
 }

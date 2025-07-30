@@ -897,11 +897,11 @@ size_t os::rss() {
   return rss;
 }
 
-bool os::allocatable_memory_limit(size_t* limit) {
+bool os::allocatable_memory_limit(size_t& limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-  *limit = (size_t)ms.ullAvailVirtual;
+  limit = (size_t)ms.ullAvailVirtual;
   return true;
 }
 
