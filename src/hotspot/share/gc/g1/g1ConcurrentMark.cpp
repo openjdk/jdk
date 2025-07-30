@@ -3052,10 +3052,10 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_groud_gid     = 0;
+  uint cset_group_id     = 0;
 
   if (r->rem_set()->is_added_to_cset_group()) {
-    cset_groud_gid = r->rem_set()->cset_group_id();
+    cset_group_id = r->rem_set()->cset_group_id();
   }
 
   _total_used_bytes      += used_bytes;
@@ -3076,7 +3076,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_groud_gid);
+                        cset_group_id);
 
   return false;
 }
