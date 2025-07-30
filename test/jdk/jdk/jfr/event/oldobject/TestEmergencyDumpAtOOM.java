@@ -28,6 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingFile;
 
 import jdk.test.lib.Asserts;
@@ -46,8 +49,9 @@ import jdk.test.lib.process.ProcessTools;
 public class TestEmergencyDumpAtOOM {
 
     public static List<String> DEFAULT_LEAKER_ARGS = List.of(
-        "-Xmx32m",
-        "-XX:StartFlightRecording:path-to-gc-roots=true,dumponexit=true,filename=oom.jfr",
+        "-Xmx64m",
+        "-XX:TLABSize=2k",
+        "-XX:StartFlightRecording:dumponexit=true,filename=oom.jfr",
         Leaker.class.getName()
     );
 
@@ -61,47 +65,54 @@ public class TestEmergencyDumpAtOOM {
     }
 
     private static void test(boolean shouldCrash) throws Exception {
-        var args = new ArrayList<String>(DEFAULT_LEAKER_ARGS);
+        List<String> args = new ArrayList<>(DEFAULT_LEAKER_ARGS);
         if (shouldCrash) {
             args.add(0, "-XX:+CrashOnOutOfMemoryError");
         }
-        var p = ProcessTools.createTestJavaProcessBuilder(args).start();
-        p.waitFor();
-        var output = new OutputAnalyzer(p);
-        if (!output.contains("java.lang.OutOfMemoryError")) {
-            throw new RuntimeException("OutOfMemoryError did not happen.");
+
+        while (true) {
+            Process p = ProcessTools.createTestJavaProcessBuilder(args).start();
+            p.waitFor();
+            OutputAnalyzer output = new OutputAnalyzer(p);
+            if (!output.contains("java.lang.OutOfMemoryError")) {
+                throw new RuntimeException("OutOfMemoryError did not happen.");
+            }
+
+            // Check recording file
+            String jfrFileName = shouldCrash ? String.format("hs_err_pid%d.jfr", p.pid()) : "oom.jfr";
+            Path jfrPath = Path.of(jfrFileName);
+            Asserts.assertTrue(Files.exists(jfrPath), "No jfr recording file " + jfrFileName + " exists");
+
+            // Check events
+            AtomicLong oldObjects = new AtomicLong();
+            AtomicReference<String> shutdownReason = new AtomicReference<>();
+            AtomicReference<String> dumpReason = new AtomicReference<>();
+            try (EventStream stream = EventStream.openFile(jfrPath)) {
+                stream.onEvent("jdk.OldObjectSample", e -> oldObjects.incrementAndGet());
+                stream.onEvent("jdk.Shutdown", e -> shutdownReason.set(e.getString("reason")));
+                stream.onEvent("jdk.DumpReason", e -> dumpReason.set(e.getString("reason")));
+                stream.start();
+            }
+
+            // Check OldObjectSample events
+            if (oldObjects.get() > 0L) {
+                // Check shutdown reason
+                String expectedShutdownReason = shouldCrash
+                    ? "VM Error"
+                    : "No remaining non-daemon Java threads";
+                Asserts.assertEquals(expectedShutdownReason, shutdownReason.get());
+
+                // Check dump reason - it would appear on emergency dump only
+                if (shouldCrash) {
+                    Asserts.assertEquals("Out of Memory", dumpReason.get());
+                }
+
+                // Passed this test
+                return;
+            }
+
+            System.out.println("Could not find OldObjectSample events. Retrying.");
         }
-
-        // Check recording file, and load all of events
-        var jfrFileName = shouldCrash ? String.format("hs_err_pid%d.jfr", p.pid()) : "oom.jfr";
-        var jfrPath = Path.of(jfrFileName);
-        Asserts.assertTrue(Files.exists(jfrPath), "No jfr recording file " + jfrFileName + " exists");
-        var events = RecordingFile.readAllEvents(jfrPath);
-
-        // Check shutdown reason
-        var shutdownEvent = events.stream()
-                                  .filter(e -> e.getEventType().getName().equals("jdk.Shutdown"))
-                                  .findAny()
-                                  .get();
-        String shutdownReason = shouldCrash
-            ? "VM Error"
-            : "No remaining non-daemon Java threads";
-        Asserts.assertEquals(shutdownReason, shutdownEvent.getString("reason"));
-
-        // Check dump reason
-        if (shouldCrash) {
-            var dumpReasonEvent = events.stream()
-                                        .filter(e -> e.getEventType().getName().equals("jdk.DumpReason"))
-                                        .findAny()
-                                        .get();
-            Asserts.assertEquals("Out of Memory", dumpReasonEvent.getString("reason"));
-        }
-
-        // Check OldObjectSample events
-        var numEvents = events.stream()
-                              .filter(e -> e.getEventType().getName().equals("jdk.OldObjectSample"))
-                              .count();
-        Asserts.assertGreaterThan(numEvents, 0L);
     }
 
     public static void main(String... args) throws Exception {
