@@ -167,6 +167,13 @@ public class ExceptionTestNulls {
                 checkROEContainsIAE(e);
             }
 
+           try {
+                mbs.registerMBean(myMy, name);
+                mbs.addNotificationListener(null, name, null, null);
+            } catch (RuntimeOperationsException e) {
+                checkROEContainsIAE(e);
+            }
+
         } catch (MBeanException | MalformedObjectNameException | InstanceAlreadyExistsException
                  | NotCompliantMBeanException | InstanceNotFoundException | ReflectionException
                  | AttributeNotFoundException | InvalidAttributeValueException e) {
