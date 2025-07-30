@@ -42,6 +42,11 @@ import static java.lang.String.UTF16;
 
 /// UTF16 String operations.
 ///
+/// UTF16 byte arrays have the identical layout as char arrays. They share the
+/// same base offset and scale, and for each two-byte unit interpreted as a char,
+/// it has the same endianness as a char, which is the platform endianness.
+/// This is ensured in the static initializer of StringUTF16.
+///
 /// All indices and sizes for byte arrays carrying UTF16 data are in number of
 /// chars instead of  number of bytes.
 final class StringUTF16 {
