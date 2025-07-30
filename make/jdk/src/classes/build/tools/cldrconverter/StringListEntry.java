@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ class StringListEntry extends Entry<List<String>> {
         value = new ArrayList<>();
     }
 
-    void addCharacters(int index, String key, String spaceRepl, char[] characters, int start, int length) {
+    void addCharacters(int index, String count, char[] characters, int start, int length) {
         int size = value.size();
-        String elem = key + ":" + new String(characters, start, length);
+        String elem = count + ":" + new String(characters, start, length);
 
-        // replace spaces, if any
-        elem = elem.replaceAll(" ", spaceRepl);
+        // quote embedded spaces, if any
+        elem = elem.replaceAll(" ", "' '");
 
         if (size < index) {
             // fill with empty strings when the patterns start from index > size

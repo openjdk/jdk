@@ -46,7 +46,6 @@ import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -853,7 +852,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         perMill = findNonFormatChar(perMillText, '\u2030');
         infinity  = numberElements[9];
         NaN = numberElements[10];
-        lenientMinusSign = numberElements[11];
 
         // monetary decimal/grouping separators may be missing in resource bundles
         monetarySeparator = numberElements.length < 12 || numberElements[11].isEmpty() ?
@@ -861,12 +859,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         monetaryGroupingSeparator = numberElements.length < 13 || numberElements[12].isEmpty() ?
             groupingSeparator : numberElements[12].charAt(0);
 
+        // Lenient minus signs
+        lenientMinusSign = numberElements.length < 14 ? "" : numberElements[13];
+
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
-
-        // lenient minus sign
-//        lenientMinusSign = adapter.getLocaleResources(override).getParseLenient("number", "-");
     }
 
     /**
@@ -1187,7 +1185,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private  char    monetaryGroupingSeparator;
 
     /**
-     * The grouping separator used when formatting currency values.
+     * Used for lenient minus sign parsing, e.g., hyphen-minus (U+002D)
+     * for minus sign (U+2212)
      *
      * @serial
      * @since 26

@@ -3521,8 +3521,8 @@ public class DecimalFormat extends NumberFormat {
         if (!parseStrict && alen == 1) {
             var a = affix.charAt(0);
             var c = text.charAt(position);
-            if (symbols.lenientMinusSign.indexOf(a) >= 0) {
-                return symbols.lenientMinusSign.indexOf(c) >= 0;
+            if (symbols.getLenientMinusSign().indexOf(a) >= 0) {
+                return symbols.getLenientMinusSign().indexOf(c) >= 0;
             } else {
                 return a == c;
             }

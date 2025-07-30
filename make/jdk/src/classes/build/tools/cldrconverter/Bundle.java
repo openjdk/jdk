@@ -79,6 +79,7 @@ class Bundle {
         "NumberElements/nan",
         "NumberElements/currencyDecimal",
         "NumberElements/currencyGroup",
+        "NumberElements/lenientMinusSign",
     };
 
     private static final String[] TIME_PATTERN_KEYS = {
@@ -112,12 +113,6 @@ class Bundle {
             "ListPatterns_standard",
             "ListPatterns_or",
             "ListPatterns_unit",
-    };
-
-    static final String[] PARSE_LENIENT_KEYS = {
-        "ParseLenient_general",
-        "ParseLenient_date",
-        "ParseLenient_number",
     };
 
     // DateFormatItem prefix
@@ -272,13 +267,6 @@ class Bundle {
                     })
                     .toArray(String[]::new);
                 myMap.put(k, arrPatterns);
-            }
-        }
-
-        for (String k : PARSE_LENIENT_KEYS) {
-            if (myMap.remove(k) instanceof List<?> lenients) {
-                // convert to array
-                myMap.put(k, lenients.toArray(new String[0]));
             }
         }
 

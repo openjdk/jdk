@@ -55,8 +55,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     private String currentContext = ""; // "format"/"stand-alone"
     private String currentWidth = ""; // "wide"/"narrow"/"abbreviated"
     private String currentStyle = ""; // short, long for decimalFormat
-    private String currentLeniencyScope = "";
-    private int leniencyIndex = 0;
 
     LDMLParseHandler(String id) {
         this.id = id;
@@ -620,8 +618,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                             case "long":
                                 pushStringListElement(qName, attributes,
                                     (int) Math.log10(Double.parseDouble(attributes.getValue("type"))),
-                                    attributes.getValue("count"),
-                                    "' '");
+                                    attributes.getValue("count"));
                                 break;
                             default:
                                 pushIgnoredContainer(qName);
@@ -852,8 +849,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 String level = attributes.getValue("level");
                 if (level != null && level.equals("lenient")) {
-                    currentLeniencyScope = attributes.getValue("scope");
-                    pushStringListEntry(qName, attributes, "ParseLenient_" + currentLeniencyScope);
+                    pushKeyContainer(qName, attributes, attributes.getValue("scope"));
                 } else {
                     pushIgnoredContainer(qName);
                 }
@@ -861,7 +857,13 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
 
         case "parseLenient":
-            pushStringListElement(qName, attributes, leniencyIndex++, attributes.getValue("sample"), "");
+            if (currentContainer instanceof KeyContainer kc &&
+                kc.getKey().equals("number") &&
+                attributes.getValue("sample").equals("-")) {
+                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/lenientMinusSign");
+            } else {
+                pushIgnoredContainer(qName);
+            }
             break;
 
         default:
@@ -1123,10 +1125,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "standard":
         case "daylight":
         case "exemplarCity":
-            if (zonePrefix != null && (currentContainer instanceof Entry)) {
+            if (zonePrefix != null && (currentContainer instanceof Entry<?> entry)) {
                 @SuppressWarnings("unchecked")
                 Map<String, String> valmap = (Map<String, String>) get(zonePrefix + getContainerKey());
-                Entry<?> entry = (Entry<?>) currentContainer;
                 if (qName.equals("exemplarCity")) {
                     put(CLDRConverter.EXEMPLAR_CITY_PREFIX + getContainerKey(), (String) entry.getValue());
                 } else {
@@ -1170,11 +1171,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             currentStyle = "";
             putIfEntry();
             break;
-        case "parseLenients":
-            currentLeniencyScope = "";
-            leniencyIndex = 0;
-            putIfEntry();
+        case "parseLenient":
+            if (currentContainer instanceof StringEntry se) {
+                put(se.getKey(), se.getValue().replaceAll("[\\[\\]\\\\ ]", ""));
+            }
             break;
+
         default:
             putIfEntry();
         }
@@ -1182,25 +1184,24 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     }
 
     private Object putIfEntry() {
-        if (currentContainer instanceof AliasEntry) {
-            Entry<?> entry = (Entry<?>) currentContainer;
-            String containerqName = entry.getParent().getqName();
+        if (currentContainer instanceof AliasEntry ae) {
+            String containerqName = ae.getParent().getqName();
             if (containerqName.equals("decimalFormatLength")) {
                 String srcKey = toJDKKey(containerqName, "", currentStyle);
-                String targetKey = getTarget(entry.getKey(), "", "", "");
+                String targetKey = getTarget(ae.getKey(), "", "", "");
                 CLDRConverter.aliases.put(srcKey, targetKey);
             } else if (containerqName.equals("currencyFormat") ||
                         containerqName.equals("percentFormat")) {
-                KeyContainer kc = (KeyContainer)entry.getParent();
+                KeyContainer kc = (KeyContainer)ae.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", kc.getKey()),
-                        getTarget(entry.getKey(), "", "", "")
+                        getTarget(ae.getKey(), "", "", "")
                 );
             } else if (containerqName.equals("listPattern")) {
-                var sae = (StringArrayEntry)entry.getParent();
+                var sae = (StringArrayEntry)ae.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", sae.getKey()),
-                        getTarget(entry.getKey(), "", "", "")
+                        getTarget(ae.getKey(), "", "", "")
                 );
             } else {
                 Set<String> keyNames = populateAliasKeys(containerqName, currentContext, currentWidth);
@@ -1210,7 +1211,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         String calType = currentCalendarType.lname();
                         String src = calType+"."+tmp[0];
                         String target = getTarget(
-                                    entry.getKey(),
+                                    ae.getKey(),
                                     calType,
                                     tmp[1].length()>0 ? tmp[1] : currentContext,
                                     tmp[2].length()>0 ? tmp[2] : currentWidth);
@@ -1222,11 +1223,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     }
                 }
             }
-        } else if (currentContainer instanceof Entry) {
-            Entry<?> entry = (Entry<?>) currentContainer;
-            Object value = entry.getValue();
+        } else if (currentContainer instanceof Entry<?> e) {
+            Object value = e.getValue();
             if (value != null) {
-                String key = entry.getKey();
+                String key = e.getKey();
                 // Tweak for MonthNames for the root locale, Needed for
                 // SimpleDateFormat.format()/parse() roundtrip.
                 if (id.equals("root") && key.startsWith("MonthNames")) {
