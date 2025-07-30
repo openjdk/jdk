@@ -50,6 +50,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
 #include "opto/vectornode.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -4232,7 +4233,8 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
+    assert(Opcode() == Op_Initialize || (UseNewCode && UseStoreStoreForCtor && Opcode() == Op_MemBarStoreStore),
+           "Neither no use of init memory nor folded store-store barrier memory at the end of constructor");
     assert(outcnt() == 1, "Only control then");
   }
   if (trailing_store() || trailing_load_store()) {
