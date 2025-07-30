@@ -185,13 +185,14 @@ class ShenandoahCASBarrierSlowStub : public ShenandoahBarrierStub {
   Register _expected;
   Register _new_val;
   Register _result;
+  bool     _cae;
 
-  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr, Register expected, Register new_val, Register result) :
+  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr, Register expected, Register new_val, Register result, bool cae) :
     ShenandoahBarrierStub(node),
-    _addr(addr), _expected(expected), _new_val(new_val), _result(result) {}
+    _addr(addr), _expected(expected), _new_val(new_val), _result(result), _cae(cae) {}
 
 public:
-  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result);
+  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, bool cae);
   void emit_code(MacroAssembler& masm) override;
 };
 

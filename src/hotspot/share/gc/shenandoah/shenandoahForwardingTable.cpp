@@ -79,10 +79,10 @@ void ShenandoahForwardingTable::enter_forwarding(HeapWord* original, HeapWord* f
   Entry* table = _table;
   uint64_t hash = FastHash::get_hash64(reinterpret_cast<uint64_t>(original), reinterpret_cast<uint64_t>(table));
   uint64_t index = hash % _num_entries;
-  log_develop_trace(gc)("Finding slot, start at index: %lu, for original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(original), p2i(forwardee));
+  log_develop_trace(gc)("Finding slot, start at index: " UINT64_FORMAT ", for original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(original), p2i(forwardee));
   ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
   while (table[index].original() != nullptr || table[index].is_marked(ctx)) {
-    log_develop_trace(gc)("Collision on %lu: [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
+    log_develop_trace(gc)("Collision on" UINT64_FORMAT ": [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
     index++;
     if (index == _num_entries) {
       index = 0;
@@ -137,10 +137,10 @@ HeapWord* ShenandoahForwardingTable::forwardee(HeapWord* original) const {
   Entry* table = _table;
   uint64_t hash = FastHash::get_hash64(reinterpret_cast<uint64_t>(original), reinterpret_cast<uint64_t>(table));
   uint64_t index = hash % _num_entries;
-  log_develop_trace(gc)("Finding slot, start at index: %lu, for original: " PTR_FORMAT, index, p2i(original));
+  log_develop_trace(gc)("Finding slot, start at index: " UINT64_FORMAT ", for original: " PTR_FORMAT, index, p2i(original));
   ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
   while (table[index].is_marked(ctx) || table[index].original() != original) {
-    log_develop_trace(gc)("Collision on %lu: [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
+    log_develop_trace(gc)("Collision on " UINT64_FORMAT ": [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
     index++;
     if (index == _num_entries) {
       index = 0;

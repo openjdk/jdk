@@ -484,7 +484,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(const MachNode* node,
   assert_different_registers(addr, expected, tmp1);
   assert_different_registers(addr, new_val,  tmp1);
 
-  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result);
+  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, is_cae);
   ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1);
   bool is_narrow = UseCompressedOops;
   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
@@ -532,6 +532,9 @@ void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
     }
     __ blr(lr);
     __ mov(_result, r0);
+  }
+  if (!_cae) {
+    __ cmp(_result, _expected);
   }
   __ b(*continuation());
 }

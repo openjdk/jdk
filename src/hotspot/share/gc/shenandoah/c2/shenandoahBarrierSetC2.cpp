@@ -1370,8 +1370,8 @@ void ShenandoahBarrierStub::register_stub() {
   }
 }
 
-ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Register addr, Register expected, Register new_val, Register result) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, addr, expected, new_val, result);
+ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, bool cae) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, addr, expected, new_val, result, cae);
   stub->register_stub();
   return stub;
 }
