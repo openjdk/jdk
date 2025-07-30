@@ -950,8 +950,9 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
+  assert(is_aligned(heap_size, alignment), "precondition");
 
-  size_t total_reserved = align_up(heap_size, alignment);
+  size_t total_reserved = heap_size;
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
