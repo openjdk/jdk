@@ -37,13 +37,19 @@ import javax.swing.JPanel;
 
 public class bug4967768 {
     private static final String INSTRUCTIONS = """
-            When the test starts you'll see a button "Oops"
-            with the "p" letter underlined at the bottom
-            of the instruction frame.
+            When the test starts you'll see a button "Oops".
+
+            For Windows and GTK Look and Feel, you need to press
+            ALT key to activate the mnemonic to be visible.
+            Once ALT key is pressed, the "p" letter
+            is underlined at the bottom of the instruction frame.
 
             Ensure the underline cuts through the descender
             of letter "p", i.e. the underline is painted
             not below the letter but below the baseline.
+
+            Press Pass if you see the expected behaviour else
+            press Fail.
             """;
 
     public static void main(String[] args) throws Exception {
