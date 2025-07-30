@@ -2613,7 +2613,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     // For the OOM handling we may already be limited in memory.
     // Lets ensure we have at least 20MB per thread.
     size_t free_memory = 0;
-    static_cast<void>(os::free_memory(free_memory));
+    (void)os::free_memory(free_memory);
     julong max_threads = free_memory / (20 * M);
     if (num_dump_threads > max_threads) {
       num_dump_threads = MAX2<uint>(1, (uint)max_threads);

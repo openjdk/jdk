@@ -1184,7 +1184,7 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   get_summary_cpu_info(buf, buflen);
   st->print("%s, ", buf);
   size_t phys_mem = 0;
-  static_cast<void>(physical_memory(phys_mem));
+  (void)physical_memory(phys_mem);
   size_t mem = phys_mem/G;
   if (mem == 0) {  // for low memory systems
     mem = phys_mem/M;
@@ -1943,7 +1943,7 @@ bool os::is_server_class_machine() {
   //     based on the sizes of DIMMs, and maybe graphics cards.
   const julong missing_memory   = 256UL * M;
   size_t phys_mem = 0;
-  static_cast<void>(os::physical_memory(phys_mem));
+  (void)os::physical_memory(phys_mem);
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
       (phys_mem >= (server_memory - missing_memory))) {
@@ -2219,10 +2219,10 @@ bool os::used_memory(size_t& value) {
 #endif
   size_t avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
-  static_cast<void>(os::available_memory(avail_mem));
+  (void)os::available_memory(avail_mem);
   size_t phys_mem = 0;
   // Return value ignored - defaulting to 0 on failure
-  static_cast<void>(os::physical_memory(phys_mem));
+  (void)os::physical_memory(phys_mem);
   value = phys_mem - avail_mem;
   return true;
 }

@@ -1359,7 +1359,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
     size_t avail_mem = 0;
-    static_cast<void>(os::available_memory(avail_mem));
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
       ("loading name=%s kind=%d (avail_mem=%zuK)",
        the_class->external_name(), _class_load_kind, avail_mem >> 10);
@@ -1526,7 +1526,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
         return JVMTI_ERROR_INTERNAL;
       }
     }
-    static_cast<void>(os::available_memory(avail_mem));
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
       ("loaded name=%s (avail_mem=%zuK)", the_class->external_name(), avail_mem >> 10);
   }
@@ -4437,7 +4437,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
     size_t avail_mem = 0;
-    static_cast<void>(os::available_memory(avail_mem));
+    (void)os::available_memory(avail_mem);
     log_info(redefine, class, load)
       ("redefined name=%s, count=%d (avail_mem=%zuK)",
        the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), avail_mem >> 10);

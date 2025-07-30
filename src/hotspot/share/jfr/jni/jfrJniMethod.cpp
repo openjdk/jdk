@@ -416,7 +416,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
 #else
   size_t phys_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
-  static_cast<void>(os::physical_memory(phys_mem));  
+  (void)os::physical_memory(phys_mem);
   return static_cast<jlong>(phys_mem);
 #endif
 JVM_END
@@ -428,7 +428,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
 #else
   size_t total_swap_space = 0;
   // Return value ignored - defaulting to 0 on failure.
-  static_cast<void>(os::total_swap_space(total_swap_space));
+  (void)os::total_swap_space(total_swap_space);
   return static_cast<jlong>(total_swap_space);
 #endif
 JVM_END
