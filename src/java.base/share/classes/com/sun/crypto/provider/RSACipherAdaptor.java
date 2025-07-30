@@ -34,13 +34,11 @@ import java.security.SignatureSpi;
 import java.security.InvalidKeyException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
-import java.security.ProviderException;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 /**
  * NONEwithRSA Signature implementation using RSA/ECB/PKCS1Padding Cipher

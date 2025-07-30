@@ -1843,9 +1843,7 @@ public class KeyStore {
             // Detect the keystore type
             for (Provider p : Security.getProviders()) {
                 for (Provider.Service s : p.getServices()) {
-                    if (s.getType().equals("KeyStore") &&
-                            CryptoAlgorithmConstraints.permits("KEYSTORE",
-                            s.getAlgorithm())) {
+                    if (s.getType().equals("KeyStore")) {
                         try {
                             KeyStoreSpi impl = (KeyStoreSpi) s.newInstance(null);
                             if (impl.engineProbe(dataStream)) {
@@ -1853,8 +1851,12 @@ public class KeyStore {
                                     kdebug.println(s.getAlgorithm()
                                             + " keystore detected: " + file);
                                 }
-                                keystore = new KeyStore(impl, p, s.getAlgorithm());
-                                break;
+                                String ksAlgo = s.getAlgorithm();
+                                if (CryptoAlgorithmConstraints.permits(
+                                        "KEYSTORE", ksAlgo)) {
+                                    keystore = new KeyStore(impl, p, ksAlgo);
+                                    break;
+                                }
                             }
                         } catch (NoSuchAlgorithmException e) {
                             // ignore

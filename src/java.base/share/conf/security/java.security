@@ -773,6 +773,13 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 
 #
 # Algorithm restrictions for Java Crypto API services
+#
+# In some environments, certain algorithms may be undesirable for certain
+# cryptographic services. For example, "MD2" is generally no longer considered
+# to be a secure hash algorithm.  This section describes the mechanism for
+# disabling algorithms at the JCA/JCE level based on service name and algorithm
+# name.
+#
 # The syntax of the disabled services string is described as follows:
 #       "DisabledService {, DisabledService}"
 #
@@ -793,7 +800,15 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 #
 # Note: Entries with unsupported services will be ignored
 #
-#jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+# Note: The restriction is applied in the various getInstance(...) methods
+# of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
+# and Signature.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# Example:
+#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)

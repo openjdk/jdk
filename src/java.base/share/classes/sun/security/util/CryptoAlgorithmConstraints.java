@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.security.util.KnownOIDs;
 
 /**
  * Algorithm constraints for disabled crypto algorithms property

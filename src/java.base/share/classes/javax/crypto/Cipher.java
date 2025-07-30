@@ -367,7 +367,6 @@ public class Cipher {
                 throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "missing mode and/or padding-"
                                    + transformation);
-
             }
             return new String[] { algo, mode, padding };
         }
@@ -626,6 +625,12 @@ public class Cipher {
      * security_guide_jdk_providers JDK Providers} document for information
      * on the transformation defaults used by JDK providers.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed.
+     *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
@@ -703,7 +708,7 @@ public class Cipher {
      * The JDK Reference Implementation additionally uses
      * the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified keystore type is allowed.
+     * if the specified algorithm is allowed.
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
