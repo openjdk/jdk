@@ -75,14 +75,18 @@ class AOTMapLogger : AllStatic {
   // at runtime.
   static intx _buffer_to_requested_delta;
 
+  static void dumptime_log_metaspace_region(const char* name, DumpRegion* region,
+                                            const ArchiveBuilder::SourceObjList* src_objs);
+  static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
+
+  // Common code for dumptime/runtime
   static void log_header(FileMapInfo* mapinfo);
   static void log_region(const char* name, address base, address top, address requested_base);
-  static void log_metaspace_region(const char* name, DumpRegion* region,
-                                   const ArchiveBuilder::SourceObjList* src_objs);
-  static void log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs);
   static void log_metaspace_objects_impl(address region_base, address region_end,
                                          GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs, int start_idx, int end_idx);
+  static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
 
+  // Metaspace object: type-specific logging
   static void log_constant_pool(ConstantPool* cp, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
                                       const char* type_name, int bytes, Thread* current);
@@ -91,9 +95,6 @@ class AOTMapLogger : AllStatic {
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
 
-  static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
-
-  static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void dumptime_log_heap_region(ArchiveHeapInfo* heap_info);

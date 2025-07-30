@@ -69,7 +69,7 @@ public:
       return (Klass*)klass;
     }
   }
-};
+}; // AOTMapLogger::RequestedMetadataAddr
 
 void AOTMapLogger::ergo_initialize() {
   if (!CDSConfig::is_dumping_archive() && CDSConfig::is_using_archive() && log_is_enabled(Info, aot, map)) {
@@ -101,8 +101,8 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   DumpRegion* rw_region = &builder->_rw_region;
   DumpRegion* ro_region = &builder->_ro_region;
 
-  log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs);
-  log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
+  dumptime_log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs);
+  dumptime_log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
 
   address bitmap_end = address(bitmap + bitmap_size_in_bytes);
   log_region("bitmap", address(bitmap), bitmap_end, nullptr);
@@ -115,7 +115,7 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 #endif
 
   log_info(aot, map)("[End of AOT cache map]");
-};
+}
 
 // This class is used to find the location and type of all the
 // archived metaspace objects.
@@ -152,7 +152,7 @@ public:
     UniqueMetaspaceClosure::finish();
     _objs.sort(compare_objs_by_addr);
   }
-};
+}; // AOTMapLogger::GatherArchivedMetaspaceObjs
 
 void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
   _is_logging_mapped_aot_cache = true;
@@ -251,36 +251,32 @@ void AOTMapLogger::log_region(const char* name, address base, address top, addre
                      name, p2i(base), p2i(top), size);
 }
 
-void AOTMapLogger::log_metaspace_region(const char* name, DumpRegion* region,
-                                        const ArchiveBuilder::SourceObjList* src_objs) {
+void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* region,
+                                                 const ArchiveBuilder::SourceObjList* src_objs) {
   address region_base = address(region->base());
   address region_top  = address(region->top());
   log_region(name, region_base, region_top, region_base + _buffer_to_requested_delta);
   if (log_is_enabled(Debug, aot, map)) {
-    log_metaspace_objects(region, src_objs);
+    GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
+    for (int i = 0; i < src_objs->objs()->length(); i++) {
+      ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+      ArchivedObjInfo info;
+      info._src_addr = src_info->source_addr();
+      info._buffered_addr = src_info->buffered_addr();
+      info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
+      info._bytes = src_info->size_in_bytes();
+      info._type = src_info->msotype();
+      objs.append(info);
+    }
+
+    log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
   }
 }
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
-void AOTMapLogger::log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
-  GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
-
-  for (int i = 0; i < src_objs->objs()->length(); i++) {
-    ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
-    ArchivedObjInfo info;
-    info._src_addr = src_info->source_addr();
-    info._buffered_addr = src_info->buffered_addr();
-    info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
-    info._bytes = src_info->size_in_bytes();
-    info._type = src_info->msotype();
-    objs.append(info);
-  }
-
-  log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
-}
-
-void AOTMapLogger::log_metaspace_objects_impl(address region_base, address region_end, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs, int start_idx, int end_idx) {
+void AOTMapLogger::log_metaspace_objects_impl(address region_base, address region_end, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                              int start_idx, int end_idx) {
   address last_obj_base = region_base;
   address last_obj_end  = region_base;
   Thread* current = Thread::current();
@@ -453,6 +449,11 @@ public:
     }
   }
 
+  FakeMirror& as_mirror();
+  FakeObjArray& as_obj_array();
+  FakeString& as_string();
+  FakeTypeArray& as_type_array();
+
   RequestedMetadataAddr klass() {
     address rk = (address)real_klass();
     return RequestedMetadataAddr(rk - _requested_to_mapped_metadata_delta);
@@ -497,14 +498,6 @@ public:
     return checked_cast<uint32_t>(pd >> _requested_shift);
   }
 
-  bool is_marked_as_native_pointer(int field_offset) {
-    if (is_logging_mapped_aot_cache()) {
-      return false; // TODO
-    } else {
-      return ArchiveHeapWriter::is_marked_as_native_pointer(_dumptime_heap_info, raw_oop(), field_offset);
-    }
-  }
-
   FakeOop read_oop_at(narrowOop* addr) { // +UseCompressedOops
     narrowOop n = *addr;
     if (size_t(n) == 0) {
@@ -537,12 +530,7 @@ public:
     precond(fd->field_type() != T_ARRAY && fd->field_type() != T_OBJECT);
     fd->print_on_for(st, raw_oop());
   }
-
-  FakeMirror& as_mirror();
-  FakeObjArray& as_obj_array();
-  FakeString& as_string();
-  FakeTypeArray& as_type_array();
-};
+}; // AOTMapLogger::FakeOop
 
 class AOTMapLogger::FakeMirror : public AOTMapLogger::FakeOop {
 public:
@@ -556,7 +544,7 @@ public:
   int static_oop_field_count() {
     return java_lang_Class::static_oop_field_count(raw_oop());
   }
-};
+}; // AOTMapLogger::FakeMirror
 
 class AOTMapLogger::FakeObjArray : public AOTMapLogger::FakeOop {
   objArrayOop raw_objArrayOop() {
@@ -574,7 +562,7 @@ public:
       return read_oop_at(raw_objArrayOop()->obj_at_addr<oop>(i));
     }
   }
-};
+}; // AOTMapLogger::FakeObjArray
 
 class AOTMapLogger::FakeString : public AOTMapLogger::FakeOop {
 public:
@@ -590,7 +578,7 @@ public:
 
   int length();
   void print_on(outputStream* st, int max_length = MaxStringPrintSize);
-};
+}; // AOTMapLogger::FakeString
 
 class AOTMapLogger::FakeTypeArray : public AOTMapLogger::FakeOop {
   typeArrayOop raw_typeArrayOop() {
@@ -605,7 +593,7 @@ public:
   int length() { return raw_typeArrayOop()->length(); }
   jbyte byte_at(int i) { return raw_typeArrayOop()->byte_at(i); }
   jchar char_at(int i) { return raw_typeArrayOop()->char_at(i); }
-};
+}; // AOTMapLogger::FakeTypeArray
 
 AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
   precond(real_klass() == vmClasses::Class_klass());
@@ -717,42 +705,11 @@ public:
       }
       break;
     default:
-      if (_fake_oop.is_marked_as_native_pointer(fd->offset())) {
-        print_as_native_pointer(fd);
-      } else {
-        _fake_oop.print_non_oop_field(_st, fd); // name, offset, value
-        _st->cr();
-      }
+      _fake_oop.print_non_oop_field(_st, fd); // name, offset, value
+      _st->cr();
     }
   }
-
-  void print_as_native_pointer(fieldDescriptor* fd) {
-#if 0
-    LP64_ONLY(assert(fd->field_type() == T_LONG, "must be"));
-    NOT_LP64 (assert(fd->field_type() == T_INT,  "must be"));
-
-    // We have a field that looks like an integer, but it's actually a pointer to a MetaspaceObj.
-    address source_native_ptr = (address)
-        LP64_ONLY(_source_obj->long_field(fd->offset()))
-        NOT_LP64( _source_obj->int_field (fd->offset()));
-    ArchiveBuilder* builder = ArchiveBuilder::current();
-
-    // The value of the native pointer at runtime.
-    address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
-
-    // The address of _source_obj at runtime
-    oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
-    // The address of this field in the requested space
-    assert(requested_obj != nullptr, "Attempting to load field from null oop");
-    address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
-
-    fd->print_on(_st);
-    _st->print_cr(PTR_FORMAT " (marked metadata pointer @" PTR_FORMAT " )",
-                  p2i(requested_native_ptr), p2i(requested_field_addr));
-#endif
-  }
-}; // ArchivedFieldPrinter
-
+}; // AOTMapLogger::ArchivedFieldPrinter
 
 int AOTMapLogger::FakeOop::_requested_shift;
 intx AOTMapLogger::FakeOop::_buffer_to_requested_delta;

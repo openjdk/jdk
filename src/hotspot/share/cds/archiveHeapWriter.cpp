@@ -747,27 +747,6 @@ void ArchiveHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
   }
 }
 
-// Do we have a jlong/jint field that's actually a pointer to a MetaspaceObj?
-bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset) {
-  HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
-  assert(p != nullptr, "must be");
-
-  // requested_field_addr = the address of this field in the requested space
-  oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
-  Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
-  assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
-
-  BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
-  // Leading zeros have been removed so some addresses may not be in the ptrmap
-  size_t start_pos = FileMapInfo::current_info()->heap_ptrmap_start_pos();
-  if (idx < start_pos) {
-    return false;
-  } else {
-    idx -= start_pos;
-  }
-  return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
-}
-
 void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   int num_non_null_ptrs = 0;
   Metadata** bottom = (Metadata**) _requested_bottom;

@@ -236,7 +236,6 @@ public:
   static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
-  static bool is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset);
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
