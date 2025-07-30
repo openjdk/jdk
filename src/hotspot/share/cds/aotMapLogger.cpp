@@ -43,7 +43,7 @@ bool AOTMapLogger::_is_logging_mapped_aot_cache;
 intx AOTMapLogger::_buffer_to_requested_delta;
 intx AOTMapLogger::_requested_to_mapped_metadata_delta;
 int AOTMapLogger::_num_root_segments;
-int AOTMapLogger::_num_obj_array_logged;
+int AOTMapLogger::_num_obj_arrays_logged;
 GrowableArrayCHeap<AOTMapLogger::FakeOop, mtClass>* AOTMapLogger::_roots;
 ArchiveHeapInfo* AOTMapLogger::_dumptime_heap_info;
 
@@ -94,8 +94,8 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 
   address header = address(mapinfo->header());
   address header_end = header + mapinfo->header()->header_size();
-  log_region("header", header, header_end, nullptr);
-  log_header(mapinfo);
+  log_region_range("header", header, header_end, nullptr);
+  log_file_header(mapinfo);
   log_as_hex(header, header_end, nullptr);
 
   DumpRegion* rw_region = &builder->_rw_region;
@@ -105,7 +105,7 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   dumptime_log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
 
   address bitmap_end = address(bitmap + bitmap_size_in_bytes);
-  log_region("bitmap", address(bitmap), bitmap_end, nullptr);
+  log_region_range("bitmap", address(bitmap), bitmap_end, nullptr);
   log_as_hex((address)bitmap, bitmap_end, nullptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -161,8 +161,8 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
 
   address header = address(mapinfo->header());
   address header_end = header + mapinfo->header()->header_size();
-  log_region("header", header, header_end, nullptr);
-  log_header(mapinfo);
+  log_region_range("header", header, header_end, nullptr);
+  log_file_header(mapinfo);
   log_as_hex(header, header_end, nullptr);
 
   runtime_log_metaspace_regions(mapinfo);
@@ -214,48 +214,22 @@ void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
     first_ro_index = i;
   }
 
-  log_region("rw", rw_base, rw_end, rw_base - _requested_to_mapped_metadata_delta);
+  log_region_range("rw", rw_base, rw_end, rw_base - _requested_to_mapped_metadata_delta);
   if (log_is_enabled(Debug, aot, map)) {
     log_metaspace_objects_impl(rw_base, rw_end, objs, 0, first_ro_index);
   }
 
-  log_region("ro", ro_base, ro_end, ro_base - _requested_to_mapped_metadata_delta);
+  log_region_range("ro", ro_base, ro_end, ro_base - _requested_to_mapped_metadata_delta);
   if (log_is_enabled(Debug, aot, map)) {
     log_metaspace_objects_impl(ro_base, ro_end, objs, first_ro_index, objs->length());
   }
-}
-
-void AOTMapLogger::log_header(FileMapInfo* mapinfo) {
-  LogStreamHandle(Info, aot, map) lsh;
-  if (lsh.is_enabled()) {
-    mapinfo->print(&lsh);
-  }
-}
-
-// Log information about a region, whose address at dump time is [base .. top). At
-// runtime, this region will be mapped to requested_base. requested_base is nullptr if this
-// region will be mapped at os-selected addresses (such as the bitmap region), or will
-// be accessed with os::read (the header).
-//
-// Note: across -Xshare:dump runs, base may be different, but requested_base should
-// be the same as the archive contents should be deterministic.
-void AOTMapLogger::log_region(const char* name, address base, address top, address requested_base) {
-  size_t size = top - base;
-  base = requested_base;
-  if (requested_base == nullptr) {
-    top = (address)size;
-  } else {
-    top = requested_base + size;
-  }
-  log_info(aot, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
-                     name, p2i(base), p2i(top), size);
 }
 
 void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* region,
                                                  const ArchiveBuilder::SourceObjList* src_objs) {
   address region_base = address(region->base());
   address region_top  = address(region->top());
-  log_region(name, region_base, region_top, region_base + _buffer_to_requested_delta);
+  log_region_range(name, region_base, region_top, region_base + _buffer_to_requested_delta);
   if (log_is_enabled(Debug, aot, map)) {
     GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
     for (int i = 0; i < src_objs->objs()->length(); i++) {
@@ -271,6 +245,32 @@ void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* r
 
     log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
   }
+}
+
+void AOTMapLogger::log_file_header(FileMapInfo* mapinfo) {
+  LogStreamHandle(Info, aot, map) lsh;
+  if (lsh.is_enabled()) {
+    mapinfo->print(&lsh);
+  }
+}
+
+// Log information about a region, whose address at dump time is [base .. top). At
+// runtime, this region will be mapped to requested_base. requested_base is nullptr if this
+// region will be mapped at os-selected addresses (such as the bitmap region), or will
+// be accessed with os::read (the header).
+//
+// Note: across -Xshare:dump runs, base may be different, but requested_base should
+// be the same as the archive contents should be deterministic.
+void AOTMapLogger::log_region_range(const char* name, address base, address top, address requested_base) {
+  size_t size = top - base;
+  base = requested_base;
+  if (requested_base == nullptr) {
+    top = (address)size;
+  } else {
+    top = requested_base + size;
+  }
+  log_info(aot, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
+                     name, p2i(base), p2i(top), size);
 }
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
@@ -334,15 +334,6 @@ void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       cp->pool_holder()->external_name());
-
-  // Snippet for supporting JDK-8363440: "Upgrade AOT map file logging to display more assets and asset content"
-  // To be removed from final version of this PR.
-  if (is_logging_metadata_details()) {
-    LogStreamHandle(Trace, aot, map) lsh;
-    if (lsh.is_enabled()) {
-      cp->print_on(&lsh);
-    }
-  }
 }
 
 void AOTMapLogger::log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
@@ -397,14 +388,15 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-// FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray, FakeTypeArray) are used to traverse 
-// and print the heap objects stored in the AOT cache. These objects are different than regular oops:
+// FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray, FakeTypeArray) are used to traverse
+// and print the (image of) heap objects stored in the AOT cache. These objects are different than regular oops:
 // - They do not reside inside the range of the heap.
 // - For +UseCompressedOops: pointers may use a different narrowOop encoding: see FakeOop::read_oop_at(narrowOop*)
 // - For -UseCompressedOops: pointers are not direct: see FakeOop::read_oop_at(oop*)
 //
 // Hence, in general, we cannot use regular oop API (such as oopDesc::obj_field()) on these objects. There
-// are a few raw case where regular oop API work, but these are all guarded with the raw_oop() method.
+// are a few raw case where regular oop API work, but these are all guarded with the raw_oop() method and
+// should be used with care.
 class AOTMapLogger::FakeOop {
   static int _requested_shift;
   static intx _buffer_to_requested_delta;
@@ -717,6 +709,75 @@ address AOTMapLogger::FakeOop::_narrow_oop_base;
 address AOTMapLogger::FakeOop::_buffer_start;
 address AOTMapLogger::FakeOop::_buffer_end;
 
+void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
+  MemRegion r = heap_info->buffer_region();
+  address buffer_start = address(r.start()); // start of the current oop inside the buffer
+  address buffer_end = address(r.end());
+
+  address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
+  address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
+  intx n = requested_start - requested_base; // FIXME rename
+  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)0xdeadbeef;
+
+  FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
+
+  log_region_range("heap", buffer_start, buffer_end, requested_start);
+  log_oops(buffer_start, buffer_end);
+}
+
+void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
+  ResourceMark rm;
+  int heap_region_index = MetaspaceShared::hp;
+  FileMapRegion* r = mapinfo->region_at(heap_region_index);
+  size_t alignment = ObjectAlignmentInBytes;
+
+  // Allocate a buffer and read the image of the archived heap region. This buffer is outside
+  // of the real Java heap, so we must use FakeOop to access the contents of the archived heap objects.
+  char* buffer = resource_allocate_bytes(r->used() + alignment);
+  address buffer_start = (address)align_up(buffer, alignment);
+  address buffer_end = buffer_start + r->used();
+  if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
+    log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
+  }
+
+  address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
+  address requested_start = requested_base + r->mapping_offset();
+  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)0xdeadbeef;
+
+  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
+
+  log_region_range("heap", buffer_start, buffer_end, requested_start);
+  log_oops(buffer_start, buffer_end);
+}
+
+void AOTMapLogger::log_oops(address buffer_start, address buffer_end) {
+  LogStreamHandle(Debug, aot, map) st;
+  if (!st.is_enabled()) {
+    return;
+  }
+
+  _roots = new GrowableArrayCHeap<FakeOop, mtClass>();
+  _num_obj_arrays_logged = 0;
+
+  for (address fop = buffer_start; fop < buffer_end; ) {
+    FakeOop fake_oop(fop);
+    st.print(PTR_FORMAT ": @@ Object ", p2i(fake_oop.requested_addr()));
+    print_oop_info_cr(&st, fake_oop, /*print_requested_addr=*/false);
+
+    LogStreamHandle(Trace, aot, map, oops) trace_st;
+    if (trace_st.is_enabled()) {
+      print_oop_details(fake_oop, &trace_st);
+    }
+
+    address next_fop = fop + fake_oop.size() * BytesPerWord;
+    log_as_hex(fop, next_fop, fake_oop.requested_addr(), /*is_heap=*/true);
+
+    fop = next_fop;
+  }
+
+  delete _roots;
+}
+
 void AOTMapLogger::print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr) {
   if (fake_oop.is_null()) {
     st->print_cr("null");
@@ -748,31 +809,6 @@ void AOTMapLogger::print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool pr
   }
 }
 
-void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
-  ResourceMark rm;
-  int heap_region_index = MetaspaceShared::hp;
-  FileMapRegion* r = mapinfo->region_at(heap_region_index);
-  size_t alignment = ObjectAlignmentInBytes;
-
-  // Allocate a buffer and read the image of the archived heap region. This buffer is outside
-  // of the real Java heap, so we must use FakeOop to access the contents of the archived heap objects.
-  char* buffer = resource_allocate_bytes(r->used() + alignment);
-  address buffer_start = (address)align_up(buffer, alignment);
-  address buffer_end = buffer_start + r->used();
-  if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
-    log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
-  }
-
-  address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
-  address requested_start = requested_base + r->mapping_offset();
-  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)0xdeadbeef;
-
-  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
-
-  log_region("heap", buffer_start, buffer_end, requested_start);
-  log_oops(buffer_start, buffer_end);
-}
-
 // Print the fields of instanceOops, or the elements of arrayOops
 void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
   Klass* real_klass = fake_oop.real_klass();
@@ -786,7 +822,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
     fake_oop.as_type_array().print_elements_on(st);
   } else if (real_klass->is_objArray_klass()) {
     FakeObjArray fake_obj_array = fake_oop.as_obj_array();
-    bool is_logging_root_segment = _num_obj_array_logged < _num_root_segments;
+    bool is_logging_root_segment = _num_obj_arrays_logged < _num_root_segments;
 
     for (int i = 0; i < fake_obj_array.length(); i++) {
       FakeOop elm = fake_obj_array.obj_at(i);
@@ -798,7 +834,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
       }
       print_oop_info_cr(st, elm);
     }
-    _num_obj_array_logged ++;
+    _num_obj_arrays_logged ++;
   } else {
     st->print_cr(" - fields (%zu words):", fake_oop.size());
 
@@ -835,49 +871,4 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
     }
   }
 }
-
-void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
-  MemRegion r = heap_info->buffer_region();
-  address buffer_start = address(r.start()); // start of the current oop inside the buffer
-  address buffer_end = address(r.end());
-
-  address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
-  address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
-  intx n = requested_start - requested_base; // FIXME rename
-  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)0xdeadbeef;
-
-  FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
-
-  log_region("heap", buffer_start, buffer_end, requested_start);
-  log_oops(buffer_start, buffer_end);
-}
-
-void AOTMapLogger::log_oops(address buffer_start, address buffer_end) {
-  LogStreamHandle(Debug, aot, map) st;
-  if (!st.is_enabled()) {
-    return;
-  }
-
-  _roots = new GrowableArrayCHeap<FakeOop, mtClass>();
-  _num_obj_array_logged = 0;
-
-  for (address fop = buffer_start; fop < buffer_end; ) {
-    FakeOop fake_oop(fop);
-    st.print(PTR_FORMAT ": @@ Object ", p2i(fake_oop.requested_addr()));
-    print_oop_info_cr(&st, fake_oop, /*print_requested_addr=*/false);
-
-    LogStreamHandle(Trace, aot, map, oops) trace_st;
-    if (trace_st.is_enabled()) {
-      print_oop_details(fake_oop, &trace_st);
-    }
-
-    address next_fop = fop + fake_oop.size() * BytesPerWord;
-    log_as_hex(fop, next_fop, fake_oop.requested_addr(), /*is_heap=*/true);
-
-    fop = next_fop;
-  }
-
-  delete _roots;
-}
-
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -63,7 +63,7 @@ class AOTMapLogger : AllStatic {
   static bool _is_logging_at_bootstrap;
   static bool _is_logging_mapped_aot_cache;
   static int _num_root_segments;
-  static int _num_obj_array_logged;
+  static int _num_obj_arrays_logged;
   static GrowableArrayCHeap<FakeOop, mtClass>* _roots;
   static ArchiveHeapInfo* _dumptime_heap_info;
 
@@ -80,8 +80,8 @@ class AOTMapLogger : AllStatic {
   static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
 
   // Common code for dumptime/runtime
-  static void log_header(FileMapInfo* mapinfo);
-  static void log_region(const char* name, address base, address top, address requested_base);
+  static void log_file_header(FileMapInfo* mapinfo);
+  static void log_region_range(const char* name, address base, address top, address requested_base);
   static void log_metaspace_objects_impl(address region_base, address region_end,
                                          GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs, int start_idx, int end_idx);
   static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
@@ -107,12 +107,6 @@ class AOTMapLogger : AllStatic {
 #endif
 
   static bool is_logging_mapped_aot_cache() { return _is_logging_mapped_aot_cache; }
-
-  // Functions like ConstantPool::print_on() won't work in the assembly phase
-  // - The C++ vtables for the buffered objects are not initialized
-  // - Pointers such as ConstantPool::_tags are "requested addresses" that do not point
-  //   to actual memory used by the current JVM.
-  static bool is_logging_metadata_details() { return is_logging_mapped_aot_cache(); }
 public:
   static void ergo_initialize();
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
