@@ -4233,7 +4233,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize || (UseNewCode && UseStoreStoreForCtor && Opcode() == Op_MemBarStoreStore),
+    assert(Opcode() == Op_Initialize || (UseStoreStoreForCtor && Opcode() == Op_MemBarStoreStore),
            "Neither no use of init memory nor folded store-store barrier memory at the end of constructor");
     assert(outcnt() == 1, "Only control then");
   }
