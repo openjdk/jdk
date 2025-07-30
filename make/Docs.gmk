@@ -236,7 +236,8 @@ define create_overview_file
       #
   ifneq ($$($1_GROUPS), )
     $1_OVERVIEW_TEXT += \
-      <p>This document specifies the following Java APIs:</p> \
+      <p>This document has \
+      $$(subst 2,two,$$(subst 3,three,$$(words $$($1_GROUPS)))) major sections:</p> \
       <blockquote><dl> \
       #
     $1_OVERVIEW_TEXT += $$(foreach g, $$($1_GROUPS), \
@@ -246,8 +247,8 @@ define create_overview_file
     $1_OVERVIEW_TEXT += \
         </dl></blockquote> \
     <p><a href="../specs/index.html">Related documents</a> specify the Java language, \
-    the Java virtual machine, and various tools, protocols, and file formats pertaining \
-    to the Java platform.</p> \
+    the Java virtual machine, various protocols and file formats pertaining to the \
+    Java platform, and tools included in the JDK.</p> \
     #
   endif
   $1_OVERVIEW_TEXT += \
