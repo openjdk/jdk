@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8363972
- * @summary Unit tests for lenient parsing
+ * @summary Unit tests for lenient minus parsing
  * @modules jdk.localedata
- * @run junit LenientParsingTest
+ * @run junit LenientMinusSignTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -46,36 +46,37 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class LenientParsingTest {
+public class LenientMinusSignTest {
     private static final Locale FINNISH = Locale.of("fi");
     private static final DecimalFormatSymbols DFS =
         new DecimalFormatSymbols(Locale.ROOT);
+    private static final String MINUS_PATTERN = "\u002D";
 
     // "parseLenient" data from CLDR v47. These data are subject to change
     private static Stream<String> minus() {
         return Stream.of(
-            "－",    // U+FF0D Fullwidth Hyphen-Minus
-            "﹣",    // U+FE63 Small Hyphen-Minus
-            "‐",    // U+2010 Hyphen
-            "‑",    // U+2011 Non-Breaking Hyphen
-            "‒",    // U+2012 Figure Dash
-            "–",    // U+2013 En Dash
-            "−",    // U+2212 Minus Sign
-            "⁻",    // U+207B Superscript Minus
-            "₋",    // U+208B Subscript Minus
-            "➖"     // U+2796 Heavy Minus Sign
+            MINUS_PATTERN,     // "-" U+002D Hyphen-Minus
+            "\uFF0D",          // "－" Fullwidth Hyphen-Minus
+            "\uFE63",          // "﹣" Small Hyphen-Minus
+            "\u2010",          // "‐" Hyphen
+            "\u2011",          // "‑" Non-Breaking Hyphen
+            "\u2012",          // "‒" Figure Dash
+            "\u2013",          // "–" En Dash
+            "\u2212",          // "−" Minus Sign
+            "\u207B",          // "⁻" Superscript Minus
+            "\u208B",          // "₋" Subscript Minus
+            "\u2796"           // "➖" Heavy Minus Sign
         );
     }
 
     @Test
-    void testFinnishMinus() {
+    void testFinnishMinus() throws ParseException {
         // originally reported in JDK-8189097
         // Should not throw a ParseException
-        assertDoesNotThrow(() -> NumberFormat.getInstance(FINNISH).parse("-1,5"));
+        assertEquals(NumberFormat.getInstance(FINNISH).parse(MINUS_PATTERN + "1,5"), -1.5);
     }
 
     @Test
@@ -83,12 +84,12 @@ public class LenientParsingTest {
         // Should throw a ParseException
         var nf = NumberFormat.getInstance(FINNISH);
         nf.setStrict(true);
-        assertThrows(ParseException.class, () -> nf.parse("-1,5"));
+        assertThrows(ParseException.class, () -> nf.parse(MINUS_PATTERN + "1,5"));
     }
 
     @Test
-    void testReadObject() throws IOException, ClassNotFoundException {
-        // check if deserialized DFS still works. Using the Finnish example
+    void testReadObject() throws IOException, ClassNotFoundException, ParseException {
+        // check if deserialized NF works with lenient minus. Using the Finnish example
         var nf = NumberFormat.getInstance(FINNISH);
         NumberFormat nfDeser;
         byte[] serialized;
@@ -102,7 +103,7 @@ public class LenientParsingTest {
              ObjectInputStream in = new ObjectInputStream(bis)) {
             nfDeser = (NumberFormat) in.readObject();
         }
-        assertDoesNotThrow(() -> nfDeser.parse("-1,5"));
+        assertEquals(nfDeser.parse(MINUS_PATTERN + "1,5"), -1.5);
     }
 
     @Nested
@@ -111,35 +112,43 @@ public class LenientParsingTest {
         private static final String SUFFIX = "#+;#-";
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
+        @MethodSource("LenientMinusSignTest#minus")
         public void testLenientPrefix(String sign) throws ParseException {
             var df = new DecimalFormat(PREFIX, DFS);
             df.setStrict(false);
-            assertEquals("-1", df.format(df.parse(sign + "1")));
+            assertEquals(MINUS_PATTERN + "1", df.format(df.parse(sign + "1")));
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
+        @MethodSource("LenientMinusSignTest#minus")
         public void testLenientSuffix(String sign) throws ParseException {
             var df = new DecimalFormat(SUFFIX, DFS);
             df.setStrict(false);
-            assertEquals("1-", df.format(df.parse("1" + sign)));
+            assertEquals("1" + MINUS_PATTERN, df.format(df.parse("1" + sign)));
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
-        public void testStrictPrefix(String sign) {
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testStrictPrefix(String sign) throws ParseException {
             var df = new DecimalFormat(PREFIX, DFS);
             df.setStrict(true);
-            assertThrows(ParseException.class, () -> df.parse(sign + "1"));
+            if (sign.equals(MINUS_PATTERN)) {
+                assertEquals(MINUS_PATTERN + "1", df.format(df.parse(sign + "1")));
+            } else {
+                assertThrows(ParseException.class, () -> df.parse(sign + "1"));
+            }
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
-        public void testStrictSuffix(String sign) {
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testStrictSuffix(String sign) throws ParseException {
             var df = new DecimalFormat(SUFFIX, DFS);
             df.setStrict(true);
-            assertThrows(ParseException.class, () -> df.parse("1" + sign));
+            if (sign.equals(MINUS_PATTERN)) {
+                assertEquals("1" + MINUS_PATTERN, df.format(df.parse("1" + sign)));
+            } else {
+                assertThrows(ParseException.class, () -> df.parse("1" + sign));
+            }
         }
     }
 
@@ -149,35 +158,43 @@ public class LenientParsingTest {
         private static final String[] SUFFIX = {"0+;0-"};
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
+        @MethodSource("LenientMinusSignTest#minus")
         public void testLenientPrefix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, PREFIX);
             cnf.setStrict(false);
-            assertEquals("-1", cnf.format(cnf.parse(sign + "1")));
+            assertEquals(MINUS_PATTERN + "1", cnf.format(cnf.parse(sign + "1")));
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
+        @MethodSource("LenientMinusSignTest#minus")
         public void testLenientSuffix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, SUFFIX);
             cnf.setStrict(false);
-            assertEquals("1-", cnf.format(cnf.parse("1" + sign)));
+            assertEquals("1" + MINUS_PATTERN, cnf.format(cnf.parse("1" + sign)));
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
-        public void testStrictPrefix(String sign) {
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testStrictPrefix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, PREFIX);
             cnf.setStrict(true);
-            assertThrows(ParseException.class, () -> cnf.parse(sign + "1"));
+            if (sign.equals(MINUS_PATTERN)) {
+                assertEquals(MINUS_PATTERN + "1", cnf.format(cnf.parse(sign + "1")));
+            } else {
+                assertThrows(ParseException.class, () -> cnf.parse(sign + "1"));
+            }
         }
 
         @ParameterizedTest
-        @MethodSource("LenientParsingTest#minus")
-        public void testStrictSuffix(String sign) {
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testStrictSuffix(String sign) throws ParseException {
             var cnf = new CompactNumberFormat("0", DFS, SUFFIX);
             cnf.setStrict(true);
-            assertThrows(ParseException.class, () -> cnf.parse("1" + sign));
+            if (sign.equals(MINUS_PATTERN)) {
+                assertEquals("1" + MINUS_PATTERN, cnf.format(cnf.parse("1" + sign)));
+            } else {
+                assertThrows(ParseException.class, () -> cnf.parse("1" + sign));
+            }
         }
     }
 }
