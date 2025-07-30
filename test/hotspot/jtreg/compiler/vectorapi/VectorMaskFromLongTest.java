@@ -263,7 +263,8 @@ public class VectorMaskFromLongTest {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.addFlags("--add-modules=jdk.incubator.vector")
+        testFramework.setDefaultWarmup(10000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
     }
 }
