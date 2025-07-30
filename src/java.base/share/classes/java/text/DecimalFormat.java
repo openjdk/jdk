@@ -417,6 +417,10 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
+ * @implNote The default implementation follows the LDML specification for
+ * {@code parseLenient} elements to interpret minus sign patterns when lenient
+ * parsing is enabled.
+ *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
