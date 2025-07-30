@@ -67,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  SplitWins wins = SplitWins();
+  SplitWins wins;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -1199,7 +1199,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // policy before it is considered profitable.  Policy is usually 0,
   // so 1 win is considered profitable.  Big merges will require big
   // cloning, so get a larger policy.
-  int policy = checked_cast<int>(n_blk->req() >> 2);
+  int policy = n_blk->req() >> 2;
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
