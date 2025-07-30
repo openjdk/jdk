@@ -26,7 +26,6 @@
  * @bug 8360561
  * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
  *          Comparing such values in such range with != should always be true.
- * @modules java.base/jdk.internal.util
  * @run main/othervm -Xbatch
  *                   -XX:CompileCommand=compileonly,compiler.igvn.CmpDisjointButNonOrderedRanges2::*
  *                   -XX:-TieredCompilation

@@ -26,48 +26,35 @@
  * @bug 8360561
  * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
  *          Comparing such values in such range with != should always be true.
- * @run main/othervm -Xcomp
- *                   -XX:CompileCommand=compileonly,compiler.igvn.CmpDisjointButNonOrderedRanges::*
- *                   compiler.igvn.CmpDisjointButNonOrderedRanges
- * @run main compiler.igvn.CmpDisjointButNonOrderedRanges
+ * @library /test/lib /
+ * @run main compiler.igvn.CmpDisjointButNonOrderedRangesLong
  */
 package compiler.igvn;
 
-public class CmpDisjointButNonOrderedRanges {
+import compiler.lib.ir_framework.*;
+
+public class CmpDisjointButNonOrderedRangesLong {
     static boolean bFld;
+    static double dFld1;
+    static double dFld2;
 
     public static void main(String[] strArr) {
-        test();
+        TestFramework.runWithFlags("-Xcomp", "-XX:CompileCommand=compileonly,compiler.igvn.CmpDisjointButNonOrderedRangesLong::test");
     }
 
-    static void test() {
-        int x = 7;
-        int y = 4;
-        for (int i = 3; i < 12; i++) {
-            // x = 7 \/ x = -195 => x \in [-195, 7] as a signed value
-            // but [7, bitwise_cast_uint(-195)] as unsigned
-            // So 0 is not possible.
-            if (x != 0) {
-                A.foo();
-                // Because A is not loaded, A.foo() traps and this point is not reachable.
-            }
-            // x is tighten to be in the meet (so Hotspot's join) of [0, 0] and [7, bitwise_cast_uint(-195)]
-            // that is bottom (Hotspot's top). Data is dead, control needs to be dead as well.
-            for (int j = 1; j < 8; j++) {
-                x = -195;
-                if (bFld) {
-                    y += 2;
-                }
-            }
+    @Test
+    @IR(failOn = {IRNode.PHI})
+    static int test() {
+        long x = 7;
+        if (bFld) {
+            x = -195;
         }
-    }
 
-    static void foo() {
-    }
-}
+        dFld1 = dFld2 % 2.5;
 
-
-class A {
-    static void foo() {
+        if (x == 0) {
+            return 0;
+        }
+        return 1;
     }
 }
