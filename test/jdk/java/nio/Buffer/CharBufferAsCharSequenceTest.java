@@ -62,7 +62,8 @@ public class CharBufferAsCharSequenceTest {
     }
 
     /**
-     * Randomly adjusts the position and limit such that the position will be in the first 1/4th and the limit in the last half.
+     * Randomly adjusts the position and limit such that the position will be in the
+     * first 1/4th and the limit in the last half.
      */
     private static CharBuffer randomizeRange(CharBuffer cb) {
         int mid = cb.capacity() >>> 1;
@@ -74,10 +75,13 @@ public class CharBufferAsCharSequenceTest {
     }
 
     /**
-     * Generates random content to use for populating <i>cb</i> then calling through to {@code addCases(String, char[], CharBuffer, List)}
-     * @param type String description of the type of CharBuffer under test.
-     * @param cb CharBuffer instance to populate as base of creating cases.
-     * @param cases The {@code List} to populate with the cases for use from {@link #charBufferArguments()}.
+     * Generates random content to use for populating <i>cb</i> then calling through
+     * to {@code addCases(String, char[], CharBuffer, List)}
+     * 
+     * @param type  String description of the type of CharBuffer under test.
+     * @param cb    CharBuffer instance to populate as base of creating cases.
+     * @param cases The {@code List} to populate with the cases for use from
+     *              {@link #charBufferArguments()}.
      */
     private static void populateAndAddCases(String type, CharBuffer cb, List<Arguments> cases) {
         assert cb.position() == 0 && cb.limit() == cb.capacity();
@@ -91,9 +95,12 @@ public class CharBufferAsCharSequenceTest {
      * Adds 4 cases to <i>cases</i>.
      * <ul>
      * <li>Full use of cb</li>.
-     * <li>A duplicate of <i>cb</i> with a randomized position and limit. See {@code randomizeRange(CharBuffer)}<li>
+     * <li>A duplicate of <i>cb</i> with a randomized position and limit. See
+     * {@code randomizeRange(CharBuffer)}
+     * <li>
      * <li>A {@link CharBuffer#slice() sliced} copy of randomized range.</li>
-     * <li>A {@link CharBuffer#slice() sliced} copy of randomized range with a randomized position and limit.</li>
+     * <li>A {@link CharBuffer#slice() sliced} copy of randomized range with a
+     * randomized position and limit.</li>
      * </ul>
      */
     private static void addCases(String type, char[] buf, CharBuffer cb, List<Arguments> cases) {
@@ -101,13 +108,18 @@ public class CharBufferAsCharSequenceTest {
         cases.add(Arguments.of(cb, buf, 0, buf.length, type + " full"));
 
         CharBuffer rndRange = randomizeRange(cb.duplicate());
-        cases.add(Arguments.of(rndRange, buf, rndRange.position(), rndRange.limit(), type + " at " + rndRange.position() + " through " + rndRange.limit()));
-        cases.add(Arguments.of(rndRange.slice(), buf, rndRange.position(), rndRange.limit(), type + " sliced at " + rndRange.position() + " through " + rndRange.limit()));
+        cases.add(Arguments.of(rndRange, buf, rndRange.position(), rndRange.limit(),
+                type + " at " + rndRange.position() + " through " + rndRange.limit()));
+        cases.add(Arguments.of(rndRange.slice(), buf, rndRange.position(), rndRange.limit(),
+                type + " sliced at " + rndRange.position() + " through " + rndRange.limit()));
 
         CharBuffer rndSlicedRange = randomizeRange(rndRange.slice());
-        cases.add(Arguments.of(rndSlicedRange, buf, rndRange.position() + rndSlicedRange.position(),
-                rndRange.position() + rndSlicedRange.limit(), type + " sliced at " + rndRange.position()
-                        + " with position " + rndSlicedRange.position() + " and limit " + rndSlicedRange.limit()));
+        cases.add(Arguments.of(rndSlicedRange,
+                               buf,
+                               rndRange.position() + rndSlicedRange.position(),
+                               rndRange.position() + rndSlicedRange.limit(),
+                               type + " sliced at " + rndRange.position() + " with position " +
+                               rndSlicedRange.position() + " and limit " + rndSlicedRange.limit()));
     }
 
     /**
@@ -133,9 +145,11 @@ public class CharBufferAsCharSequenceTest {
      *         <li>DirectByteBuffer Little Endian</i>
      *       </ul>
      *     </li>
-     *     <li>Randomly generated content into {@link CharBuffer#wrap(CharSequence) StringCharBuffer} - see {@code addCases(String, char[], CharBuffer, List)}.
+     *     <li>Randomly generated content into {@link CharBuffer#wrap(CharSequence) StringCharBuffer}
+     *         - see {@code addCases(String, char[], CharBuffer, List)}.
      *       <ul>
-     *         <li>StringCharBuffer wrapping a {@code CharBuffer} created from {@link CharBuffer#wrap(char[])}</li>
+     *         <li>StringCharBuffer wrapping a {@code CharBuffer}
+     *             created from {@link CharBuffer#wrap(char[])}</li>
      *         <li>StringCharBuffer wrapping a {@code String}</li>
      *       </ul>
      *     </li>
@@ -147,10 +161,14 @@ public class CharBufferAsCharSequenceTest {
         List<Arguments> args = new ArrayList<>();
 
         populateAndAddCases("HeapCharBuffer", CharBuffer.allocate(SIZE), args);
-        populateAndAddCases("HeapByteBuffer BE", ByteBuffer.allocate(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("HeapByteBuffer LE", ByteBuffer.allocate(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("DirectByteBuffer BE", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("DirectByteBuffer LE", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("HeapByteBuffer BE",
+                ByteBuffer.allocate(SIZE * 2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("HeapByteBuffer LE",
+                ByteBuffer.allocate(SIZE * 2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("DirectByteBuffer BE",
+                ByteBuffer.allocateDirect(SIZE * 2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("DirectByteBuffer LE",
+                ByteBuffer.allocateDirect(SIZE * 2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
 
         char[] randomChars = randomChars();
         CharBuffer cb = CharBuffer.wrap(randomChars);
