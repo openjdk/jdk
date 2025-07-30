@@ -101,7 +101,8 @@ public class ExceptionTestNulls {
             }
 
             try {
-                mbs.unregisterMBean(null); // null ObjectName
+                // unregisterMBean with null ObjectName
+                mbs.unregisterMBean(null);
             } catch (RuntimeOperationsException e) {
                 checkROEContainsIAE(e);
             }
@@ -169,9 +170,8 @@ public class ExceptionTestNulls {
         } catch (MBeanException | MalformedObjectNameException | InstanceAlreadyExistsException
                  | NotCompliantMBeanException | InstanceNotFoundException | ReflectionException
                  | AttributeNotFoundException | InvalidAttributeValueException e) {
-            // Should not reach here.
-            // These are thrown by methods above, not being tested here.
-            // Other exceptions (e.g. NullPointerException) not caught, also cause test to fail.
+            // Should not reach here.  Known Exceptions thrown by methods above.
+            // These would be a failure, as would other exceptions not caught (e.g. NullPointerException).
             throw new RuntimeException(e);
         }
     }
