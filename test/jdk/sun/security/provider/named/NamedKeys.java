@@ -39,12 +39,16 @@ import java.util.Arrays;
 public class NamedKeys {
     public static void main(String[] args) throws Exception {
 
+        // This test uses fictional key algorithms SHA and SHA-256,
+        // simply because they look like a family name and parameter
+        // set name and SHA-256 already have its OID defined.
+
         var r = SeededSecureRandom.one();
         var raw = r.nBytes(32);
 
         // Create a key using raw bytes
         var sk = NamedPKCS8Key.internalCreate("SHA", "SHA-256", raw, null);
-        var enc = sk.getEncoded().clone();
+        var enc = sk.getEncoded();
 
         // The raw bytes array is re-used
         Asserts.assertTrue(sk.getRawBytes() == sk.getRawBytes());
