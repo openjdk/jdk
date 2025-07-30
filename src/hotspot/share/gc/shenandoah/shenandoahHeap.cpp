@@ -2777,19 +2777,12 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 #if INCLUDE_CDS_JAVA_HEAP
   // CDS wants a raw continuous memory range to load a bunch of objects itself.
   // This is an unusual request, since all requested regions should be regular, not humongous.
-  // Plus, the objects loaded by CDS are likely old and would survive lots of collections.
-  //
-  // We handle the whole thing by allocating the contiguous set of full regions for CDS load.
-  // This simplifies accounting in GC code, and makes sure the CDS loaded object are segregated
-  // by age from the rest of the allocations. We will insert the filler object when load
-  // is complete.
   //
   // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
   // as MIN_GC_REGION_ALIGNMENT.
   guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
-  size_t aligned_size = ShenandoahHeapRegion::required_regions(size) * ShenandoahHeapRegion::region_size_bytes();
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(aligned_size);
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
   return allocate_memory(req);
 #else
   assert(false, "Archive heap loader should not be available, should not be here");
@@ -2798,32 +2791,22 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 }
 
 void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  // Nothing to do here, except checking that heap looks fine.
+#ifdef ASSERT
   HeapWord* start = archive_space.start();
   HeapWord* end = archive_space.end();
 
-  // Fill the tail with the filler object.
-  HeapWord* regions_end = align_up(end, ShenandoahHeapRegion::region_size_bytes());
-  if (regions_end > end) {
-    fill_with_dummy_object(end, regions_end, false);
-  }
-
-  // Nothing else to do here, except checking that heap looks fine.
-#ifdef ASSERT
   // No unclaimed space between the objects.
   // Objects are properly allocated in correct regions.
   HeapWord* cur = start;
-  while (cur < regions_end) {
+  while (cur < end) {
     oop oop = cast_to_oop(cur);
     shenandoah_assert_in_correct_region(nullptr, oop);
     cur += oop->size();
   }
 
-  assert(cur == regions_end,
-         "Should allocate entire region space to maintain heap parsability: " PTR_FORMAT " " PTR_FORMAT,
-         p2i(cur), p2i(regions_end));
-
   // No unclaimed tail at the end of archive space.
-  assert(cur >= end,
+  assert(cur == end,
          "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
          p2i(cur), p2i(end));
 
@@ -2835,15 +2818,15 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
     ShenandoahHeapRegion* r = get_region(idx);
     assert(r->is_regular(), "Must be regular");
     assert(r->is_young(), "Must be young");
-    assert(r->top() == r->end(),
-           "All regions should be full: " PTR_FORMAT " " PTR_FORMAT,
+    assert(idx == end_reg_idx || r->top() == r->end(),
+           "All regions except the last one should be full: " PTR_FORMAT " " PTR_FORMAT,
            p2i(r->top()), p2i(r->end()));
     assert(idx != begin_reg_idx || r->bottom() == start,
            "Archive space start should be at the bottom of first region: " PTR_FORMAT " " PTR_FORMAT,
            p2i(r->bottom()), p2i(start));
-    assert(idx != end_reg_idx || (r->bottom() < end && end <= r->top()),
-           "Archive space end should be in the last region: " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
-           p2i(r->bottom()), p2i(end), p2i(r->top()));
+    assert(idx != end_reg_idx || r->top() == end,
+           "Archive space end should be at the top of last region: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->top()), p2i(end));
   }
 
 #endif

@@ -1269,14 +1269,26 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
   }
   generation->increase_affiliated_region_count(num);
 
-  // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
-  _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-
-  size_t total_contiguous_size = ShenandoahHeapRegion::region_size_bytes() * num;
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_contiguous_size);
+  size_t total_used = 0;
+  if (is_humongous) {
+    // Humongous allocation retires all regions at once: no allocation is possible anymore.
+    _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
+    total_used = ShenandoahHeapRegion::region_size_bytes() * num;
+  } else {
+    // Non-humongous allocation retires only the regions that cannot be used for allocation anymore.
+    for (idx_t i = beg; i <= end; i++) {
+      ShenandoahHeapRegion* r = _heap->get_region(i);
+      if (r->free() < PLAB::min_size() * HeapWordSize) {
+        _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, i, r->used());
+      }
+      total_used += r->used();
+    }
+  }
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
   _partitions.assert_bounds();
+
   req.set_actual_size(words_size);
-  if (remainder != 0) {
+  if (remainder != 0 && is_humongous) {
     req.set_waste(ShenandoahHeapRegion::region_size_words() - remainder);
   }
   return _heap->get_region(beg)->bottom();
