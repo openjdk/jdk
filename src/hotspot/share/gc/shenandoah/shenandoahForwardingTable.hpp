@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDINGTABLE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDINGTABLE_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 class ShenandoahHeapRegion;
 class ShenandoahMarkingContext;
 
