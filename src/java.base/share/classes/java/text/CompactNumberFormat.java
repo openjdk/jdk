@@ -1926,15 +1926,11 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!affix.isEmpty() && !affix.equals(defaultAffix)) {
             // Look ahead only for the longer match than the previous match
             if (matchedAffix.length() < affix.length()) {
-                // delegate matching to DecimalFormat, which allows lenient
-                // parsing of affixes
                 return decimalFormat.matchAffix(text, position, affix);
             }
         }
         return false;
     }
-
-
 
     /**
      * Attempts to match given {@code prefix} and {@code suffix} in

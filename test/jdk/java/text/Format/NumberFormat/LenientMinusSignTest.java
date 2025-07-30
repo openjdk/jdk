@@ -58,7 +58,7 @@ public class LenientMinusSignTest {
     // "parseLenient" data from CLDR v47. These data are subject to change
     private static Stream<String> minus() {
         return Stream.of(
-            MINUS_PATTERN,     // "-" U+002D Hyphen-Minus
+            MINUS_PATTERN,     // "-" Hyphen-Minus
             "\uFF0D",          // "－" Fullwidth Hyphen-Minus
             "\uFE63",          // "﹣" Small Hyphen-Minus
             "\u2010",          // "‐" Hyphen
@@ -110,6 +110,8 @@ public class LenientMinusSignTest {
     class DecimalFormatTest {
         private static final String PREFIX = "+#;-#";
         private static final String SUFFIX = "#+;#-";
+        private static final String LONG_PREFIX = "pos#;-neg#";
+        private static final String LONG_SUFFIX = "#pos;#neg-";
 
         @ParameterizedTest
         @MethodSource("LenientMinusSignTest#minus")
@@ -150,12 +152,28 @@ public class LenientMinusSignTest {
                 assertThrows(ParseException.class, () -> df.parse("1" + sign));
             }
         }
+
+        @ParameterizedTest
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testLongPrefix(String sign) throws ParseException {
+            var df = new DecimalFormat(LONG_PREFIX, DFS);
+            assertEquals(MINUS_PATTERN + "neg1", df.format(df.parse(sign + "neg1")));
+        }
+
+        @ParameterizedTest
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testLongSuffix(String sign) throws ParseException {
+            var df = new DecimalFormat(LONG_SUFFIX, DFS);
+            assertEquals("1neg" + MINUS_PATTERN, df.format(df.parse("1neg" + sign)));
+        }
     }
 
     @Nested
     class CompactNumberFormatTest {
         private static final String[] PREFIX = {"+0;-0"};
         private static final String[] SUFFIX = {"0+;0-"};
+        private static final String[] LONG_PREFIX = {"pos0;-neg0"};
+        private static final String[] LONG_SUFFIX = {"0pos;0neg-"};
 
         @ParameterizedTest
         @MethodSource("LenientMinusSignTest#minus")
@@ -195,6 +213,20 @@ public class LenientMinusSignTest {
             } else {
                 assertThrows(ParseException.class, () -> cnf.parse("1" + sign));
             }
+        }
+
+        @ParameterizedTest
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testLongPrefix(String sign) throws ParseException {
+            var cnf = new CompactNumberFormat("0", DFS, LONG_PREFIX);
+            assertEquals(MINUS_PATTERN + "neg1", cnf.format(cnf.parse(sign + "neg1")));
+        }
+
+        @ParameterizedTest
+        @MethodSource("LenientMinusSignTest#minus")
+        public void testLongSuffix(String sign) throws ParseException {
+            var cnf = new CompactNumberFormat("0", DFS, LONG_SUFFIX);
+            assertEquals("1neg" + MINUS_PATTERN, cnf.format(cnf.parse( "1neg" + sign)));
         }
     }
 }

@@ -857,6 +857,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
 
         case "parseLenient":
+            // Use only the lenient minus sign for now
             if (currentContainer instanceof KeyContainer kc &&
                 kc.getKey().equals("number") &&
                 attributes.getValue("sample").equals("-")) {
@@ -1174,6 +1175,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
         case "parseLenient":
             if (currentContainer instanceof StringEntry se) {
+                // Convert to a simple concatenation of lenient minuses
+                // e.g. "[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]" -> "-－﹣‐‑‒–−⁻₋➖" for the root locale
                 put(se.getKey(), se.getValue().replaceAll("[\\[\\]\\\\ ]", ""));
             }
             break;

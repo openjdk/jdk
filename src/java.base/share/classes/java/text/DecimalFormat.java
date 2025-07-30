@@ -3508,8 +3508,9 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@return if the text matches the affix} In lenient mode, it matches
-     * lenient minus signs as well. Package access from CompactNumberFormat
+     * {@return if the text matches the affix} In lenient mode, lenient
+     * minus signs also match the hyphen-minus (U+002D).
+     * Package-private access, as it is being called from CompactNumberFormat.
      */
     boolean matchAffix(String text, int position, String affix) {
         var alen = affix.length();
