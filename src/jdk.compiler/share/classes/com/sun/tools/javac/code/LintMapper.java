@@ -248,19 +248,17 @@ public class LintMapper {
         Span span,                                      // declaration's lexical range
         Lint lint,                                      // the Lint configuration that applies at this declaration
         Symbol symbol,                                  // declaration symbol (for debug purposes only; null for root)
-        LintRange parent,                               // the parent node of this node
         List<LintRange> children                        // the nested declarations one level below this node
     ) {
 
         // Create a node representing the entire file, using the root lint configuration
         LintRange(Lint rootLint) {
-            this(Span.MAXIMAL, rootLint, null, null, new ArrayList<>());
+            this(Span.MAXIMAL, rootLint, null, new ArrayList<>());
         }
 
         // Create a node representing the given declaration and its corresponding Lint configuration
-        LintRange(JCTree tree, EndPosTable endPositions, Lint lint, Symbol symbol, LintRange parent) {
-            this(new Span(tree, endPositions), lint, symbol, parent, new ArrayList<>());
-            parent.children.add(this);
+        LintRange(JCTree tree, EndPosTable endPositions, Lint lint, Symbol symbol) {
+            this(new Span(tree, endPositions), lint, symbol, new ArrayList<>());
         }
 
         // Find the most specific node in this tree (including me) that contains the given position, if any
@@ -277,7 +275,7 @@ public class LintMapper {
         void populateSubtree(JCTree tree, EndPosTable endPositions) {
             new TreeScanner() {
 
-                private LintRange parent = LintRange.this;
+                private LintRange currentNode = LintRange.this;
 
                 @Override
                 public void visitModuleDef(JCModuleDecl tree) {
@@ -309,26 +307,23 @@ public class LintMapper {
                     }
 
                     // Update the Lint using the declaration; if there's no change, then we don't need a new node here
-                    Lint newLint = parent.lint.augment(symbol);
-                    if (newLint == parent.lint) {       // note: lint.augment() returns the same instance if there's no change
+                    Lint newLint = currentNode.lint.augment(symbol);
+                    if (newLint == currentNode.lint) {  // note: lint.augment() returns the same instance if there's no change
                         recursor.accept(tree);
                         return;
                     }
 
-                    // Add a new node here
-                    LintRange node = parent = new LintRange(tree, endPositions, newLint, symbol, parent);
+                    // Add a new node here and proceed
+                    final LintRange previousNode = currentNode;
+                    currentNode = new LintRange(tree, endPositions, newLint, symbol);
+                    previousNode.children.add(currentNode);
                     try {
                         recursor.accept(tree);
                     } finally {
-                        parent = node.parent;
+                        currentNode = previousNode;
                     }
                 }
             }.scan(tree);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("LintRange[span=%s,sym=%s,lint=%s,children=%s]", span, symbol, lint, children);
         }
     }
 }
