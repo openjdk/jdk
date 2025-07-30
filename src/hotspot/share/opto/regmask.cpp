@@ -104,6 +104,24 @@ int RegMask::num_registers(uint ireg, LRG &lrg) {
   return n_regs;
 }
 
+// Find random register from mask, or BAD if mask is empty.
+OptoReg::Name RegMask::find_random_elem(uint num_regs) const {
+  assert(valid_watermarks(), "sanity");
+  uint popcount = Size();
+  uint buckets = popcount / num_regs;
+  uint seek = Compile::current()->random();
+  if (buckets) {
+    seek = seek % buckets;
+  }
+  AlignedRegMaskIterator iter(*this, num_regs);
+  OptoReg::Name reg = OptoReg::Bad;
+  while(seek < buckets && iter.has_next()) {
+    reg = iter.next();
+    seek++;
+  }
+  return reg;
+}
+
 static const uintptr_t zero  = uintptr_t(0);  // 0x00..00
 static const uintptr_t all   = ~uintptr_t(0);  // 0xFF..FF
 static const uintptr_t fives = all/3;        // 0x5555..55

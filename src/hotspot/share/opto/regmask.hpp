@@ -32,6 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class LRG;
+class AlignedRegMaskIterator;
 
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, undefined if empty/0
@@ -58,6 +59,7 @@ static unsigned int find_highest_bit(uintptr_t mask) {
 class RegMask {
 
   friend class RegMaskIterator;
+  friend class AlignedRegMaskIterator;
 
   // The RM_SIZE is aligned to 64-bit - assert that this holds
   LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE, 2)));
@@ -179,6 +181,9 @@ class RegMask {
     }
     return tmp;
   }
+
+  // Find random register from mask, or BAD if mask is empty.
+  OptoReg::Name find_random_elem(uint num_regs) const;
 
   // Find lowest-numbered register from mask, or BAD if mask is empty.
   OptoReg::Name find_first_elem() const {
@@ -369,6 +374,60 @@ class RegMask {
     // NOTE: SlotsPerVecZ in computation reflects the need
     //       to keep mask aligned for largest value (VecZ).
     return can_represent(reg, SlotsPerVecZ);
+  }
+};
+
+class AlignedRegMaskIterator {
+ private:
+  uintptr_t _current_bits;
+  unsigned int _next_index;
+  OptoReg::Name _reg;
+  const RegMask& _rm;
+  uint _num_reg;
+
+ public:
+  AlignedRegMaskIterator(const RegMask& rm, uint num_reg) : _current_bits(0), _next_index(rm._lwm), _reg(OptoReg::Bad), _rm(rm), _num_reg(num_reg) {
+    // Calculate the first element
+    next();
+  }
+
+  bool has_next() {
+    return _reg != OptoReg::Bad;
+  }
+
+  // Get the current element and calculate the next aligned set bits.
+  OptoReg::Name next() {
+    OptoReg::Name r = _reg;
+    uint aligned_mask = (1 << _num_reg) - 1;
+
+    if (_current_bits != 0) {
+      unsigned int next_bit = find_lowest_bit(_current_bits);
+      assert(_reg != OptoReg::Bad, "can't be in a bad state");
+      assert(next_bit > 0, "must be");
+      assert(((_current_bits >> next_bit) & aligned_mask) == aligned_mask, "lowest bit must be set after shift");
+      _current_bits = (_current_bits >> next_bit) & ~aligned_mask;
+      _reg = OptoReg::add(_reg, next_bit);
+      return r;
+    }
+
+    // Find the next word with bits
+    while (_next_index <= _rm._hwm) {
+      _current_bits = _rm._RM_UP[_next_index++];
+      if (_current_bits != 0) {
+        // Found a word. Calculate the first register element and
+        // prepare _current_bits by shifting it down and clearing
+        // the lowest bit
+        unsigned int next_bit = find_lowest_bit(_current_bits);
+        assert(((_current_bits >> next_bit) & aligned_mask) == aligned_mask, "lowest bit must be set after shift");
+        _current_bits = (_current_bits >> next_bit) & ~aligned_mask;
+        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit + 1);
+        return r;
+      }
+    }
+
+    // No more bits
+    _reg = OptoReg::Name(OptoReg::Bad);
+    return r;
   }
 };
 
