@@ -39,9 +39,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -55,6 +52,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -76,7 +74,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpRequest.BodyPublishers.ofFileChannel;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 import static java.net.http.HttpResponse.BodyHandlers.ofInputStream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -191,7 +188,7 @@ class FileChannelPublisherTest {
                     exchange.sendResponseHeaders(200, requestBodyBytes.length);
                     exchange.getResponseBody().write(requestBodyBytes);
 
-                } catch (Exception exception) {
+                } catch (Throwable exception) {
                     LOGGER.log(
                             "Server[%s] failed to process the request (exchange=%s)".formatted(serverName, exception),
                             exception);
@@ -282,7 +279,7 @@ class FileChannelPublisherTest {
 
     @Test
     void testNullFileChannel() {
-        assertThrows(NullPointerException.class, () -> ofFileChannel(null, 0, 1));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofFileChannel(null, 0, 1));
     }
 
     @ParameterizedTest
@@ -293,30 +290,38 @@ class FileChannelPublisherTest {
             "6,0,7",    // length > fileSize
             "6,2,5"     // (offset + length) > fileSize
     })
-    void testIllegalOffset(
+    void testIllegalOffsetOrLength(
             int fileLength,
             int fileChannelOffset,
             int fileChannelLength,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir) throws Exception {
+            @TempDir Path tempDir) throws Exception {
         withFileChannel(tempDir.resolve("data.txt"), fileLength, (_, fileChannel) ->
                 assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> ofFileChannel(fileChannel, fileChannelOffset, fileChannelLength)));
+                        () -> BodyPublishers.ofFileChannel(fileChannel, fileChannelOffset, fileChannelLength)));
     }
 
+    /**
+     * Stresses corner cases in {@linkplain
+     * BodyPublishers#ofFileChannel(FileChannel, long, long) the file channel
+     * publisher}, which uses a {@linkplain #DEFAULT_BUFFER_SIZE fixed size}
+     * buffer to read files, by providing sub-ranges and files that are
+     * <em>smaller</em> than the buffer size.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testContentLessThanBufferSize(
-            ServerRequestPair pair,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir) throws Exception {
+    void testContentLessThanBufferSize(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
 
+        // Use a file of length smaller than the default buffer size
         int fileLength = 6;
         assertTrue(fileLength < DEFAULT_BUFFER_SIZE);
 
+        // Publish the `[0, fileLength)` sub-range
         testSuccessfulContentDelivery(
                 "Complete content",
                 pair, tempDir, fileLength, 0, fileLength);
 
+        // Publish the `[1, fileLength)` sub-range to stress the inclusion of EOF
         {
             int fileChannelOffset = 1;
             int fileChannelLength = fileLength - 1;
@@ -329,6 +334,7 @@ class FileChannelPublisherTest {
                     pair, tempDir, fileLength, fileChannelOffset, fileChannelLength);
         }
 
+        // Publish the `[1, fileLength - 1)` sub-range to stress the exclusion of EOF
         {
             int fileChannelOffset = 1;
             int fileChannelLength = fileLength - 2;
@@ -343,18 +349,30 @@ class FileChannelPublisherTest {
 
     }
 
+    /**
+     * Stresses corner cases in {@linkplain
+     * BodyPublishers#ofFileChannel(FileChannel, long, long) the file channel
+     * publisher}, which uses a {@linkplain #DEFAULT_BUFFER_SIZE fixed size}
+     * buffer to read files, by providing sub-ranges and files that are
+     * <em>bigger</em> than the buffer size.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testContentMoreThanBufferSize(
-            ServerRequestPair pair,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir) throws Exception {
+    void testContentMoreThanBufferSize(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
 
+        // Use a file of length that is
+        // 1. greater than the default buffer size
+        // 2. *not* a multitude of the buffer size
         int fileLength = 1 + 3 * DEFAULT_BUFFER_SIZE;
 
+        // Publish the `[0, fileLength)` sub-range
         testSuccessfulContentDelivery(
                 "Complete content",
                 pair, tempDir, fileLength, 0, fileLength);
 
+        // Publish the `[1, fileLength)` sub-range such that
+        // - EOF is included
+        // - the total length is a multitude of the buffer size
         {
             int fileChannelOffset = 1;
             int fileChannelLength = 3 * DEFAULT_BUFFER_SIZE;
@@ -367,6 +385,9 @@ class FileChannelPublisherTest {
                     pair, tempDir, fileLength, fileChannelOffset, fileChannelLength);
         }
 
+        // Publish the `[1, fileLength)` sub-range such that
+        // - EOF is included
+        // - the total length is *not* a multitude of the buffer size
         {
             int fileChannelOffset = 2;
             int fileChannelLength = 3 * DEFAULT_BUFFER_SIZE - 1;
@@ -379,6 +400,9 @@ class FileChannelPublisherTest {
                     pair, tempDir, fileLength, fileChannelOffset, fileChannelLength);
         }
 
+        // Publish the `[1, fileLength)` sub-range such that
+        // - EOF is *not* included
+        // - the total length is a multitude of the buffer size
         {
             int fileChannelOffset = 2;
             int fileChannelLength = 2 * DEFAULT_BUFFER_SIZE;
@@ -391,6 +415,9 @@ class FileChannelPublisherTest {
                     pair, tempDir, fileLength, fileChannelOffset, fileChannelLength);
         }
 
+        // Publish the `[1, fileLength)` sub-range such that
+        // - EOF is *not* included
+        // - the total length is *not* a multitude of the buffer size
         {
             int fileChannelOffset = 2;
             int fileChannelLength = 3 * DEFAULT_BUFFER_SIZE - 2;
@@ -436,7 +463,7 @@ class FileChannelPublisherTest {
             // Upload the file
             HttpRequest request = pair
                     .requestBuilder
-                    .POST(ofFileChannel(fileChannel, fileChannelOffset, fileChannelLength))
+                    .POST(BodyPublishers.ofFileChannel(fileChannel, fileChannelOffset, fileChannelLength))
                     .build();
             CLIENT.send(request, discarding());
 
@@ -474,10 +501,7 @@ class FileChannelPublisherTest {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testChannelCloseDuringPublisherRead(
-            ServerRequestPair pair,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir)
-            throws Exception {
+    void testChannelCloseDuringPublisherRead(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
         establishInitialConnection(pair);
         ServerRequestPair.SERVER_REQUEST_RECEIVED_SIGNAL = new CountDownLatch(1);
         ServerRequestPair.SERVER_READ_PERMISSION = new CountDownLatch(1);
@@ -491,7 +515,7 @@ class FileChannelPublisherTest {
                 LOGGER.log("Issuing the request");
                 HttpRequest request = pair
                         .requestBuilder
-                        .POST(ofFileChannel(fileChannel, 0, fileLength))
+                        .POST(BodyPublishers.ofFileChannel(fileChannel, 0, fileLength))
                         .build();
                 responseFutureRef.set(CLIENT.sendAsync(request, discarding()));
 
@@ -509,9 +533,9 @@ class FileChannelPublisherTest {
 
             // Verifying the client failure
             LOGGER.log("Verifying the client failure");
-            Exception requestFailure = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
-            assertInstanceOf(UncheckedIOException.class, requestFailure.getCause());
-            assertInstanceOf(ClosedChannelException.class, requestFailure.getCause().getCause());
+            Exception requestFailure0 = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
+            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
+            assertInstanceOf(ClosedChannelException.class, requestFailure1.getCause());
 
             verifyServerIncompleteRead(pair, fileLength);
 
@@ -523,13 +547,7 @@ class FileChannelPublisherTest {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    // On Windows, modification while reading is not possible.
-    // Recall the infamous `The process cannot access the file because it is being used by another process`.
-    @DisabledOnOs(OS.WINDOWS)
-    void testFileModificationDuringPublisherRead(
-            ServerRequestPair pair,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir)
-            throws Exception {
+    void testFileModificationDuringPublisherRead(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
         establishInitialConnection(pair);
         ServerRequestPair.SERVER_REQUEST_RECEIVED_SIGNAL = new CountDownLatch(1);
         ServerRequestPair.SERVER_READ_PERMISSION = new CountDownLatch(1);
@@ -543,7 +561,7 @@ class FileChannelPublisherTest {
                 LOGGER.log("Issuing the request");
                 HttpRequest request = pair
                         .requestBuilder
-                        .POST(ofFileChannel(fileChannel, 0, fileLength))
+                        .POST(BodyPublishers.ofFileChannel(fileChannel, 0, fileLength))
                         .build();
                 CompletableFuture<HttpResponse<Void>> responseFuture = CLIENT.sendAsync(request, discarding());
 
@@ -561,11 +579,13 @@ class FileChannelPublisherTest {
 
                 // Verifying the client failure
                 LOGGER.log("Verifying the client failure");
-                Exception requestFailure = assertThrows(ExecutionException.class, responseFuture::get);
-                String requestFailureMessage = requestFailure.getMessage();
+                Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
+                Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
+                Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
+                String requestFailure2Message = requestFailure2.getMessage();
                 assertTrue(
-                        requestFailureMessage.contains("Unexpected EOF"),
-                        "unexpected message: " + requestFailureMessage);
+                        requestFailure2Message.contains("Unexpected EOF"),
+                        "unexpected message: " + requestFailure2Message);
 
                 verifyServerIncompleteRead(pair, fileLength);
 
@@ -588,10 +608,7 @@ class FileChannelPublisherTest {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSlicedUpload(
-            ServerRequestPair pair,
-            @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path tempDir)
-            throws Exception {
+    void testSlicedUpload(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
 
         // Populate the file
         int sliceCount = 4;
@@ -610,7 +627,7 @@ class FileChannelPublisherTest {
                 LOGGER.log("Issuing request %d/%d", (sliceIndex + 1), sliceCount);
                 HttpRequest request = pair
                         .requestBuilder
-                        .POST(ofFileChannel(fileChannel, sliceIndex * sliceLength, sliceLength))
+                        .POST(BodyPublishers.ofFileChannel(fileChannel, sliceIndex * sliceLength, sliceLength))
                         .build();
                 responseFutures.add(CLIENT.sendAsync(
                         request,
