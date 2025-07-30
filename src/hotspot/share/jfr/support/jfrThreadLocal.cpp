@@ -136,17 +136,31 @@ static void send_java_thread_start_event(JavaThread* jt) {
 }
 
 void JfrThreadLocal::on_start(Thread* t) {
-  assign_thread_id(t, t->jfr_thread_local());
+  JfrThreadLocal* const tl = t->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  assign_thread_id(t, tl);
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_checkpoint(t);
-    if (t->is_Java_thread()) {
-      JavaThread *const jt = JavaThread::cast(t);
+    if (!t->is_Java_thread()) {
+      JfrCheckpointManager::write_checkpoint(t);
+      return;
+    }
+    JavaThread* const jt = JavaThread::cast(t);
+    if (jt->thread_state() == _thread_new) {
       JfrCPUTimeThreadSampling::on_javathread_create(jt);
+    } else {
+      assert(jt->thread_state() == _thread_in_vm, "invariant");
+      JfrCheckpointManager::write_checkpoint(t);
       send_java_thread_start_event(jt);
+      if (tl->has_cached_stack_trace()) {
+        tl->clear_cached_stack_trace();
+      }
+      return;
     }
   }
-  if (t->jfr_thread_local()->has_cached_stack_trace()) {
-    t->jfr_thread_local()->clear_cached_stack_trace();
+  if (t->is_Java_thread() && JavaThread::cast(t)->thread_state() == _thread_in_vm) {
+    if (tl->has_cached_stack_trace()) {
+      tl->clear_cached_stack_trace();
+    }
   }
 }
 
