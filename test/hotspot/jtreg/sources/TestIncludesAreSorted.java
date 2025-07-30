@@ -51,7 +51,9 @@ public class TestIncludesAreSorted {
                     "share/libadt",
                     "share/metaprogramming",
                     "share/oops",
-                    "share/opto"
+                    "share/opto",
+                    "share/services",
+                    "share/utilities"
     };
 
     /**
