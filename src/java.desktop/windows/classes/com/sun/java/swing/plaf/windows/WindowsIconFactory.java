@@ -880,7 +880,6 @@ public final class WindowsIconFactory implements Serializable
                 }
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
-                int skinWidth = -1;
 
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
@@ -905,12 +904,7 @@ public final class WindowsIconFactory implements Serializable
                         }
                         XPStyle xp = XPStyle.getXP();
                         if (xp != null) {
-                            Skin skin;
-                            skin =  xp.getSkin(c, backgroundPart);
-                            skin.paintSkin(g, x, y,
-                                    getIconWidth(), getIconHeight(), backgroundState);
-                            skinWidth = getIconWidth();
-                            skin = xp.getSkin(c, part);
+                            Skin skin = xp.getSkin(c, part);
                             if (icon == null || icon.getIconHeight() <= 16) {
                                 skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                             } else {
