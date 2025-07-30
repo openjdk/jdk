@@ -52,6 +52,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
@@ -272,6 +273,14 @@ public interface DocTreeFactory {
      * @return a {@code LiteralTree} object
      */
     LiteralTree newLiteralTree(TextTree text);
+
+    /**
+     * Creates a new {@code NoteTree} object, to represent a {@code {@note }} tag.
+     * @param attributes the attributes of the tag
+     * @param body the body of the tag
+     * @return a {@code LiteralTree} object
+     */
+    NoteTree newNoteTree(List<? extends DocTree> attributes, List<? extends DocTree> body);
 
     /**
      * Creates a new {@code ParamTree} object, to represent a {@code @param} tag.

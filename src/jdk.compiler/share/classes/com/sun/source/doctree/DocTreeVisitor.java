@@ -224,6 +224,14 @@ public interface DocTreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
+     * Visits an {@code NoteTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitNote(NoteTree node, P p);
+
+    /**
      * Visits a {@code ParamTree} node.
      * @param node the node being visited
      * @param p a parameter value

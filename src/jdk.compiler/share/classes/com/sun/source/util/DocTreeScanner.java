@@ -393,6 +393,22 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
+    public R visitNote(NoteTree node, P p) {
+        R r = scan(node.getAttributes(), p);
+        r = scanAndReduce(node.getBody(), p, r);
+        return r;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
+    @Override
     public R visitParam(ParamTree node, P p) {
         R r = scan(node.getName(), p);
         r = scanAndReduce(node.getDescription(), p, r);

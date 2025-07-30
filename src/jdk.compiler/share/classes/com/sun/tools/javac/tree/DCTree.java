@@ -871,6 +871,36 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCNote extends DCInlineTag<DCNote> implements NoteTree {
+        public final List<? extends DocTree> attributes;
+        public final List<DCTree> body;
+
+        public DCNote(List<DCTree> attributes, List<DCTree> body) {
+            this.attributes = attributes;
+            this.body = body;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.NOTE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitNote(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getAttributes() {
+            return attributes;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getBody() {
+            return body;
+        }
+    }
+
     public static class DCProvides extends DCBlockTag implements ProvidesTree {
         public final DCReference serviceType;
         public final List<DCTree> description;

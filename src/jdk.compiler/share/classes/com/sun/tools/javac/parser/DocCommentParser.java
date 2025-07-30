@@ -2117,6 +2117,26 @@ public class DocCommentParser {
                 }
             },
 
+            // {@note [attributes] body}
+            new TagParser(TagParser.Kind.INLINE, DCTree.Kind.NOTE) {
+                @Override
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    List<DCTree> attributes = List.nil();
+                    if (ch == '[') {
+                        nextChar();
+                        attributes = tagAttrs(']');
+                        if (ch != ']') {
+                            throw new ParseException("dc.unexpected.content");
+                        }
+                        nextChar();
+                    }
+                    skipWhitespace();
+                    List<DCTree> body = inlineContent();
+                    return m.at(pos).newNoteTree(attributes, body);
+                }
+            },
+
             // {@literal text}
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.LITERAL, true) {
                 @Override
@@ -2272,7 +2292,7 @@ public class DocCommentParser {
                 @Override
                 DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    List<DCTree> attributes = tagAttrs();
+                    List<DCTree> attributes = tagAttrs(':');
                     // expect "}" or ":"
                     if (ch == '}') {
                         nextChar();
@@ -2302,54 +2322,6 @@ public class DocCommentParser {
                     } else {
                         throw new ParseException("dc.unexpected.content");
                     }
-                }
-
-                /*
-                 * Reads a series of inline snippet tag attributes.
-                 *
-                 * Attributes are terminated by the first of ":" (colon) or
-                 * an unmatched "}" (closing curly).
-                 */
-                private List<DCTree> tagAttrs() {
-                    ListBuffer<DCTree> attrs = new ListBuffer<>();
-                    skipWhitespace();
-                    while (bp < buflen && isIdentifierStart(ch)) {
-                        int namePos = bp;
-                        Name name = readAttributeName();
-                        skipWhitespace();
-                        List<DCTree> value = null;
-                        ValueKind vkind = ValueKind.EMPTY;
-                        if (ch == '=') {
-                            ListBuffer<DCTree> v = new ListBuffer<>();
-                            nextChar();
-                            skipWhitespace();
-                            if (ch == '\'' || ch == '"') {
-                                newline = false;
-                                vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
-                                char quote = ch;
-                                nextChar();
-                                textStart = bp;
-                                while (bp < buflen && ch != quote) {
-                                    nextChar();
-                                }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
-                                nextChar();
-                            } else {
-                                vkind = ValueKind.UNQUOTED;
-                                textStart = bp;
-                                // Stop on '}' and ':' for them to be re-consumed by non-attribute parts of tag
-                                while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
-                                    nextChar();
-                                }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
-                            }
-                            skipWhitespace();
-                            value = v.toList();
-                        }
-                        DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
-                        attrs.add(attr);
-                    }
-                    return attrs.toList();
                 }
             },
 
@@ -2472,6 +2444,54 @@ public class DocCommentParser {
             tagParsers.put(names.fromString(p.getTreeKind().tagName), p);
 
         return tagParsers;
+    }
+
+    /*
+     * Reads a series of inline snippet tag attributes.
+     *
+     * Attributes are terminated by the first of terminator char or
+     * an unmatched "}" (closing curly).
+     */
+    private List<DCTree> tagAttrs(char terminator) {
+        ListBuffer<DCTree> attrs = new ListBuffer<>();
+        skipWhitespace();
+        while (bp < buflen && isIdentifierStart(ch)) {
+            int namePos = bp;
+            Name name = readAttributeName();
+            skipWhitespace();
+            List<DCTree> value = null;
+            ValueKind vkind = ValueKind.EMPTY;
+            if (ch == '=') {
+                ListBuffer<DCTree> v = new ListBuffer<>();
+                nextChar();
+                skipWhitespace();
+                if (ch == '\'' || ch == '"') {
+                    newline = false;
+                    vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
+                    char quote = ch;
+                    nextChar();
+                    textStart = bp;
+                    while (bp < buflen && ch != quote) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                    nextChar();
+                } else {
+                    vkind = ValueKind.UNQUOTED;
+                    textStart = bp;
+                    // Stop on '}' and terminator for them to be re-consumed by non-attribute parts of tag
+                    while (bp < buflen && (ch != '}' && ch != terminator && !isUnquotedAttrValueTerminator(ch))) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                }
+                skipWhitespace();
+                value = v.toList();
+            }
+            DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
+            attrs.add(attr);
+        }
+        return attrs.toList();
     }
 
 }
