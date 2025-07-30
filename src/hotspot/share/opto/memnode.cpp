@@ -50,7 +50,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
