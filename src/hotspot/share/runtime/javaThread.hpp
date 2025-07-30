@@ -1266,11 +1266,16 @@ public:
   // the Java code in Object::wait which are not present in RawMonitorWait.
   bool get_and_clear_interrupted();
 
-public:
+private:
+
+#if defined(__APPLE__) && defined(AARCH64)
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
   ThreadWXEnable* _cur_wx_enable;
   WXMode* _cur_wx_mode;
+#endif
 
-private:
   LockStack _lock_stack;
   OMCache _om_cache;
 

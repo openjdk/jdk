@@ -241,7 +241,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(AARCH64)
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
