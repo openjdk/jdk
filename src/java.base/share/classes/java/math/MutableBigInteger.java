@@ -2008,7 +2008,7 @@ class MutableBigInteger {
                  *
                  * Recalling x < 2^bl:
                  * x >> (sh-ex) < 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
-                 * Thus, x >> (sh-ex) is in the range of finite doubles.
+                 * Thus, rad ≤ 2^ME is in the range of finite doubles.
                  *
                  * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
                  * which shows that x >> (sh-ex) has at least P bits of precision,
@@ -2030,7 +2030,7 @@ class MutableBigInteger {
             }
 
             // Use the root of the shifted value as an estimate.
-            // rad < 2^ME, so Math.nextUp(rad) ≤ 2^ME < Double.MAX_VALUE
+            // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
             rad = Math.nextUp(rad);
             double approx = nthRootApprox(rad, n);
             int rootSh = (int) (sh / n);
