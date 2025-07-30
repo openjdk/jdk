@@ -163,13 +163,9 @@ final class StringUTF16 {
      * @param off an offset
      * @param len a length
      */
-    @IntrinsicCandidate
     public static byte[] toBytes(char[] value, int off, int len) {
-        byte[] val = newBytesFor(len);
-        for (int i = 0; i < len; i++) {
-            putChar(val, i, value[off]);
-            off++;
-        }
+        byte[] val = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, newBytesLength(len));
+        putCharsSB(val, 0, value, off, off + len);
         return val;
     }
 

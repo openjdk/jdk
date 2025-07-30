@@ -224,7 +224,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
   bool inline_vectorizedHashCode();
-  bool inline_string_toBytesU();
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
   bool inline_string_char_access(bool is_store);
