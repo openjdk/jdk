@@ -529,16 +529,12 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
  */
 TRACE_REQUEST_FUNC(PhysicalMemory) {
   size_t phys_mem = 0;
-  if (!os::physical_memory(phys_mem)) {
-    //TODO add proper logging
-  }
+  static_cast<void>(os::physical_memory(phys_mem));
   u8 totalPhysicalMemory = static_cast<u8>(phys_mem);
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);
   size_t avail_mem = 0;
-  if (!os::available_memory(avail_mem)) {
-    //TODO add proper logging
-  }
+  static_cast<void>(os::available_memory(avail_mem));
   event.set_usedSize(totalPhysicalMemory - static_cast<u8>(avail_mem));
   event.commit();
 }
@@ -546,14 +542,10 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
 TRACE_REQUEST_FUNC(SwapSpace) {
   EventSwapSpace event;
   size_t total_swap_space = 0;
-  if (!os::total_swap_space(total_swap_space)) {
-    // TODO add proper logging
-  }
+  static_cast<void>(os::total_swap_space(total_swap_space));
   event.set_totalSize(static_cast<s8>(total_swap_space));
   size_t free_swap_space = 0;
-  if (!os::free_swap_space(free_swap_space)) {
-    // TODO add proper logging
-  }
+  static_cast<void>(!os::free_swap_space(free_swap_space));
   event.set_freeSize(static_cast<s8>(free_swap_space));
   event.commit();
 }
