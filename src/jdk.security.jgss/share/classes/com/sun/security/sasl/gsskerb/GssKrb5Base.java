@@ -134,12 +134,6 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
             throw new IllegalStateException("No security layer negotiated");
         }
 
-        // Connection::cleanup is called. Context might be set to null already
-        // before this method is completed.
-        if (secCtx == null) {
-            throw new SaslException("GSSContext is null");
-        }
-
         // Generate GSS token
         try {
             MessageProp msgProp = new MessageProp(JGSS_QOP, privacy);
