@@ -556,7 +556,7 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
 
   const double old_vs_young_efficiency_ratio = current_old_bytes_freed_per_gc_time / current_young_bytes_freed_per_gc_time;
 
-  return old_vs_young_efficiency_ratio;
+  return MIN2(old_vs_young_efficiency_ratio, (double)ZOldGCThreads);
 }
 
 static bool rule_major_proactive(const ZDirectorStats& stats) {
@@ -712,11 +712,6 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
   }
 
   double young_to_old_ratio = calculate_young_to_old_worker_ratio(stats);
-  // limit young_to_old_ratio to the maximum clamping range value to avoid
-  // very high out of uint-range values in multiplication below
-  if (young_to_old_ratio > ZOldGCThreads) {
-    young_to_old_ratio = ZOldGCThreads;
-  }
   uint old_workers = clamp(uint(young_workers * young_to_old_ratio), 1u, ZOldGCThreads);
 
   if (type != ZWorkerSelectionType::normal && old_workers + young_workers > ConcGCThreads) {
