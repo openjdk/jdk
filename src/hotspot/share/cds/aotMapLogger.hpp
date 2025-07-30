@@ -51,9 +51,6 @@ class AOTMapLogger : AllStatic {
     int _bytes;
     MetaspaceObj::Type _type;
   };
-  static intx _requested_to_mapped_metadata_delta;
-  static bool _is_logging_at_bootstrap;
-  static bool _is_logging_mapped_aot_cache;
 
   // FakeOop and subtypes
   class FakeOop;
@@ -61,6 +58,14 @@ class AOTMapLogger : AllStatic {
   class   FakeObjArray;
   class   FakeString;
   class   FakeTypeArray;
+
+  static intx _requested_to_mapped_metadata_delta;
+  static bool _is_logging_at_bootstrap;
+  static bool _is_logging_mapped_aot_cache;
+  static int _num_root_segments;
+  static int _num_obj_array_logged;
+  static GrowableArrayCHeap<FakeOop, mtClass>* _roots;
+  static ArchiveHeapInfo* _dumptime_heap_info;
 
   class RequestedMetadataAddr;
 
@@ -91,20 +96,13 @@ class AOTMapLogger : AllStatic {
   static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void log_heap_region(ArchiveHeapInfo* heap_info);
-  static void log_oops(ArchiveHeapInfo* heap_info, address start, address end);
-  static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr);
-  static void print_class_signature_for_mirror(outputStream* st, oop scratch_mirror);
-  static void log_heap_roots();
-  static void print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr = true);
-
-  static void new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr = true);
-  static void new_print_oop_details(FakeOop fake_oop, outputStream* st);
-
+  static void dumptime_log_heap_region(ArchiveHeapInfo* heap_info);
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
-  static void runtime_log_oops(address buf_start, address buf_end);
+
+  static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr = true);
+  static void print_oop_details(FakeOop fake_oop, outputStream* st);
+  static void log_oops(address buf_start, address buf_end);
   class ArchivedFieldPrinter; // to be replaced by ArchivedFieldPrinter2
-  class ArchivedFieldPrinter2;
 #endif
 
   static bool is_logging_mapped_aot_cache() { return _is_logging_mapped_aot_cache; }

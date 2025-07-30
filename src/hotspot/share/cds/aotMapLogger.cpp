@@ -41,7 +41,11 @@
 bool AOTMapLogger::_is_logging_at_bootstrap;
 bool AOTMapLogger::_is_logging_mapped_aot_cache;
 intx AOTMapLogger::_buffer_to_requested_delta;
-intx  AOTMapLogger::_requested_to_mapped_metadata_delta;
+intx AOTMapLogger::_requested_to_mapped_metadata_delta;
+int AOTMapLogger::_num_root_segments;
+int AOTMapLogger::_num_obj_array_logged;
+GrowableArrayCHeap<AOTMapLogger::FakeOop, mtClass>* AOTMapLogger::_roots;
+ArchiveHeapInfo* AOTMapLogger::_dumptime_heap_info;
 
 class AOTMapLogger::RequestedMetadataAddr {
   address _raw_addr;
@@ -83,6 +87,8 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                                 char* bitmap, size_t bitmap_size_in_bytes) {
   _is_logging_mapped_aot_cache = false;
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
+  _num_root_segments = mapinfo->heap_root_segments().count();
+  _dumptime_heap_info = heap_info;
 
   log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
 
@@ -104,7 +110,7 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (heap_info->is_used()) {
-    log_heap_region(heap_info);
+    dumptime_log_heap_region(heap_info);
   }
 #endif
 
@@ -151,6 +157,7 @@ public:
 void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
   _is_logging_mapped_aot_cache = true;
   _requested_to_mapped_metadata_delta = mapinfo->relocation_delta();
+  _num_root_segments = mapinfo->heap_root_segments().count();
 
   address header = address(mapinfo->header());
   address header_end = header + mapinfo->header()->header_size();
@@ -394,245 +401,6 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-#if 0
-void AOTMapLogger::log_oops(ArchiveHeapInfo* heap_info, address start, address end) {
-  LogStreamHandle(Debug, aot, map) st;
-  if (!st.is_enabled()) {
-    return;
-  }
-
-  HeapRootSegments segments = heap_info->heap_root_segments();
-  assert(segments.base_offset() == 0, "Sanity");
-
-  for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
-    address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
-    st.print_cr(PTR_FORMAT ": Heap roots segment [%d]",
-                p2i(requested_start), segments.size_in_elems(seg_idx));
-    start += segments.size_in_bytes(seg_idx);
-  }
-  log_heap_roots();
-
-  while (start < end) {
-    size_t byte_size;
-    oop source_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
-    address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
-    st.print(PTR_FORMAT ": @@ Object ", p2i(requested_start));
-
-    if (source_oop != nullptr) {
-      // This is a regular oop that got archived.
-      // Don't print the requested addr again as we have just printed it at the beginning of the line.
-      // Example:
-      // 0x00000007ffd27938: @@ Object (0xfffa4f27) java.util.HashMap
-      print_oop_info_cr(&st, source_oop, /*print_requested_addr=*/false);
-      byte_size = source_oop->size() * BytesPerWord;
-    } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
-      // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
-      // Example:
-      // 0x00000007ffc3ffd8: @@ Object filler 40 bytes
-      st.print_cr("filler %zu bytes", byte_size);
-    } else {
-      ShouldNotReachHere();
-    }
-
-    if (source_oop != nullptr) {
-      log_oop_details(heap_info, source_oop, /*buffered_addr=*/start);
-    }
-
-    address oop_end = start + byte_size;
-    log_as_hex(start, oop_end, requested_start, /*is_heap=*/true);
-
-    start = oop_end;
-  }
-}
-
-// ArchivedFieldPrinter is used to print the fields of archived objects. We can't
-// use _source_obj->print_on(), because we want to print the oop fields
-// in _source_obj with their requested addresses using print_oop_info_cr().
-class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
-  ArchiveHeapInfo* _heap_info;
-  outputStream* _st;
-  oop _source_obj;
-  address _buffered_addr;
-public:
-  ArchivedFieldPrinter(ArchiveHeapInfo* heap_info, outputStream* st, oop src_obj, address buffered_addr) :
-    _heap_info(heap_info), _st(st), _source_obj(src_obj), _buffered_addr(buffered_addr) {}
-
-  void do_field(fieldDescriptor* fd) {
-    _st->print(" - ");
-    BasicType ft = fd->field_type();
-    switch (ft) {
-    case T_ARRAY:
-    case T_OBJECT:
-      {
-        fd->print_on(_st); // print just the name and offset
-        oop obj = _source_obj->obj_field(fd->offset());
-        if (java_lang_Class::is_instance(obj)) {
-          obj = HeapShared::scratch_java_mirror(obj);
-        }
-        print_oop_info_cr(_st, obj);
-      }
-      break;
-    default:
-      if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
-        print_as_native_pointer(fd);
-      } else {
-        fd->print_on_for(_st, cast_to_oop(_buffered_addr)); // name, offset, value
-        _st->cr();
-      }
-    }
-  }
-
-  void print_as_native_pointer(fieldDescriptor* fd) {
-    LP64_ONLY(assert(fd->field_type() == T_LONG, "must be"));
-    NOT_LP64 (assert(fd->field_type() == T_INT,  "must be"));
-
-    // We have a field that looks like an integer, but it's actually a pointer to a MetaspaceObj.
-    address source_native_ptr = (address)
-        LP64_ONLY(_source_obj->long_field(fd->offset()))
-        NOT_LP64( _source_obj->int_field (fd->offset()));
-    ArchiveBuilder* builder = ArchiveBuilder::current();
-
-    // The value of the native pointer at runtime.
-    address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
-
-    // The address of _source_obj at runtime
-    oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
-    // The address of this field in the requested space
-    assert(requested_obj != nullptr, "Attempting to load field from null oop");
-    address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
-
-    fd->print_on(_st);
-    _st->print_cr(PTR_FORMAT " (marked metadata pointer @" PTR_FORMAT " )",
-                  p2i(requested_native_ptr), p2i(requested_field_addr));
-  }
-}; // ArchivedFieldPrinter
-
-// Print the fields of instanceOops, or the elements of arrayOops
-void AOTMapLogger::log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr) {
-  LogStreamHandle(Trace, aot, map, oops) st;
-  if (st.is_enabled()) {
-    Klass* source_klass = source_oop->klass();
-    ArchiveBuilder* builder = ArchiveBuilder::current();
-    Klass* requested_klass = builder->to_requested(builder->get_buffered_addr(source_klass));
-
-    st.print(" - klass: ");
-    source_klass->print_value_on(&st);
-    st.print(" " PTR_FORMAT, p2i(requested_klass));
-    st.cr();
-
-    if (source_oop->is_typeArray()) {
-      TypeArrayKlass::cast(source_klass)->oop_print_elements_on(typeArrayOop(source_oop), &st);
-    } else if (source_oop->is_objArray()) {
-      objArrayOop source_obj_array = objArrayOop(source_oop);
-      for (int i = 0; i < source_obj_array->length(); i++) {
-        st.print(" -%4d: ", i);
-        oop obj = source_obj_array->obj_at(i);
-        if (java_lang_Class::is_instance(obj)) {
-          obj = HeapShared::scratch_java_mirror(obj);
-        }
-        print_oop_info_cr(&st, obj);
-      }
-    } else {
-      st.print_cr(" - fields (%zu words):", source_oop->size());
-      ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
-      InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
-
-      if (java_lang_Class::is_instance(source_oop)) {
-        oop scratch_mirror = source_oop;
-        st.print(" - signature: ");
-        print_class_signature_for_mirror(&st, scratch_mirror);
-        st.cr();
-
-        Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
-        if (src_klass != nullptr && src_klass->is_instance_klass()) {
-          oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
-          st.print(" - archived_resolved_references: ");
-          print_oop_info_cr(&st, rr);
-
-          // We need to print the fields in the scratch_mirror, not the original mirror.
-          // (if a class is not aot-initialized, static fields in its scratch mirror will be cleared).
-          assert(scratch_mirror == HeapShared::scratch_java_mirror(src_klass->java_mirror()), "sanity");
-          st.print_cr("- ---- static fields (%d):", java_lang_Class::static_oop_field_count(scratch_mirror));
-          InstanceKlass::cast(src_klass)->do_local_static_fields(&print_field);
-        }
-      }
-    }
-  }
-}
-
-void AOTMapLogger::print_class_signature_for_mirror(outputStream* st, oop scratch_mirror) {
-  assert(java_lang_Class::is_instance(scratch_mirror), "sanity");
-  if (java_lang_Class::is_primitive(scratch_mirror)) {
-    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-      BasicType bt = (BasicType)i;
-      if (!is_reference_type(bt) && scratch_mirror == HeapShared::scratch_java_mirror(bt)) {
-        oop orig_mirror = Universe::java_mirror(bt);
-        java_lang_Class::print_signature(orig_mirror, st);
-        return;
-      }
-    }
-    ShouldNotReachHere();
-  }
-  java_lang_Class::print_signature(scratch_mirror, st);
-}
-
-void AOTMapLogger::log_heap_roots() {
-  LogStreamHandle(Trace, aot, map, oops) st;
-  if (st.is_enabled()) {
-    for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
-      st.print("roots[%4d]: ", i);
-      print_oop_info_cr(&st, HeapShared::pending_roots()->at(i));
-    }
-  }
-}
-
-// Example output:
-// - The first number is the requested address (if print_requested_addr == true)
-// - The second number is the narrowOop version of the requested address (if UseCompressedOops == true)
-//     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class Ljava/util/Array;
-//     0x00000007ffc000f8 (0xfff8001f) [B length: 11
-void AOTMapLogger::print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr) {
-  if (source_oop == nullptr) {
-    st->print_cr("null");
-  } else {
-    ResourceMark rm;
-    oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(source_oop);
-    if (print_requested_addr) {
-      st->print(PTR_FORMAT " ", p2i(requested_obj));
-    }
-    if (UseCompressedOops) {
-      st->print("(0x%08x) ", CompressedOops::narrow_oop_value(requested_obj));
-    }
-    if (source_oop->is_array()) {
-      int array_len = arrayOop(source_oop)->length();
-      st->print_cr("%s length: %d", source_oop->klass()->external_name(), array_len);
-    } else {
-      st->print("%s", source_oop->klass()->external_name());
-
-      if (java_lang_String::is_instance(source_oop)) {
-        st->print(" ");
-        java_lang_String::print(source_oop, st);
-      } else if (java_lang_Class::is_instance(source_oop)) {
-        oop scratch_mirror = source_oop;
-
-        st->print(" ");
-        print_class_signature_for_mirror(st, scratch_mirror);
-
-        Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
-        if (src_klass != nullptr && src_klass->is_instance_klass()) {
-          InstanceKlass* buffered_klass =
-            ArchiveBuilder::current()->get_buffered_addr(InstanceKlass::cast(src_klass));
-          if (buffered_klass->has_aot_initialized_mirror()) {
-            st->print(" (aot-inited)");
-          }
-        }
-      }
-      st->cr();
-    }
-  }
-}
-#endif
-
 // FakeOop (and subclasses FakeMirror, FakeString, FakeObjArray, FakeTypeArray) are used to traverse 
 // and print the heap objects stored in the AOT cache. These objects are different than regular oops:
 // - They do not reside inside the range of the heap.
@@ -676,6 +444,8 @@ public:
     _buffer_start = buffer_start;
     _buffer_end = buffer_end;
   }
+
+  FakeOop() : _buffer_addr(nullptr) {}
 
   FakeOop(address buffer_addr) : _buffer_addr(buffer_addr) {
     if (_buffer_addr != nullptr) {
@@ -728,7 +498,11 @@ public:
   }
 
   bool is_marked_as_native_pointer(int field_offset) {
-    return false; // TODO
+    if (is_logging_mapped_aot_cache()) {
+      return false; // TODO
+    } else {
+      return ArchiveHeapWriter::is_marked_as_native_pointer(_dumptime_heap_info, raw_oop(), field_offset);
+    }
   }
 
   FakeOop read_oop_at(narrowOop* addr) { // +UseCompressedOops
@@ -924,12 +698,11 @@ void AOTMapLogger::FakeString::print_on(outputStream* st, int max_length) {
   }
 }
 
-// This will eventually completely replace ArchivedFieldPrinter
-class AOTMapLogger::ArchivedFieldPrinter2 : public FieldClosure {
+class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
   FakeOop _fake_oop;
   outputStream* _st;
 public:
-  ArchivedFieldPrinter2(FakeOop fake_oop, outputStream* st) : _fake_oop(fake_oop), _st(st) {}
+  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st) : _fake_oop(fake_oop), _st(st) {}
 
   void do_field(fieldDescriptor* fd) {
     _st->print(" - ");
@@ -940,7 +713,7 @@ public:
       {
         fd->print_on(_st); // print just the name and offset
         FakeOop field_value = _fake_oop.obj_field(fd->offset());
-        new_print_oop_info_cr(_st, field_value);
+        print_oop_info_cr(_st, field_value);
       }
       break;
     default:
@@ -978,7 +751,7 @@ public:
                   p2i(requested_native_ptr), p2i(requested_field_addr));
 #endif
   }
-}; // ArchivedFieldPrinter2
+}; // ArchivedFieldPrinter
 
 
 int AOTMapLogger::FakeOop::_requested_shift;
@@ -987,7 +760,7 @@ address AOTMapLogger::FakeOop::_narrow_oop_base;
 address AOTMapLogger::FakeOop::_buffer_start;
 address AOTMapLogger::FakeOop::_buffer_end;
 
-void AOTMapLogger::new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr) {
+void AOTMapLogger::print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr) {
   if (fake_oop.is_null()) {
     st->print_cr("null");
   } else {
@@ -1040,11 +813,11 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
   FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
 
   log_region("heap", buffer_start, buffer_end, requested_start);
-  runtime_log_oops(buffer_start, buffer_end);
+  log_oops(buffer_start, buffer_end);
 }
 
 // Print the fields of instanceOops, or the elements of arrayOops
-void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
+void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
   Klass* real_klass = fake_oop.real_klass();
 
   st->print(" - klass: ");
@@ -1056,15 +829,23 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
     fake_oop.as_type_array().print_elements_on(st);
   } else if (real_klass->is_objArray_klass()) {
     FakeObjArray fake_obj_array = fake_oop.as_obj_array();
+    bool is_logging_root_segment = _num_obj_array_logged < _num_root_segments;
+
     for (int i = 0; i < fake_obj_array.length(); i++) {
-      st->print(" -%4d: ", i);
       FakeOop elm = fake_obj_array.obj_at(i);
-      new_print_oop_info_cr(st, elm);
+      if (is_logging_root_segment) {
+        st->print(" root[%4d]: ", _roots->length());
+        _roots->append(elm);
+      } else {
+        st->print(" -%4d: ", i);
+      }
+      print_oop_info_cr(st, elm);
     }
+    _num_obj_array_logged ++;
   } else {
     st->print_cr(" - fields (%zu words):", fake_oop.size());
 
-    ArchivedFieldPrinter2 print_field(fake_oop, st);
+    ArchivedFieldPrinter print_field(fake_oop, st);
     InstanceKlass::cast(real_klass)->print_nonstatic_fields(&print_field);
 
     if (real_klass == vmClasses::Class_klass()) {
@@ -1076,23 +857,32 @@ void AOTMapLogger::new_print_oop_details(FakeOop fake_oop, outputStream* st) {
 
       Klass* real_mirrored_klass = fake_mirror.real_mirrored_klass();
       if (real_mirrored_klass != nullptr && real_mirrored_klass->is_instance_klass()) {
-        //TODO ....
-        //oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
-        //st->print(" - archived_resolved_references: ");
-        //print_oop_info_cr(&st, rr);
+        InstanceKlass* real_mirrored_ik = InstanceKlass::cast(real_mirrored_klass);
+
+        ConstantPoolCache* cp_cache = real_mirrored_ik->constants()->cache();
+        if (!is_logging_mapped_aot_cache()) {
+          cp_cache = ArchiveBuilder::current()->get_buffered_addr(cp_cache);
+        }
+        int rr_root_index = cp_cache->archived_references_index();
+        st->print(" - resolved_references: ");
+        if (rr_root_index >= 0) {
+          FakeOop resolved_references = _roots->at(rr_root_index);
+          print_oop_info_cr(st, resolved_references);
+        } else {
+          st->print("null");
+        }
 
         st->print_cr("- ---- static fields (%d):", fake_mirror.static_oop_field_count());
-        InstanceKlass::cast(real_mirrored_klass)->do_local_static_fields(&print_field);
+        real_mirrored_ik->do_local_static_fields(&print_field);
       }
     }
   }
 }
 
-void AOTMapLogger::log_heap_region(ArchiveHeapInfo* heap_info) {
+void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());
-
 
   address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
@@ -1102,23 +892,26 @@ void AOTMapLogger::log_heap_region(ArchiveHeapInfo* heap_info) {
   FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
 
   log_region("heap", buffer_start, buffer_end, requested_start);
-  runtime_log_oops(buffer_start, buffer_end);
+  log_oops(buffer_start, buffer_end);
 }
 
-void AOTMapLogger::runtime_log_oops(address buffer_start, address buffer_end) {
+void AOTMapLogger::log_oops(address buffer_start, address buffer_end) {
   LogStreamHandle(Debug, aot, map) st;
   if (!st.is_enabled()) {
     return;
   }
 
+  _roots = new GrowableArrayCHeap<FakeOop, mtClass>();
+  _num_obj_array_logged = 0;
+
   for (address fop = buffer_start; fop < buffer_end; ) {
     FakeOop fake_oop(fop);
     st.print(PTR_FORMAT ": @@ Object ", p2i(fake_oop.requested_addr()));
-    new_print_oop_info_cr(&st, fake_oop, /*print_requested_addr=*/false);
+    print_oop_info_cr(&st, fake_oop, /*print_requested_addr=*/false);
 
     LogStreamHandle(Trace, aot, map, oops) trace_st;
     if (trace_st.is_enabled()) {
-      new_print_oop_details(fake_oop, &trace_st);
+      print_oop_details(fake_oop, &trace_st);
     }
 
     address next_fop = fop + fake_oop.size() * BytesPerWord;
@@ -1126,6 +919,8 @@ void AOTMapLogger::runtime_log_oops(address buffer_start, address buffer_end) {
 
     fop = next_fop;
   }
+
+  delete _roots;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
