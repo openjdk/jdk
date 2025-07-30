@@ -218,9 +218,11 @@ public final class ImageReader implements AutoCloseable {
             nodes.put(root.getName(), root);
         }
 
-        /// Returns the offset of the string denoting the leading "module" segment
-        /// in the given path (e.g. `<module>/<path>`). We can't just pass in the
-        /// `/<module>` string here because that has a module offset of zero.
+        /**
+         * Returns the offset of the string denoting the leading "module" segment in
+         * the given path (e.g. {@code <module>/<path>}). We can't just pass in the
+         * {@code /<module>} string here because that has a module offset of zero.
+         */
         private int getModuleOffset(String path) {
             ImageLocation location = findLocation(path);
             assert location != null : "Cannot find expected jimage location: " + path;
@@ -270,17 +272,19 @@ public final class ImageReader implements AutoCloseable {
             }
         }
 
-        /// Returns a node with the given name, or null if no resource or directory of
-        /// that name exists.
-        ///
-        /// This is the only public API by which anything outside this class can access
-        /// `Node` instances either directly, or by resolving symbolic links.
-        ///
-        /// Note also that there is no reentrant calling back to this method from within
-        /// the node handling code.
-        ///
-        /// @param name an absolute, `/`-separated path string, prefixed with either
-        ///     "/modules" or "/packages".
+        /**
+         * Returns a node with the given name, or null if no resource or directory of
+         * that name exists.
+         *
+         * <p>This is the only public API by which anything outside this class can access
+         * {@code Node} instances either directly, or by resolving symbolic links.
+         *
+         * <p>Note also that there is no reentrant calling back to this method from within
+         * the node handling code.
+         *
+         * @param name an absolute, {@code /}-separated path string, prefixed with either
+         *     "/modules" or "/packages".
+         */
         synchronized Node findNode(String name) {
             Node node = nodes.get(name);
             if (node == null) {
@@ -303,9 +307,12 @@ public final class ImageReader implements AutoCloseable {
             return node;
         }
 
-        /// Builds a node in the "/modules/..." namespace.
-        ///
-        /// Called by `findNode()` if a `/modules/...` node is not present in the cache.
+        /**
+         * Builds a node in the "/modules/..." namespace.
+         *
+         * <p>Called by {@link #findNode(String)} if a {@code /modules/...} node
+         * is not present in the cache.
+         */
         Node buildModulesNode(String name) {
             assert name.startsWith(MODULES_ROOT + "/") : "Invalid module node name: " + name;
             // Will fail for non-directory resources since the jimage name does not
@@ -321,9 +328,12 @@ public final class ImageReader implements AutoCloseable {
             return loc != null ? newResource(name, loc) : null;
         }
 
-        /// Builds a node in the "/packages/..." namespace.
-        ///
-        /// Called by `findNode()` if a `/packages/...` node is not present in the cache.
+        /**
+         * Builds a node in the "/packages/..." namespace.
+         *
+         * <p>Called by {@link #findNode(String)} if a {@code /packages/...} node
+         * is not present in the cache.
+         */
         private Node buildPackagesNode(String name) {
             // There are only locations for the root "/packages" or "/packages/xxx"
             // directories, but not the symbolic links below them (the links can be
@@ -355,7 +365,7 @@ public final class ImageReader implements AutoCloseable {
             return null;
         }
 
-        /// Completes a directory by ensuring its child list is populated correctly.
+        /** Completes a directory by ensuring its child list is populated correctly. */
         private void completeDirectory(Directory dir) {
             String name = dir.getName();
             // Since the node exists, we can assert that its name starts with
@@ -375,10 +385,12 @@ public final class ImageReader implements AutoCloseable {
             assert dir.isCompleted() : "Directory must be complete by now: " + dir;
         }
 
-        /// Completes a modules directory by setting the list of child nodes.
-        ///
-        /// The given directory can be the top level `/modules` directory, so
-        /// it is NOT safe to use `isModulesSubdirectory(loc)` here.
+        /**
+         * Completes a modules directory by setting the list of child nodes.
+         *
+         * <p>The given directory can be the top level {@code /modules} directory,
+         * so it is NOT safe to use {@code isModulesSubdirectory(loc)} here.
+         */
         private Directory completeModuleDirectory(Directory dir, ImageLocation loc) {
             assert dir.getName().equals(loc.getFullName()) : "Mismatched location for directory: " + dir;
             List<Node> children = createChildNodes(loc, childLoc -> {
@@ -394,10 +406,12 @@ public final class ImageReader implements AutoCloseable {
             return dir;
         }
 
-        /// Completes a package directory by setting the list of child nodes.
-        ///
-        /// The given directory can be the top level `/packages` directory, so
-        /// it is NOT safe to use `isPackagesSubdirectory(loc)` here.
+        /**
+         * Completes a package directory by setting the list of child nodes.
+         *
+         * <p>The given directory can be the top level {@code /packages} directory,
+         * so it is NOT safe to use {@code isPackagesSubdirectory(loc)} here.
+         */
         private Directory completePackageDirectory(Directory dir, ImageLocation loc) {
             assert dir.getName().equals(loc.getFullName()) : "Mismatched location for directory: " + dir;
             // The only directories in the "/packages" namespace are "/packages" or
@@ -427,11 +441,12 @@ public final class ImageReader implements AutoCloseable {
             return dir;
         }
 
-        /// Creates the list of child nodes for a `Directory` based on a given
-        /// node creation function.
-        ///
-        /// Note: This cannot be used for package subdirectories as they have
-        /// child offsets stored differently to other directories.
+        /**
+         * Creates the list of child nodes for a {@code Directory} based on a given
+         *
+         * <p>Note: This cannot be used for package subdirectories as they have
+         * child offsets stored differently to other directories.
+         */
         private List<Node> createChildNodes(ImageLocation loc, Function<ImageLocation, Node> newChildFn) {
             IntBuffer offsets = getOffsetBuffer(loc);
             int childCount = offsets.capacity();
@@ -442,7 +457,7 @@ public final class ImageReader implements AutoCloseable {
             return children;
         }
 
-        /// Helper to extract the integer offset buffer from a directory location.
+        /** Helper to extract the integer offset buffer from a directory location. */
         private IntBuffer getOffsetBuffer(ImageLocation dir) {
             assert isDirectory(dir) : "Not a directory: " + dir.getFullName();
             byte[] offsets = getResource(dir);
@@ -451,53 +466,65 @@ public final class ImageReader implements AutoCloseable {
             return buffer.asIntBuffer();
         }
 
-        /// Determines if an image location is a directory in the `/modules`
-        /// namespace (if so, the location name is the node name).
-        ///
-        /// In jimage, every `ImageLocation` under `/modules/` is a directory
-        /// and has the same value for `getModule()`, and `getModuleOffset()`.
+        /**
+         * Determines if an image location is a directory in the {@code /modules}
+         * namespace (if so, the location name is the node name).
+         *
+         * <p>In jimage, every {@code ImageLocation} under {@code /modules/} is a
+         * directory and has the same value for {@code getModule()}, and {@code
+         * getModuleOffset()}.
+         */
         private boolean isModulesSubdirectory(ImageLocation loc) {
             return loc.getModuleOffset() == modulesStringOffset;
         }
 
-        /// Determines if an image location is a directory in the `/packages``
-        /// namespace (if so, the location name is the node name).
-        ///
-        /// In jimage, every `ImageLocation` under `/packages/` is a directory
-        /// and has the same value for `getModule()`, and `getModuleOffset()`.
+        /**
+         * Determines if an image location is a directory in the {@code /packages}
+         * namespace (if so, the location name is the node name).
+         *
+         * <p>In jimage, every {@code ImageLocation} under {@code /packages/} is a
+         * directory and has the same value for {@code getModule()}, and {@code
+         * getModuleOffset()}.
+         */
         private boolean isPackagesSubdirectory(ImageLocation loc) {
             return loc.getModuleOffset() == packagesStringOffset;
         }
 
-        /// Determines if an image location represents a directory of some kind.
+        /** Determines if an image location represents a directory of some kind. */
         private boolean isDirectory(ImageLocation loc) {
             return isModulesSubdirectory(loc) || isPackagesSubdirectory(loc) || loc.getModuleOffset() == 0;
         }
 
-        /// Creates an "incomplete" directory node with no child nodes set.
-        /// Directories need to be "completed" before they are returned by
-        /// `findNode()`.
+        /**
+         * Creates an "incomplete" directory node with no child nodes set.
+         * Directories need to be "completed" before they are returned by
+         * {@link #findNode(String)}.
+         */
         private Directory newDirectory(String name) {
             return new Directory(name, imageFileAttributes);
         }
 
-        /// Creates a new resource from an image location. This is the only case
-        /// where the image location name does not match the requested node name.
-        /// In image files, resource locations are NOT prefixed by `/modules`.
+        /**
+         * Creates a new resource from an image location. This is the only case
+         * where the image location name does not match the requested node name.
+         * In image files, resource locations are NOT prefixed by {@code /modules}.
+         */
         private Resource newResource(String name, ImageLocation loc) {
             assert name.equals(loc.getFullName(true)) : "Mismatched location for resource: " + name;
             return new Resource(name, loc, imageFileAttributes);
         }
 
-        /// Creates a new link node pointing at the given target name.
-        ///
-        /// Note that target node is resolved each time `resolve()` is called, so
-        /// if a link node is retained after its reader is closed, it will fail.
+        /**
+         * Creates a new link node pointing at the given target name.
+         *
+         * <p>Note that target node is resolved each time {@code resolve()} is called,
+         * so if a link node is retained after its reader is closed, it will fail.
+         */
         private LinkNode newLinkNode(String name, String targetName) {
             return new LinkNode(name, () -> findNode(targetName), imageFileAttributes);
         }
 
-        /// Returns the content of a resource node.
+        /** Returns the content of a resource node. */
         private byte[] getResource(Node node) throws IOException {
             // We could have been given a non-resource node here.
             if (node.isResource()) {
@@ -666,24 +693,29 @@ public final class ImageReader implements AutoCloseable {
         }
     }
 
-    /// Directory node (referenced from a full path, without a trailing '/').
-    ///
-    /// Directory nodes have two distinct states:
-    /// * Incomplete: The child list has not been set.
-    /// * Complete: The child list has been set.
-    ///
-    /// When a directory node is returned by `findNode()` it is always complete,
-    /// but this DOES NOT mean that its child nodes are complete yet.
-    ///
-    /// To avoid users being able to access incomplete child nodes, the
-    /// `Node` API offers only a way to obtain child node names, forcing
-    /// callers to invoke {@link ImageReader#findNode(String)} if they need to
-    /// access the child node itself.
-    ///
-    /// This approach allows directories to be implemented lazily with respect
-    /// to child nodes, while retaining efficiency when child nodes are accessed
-    /// (since any incomplete nodes will be created and placed in the node cache
-    /// when the parent was first returned to the user).
+    /**
+     * Directory node (referenced from a full path, without a trailing '/').
+     *
+     * <p>Directory nodes have two distinct states:
+     * <ul>
+     *     <li>Incomplete: The child list has not been set.
+     *     <li>Complete: The child list has been set.
+     * </ul>
+     *
+     * <p>When a directory node is returned by {@link ImageReader#findNode(String)}
+     * it is always complete, but this DOES NOT mean that its child nodes are
+     * complete yet.
+     *
+     * <p>To avoid users being able to access incomplete child nodes, the
+     * {@code Node} API offers only a way to obtain child node names, forcing
+     * callers to invoke {@code findNode()} if they need to access the child
+     * node itself.
+     *
+     * <p>This approach allows directories to be implemented lazily with respect
+     * to child nodes, while retaining efficiency when child nodes are accessed
+     * (since any incomplete nodes will be created and placed in the node cache
+     * when the parent was first returned to the user).
+     */
     private static final class Directory extends Node {
         // Monotonic reference, will be set to the unmodifiable child list exactly once.
         private List<Node> children = null;
@@ -715,17 +747,18 @@ public final class ImageReader implements AutoCloseable {
             this.children = Collections.unmodifiableList(children);
         }
     }
-
-    /// Resource node (e.g. a ".class" entry, or any other data resource).
-    ///
-    /// Resources are leaf nodes referencing an underlying image location. They
-    /// are lightweight, and do not cache their contents.
-    ///
-    /// Unlike directories (where the node name matches the jimage path for the
-    /// corresponding `ImageLocation`), resource node names are NOT the same as
-    /// the corresponding jimage path. The difference is that node names for
-    /// resources are prefixed with "/modules", which is missing from the
-    /// equivalent jimage path.
+    /**
+     * Resource node (e.g. a ".class" entry, or any other data resource).
+     *
+     * <p>Resources are leaf nodes referencing an underlying image location. They
+     * are lightweight, and do not cache their contents.
+     *
+     * <p>Unlike directories (where the node name matches the jimage path for the
+     * corresponding {@code ImageLocation}), resource node names are NOT the same
+     * as the corresponding jimage path. The difference is that node names for
+     * resources are prefixed with "/modules", which is missing from the
+     * equivalent jimage path.
+     */
     private static class Resource extends Node {
         private final ImageLocation loc;
 
@@ -760,12 +793,14 @@ public final class ImageReader implements AutoCloseable {
         }
     }
 
-    /// Link node (a symbolic link to a top-level modules directory).
-    ///
-    /// Link nodes resolve their target by invoking a given supplier, and do not
-    /// cache the result. Since nodes are cached by the `ImageReader`, this
-    /// means that only the first call to `resolveLink()` could do any
-    /// significant work.
+    /**
+     * Link node (a symbolic link to a top-level modules directory).
+     *
+     * <p>Link nodes resolve their target by invoking a given supplier, and do
+     * not cache the result. Since nodes are cached by the {@code ImageReader},
+     * this means that only the first call to {@link #resolveLink(boolean)}
+     * could do any significant work.
+     */
     private static class LinkNode extends Node {
         private final Supplier<Node> link;
 
@@ -776,6 +811,8 @@ public final class ImageReader implements AutoCloseable {
 
         @Override
         public Node resolveLink(boolean recursive) {
+            // No need to use or propagate the recursive flag, since the target
+            // cannot possibly be a link node (links only point to directories).
             return link.get();
         }
 
