@@ -372,8 +372,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, CodeBlobKind kind, int size);
-  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size);
+  BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size = sizeof(BufferBlob));
+  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size = sizeof(BufferBlob));
 
   void* operator new(size_t s, unsigned size) throw();
 
