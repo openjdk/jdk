@@ -1380,7 +1380,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
                                 VM_Version::printable_jdk_debug_level() : "";
 
-  st->print_cr("                 JRE version: %s%s%s (%s) (%sbuild %s)", runtime_name,
+  st->print_cr("                 JDK version: %s%s%s (%s) (%sbuild %s)", runtime_name,
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                 buf, jdk_debug_level, runtime_version);
 
