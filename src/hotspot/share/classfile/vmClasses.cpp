@@ -100,7 +100,6 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
 
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
-
   for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
     if (CDSConfig::is_using_preloaded_classes()) {
       precond(klass_at(id)->is_loaded());

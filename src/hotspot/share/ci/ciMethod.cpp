@@ -1111,7 +1111,6 @@ bool ciMethod::can_be_compiled() {
   if (is_c1_compile(env->comp_level())) {
     return _is_c1_compilable;
   }
-
   return _is_c2_compilable;
 }
 
