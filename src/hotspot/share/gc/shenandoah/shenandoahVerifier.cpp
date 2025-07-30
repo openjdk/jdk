@@ -491,10 +491,14 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t generation_used = generation->used();
     size_t generation_used_regions = generation->used_regions();
+#ifdef KELVIN_DEPRECATE
+    // We no longer need to adjust for padding.  Probably want to
+    // remove this argument altogether.
     if (adjust_for_padding && (generation->is_young() || generation->is_global())) {
       size_t pad = heap->old_generation()->get_pad_for_promote_in_place();
       generation_used += pad;
     }
+#endif
 
 #undef KELVIN_EXTRA_NOISE
 #ifdef KELVIN_EXTRA_NOISE
@@ -939,7 +943,8 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
     size_t heap_used;
     if (_heap->mode()->is_generational() && (sizeness == _verify_size_adjusted_for_padding)) {
       // Prior to evacuation, regular regions that are to be evacuated in place are padded to prevent further allocations
-      heap_used = _heap->used() + _heap->old_generation()->get_pad_for_promote_in_place();
+      // but this padding is already represented in _heap->used()
+      heap_used = _heap->used();
     } else if (sizeness != _verify_size_disable) {
       heap_used = _heap->used();
     }
