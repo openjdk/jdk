@@ -1328,7 +1328,7 @@ nmethod::nmethod(
            _mutable_data_size, _relocation_size, metadata_size);
 
     // native wrapper does not have read-only data but we need unique not null address
-    _immutable_data          = blob_end();
+    _immutable_data          = nullptr;
     _immutable_data_size     = 0;
     _nul_chk_table_offset    = 0;
     _handler_table_offset    = 0;
@@ -1510,8 +1510,7 @@ nmethod::nmethod(
       assert(immutable_data != nullptr, "required");
       _immutable_data     = immutable_data;
     } else {
-      // We need unique not null address
-      _immutable_data     = blob_end();
+      _immutable_data     = nullptr;
     }
     CHECKED_CAST(_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
     CHECKED_CAST(_handler_table_offset, uint16_t, (_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
@@ -2152,10 +2151,9 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   delete[] _compiled_ic_data;
 
-  if (_immutable_data != blob_end()) {
-    os::free(_immutable_data);
-    _immutable_data = blob_end(); // Valid not null address
-  }
+  os::free(_immutable_data);
+  _immutable_data = nullptr;
+
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
