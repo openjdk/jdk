@@ -30,6 +30,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -655,7 +656,7 @@ void VM_Version::initialize() {
     ss.print("(0x%03x)", _model2);
   }
   ss.print(", ");
-  int features_offset = ss.size();
+  int features_offset = (int)ss.size();
   insert_features_names(_features, ss);
 
   _cpu_info_string = ss.as_string(true);
