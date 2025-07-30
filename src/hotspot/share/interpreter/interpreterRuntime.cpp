@@ -388,6 +388,7 @@ JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current, char* 
   current->set_vm_result_oop(exception());
 JRT_END
 
+
 JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, char* name, oopDesc* obj))
   // Produce the error message first because note_trap can safepoint
   ResourceMark rm(current);
