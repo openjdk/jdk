@@ -711,7 +711,7 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
     return {active_young_workers, active_old_workers};
   }
 
-  double young_to_old_ratio = calculate_young_to_old_worker_ratio(stats);
+  const double young_to_old_ratio = calculate_young_to_old_worker_ratio(stats);
   uint old_workers = clamp(uint(young_workers * young_to_old_ratio), 1u, ZOldGCThreads);
 
   if (type != ZWorkerSelectionType::normal && old_workers + young_workers > ConcGCThreads) {
