@@ -2065,7 +2065,6 @@ class MutableBigInteger {
                     rootSh -= correctBits;
                     approx = Math.scalb(approx, correctBits);
                 }
-                s.copyValue(valueOf(approx + 1.0));
 
                 /* The Newton's recurrence roughly duplicates the correct bits at each iteration.
                  * Instead of shifting the approximate root into the original range right now,
