@@ -3001,11 +3001,14 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_arraycopy_stubs() {
 
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
+
     // Note:  the disjoint stubs must be generated first, some of
     //        the conjoint stubs use them.
-
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_disjoint_arraycopy  = generate_primitive_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id);
@@ -3127,7 +3130,14 @@ class StubGenerator: public StubCodeGenerator {
   // Initialization
 
   void generate_preuniverse_stubs() {
-    // preuniverse stubs are not needed for arm
+    // Atomics are used in universe initialization code (e.g. CDS relocation),
+    // therefore we need to generate real stubs very early on.
+    StubRoutines::_atomic_add_entry = generate_atomic_add();
+    StubRoutines::_atomic_xchg_entry = generate_atomic_xchg();
+    StubRoutines::_atomic_cmpxchg_entry = generate_atomic_cmpxchg();
+    StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
+    StubRoutines::Arm::_atomic_load_long_entry = generate_atomic_load_long();
+    StubRoutines::Arm::_atomic_store_long_entry = generate_atomic_store_long();
   }
 
   void generate_initial_stubs() {
@@ -3151,14 +3161,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // integer division used both by interpreter and compiler
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
-
-    StubRoutines::_atomic_add_entry = generate_atomic_add();
-    StubRoutines::_atomic_xchg_entry = generate_atomic_xchg();
-    StubRoutines::_atomic_cmpxchg_entry = generate_atomic_cmpxchg();
-    StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
-    StubRoutines::Arm::_atomic_load_long_entry = generate_atomic_load_long();
-    StubRoutines::Arm::_atomic_store_long_entry = generate_atomic_store_long();
-
   }
 
   void generate_continuation_stubs() {

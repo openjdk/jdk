@@ -39,6 +39,14 @@ JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error AOTCacheOutputConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCacheOutput cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error AOTConfigurationConstraintFunc(ccstr value, bool verbose) {
   if (value == nullptr) {
     JVMFlag::printError(verbose, "AOTConfiguration cannot be empty\n");
@@ -125,5 +133,27 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
+#ifdef AARCH64
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "OnSpinWaitInst cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (strcmp(value, "nop")   != 0 &&
+      strcmp(value, "isb")   != 0 &&
+      strcmp(value, "yield") != 0 &&
+      strcmp(value, "sb")    != 0 &&
+      strcmp(value, "none")  != 0) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
+                        "nop, isb, yield, sb, none\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
   return JVMFlag::SUCCESS;
 }

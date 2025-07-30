@@ -28,8 +28,8 @@
 // No concurrentHashTableTasks.hpp
 
 #include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // This inline file contains BulkDeleteTask and GrowTasks which are both bucket
 // operations, which they are serialized with each other.

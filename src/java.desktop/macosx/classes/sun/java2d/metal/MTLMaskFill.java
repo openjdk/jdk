@@ -38,7 +38,7 @@ import static sun.java2d.loops.CompositeType.SrcNoEa;
 import static sun.java2d.loops.CompositeType.SrcOver;
 import static sun.java2d.loops.SurfaceType.*;
 
-class MTLMaskFill extends BufferedMaskFill {
+final class MTLMaskFill extends BufferedMaskFill {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
 import jdk.jshell.spi.ExecutionControlProvider;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.Util.expunge;
+import jdk.jshell.execution.impl.RestartableInputStream;
 
 /**
  * The JShell evaluation state engine.  This is the central class in the JShell
@@ -115,7 +116,7 @@ public class JShell implements AutoCloseable {
     private static ResourceBundle outputRB  = null;
 
     JShell(Builder b) throws IllegalStateException {
-        this.in = b.in;
+        this.in = new RestartableInputStream(b.in);
         this.out = b.out;
         this.err = b.err;
         this.console = Optional.ofNullable(b.console);
