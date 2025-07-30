@@ -905,7 +905,7 @@ bool os::allocatable_memory_limit(size_t& limit) {
   return true;
 }
 
-size_t os::address_space_limit() {
+size_t os::reserve_memory_limit() {
   // Virtual address space cannot be limited on Windows.
   return SIZE_MAX;
 }

@@ -734,7 +734,7 @@ static bool is_allocatable(size_t s) {
 bool os::allocatable_memory_limit(size_t& limit) {
   // On POSIX systems, the amount of allocatable memory is limited by the
   // size of the virtual address space.
-  size_t as_limit = address_space_limit();
+  size_t as_limit = reserve_memory_limit();
   bool as_is_limited = as_limit != SIZE_MAX;
 
 #ifdef _LP64
@@ -795,7 +795,7 @@ bool os::allocatable_memory_limit(size_t& limit) {
 #endif
 }
 
-size_t os::address_space_limit() {
+size_t os::reserve_memory_limit() {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
 
