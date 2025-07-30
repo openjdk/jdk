@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
- * @bug 8343110 8361299
+ * @bug 8343110 8361299 8364345
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -61,15 +61,24 @@ public class CharBufferAsCharSequenceTest {
         return chars;
     }
 
+    /**
+     * Randomly adjusts the position and limit such that the position will be in the first 1/4th and the limit in the last half.
+     */
     private static CharBuffer randomizeRange(CharBuffer cb) {
         int mid = cb.capacity() >>> 1;
-        int start = RAND.nextInt(mid - 3); // from 0 to mid
-        int end = RAND.nextInt(mid + 3, cb.capacity()); // from mid to capacity
+        int start = RAND.nextInt(mid >> 1); // from 0 to 1/4
+        int end = RAND.nextInt(mid + 1, cb.capacity()); // from mid to capacity
         cb.position(start);
         cb.limit(end);
         return cb;
     }
 
+    /**
+     * Generates random content to use for populating <i>cb</i> then calling through to {@code addCases(String, char[], CharBuffer, List)}
+     * @param type String description of the type of CharBuffer under test.
+     * @param cb CharBuffer instance to populate as base of creating cases.
+     * @param cases The {@code List} to populate with the cases for use from {@link #charBufferArguments()}.
+     */
     private static void populateAndAddCases(String type, CharBuffer cb, List<Arguments> cases) {
         assert cb.position() == 0 && cb.limit() == cb.capacity();
         char[] buf = randomChars();
@@ -78,6 +87,15 @@ public class CharBufferAsCharSequenceTest {
         addCases(type, buf, cb, cases);
     }
 
+    /**
+     * Adds 4 cases to <i>cases</i>.
+     * <ul>
+     * <li>Full use of cb</li>.
+     * <li>A duplicate of <i>cb</i> with a randomized position and limit. See {@code randomizeRange(CharBuffer)}<li>
+     * <li>A {@link CharBuffer#slice() sliced} copy of randomized range.</li>
+     * <li>A {@link CharBuffer#slice() sliced} copy of randomized range with a randomized position and limit.</li>
+     * </ul>
+     */
     private static void addCases(String type, char[] buf, CharBuffer cb, List<Arguments> cases) {
         assert cb.position() == 0 && cb.limit() == cb.capacity();
         cases.add(Arguments.of(cb, buf, 0, buf.length, type + " full"));
@@ -100,6 +118,29 @@ public class CharBufferAsCharSequenceTest {
      * <li>int start - index (inclusive) into char[] where the CharBuffer should be positioned</li>
      * <li>int stop - index (exclusive) into char[] where the CharBuffer should be limited</li>
      * <li>String - description of the test scenario</li>
+     * </ul>
+     * 
+     * Generates the following sets of arguments/test cases.
+     * <ul>
+     * <li>Randomly generated content
+     *   <ul>
+     *     <li>See {@code populateAndAddCases(String, CharBuffer, List)} for the following types:
+     *       <ul>
+     *         <li>HeapCharBuffer</i>
+     *         <li>HeapByteBuffer Big Endian</i>
+     *         <li>HeapByteBuffer Little Endian</i>
+     *         <li>DirectByteBuffer Big Endian</i>
+     *         <li>DirectByteBuffer Little Endian</i>
+     *       </ul>
+     *     </li>
+     *     <li>Randomly generated content into {@link CharBuffer#wrap(CharSequence) StringCharBuffer} - see {@code addCases(String, char[], CharBuffer, List)}.
+     *       <ul>
+     *         <li>StringCharBuffer wrapping a {@code CharBuffer} created from {@link CharBuffer#wrap(char[])}</li>
+     *         <li>StringCharBuffer wrapping a {@code String}</li>
+     *       </ul>
+     *     </li>
+     *   </ul>
+     * </li>
      * </ul>
      */
     static List<Arguments> charBufferArguments() {
