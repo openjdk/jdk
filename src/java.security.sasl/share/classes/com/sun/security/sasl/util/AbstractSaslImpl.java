@@ -56,7 +56,11 @@ public abstract class AbstractSaslImpl {
 
     // These are relevant only when privacy or integray have been negotiated
     protected int sendMaxBufSize = 0;     // specified by peer but can override
-    protected int recvMaxBufSize = 65536; // optionally specified by self
+
+    // optionally specified by self
+    protected int recvMaxBufSize = System.getProperty("javax.security.sasl.maxbuffer") == null ?
+            65536 : Integer.valueOf(System.getProperty("javax.security.sasl.maxbuffer"));
+
     protected int rawSendSize;            // derived from sendMaxBufSize
 
     protected String myClassName;
