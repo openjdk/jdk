@@ -119,7 +119,7 @@ public class CharBufferAsCharSequenceTest {
      * <li>int stop - index (exclusive) into char[] where the CharBuffer should be limited</li>
      * <li>String - description of the test scenario</li>
      * </ul>
-     * 
+     *
      * Generates the following sets of arguments/test cases.
      * <ul>
      * <li>Randomly generated content
