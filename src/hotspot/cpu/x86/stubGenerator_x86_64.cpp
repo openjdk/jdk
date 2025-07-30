@@ -574,7 +574,7 @@ address StubGenerator::generate_verify_mxcsr() {
   if (CheckJNICalls) {
     Label ok_ret;
     ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ push(rax);
+    __ push_ppx(rax);
     __ subptr(rsp, wordSize);      // allocate a temp location
     __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, ok_ret);
@@ -585,7 +585,7 @@ address StubGenerator::generate_verify_mxcsr() {
 
     __ bind(ok_ret);
     __ addptr(rsp, wordSize);
-    __ pop(rax);
+    __ pop_ppx(rax);
   }
 
   __ ret(0);
@@ -602,10 +602,10 @@ address StubGenerator::generate_f2i_fixup() {
 
   Label L;
 
-  __ push(rax);
-  __ push(c_rarg3);
-  __ push(c_rarg2);
-  __ push(c_rarg1);
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
 
   __ movl(rax, 0x7f800000);
   __ xorl(c_rarg3, c_rarg3);
@@ -622,10 +622,10 @@ address StubGenerator::generate_f2i_fixup() {
   __ bind(L);
   __ movptr(inout, c_rarg3);
 
-  __ pop(c_rarg1);
-  __ pop(c_rarg2);
-  __ pop(c_rarg3);
-  __ pop(rax);
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -640,10 +640,10 @@ address StubGenerator::generate_f2l_fixup() {
 
   Label L;
 
-  __ push(rax);
-  __ push(c_rarg3);
-  __ push(c_rarg2);
-  __ push(c_rarg1);
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
 
   __ movl(rax, 0x7f800000);
   __ xorl(c_rarg3, c_rarg3);
@@ -660,10 +660,10 @@ address StubGenerator::generate_f2l_fixup() {
   __ bind(L);
   __ movptr(inout, c_rarg3);
 
-  __ pop(c_rarg1);
-  __ pop(c_rarg2);
-  __ pop(c_rarg3);
-  __ pop(rax);
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -679,11 +679,11 @@ address StubGenerator::generate_d2i_fixup() {
 
   Label L;
 
-  __ push(rax);
-  __ push(c_rarg3);
-  __ push(c_rarg2);
-  __ push(c_rarg1);
-  __ push(c_rarg0);
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+  __ push_ppx(c_rarg0);
 
   __ movl(rax, 0x7ff00000);
   __ movq(c_rarg2, inout);
@@ -707,11 +707,11 @@ address StubGenerator::generate_d2i_fixup() {
   __ bind(L);
   __ movptr(inout, c_rarg2);
 
-  __ pop(c_rarg0);
-  __ pop(c_rarg1);
-  __ pop(c_rarg2);
-  __ pop(c_rarg3);
-  __ pop(rax);
+  __ pop_ppx(c_rarg0);
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -727,11 +727,11 @@ address StubGenerator::generate_d2l_fixup() {
 
   Label L;
 
-  __ push(rax);
-  __ push(c_rarg3);
-  __ push(c_rarg2);
-  __ push(c_rarg1);
-  __ push(c_rarg0);
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+  __ push_ppx(c_rarg0);
 
   __ movl(rax, 0x7ff00000);
   __ movq(c_rarg2, inout);
@@ -755,11 +755,11 @@ address StubGenerator::generate_d2l_fixup() {
   __ bind(L);
   __ movq(inout, c_rarg2);
 
-  __ pop(c_rarg0);
-  __ pop(c_rarg1);
-  __ pop(c_rarg2);
-  __ pop(c_rarg3);
-  __ pop(rax);
+  __ pop_ppx(c_rarg0);
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -1180,11 +1180,11 @@ address StubGenerator::generate_verify_oop() {
   __ pushf();
   __ incrementl(ExternalAddress((address) StubRoutines::verify_oop_count_addr()), rscratch1);
 
-  __ push(r12);
+  __ push_ppx(r12);
 
   // save c_rarg2 and c_rarg3
-  __ push(c_rarg2);
-  __ push(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg3);
 
   enum {
     // After previous pushes.
@@ -1211,9 +1211,9 @@ address StubGenerator::generate_verify_oop() {
   __ bind(exit);
   __ movptr(rax, Address(rsp, saved_rax));     // get saved rax back
   __ movptr(rscratch1, Address(rsp, saved_r10)); // get saved r10 back
-  __ pop(c_rarg3);                             // restore c_rarg3
-  __ pop(c_rarg2);                             // restore c_rarg2
-  __ pop(r12);                                 // restore r12
+  __ pop_ppx(c_rarg3);           // restore c_rarg3
+  __ pop_ppx(c_rarg2);           // restore c_rarg2
+  __ pop_ppx(r12);               // restore r12
   __ popf();                                   // restore flags
   __ ret(4 * wordSize);                        // pop caller saved stuff
 
@@ -1221,9 +1221,9 @@ address StubGenerator::generate_verify_oop() {
   __ bind(error);
   __ movptr(rax, Address(rsp, saved_rax));     // get saved rax back
   __ movptr(rscratch1, Address(rsp, saved_r10)); // get saved r10 back
-  __ pop(c_rarg3);                             // get saved c_rarg3 back
-  __ pop(c_rarg2);                             // get saved c_rarg2 back
-  __ pop(r12);                                 // get saved r12 back
+  __ pop_ppx(c_rarg3);           // get saved c_rarg3 back
+  __ pop_ppx(c_rarg2);           // get saved c_rarg2 back
+  __ pop_ppx(r12);               // get saved r12 back
   __ popf();                                   // get saved flags off stack --
                                                // will be ignored
 
@@ -1431,10 +1431,10 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   const Address limit_param(rsp, 1 * wordSize + 4);
 
   __ enter();
-  __ push(rbx);
-  __ push(rdi);
-  __ push(rsi);
-  __ push(r15);
+  __ push_ppx(rbx);
+  __ push_ppx(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(r15);
   __ subptr(rsp, 2 * wordSize);
 
   __ movptr(buf_param, c_rarg0);
@@ -1446,10 +1446,10 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   __ fast_md5(buf_param, state_param, ofs_param, limit_param, multi_block);
 
   __ addptr(rsp, 2 * wordSize);
-  __ pop(r15);
-  __ pop(rsi);
-  __ pop(rdi);
-  __ pop(rbx);
+  __ pop_ppx(r15);
+  __ pop_ppx(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rbx);
   __ leave();
   __ ret(0);
 
@@ -1790,10 +1790,10 @@ address StubGenerator::generate_base64_encodeBlock()
   __ enter();
 
   // Save callee-saved registers before using them
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
 
   // arguments
   const Register source = c_rarg0;       // Source Array
@@ -2153,10 +2153,10 @@ address StubGenerator::generate_base64_encodeBlock()
   __ jcc(Assembler::aboveEqual, L_processdata);
 
   __ BIND(L_exit);
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
   __ leave();
   __ ret(0);
 
@@ -2490,11 +2490,11 @@ address StubGenerator::generate_base64_decodeBlock() {
   __ enter();
 
   // Save callee-saved registers before using them
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-  __ push(rbx);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
+  __ push_ppx(rbx);
 
   // arguments
   const Register source = c_rarg0; // Source Array
@@ -2562,7 +2562,7 @@ address StubGenerator::generate_base64_decodeBlock() {
   // calculate length from offsets
   __ movl(length, end_offset);
   __ subl(length, start_offset);
-  __ push(dest);          // Save for return value calc
+  __ push_ppx(dest);          // Save for return value calc
 
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
@@ -2793,14 +2793,14 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     __ BIND(L_exit);
     __ vzeroupper();
-    __ pop(rax);             // Get original dest value
+    __ pop_ppx(rax);             // Get original dest value
     __ subptr(dest, rax);      // Number of bytes converted
     __ movptr(rax, dest);
-    __ pop(rbx);
-    __ pop(r15);
-    __ pop(r14);
-    __ pop(r13);
-    __ pop(r12);
+    __ pop_ppx(rbx);
+    __ pop_ppx(r15);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+    __ pop_ppx(r12);
     __ leave();
     __ ret(0);
 
@@ -2987,14 +2987,14 @@ address StubGenerator::generate_base64_decodeBlock() {
   __ jcc(Assembler::positive, L_forceLoop);
 
   __ BIND(L_exit_no_vzero);
-  __ pop(rax);             // Get original dest value
-  __ subptr(dest, rax);      // Number of bytes converted
+  __ pop_ppx(rax);             // Get original dest value
+  __ subptr(dest, rax);                      // Number of bytes converted
   __ movptr(rax, dest);
-  __ pop(rbx);
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(rbx);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
   __ leave();
   __ ret(0);
 
@@ -3117,8 +3117,8 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
     __ bind(L_doSmall);
   }
 #ifdef _WIN64
-  __ push(y);
-  __ push(z);
+  __ push_ppx(y);
+  __ push_ppx(z);
 #endif
   __ crc32c_ipl_alg2_alt2(crc, buf, len,
                           a, j, k,
@@ -3126,8 +3126,8 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
                           c_farg0, c_farg1, c_farg2,
                           is_pclmulqdq_supported);
 #ifdef _WIN64
-  __ pop(z);
-  __ pop(y);
+  __ pop_ppx(z);
+  __ pop_ppx(y);
 #endif
 
   __ bind(L_continue);
@@ -3313,7 +3313,7 @@ address StubGenerator::generate_method_entry_barrier() {
 
   // save c_rarg0, because we want to use that value.
   // We could do without it but then we depend on the number of slots used by pusha
-  __ push(c_rarg0);
+  __ push_ppx(c_rarg0);
 
   __ lea(c_rarg0, Address(rsp, wordSize * 3)); // 1 for cookie, 1 for rbp, 1 for c_rarg0 - this should be the return address
 
@@ -3350,7 +3350,7 @@ address StubGenerator::generate_method_entry_barrier() {
   __ jcc(Assembler::equal, deoptimize_label);
 
   __ popa();
-  __ pop(c_rarg0);
+  __ pop_ppx(c_rarg0);
 
   __ leave();
 
@@ -3361,7 +3361,7 @@ address StubGenerator::generate_method_entry_barrier() {
   __ BIND(deoptimize_label);
 
   __ popa();
-  __ pop(c_rarg0);
+  __ pop_ppx(c_rarg0);
 
   __ leave();
 
@@ -3465,10 +3465,10 @@ address StubGenerator::generate_bigIntegerRightShift() {
   // For windows, since last argument is on stack, we need to move it to the appropriate register.
   __ movl(totalNumIter, Address(rsp, 6 * wordSize));
   // Save callee save registers.
-  __ push(tmp3);
-  __ push(tmp4);
+  __ push_ppx(tmp3);
+  __ push_ppx(tmp4);
 #endif
-  __ push(tmp5);
+  __ push_ppx(tmp5);
 
   // Rename temps used throughout the code.
   const Register idx = tmp1;
@@ -3541,10 +3541,10 @@ address StubGenerator::generate_bigIntegerRightShift() {
   __ BIND(Exit);
   __ vzeroupper();
   // Restore callee save registers.
-  __ pop(tmp5);
+  __ pop_ppx(tmp5);
 #ifdef _WIN64
-  __ pop(tmp4);
-  __ pop(tmp3);
+  __ pop_ppx(tmp4);
+  __ pop_ppx(tmp3);
   restore_arg_regs();
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -3598,10 +3598,10 @@ address StubGenerator::generate_bigIntegerLeftShift() {
   // For windows, since last argument is on stack, we need to move it to the appropriate register.
   __ movl(totalNumIter, Address(rsp, 6 * wordSize));
   // Save callee save registers.
-  __ push(tmp3);
-  __ push(tmp4);
+  __ push_ppx(tmp3);
+  __ push_ppx(tmp4);
 #endif
-  __ push(tmp5);
+  __ push_ppx(tmp5);
 
   // Rename temps used throughout the code
   const Register idx = tmp1;
@@ -3666,10 +3666,10 @@ address StubGenerator::generate_bigIntegerLeftShift() {
   __ BIND(Exit);
   __ vzeroupper();
   // Restore callee save registers.
-  __ pop(tmp5);
+  __ pop_ppx(tmp5);
 #ifdef _WIN64
-  __ pop(tmp4);
-  __ pop(tmp3);
+  __ pop_ppx(tmp4);
+  __ pop_ppx(tmp3);
   restore_arg_regs();
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -3813,7 +3813,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier.
-    __ push(rax);
+    __ push_ppx(rax);
     __ push_d(xmm0);
   }
 
@@ -3826,7 +3826,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
     // Restore return value from a method returning to the return barrier.
     // No safepoint in the call to thaw, so even an oop return value should be OK.
     __ pop_d(xmm0);
-    __ pop(rax);
+    __ pop_ppx(rax);
   }
 
 #ifdef ASSERT
@@ -3852,7 +3852,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier. (Again.)
-    __ push(rax);
+    __ push_ppx(rax);
     __ push_d(xmm0);
   }
 
@@ -3866,7 +3866,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
     // Restore return value from a method returning to the return barrier. (Again.)
     // No safepoint in the call to thaw, so even an oop return value should be OK.
     __ pop_d(xmm0);
-    __ pop(rax);
+    __ pop_ppx(rax);
   } else {
     // Return 0 (success) from doYield.
     __ xorptr(rax, rax);
@@ -3882,7 +3882,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
     __ movptr(c_rarg1, Address(rsp, wordSize)); // return address
 
     // rax still holds the original exception oop, save it before the call
-    __ push(rax);
+    __ push_ppx(rax);
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
     __ movptr(rbx, rax);
@@ -3891,7 +3891,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
     //   rax: exception oop
     //   rbx: exception handler
     //   rdx: exception pc
-    __ pop(rax);
+    __ pop_ppx(rax);
     __ verify_oop(rax);
     __ pop(rbp); // pop out RBP here too
     __ pop(rdx);
@@ -4095,15 +4095,11 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubId::stubgen_double_sign_flip_id, 0x8000000000000000);
 
   if (UseCRC32Intrinsics) {
-    // set table address before stub generation which use it
-    StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
-    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
-    StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
     StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
   }
 

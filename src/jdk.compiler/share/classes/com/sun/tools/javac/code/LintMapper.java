@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +67,7 @@ import static com.sun.tools.javac.code.Lint.LintCategory.SUPPRESSION;
  * Maps source code positions to the applicable {@link Lint} instance.
  *
  * <p>
- * Because {@code @SuppressWarnings} is a Java symbol, in general this mapping can't be be
+ * Because {@code @SuppressWarnings} is a Java symbol, in general this mapping can't be
  * calculated until after attribution. As each top-level declaration (class, package, or module)
  * is attributed, this singleton is notified and the {@link Lint}s that apply to every source
  * position within that top-level declaration are calculated.
@@ -112,7 +113,7 @@ public class LintMapper {
     // The key for the context singleton
     private static final Context.Key<LintMapper> CONTEXT_KEY = new Context.Key<>();
 
-    // Per-source file lint information
+    // Per-source file information. Note: during the parsing of a file, an entry exists but the FileInfo value is null
     private final Map<JavaFileObject, FileInfo> fileInfoMap = new HashMap<>();
 
     // Validations of "-Xlint:-foo" suppressions
@@ -175,7 +176,7 @@ public class LintMapper {
      *
      * @param sourceFile source file
      * @param pos source position
-     * @return the applicable {@link Lint}, if known
+     * @return the applicable {@link Lint}, if known, otherwise empty
      */
     public Optional<Lint> lintAt(JavaFileObject sourceFile, DiagnosticPosition pos) {
         initializeIfNeeded();
@@ -206,19 +207,19 @@ public class LintMapper {
 // Parsing Notifications
 
     /**
-     * Invoked when file parsing starts to create an entry for the new file.
+     * Invoked when file parsing starts to create an entry for the new file (but with a null value).
      */
     public void startParsingFile(JavaFileObject sourceFile) {
         initializeIfNeeded();
-        fileInfoMap.put(sourceFile, new FileInfo());
+        fileInfoMap.put(sourceFile, null);
     }
 
     /**
-     * Invoked when file parsing completes to identify the top-level declarations.
+     * Invoked when file parsing completes to put in place a corresponding {@link FileInfo}.
      */
     public void finishParsingFile(JCCompilationUnit tree) {
         Assert.check(rootLint != null);
-        fileInfoMap.get(tree.sourcefile).afterParse(tree);
+        fileInfoMap.put(tree.sourcefile, new FileInfo(rootLint, tree));
     }
 
 // Suppression Tracking
@@ -249,15 +250,18 @@ public class LintMapper {
      */
     public void reportUnnecessarySuppressionAnnotations(JavaFileObject sourceFile, JCTree tree) {
         initializeIfNeeded();
-        FileInfo fileInfo = fileInfoMap.get(sourceFile);
-        DeclNode topNode = fileInfo.findTopNode(tree.pos());
 
-        // Propagate validations in this top-level declaration to determine which suppressions never got validated
-        propagateValidations(fileInfo, topNode);
+        // Find the corresponding LintRange
+        FileInfo fileInfo = fileInfoMap.get(sourceFile);
+        LintRange lintRange = fileInfo.rootRange.findChild(tree.pos());
+
+        // Propagate validations in the given top-level declaration to determine which suppressions never got validated.
+        // Any that escape validate the corresponding "Xlint:-foo" suppression.
+        optionFlagValidations.addAll(fileInfo.propagateValidations(lintRange));
 
         // Report them if needed
         if (rootLint.isEnabled(SUPPRESSION, false)) {
-            topNode.stream()
+            lintRange.stream()
               .filter(node -> node.lint.isEnabled(SUPPRESSION, false))
               .forEach(node -> report(node.unvalidated, name -> "\"" + name + "\"",
                 names -> log.warning(node.annotation.pos(), LintWarnings.UnnecessaryWarningSuppression(names))));
@@ -274,44 +278,48 @@ public class LintMapper {
             logger.accept(names);
     }
 
-    // Propagate validations in the given top-level declaration; any that escape validate the corresponding "Xlint" suppression
-    private void propagateValidations(FileInfo fileInfo, DeclNode topNode) {
-        optionFlagValidations.addAll(fileInfo.propagateValidations(topNode));
-    }
-
 // FileInfo
 
     /**
-     * Holds {@link Lint} information for one source file.
+     * Holds {@link Lint} information for a fully parsed source file.
      *
      * <p>
-     * Instances evolve through three states:
-     * <ul>
-     *  <li>Before the file has been completely parsed, {@link #topSpans} is null.
-     *  <li>Immediately after the file has been parsed, {@link #topSpans} contains zero or more {@link Span}s
-     *      corresponding to the top-level declarations in the file, and {@code rootNode} has no children.
-     *  <li>When a top-level declaration is attributed, a corresponding {@link DeclNode} child matching one
-     *      of the {@link Span}s in {@link #topSpans} is created and added to {@link #rootNode}.
-     * </ul>
+     * Initially (immediately after parsing), "unmappedDecls" contains a {@link Span} corresponding to each
+     * top-level declaration in the source file. As each top-level declaration is attributed, the corresponding
+     * {@link Span} is removed and the corresponding {@link LintRange} subtree is populated under "rootRange".
      */
     private class FileInfo {
 
-        List<Span> topSpans;                                        // the spans of all top level declarations
-        final DeclNode rootNode = new DeclNode(rootLint);           // tree of file's "interesting" declaration nodes
+        final LintRange rootRange;                                  // the root LintRange (covering the entire source file)
+        final List<Span> unmappedDecls = new ArrayList<>();         // unmapped top-level declarations awaiting attribution
         final Map<Symbol, EnumSet<LintCategory>> validationsMap     // maps declaration symbol to validations therein
           = new HashMap<>();
 
-        // Find the Lint that applies to the given position, if known
+        // After parsing: Add top-level declarations to our "unmappedDecls" list
+        FileInfo(Lint rootLint, JCCompilationUnit tree) {
+            rootRange = new LintRange(rootLint);
+            tree.defs.stream()
+              .filter(this::isTopLevelDecl)
+              .map(decl -> new Span(decl, tree.endPositions))
+              .forEach(unmappedDecls::add);
+        }
+
+        // After attribution: Discard the span from "unmappedDecls" and populate the declaration's subtree under "rootRange"
+        void afterAttr(JCTree tree, EndPosTable endPositions) {
+            for (Iterator<Span> i = unmappedDecls.iterator(); i.hasNext(); ) {
+                if (i.next().contains(tree.pos())) {
+                    rootRange.populateSubtree(this, syms, tree, endPositions);
+                    i.remove();
+                    return;
+                }
+            }
+            throw new AssertionError("top-level declaration not found");
+        }
+
+        // Find the most specific Lint configuration applying to the given position, unless the position has not been mapped yet
         Optional<Lint> lintAt(DiagnosticPosition pos) {
-            if (topSpans == null)                           // has the file been parsed yet?
-                return Optional.empty();                    // -> no, we don't know yet
-            if (!findTopSpan(pos).isPresent())              // is the position within some top-level declaration?
-                return Optional.of(rootLint);               // -> no, use the root lint
-            DeclNode topNode = findTopNode(pos);
-            if (topNode == null)                            // has that declaration been attributed yet?
-                return Optional.empty();                    // -> no, we don't know yet
-            DeclNode node = topNode.find(pos);              // find the best matching node (it must exist)
-            return Optional.of(node.lint);                  // use its Lint
+            boolean mapped = unmappedDecls.stream().noneMatch(span -> span.contains(pos));
+            return mapped ? Optional.of(rootRange.bestMatch(pos).lint) : Optional.empty();
         }
 
         // Obtain the validation state for the given symbol
@@ -328,36 +336,8 @@ public class LintMapper {
         }
 
         // Propagate validations in the given top-level node
-        EnumSet<LintCategory> propagateValidations(DeclNode topNode) {
-            Assert.check(rootNode.children.contains(topNode));
-            return topNode.propagateValidations(validationsMap);
-        }
-
-        void afterParse(JCCompilationUnit tree) {
-            Assert.check(topSpans == null, "source already parsed");
-            topSpans = tree.defs.stream()
-              .filter(this::isTopLevelDecl)
-              .map(decl -> new Span(decl, tree.endPositions))
-              .collect(Collectors.toList());
-        }
-
-        void afterAttr(JCTree tree, EndPosTable endPositions) {
-            Assert.check(topSpans != null, "source not parsed");
-            Assert.check(findTopNode(tree.pos()) == null, "duplicate call");
-            new DeclNodeTreeBuilder(this, rootNode, endPositions).scan(tree);
-        }
-
-        Optional<Span> findTopSpan(DiagnosticPosition pos) {
-            return topSpans.stream()
-              .filter(span -> span.contains(pos))
-              .findFirst();
-        }
-
-        DeclNode findTopNode(DiagnosticPosition pos) {
-            return rootNode.children.stream()
-              .filter(node -> node.contains(pos))
-              .findFirst()
-              .orElse(null);
+        EnumSet<LintCategory> propagateValidations(LintRange lintRange) {
+            return lintRange.propagateValidations(validationsMap);
         }
 
         boolean isTopLevelDecl(JCTree tree) {
@@ -370,95 +350,73 @@ public class LintMapper {
 // Span
 
     /**
-     * Represents a lexical range in a file.
+     * A lexical range.
      */
-    private static class Span {
+    private record Span(int startPos, int endPos) {
 
-        final int startPos;
-        final int endPos;
-
-        Span(int startPos, int endPos) {
-            this.startPos = startPos;
-            this.endPos = endPos;
-        }
+        static final Span MAXIMAL = new Span(Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         Span(JCTree tree, EndPosTable endPositions) {
             this(TreeInfo.getStartPos(tree), TreeInfo.getEndPos(tree, endPositions));
         }
 
-        boolean contains(int pos) {
-            return pos == startPos || (pos > startPos && pos < endPos);
-        }
-
         boolean contains(DiagnosticPosition pos) {
-            return contains(pos.getLintPosition());
+            int offset = pos.getLintPosition();
+            return offset == startPos || (offset > startPos && offset < endPos);
         }
 
         boolean contains(Span that) {
             return this.startPos <= that.startPos && this.endPos >= that.endPos;
         }
-
-        @Override
-        public String toString() {
-            return String.format("Span[%d-%d]", startPos, endPos);
-        }
     }
 
-// DeclNode
+// LintRange
 
     /**
-     * Represents a declaration and the {@link Lint} configuration that applies within its lexical range.
-     *
-     * <p>
-     * For each file, there is a root node represents the entire source file. At the next level down are
-     * nodes representing the top-level declarations in the file, and so on.
+     * A tree of nested lexical ranges and the {@link Lint} configurations that apply therein.
      */
-    private static class DeclNode extends Span {
+    private record LintRange(
+        Span span,                                      // declaration's lexical range
+        Lint lint,                                      // the Lint configuration that applies at this declaration
+        Symbol symbol,                                  // declaration symbol (for debug purposes only; null for root)
+        List<LintRange> children,                       // the nested declarations one level below this node
+        JCAnnotation annotation,                        // the @SuppressWarnings on this declaration, if any
+        EnumSet<LintCategory> suppressions,             // categories suppressed by @SuppressWarnings, if any
+        EnumSet<LintCategory> unvalidated               // categories in "suppressions" that were never validated
+    ) {
 
-        final Symbol symbol;                                    // the symbol declared by this declaration (null for root)
-        final DeclNode parent;                                  // the immediately containing declaration (null for root)
-        final List<DeclNode> children = new ArrayList<>();      // the immediately next level down declarations under this node
-        final Lint lint;                                        // the Lint configuration that applies at this declaration
-        final JCAnnotation annotation;                          // the @SuppressWarnings on this declaration, if any
-        final EnumSet<LintCategory> suppressions;               // categories suppressed by @SuppressWarnings, if any
-        final EnumSet<LintCategory> unvalidated;                // categories in "suppressions" that were never validated
-
-        // Create a root node representing the entire file
-        DeclNode(Lint rootLint) {
-            super(Integer.MIN_VALUE, Integer.MAX_VALUE);
-            this.symbol = null;
-            this.parent = null;
-            this.lint = rootLint;
-            this.annotation = null;
-            this.suppressions = LintCategory.newEmptySet();     // you can't put @SuppressWarnings on a file
-            this.unvalidated = EnumSet.copyOf(suppressions);
+        // Create a node representing the entire file, using the root lint configuration
+        LintRange(Lint rootLint) {
+            this(Span.MAXIMAL, rootLint, null, new ArrayList<>(), null, LintCategory.newEmptySet(), LintCategory.newEmptySet());
         }
 
-        // Create a normal declaration node
-        DeclNode(Symbol symbol, DeclNode parent, JCTree tree, EndPosTable endPositions,
-          Lint lint, JCAnnotation annotation, EnumSet<LintCategory> suppressions) {
-            super(tree, endPositions);
-            this.symbol = symbol;
-            this.parent = parent;
-            this.lint = lint;
-            this.annotation = annotation;
-            this.suppressions = suppressions;
-            this.unvalidated = EnumSet.copyOf(suppressions);
-            parent.children.add(this);
+        // Create a node representing the given declaration and its corresponding Lint configuration
+        LintRange(JCTree tree, EndPosTable endPositions, Lint lint, Symbol symbol,
+          JCAnnotation annotation, EnumSet<LintCategory> suppressions) {
+            this(new Span(tree, endPositions), lint, symbol, new ArrayList<>(),
+              annotation, suppressions, EnumSet.copyOf(suppressions));
         }
 
-        // Find the narrowest node in this tree that contains the given position, if any
-        DeclNode find(DiagnosticPosition pos) {
+        // Find the most specific node in this tree (including me) that contains the given position, if any
+        LintRange bestMatch(DiagnosticPosition pos) {
             return children.stream()
-              .map(child -> child.find(pos))
+              .map(child -> child.bestMatch(pos))
               .filter(Objects::nonNull)
-              .reduce((a, b) -> a.contains(b) ? b : a)
-              .orElseGet(() -> contains(pos) ? this : null);
+              .reduce((a, b) -> a.span.contains(b.span) ? b : a)
+              .orElseGet(() -> span.contains(pos) ? this : null);
+        }
+
+        // Find the child containing the given position
+        LintRange findChild(DiagnosticPosition pos) {
+            return children.stream()
+              .filter(node -> node.span.contains(pos))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("child not found"));
         }
 
         // Stream this node and all descendents via pre-order recursive descent
-        Stream<DeclNode> stream() {
-            return Stream.concat(Stream.of(this), children.stream().flatMap(DeclNode::stream));
+        Stream<LintRange> stream() {
+            return Stream.concat(Stream.of(this), children.stream().flatMap(LintRange::stream));
         }
 
         // Calculate the unvalidated suppressions in the subtree rooted at this node. We do this by recursively
@@ -490,121 +448,102 @@ public class LintMapper {
             return validations;
         }
 
-        @Override
-        public String toString() {
-            String label = symbol != null ? "sym=" + symbol : "ROOT";
-            return String.format("DeclNode[%s,lint=%s,suppressions=%s]", label, lint, suppressions);
-        }
-    }
+        // Build and populate a subtree corresponding to the given top-level declaration.
+        // Only "interesting" declarations are included:
+        //  - Top-level declarations
+        //  - Declarations that have a different Lint configuration than their parent
+        //  - Declarations with any @SuppressWarnings annotations
+        void populateSubtree(FileInfo fileInfo, Symtab syms, JCTree tree, EndPosTable endPositions) {
+            new TreeScanner() {
 
-// DeclNodeTreeBuilder
+                // Variables declared together (separated by commas) share their @SuppressWarnings annotation, so they must also
+                // share the set of validated suppressions: the suppression of a category is valid if *any* of the variables
+                // validates it. We detect that situation using this map and, when found, invoke FileInfo.mergeValidations().
+                private final Map<JCAnnotation, VarSymbol> annotationRepresentativeSymbolMap = new HashMap<>();
 
-    /**
-     * Builds a tree of {@link DeclNode}s starting from a top-level declaration.
-     */
-    private class DeclNodeTreeBuilder extends TreeScanner {
+                private LintRange currentNode = LintRange.this;
 
-        // Variables declared together (separated by commas) share their @SuppressWarnings annotation, so they must also share
-        // the set of validated suppressions: the suppression of a category is valid if *any* of the variables validates it.
-        // We detect that situation using this map and, when found, invoke FileInfo.mergeValidations().
-        private final Map<JCAnnotation, VarSymbol> annotationRepresentativeSymbolMap = new HashMap<>();
+                @Override
+                public void visitModuleDef(JCModuleDecl tree) {
+                    scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitModuleDef);
+                }
+                @Override
+                public void visitPackageDef(JCPackageDecl tree) {
+                    scanDecl(tree, tree.packge, findAnnotation(tree.annotations), super::visitPackageDef);
+                }
+                @Override
+                public void visitClassDef(JCClassDecl tree) {
+                    scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitClassDef);
+                }
+                @Override
+                public void visitMethodDef(JCMethodDecl tree) {
+                    scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitMethodDef);
+                }
+                @Override
+                public void visitVarDef(JCVariableDecl tree) {
+                    scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitVarDef);
+                }
 
-        private final FileInfo fileInfo;
-        private final EndPosTable endPositions;
+                private <T extends JCTree> void scanDecl(T tree,
+                  Symbol symbol, JCAnnotation annotation, Consumer<? super T> recursor) {
 
-        private DeclNode parent;
-        private Lint lint;
+                    // The "symbol" can be null if there were earlier errors; skip this declaration if so
+                    if (symbol == null) {
+                        recursor.accept(tree);
+                        return;
+                    }
 
-        DeclNodeTreeBuilder(FileInfo fileInfo, DeclNode rootNode, EndPosTable endPositions) {
-            this.fileInfo = fileInfo;
-            this.endPositions = endPositions;
-            this.parent = rootNode;
-            this.lint = rootNode.lint;              // i.e, rootLint
-        }
+                    // Update the Lint using the declaration
+                    Lint newLint = currentNode.lint.augment(symbol);
 
-        @Override
-        public void visitModuleDef(JCModuleDecl tree) {
-            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitModuleDef);
-        }
+                    // Get the lint categories explicitly suppressed at this symbol's declaration by @SuppressedWarnings
+                    EnumSet<LintCategory> suppressed = Optional.ofNullable(annotation)
+                      .map(anno -> lint.suppressionsFrom(anno))
+                      .orElseGet(LintCategory::newEmptySet);
 
-        @Override
-        public void visitPackageDef(JCPackageDecl tree) {
-            scanDecl(tree, tree.packge, findAnnotation(tree.annotations), super::visitPackageDef);
-        }
+                    // Merge validation sets for variables that share the same declaration (and therefore @SuppressedWarnings)
+                    if (annotation != null && symbol instanceof VarSymbol varSym) {
+                        annotationRepresentativeSymbolMap.merge(annotation, varSym, (oldSymbol, newSymbol) -> {
+                            fileInfo.mergeValidations(oldSymbol, newSymbol);
+                            return oldSymbol;
+                        });
+                    }
 
-        @Override
-        public void visitClassDef(JCClassDecl tree) {
-            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitClassDef);
-        }
+                    // If this declaration is not "interesting", then we don't need a new node here
+                    if (newLint == currentNode.lint && currentNode.symbol != null && suppressed.isEmpty()) {
+                        recursor.accept(tree);
+                        return;
+                    }
 
-        @Override
-        public void visitMethodDef(JCMethodDecl tree) {
-            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitMethodDef);
-        }
+                    // Add a new node here and proceed
+                    final LintRange previousNode = currentNode;
+                    currentNode = new LintRange(tree, endPositions, newLint, symbol, annotation, suppressed);
+                    previousNode.children.add(currentNode);
+                    try {
+                        recursor.accept(tree);
+                    } finally {
+                        currentNode = previousNode;
+                    }
+                }
 
-        @Override
-        public void visitVarDef(JCVariableDecl tree) {
-            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitVarDef);
-        }
+                // Retrieve the @SuppressWarnings annotation, if any, from the given modifiers
+                private JCAnnotation findAnnotation(JCModifiers mods) {
+                    return Optional.ofNullable(mods)
+                      .map(m -> m.annotations)
+                      .map(this::findAnnotation)
+                      .orElse(null);
+                }
 
-        private <T extends JCTree> void scanDecl(T tree, Symbol symbol, JCAnnotation annotation, Consumer<? super T> recursion) {
-
-            // "symbol" can be null if there were earlier errors; skip this declaration if so
-            if (symbol == null) {
-                recursion.accept(tree);
-                return;
-            }
-
-            // Update the current Lint in effect; note lint.augment() returns the same instance if there's no change
-            Lint previousLint = lint;
-            lint = lint.augment(symbol);
-
-            // Get the lint categories explicitly suppressed at this symbol's declaration by @SuppressedWarnings
-            EnumSet<LintCategory> suppressed = Optional.ofNullable(annotation)
-              .map(anno -> rootLint.suppressionsFrom(anno))
-              .orElseGet(LintCategory::newEmptySet);
-
-            // Merge validation sets for variables that share the same declaration (and therefore the same @SuppressedWarnings)
-            if (annotation != null && symbol instanceof VarSymbol varSym) {
-                annotationRepresentativeSymbolMap.merge(annotation, varSym, (oldSymbol, newSymbol) -> {
-                    fileInfo.mergeValidations(oldSymbol, newSymbol);
-                    return oldSymbol;
-                });
-            }
-
-            // If this declaration is not "interesting", we don't need to create a DeclNode for it
-            if (lint == previousLint && parent.parent != null && suppressed.isEmpty()) {
-                recursion.accept(tree);
-                return;
-            }
-
-            // Add a DeclNode here
-            DeclNode node = new DeclNode(symbol, parent, tree, endPositions, lint, annotation, suppressed);
-            parent = node;
-            try {
-                recursion.accept(tree);
-            } finally {
-                parent = node.parent;
-                lint = previousLint;
-            }
-        }
-
-        // Retrieve the @SuppressWarnings annotation, if any, from the given modifiers
-        private JCAnnotation findAnnotation(JCModifiers mods) {
-            return Optional.ofNullable(mods)
-              .map(m -> m.annotations)
-              .map(this::findAnnotation)
-              .orElse(null);
-        }
-
-        // Retrieve the @SuppressWarnings annotation, if any, from the given list of annotations
-        private JCAnnotation findAnnotation(Collection<JCAnnotation> annotations) {
-            return Optional.ofNullable(annotations)
-              .stream()
-              .flatMap(Collection::stream)
-              .filter(a -> a.attribute.type.tsym == syms.suppressWarningsType.tsym)
-              .findFirst()
-              .orElse(null);
+                // Retrieve the @SuppressWarnings annotation, if any, from the given list of annotations
+                private JCAnnotation findAnnotation(Collection<JCAnnotation> annotations) {
+                    return Optional.ofNullable(annotations)
+                      .stream()
+                      .flatMap(Collection::stream)
+                      .filter(a -> a.attribute.type.tsym == syms.suppressWarningsType.tsym)
+                      .findFirst()
+                      .orElse(null);
+                }
+            }.scan(tree);
         }
     }
 }

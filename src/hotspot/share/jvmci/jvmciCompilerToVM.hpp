@@ -131,6 +131,8 @@ class CompilerToVM {
     static address dlog10;
     static address dpow;
 
+    static address crc_table_addr;
+
     static address symbol_init;
     static address symbol_clinit;
 
