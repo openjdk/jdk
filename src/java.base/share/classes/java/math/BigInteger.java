@@ -2788,11 +2788,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param n the root degree
      * @return an array of two BigIntegers with the integer {@code n}th root at
      *         offset 0 and the remainder at offset 1
-     * @throws ArithmeticException if {@code n <= 0} (Non-positive degree integer roots
-     *                             are not defined.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative. (This would cause the operation to
-     *                             yield non-real roots.)
+     * @throws ArithmeticException if {@code n <= 0}.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @see #sqrtAndRemainder()
      * @see #nthRoot(int)
