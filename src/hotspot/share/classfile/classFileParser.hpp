@@ -192,6 +192,7 @@ class ClassFileParser {
   bool _has_localvariable_table;
   bool _has_final_method;
   bool _has_contended_fields;
+  bool _has_aot_runtime_setup_method;
 
   // precomputed flags
   bool _has_finalizer;
