@@ -107,6 +107,7 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
     _writer.write(name);
     _writer.write(tid);
     _writer.write(JfrThreadGroupManager::thread_group_id(JavaThread::cast(t), _curthread));
+    t->jfr_thread_local()->set_written();
   }
   _writer.write<bool>(false); // isVirtual
 }
@@ -115,7 +116,11 @@ void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
   JfrCheckpointThreadClosure tc(writer);
   JfrJavaThreadIterator javathreads;
   while (javathreads.has_next()) {
-    tc.do_thread(javathreads.next());
+    JavaThread* const jt = javathreads.next();
+    if (jt->jfr_thread_local()->should_write()) {
+      tc.do_thread(jt);
+      jt->jfr_thread_local()->set_written();
+    }
   }
   JfrNonJavaThreadIterator nonjavathreads;
   while (nonjavathreads.has_next()) {
