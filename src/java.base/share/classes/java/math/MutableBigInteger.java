@@ -2042,7 +2042,8 @@ class MutableBigInteger {
             }
 
             if (rootSh == 0) {
-                s = valueOf(approx + 1.0);
+                // approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
+                s = new MutableBigInteger((int) approx + 1);
             } else {
                 // Allocate sufficient space to store the final root
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
@@ -2077,7 +2078,9 @@ class MutableBigInteger {
                         rootSh -= correctBits;
                         approx = Math.scalb(approx, correctBits);
                     }
-                    s.copyValue(valueOf(approx + 1.0));
+                    // now approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
+                    s.value[0] = (int) approx + 1;
+                    s.intLen = 1;
                 }
 
                 /* The Newton's recurrence roughly duplicates the correct bits at each iteration.
