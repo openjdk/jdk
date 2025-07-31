@@ -441,9 +441,9 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 class AOTMapLogger::FakeOop {
   static int _requested_shift;
   static intx _buffer_to_requested_delta;
-  static address _narrow_oop_base;
   static address _buffer_start;
   static address _buffer_end;
+  static uint64_t _buffer_start_narrow_oop; // The encoded narrow oop for the objects at _buffer_start
 
   address _buffer_addr;
 
@@ -466,12 +466,19 @@ protected:
   oop raw_oop() { return cast_to_oop(_buffer_addr); }
 
 public:
-  static void init(address requested_start, int requested_shift, address narrow_oop_base, address buffer_start, address buffer_end) {
+  static void init(address requested_base, address requested_start, int requested_shift, address buffer_start, address buffer_end) {
     _requested_shift = requested_shift;
     _buffer_to_requested_delta = requested_start - buffer_start;
-    _narrow_oop_base = narrow_oop_base;
     _buffer_start = buffer_start;
     _buffer_end = buffer_end;
+
+    precond(requested_start >= requested_base);
+    if (UseCompressedOops) {
+      _buffer_start_narrow_oop = (uint64_t)(pointer_delta(requested_start, requested_base, 1)) >> _requested_shift;
+      assert(_buffer_start_narrow_oop < 0xffffffff, "sanity");
+    } else {
+      _buffer_start_narrow_oop = 0xdeadbeed;
+    }
   }
 
   FakeOop() : _buffer_addr(nullptr) {}
@@ -489,7 +496,12 @@ public:
 
   RequestedMetadataAddr klass() {
     address rk = (address)real_klass();
-    return RequestedMetadataAddr(rk - _requested_to_mapped_metadata_delta);
+    if (_is_runtime_logging) {
+      return RequestedMetadataAddr(rk - _requested_to_mapped_metadata_delta);
+    } else {
+      ArchiveBuilder* builder = ArchiveBuilder::current();
+      return builder->to_requested(builder->get_buffered_addr(rk));
+    }
   }
 
   Klass* real_klass() {
@@ -527,16 +539,17 @@ public:
     if (_buffer_addr == nullptr) {
       return 0;
     }
-    uint64_t pd = (uint64_t)(pointer_delta((void*)_buffer_addr, (void*)_narrow_oop_base, 1));
-    return checked_cast<uint32_t>(pd >> _requested_shift);
+    uint64_t pd = (uint64_t)(pointer_delta(_buffer_addr, _buffer_start, 1));
+    return checked_cast<uint32_t>(_buffer_start_narrow_oop + (pd >> _requested_shift));
   }
 
   FakeOop read_oop_at(narrowOop* addr) { // +UseCompressedOops
-    narrowOop n = *addr;
-    if (size_t(n) == 0) {
+    uint64_t n = (uint64_t)(*addr);
+    if (n == 0) {
       return FakeOop(nullptr);
     } else {
-      address value = _narrow_oop_base + (size_t(n) << _requested_shift);
+      precond(n >= _buffer_start_narrow_oop);
+      address value = _buffer_start + ((n - _buffer_start_narrow_oop) << _requested_shift);
       return FakeOop(value);
     }
   }
@@ -748,9 +761,9 @@ public:
 
 int AOTMapLogger::FakeOop::_requested_shift;
 intx AOTMapLogger::FakeOop::_buffer_to_requested_delta;
-address AOTMapLogger::FakeOop::_narrow_oop_base;
 address AOTMapLogger::FakeOop::_buffer_start;
 address AOTMapLogger::FakeOop::_buffer_end;
+uint64_t AOTMapLogger::FakeOop::_buffer_start_narrow_oop;
 
 void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
@@ -759,10 +772,9 @@ void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
 
   address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
-  intx n = requested_start - requested_base; // FIXME rename
-  address narrow_oop_base = UseCompressedOops ? (buffer_start - n) : (address)((intptr_t)0xdeadbeef);
+  int requested_shift =  CompressedOops::shift();
 
-  FakeOop::init(requested_start, CompressedOops::shift(), narrow_oop_base, buffer_start, buffer_end);
+  FakeOop::init(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
 
   log_region_range("heap", buffer_start, buffer_end, requested_start);
   log_oops(buffer_start, buffer_end);
@@ -781,13 +793,14 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
   address buffer_end = buffer_start + r->used();
   if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
     log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
+    return;
   }
 
   address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : mapinfo->heap_region_requested_address();
   address requested_start = requested_base + r->mapping_offset();
-  address narrow_oop_base = UseCompressedOops ? buffer_start - r->mapping_offset() : (address)((intptr_t)0xdeadbeef);
+  int requested_shift = mapinfo->narrow_oop_shift();
 
-  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), narrow_oop_base, buffer_start, buffer_end);
+  FakeOop::init(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
 
   log_region_range("heap", buffer_start, buffer_end, requested_start);
   log_oops(buffer_start, buffer_end);
