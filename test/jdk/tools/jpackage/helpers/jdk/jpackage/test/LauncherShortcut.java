@@ -85,6 +85,7 @@ public enum LauncherShortcut {
 
     LauncherShortcut(String propertyName) {
         this.propertyName = Objects.requireNonNull(propertyName);
+        this.predefinedAppImagePropertyName = propertyName.substring(propertyName.indexOf('-') + 1);
     }
 
     public String propertyName() {
@@ -103,11 +104,14 @@ public enum LauncherShortcut {
         if (name.equals(cmd.name())) {
             return findMainLauncherShortcut(cmd);
         } else {
+            String[] propertyName = new String[1];
             return findAddLauncherShortcut(cmd, predefinedAppImage.map(appImage -> {
+                propertyName[0] = this.predefinedAppImagePropertyName;
                 return new PropertyFile(appImage.addLaunchers().get(launcherName));
             }).orElseGet(() -> {
+                propertyName[0] = this.propertyName;
                 return getAdditionalLauncherProperties(cmd, launcherName);
-            })::findProperty);
+            })::findProperty, propertyName[0]);
         }
     }
 
@@ -147,8 +151,8 @@ public enum LauncherShortcut {
     }
 
     private Optional<StartupDirectory> findAddLauncherShortcut(JPackageCommand cmd,
-            Function<String, Optional<String>> addlauncherProperties) {
-        var explicit = addlauncherProperties.apply(propertyName());
+            Function<String, Optional<String>> addlauncherProperties, String propertyName) {
+        var explicit = addlauncherProperties.apply(propertyName);
         if (explicit.isPresent()) {
             return explicit.flatMap(StartupDirectory::parse);
         } else {
@@ -157,4 +161,5 @@ public enum LauncherShortcut {
     }
 
     private final String propertyName;
+    private final String predefinedAppImagePropertyName;
 }
