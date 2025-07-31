@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
@@ -265,7 +266,15 @@ public class AddLShortcutTest {
                 return launcherName.equals(v.launcherName());
             }).findAny().orElseThrow();
 
-            Executor.of(invokeShortcutSpec.commandLine()).execute();
+            invokeShortcutSpec.execute();
+
+            // On Linux, "gtk-launch" is used to launch a .desktop file. It is async and there is no
+            // wait to make it wait for exit of a process it triggers.
+            Executor.tryRunMultipleTimes(() -> {
+                if (!Files.exists(expectedOutputFile)) {
+                    throw new NoSuchElementException(String.format("[%s] is not avaialble", expectedOutputFile));
+                }
+            }, 3 /* Number of attempts */, 3 /* Seconds between attempts */);
 
             TKit.assertFileExists(expectedOutputFile);
             var actualStr = Files.readAllLines(expectedOutputFile).getFirst();
