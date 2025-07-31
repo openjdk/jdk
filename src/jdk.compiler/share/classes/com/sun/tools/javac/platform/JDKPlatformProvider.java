@@ -259,7 +259,8 @@ public class JDKPlatformProvider implements PlatformProvider {
                         fs = FileSystems.newFileSystem(file, CT_SYM_ZIP_ENV);
                         // If for any reason this was not opened from a ZIP file,
                         // then the resulting file system would not be read-only.
-                        Assert.check(fs.isReadOnly());
+                        // NOTE: This check is disabled until JDK 25 bootstrap!
+                        // Assert.check(fs.isReadOnly());
                         ctSym2FileSystem.put(file, fs);
                     }
 
