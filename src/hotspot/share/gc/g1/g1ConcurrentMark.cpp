@@ -1270,6 +1270,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
             }
             _cm->update_top_at_rebuild_start(hr);
           };
+
           _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
         } else {
           reclaim_empty_humongous_region(hr);
