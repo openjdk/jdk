@@ -840,7 +840,7 @@ sealed abstract class QuicKeyManager
 
         void deriveKeys(final QuicVersion negotiatedVersion,
                 final HandshakeContext handshakeContext,
-                final boolean clientMode) {
+                final boolean clientMode) throws IOException {
             Objects.requireNonNull(negotiatedVersion);
             if (keysAvailable()) {
                 throw new IllegalStateException("Keys already derived for " +
@@ -864,8 +864,8 @@ sealed abstract class QuicKeyManager
                         server_application_traffic_secret_0,
                         handshakeContext.negotiatedCipherSuite,
                         clientMode);
-            } catch (IOException | GeneralSecurityException e) {
-                throw new AssertionError("Should not happen", e);
+            } catch (GeneralSecurityException e) {
+                throw new SSLException("Missing cipher algorithm", e);
             }
         }
 

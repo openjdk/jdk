@@ -849,7 +849,12 @@ final class Finished {
                 if (shc.sslConfig.isQuic) {
                     QuicTLSEngineImpl engine =
                             (QuicTLSEngineImpl) shc.conContext.transport;
-                    engine.deriveOneRTTKeys();
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
                 }
             } catch (GeneralSecurityException gse) {
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
@@ -1018,7 +1023,12 @@ final class Finished {
                 if (chc.sslConfig.isQuic) {
                     QuicTLSEngineImpl engine =
                             (QuicTLSEngineImpl) chc.conContext.transport;
-                    engine.deriveOneRTTKeys();
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
                 }
             } catch (GeneralSecurityException gse) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,

@@ -722,7 +722,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 getUseClientMode());
     }
 
-    public void deriveOneRTTKeys() {
+    public void deriveOneRTTKeys() throws IOException {
         final QuicVersion quicVersion = getNegotiatedVersion();
         this.oneRttKeyManager.deriveKeys(quicVersion,
                 this.conContext.handshakeContext,
