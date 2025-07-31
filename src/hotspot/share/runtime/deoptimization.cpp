@@ -934,10 +934,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
                    RegisterMap::ProcessFrames::include,
                    RegisterMap::WalkContinuation::skip);
     rm.set_include_argument_oops(false);
-    bool is_top_frame = true;
     int callee_size_of_parameters = 0;
     for (int frame_idx = 0; frame_idx < cur_array->frames(); frame_idx++) {
-      assert(is_top_frame == (frame_idx == 0), "must be");
+      bool is_top_frame = (frame_idx == 0);
       vframeArrayElement* el = cur_array->element(frame_idx);
       frame* iframe = el->iframe();
       guarantee(iframe->is_interpreted_frame(), "Wrong frame type");
@@ -1020,7 +1019,6 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       VerifyOopClosure verify;
       iframe->oops_interpreted_do(&verify, &rm, false);
       callee_size_of_parameters = mh->size_of_parameters();
-      is_top_frame = false;
     }
   }
 #endif // !PRODUCT
