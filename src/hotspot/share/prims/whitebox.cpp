@@ -2513,8 +2513,7 @@ WB_END
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   LINUX_ONLY(return os::Linux::physical_memory();)
   size_t phys_mem = 0;
-  // Return value ignored - defaulting to 0 on failure
-  (void)os::physical_memory(phys_mem);
+  os::physical_memory(phys_mem);
   return static_cast<jlong>(phys_mem);
 WB_END
 

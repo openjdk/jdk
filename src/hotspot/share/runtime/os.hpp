@@ -339,10 +339,7 @@ class os: AllStatic {
   static bool total_swap_space(size_t& value);
   static bool free_swap_space(size_t& value);
 
-  // This method can return false on Windows and AIX. On Linux and BSD the reported value is
-  // obtained by a system call in initialize_system_info() after a proper check. If that check
-  // fails, a fatal VM error is reported.
-  static bool physical_memory(size_t& value);
+  static void physical_memory(size_t& value);
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
   static size_t rss();

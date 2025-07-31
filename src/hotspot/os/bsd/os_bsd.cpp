@@ -208,9 +208,8 @@ bool os::free_swap_space(size_t& value) {
 #endif
 }
 
-bool os::physical_memory(size_t& value) {
+void os::physical_memory(size_t& value) {
   value = Bsd::physical_memory();
-  return true;
 }
 
 size_t os::rss() {
@@ -1471,7 +1470,7 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
   size_t phys_mem = 0;
-  (void)os::physical_memory(phys_mem);
+  os::physical_memory(phys_mem);
   st->print(", physical %zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;

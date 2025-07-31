@@ -63,11 +63,8 @@ void GCInitLogger::print_cpu() {
 
 void GCInitLogger::print_memory() {
   size_t memory = 0;
-  if (os::physical_memory(memory)) {
-    log_info_p(gc, init)("Memory: %zu%s", byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
-  } else {
-    log_info_p(gc, init)("Memory: NA");
-  }
+  os::physical_memory(memory);
+  log_info_p(gc, init)("Memory: %zu%s", byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
 }
 
 void GCInitLogger::print_large_pages() {

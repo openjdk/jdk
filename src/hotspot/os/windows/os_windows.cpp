@@ -894,14 +894,8 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-bool os::physical_memory(size_t& value) {
-  size_t phys_mem = win32::physical_memory();
-  if (phys_mem == std::numeric_limits<size_t>::max()) {
-    // indication that GlobalMemoryStatusEx failed
-    return false;
-  }
-  value = phys_mem;
-  return true;
+void os::physical_memory(size_t& value) {
+  value = win32::physical_memory();
 }
 
 size_t os::rss() {
@@ -4161,12 +4155,8 @@ void os::win32::initialize_system_info() {
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
   BOOL res = GlobalMemoryStatusEx(&ms);
-  if (!res) {
-    // to indicate that GlobalMemoryStatusEx failed
-    _physical_memory = std::numeric_limits<size_t>::max();
-  } else {
-    _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
-  }
+  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
+  
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.

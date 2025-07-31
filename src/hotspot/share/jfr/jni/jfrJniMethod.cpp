@@ -415,8 +415,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
   return os::Linux::physical_memory();
 #else
   size_t phys_mem = 0;
-  // Return value ignored - defaulting to 0 on failure.
-  (void)os::physical_memory(phys_mem);
+  os::physical_memory(phys_mem);
   return static_cast<jlong>(phys_mem);
 #endif
 JVM_END

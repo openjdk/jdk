@@ -290,14 +290,8 @@ bool os::free_swap_space(size_t& value) {
   return true;
 }
 
-bool os::physical_memory(size_t& value) {
-  size_t phys_mem = Aix::physical_memory();
-  if (phys_mem == std::numeric_limits<size_t>::max()) {
-    // os::Aix::get_meminfo failed
-    return false;
-  }
-  value = phys_mem;
-  return true;
+void os::physical_memory(size_t& value) {
+  value = Aix::physical_memory();
 }
 
 size_t os::rss() { return (size_t)0; }
@@ -332,13 +326,7 @@ void os::Aix::initialize_system_info() {
 
   // Retrieve total physical storage.
   os::Aix::meminfo_t mi;
-  if (!os::Aix::get_meminfo(&mi)) {
-    assert(false, "os::Aix::get_meminfo failed.");
-    // to propagate error
-    _physical_memory = std::numeric_limits<size_t>::max();
-  } else {
-    _physical_memory = static_cast<size_t>(mi.real_total);
-  }
+  _physical_memory = static_cast<size_t>(mi.real_total);
 }
 
 // Helper function for tracing page sizes.

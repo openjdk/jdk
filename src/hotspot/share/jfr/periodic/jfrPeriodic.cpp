@@ -529,7 +529,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
  */
 TRACE_REQUEST_FUNC(PhysicalMemory) {
   size_t phys_mem = 0;
-  (void)os::physical_memory(phys_mem);
+  os::physical_memory(phys_mem);
   u8 totalPhysicalMemory = static_cast<u8>(phys_mem);
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);

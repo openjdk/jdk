@@ -977,8 +977,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
   case JMM_OS_MEM_TOTAL_PHYSICAL_BYTES:
     {
       size_t phys_mem = 0;
-      // Return value ignored - defaulting to 0 on failure
-      (void)os::physical_memory(phys_mem);
+      os::physical_memory(phys_mem);
       return phys_mem;
     }
 
