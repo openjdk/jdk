@@ -62,7 +62,7 @@ final class ChunkInputStream extends InputStream {
         }
         return total <= Integer.MAX_VALUE ? (int) total : Integer.MAX_VALUE;
     }
-    
+
     private boolean nextStream() throws IOException {
         while (nextChunk()) {
             try {
