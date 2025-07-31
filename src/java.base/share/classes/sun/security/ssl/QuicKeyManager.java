@@ -673,8 +673,13 @@ sealed abstract class QuicKeyManager
             if (currentSeries.next == null) {
                 // next keys haven't yet been generated,
                 // generate them now
-                currentSeries = generateNextKeys(
-                        this.negotiatedVersion, currentSeries);
+                try {
+                    currentSeries = generateNextKeys(
+                            this.negotiatedVersion, currentSeries);
+                } catch (GeneralSecurityException | IOException e) {
+                    throw new QuicTransportException("Failed to update keys",
+                            ONE_RTT, 0, Alert.INTERNAL_ERROR.id, e);
+                }
             }
             maybeInitiateKeyUpdate(currentSeries, packetNumber);
             // call getWriteCipher() afresh so that it can use
@@ -928,57 +933,52 @@ sealed abstract class QuicKeyManager
         }
 
         private static QuicWriteCipher generateNextWriteCipher(
-                final QuicVersion quicVersion, final QuicWriteCipher current) {
+                final QuicVersion quicVersion, final QuicWriteCipher current)
+                throws IOException, GeneralSecurityException {
             final SSLKeyDerivation kd =
                     new QuicTLSKeyDerivation(current.getCipherSuite(),
                             current.getBaseSecret());
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
-            try {
-                final SecretKey nplus1Secret =
-                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
-                final QuicKeys quicKeys =
-                        QuicKeyManager.deriveQuicKeys(quicVersion,
-                                current.getCipherSuite(),
-                                nplus1Secret, current.getHeaderProtectionKey());
-                final int nextKeyPhase = current.getKeyPhase() == 0 ? 1 : 0;
-                // toggle the 1 bit keyphase
-                final QuicWriteCipher next =
-                        QuicCipher.createWriteCipher(current.getCipherSuite(),
-                                nplus1Secret, quicKeys.key, quicKeys.iv,
-                                quicKeys.hp, nextKeyPhase);
-                return next;
-            } catch (GeneralSecurityException | IOException e) {
-                throw new AssertionError("should not happen", e);
-            }
+            final SecretKey nplus1Secret =
+                    kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
+            final QuicKeys quicKeys =
+                    QuicKeyManager.deriveQuicKeys(quicVersion,
+                            current.getCipherSuite(),
+                            nplus1Secret, current.getHeaderProtectionKey());
+            final int nextKeyPhase = current.getKeyPhase() == 0 ? 1 : 0;
+            // toggle the 1 bit keyphase
+            final QuicWriteCipher next =
+                    QuicCipher.createWriteCipher(current.getCipherSuite(),
+                            nplus1Secret, quicKeys.key, quicKeys.iv,
+                            quicKeys.hp, nextKeyPhase);
+            return next;
         }
 
         private static QuicReadCipher generateNextReadCipher(
-                final QuicVersion quicVersion, final QuicReadCipher current) {
+                final QuicVersion quicVersion, final QuicReadCipher current)
+                throws IOException, GeneralSecurityException {
             final SSLKeyDerivation kd =
                     new QuicTLSKeyDerivation(current.getCipherSuite(),
                             current.getBaseSecret());
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
-            try {
-                final SecretKey nPlus1Secret =
-                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
-                final QuicKeys quicKeys =
-                        QuicKeyManager.deriveQuicKeys(quicVersion,
-                                current.getCipherSuite(),
-                                nPlus1Secret, current.getHeaderProtectionKey());
-                final int nextKeyPhase = current.getKeyPhase() == 0 ? 1 : 0;
-                // toggle the 1 bit keyphase
-                final QuicReadCipher next =
-                        QuicCipher.createReadCipher(current.getCipherSuite(),
-                                nPlus1Secret, quicKeys.key,
-                                quicKeys.iv, quicKeys.hp, nextKeyPhase);
-                return next;
-            } catch (GeneralSecurityException | IOException e) {
-                throw new AssertionError("should not happen", e);
-            }
+            final SecretKey nPlus1Secret =
+                    kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
+            final QuicKeys quicKeys =
+                    QuicKeyManager.deriveQuicKeys(quicVersion,
+                            current.getCipherSuite(),
+                            nPlus1Secret, current.getHeaderProtectionKey());
+            final int nextKeyPhase = current.getKeyPhase() == 0 ? 1 : 0;
+            // toggle the 1 bit keyphase
+            final QuicReadCipher next =
+                    QuicCipher.createReadCipher(current.getCipherSuite(),
+                            nPlus1Secret, quicKeys.key,
+                            quicKeys.iv, quicKeys.hp, nextKeyPhase);
+            return next;
         }
 
         private KeySeries generateNextKeys(final QuicVersion version,
-                final KeySeries currentSeries) {
+                final KeySeries currentSeries)
+                throws GeneralSecurityException, IOException {
             this.keySeriesLock.lock();
             try {
                 // nothing to do if some other thread
