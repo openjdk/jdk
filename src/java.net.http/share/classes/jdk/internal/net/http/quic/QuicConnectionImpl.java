@@ -2650,16 +2650,21 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @return true if switching to the new version was successful
      */
     protected boolean switchVersion(QuicVersion negotiated) {
-        assert !versionNegotiated;
-        if (debug.on())
-            debug.log("switch to negotiated version %s", negotiated);
-        this.quicVersion = negotiated;
-        this.decoder = QuicPacketDecoder.of(negotiated);
-        this.encoder = QuicPacketEncoder.of(negotiated);
-        this.packetSpace(PacketNumberSpace.INITIAL).versionChanged();
-        // regenerate the INITIAL keys using the new negotiated Quic version
-        this.quicTLSEngine.deriveInitialKeys(negotiated, originalServerConnId().asReadOnlyBuffer());
-        return true;
+        try {
+            assert !versionNegotiated;
+            if (debug.on())
+                debug.log("switch to negotiated version %s", negotiated);
+            this.quicVersion = negotiated;
+            this.decoder = QuicPacketDecoder.of(negotiated);
+            this.encoder = QuicPacketEncoder.of(negotiated);
+            this.packetSpace(PacketNumberSpace.INITIAL).versionChanged();
+            // regenerate the INITIAL keys using the new negotiated Quic version
+            this.quicTLSEngine.deriveInitialKeys(negotiated, originalServerConnId().asReadOnlyBuffer());
+            return true;
+        } catch (Throwable t) {
+            terminator.terminate(forException(t));
+            throw new RuntimeException("failed to switch to version", t);
+        }
     }
 
     /**

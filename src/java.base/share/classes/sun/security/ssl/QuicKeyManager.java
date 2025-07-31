@@ -256,7 +256,7 @@ sealed abstract class QuicKeyManager
 
         void deriveKeys(final QuicVersion quicVersion,
                 final byte[] connectionId,
-                final boolean clientMode) {
+                final boolean clientMode) throws IOException{
             Objects.requireNonNull(quicVersion);
             final CipherSuite cs = CipherSuite.TLS_AES_128_GCM_SHA256;
             final CipherSuite.HashAlg hashAlg = cs.hashAlg;
@@ -265,7 +265,7 @@ sealed abstract class QuicKeyManager
             try {
                 hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             } catch (NoSuchAlgorithmException e) {
-                throw new AssertionError("Should not happen", e);
+                throw new SSLHandshakeException("Could not generate secret", e);
             }
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             SecretKey initial_secret = null;
@@ -330,8 +330,8 @@ sealed abstract class QuicKeyManager
                 if (old != null) {
                     old.discard(true);
                 }
-            } catch (IOException | GeneralSecurityException e) {
-                throw new AssertionError("Should not happen", e);
+            } catch (GeneralSecurityException e) {
+                throw new SSLException("Missing cipher algorithm", e);
             } finally {
                 KeyUtil.destroySecretKeys(initial_secret, client_initial_secret,
                         server_initial_secret);

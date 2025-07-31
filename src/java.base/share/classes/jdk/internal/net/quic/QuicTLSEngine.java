@@ -212,7 +212,7 @@ public interface QuicTLSEngine {
      *         {@linkplain #getSupportedQuicVersions() supported} on this
      *         {@code QuicTLSEngine}
      */
-    void deriveInitialKeys(QuicVersion quicVersion, ByteBuffer connectionId);
+    void deriveInitialKeys(QuicVersion quicVersion, ByteBuffer connectionId) throws IOException;
 
     /**
      * Get the sample size for header protection algorithm

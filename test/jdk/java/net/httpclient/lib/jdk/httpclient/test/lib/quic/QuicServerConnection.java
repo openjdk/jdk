@@ -22,6 +22,7 @@
  */
 package jdk.httpclient.test.lib.quic;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -134,7 +135,11 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         });
         assert quicVersion == quicVersion() : "unexpected quic version on" +
                 " server connection, expected " + quicVersion + " but found " + quicVersion();
-        getTLSEngine().deriveInitialKeys(quicVersion, clientSentDestConnId.asReadOnlyBuffer());
+        try {
+            getTLSEngine().deriveInitialKeys(quicVersion, clientSentDestConnId.asReadOnlyBuffer());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

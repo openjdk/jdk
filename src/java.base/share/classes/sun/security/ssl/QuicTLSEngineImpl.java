@@ -687,7 +687,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     @Override
     public void deriveInitialKeys(final QuicVersion quicVersion,
-            final ByteBuffer connectionId) {
+            final ByteBuffer connectionId) throws IOException {
         if (!isEnabled(quicVersion)) {
             throw new IllegalArgumentException("Quic version " + quicVersion +
                     " isn't enabled");
