@@ -1265,11 +1265,11 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
           auto on_humongous_region = [&] (G1HeapRegion* hr) {
-                                       if (selected_for_rebuild) {
-                                         _num_selected_for_rebuild++;
-                                       }
-                                       _cm->update_top_at_rebuild_start(hr);
-                                     };
+            if (selected_for_rebuild) {
+              _num_selected_for_rebuild++;
+            }
+            _cm->update_top_at_rebuild_start(hr);
+          };
           _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
         } else {
           reclaim_empty_humongous_region(hr);
