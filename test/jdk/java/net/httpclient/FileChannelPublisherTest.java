@@ -64,11 +64,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -508,7 +508,7 @@ class FileChannelPublisherTest {
         try {
 
             int fileLength = BIG_FILE_LENGTH;
-            AtomicReference<CompletableFuture<HttpResponse<Void>>> responseFutureRef = new AtomicReference<>();
+            AtomicReference<Future<HttpResponse<Void>>> responseFutureRef = new AtomicReference<>();
             withFileChannel(tempDir.resolve("data.txt"), fileLength, ((_, fileChannel) -> {
 
                 // Issue the request
@@ -563,7 +563,7 @@ class FileChannelPublisherTest {
                         .requestBuilder
                         .POST(BodyPublishers.ofFileChannel(fileChannel, 0, fileLength))
                         .build();
-                CompletableFuture<HttpResponse<Void>> responseFuture = CLIENT.sendAsync(request, discarding());
+                Future<HttpResponse<Void>> responseFuture = CLIENT.sendAsync(request, discarding());
 
                 // Wait for server to receive the request
                 LOGGER.log("Waiting for the request to be received");
@@ -622,7 +622,7 @@ class FileChannelPublisherTest {
         try (FileChannel fileChannel = FileChannel.open(filePath)) {
 
             // Upload the complete file in mutually exclusive slices
-            List<CompletableFuture<HttpResponse<InputStream>>> responseFutures = new ArrayList<>(sliceCount);
+            List<Future<HttpResponse<InputStream>>> responseFutures = new ArrayList<>(sliceCount);
             for (int sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++) {
                 LOGGER.log("Issuing request %d/%d", (sliceIndex + 1), sliceCount);
                 HttpRequest request = pair
