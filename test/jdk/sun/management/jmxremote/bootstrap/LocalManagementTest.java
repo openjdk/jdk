@@ -46,7 +46,6 @@ import jdk.test.lib.process.ProcessTools;
  * @run main/othervm/timeout=300 LocalManagementTest
  */
 public class LocalManagementTest {
-    private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
 
     public static void main(String[] args) throws Exception {
         int failures = 0;
@@ -97,8 +96,6 @@ public class LocalManagementTest {
     private static boolean doTest(String testId, String arg) throws Exception {
         List<String> args = new ArrayList<>();
         args.add("-XX:+UsePerfData");
-        args.add("-cp");
-        args.add(TEST_CLASSPATH);
 
         if (arg != null) {
             args.add(arg);
@@ -131,8 +128,6 @@ public class LocalManagementTest {
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createTestJavaProcessBuilder(
-                "-cp",
-                TEST_CLASSPATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
                 String.valueOf(serverPrc.pid()),

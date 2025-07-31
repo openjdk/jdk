@@ -182,8 +182,6 @@ public class RmiRegistrySslTest {
             command.add("-Dtest.src=" + TEST_SRC);
             command.add("-Dtest.rmi.port=" + port);
             command.addAll(Arrays.asList(args));
-            command.add("-cp");
-            command.add(TEST_CLASS_PATH);
             command.add(className);
 
             ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);

@@ -169,8 +169,6 @@ public abstract class AbstractFilePermissionTest {
             List<String> command = new ArrayList<>();
             command.add(mp);
             command.add(pp);
-            command.add("-cp");
-            command.add(TEST_CLASSES);
             command.add(className);
 
             ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
