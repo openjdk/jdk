@@ -31,23 +31,12 @@ import java.awt.Window;
  * @key headful
  */
 public final class BogusFocusableWindowState {
-    private static boolean isRunning = false;
 
     public static void main(String[] args) {
         Window frame = new Window(null) {
             @Override
             public boolean getFocusableWindowState() {
-                if (isRunning) {
-                    return false;
-                }
-
-                isRunning = true;
-                try {
-                    removeNotify();
-                } finally {
-                    isRunning = false;
-                }
-
+                removeNotify();
                 return true;
             }
         };
