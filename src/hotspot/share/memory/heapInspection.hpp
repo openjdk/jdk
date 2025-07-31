@@ -104,6 +104,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* lookup(Klass* k);
   void initialize() { _list = nullptr; }
   void empty();
+  // Deletes the KlassInfoEntry in the list
   void remove_from_list(KlassInfoEntry* entry);
   void iterate(KlassInfoClosure* cic);
 };
@@ -132,6 +133,7 @@ class KlassInfoTable: public StackObj {
   size_t size_of_instances_in_words() const;
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
+  // Deletes the KlassInfoEntry in the list
   void delete_entry(KlassInfoEntry* entry);
   friend class KlassInfoHisto;
   friend class KlassHierarchy;

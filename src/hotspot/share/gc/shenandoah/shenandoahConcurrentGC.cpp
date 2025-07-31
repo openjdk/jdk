@@ -769,8 +769,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
     heap->verifier()->verify_roots_no_forwarded();
   }
 
-
-
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
