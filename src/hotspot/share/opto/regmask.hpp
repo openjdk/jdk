@@ -406,7 +406,8 @@ class AlignedRegMaskIterator {
       assert(next_bit > 0, "must be");
       assert(((_current_bits >> next_bit) & aligned_mask) == aligned_mask, "lowest bit must be set after shift");
       _current_bits = (_current_bits >> next_bit) & ~aligned_mask;
-      _reg = OptoReg::add(_reg, next_bit);
+      // Convert to bit number, return hi bit in pair.
+      _reg = OptoReg::add(_reg, (_num_reg - 1));
       return r;
     }
 
@@ -420,7 +421,8 @@ class AlignedRegMaskIterator {
         unsigned int next_bit = find_lowest_bit(_current_bits);
         assert(((_current_bits >> next_bit) & aligned_mask) == aligned_mask, "lowest bit must be set after shift");
         _current_bits = (_current_bits >> next_bit) & ~aligned_mask;
-        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit + 1);
+        // Convert to bit number, return hi bit in pair.
+        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + (_num_reg - 1));
         return r;
       }
     }
