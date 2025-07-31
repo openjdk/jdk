@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+
+// When -XX:+PreloadSharedClasses is enabled, this class will be
+// archived in the unlinked state. When we try to use this class
+// at runtime, a VerifyError should be thrown.
+
+super public class BadNewClass2
+	version 52:0
+{
+
+
+public Method "<init>":"()V"
+	stack 1 locals 1
+{
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+}
+
+    /*
+     * The following method tries to return a NotFoo as a Foo.
+     * Verifier should fail.
+     */
+public Method doit:"()LFoo;"
+	stack 2 locals 1
+{
+                new	class NotFoo;
+		dup;
+		invokespecial	Method NotFoo."<init>":"()V";
+		astore_0;
+		aload_0;
+		areturn;   // tries to return a NotFoo as a Foo
+}
+
+}

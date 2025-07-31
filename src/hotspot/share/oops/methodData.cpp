@@ -323,9 +323,7 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
 
 static bool is_excluded(Klass* k) {
 #if INCLUDE_CDS
-  if (SafepointSynchronize::is_at_safepoint() &&
-      CDSConfig::is_dumping_archive() &&
-      CDSConfig::current_thread_is_vm_or_dumper()) {
+  if (CDSConfig::is_at_cds_safepoint()) {
     if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
@@ -342,6 +340,7 @@ static bool is_excluded(Klass* k) {
 }
 
 void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
+  ConditionalMutexLocker ml(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   for (int i = 0; i < _number_of_entries; i++) {
     intptr_t p = type(i);
     Klass* k = (Klass*)klass_part(p);
@@ -370,6 +369,7 @@ void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
     if (!always_clean && k->is_instance_klass() && InstanceKlass::cast(k)->is_not_initialized()) {
       return; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
     }
+    ConditionalMutexLocker ml(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
     if (always_clean || !k->is_loader_present_and_alive() || is_excluded(k)) {
       set_type(with_status((Klass*)nullptr, p));
     }
@@ -460,6 +460,7 @@ void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
       if (!always_clean && p->is_instance_klass() && InstanceKlass::cast(p)->is_not_initialized()) {
         continue; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
       }
+      ConditionalMutexLocker ml(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
       if (always_clean || !p->is_loader_present_and_alive() || is_excluded(p)) {
         clear_row(row);
       }
@@ -1863,6 +1864,7 @@ Mutex* MethodData::extra_data_lock() {
   Mutex* lock = Atomic::load_acquire(&_extra_data_lock);
   if (lock == nullptr) {
     // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
+    ConditionalMutexLocker ml(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
     lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
     Mutex* old = Atomic::cmpxchg(&_extra_data_lock, (Mutex*)nullptr, lock);
     if (old != nullptr) {
@@ -1963,6 +1965,7 @@ void MethodData::clean_method_data(bool always_clean) {
 
   CleanExtraDataKlassClosure cl(always_clean);
 
+  ConditionalMutexLocker dl(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   // Lock to modify extra data, and prevent Safepoint from breaking the lock
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
@@ -1976,6 +1979,7 @@ void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   CleanExtraDataMethodClosure cl;
 
+  ConditionalMutexLocker dl(DumpTimeTable_lock, !DumpTimeTable_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   // Lock to modify extra data, and prevent Safepoint from breaking the lock
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
 

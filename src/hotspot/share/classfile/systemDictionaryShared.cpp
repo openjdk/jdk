@@ -204,26 +204,153 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   return info;
 }
 
-bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
-  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(k)) {
-    // We have reached a super type that's already in the base archive. Treat it
-    // as "not excluded".
-    return false;
-  }
-
-  if (info == nullptr) {
-    info = _dumptime_table->get(k);
-    assert(info != nullptr, "supertypes of any classes in _dumptime_table must either be shared, or must also be in _dumptime_table");
-  }
+bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
+  assert_lock_strong(DumpTimeTable_lock);
 
   if (!info->has_checked_exclusion()) {
-    if (check_for_exclusion_impl(k)) {
-      info->set_excluded();
-    }
-    info->set_has_checked_exclusion();
+    check_exclusion_for_self_and_dependencies(k);
+    assert(info->has_checked_exclusion(), "must be");
   }
 
   return info->is_excluded();
+}
+
+// If <func> returns true for any name, this method terminates immediately and returns true.
+// If <func> never returns true, we will iterate over all the names and this method returns false.
+//
+// <func> returns bool and takes a single parameter of Symbol*
+template<typename Function>
+bool SystemDictionaryShared::iterate_all_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
+  int n = info->num_verifier_constraints();
+  for (int i = 0; i < n; i++) {
+    if (func(info->verifier_constraint_name_at(i))) {
+      return true;
+    }
+    if (func(info->verifier_constraint_from_name_at(i))) {
+      return true;
+    }
+  }
+
+  n = info->num_old_verifier_dependencies();
+  for (int i = 0; i < n; i++) {
+    if (func(info->old_verifier_dependency_at(i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// This is a table of classes that need to be check for exclusion.
+class SystemDictionaryShared::ExclusionCheckCandidates
+  : public ResourceHashtable<InstanceKlass*, DumpTimeClassInfo*, 15889> {
+  void add_candidate(InstanceKlass* k) {
+    if (contains(k)) {
+      return;
+    }
+    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(k)) {
+      return;
+    }
+
+    DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(k);
+    if (info->has_checked_exclusion()) {
+      // We have check exclusion of k and all of its dependencies, so there's no need to check again.
+      return;
+    }
+
+    put(k, info);
+
+    InstanceKlass* super = k->java_super();
+    if (super != nullptr) {
+      add_candidate(super);
+    }
+
+    Array<InstanceKlass*>* interfaces = k->local_interfaces();
+    int len = interfaces->length();
+    for (int i = 0; i < len; i++) {
+      add_candidate(interfaces->at(i));
+    }
+
+    InstanceKlass* nest_host = k->nest_host_or_null();
+    if (nest_host != nullptr && nest_host != k) {
+      add_candidate(nest_host);
+    }
+
+    if (CDSConfig::is_preserving_verification_dependencies()) {
+      SystemDictionaryShared::iterate_all_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
+        Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
+        if (dependency_bottom_class != nullptr && dependency_bottom_class->is_instance_klass()) {
+          add_candidate(InstanceKlass::cast(dependency_bottom_class));
+        }
+        return false; // Keep iterating.
+      });
+    }
+  }
+
+public:
+  ExclusionCheckCandidates(InstanceKlass* k) {
+    add_candidate(k);
+  }
+};
+
+// A class X is excluded if check_self_exclusion() returns true for X or any of
+// X's "exclusion dependency" classes, which include:
+//     - ik's super types
+//     - ik's nest host (if any)
+//
+//  plus, if CDSConfig::is_preserving_verification_dependencies()==true:
+//     - ik's verification dependencies. These are the classes used in assignability checks
+//         when verifying ik's bytecodes.
+//
+// This method ensure that exclusion check is performed on X and all of its exclusion dependencies.
+void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceKlass *ik) {
+  assert_lock_strong(DumpTimeTable_lock);
+  ResourceMark rm;
+
+  // This will recursive find ik and all of its exclusion dependencies that have not yet been checked.
+  ExclusionCheckCandidates candidates(ik);
+
+  // (1) Check each class to see if it should be excluded due to its own problems
+  candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
+    if (check_self_exclusion(k)) {
+      info->set_excluded();
+    }
+  });
+
+  // (2) Check each class to see if it should be excluded because of problems in a depeendency class
+  while (true) {
+    bool found_new_exclusion = false;
+
+    candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
+      if (!info->is_excluded() && check_dependencies_exclusion(k, info)) {
+        info->set_excluded();
+        found_new_exclusion = true;
+      }
+    });
+
+    // Algorithm notes:
+    //
+    // The dependencies is a directed graph, possibly cyclic. Class X is excluded
+    // if it has at least one directed path that reaches class Y, where
+    // check_self_exclusion(Y) returns true.
+    //
+    // Because of the possibility of cycles in the graph, we cannot use simple
+    // recursion. Otherwise we will either never terminate, or will miss some paths.
+    //
+    // Hence, we keep doing a linear scan of the candidate until we stop finding
+    // new exclusions.
+    //
+    // In the worst case, we find one exclusion per iteration of the while loop,
+    // so the while loop gets executed O(N^2) times. However, in reality we have
+    // very few exclusions, so in most cases the while loop executes only once, and we
+    // walk each edge in the dependencies graph exactly once.
+    if (!found_new_exclusion) {
+      break;
+    }
+  }
+  candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
+    // All candidates have been fully checked, so we don't need to check them again.
+    info->set_has_checked_exclusion();
+  });
 }
 
 // Returns true so the caller can do:    return warn_excluded(".....");
@@ -248,7 +375,8 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   return (info != nullptr) ? info->is_early_klass() : false;
 }
 
-bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
+bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
   if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
       && k->is_shared()) {
     return false; // Do not exclude: unregistered classes are passed from preimage to final image.
@@ -301,9 +429,8 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       return warn_excluded(k, "Failed verification");
     } else if (CDSConfig::is_dumping_aot_linked_classes()) {
       // Most loaded classes should have been speculatively linked by MetaspaceShared::link_class_for_cds().
-      // However, we do not speculatively link old classes, as they are not recorded by
-      // SystemDictionaryShared::record_linking_constraint(). As a result, such an unlinked
-      // class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
+      // Old classes may not be linked if CDSConfig::is_preserving_verification_dependencies()==false.
+      // An unlinked class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
       // causing the JVM to fail at bootstrap.
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
     } else if (CDSConfig::is_dumping_preimage_static_archive()) {
@@ -329,10 +456,13 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
+  return false;
+}
+
+// Returns true if the DumpTimeClassInfo::is_excluded() is true for at least one of k's exclusion dependencies.
+bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
   InstanceKlass* super = k->java_super();
-  if (super != nullptr && check_for_exclusion(super, nullptr)) {
-    ResourceMark rm;
-    aot_log_warning(aot)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
+  if (super != nullptr && is_dependency_excluded(k, super, "super")) {
     return true;
   }
 
@@ -340,21 +470,75 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
-    if (check_for_exclusion(intf, nullptr)) {
-      ResourceMark rm;
-      aot_log_warning(aot)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
+    if (is_dependency_excluded(k, intf, "interface")) {
       return true;
     }
   }
 
   InstanceKlass* nest_host = k->nest_host_or_null();
-  if (nest_host != nullptr && nest_host != k && check_for_exclusion(nest_host, nullptr)) {
-    ResourceMark rm;
-    aot_log_warning(aot)("Skipping %s: nest_host class %s is excluded", k->name()->as_C_string(), nest_host->name()->as_C_string());
+  if (nest_host != nullptr && nest_host != k && is_dependency_excluded(k, nest_host, "nest host class")) {
     return true;
   }
 
-  return false; // false == k should NOT be excluded
+  if (CDSConfig::is_preserving_verification_dependencies()) { 
+    iterate_all_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
+      if (check_verification_dependency_exclusion(k, dependency_class_name)) {
+        // If one of the verification dependency class has been excluded, the assignability checks
+        // by the verifier may no longer be valid in the production run. For safety, exclude this class.
+        return true; // terminate iteration; k will be excluded
+      } else {
+        return false; // keep iterating
+      }
+    });
+  }
+
+  return false;
+}
+
+bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(dependency)) {
+    return false;
+  }
+  DumpTimeClassInfo* dependency_info = get_info_locked(dependency);
+  if (dependency_info->is_excluded()) {
+    ResourceMark rm;
+    aot_log_warning(aot)("Skipping %s: %s %s is excluded", k->name()->as_C_string(), type, dependency->name()->as_C_string());
+    return true;
+  }
+  return false;
+}
+
+bool SystemDictionaryShared::check_verification_dependency_exclusion(InstanceKlass* k, Symbol* dependency_class_name) {
+  Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
+  if (dependency_bottom_class == nullptr) {
+    // The new verifier was checking if dependency_class_name is assignable to an interface, and found
+    // the answer without resolving dependency_class_name.
+    return false;
+  } else if (dependency_bottom_class->is_instance_klass()) {
+    if (is_dependency_excluded(k, InstanceKlass::cast(dependency_bottom_class), "verification constraint")) {
+      return true;
+    }
+  } else {
+    assert(dependency_bottom_class->is_typeArray_klass(), "must be");
+  }
+
+  return false;
+}
+
+Klass* SystemDictionaryShared::find_verification_dependency_bottom_class(InstanceKlass* k, Symbol* dependency_class_name) {
+  Thread* current = Thread::current();
+  Handle loader(current, k->class_loader());
+  Klass* dependency_class = SystemDictionary::find_instance_or_array_klass(current, dependency_class_name, loader);
+  if (dependency_class == nullptr) {
+    return nullptr;
+  }
+
+  if (dependency_class->is_objArray_klass()) {
+    dependency_class = ObjArrayKlass::cast(dependency_class)->bottom_klass();
+  }
+
+  precond(dependency_class->is_typeArray_klass() || dependency_class->is_instance_klass());
+  return dependency_class;
 }
 
 bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
@@ -556,7 +740,7 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
 
 void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) {
   init_dumptime_info(k);
-  copy_verification_constraints_from_preimage(k);
+  copy_verification_info_from_preimage(k);
   copy_linking_constraints_from_preimage(k);
 
   if (SystemDictionary::is_platform_class_loader(k->class_loader())) {
@@ -651,16 +835,21 @@ public:
 // Returns true if the class should be excluded. This can be called by
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
 // When called before the safepoint, we need to link the class so that
-// it can be checked by check_for_exclusion().
+// it can be checked by should_be_excluded_impl().
 bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(CDSConfig::current_thread_is_vm_or_dumper(), "sanity");
 
-  if (k->is_objArray_klass()) {
-    return should_be_excluded(ObjArrayKlass::cast(k)->bottom_klass());
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(k)) {
+    // We have reached a super type that's already in the base archive. Treat it
+    // as "not excluded".
+    return false;
   }
 
-  if (!k->is_instance_klass()) {
+  if (k->is_objArray_klass()) {
+    return should_be_excluded(ObjArrayKlass::cast(k)->bottom_klass());
+  } else if (!k->is_instance_klass()) {
+    assert(k->is_typeArray_klass(), "must be");
     return false;
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
@@ -672,7 +861,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 
     if (!SafepointSynchronize::is_at_safepoint()) {
       if (!ik->is_linked()) {
-        // check_for_exclusion() below doesn't link unlinked classes. We come
+        // should_be_excluded_impl() below doesn't link unlinked classes. We come
         // here only when we are trying to aot-link constant pool entries, so
         // we'd better link the class.
         JavaThread* THREAD = JavaThread::current();
@@ -681,6 +870,10 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
           CLEAR_PENDING_EXCEPTION;
           return true; // linking failed -- let's exclude it
         }
+
+        // Also link any classes that were loaded for the verification of ik or its supertypes.
+        // Otherwise we might miss the verification constraints of those classes.
+        MetaspaceShared::link_all_loaded_classes(THREAD);
       }
 
       MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
@@ -688,7 +881,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       if (p->is_excluded()) {
         return true;
       }
-      return check_for_exclusion(ik, p);
+      return should_be_excluded_impl(ik, p);
     } else {
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in MetaspaceShared::link_class_for_cds().
@@ -697,12 +890,13 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       if (p->is_excluded()) {
         return true;
       }
-      return check_for_exclusion(ik, p);
+      return should_be_excluded_impl(ik, p);
     }
   }
 }
 
 void SystemDictionaryShared::finish_exclusion_checks() {
+  assert_at_safepoint();
   if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
@@ -713,7 +907,7 @@ void SystemDictionaryShared::finish_exclusion_checks() {
   }
 
   _dumptime_table->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    SystemDictionaryShared::check_for_exclusion(k, &info);
+    SystemDictionaryShared::should_be_excluded_impl(k, &info);
   });
 
   _dumptime_table->update_counts();
@@ -793,7 +987,7 @@ void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
          bool* skip_assignability_check) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
-  info->add_verification_constraint(k, name, from_name, from_field_is_protected,
+  info->add_verification_constraint(name, from_name, from_field_is_protected,
                                     from_is_array, from_is_object);
 
   if (CDSConfig::is_dumping_classic_static_archive() && !is_builtin(k)) {
@@ -815,6 +1009,26 @@ void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
     // In all other cases, we are using an *actual* class loader to load k, so it should be able
     // to resolve any types that are needed for the verification of k.
     *skip_assignability_check = false;
+  }
+}
+
+// When the old verifier is verifying the class <ik> at dump time, it tries to resolve a
+// class with the given <name>. For the verification result to be valid at run time, we must
+// ensure that <name> resolves to the exact same Klass as in dump time.
+void SystemDictionaryShared::add_old_verification_dependency(Thread* current, InstanceKlass* ik, Symbol* name) {
+  precond(CDSConfig::is_preserving_verification_dependencies());
+  DumpTimeClassInfo* info = get_info(ik);
+  Handle loader(current, ik->class_loader());
+  Klass* k = SystemDictionary::find_instance_or_array_klass(current, name, loader);
+  if (k != nullptr) {
+    if (k->is_objArray_klass()) {
+      k = ObjArrayKlass::cast(k)->bottom_klass();
+    }
+    // No need to record any supertypes, as ik cannot be loaded at run time unless the
+    // exact same set of super types are loaded.
+    if (k->is_instance_klass() && !ik->is_subclass_of(k)) {
+      info->add_old_verification_dependency(k->name());
+    }
   }
 }
 
@@ -860,7 +1074,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   }
 }
 
-void SystemDictionaryShared::copy_verification_constraints_from_preimage(InstanceKlass* klass) {
+void SystemDictionaryShared::copy_verification_info_from_preimage(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   DumpTimeClassInfo* dt_info = get_info(klass);
   RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
@@ -872,8 +1086,16 @@ void SystemDictionaryShared::copy_verification_constraints_from_preimage(Instanc
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
 
-      dt_info->add_verification_constraint(klass, name, from_name,
+      dt_info->add_verification_constraint(name, from_name,
          rt_info->from_field_is_protected(i), rt_info->from_is_array(i), rt_info->from_is_object(i));
+    }
+  }
+
+  length = rt_info->num_old_verifier_dependencies();
+  if (length > 0) {
+    for (int i = 0; i < length; i++) {
+      Symbol* name = rt_info->old_verifier_constraint_at(i);
+      dt_info->add_old_verification_dependency(name);
     }
   }
 }
