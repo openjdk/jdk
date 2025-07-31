@@ -253,14 +253,6 @@ public final class WinShortcutVerifier {
         return expectedShortcuts;
     }
 
-        addShortcuts.accept(cmd.name());
-        predefinedAppImage.map(v -> {
-            return (Collection<String>)v.addLaunchers().keySet();
-        }).orElseGet(cmd::addLauncherNames).forEach(addShortcuts);
-
-        return expectedShortcuts;
-    }
-
     private static InvokeShortcutSpec convert(JPackageCommand cmd, String launcherName, Shortcut shortcut) {
         LauncherShortcut launcherShortcut;
         if (Stream.of(ShortcutType.COMMON_START_MENU, ShortcutType.USER_START_MENU).anyMatch(type -> {
@@ -275,7 +267,7 @@ public final class WinShortcutVerifier {
         return new InvokeShortcutSpec.Stub(
                 launcherName,
                 launcherShortcut,
-                resolvePath(shortcut.workDir(), !isUserLocalInstall),
+                Optional.of(resolvePath(shortcut.workDir(), !isUserLocalInstall)),
                 List.of("cmd", "/c", "start", "/wait", PathUtils.addSuffix(resolvePath(shortcut.path(), !isUserLocalInstall), ".lnk").toString()));
     }
 
