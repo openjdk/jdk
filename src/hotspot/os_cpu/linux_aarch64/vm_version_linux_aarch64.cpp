@@ -71,6 +71,10 @@
 #define HWCAP_SVE (1 << 22)
 #endif
 
+#ifndef HWCAP_SB
+#define HWCAP_SB (1 << 29)
+#endif
+
 #ifndef HWCAP_PACA
 #define HWCAP_PACA (1 << 30)
 #endif
@@ -143,6 +147,7 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_SHA3    |
       HWCAP_SHA512  |
       HWCAP_SVE     |
+      HWCAP_SB      |
       HWCAP_PACA    |
       HWCAP_FPHP    |
       HWCAP_ASIMDHP);

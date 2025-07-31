@@ -377,7 +377,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(rax);
 
   // search an exception handler (rax: exception oop, rdx: throwing pc)
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_handle_exception_from_callee_id)));
   __ should_not_reach_here();
   guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
@@ -433,7 +433,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes());
-  __ jump(RuntimeAddress(Runtime1::entry_for(C1StubId::unwind_exception_id)));
+  __ jump(RuntimeAddress(Runtime1::entry_for(StubId::c1_unwind_exception_id)));
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -1385,11 +1385,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ cmpptr(klass_RInfo, k_RInfo);
         __ jcc(Assembler::equal, *success_target);
 
-        __ push(klass_RInfo);
-        __ push(k_RInfo);
-        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-        __ pop(klass_RInfo);
-        __ pop(klass_RInfo);
+        __ push_ppx(klass_RInfo);
+        __ push_ppx(k_RInfo);
+        __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
+        __ pop_ppx(klass_RInfo);
+        __ pop_ppx(klass_RInfo);
         // result is a boolean
         __ testl(klass_RInfo, klass_RInfo);
         __ jcc(Assembler::equal, *failure_target);
@@ -1399,11 +1399,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // perform the fast part of the checking logic
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-      __ push(klass_RInfo);
-      __ push(k_RInfo);
-      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-      __ pop(klass_RInfo);
-      __ pop(k_RInfo);
+      __ push_ppx(klass_RInfo);
+      __ push_ppx(k_RInfo);
+      __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
+      __ pop_ppx(klass_RInfo);
+      __ pop_ppx(k_RInfo);
       // result is a boolean
       __ testl(k_RInfo, k_RInfo);
       __ jcc(Assembler::equal, *failure_target);
@@ -1478,11 +1478,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-    __ push(klass_RInfo);
-    __ push(k_RInfo);
-    __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-    __ pop(klass_RInfo);
-    __ pop(k_RInfo);
+    __ push_ppx(klass_RInfo);
+    __ push_ppx(k_RInfo);
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
+    __ pop_ppx(klass_RInfo);
+    __ pop_ppx(k_RInfo);
     // result is a boolean
     __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
@@ -2217,7 +2217,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
-  C1StubId unwind_id;
+  StubId unwind_id;
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
@@ -2229,9 +2229,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   __ verify_not_null_oop(rax);
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   if (compilation()->has_fpu_code()) {
-    unwind_id = C1StubId::handle_exception_id;
+    unwind_id = StubId::c1_handle_exception_id;
   } else {
-    unwind_id = C1StubId::handle_exception_nofpu_id;
+    unwind_id = StubId::c1_handle_exception_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
@@ -2536,26 +2536,26 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       // safely do the copy.
       Label cont, slow;
 
-      __ push(src);
-      __ push(dst);
+      __ push_ppx(src);
+      __ push_ppx(dst);
 
       __ load_klass(src, src, tmp_load_klass);
       __ load_klass(dst, dst, tmp_load_klass);
 
       __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
-      __ push(src);
-      __ push(dst);
-      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-      __ pop(dst);
-      __ pop(src);
+      __ push_ppx(src);
+      __ push_ppx(dst);
+      __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
+      __ pop_ppx(dst);
+      __ pop_ppx(src);
 
       __ testl(src, src);
       __ jcc(Assembler::notEqual, cont);
 
       __ bind(slow);
-      __ pop(dst);
-      __ pop(src);
+      __ pop_ppx(dst);
+      __ pop_ppx(src);
 
       address copyfunc_addr = StubRoutines::checkcast_arraycopy();
       if (copyfunc_addr != nullptr) { // use stub if available
@@ -2904,13 +2904,13 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     if (exact_klass != nullptr) {
       Label ok;
       __ load_klass(tmp, obj, tmp_load_klass);
-      __ push(tmp);
+      __ push_ppx(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
       __ jcc(Assembler::equal, ok);
       __ stop("exact klass and actual klass differ");
       __ bind(ok);
-      __ pop(tmp);
+      __ pop_ppx(tmp);
     }
 #endif
     if (!no_conflict) {
@@ -2975,7 +2975,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
         {
           Label ok;
-          __ push(tmp);
+          __ push_ppx(tmp);
           __ testptr(mdo_addr, TypeEntries::type_mask);
           __ jcc(Assembler::zero, ok);
           // may have been set by another thread
@@ -2986,7 +2986,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
           __ stop("unexpected profiling mismatch");
           __ bind(ok);
-          __ pop(tmp);
+          __ pop_ppx(tmp);
         }
 #else
         __ jccb(Assembler::zero, next);

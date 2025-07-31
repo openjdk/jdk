@@ -736,8 +736,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc"
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power10"
+        # Use Power8 for target cpu, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        # Use Power10 for tuning target, this is supported by gcc >= 10
+        POWER_TUNE_VERSION="-mtune=power10"
+        FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${POWER_TUNE_VERSION}],
+          IF_FALSE: [
+              POWER_TUNE_VERSION="-mtune=power8"
+          ]
+        )
+        $1_CFLAGS_CPU="-mcpu=power8 ${POWER_TUNE_VERSION}"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then

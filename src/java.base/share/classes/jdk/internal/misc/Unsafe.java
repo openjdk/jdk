@@ -25,9 +25,11 @@
 
 package jdk.internal.misc;
 
-import jdk.internal.ref.Cleaner;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
@@ -52,7 +54,7 @@ import static jdk.internal.misc.UnsafeConstants.*;
  * @author John R. Rose
  * @see #getUnsafe
  */
-
+@AOTSafeClassInitializer
 public final class Unsafe {
 
     private static native void registerNatives();
@@ -60,7 +62,9 @@ public final class Unsafe {
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache
+    /// BASE_OFFSET, INDEX_SCALE, and ADDRESS_SIZE fields are equivalent if the
+    /// AOT initialized heap is reused, so just register natives
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         registerNatives();
     }
