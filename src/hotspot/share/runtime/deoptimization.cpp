@@ -951,6 +951,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       Bytecodes::Code cur_code = str.next();
 
       if (!reexecute && !Bytecodes::is_invoke(cur_code)) {
+        // We can only compute OopMaps for the before state, so we need to roll forward
+        // to the next bytecode.
         assert(is_top_frame, "must be");
         assert(falls_through(cur_code), "must be");
         assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
@@ -967,6 +969,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
 
         cur_code = str.next();
+        // Reflect the fact that we have rolled forward and now need
+        // top_frame_expression_stack_adjustment
         reexecute = true;
       }
 
@@ -989,12 +993,12 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 
       // Verify stack depth and oops in frame
       int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
-      int map_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
-      int expr_ssize_before = iframe_expr_ssize + (is_top_frame ? top_frame_expression_stack_adjustment : 0);
-      int map_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
+      int oopmap_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
+      int expr_ssize_before = iframe_expr_ssize + top_frame_expression_stack_adjustment;
+      int oopmap_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
       if (!((is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) ||
-            (reexecute ? expr_ssize_before == map_expr_invoke_ssize :
-                         iframe_expr_ssize == map_expr_callee_ssize))) {
+            (reexecute ? expr_ssize_before == oopmap_expr_invoke_ssize :
+                         iframe_expr_ssize == oopmap_expr_callee_ssize))) {
         // Print out some information that will help us debug the problem
         tty->print_cr("Wrong number of expression stack elements during deoptimization");
         tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
@@ -1005,7 +1009,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
         tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
         tty->print_cr("  exec_mode = %d", exec_mode);
-        tty->print_cr("  reexecute = %s", reexecute ? "true" : "false");
+        tty->print_cr("  original should_reexecute = %s", el->should_reexecute() ? "true" : "false");
+        tty->print_cr("  reexecute = %s%s", reexecute ? "true" : "false",
+                      (reexecute != el->should_reexecute()) ? " (changed)" : "");
         tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
         tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
         tty->print_cr("  Interpreted frames:");
