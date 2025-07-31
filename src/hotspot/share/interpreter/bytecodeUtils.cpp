@@ -312,7 +312,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
 
       if ((bci >= start) && (bci < end) && (elem->slot == slot)) {
         ConstantPool* cp = method->constants();
-        char *var =  cp->symbol_at(elem->name_cp_index)->as_C_string();
+        char *var = cp->symbol_at(elem->name_cp_index)->as_C_string();
         os->print("%s", var);
 
         return;
@@ -343,6 +343,20 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
     }
 
     if (found && is_parameter) {
+      // Check MethodParameters for a name, if it carries a name
+      int actual_param_index = param_index - 1; // 0 based
+      if (method->has_method_parameters() && actual_param_index < method->method_parameters_length()) {
+        MethodParametersElement elem = method->method_parameters_start()[actual_param_index];
+        if (elem.name_cp_index != 0) {
+          ConstantPool* cp = method->constants();
+          char *var = cp->symbol_at(elem.name_cp_index)->as_C_string();
+          os->print("%s", var);
+
+          return;
+        }
+      }
+
+      // TODO we should use arg%d forms, 0-based, like core reflection
       os->print("<parameter%d>", param_index);
     } else {
       // This is the best we can do.
