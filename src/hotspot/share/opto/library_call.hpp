@@ -22,12 +22,15 @@
  *
  */
 
+#ifndef SHARE_OPTO_LIBRARY_CALL_HPP
+#define SHARE_OPTO_LIBRARY_CALL_HPP
+
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
 #include "opto/callGenerator.hpp"
-#include "opto/graphKit.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
 
@@ -125,6 +128,29 @@ class LibraryCallKit : public GraphKit {
   Node*     result() { return _result; }
 
   virtual int reexecute_sp() { return _reexecute_sp; }
+
+  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+   * bailout before making changes because the bailing out decision might depend on new nodes
+   * (their types, for instance).
+   *
+   * So, if an intrinsic might cause this situation, one must start by saving the state in a
+   * SavedState by constructing it, and the state will be restored on destruction. If the
+   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+   */
+  class SavedState {
+    LibraryCallKit* _kit;
+    uint _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(LibraryCallKit*);
+    ~SavedState();
+    void discard();
+  };
 
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
@@ -300,7 +326,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_compare_unsigned(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
-  bool inline_reference_get();
+  bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
@@ -416,3 +442,4 @@ class LibraryCallKit : public GraphKit {
   bool inline_blackhole();
 };
 
+#endif // SHARE_OPTO_LIBRARY_CALL_HPP

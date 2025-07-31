@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.internal.util;
 import java.util.Properties;
 
 /**
- * System Property access for internal use only.
+ * System Property access for `java.base` module internal use only.
  * Read-only access to System property values initialized during Phase 1
  * are cached.  Setting, clearing, or modifying the value using
  * {@link System#setProperty} or {@link System#getProperties()} is ignored.
@@ -48,8 +48,11 @@ public final class StaticProperty {
     private static final String JAVA_IO_TMPDIR;
     private static final String NATIVE_ENCODING;
     private static final String FILE_ENCODING;
-    private static final String JAVA_PROPERTIES_DATE;
+    private static final String STDIN_ENCODING;
+    private static final String STDERR_ENCODING;
+    private static final String STDOUT_ENCODING;
     private static final String SUN_JNU_ENCODING;
+    private static final String JAVA_PROPERTIES_DATE;
     private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
     private static final String OS_NAME;
     private static final String OS_ARCH;
@@ -86,8 +89,11 @@ public final class StaticProperty {
         JDK_SERIAL_FILTER_FACTORY = getProperty(props, "jdk.serialFilterFactory", null);
         NATIVE_ENCODING = getProperty(props, "native.encoding");
         FILE_ENCODING = getProperty(props, "file.encoding");
-        JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
+        STDIN_ENCODING = getProperty(props, "stdin.encoding");
+        STDERR_ENCODING = getProperty(props, "stderr.encoding");
+        STDOUT_ENCODING = getProperty(props, "stdout.encoding");
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
+        JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
         JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
         OS_NAME = getProperty(props, "os.name");
         OS_ARCH = getProperty(props, "os.arch");
@@ -218,10 +224,24 @@ public final class StaticProperty {
     }
 
     /**
-     * {@return the {@code java.properties.date} system property}
+     * {@return the {@code stdin.encoding} system property}
      */
-    public static String javaPropertiesDate() {
-        return JAVA_PROPERTIES_DATE;
+    public static String stdinEncoding() {
+        return STDIN_ENCODING;
+    }
+
+    /**
+     * {@return the {@code stderr.encoding} system property}
+     */
+    public static String stderrEncoding() {
+        return STDERR_ENCODING;
+    }
+
+    /**
+     * {@return the {@code stdout.encoding} system property}
+     */
+    public static String stdoutEncoding() {
+        return STDOUT_ENCODING;
     }
 
     /**
@@ -229,6 +249,13 @@ public final class StaticProperty {
      */
     public static String jnuEncoding() {
         return SUN_JNU_ENCODING;
+    }
+
+    /**
+     * {@return the {@code java.properties.date} system property}
+     */
+    public static String javaPropertiesDate() {
+        return JAVA_PROPERTIES_DATE;
     }
 
     /**

@@ -29,6 +29,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -60,6 +61,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -436,6 +438,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -443,7 +448,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
@@ -894,13 +898,19 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
-
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
+  }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
   }
   if (CDSConfig::is_dumping_archive()) {
     CDSConfig::prepare_for_dumping();
