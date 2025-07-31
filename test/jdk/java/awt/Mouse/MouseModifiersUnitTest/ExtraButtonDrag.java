@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 6315717
-  @summary verifies that drag events are coming for every button if the property is set to true
-  @run main ExtraButtonDrag
+ * @test
+ * @key headful
+ * @bug 6315717
+ * @summary verifies that drag events are coming for every button if the property is set to true
+ * @run main ExtraButtonDrag
  */
 
 import java.awt.AWTException;
@@ -46,15 +46,14 @@ public class ExtraButtonDrag {
 
     private static Frame frame;
     private static Robot robot;
-    private volatile static boolean dragged = false;
-    private volatile static boolean moved = false;
+    private static volatile boolean dragged = false;
+    private static volatile boolean moved = false;
     private static volatile Point centerFrame;
     private static volatile Point outboundsFrame;
     private static String tk = Toolkit.getDefaultToolkit().getClass().getName();
     private static MouseAdapter mAdapter = new MouseAdapter() {
         @Override
         public void mouseDragged(MouseEvent e) {
-            System.out.println("Dragged " + e);
             dragged = true;
         }
 
@@ -63,17 +62,6 @@ public class ExtraButtonDrag {
             System.out.println("Moved " + e);
             moved = true;
         }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-            System.out.println("Pressed " + e);
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            System.out.println("Released " + e);
-        }
-
     };
 
     public static void initializeGUI() {
@@ -187,7 +175,7 @@ public class ExtraButtonDrag {
 
             doTest();
 
-            System.out.println("Test PASSED");
+            System.out.println("Test Passed");
         } finally {
             EventQueue.invokeAndWait(ExtraButtonDrag::disposeFrame);
         }
