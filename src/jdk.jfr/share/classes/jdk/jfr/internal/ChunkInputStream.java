@@ -49,7 +49,9 @@ final class ChunkInputStream extends InputStream {
         }
 
         this.chunks = l.iterator();
-        nextStream();
+        if (!nextStream()) {
+            throw new IOException("Recording data missing on disk.");
+        }
     }
 
     @Override
@@ -60,15 +62,20 @@ final class ChunkInputStream extends InputStream {
         }
         return total <= Integer.MAX_VALUE ? (int) total : Integer.MAX_VALUE;
     }
-
+    
     private boolean nextStream() throws IOException {
-        if (!nextChunk()) {
-            return false;
+        while (nextChunk()) {
+            try {
+                stream = new BufferedInputStream(Files.newInputStream(currentChunk.getFile()));
+                unstreamedSize -= currentChunk.getSize();
+                return true;
+            } catch (IOException e) {
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Could not open chunk file for stream: " + e.getMessage() + ". Skipping.");
+                // Release chunk if it can't be found/accessed.
+                closeChunk();
+            }
         }
-
-        stream = new BufferedInputStream(Files.newInputStream(currentChunk.getFile()));
-        unstreamedSize -= currentChunk.getSize();
-        return true;
+        return false;
     }
 
     private boolean nextChunk() {
@@ -126,11 +133,14 @@ final class ChunkInputStream extends InputStream {
     }
 
     private void closeStream() throws IOException {
-        if (stream != null) {
-            stream.close();
-            stream = null;
+        try {
+            if (stream != null) {
+                stream.close();
+                stream = null;
+            }
+        } finally {
+            closeChunk();
         }
-        closeChunk();
     }
 
     private void closeChunk() {
@@ -143,11 +153,9 @@ final class ChunkInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         closeStream();
-        while (currentChunk != null) {
-            closeChunk();
-            if (!nextChunk()) {
-                return;
-            }
+        while (chunks.hasNext()) {
+            RepositoryChunk c = chunks.next();
+            c.release();
         }
     }
 }
