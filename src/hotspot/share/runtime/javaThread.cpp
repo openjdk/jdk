@@ -2097,7 +2097,7 @@ bool JavaThread::sleep(jlong millis) {
 
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
-// if the thread was interrupted.
+// if the thread was interrupted or async exception was installed.
 bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
   assert(nanos >= 0, "nanos are in range");
