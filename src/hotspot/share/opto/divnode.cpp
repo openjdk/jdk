@@ -1232,9 +1232,9 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   }
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 int constants.
-    // Check for min_jlong % '-1', result is defined to be '0'
-    // We don't need to check for min_jint % '-1' as its result is defined when using jlong.
-    if (i1->get_con_as_long(bt) == min_jlong && i2->get_con_as_long(bt) == -1) {
+    // Special case: min_jlong % '-1' is UB, and e.g., x86 triggers a division error.
+    // Any value % -1 is 0, so we can return 0 and avoid that scenario.
+    if (i2->get_con_as_long(bt) == -1) {
       return TypeInteger::zero(bt);
     }
     return TypeInteger::make(i1->get_con_as_long(bt) % i2->get_con_as_long(bt), bt);
