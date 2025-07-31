@@ -103,7 +103,7 @@ inline address CompressedKlassPointers::encoding_range_end() {
   const int max_bits = narrow_klass_pointer_bits() + _shift;
   return (address)((uintptr_t)_base + nth_bit(max_bits));
 #else
-  return klass_range_end();
+  return (address)SIZE_MAX;
 #endif
 }
 
