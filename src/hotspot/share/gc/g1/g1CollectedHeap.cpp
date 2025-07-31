@@ -1133,13 +1133,13 @@ bool G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
   // GC service thread) just do the work directly.
   if (SafepointSynchronize::is_at_safepoint()) {
     shrink(shrink_bytes);
-    return true;                     // we *did* something
+    return true;                     // We did something.
   }
 
   // Schedule a small VM-op so the work is done at the next safepoint
   VM_G1ShrinkHeap op(this, shrink_bytes);
   VMThread::execute(&op);
-  return true;                       // pages were at least *requested* to be released
+  return true;                       // Pages were at least requested to be released.
 }
 
 class OldRegionSetChecker : public G1HeapRegionSetChecker {

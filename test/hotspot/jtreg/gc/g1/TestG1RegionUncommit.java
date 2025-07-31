@@ -32,7 +32,7 @@ package gc.g1;
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @run main/othervm -XX:+UseG1GC -Xms8m -Xmx256m -XX:G1HeapRegionSize=1M
- *                   -XX:+UnlockExperimentalVMOptions -XX:+G1UseTimeBasedHeapSizing
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:G1UncommitDelayMillis=3000 -XX:G1TimeBasedEvaluationIntervalMillis=2000
  *                   -XX:G1MinRegionsToUncommit=2
  *                   -Xlog:gc*,gc+sizing*=debug
@@ -66,7 +66,7 @@ public class TestG1RegionUncommit {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UseG1GC",
             "-Xms8m", "-Xmx256m", "-XX:G1HeapRegionSize=1M",
-            "-XX:+UnlockExperimentalVMOptions", "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1UncommitDelayMillis=3000", "-XX:G1TimeBasedEvaluationIntervalMillis=2000",
             "-XX:G1MinRegionsToUncommit=2",
             "-Xlog:gc*,gc+sizing*=debug",
@@ -75,13 +75,13 @@ public class TestG1RegionUncommit {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        // Verify the time-based evaluation logic is working
+        // Verify the uncommit evaluation logic is working
         output.shouldContain("G1 Time-Based Heap Sizing enabled (uncommit-only)");
         output.shouldContain("Starting heap evaluation");
         output.shouldContain("Region state transition:");
         output.shouldContain("transitioning from active to inactive");
         output.shouldContain("Uncommit candidates found:");
-        output.shouldContain("Time-based heap uncommit evaluation:");
+        output.shouldContain("Uncommit evaluation: Found");
         output.shouldContain("target shrink:");
 
         output.shouldHaveExitValue(0);
@@ -131,7 +131,7 @@ public class TestG1RegionUncommit {
             "-XX:+UseG1GC",
             "-Xms32m", "-Xmx64m",  // Small heap to test boundaries
             "-XX:G1HeapRegionSize=1M",
-            "-XX:+UnlockExperimentalVMOptions", "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1UncommitDelayMillis=2000", // Short delay
             "-XX:G1TimeBasedEvaluationIntervalMillis=1000",
             "-XX:G1MinRegionsToUncommit=1",
@@ -153,7 +153,7 @@ public class TestG1RegionUncommit {
             "-XX:+UseG1GC",
             "-Xms64m", "-Xmx256m",
             "-XX:G1HeapRegionSize=1M",
-            "-XX:+UnlockExperimentalVMOptions", "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1TimeBasedEvaluationIntervalMillis=1000", // Frequent evaluation
             "-XX:G1UncommitDelayMillis=2000",
             "-XX:G1MinRegionsToUncommit=2",
