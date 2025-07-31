@@ -2570,10 +2570,10 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_counterMode_AESCrypt() {
-    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
     StubCodeMark mark(this, stub_id);
 
     const Register in = c_rarg0;
@@ -6994,10 +6994,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    }
 
-      if (UseAESCTRIntrinsics) {
-        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
-      }
+    if (UseAESCTRIntrinsics) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
     }
 
     if (UsePoly1305Intrinsics) {
