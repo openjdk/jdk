@@ -2898,7 +2898,7 @@ JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
         HOTSPOT_THREAD_SLEEP_END(1);
-        if (!has_async_exception_condition()) {
+        if (!thread->has_async_exception_condition()) {
           // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
           // to properly restore the thread state.  That's likely wrong.
           THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
