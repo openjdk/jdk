@@ -52,7 +52,9 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     uint volatile _cur_claim_idx;
 
-    static int compare_region_gc_efficiency(G1HeapRegion* r1, G1HeapRegion* r2) {
+    static int compare_region_gc_efficiency(G1HeapRegion** rr1, G1HeapRegion** rr2) {
+      G1HeapRegion* r1 = *rr1;
+      G1HeapRegion* r2 = *rr2;
       // Make sure that null entries are moved to the end.
       if (r1 == nullptr) {
         if (r2 == nullptr) {
