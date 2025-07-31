@@ -1229,7 +1229,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       hr->set_containing_set(nullptr);
       hr->clear_cardtable();
       _cm->clear_statistics(hr);
-      G1HeapRegionPrinter::mark_reclaim(hr);      
+      G1HeapRegionPrinter::mark_reclaim(hr);
     }
 
     void reclaim_empty_humongous_region(G1HeapRegion* hr) {
