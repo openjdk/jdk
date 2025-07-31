@@ -170,7 +170,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(),
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
