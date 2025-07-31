@@ -246,9 +246,9 @@ define create_overview_file
     )
     $1_OVERVIEW_TEXT += \
         </dl></blockquote> \
-    <p><a href="../specs/index.html">Related documents</a> specify the Java language, \
-    the Java virtual machine, various protocols and file formats pertaining to the \
-    Java platform, and tools included in the JDK.</p> \
+    <p><a href="../specs/index.html">Related documents</a> specify the Java \
+    programming language, the Java Virtual Machine, various protocols and file \
+    formats pertaining to the Java platform, and tools included in the JDK.</p> \
     #
   endif
   $1_OVERVIEW_TEXT += \
