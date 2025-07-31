@@ -351,7 +351,6 @@ class JfrThreadLocal {
 
   // Serialization state.
   bool should_write() const;
-  void set_written() const;
 
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);

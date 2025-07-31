@@ -118,7 +118,6 @@ void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
     JavaThread* const jt = javathreads.next();
     if (jt->jfr_thread_local()->should_write()) {
       tc.do_thread(jt);
-      jt->jfr_thread_local()->set_written();
     }
   }
   JfrNonJavaThreadIterator nonjavathreads;

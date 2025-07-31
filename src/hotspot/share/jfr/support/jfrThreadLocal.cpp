@@ -153,7 +153,6 @@ void JfrThreadLocal::on_start(Thread* t) {
       assert(jt->thread_state() == _thread_in_vm, "invariant");
       if (tl->should_write()) {
         JfrCheckpointManager::write_checkpoint(t);
-        tl->set_written();
       }
       send_java_thread_start_event(jt);
       if (tl->has_cached_stack_trace()) {
@@ -255,7 +254,6 @@ void JfrThreadLocal::on_exit(Thread* t) {
       assert(jt->thread_state() == _thread_in_vm, "invariant");
       if (tl->should_write()) {
         JfrCheckpointManager::write_checkpoint(t);
-        tl->set_written();
       }
       send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
       JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
@@ -451,11 +449,12 @@ u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
 }
 
 bool JfrThreadLocal::should_write() const {
-  return !JfrTraceIdEpoch::is_current_epoch_generation(Atomic::load(&_generation));
-}
-
-void JfrThreadLocal::set_written() const {
-  Atomic::store(&_generation, JfrTraceIdEpoch::epoch_generation());
+  const u2 current_generation = JfrTraceIdEpoch::epoch_generation();
+  if (Atomic::load(&_generation) != current_generation) {
+    Atomic::store(&_generation, current_generation);
+    return true;
+  }
+  return false;
 }
 
 traceid JfrThreadLocal::thread_id(const Thread* t) {
