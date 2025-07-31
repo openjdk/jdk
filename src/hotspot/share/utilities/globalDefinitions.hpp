@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT.
 #include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
