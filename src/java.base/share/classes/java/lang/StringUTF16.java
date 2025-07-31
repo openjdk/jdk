@@ -164,7 +164,7 @@ final class StringUTF16 {
      * @param len a length
      */
     public static byte[] toBytes(char[] value, int off, int len) {
-        byte[] val = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, newBytesLength(len));
+        byte[] val = new byte[newBytesLength(len)];
         putCharsSB(val, 0, value, off, off + len);
         return val;
     }
