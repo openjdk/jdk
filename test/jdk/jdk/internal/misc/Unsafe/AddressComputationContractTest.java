@@ -26,8 +26,7 @@ import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
 
 import static jdk.internal.misc.Unsafe.getUnsafe;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
@@ -66,8 +65,10 @@ public class AddressComputationContractTest {
         assertDoesNotThrow(() -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "instanceField"));
         assertThrows(NullPointerException.class, () -> getUnsafe().objectFieldOffset(null, "instanceField"));
         assertThrows(NullPointerException.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, null));
-        assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "doesNotExist"));
-        assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "staticField"));
+        var dneMsg = assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "doesNotExist")).getMessage();
+        assertTrue(dneMsg.contains("AddressComputationContractTest.doesNotExist") && dneMsg.contains("not found"), dneMsg);
+        var staticMsg = assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "staticField")).getMessage();
+        assertTrue(staticMsg.contains("AddressComputationContractTest.staticField") && staticMsg.contains("static field"), staticMsg);
     }
 
     @Test

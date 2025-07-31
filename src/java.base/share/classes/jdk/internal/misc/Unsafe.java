@@ -1083,17 +1083,18 @@ public final class Unsafe {
     }
 
     /**
-     * Reports the location of the field with a given name in the storage
-     * allocation of its class.
+     * (For compile-time known instance fields in JDK code only) Reports the
+     * location of the field with a given name in the storage allocation of its
+     * class.
      * <p>
-     * Great care must be taken to ensure the passed field name is validated
-     * to be an instance field.  Do not pass arbitrary field names.
+     * This API is used to avoid creating reflective Objects in Java code at
+     * startup.  This should not be used to find fields in non-trusted code.
+     * Use the {@link #objectFieldOffset(Field) Field}-accepting version for
+     * arbitrary fields instead.
      *
      * @throws NullPointerException if any parameter is {@code null}.
      * @throws InternalError if there is no field named {@code name} declared
-     *         in class {@code c}, i.e., if {@code c.getDeclaredField(name)}
-     *         would throw {@code java.lang.NoSuchFieldException}, or if such
-     *         a field is static
+     *         in class {@code c} or if that field is static
      *
      * @see #objectFieldOffset(Field)
      */
@@ -1102,7 +1103,16 @@ public final class Unsafe {
             throw new NullPointerException();
         }
 
-        return objectFieldOffset1(c, name);
+        long result = knownObjectFieldOffset0(c, name);
+        if (result < 0) {
+            String type = switch ((int) result) {
+                case -2 -> "a static field";
+                case -1 -> "not found";
+                default -> "unknown";
+            };
+            throw new InternalError("Field %s.%s %s".formatted(c.getTypeName(), name, type));
+        }
+        return result;
     }
 
     /**
@@ -3862,7 +3872,7 @@ public final class Unsafe {
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
     private native void copySwapMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes, long elemSize);
     private native long objectFieldOffset0(Field f); // throws IAE
-    private native long objectFieldOffset1(Class<?> c, String name); // throws InternalError
+    private native long knownObjectFieldOffset0(Class<?> c, String name); // error code: -1 not found, -2 static
     private native long staticFieldOffset0(Field f); // throws IAE
     private native Object staticFieldBase0(Field f); // throws IAE
     private native boolean shouldBeInitialized0(Class<?> c);
