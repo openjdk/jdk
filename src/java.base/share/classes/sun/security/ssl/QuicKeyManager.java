@@ -48,6 +48,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 import jdk.internal.net.quic.QuicKeyUnavailableException;
@@ -400,7 +401,7 @@ sealed abstract class QuicKeyManager
 
         void deriveKeys(final QuicVersion quicVersion,
                 final HandshakeContext handshakeContext,
-                final boolean clientMode) {
+                final boolean clientMode) throws IOException {
             Objects.requireNonNull(quicVersion);
             if (keysAvailable()) {
                 throw new IllegalStateException(
@@ -460,8 +461,8 @@ sealed abstract class QuicKeyManager
                     }
                     this.cipherPair = new CipherPair(readCipher, writeCipher);
                 }
-            } catch (IOException | GeneralSecurityException e) {
-                throw new AssertionError("Should not happen", e);
+            } catch (GeneralSecurityException e) {
+                throw new SSLException("Missing cipher algorithm", e);
             } finally {
                 KeyUtil.destroySecretKeys(client_handshake_traffic_secret,
                         server_handshake_traffic_secret);

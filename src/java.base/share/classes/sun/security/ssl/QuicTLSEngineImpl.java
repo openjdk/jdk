@@ -715,7 +715,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         }
     }
 
-    public void deriveHandshakeKeys() {
+    public void deriveHandshakeKeys() throws IOException {
         final QuicVersion quicVersion = getNegotiatedVersion();
         this.handshakeKeyManager.deriveKeys(quicVersion,
                 this.conContext.handshakeContext,

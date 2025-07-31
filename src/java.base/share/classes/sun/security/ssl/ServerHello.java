@@ -675,7 +675,13 @@ final class ServerHello {
             if (shc.sslConfig.isQuic) {
                 QuicTLSEngineImpl engine =
                         (QuicTLSEngineImpl) shc.conContext.transport;
-                engine.deriveHandshakeKeys();
+                try {
+                    engine.deriveHandshakeKeys();
+                } catch (IOException e) {
+                    // unlikely
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Failed to derive keys", e);
+                }
             }
             // Check if the server supports stateless resumption
             if (sessionCache.statelessEnabled()) {
@@ -1379,7 +1385,13 @@ final class ServerHello {
             if (chc.sslConfig.isQuic) {
                 QuicTLSEngineImpl engine =
                         (QuicTLSEngineImpl) chc.conContext.transport;
-                engine.deriveHandshakeKeys();
+                try {
+                    engine.deriveHandshakeKeys();
+                } catch (IOException e) {
+                    // unlikely
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Failed to derive keys", e);
+                }
             }
 
             // update the consumers and producers
