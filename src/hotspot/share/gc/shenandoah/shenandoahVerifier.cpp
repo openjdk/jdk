@@ -394,33 +394,35 @@ public:
     log_info(gc)("%s:ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s r: %zu used: %zu, garbage: %zu, is_trash: %s",
                  _nm, r->affiliation_name(), r->index(), r->used(), r->garbage(), r->is_trash()? "yes": "no");
 #endif
-    size_t alloc_capacity = r->free();
-    if ((alloc_capacity > 0) && (alloc_capacity < _min_free_size)) {
-#ifdef KELVIN_STATS
-      log_info(gc)("KELVIN!!!!  overwriting alloc_capacity %zu with 0 because too small", alloc_capacity);
-#endif
-      // this region has been retired already, count it as entirely consumed
-      alloc_capacity = 0;
-    }
-    size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
-    size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
 
     if (r->is_cset() || r->is_trash()) {
       // Count the entire cset or trashed (formerly cset) region as used
       // Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
-      _garbage += bytes_garbage_in_region + r->free();
+      _garbage += _region_size_bytes - r->get_live_data_bytes();
       if (r->is_trash()) {
         _trashed_regions++;
         _trashed_used += _region_size_bytes;
       }
     } else {
-      _used += bytes_used_in_region;
-      _garbage += bytes_garbage_in_region;
       if (r->is_humongous()) {
+        _used += _region_size_bytes;
+        _garbage += _region_size_bytes - r->get_live_data_bytes();
+        _humongous_waste += r->free();
+      } else {
+        size_t alloc_capacity = r->free();
+        if (alloc_capacity < _min_free_size) {
+#ifdef KELVIN_STATS
+          log_info(gc)("KELVIN!!!!  overwriting alloc_capacity %zu with 0 because too small", alloc_capacity);
+#endif
+          // this region has been retired already, count it as entirely consumed
+          alloc_capacity = 0;
+        }
+        size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
+        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
         size_t waste_bytes = r->free();
-        _humongous_waste += waste_bytes;
-        _used += waste_bytes;     // humongous_waste is counted as part of _used
+        _used += bytes_used_in_region;
+        _garbage += bytes_garbage_in_region;
       }
     }
     _committed += r->is_committed() ? _region_size_bytes : 0;

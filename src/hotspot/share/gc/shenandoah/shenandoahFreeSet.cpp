@@ -664,7 +664,11 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   assert (partition < NumPartitions, "Cannot remove from free partitions if not already free");
 
   for (idx_t idx = low_idx; idx <= high_idx; idx++) {
+#ifdef ASSERT
+    ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
+    assert(r->is_empty() || r->is_trash(), "Region must be empty or trash");
+#endif
     _membership[int(partition)].clear_bit(idx);
   }
   size_t num_regions = high_idx + 1 - low_idx;
@@ -1801,6 +1805,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     end++;
   }
 
+  // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
+  _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
+  size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_humongous_size);
+
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
   // Initialize regions:
   for (idx_t i = beg; i <= end; i++) {
@@ -1838,10 +1847,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     _heap->notify_mutator_alloc_words(ShenandoahHeapRegion::region_size_words() - remainder, true);
   }
 
-  // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
-  _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-  size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_humongous_size);
   req.set_actual_size(words_size);
   if (remainder != 0) {
     size_t waste = ShenandoahHeapRegion::region_size_words() - remainder;
