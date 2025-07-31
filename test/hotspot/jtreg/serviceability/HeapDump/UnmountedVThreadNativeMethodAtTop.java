@@ -27,7 +27,9 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run junit/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
  */
 
 import java.lang.management.ManagementFactory;
@@ -45,8 +47,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.model.ThreadObject;
 import jdk.test.lib.hprof.parser.Reader;
+import jdk.test.whitebox.WhiteBox;
 
 public class UnmountedVThreadNativeMethodAtTop {
+
+    static WhiteBox wb = WhiteBox.getWhiteBox();
 
     boolean done;
 
@@ -56,7 +61,7 @@ public class UnmountedVThreadNativeMethodAtTop {
      */
     @BeforeEach
     void doGC() {
-        System.gc();
+        wb.fullGC();
     }
 
     /**
