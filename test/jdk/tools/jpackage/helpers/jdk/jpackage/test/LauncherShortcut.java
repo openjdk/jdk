@@ -118,6 +118,10 @@ public enum LauncherShortcut {
         Optional<Path> expectedWorkDirectory();
         List<String> commandLine();
 
+        default Executor.Result execute() {
+            return HelloApp.configureAndExecute(0, Executor.of(commandLine()).dumpOutput());
+        }
+
         record Stub(
                 String launcherName,
                 LauncherShortcut shortcut,
