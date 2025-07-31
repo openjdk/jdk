@@ -1254,13 +1254,6 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       _g1h->free_region(hr, _local_cleanup_list);
     }
 
-    void update_live_region(G1HeapRegion* hr, bool selected_for_rebuild) {
-      if (selected_for_rebuild) {
-        _num_selected_for_rebuild++;
-      }
-      _cm->update_top_at_rebuild_start(hr);
-    }
-
     bool do_heap_region(G1HeapRegion* hr) override {
       G1RemSetTrackingPolicy* tracker = _g1h->policy()->remset_tracker();
       if (hr->is_starts_humongous()) {
@@ -1271,9 +1264,13 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
                           || hr->has_pinned_objects();
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
-          _g1h->humongous_obj_regions_iterate(hr, [&] (G1HeapRegion* hr) {
-                                                    update_live_region(hr, selected_for_rebuild);
-                                                  });
+          auto on_humongous_region = [&] (G1HeapRegion* hr) {
+                                       if (selected_for_rebuild) {
+                                         _num_selected_for_rebuild++;
+                                       }
+                                       _cm->update_top_at_rebuild_start(hr);
+                                     };
+          _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
         } else {
           reclaim_empty_humongous_region(hr);
         }
@@ -1284,8 +1281,11 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         const bool is_live = hr->live_bytes() != 0
                           || hr->has_pinned_objects();
         if (is_live) {
-          bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
-          update_live_region(hr, selected_for_rebuild);
+          const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
+          if (selected_for_rebuild) {
+            _num_selected_for_rebuild++;
+          }
+          _cm->update_top_at_rebuild_start(hr);
         } else {
           reclaim_empty_old_region(hr);
         }
