@@ -37,9 +37,10 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
 // Initialize static member
-jlong G1HeapSizingPolicy::_uncommit_delay_ms = 0;
+Tickspan G1HeapSizingPolicy::_uncommit_delay;
 
 G1HeapSizingPolicy* G1HeapSizingPolicy::create(const G1CollectedHeap* g1h, const G1Analytics* analytics) {
   return new G1HeapSizingPolicy(g1h, analytics);
@@ -54,7 +55,7 @@ G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analy
   _recent_cpu_usage_deltas(long_term_count_limit()),
   _long_term_count(0) {
   // Initialize static uncommit delay from flag value
-  _uncommit_delay_ms = (jlong)G1UncommitDelayMillis;
+  _uncommit_delay = Tickspan();
 }
 
 void G1HeapSizingPolicy::reset_cpu_usage_tracking_data() {
@@ -491,18 +492,18 @@ bool G1HeapSizingPolicy::should_uncommit_region(G1HeapRegion* hr) const {
   // Note: Caller already guarantees hr->is_empty() is true
   // Empty regions should always be free and not in collection set in normal operation
 
-  jlong current_time = os::javaTimeMillis();
-  jlong last_access = hr->last_access_time();
-  jlong elapsed = current_time - last_access;
+  Ticks current_time = Ticks::now();
+  Ticks last_access = hr->last_access_time();
+  Tickspan elapsed = current_time - last_access;
 
   log_trace(gc, sizing)("Region %u uncommit check: elapsed=" JLONG_FORMAT "ms threshold=" JLONG_FORMAT "ms last_access=" JLONG_FORMAT " now=" JLONG_FORMAT " empty=%s",
-                     hr->hrm_index(), elapsed, (jlong)_uncommit_delay_ms, last_access, current_time,
+                     hr->hrm_index(), elapsed.milliseconds(), (jlong)G1UncommitDelayMillis, last_access.value(), current_time.value(),
                      hr->is_empty() ? "true" : "false");
 
-  bool should_uncommit = elapsed > (jlong)_uncommit_delay_ms;
+  bool should_uncommit = elapsed.milliseconds() > G1UncommitDelayMillis;
   if (should_uncommit) {
     log_debug(gc, sizing)("Region state transition: Region %u transitioning from active to inactive after " JLONG_FORMAT "ms idle",
-                  hr->hrm_index(), elapsed);
+                  hr->hrm_index(), (jlong)elapsed.milliseconds());
   }
 
   return should_uncommit;
@@ -541,7 +542,7 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize(bool& expand) {
     // Calculate maximum bytes we can uncommit while respecting min heap size
     size_t max_shrink_bytes = current_heap > min_heap ? current_heap - min_heap : 0;
 
-    log_trace(gc, sizing)("Time-based evaluation details: current_heap=%zuB min_heap=%zuB "
+    log_trace(gc, sizing)("Uncommit evaluation: current_heap=%zuB min_heap=%zuB "
                          "region_size=%zuB max_shrink=%zuB initial_size=%zuB",
                          current_heap, min_heap, region_size, max_shrink_bytes, InitialHeapSize);
 
@@ -565,7 +566,7 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize(bool& expand) {
       shrink_bytes = MIN2(shrink_bytes, current_heap - MinHeapSize);
 
       if (current_heap - shrink_bytes < InitialHeapSize) {
-        log_info(gc, sizing)("Time-based uncommit skipped: would reduce heap below initial size (%zuMB < %zuMB)",
+        log_info(gc, sizing)("Uncommit evaluation: skipped, would reduce heap below initial size (%zuMB < %zuMB)",
                             (current_heap - shrink_bytes) / M, InitialHeapSize / M);
         log_debug(gc, sizing)("Skipping uncommit - would reduce heap below initial size: "
                              "current=%zuB shrink=%zuB result=%zuB initial=%zuB min=%zuB",
@@ -575,9 +576,9 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize(bool& expand) {
       }
 
       if (shrink_bytes > 0) {
-        log_info(gc, sizing)("Time-based uncommit: found %u inactive regions, uncommitting %zu regions (%zuMB)",
+        log_info(gc, sizing)("Uncommit evaluation: found %u inactive regions, uncommitting %zu regions (%zuMB)",
                             inactive_count, regions_to_uncommit, shrink_bytes / M);
-        log_debug(gc, sizing)("Time-based heap uncommit evaluation: Found %u inactive regions out of %u total regions, "
+        log_debug(gc, sizing)("Uncommit evaluation: Found %u inactive regions out of %u total regions, "
                              "target shrink: %zuB (max allowed: %zuB)",
                              inactive_count, total_regions, shrink_bytes, max_shrink_bytes);
         log_debug(gc, sizing)("Region state transition: %zu regions selected for uncommit",
@@ -588,7 +589,7 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize(bool& expand) {
     }
   }
 
-  log_trace(gc, sizing)("Time-based heap evaluation: no uncommit needed "
+  log_trace(gc, sizing)("Uncommit evaluation: no uncommit needed "
                        "(inactive=%u min_required=%zu heap=%zuB min=%zuB)",
                        inactive_count, G1MinRegionsToUncommit,
                        _g1h->capacity(), MAX2((size_t)InitialHeapSize, MinHeapSize));

@@ -370,7 +370,7 @@
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
                                                                             \
-  product(bool, G1UseTimeBasedHeapSizing, false, EXPERIMENTAL,              \
+  product(bool, G1UseTimeBasedHeapSizing, true, DIAGNOSTIC,                 \
           "Enable time-based heap sizing to uncommit memory from inactive " \
           "regions independent of GC cycles")                               \
                                                                             \
@@ -384,7 +384,7 @@
           "within this many milliseconds")                                  \
           range(1000, LP64_ONLY(max_jlong) NOT_LP64(max_uintx / 2))         \
                                                                             \
-  product(size_t, G1MinRegionsToUncommit, 10, EXPERIMENTAL,                 \
+  product(size_t, G1MinRegionsToUncommit, 10, DIAGNOSTIC,                   \
           "Minimum number of inactive regions required before G1 will "     \
           "attempt to uncommit memory")                                     \
           range(1, max_uintx)                                               \

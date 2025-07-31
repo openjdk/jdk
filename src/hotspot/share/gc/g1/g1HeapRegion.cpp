@@ -250,7 +250,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex),
-  _last_access_timestamp(os::javaTimeMillis()), // Initialize timestamp with milliseconds to match uncommit check
+  _last_access_timestamp(Ticks::now()), // Initialize timestamp with current time
   _pinned_object_count(0)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

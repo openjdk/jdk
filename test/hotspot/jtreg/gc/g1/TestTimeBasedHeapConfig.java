@@ -31,7 +31,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
- * @run main/othervm -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+G1UseTimeBasedHeapSizing
+ * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions
  *     -Xms16m -Xmx64m -XX:G1HeapRegionSize=1M
  *     -XX:G1TimeBasedEvaluationIntervalMillis=5000
  *     -XX:G1UncommitDelayMillis=10000
@@ -56,8 +56,7 @@ public class TestTimeBasedHeapConfig {
         // Test default settings
         verifyVMConfig(new String[] {
             "-XX:+UseG1GC",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-Xms16m", "-Xmx64m",
             "-XX:G1HeapRegionSize=1M",
             "-Xlog:gc*,gc+sizing*=debug",
@@ -102,8 +101,7 @@ public class TestTimeBasedHeapConfig {
         // Test minimum values
         verifyVMConfig(new String[] {
             "-XX:+UseG1GC",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-Xms8m", "-Xmx32m",
             "-XX:G1HeapRegionSize=1M",
             "-XX:G1TimeBasedEvaluationIntervalMillis=1000", // 1 second minimum
@@ -116,8 +114,7 @@ public class TestTimeBasedHeapConfig {
         // Test maximum reasonable values
         verifyVMConfig(new String[] {
             "-XX:+UseG1GC",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-Xms32m", "-Xmx256m",
             "-XX:G1HeapRegionSize=1M",
             "-XX:G1TimeBasedEvaluationIntervalMillis=300000", // 5 minutes
@@ -132,8 +129,7 @@ public class TestTimeBasedHeapConfig {
         // Test with very small heap (should still work)
         verifyVMConfig(new String[] {
             "-XX:+UseG1GC",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-Xms4m", "-Xmx8m", // Very small heap
             "-XX:G1HeapRegionSize=1M",
             "-XX:G1TimeBasedEvaluationIntervalMillis=2000",

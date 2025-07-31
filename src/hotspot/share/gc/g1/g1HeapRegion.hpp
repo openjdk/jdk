@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CardSet;
 class G1CardSetConfiguration;
@@ -254,7 +255,7 @@ private:
   uint _node_index;
 
   // Time-based heap sizing: tracks last allocation/access time
-  jlong _last_access_timestamp;
+  Ticks _last_access_timestamp;
 
   // Number of objects in this region that are currently pinned.
   volatile size_t _pinned_object_count;
@@ -559,21 +560,21 @@ public:
 
   // Time-based heap sizing methods
   void record_activity() {
-    _last_access_timestamp = os::javaTimeMillis();  // Use milliseconds to match uncommit check
+    _last_access_timestamp = Ticks::now();
   }
 
-  jlong last_access_time() const {
+  Ticks last_access_time() const {
     return _last_access_timestamp;
   }
 
   // Returns true if the region has been inactive for longer than the uncommit delay
-  bool should_uncommit(uint64_t delay) const {
+  bool should_uncommit(Tickspan delay) const {
     if (!is_empty()) {
       return false;
     }
-    jlong current_time = os::javaTimeMillis();
-    jlong elapsed = current_time - _last_access_timestamp;
-    return elapsed > (jlong)delay;
+    Ticks current_time = Ticks::now();
+    Tickspan elapsed = current_time - _last_access_timestamp;
+    return elapsed > delay;
   }
 
   // Verify that the entries on the code root list for this

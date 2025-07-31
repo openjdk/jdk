@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 
@@ -71,7 +72,7 @@ class G1CollectedHeap;
 // For full collections, we base resize decisions only on Min/MaxHeapFreeRatio.
 //
 class G1HeapSizingPolicy: public CHeapObj<mtGC> {
-  static jlong _uncommit_delay_ms;  // Delay before uncommitting inactive regions
+  static Tickspan _uncommit_delay;  // Delay before uncommitting inactive regions
 
   const G1CollectedHeap* _g1h;
   const G1Analytics* _analytics;
@@ -119,7 +120,7 @@ public:
   size_t full_collection_resize_amount(bool& expand, size_t allocation_word_size);
 
   // Time-based sizing methods
-  static jlong uncommit_delay() { return _uncommit_delay_ms; }
+  static Tickspan uncommit_delay() { return _uncommit_delay; }
   size_t evaluate_heap_resize(bool& expand);
 
   static G1HeapSizingPolicy* create(const G1CollectedHeap* g1h, const G1Analytics* analytics);

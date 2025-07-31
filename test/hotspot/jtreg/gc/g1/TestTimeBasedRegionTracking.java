@@ -31,7 +31,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
- * @run main/othervm -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+G1UseTimeBasedHeapSizing
+ * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions
  *      -Xms32m -Xmx128m -XX:G1HeapRegionSize=1M
  *      -XX:G1TimeBasedEvaluationIntervalMillis=5000
  *      -XX:G1UncommitDelayMillis=10000
@@ -47,8 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TestTimeBasedRegionTracking {
 
     private static final String TEST_VM_OPTS = "-XX:+UseG1GC " +
-        "-XX:+UnlockExperimentalVMOptions " +
-        "-XX:+G1UseTimeBasedHeapSizing " +
+        "-XX:+UnlockDiagnosticVMOptions " +
         "-XX:G1TimeBasedEvaluationIntervalMillis=5000 " +
         "-XX:G1UncommitDelayMillis=10000 " +
         "-XX:G1MinRegionsToUncommit=2 " +
@@ -137,8 +136,7 @@ public class TestTimeBasedRegionTracking {
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UseG1GC",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+G1UseTimeBasedHeapSizing",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-Xms64m", "-Xmx256m",
             "-XX:G1HeapRegionSize=1M",
             "-XX:G1TimeBasedEvaluationIntervalMillis=1000", // Frequent evaluation (minimum allowed)
