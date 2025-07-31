@@ -58,7 +58,7 @@ static char *skipNonWhitespace(char *p) {
   #define FD_DIR "/proc/self/fd"
 #endif
 
-int
+static int
 markCloseOnExec(int fd)
 {
     const int flags = fcntl(fd, F_GETFD);
