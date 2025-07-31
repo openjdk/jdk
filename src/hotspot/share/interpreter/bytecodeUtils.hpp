@@ -36,6 +36,8 @@ class BytecodeUtils : public AllStatic {
  public:
   // NPE extended message. Return true if string is printed.
   static bool get_NPE_message_at(outputStream* ss, Method* method, int bci);
+  // NPE extended message. Return true if string is printed.
+  static bool get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot);
 };
 
 #endif // SHARE_INTERPRETER_BYTECODEUTILS_HPP

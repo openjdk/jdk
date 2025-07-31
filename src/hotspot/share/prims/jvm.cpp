@@ -503,14 +503,15 @@ JVM_END
 
 // java.lang.NullPointerException ///////////////////////////////////////////
 
-JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
+JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable, jboolean forObjectsRequireNonNull))
   if (!ShowCodeDetailsInExceptionMessages) return nullptr;
 
   oop exc = JNIHandles::resolve_non_null(throwable);
 
   Method* method;
   int bci;
-  if (!java_lang_Throwable::get_top_method_and_bci(exc, &method, &bci)) {
+  int depth = forObjectsRequireNonNull ? 2 : 1; // rNN, (hidden) JLA, 1-based
+  if (!java_lang_Throwable::get_method_and_bci(exc, &method, &bci, depth)) {
     return nullptr;
   }
   if (method->is_native()) {
@@ -518,7 +519,12 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
   }
 
   stringStream ss;
-  bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
+  bool ok;
+  if (forObjectsRequireNonNull) {
+    ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci, 0);
+  } else {
+    ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
+  }
   if (ok) {
     oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_NULL);
     return (jstring) JNIHandles::make_local(THREAD, result);

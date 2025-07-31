@@ -192,7 +192,7 @@ class ExceptionMessageBuilder : public StackObj {
   int do_instruction(int bci);
 
   bool print_NPE_cause0(outputStream *os, int bci, int slot, int max_detail,
-                        bool inner_expr = false, const char *prefix = nullptr);
+                        bool inner_expr, bool because_clause = false);
 
  public:
 
@@ -226,9 +226,10 @@ class ExceptionMessageBuilder : public StackObj {
   //  slot: The slot on the operand stack that contains null.
   //        The slots are numbered from TOS downwards, i.e.,
   //        TOS has the slot number 0, that below 1 and so on.
+  //  because_clause: Whether to prefix with " because ..."
   //
   // Returns false if nothing was printed, else true.
-  bool print_NPE_cause(outputStream *os, int bci, int slot);
+  bool print_NPE_cause(outputStream *os, int bci, int slot, bool because_clause);
 
   // Prints a string describing the failed action.
   void print_NPE_failed_action(outputStream *os, int bci);
@@ -1168,8 +1169,8 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
   return INVALID_BYTECODE_ENCOUNTERED;
 }
 
-bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slot) {
-  if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, " because \"")) {
+bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slot, bool because_clause) {
+  if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, because_clause)) {
     os->print("\" is null");
     return true;
   }
@@ -1182,8 +1183,8 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
 // at bytecode 'bci'. Compute a message for that bytecode. If
 // necessary (array, field), recur further.
 // At most do max_detail recursions.
-// Prefix is used to print a proper beginning of the whole
-// sentence.
+// because_clause is used to print a "because" prefix when this is
+// not inner_expr ()
 // inner_expr is used to omit some text, like 'static' in
 // inner expressions like array subscripts.
 //
@@ -1191,7 +1192,7 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
 //
 bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int slot,
                                                int max_detail,
-                                               bool inner_expr, const char *prefix) {
+                                               bool inner_expr, bool because_clause) {
   assert(bci >= 0, "BCI too low");
   assert(bci < get_size(), "BCI too large");
 
@@ -1227,12 +1228,16 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
   }
 
   if (max_detail == _max_cause_detail &&
-      prefix != nullptr &&
+      !inner_expr &&
       code != Bytecodes::_invokevirtual &&
       code != Bytecodes::_invokespecial &&
       code != Bytecodes::_invokestatic &&
       code != Bytecodes::_invokeinterface) {
-    os->print("%s", prefix);
+    if (because_clause) {
+      os->print(" because \"");
+    } else {
+      os->print("\"");
+    }
   }
 
   switch (code) {
@@ -1347,7 +1352,12 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     case Bytecodes::_invokeinterface: {
       int cp_index = Bytes::get_native_u2(code_base + pos);
       if (max_detail == _max_cause_detail && !inner_expr) {
-        os->print(" because the return value of \"");
+        if (because_clause) {
+          os->print(" because t");
+        } else {
+          os->print("T");
+        }
+        os->print("he return value of \"");
       }
       print_method_name(os, _method, cp_index, code);
       return true;
@@ -1472,10 +1482,26 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
     // performed because of the null reference.
     emb.print_NPE_failed_action(ss, bci);
     // Print a description of what is null.
-    if (!emb.print_NPE_cause(ss, bci, slot)) {
+    if (!emb.print_NPE_cause(ss, bci, slot, true)) {
       // Nothing was printed. End the sentence without the 'because'
       // subordinate sentence.
     }
   }
   return true;
+}
+
+bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot) {
+  NoSafepointVerifier _nsv;   // Cannot use this object over a safepoint.
+
+  // If this NPE was created via reflection, we have no real NPE.
+  if (method->method_holder() ==
+      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
+    return false;
+  }
+
+  // Analyse the bytecodes.
+  ResourceMark rm;
+  ExceptionMessageBuilder emb(method, bci);
+
+  return emb.print_NPE_cause(ss, bci, slot, false);
 }

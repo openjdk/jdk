@@ -3039,21 +3039,31 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   return init_error;
 }
 
-bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
+bool java_lang_Throwable::get_method_and_bci(oop throwable, Method** method, int* bci, int depth) {
   JavaThread* current = JavaThread::current();
   objArrayHandle result(current, objArrayOop(backtrace(throwable)));
-  BacktraceIterator iter(result, current);
-  // No backtrace available.
-  if (!iter.repeat()) return false;
 
   // If the exception happened in a frame that has been hidden, i.e.,
   // omitted from the back trace, we can not compute the message.
-  oop hidden = ((objArrayOop)backtrace(throwable))->obj_at(trace_hidden_offset);
-  if (hidden != nullptr) {
-    return false;
+  // Restriction only exists for 1 depth; Objects.requireNonNull uses a hidden frame
+  if (depth == 1) {
+    oop hidden = ((objArrayOop)backtrace(throwable))->obj_at(trace_hidden_offset);
+    if (hidden != nullptr) {
+      return false;
+    }
   }
 
-  // Get first backtrace element.
+  BacktraceIterator iter(result, current);
+  // Get the backtrace element.
+  do {
+    // No backtrace available.
+    if (!iter.repeat()) return false;
+
+
+    if (--depth > 0) {
+      iter.next(current);
+    }
+  } while (depth > 0);
   BacktraceElement bte = iter.next(current);
 
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));

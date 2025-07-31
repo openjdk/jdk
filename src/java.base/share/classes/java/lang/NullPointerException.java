@@ -57,6 +57,7 @@ public class NullPointerException extends RuntimeException {
      */
     public NullPointerException() {
         super();
+        extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
     /**
@@ -67,11 +68,20 @@ public class NullPointerException extends RuntimeException {
      */
     public NullPointerException(String s) {
         super(s);
+        extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
-    // 0: no backtrace filled in, no message computed.
-    // 1: backtrace filled in, no message computed.
-    // 2: message computed
+    /// Internal constructor for Objects.requireNonNull
+    NullPointerException(Void sig) {
+        extendedMessageState = OBJECTS_REQUIRE_NON_NULL_HANDLING;
+        this();
+    }
+
+    // Access these fields in object monitor only
+    private static final int
+            CONSTRUCTOR_FINISHED = 0x1,
+            MESSAGE_COMPUTED = 0x2,
+            OBJECTS_REQUIRE_NON_NULL_HANDLING = 0x4;
     private transient int extendedMessageState;
     private transient String extendedMessage;
 
@@ -81,12 +91,7 @@ public class NullPointerException extends RuntimeException {
     public synchronized Throwable fillInStackTrace() {
         // If the stack trace is changed the extended NPE algorithm
         // will compute a wrong message. So compute it beforehand.
-        if (extendedMessageState == 0) {
-            extendedMessageState = 1;
-        } else if (extendedMessageState == 1) {
-            extendedMessage = getExtendedNPEMessage();
-            extendedMessageState = 2;
-        }
+        ensureMessageComputed();
         return super.fillInStackTrace();
     }
 
@@ -110,16 +115,20 @@ public class NullPointerException extends RuntimeException {
         String message = super.getMessage();
         if (message == null) {
             synchronized(this) {
-                if (extendedMessageState == 1) {
-                    // Only the original stack trace was filled in. Message will
-                    // compute correctly.
-                    extendedMessage = getExtendedNPEMessage();
-                    extendedMessageState = 2;
-                }
+                ensureMessageComputed();
                 return extendedMessage;
             }
         }
         return message;
+    }
+
+    // Methods below must be called in object monitor
+
+    private void ensureMessageComputed() {
+        if ((extendedMessageState & (MESSAGE_COMPUTED | CONSTRUCTOR_FINISHED)) == CONSTRUCTOR_FINISHED) {
+            extendedMessage = getExtendedNPEMessage((extendedMessageState & OBJECTS_REQUIRE_NON_NULL_HANDLING) != 0);
+            extendedMessageState |= MESSAGE_COMPUTED;
+        }
     }
 
     /**
@@ -127,5 +136,5 @@ public class NullPointerException extends RuntimeException {
      * the location and cause of the exception. It returns null for
      * exceptions where this is not applicable.
      */
-    private native String getExtendedNPEMessage();
+    private native String getExtendedNPEMessage(boolean forObjectsRequireNonNull);
 }

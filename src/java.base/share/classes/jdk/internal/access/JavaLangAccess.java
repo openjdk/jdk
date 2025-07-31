@@ -624,4 +624,8 @@ public interface JavaLangAccess {
      * Are the string bytes compatible with the given charset?
      */
     boolean bytesCompatible(String string, Charset charset);
+
+    /// Creates an extended NPE for Objects.requireNonNull.
+    /// The implementation is @Hidden to hide this JLA frame from the trace
+    NullPointerException extendedNullPointerException();
 }

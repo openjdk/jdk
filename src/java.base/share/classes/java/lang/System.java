@@ -81,6 +81,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
@@ -2327,6 +2328,7 @@ public final class System {
             public boolean bytesCompatible(String string, Charset charset) {
                 return string.bytesCompatible(charset);
             }
+            @Hidden public NullPointerException extendedNullPointerException() { return new NullPointerException((Void) null); }
         });
     }
 }

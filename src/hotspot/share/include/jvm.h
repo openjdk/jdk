@@ -241,7 +241,7 @@ JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
  */
 
 JNIEXPORT jstring JNICALL
-JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable);
+JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable, jboolean forObjectsRequireNonNull);
 
 /*
  * java.lang.StackWalker
