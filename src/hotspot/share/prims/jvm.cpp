@@ -510,7 +510,7 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable, 
 
   Method* method;
   int bci;
-  int depth = forObjectsRequireNonNull ? 2 : 1; // rNN, (hidden) JLA, 1-based
+  int depth = forObjectsRequireNonNull ? 2 : 1; // extra rNN frame, 1-based; omits hidden frames
   if (!java_lang_Throwable::get_method_and_bci(exc, &method, &bci, depth)) {
     return nullptr;
   }

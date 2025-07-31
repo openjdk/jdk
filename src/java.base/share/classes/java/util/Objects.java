@@ -27,7 +27,9 @@ package java.util;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 
 import java.util.function.Supplier;
 
@@ -218,8 +220,15 @@ public final class Objects {
     @ForceInline
     public static <T> T requireNonNull(T obj) {
         if (obj == null)
-            throw SharedSecrets.getJavaLangAccess().extendedNullPointerException();
+            throw extendedNullPointerException();
         return obj;
+    }
+
+    /// Squeeze code here to avoid blowing up ForceInline above with two calls
+    @Hidden
+    @DontInline
+    private static NullPointerException extendedNullPointerException() {
+        return SharedSecrets.getJavaLangAccess().extendedNullPointerException();
     }
 
     /**

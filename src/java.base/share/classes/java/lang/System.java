@@ -2328,7 +2328,11 @@ public final class System {
             public boolean bytesCompatible(String string, Charset charset) {
                 return string.bytesCompatible(charset);
             }
-            @Hidden public NullPointerException extendedNullPointerException() { return new NullPointerException((Void) null); }
+
+            @Hidden
+            public NullPointerException extendedNullPointerException() {
+                return new NullPointerException((Void) null);
+            }
         });
     }
 }
