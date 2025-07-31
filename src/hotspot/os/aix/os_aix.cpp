@@ -326,6 +326,9 @@ void os::Aix::initialize_system_info() {
 
   // Retrieve total physical storage.
   os::Aix::meminfo_t mi;
+  if (!os::Aix::get_meminfo(&mi)) {
+    assert(false, "os::Aix::get_meminfo failed.");
+  }
   _physical_memory = static_cast<size_t>(mi.real_total);
 }
 
