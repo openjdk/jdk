@@ -511,7 +511,8 @@ public class Cipher {
      * requirements of your application.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
      * <ul>
      * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine

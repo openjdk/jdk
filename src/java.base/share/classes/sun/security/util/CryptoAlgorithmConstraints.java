@@ -54,7 +54,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    public static final boolean permits(String service, String algo) {
+    public static boolean permits(String service, String algo) {
         return CryptoHolder.CONSTRAINTS.permits(null, service + "." + algo, null);
     }
 
@@ -81,6 +81,11 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
             String service = dk.substring(0, idx);
             String algo = dk.substring(idx + 1);
+            if (service.length() == 0 || algo.length() == 0) {
+                debug("Remove invalid entry: " + dk);
+                disabledServices.remove(dk);
+                continue;
+            }
             KnownOIDs oid = KnownOIDs.findMatch(algo);
             if (oid != null) {
                 debug("Add oid: " + oid.value());
@@ -121,7 +126,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         throw new UnsupportedOperationException("Unsupported permits() method");
     }
 
-    // Return false if algorithm is found in the disabledAlgorithms Set.
+    // Return false if algorithm is found in the disabledServices Set.
     // Otherwise, return true.
     private boolean cachedCheckAlgorithm(String serviceDesc) {
         Map<String, Boolean> cache;
@@ -137,7 +142,6 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         if (result != null) {
             return result;
         }
-        // We won't check patterns if algorithm check fails.
         result = checkAlgorithm(disabledServices, serviceDesc, null);
         cache.put(serviceDesc, result);
         return result;

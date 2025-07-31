@@ -30,15 +30,11 @@
  * @run main/othervm TestDisabledAlgorithms KeyStore.jceKS false
  */
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
-import java.security.KeyStoreException;
 import java.security.KeyStore;
-import java.security.KeyStore.PasswordProtection;
-import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
-import java.security.cert.CertificateException;
 
 public class TestDisabledAlgorithms {
 
@@ -115,7 +111,6 @@ public class TestDisabledAlgorithms {
         Security.setProperty(PROP_NAME, propValue);
 
         boolean shouldThrow = Boolean.valueOf(args[1]);
-        Security.getProperty(PROP_NAME).equalsIgnoreCase("false");
 
         List<String> algos = List.of("JKS", "jkS");
         // test w/o provider

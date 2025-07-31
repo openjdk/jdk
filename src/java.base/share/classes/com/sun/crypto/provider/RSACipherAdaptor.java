@@ -41,11 +41,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
 /**
- * NONEwithRSA Signature implementation using RSA/ECB/PKCS1Padding Cipher
- * implementation.
- *
- * This is mostly refactored from the private static CipherAdapter class
- * in the java.security.Signature class
+ * NONEwithRSA Signature implementation using the RSA/ECB/PKCS1Padding Cipher
+ * implementation from SunJCE.
  */
 public final class RSACipherAdaptor extends SignatureSpi {
 
@@ -56,6 +53,7 @@ public final class RSACipherAdaptor extends SignatureSpi {
         c = new RSACipher();
     }
 
+    @Override
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
         c.engineInit(Cipher.DECRYPT_MODE, publicKey, null);
@@ -66,22 +64,26 @@ public final class RSACipherAdaptor extends SignatureSpi {
         }
     }
 
+    @Override
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException {
         c.engineInit(Cipher.ENCRYPT_MODE, privateKey, null);
         verifyBuf = null;
     }
 
+    @Override
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
         c.engineInit(Cipher.ENCRYPT_MODE, privateKey, random);
         verifyBuf = null;
     }
 
+    @Override
     protected void engineUpdate(byte b) throws SignatureException {
         engineUpdate(new byte[] {b}, 0, 1);
     }
 
+    @Override
     protected void engineUpdate(byte[] b, int off, int len)
             throws SignatureException {
         if (verifyBuf != null) {
@@ -95,6 +97,7 @@ public final class RSACipherAdaptor extends SignatureSpi {
         }
     }
 
+    @Override
     protected byte[] engineSign() throws SignatureException {
         try {
             return c.engineDoFinal(null, 0, 0);
@@ -103,6 +106,7 @@ public final class RSACipherAdaptor extends SignatureSpi {
         }
     }
 
+    @Override
     protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
         try {
             byte[] out = c.engineDoFinal(sigBytes, 0, sigBytes.length);
@@ -118,6 +122,7 @@ public final class RSACipherAdaptor extends SignatureSpi {
         }
     }
 
+    @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
         if (params != null) {
@@ -125,12 +130,14 @@ public final class RSACipherAdaptor extends SignatureSpi {
         }
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         throw new InvalidParameterException("Parameters not supported");
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {

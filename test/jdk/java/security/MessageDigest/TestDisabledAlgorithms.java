@@ -72,7 +72,6 @@ public class TestDisabledAlgorithms {
         Security.setProperty(PROP_NAME, propValue);
 
         boolean shouldThrow = Boolean.valueOf(args[1]);
-        Security.getProperty(PROP_NAME).equalsIgnoreCase("false");
 
         List<String> algos = List.of("sHA-512", "shA-512", "2.16.840.1.101.3.4.2.3");
         // test w/o provider
