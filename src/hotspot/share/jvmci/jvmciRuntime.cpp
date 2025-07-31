@@ -589,10 +589,6 @@ void JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj) {
   G1BarrierSetRuntime::write_ref_field_pre_entry(obj, thread);
 }
 
-void JVMCIRuntime::write_barrier_post(JavaThread* thread, volatile CardValue* card_addr) {
-  G1BarrierSetRuntime::write_ref_field_post_entry(card_addr, thread);
-}
-
 #endif // INCLUDE_G1GC
 
 JRT_LEAF(jboolean, JVMCIRuntime::validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child))

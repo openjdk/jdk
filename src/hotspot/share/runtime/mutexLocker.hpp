@@ -74,7 +74,7 @@ extern Monitor* G1CGC_lock;                      // used for coordination betwee
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
 extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
-extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats for G1.
+extern Mutex*   G1ReviseYoungLength_lock;        // Protects access to young gen length revising operations.
 extern Mutex*   G1MarkStackFreeList_lock;        // Protects access to the G1 global mark stack free list.
 extern Mutex*   G1MarkStackChunkList_lock;       // Protects access to the G1 global mark stack chunk list.
 extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools and allocated memory high water mark.
