@@ -1083,6 +1083,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     @Override
     public void setVisible(boolean vis) {
+        if(isVisible() == vis) {
+            return;
+        }
         if (!isVisible() && vis) {
             isBeforeFirstMapNotify = true;
             winAttr.initialFocus = isAutoRequestFocus();
