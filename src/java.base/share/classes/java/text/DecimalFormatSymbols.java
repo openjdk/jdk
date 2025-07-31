@@ -1009,8 +1009,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         }
 
         if (loadNumberData(locale) instanceof Object[] d &&
-            d.length >= 14 &&
-            d[0] instanceof String[] numberElements) {
+            d[0] instanceof String[] numberElements &&
+            numberElements.length >= 14) {
             lenientMinusSign =  numberElements[13];
         } else {
             lenientMinusSign = minusSignText;
