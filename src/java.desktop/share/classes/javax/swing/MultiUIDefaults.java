@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,11 +139,11 @@ class MultiUIDefaults extends UIDefaults
     }
 
     @Override
-    protected void getUIError(String msg) {
+    protected void getUIError(String msg, Throwable cause) {
         if (tables != null && tables.length > 0 && tables[0] != null) {
-            tables[0].getUIError(msg);
+            tables[0].getUIError(msg, cause);
         } else {
-            super.getUIError(msg);
+            super.getUIError(msg, cause);
         }
     }
 

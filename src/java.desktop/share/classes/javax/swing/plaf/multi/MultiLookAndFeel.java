@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ class MultiUIDefaults extends UIDefaults {
     MultiUIDefaults(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor);
     }
-    protected void getUIError(String msg) {
-        System.err.println("Multiplexing LAF:  " + msg);
+    protected void getUIError(String msg, Throwable cause) {
+        System.err.println("Multiplexing LAF:  " + msg + "\n" + cause);
     }
 }

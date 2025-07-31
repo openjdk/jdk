@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -745,11 +745,12 @@ public class UIDefaults extends Hashtable<Object,Object>
      * Subclasses may choose to do more or less here.
      *
      * @param msg message string to print
+     * @param cause cause of the failure
      * @see #getUI
      */
-    protected void getUIError(String msg) {
+    protected void getUIError(String msg, Throwable cause) {
         try {
-            throw new Error(msg);
+            throw new Error(msg, cause);
         }
         catch (Throwable e) {
             e.printStackTrace();
@@ -779,7 +780,7 @@ public class UIDefaults extends Hashtable<Object,Object>
         Object uiObject = null;
 
         if (uiClass == null) {
-            getUIError("no ComponentUI class for: " + target);
+            getUIError("no ComponentUI class for: " + target, null);
         }
         else {
             try {
@@ -797,14 +798,14 @@ public class UIDefaults extends Hashtable<Object,Object>
                 }
             }
             catch (NoSuchMethodException e) {
-                getUIError("static createUI() method not found in " + uiClass);
+                getUIError("static createUI() method not found in " + uiClass, e);
             }
             catch (Exception e) {
                 StringWriter w = new StringWriter();
                 PrintWriter pw = new PrintWriter(w);
                 e.printStackTrace(pw);
                 pw.flush();
-                getUIError("createUI() failed for " + target + "\n" + w);
+                getUIError("createUI() failed for " + target + "\n" + w, e);
             }
         }
 
