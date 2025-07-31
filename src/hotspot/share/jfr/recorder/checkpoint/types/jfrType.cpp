@@ -107,7 +107,6 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
     _writer.write(name);
     _writer.write(tid);
     _writer.write(JfrThreadGroupManager::thread_group_id(JavaThread::cast(t), _curthread));
-    t->jfr_thread_local()->set_written();
   }
   _writer.write<bool>(false); // isVirtual
 }
