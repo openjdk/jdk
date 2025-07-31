@@ -731,29 +731,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
-bool os::commit_memory_limit(size_t& limit) {
-  // On POSIX systems, the amount of allocatable memory is limited by the
-  // size of the virtual address space.
-  size_t as_limit = reserve_memory_limit();
-  bool as_is_limited = as_limit != SIZE_MAX;
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
 #ifdef _LP64
-  if (as_is_limited) {
-    limit = as_limit;
-    return true;
-  }
-
-  return false;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (as_is_limited) {
-    as_limit = MIN2(as_limit, max_virtual_limit);
-  } else {
-    as_limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -767,15 +757,15 @@ bool os::commit_memory_limit(size_t& limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = as_limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -788,10 +778,10 @@ bool os::commit_memory_limit(size_t& limit) {
         upper_limit = temp_limit;
       }
     }
-    limit = lower_limit;
+    actual_limit = lower_limit;
   }
 
-  return true;
+  return actual_limit;
 #endif
 }
 

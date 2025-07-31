@@ -456,7 +456,7 @@ class os: AllStatic {
   // Returns an upper limit beyond which commit_memory() calls are guaranteed
   // to fail. It is not guaranteed that committing less memory than this will
   // succeed, however.
-  static bool commit_memory_limit(size_t& limit);
+  static size_t commit_memory_limit();
 
   inline static size_t cds_core_region_alignment();
 

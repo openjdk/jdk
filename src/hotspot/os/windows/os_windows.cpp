@@ -3296,12 +3296,11 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-bool os::commit_memory_limit(size_t& limit) {
+size_t os::commit_memory_limit() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-  limit = (size_t)ms.ullAvailVirtual;
-  return true;
+  return (size_t)ms.ullAvailVirtual;
 }
 
 size_t os::reserve_memory_limit() {
