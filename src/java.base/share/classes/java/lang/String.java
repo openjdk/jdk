@@ -1289,12 +1289,12 @@ public final class String
             return val.clone();
         }
 
-        int dp = positives;
         byte[] dst = StringUTF16.newBytesFor(val.length);
         if (positives > 0) {
             System.arraycopy(val, 0, dst, 0, positives);
         }
-        for (int i=dp ; i<val.length; ++i) {
+        int dp = positives;
+        for (int i=dp; i<val.length; ++i) {
             byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
