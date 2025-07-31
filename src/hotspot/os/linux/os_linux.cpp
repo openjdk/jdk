@@ -292,12 +292,12 @@ bool os::Linux::free_memory(size_t& value) {
 }
 
 bool os::total_swap_space(size_t& value) {
-  if (OSContainer::is_containerized()) {
+  if (OSContainer::is_containerized() && OSContainer::memory_and_swap_limit_in_bytes() > 0) {
     if (OSContainer::memory_limit_in_bytes() > 0) {
       value = static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
       return true;
     }
-  }
+  } // fallback to the host swap space if the container did return the unbound value of -1
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
