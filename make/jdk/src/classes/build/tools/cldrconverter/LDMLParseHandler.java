@@ -846,13 +846,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
 
         // Lenient parsing
         case "parseLenients":
-            {
-                String level = attributes.getValue("level");
-                if (level != null && level.equals("lenient")) {
-                    pushKeyContainer(qName, attributes, attributes.getValue("scope"));
-                } else {
-                    pushIgnoredContainer(qName);
-                }
+            if ("lenient".equals(attributes.getValue("level"))) {
+                pushKeyContainer(qName, attributes, attributes.getValue("scope"));
+            } else {
+                pushIgnoredContainer(qName);
             }
             break;
 

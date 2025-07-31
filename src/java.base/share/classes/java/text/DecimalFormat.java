@@ -3522,28 +3522,27 @@ public class DecimalFormat extends NumberFormat {
         if (position >= tlen) {
             return false;
         }
-
-        if (!parseStrict) {
-            var lms = symbols.getLenientMinusSign();
-            if (alen == 1) {
-                var a = affix.charAt(0);
-                var c = text.charAt(position);
-                if (lms.indexOf(a) >= 0) {
-                    return lms.indexOf(c) >= 0;
-                } else {
-                    return a == c;
-                }
-            } else {
-                // slow path. normalize lenient minus to "-" and compare
-                var lmsp = "[" + lms + "]";
-                var a = affix.replaceAll(lmsp, "-");
-                var t = text.substring(position, Math.min(tlen, position + alen))
-                    .replaceAll(lmsp, "-");
-                return t.regionMatches(0, a, 0, alen);
-            }
+        if (parseStrict) {
+            return text.regionMatches(position, affix, 0, alen);
         }
 
-        return text.regionMatches(position, affix, 0, alen);
+        var lms = symbols.getLenientMinusSign();
+        if (alen == 1) {
+            var a = affix.charAt(0);
+            var c = text.charAt(position);
+            if (lms.indexOf(a) >= 0) {
+                return lms.indexOf(c) >= 0;
+            } else {
+                return a == c;
+            }
+        } else {
+            // slow path. normalize lenient minus to "-" and compare
+            var lmsp = "[" + lms + "]";
+            var a = affix.replaceAll(lmsp, "-");
+            var t = text.substring(position, Math.min(tlen, position + alen))
+                .replaceAll(lmsp, "-");
+            return t.regionMatches(0, a, 0, alen);
+        }
     }
 
     /**

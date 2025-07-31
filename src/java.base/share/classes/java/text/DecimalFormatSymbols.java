@@ -998,11 +998,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             monetaryGroupingSeparator = groupingSeparator;
         }
 
-        if (loadNumberData(locale) instanceof Object[] d &&
-            d[0] instanceof String[] numberElements) {
-            lenientMinusSign = numberElements.length < 14 ? minusSignText : numberElements[13];
-        }
-
         serialVersionOnStream = currentSerialVersion;
 
         if (intlCurrencySymbol != null) {
@@ -1011,6 +1006,14 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             } catch (IllegalArgumentException e) {
             }
             currencyInitialized = true;
+        }
+
+        if (loadNumberData(locale) instanceof Object[] d &&
+            d[0] instanceof String[] numberElements &&
+            numberElements.length >= 14) {
+            lenientMinusSign =  numberElements[13];
+        } else {
+            lenientMinusSign = minusSignText;
         }
     }
 
