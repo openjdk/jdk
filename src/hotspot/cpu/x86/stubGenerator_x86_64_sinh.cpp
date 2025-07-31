@@ -310,6 +310,7 @@ address StubGenerator::generate_libmSinh() {
 
   __ bind(B1_2);
   __ xorpd(xmm4, xmm4);
+  __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
   __ movl(rax, 32768);
   __ pinsrw(xmm4, rax, 3);
   __ pextrw(rcx, xmm0, 3);
@@ -322,7 +323,6 @@ address StubGenerator::generate_libmSinh() {
   __ cmpl(rcx, 177);
   __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_0_0_2); // Branch only if |x| is not in [23/64, 3*2^8)
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
-  __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
   __ movsd(xmm2, ExternalAddress(L2E + 8), r11 /*rscratch*/);
   __ movsd(xmm6, ExternalAddress(Shifter), r11 /*rscratch*/);
   __ andpd(xmm3, xmm0);
