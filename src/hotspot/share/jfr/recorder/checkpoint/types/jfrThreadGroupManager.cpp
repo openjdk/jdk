@@ -82,7 +82,6 @@ class JfrThreadGroup : public JfrCHeapObj {
   }
 
   const JfrThreadGroup* next() const { return _next; }
-  void set_next(const JfrThreadGroup* tg) const { _next = tg; }
 
   traceid id() const { return _tgid; }
 
