@@ -102,7 +102,7 @@ public final class AdditionalLauncher {
             setShortcut(LINUX_SHORTCUT, desktop);
         } else if (TKit.isWindows()) {
             setShortcut(WIN_DESKTOP_SHORTCUT, desktop);
-            setShortcut(WIN_START_MENU_SHORTCUT, desktop);
+            setShortcut(WIN_START_MENU_SHORTCUT, menu);
         }
         return this;
     }
