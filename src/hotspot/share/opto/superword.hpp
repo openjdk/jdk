@@ -656,6 +656,9 @@ private:
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const;
 
   bool schedule_and_apply() const;
+
+public:
+  static bool is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP
