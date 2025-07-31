@@ -1508,6 +1508,7 @@ static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 void Arguments::set_heap_size() {
   julong phys_mem;
   size_t physical_mem_val = 0;
+
   // If the user specified one of these options, they
   // want specific memory sizing so do not limit memory
   // based on compressed oops addressability.
