@@ -22,18 +22,20 @@
  * questions.
  */
 
-
 /*
  * @test
+ * @bug 8355627
  * @summary Test the short history feature in the hs-err file
  * @library /test/lib
  * @requires vm.flagless
- * @requires vm.debug
+ * @requires vm.debug == true
  * @modules java.base/jdk.internal.misc
- *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver TestHistoryInHsErrFile
  */
 
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
@@ -45,18 +47,20 @@ public class TestHistoryInHsErrFile {
 
   public static void main(String[] args) throws Exception {
 
-    if (args.length > 0 && args[0].equals("sleep")) {
-      Thread.sleep(20000);
-      throw new RuntimeException("not killed?");
+    if (args.length > 0 && args[0].equals("childproc")) {
+      // give us some time to collect some history data
+      Thread.sleep(3000);
+      WhiteBox.getWhiteBox().controlledCrash(14);
+      throw new RuntimeException("Still alive?");
     }
+
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions",
-        "-Xmx100M",
-        "-XX:+UseHistory",
-        "-XX:HistoryInterval=1000",
-        "-XX:ErrorHandlerTest=14",
-        "-XX:ErrorHandlerTestDelay=6000",
-        TestHistoryInHsErrFile.class.getName(), "sleep");
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
+            "-XX:+UseHistory",
+            "-XX:HistoryInterval=1000",
+        TestHistoryInHsErrFile.class.getName(), "childproc");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
 
