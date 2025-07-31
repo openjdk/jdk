@@ -427,7 +427,7 @@ public class QuicPacketDecoder {
          * @throws BufferUnderflowException if buffer does not have enough bytes
          */
         static IncomingRetryPacket decode(PacketReader reader, CodingContext context)
-                throws IOException {
+                throws IOException, QuicTransportException {
             try {
                 reader.verifyRetry();
             } catch (AEADBadTagException e) {
@@ -1674,7 +1674,7 @@ public class QuicPacketDecoder {
             return retryIntegrityTag;
         }
 
-        public void verifyRetry() throws AEADBadTagException {
+        public void verifyRetry() throws AEADBadTagException, QuicTransportException {
             // assume the buffer position and limit are set to packet boundaries
             QuicTLSEngine tlsEngine = context.getTLSEngine();
             tlsEngine.verifyRetryPacket(quicVersion,

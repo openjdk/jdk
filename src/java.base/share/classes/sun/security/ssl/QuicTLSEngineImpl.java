@@ -360,7 +360,8 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     @Override
     public void signRetryPacket(final QuicVersion quicVersion,
             final ByteBuffer originalConnectionId, final ByteBuffer packet,
-            final ByteBuffer output) throws ShortBufferException {
+            final ByteBuffer output)
+            throws ShortBufferException, QuicTransportException {
         if (!isEnabled(quicVersion)) {
             throw new IllegalArgumentException(
                     "Quic version " + quicVersion + " isn't enabled");
@@ -378,15 +379,19 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             // No data to encrypt, just outputting the tag which will be
             // verified later.
             cipher.doFinal(ByteBuffer.allocate(0), output);
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
-            throw new AssertionError("Should not happen", e);
+        } catch (ShortBufferException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new QuicTransportException("Failed to sign packet",
+                    null, 0, Alert.INTERNAL_ERROR.id, e);
         }
     }
 
     @Override
     public void verifyRetryPacket(final QuicVersion quicVersion,
             final ByteBuffer originalConnectionId,
-            final ByteBuffer packet) throws AEADBadTagException {
+            final ByteBuffer packet)
+            throws AEADBadTagException, QuicTransportException {
         if (!isEnabled(quicVersion)) {
             throw new IllegalArgumentException(
                     "Quic version " + quicVersion + " isn't enabled");
@@ -412,9 +417,9 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             assert outBuffer.position() == 0;
         } catch (AEADBadTagException e) {
             throw e;
-        } catch (IllegalBlockSizeException | BadPaddingException |
-                 ShortBufferException e) {
-            throw new AssertionError("Should not happen", e);
+        } catch (Exception e) {
+            throw new QuicTransportException("Failed to verify packet",
+                    null, 0, Alert.INTERNAL_ERROR.id, e);
         }
     }
 

@@ -36,6 +36,7 @@ import java.util.function.Function;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.quic.QuicKeyUnavailableException;
+import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
@@ -439,7 +440,7 @@ public class QuicPacketEncoder {
      */
     private void encodePacket(OutgoingRetryPacket packet,
                                      ByteBuffer buffer,
-                                     CodingContext context) {
+                                     CodingContext context) throws QuicTransportException {
         int version = packet.version();
         if (quicVersion.versionNumber() != version) {
             throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
@@ -1641,7 +1642,7 @@ public class QuicPacketEncoder {
             maskPacketNumber(packetNumberStart, packetNumberLength, encryptedSample);
         }
 
-        private void signRetry(final int version) {
+        private void signRetry(final int version) throws QuicTransportException {
             final QuicVersion retryVersion = QuicVersion.of(version)
                     .orElseThrow(() -> new IllegalArgumentException("Unknown Quic version 0x"
                             + Integer.toHexString(version)));
@@ -1653,7 +1654,8 @@ public class QuicPacketEncoder {
                 context.getTLSEngine().signRetryPacket(retryVersion,
                         context.originalServerConnId().asReadOnlyBuffer(), temp, buffer);
             } catch (ShortBufferException e) {
-                throw new AssertionError("Should not happen", e);
+                throw new QuicTransportException("Failed to sign packet",
+                        null, 0, QuicTransportErrors.INTERNAL_ERROR);
             }
         }
 

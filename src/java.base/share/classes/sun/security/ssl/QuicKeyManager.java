@@ -339,7 +339,7 @@ sealed abstract class QuicKeyManager
         }
 
         static Cipher getRetryCipher(final QuicVersion quicVersion,
-                final boolean incoming) {
+                final boolean incoming) throws QuicTransportException {
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             return tlsData.getRetryCipher(incoming);
         }
@@ -1193,20 +1193,16 @@ sealed abstract class QuicKeyManager
             return initialSalt;
         }
 
-        public Cipher getRetryCipher(boolean incoming) {
+        public Cipher getRetryCipher(boolean incoming) throws QuicTransportException {
             Cipher retryCipher = null;
             try {
                 retryCipher = Cipher.getInstance("AES/GCM/NoPadding");
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                throw new RuntimeException("Cipher not available", e);
-            }
-            try {
                 retryCipher.init(incoming ? Cipher.DECRYPT_MODE :
                                 Cipher.ENCRYPT_MODE,
                         retryKey, retryIvSpec);
-            } catch (InvalidKeyException |
-                     InvalidAlgorithmParameterException e) {
-                throw new AssertionError("Should never happen", e);
+            } catch (Exception e) {
+                throw new QuicTransportException("Cipher not available",
+                        null, 0, Alert.INTERNAL_ERROR.id, e);
             }
             return retryCipher;
         }

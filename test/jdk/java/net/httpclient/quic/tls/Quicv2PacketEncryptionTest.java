@@ -24,6 +24,7 @@
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicTLSEngine;
+import jdk.internal.net.quic.QuicTransportException;
 import org.testng.annotations.Test;
 import sun.security.ssl.QuicTLSEngineImpl;
 import sun.security.ssl.QuicTLSEngineImplAccessor;
@@ -284,7 +285,7 @@ public class Quicv2PacketEncryptionTest {
     }
 
     @Test
-    public void testSignRetry() throws NoSuchAlgorithmException, ShortBufferException {
+    public void testSignRetry() throws NoSuchAlgorithmException, ShortBufferException, QuicTransportException {
         QuicTLSEngine clientEngine = getQuicV2Engine(SSLContext.getDefault(), true);
         ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
 
@@ -301,7 +302,7 @@ public class Quicv2PacketEncryptionTest {
     }
 
     @Test
-    public void testVerifyRetry() throws NoSuchAlgorithmException, AEADBadTagException {
+    public void testVerifyRetry() throws NoSuchAlgorithmException, AEADBadTagException, QuicTransportException {
         QuicTLSEngine clientEngine = getQuicV2Engine(SSLContext.getDefault(), true);
         ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
 
@@ -311,7 +312,7 @@ public class Quicv2PacketEncryptionTest {
     }
 
     @Test(expectedExceptions = AEADBadTagException.class)
-    public void testVerifyBadRetry() throws NoSuchAlgorithmException, AEADBadTagException {
+    public void testVerifyBadRetry() throws NoSuchAlgorithmException, AEADBadTagException, QuicTransportException {
         QuicTLSEngine clientEngine = getQuicV2Engine(SSLContext.getDefault(), true);
         ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
 

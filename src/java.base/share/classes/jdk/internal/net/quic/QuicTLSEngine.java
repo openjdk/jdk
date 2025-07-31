@@ -353,7 +353,7 @@ public interface QuicTLSEngine {
      *         {@linkplain #getSupportedQuicVersions() supported}
      */
     void signRetryPacket(QuicVersion version, ByteBuffer originalConnectionId,
-            ByteBuffer packet, ByteBuffer output) throws ShortBufferException;
+            ByteBuffer packet, ByteBuffer output) throws ShortBufferException, QuicTransportException;
 
     /**
      * Verify the provided retry packet.
@@ -369,7 +369,7 @@ public interface QuicTLSEngine {
      *         {@linkplain #getSupportedQuicVersions() supported}
      */
     void verifyRetryPacket(QuicVersion version, ByteBuffer originalConnectionId,
-            ByteBuffer packet) throws AEADBadTagException;
+            ByteBuffer packet) throws AEADBadTagException, QuicTransportException;
 
     /**
      * If the current handshake state is {@link HandshakeState#NEED_SEND_CRYPTO}
