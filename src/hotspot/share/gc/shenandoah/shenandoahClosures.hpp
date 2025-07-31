@@ -27,6 +27,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
@@ -35,6 +36,7 @@ class BarrierSetNMethod;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
+class ShenandoahObjectCountClosure;
 class ShenandoahReferenceProcessor;
 class SATBMarkQueueSet;
 
@@ -73,7 +75,7 @@ private:
 
 protected:
   template <class T, ShenandoahGenerationType GENERATION>
-  void work(T *p);
+  bool work(T *p);
 
 public:
   inline ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
@@ -101,6 +103,26 @@ private:
 public:
   ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
           ShenandoahMarkRefsSuperClosure(q, rp, old_q) {};
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+template <ShenandoahGenerationType GENERATION>
+class ShenandoahMarkRefsAndCountClosure : public ShenandoahMarkRefsSuperClosure {
+private:
+  ShenandoahObjectCountClosure* _count;
+  template <class T>
+  inline void do_oop_work(T* p) {
+    bool newly_marked = work<T, GENERATION>(p);
+    if (newly_marked) {
+      _count->do_oop(p);
+    }
+  }
+
+public:
+  ShenandoahMarkRefsAndCountClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q, ShenandoahObjectCountClosure* count) :
+          ShenandoahMarkRefsSuperClosure(q, rp, old_q), _count(count) {};
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }

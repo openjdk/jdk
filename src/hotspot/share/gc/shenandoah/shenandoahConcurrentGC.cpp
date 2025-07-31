@@ -317,7 +317,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   VM_ShenandoahFinalMarkStartEvac op(this);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
   assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should not be at safepoint");
-  heap->tracer()->report_object_count();
+  heap->tracer()->report_object_count(heap);
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {

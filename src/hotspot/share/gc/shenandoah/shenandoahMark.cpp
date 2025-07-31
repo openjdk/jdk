@@ -24,7 +24,7 @@
  */
 
 
-
+#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -69,9 +69,18 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     Closure cl(q, rp, old_q);
     mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    using Closure = ShenandoahMarkRefsClosure<GENERATION>;
-    Closure cl(q, rp, old_q);
-    mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
+    if (object_count) {
+      KlassInfoTable* _cit = heap->get_cit();
+      ShenandoahObjectCountClosure _count(_cit);
+      using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
+      Closure cl(q, rp, old_q, &_count);
+      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    } else {
+      using Closure = ShenandoahMarkRefsClosure<GENERATION>;
+      Closure cl(q, rp, old_q);
+      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    }
   }
 
   heap->flush_liveness_cache(w);

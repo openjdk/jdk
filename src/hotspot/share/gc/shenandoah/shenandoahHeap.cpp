@@ -533,6 +533,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
+  _cit(nullptr),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
@@ -686,6 +687,9 @@ void ShenandoahHeap::post_initialize() {
     _safepoint_workers->set_initialize_gclab();
   }
 
+  static KlassInfoTable cit(false);
+  _cit = &cit;
+
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
@@ -801,6 +805,10 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
   Atomic::store(&_soft_max_size, v);
+}
+
+KlassInfoTable* ShenandoahHeap::get_cit() {
+  return _cit;
 }
 
 size_t ShenandoahHeap::min_capacity() const {

@@ -82,18 +82,20 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   const size_t _total_size_in_words;
   const Ticks _timestamp;
+  KlassInfoTable* _cit;
 
  public:
-  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp) :
+  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp, KlassInfoTable* cit) :
     _size_threshold_percentage(ObjectCountCutOffPercent / 100),
     _total_size_in_words(total_size_in_words),
-    _timestamp(timestamp)
+    _timestamp(timestamp),
+    _cit(cit)
   {}
 
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       ObjectCountEventSender::send<Event>(entry, _timestamp);
-      ObjectCountClosure::reset_table(entry);
+      _cit->delete_entry(entry);
     }
   }
 
@@ -104,15 +106,16 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-void GCTracer::report_object_count() {
-  KlassInfoTable* cit = ObjectCountClosure::get_table();
-  if (cit == nullptr || !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
+// Assumes that the get_cit a member of the heap class
+template <typename T>
+void GCTracer::report_object_count(T* heap) {
+  KlassInfoTable* cit = heap->get_cit();
+  if (cit == nullptr && !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
     return;
   }
 
-  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
+  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
   cit->iterate(&event_sender);
-  // ObjectCountClosure::reset_table();
 }
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
@@ -124,7 +127,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now(), &cit);
       cit.iterate(&event_sender);
     }
   }
@@ -203,3 +206,5 @@ void ParallelOldTracer::report_dense_prefix(void* dense_prefix) {
 void OldGCTracer::report_concurrent_mode_failure() {
   send_concurrent_mode_failure_event();
 }
+
+template void GCTracer::report_object_count<ShenandoahHeap>(ShenandoahHeap* heap);

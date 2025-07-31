@@ -39,6 +39,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
+#include "iostream"
 
 // HeapInspection
 
@@ -140,8 +141,9 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
 void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
   KlassInfoEntry* elt = _list;
   while (elt != nullptr) {
+    KlassInfoEntry* next = elt->next();
     cic->do_cinfo(elt);
-    elt = elt->next();
+    elt = next;
   }
 }
 
@@ -155,17 +157,28 @@ void KlassInfoBucket::empty() {
   }
 }
 
+// Deletes the KlassInfoEntry in the list
 void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
+  // If entry is the head, delete it
+  if (_list == entry) {
+    KlassInfoEntry* next = _list->next();
+    _list = next;
+    delete entry;
+    return;
+  }
+
   KlassInfoEntry* elt = _list;
+  KlassInfoEntry* prev = nullptr;
   while (elt != nullptr) {
     KlassInfoEntry* next = elt->next();
-    if (next == entry) {
-      elt->set_next(entry->next());
-      delete entry;
+    if (elt == entry) {
+      prev->set_next(next);
+      delete elt;
       return;
     }
+    prev = elt;
     elt = next;
-  }
+  } 
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
@@ -283,16 +296,6 @@ public:
   }
   bool success() { return _success; }
 };
-
-void KlassInfoTable::clear_entries() {
-  if (_buckets != nullptr) {
-    for (int index = 0; index < _num_buckets; index++) {
-      _buckets[index].empty();
-      _buckets[index].initialize();
-    }
-    _size_of_instances_in_words = 0;
-  }
-}
 
 // merge from table
 bool KlassInfoTable::merge(KlassInfoTable* table) {

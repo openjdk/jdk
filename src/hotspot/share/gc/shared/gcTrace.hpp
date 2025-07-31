@@ -104,7 +104,9 @@ class GCTracer {
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   // Sends event data to the ObjectCountAfterGC event
-  void report_object_count() NOT_SERVICES_RETURN;
+  template <typename T>
+  void report_object_count(T* heap) NOT_SERVICES_RETURN;
+
   void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
