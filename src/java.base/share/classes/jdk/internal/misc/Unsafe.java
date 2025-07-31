@@ -1093,8 +1093,7 @@ public final class Unsafe {
      * arbitrary fields instead.
      *
      * @throws NullPointerException if any parameter is {@code null}.
-     * @throws InternalError if there is no field named {@code name} declared
-     *         in class {@code c} or if that field is static
+     * @throws InternalError if the presumably known field couldn't be found
      *
      * @see #objectFieldOffset(Field)
      */
