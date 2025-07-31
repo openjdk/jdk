@@ -1327,7 +1327,7 @@ nmethod::nmethod(
            "wrong mutable data size: %d != %d + %d",
            _mutable_data_size, _relocation_size, metadata_size);
 
-    // native wrapper does not have read-only data but we need unique not null address
+    // native wrapper does not have read-only data
     _immutable_data          = nullptr;
     _immutable_data_size     = 0;
     _nul_chk_table_offset    = 0;
