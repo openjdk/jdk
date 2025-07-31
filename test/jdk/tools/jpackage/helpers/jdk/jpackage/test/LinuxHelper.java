@@ -361,7 +361,7 @@ public final class LinuxHelper {
                     launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile),
                     LauncherShortcut.LINUX_SHORTCUT,
                     new DesktopFile(systemDesktopFile, false).findQuotedValue("Path").map(Path::of),
-                    List.of("xdg-open", systemDesktopFile.toString()));
+                    List.of("gtk-launch", PathUtils.replaceSuffix(systemDesktopFile.getFileName(), "").toString()));
         }).toList();
     }
 
