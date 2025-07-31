@@ -532,6 +532,10 @@ public class SecurityTest {
         private MBeanServerConnection mbsc = null;
 
         public static void main(String args[]) throws Exception {
+            // Disable default KeyManager's certificate checking so we can use
+            // a certificate signed with MD5withRSA algorithm.
+            System.setProperty("jdk.tls.SunX509KeyManager.certChecking",
+                    "false");
 
             // Parses parameters
             Utils.parseDebugProperties();
