@@ -913,7 +913,7 @@ jint universe_init() {
   if (CDSConfig::is_using_full_module_graph()) {
     ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
   }
-#endif
+#endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
     CDSConfig::prepare_for_dumping();
   }
