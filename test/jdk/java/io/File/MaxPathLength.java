@@ -24,20 +24,21 @@
 /* @test
    @bug 4759207 4403166 4165006 4403166 6182812 6274272 7160013
    @summary Test to see if win32 path length can be greater than 260
+   @library .. /test/lib
  */
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.DirectoryNotEmptyException;
+import jdk.test.lib.Platform;
 
 public class MaxPathLength {
     private static String sep = File.separator;
     private static String pathComponent = sep +
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static String fileName =
-                "areallylongfilenamethatsforsur";
-    private static boolean isWindows = false;
+            "areallylongfilenamethatsforsur";
 
     private static final int MAX_LENGTH = 256;
 
@@ -48,7 +49,6 @@ public class MaxPathLength {
     private static int counter = 0;
 
     public static void main(String[] args) throws Exception {
-        setIsWindows();
 
         for (int i = 4; i < 7; i++) {
             String name = fileName;
@@ -61,15 +61,8 @@ public class MaxPathLength {
 
         // test long paths on windows
         // And these long paths cannot be handled on Linux and Mac platforms
-        if (isWindows) {
+        if (Platform.isWindows()) {
             testLongPath();
-        }
-    }
-
-    private static void setIsWindows() {
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows")) {
-            isWindows = true;
         }
     }
 
@@ -149,7 +142,7 @@ public class MaxPathLength {
             if (flist == null || !fn.equals(flist[0].getName()))
                 throw new RuntimeException ("File.listFiles() failed");
 
-            if (isWindows &&
+            if (Platform.isWindows() &&
                 !fu.getCanonicalPath().equals(f.getCanonicalPath()))
                 throw new RuntimeException ("getCanonicalPath() failed");
 
