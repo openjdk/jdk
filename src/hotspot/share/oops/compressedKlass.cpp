@@ -141,7 +141,8 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   address lowest_possible_klass_location = _klass_range_start;
 
   // A Klass will never be placed at the Encoding range start, since that would translate to a narrowKlass=0, which
-  // is disallowed. Note that both Metaspace and CDS prvent allocation at the first address for this reason.
+  // is disallowed. If the encoding range starts at the klass range start, both Metaspace and CDS establish an
+  // mprotected zone for this reason (see establish_protection_zone).
   if (lowest_possible_klass_location == _base) {
     lowest_possible_klass_location += klass_alignment_in_bytes();
   }

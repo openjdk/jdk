@@ -53,8 +53,8 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 
 // TODO: we need to define a naming convention for perf counters
