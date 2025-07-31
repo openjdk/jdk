@@ -205,7 +205,6 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
 }
 
 void CodeBlob::purge() {
-  assert(_mutable_data != nullptr, "should never be null");
   os::free(_mutable_data);
   _mutable_data = nullptr;
   delete _oop_maps;
