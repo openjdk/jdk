@@ -228,7 +228,8 @@ public final class Objects {
     @Hidden
     @DontInline
     private static NullPointerException extendedNullPointerException() {
-        return SharedSecrets.getJavaLangAccess().extendedNullPointerException();
+        // 1 offset for explicit requireNonNull, 0 slot for incoming argument
+        return SharedSecrets.getJavaLangAccess().extendedNullPointerException(1, 0);
     }
 
     /**

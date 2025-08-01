@@ -625,7 +625,9 @@ public interface JavaLangAccess {
      */
     boolean bytesCompatible(String string, Charset charset);
 
-    /// Creates an extended NPE for Objects.requireNonNull.
-    /// The implementation is @Hidden to hide this JLA frame from the trace
-    NullPointerException extendedNullPointerException();
+    /// Creates an extended NPE for general null-checking APIs.
+    /// The implementation is @Hidden to hide this JLA frame from the trace.
+    /// Stack offset is the number of non-hidden frames to skip, pointing to the null-checking API.
+    /// Search slot is the slot where the null-checked value is passed in.
+    NullPointerException extendedNullPointerException(int stackOffset, int searchSlot);
 }

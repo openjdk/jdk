@@ -3039,14 +3039,14 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   return init_error;
 }
 
-bool java_lang_Throwable::get_method_and_bci(oop throwable, Method** method, int* bci, int depth) {
+bool java_lang_Throwable::get_method_and_bci(oop throwable, Method** method, int* bci, int depth, bool hidden_ok) {
   JavaThread* current = JavaThread::current();
   objArrayHandle result(current, objArrayOop(backtrace(throwable)));
 
   // If the exception happened in a frame that has been hidden, i.e.,
   // omitted from the back trace, we can not compute the message.
   // Restriction only exists for 1 depth; Objects.requireNonNull uses a hidden frame
-  if (depth == 1) {
+  if (!hidden_ok) {
     oop hidden = ((objArrayOop)backtrace(throwable))->obj_at(trace_hidden_offset);
     if (hidden != nullptr) {
       return false;

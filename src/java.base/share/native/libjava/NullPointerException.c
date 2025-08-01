@@ -30,7 +30,7 @@
 #include "java_lang_NullPointerException.h"
 
 JNIEXPORT jstring JNICALL
-Java_java_lang_NullPointerException_getExtendedNPEMessage(JNIEnv *env, jobject throwable, jboolean forObjectsRequireNonNull)
+Java_java_lang_NullPointerException_getExtendedNPEMessage(JNIEnv *env, jobject throwable, jint stackOffset, jint searchSlot)
 {
-    return JVM_GetExtendedNPEMessage(env, throwable, forObjectsRequireNonNull);
+    return JVM_GetExtendedNPEMessage(env, throwable, stackOffset, searchSlot);
 }

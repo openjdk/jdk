@@ -691,7 +691,7 @@ class java_lang_Throwable: AllStatic {
   // Debugging
   friend class JavaClasses;
   // Gets the method and bci of a particular frame (TOS). Returns false if this failed.
-  static bool get_method_and_bci(oop throwable, Method** method, int* bci, int depth);
+  static bool get_method_and_bci(oop throwable, Method** method, int* bci, int depth, bool hidden_ok);
 };
 
 

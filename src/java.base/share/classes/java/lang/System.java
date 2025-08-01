@@ -2330,8 +2330,8 @@ public final class System {
             }
 
             @Hidden
-            public NullPointerException extendedNullPointerException() {
-                return new NullPointerException((Void) null);
+            public NullPointerException extendedNullPointerException(int stackOffset, int searchSlot) {
+                return new NullPointerException(stackOffset, searchSlot);
             }
         });
     }
