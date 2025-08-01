@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -826,7 +827,7 @@ public final class LinuxHelper {
                     TKit.assertEquals("[Desktop Entry]", lines.getFirst(), "Check file header");
                 }
 
-                var stream = lines.stream().skip(1);
+                var stream = lines.stream().skip(1).filter(Predicate.not(String::isEmpty));
                 if (verify) {
                     stream = stream.peek(str -> {
                         TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str));
