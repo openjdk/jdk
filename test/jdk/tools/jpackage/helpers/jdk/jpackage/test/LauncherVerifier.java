@@ -282,7 +282,7 @@ public final class LauncherVerifier {
     private void executeLauncher(JPackageCommand cmd) throws IOException {
         Path launcherPath = cmd.appLauncherPath(name);
 
-        if (!cmd.canRunLauncher(String.format("Not running %s launcher", launcherPath))) {
+        if (!cmd.canRunLauncher(String.format("Not running [%s] launcher", launcherPath))) {
             return;
         }
 
