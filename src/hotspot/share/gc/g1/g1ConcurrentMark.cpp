@@ -3125,6 +3125,13 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group(G1CSetCandidateG
                           type);
 }
 
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
+  for (G1CSetCandidateGroup* group : gl) {
+    log_cset_candidate_group(group, type);
+    _total_remset_bytes += group->card_set()->mem_size();
+  }
+}
+
 void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
@@ -3156,13 +3163,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
   log_cset_candidate_group(g1h->young_regions_cset_group(), "Y");
   _total_remset_bytes += g1h->young_regions_cset_group()->card_set()->mem_size();
 
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
-    log_cset_candidate_group(group, "M");
-    _total_remset_bytes += group->card_set()->mem_size();
-  }
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
-    log_cset_candidate_group(group, "R");
-    _total_remset_bytes += group->card_set()->mem_size();
-  }
+  G1CollectionSetCandidates * candidates = g1h->policy()->candidates();
+  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
+  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
 }
