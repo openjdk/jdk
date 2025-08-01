@@ -780,6 +780,9 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # disabling algorithms at the JCA/JCE level based on service name and algorithm
 # name.
 #
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
 # The syntax of the disabled services string is described as follows:
 #       "DisabledService {, DisabledService}"
 #

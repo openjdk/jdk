@@ -156,7 +156,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
      * <ul>
      * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
@@ -166,7 +167,9 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * </li>
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      * </li>
      * </ul>
      *
@@ -232,7 +235,9 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * The JDK Reference Implementation additionally uses
      * the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -299,7 +304,9 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * The JDK Reference Implementation additionally uses
      * the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=

@@ -525,7 +525,9 @@ public class Cipher {
      * </li>
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      * </li>
      * </ul>
      *
@@ -630,7 +632,9 @@ public class Cipher {
      * The JDK Reference Implementation additionally uses
      * the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
@@ -709,7 +713,9 @@ public class Cipher {
      * The JDK Reference Implementation additionally uses
      * the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is allowed.
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.

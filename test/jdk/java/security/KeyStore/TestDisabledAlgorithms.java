@@ -28,6 +28,9 @@
  * @run main/othervm TestDisabledAlgorithms KeyStore.JKs true
  * @run main/othervm TestDisabledAlgorithms what false
  * @run main/othervm TestDisabledAlgorithms KeyStore.jceKS false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="KeyStore.JKs" TestDisabledAlgorithms KeyStore.JceKs true
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="what" TestDisabledAlgorithms KeyStore.JKS false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="KeyStore.jceKS" TestDisabledAlgorithms KeyStore.JKS false
  */
 import java.io.File;
 import java.util.List;

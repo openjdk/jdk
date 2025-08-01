@@ -29,6 +29,7 @@ import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -63,13 +64,20 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new SoftReference<>(null);
 
     /**
-     * Initialize algorithm constraints with the specified security property.
+     * Initialize algorithm constraints with the specified security property
+     * {@code propertyName}. Note that if a system property of the same name
+     * is set, it overrides the security property.
      *
      * @param propertyName the security property name that define the disabled
      *        algorithm constraints
      */
     CryptoAlgorithmConstraints(String propertyName) {
         super(null);
+        String val = System.getProperty(propertyName);
+        // Override the security property with system property value if set
+        if (val != null) {
+            Security.setProperty(propertyName, val);
+        }
         disabledServices = getAlgorithms(propertyName);
         debug("Before " + Arrays.deepToString(disabledServices.toArray()));
         for (String dk : disabledServices) {
