@@ -26,6 +26,7 @@
  * @bug 8363972
  * @summary Unit tests for lenient minus parsing
  * @modules jdk.localedata
+ *          java.base/java.text:+open
  * @run junit LenientMinusSignTest
  */
 
@@ -34,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.invoke.MethodHandles;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -104,6 +106,26 @@ public class LenientMinusSignTest {
             nfDeser = (NumberFormat) in.readObject();
         }
         assertEquals(nfDeser.parse(MINUS_PATTERN + "1,5"), -1.5);
+    }
+
+    @Test
+    void testSupplementary() throws IllegalAccessException, NoSuchFieldException, ParseException {
+        var dfs = new DecimalFormatSymbols(Locale.ROOT);
+        MethodHandles.privateLookupIn(DecimalFormatSymbols.class, MethodHandles.lookup())
+            .findVarHandle(DecimalFormatSymbols.class, "lenientMinusSign", String.class)
+            .set(dfs, "-🙂");
+        var df = new DecimalFormat("#.#;🙂#.#", dfs);
+        assertEquals(df.parse("🙂1.5"), -1.5);
+    }
+
+    @Test
+    void testCanonEq() throws IllegalAccessException, NoSuchFieldException, ParseException {
+        var dfs = new DecimalFormatSymbols(Locale.ROOT);
+        MethodHandles.privateLookupIn(DecimalFormatSymbols.class, MethodHandles.lookup())
+            .findVarHandle(DecimalFormatSymbols.class, "lenientMinusSign", String.class)
+            .set(dfs, "-\u00E5");
+        var df = new DecimalFormat("#.#;a\u0308#.#", dfs);
+        assertEquals(df.parse("a\u03081.5"), -1.5);
     }
 
     @Nested

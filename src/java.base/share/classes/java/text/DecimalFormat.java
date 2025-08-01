@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
@@ -3528,8 +3529,8 @@ public class DecimalFormat extends NumberFormat {
 
         var lms = symbols.getLenientMinusSign();
         if (alen == 1) {
-            var a = affix.charAt(0);
-            var c = text.charAt(position);
+            var a = affix.codePointAt(0);
+            var c = text.codePointAt(position);
             if (lms.indexOf(a) >= 0) {
                 return lms.indexOf(c) >= 0;
             } else {
@@ -3537,11 +3538,11 @@ public class DecimalFormat extends NumberFormat {
             }
         } else {
             // slow path. normalize lenient minus to "-" and compare
-            var lmsp = "[" + lms + "]";
-            var a = affix.replaceAll(lmsp, "-");
-            var t = text.substring(position, Math.min(tlen, position + alen))
-                .replaceAll(lmsp, "-");
-            return t.regionMatches(0, a, 0, alen);
+            var lmsp = Pattern.compile("[" + lms + "]", Pattern.CANON_EQ);
+            var a = lmsp.matcher(affix).replaceAll("-");
+            var t = lmsp.matcher(text.substring(position, Math.min(tlen, position + alen)))
+                .replaceAll("-");
+            return t.equals(a);
         }
     }
 
