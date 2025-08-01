@@ -2301,11 +2301,14 @@ class StubGenerator: public StubCodeGenerator {
     address entry_jlong_arraycopy     = nullptr;
     address entry_checkcast_arraycopy = nullptr;
 
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
+
     generate_copy_longs(StubId::stubgen_copy_byte_f_id, copy_f, c_rarg0, c_rarg1, t1);
     generate_copy_longs(StubId::stubgen_copy_byte_b_id, copy_b, c_rarg0, c_rarg1, t1);
-
-    address ucm_common_error_exit     = generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     StubRoutines::riscv::_zero_blocks = generate_zero_blocks();
 
@@ -6686,8 +6689,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_catch_exception_entry = generate_catch_exception();
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 

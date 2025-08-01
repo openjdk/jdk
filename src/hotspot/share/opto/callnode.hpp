@@ -738,7 +738,7 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true);
+  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
 
   virtual uint match_edge(uint idx) const;
 
@@ -912,6 +912,33 @@ public:
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
+};
+
+/* A pure function call, they are assumed not to be safepoints, not to read or write memory,
+ * have no exception... They just take parameters, return a value without side effect. It is
+ * always correct to create some, or remove them, if the result is not used.
+ *
+ * They still have control input to allow easy lowering into other kind of calls that require
+ * a control, but this is more a technical than a moral constraint.
+ *
+ * Pure calls must have only control and data input and output: I/O, Memory and so on must be top.
+ * Nevertheless, pure calls can typically be expensive math operations so care must be taken
+ * when letting the node float.
+ */
+class CallLeafPureNode : public CallLeafNode {
+protected:
+  bool is_unused() const;
+  bool is_dead() const;
+  TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
+
+public:
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
+                   const TypePtr* adr_type)
+      : CallLeafNode(tf, addr, name, adr_type) {
+    init_class_id(Class_CallLeafPure);
+  }
+  int Opcode() const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
