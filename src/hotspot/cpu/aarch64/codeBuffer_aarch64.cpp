@@ -25,10 +25,10 @@
 
 #include "asm/codeBuffer.inline.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/codeCache.hpp"
+#include "code/relocInfo.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-void CodeBuffer::share_trampoline_for(TrampolineCallKind kind, address dest, int caller_offset) {
+void CodeBuffer::share_trampoline_for(relocInfo::relocType rtype, address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
@@ -36,54 +36,53 @@ void CodeBuffer::share_trampoline_for(TrampolineCallKind kind, address dest, int
   }
 
   bool created;
-  Offsets *offsets =
-      _shared_trampoline_requests->put_if_absent(SharedTrampolineRequestKey(kind, dest), &created);
+  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &created);
   if (created) {
     _shared_trampoline_requests->maybe_grow();
+    offsets->first = rtype;
+  } else {
+    assert(offsets->first == rtype, "same destination with another type already exists");
   }
-  offsets->add(caller_offset);
+  offsets->second.add(caller_offset);
   _finalize_stubs = true;
 }
 
 #define __ masm.
 
-bool CodeBuffer::emit_shared_trampolines() {
-  if (_shared_trampoline_requests == nullptr) {
+static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
+  if (requests == nullptr) {
     return true;
   }
 
-  MacroAssembler masm(this);
+  MacroAssembler masm(cb);
 
-  auto emit = [&](SharedTrampolineRequestKey pair, const CodeBuffer::Offsets &offsets) {
-    assert(stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(),
-           "pre-allocated trampolines");
-    TrampolineCallKind kind = pair.first;
-    address dest = pair.second;
-    LinkedListIterator<int> it(offsets.head());
+  auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
+    assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
+    relocInfo::relocType rtype = offsets.first;
+    LinkedListIterator<int> it(offsets.second.head());
     int offset = *it.next();
-    if (kind == TrampolineCallKind::Static) {
+    if (rtype == relocInfo::static_call_type) {
       dest = SharedRuntime::get_resolve_static_call_stub();
     }
     address stub = __ emit_trampoline_stub(offset, dest);
     assert(stub, "pre-allocated trampolines");
 
-    address reloc_pc = stubs()->end() - NativeCallTrampolineStub::instruction_size;
+    address reloc_pc = cb->stubs()->end() - NativeCallTrampolineStub::instruction_size;
     while (!it.is_empty()) {
       offset = *it.next();
-      address caller_pc = insts()->start() + offset;
-      stubs()->relocate(reloc_pc, trampoline_stub_Relocation::spec(caller_pc));
+      address caller_pc = cb->insts()->start() + offset;
+      cb->stubs()->relocate(reloc_pc, trampoline_stub_Relocation::spec(caller_pc));
     }
     return true;
   };
 
-  assert(_shared_trampoline_requests->number_of_entries() >= 1, "at least one");
-  const int total_requested_size =
-      MacroAssembler::max_trampoline_stub_size() * _shared_trampoline_requests->number_of_entries();
-  if (stubs()->maybe_expand_to_ensure_remaining(total_requested_size) && blob() == nullptr) {
+  assert(requests->number_of_entries() >= 1, "at least one");
+  const int total_requested_size = MacroAssembler::max_trampoline_stub_size() * requests->number_of_entries();
+  if (cb->stubs()->maybe_expand_to_ensure_remaining(total_requested_size) && cb->blob() == nullptr) {
     return false;
   }
 
-  _shared_trampoline_requests->iterate(emit);
+  requests->iterate(emit);
   return true;
 }
 
@@ -91,5 +90,5 @@ bool CodeBuffer::emit_shared_trampolines() {
 
 bool CodeBuffer::pd_finalize_stubs() {
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
-      && emit_shared_trampolines();
+      && emit_shared_trampolines(this, _shared_trampoline_requests);
 }

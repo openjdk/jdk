@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,7 @@ class Pair : public ALLOC_BASE {
 
   Pair() {}
   Pair(T t, V v) : first(t), second(v) {}
-
-  inline bool operator==(const Pair &other) const {
-    return this->first == other.first && this->second == other.second;
-  }
 };
+
 
 #endif // SHARE_UTILITIES_PAIR_HPP

@@ -35,15 +35,14 @@ public:
   static constexpr bool supports_shared_stubs() { return true; }
 
  private:
-  void share_trampoline_for(TrampolineCallKind kind, address dest, int caller_offset);
-  bool emit_shared_trampolines();
+  void share_trampoline_for(relocInfo::relocType rtype, address dest, int caller_offset);
 
  public:
   void share_rc_trampoline_for(address dest, int caller_offset) {
-    share_trampoline_for(TrampolineCallKind::Runtime, dest, caller_offset);
+    share_trampoline_for(relocInfo::runtime_call_type, dest, caller_offset);
   }
   void share_sc_trampoline_for(const ciMethod *callee, int caller_offset) {
-    share_trampoline_for(TrampolineCallKind::Static, (address)callee, caller_offset);
+    share_trampoline_for(relocInfo::static_call_type, (address)callee, caller_offset);
   }
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP

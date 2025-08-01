@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "metaprogramming/enableIf.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -1315,24 +1314,9 @@ typedef const char* ccstrlist;   // represents string arguments which accumulate
 //----------------------------------------------------------------------------------------------------
 // Default hash/equals functions used by ResourceHashtable
 
-template <typename T, typename V, typename ALLOC_BASE> class Pair;
-
-template <typename T> struct is_pair : public std::false_type {};
-template <typename T, typename V, typename ALLOC_BASE>
-struct is_pair<Pair<T, V, ALLOC_BASE>> : public std::true_type {};
-
-template<typename K, ENABLE_IF(!is_pair<K>::value)>
-unsigned primitive_hash(const K& k) {
+template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);
   return hash ^ (hash >> 3); // just in case we're dealing with aligned ptrs
-}
-
-template<typename K, ENABLE_IF(is_pair<K>::value)> unsigned primitive_hash(const K& k) {
-  unsigned ht = primitive_hash(k.first);
-  unsigned hv = primitive_hash(k.second);
-
-  // rotate hv to ensure that h(a,b) != h(b,a)
-  return ht ^ (hv << 1 | (hv >> (sizeof(unsigned) * BitsPerByte - 1)));
 }
 
 template<typename K> bool primitive_equals(const K& k0, const K& k1) {
