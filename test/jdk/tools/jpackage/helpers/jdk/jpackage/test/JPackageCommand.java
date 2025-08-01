@@ -90,6 +90,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         outputValidators = cmd.outputValidators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
+        unpackedPackageDirectory = cmd.unpackedPackageDirectory;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -484,7 +485,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     Path unpackedPackageDirectory() {
         verifyIsOfType(PackageType.NATIVE);
-        return getArgumentValue(UNPACKED_PATH_ARGNAME, () -> null, Path::of);
+        return unpackedPackageDirectory;
     }
 
     /**
@@ -662,7 +663,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isPackageUnpacked() {
-        return hasArgument(UNPACKED_PATH_ARGNAME);
+        return unpackedPackageDirectory != null;
     }
 
     public static void useToolProviderByDefault(ToolProvider jpackageToolProvider) {
@@ -1255,11 +1256,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     JPackageCommand setUnpackedPackageLocation(Path path) {
         verifyMutable();
         verifyIsOfType(PackageType.NATIVE);
-        if (path != null) {
-            setArgumentValue(UNPACKED_PATH_ARGNAME, path);
-        } else {
-            removeArgumentWithValue(UNPACKED_PATH_ARGNAME);
-        }
+        unpackedPackageDirectory = path;
         return this;
     }
 
@@ -1471,6 +1468,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Path winMsiLogFile;
+    private Path unpackedPackageDirectory;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
@@ -1497,8 +1495,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
         return null;
     }).get();
-
-    private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
