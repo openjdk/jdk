@@ -368,6 +368,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
     void operator()(JavaThread* current);
   };
+  class NoOpOnSuspend {
+  protected:
+    ObjectMonitor* _om;
+  public:
+    NoOpOnSuspend(ObjectMonitor* om) : _om(om) {}
+    void operator()(JavaThread* current);
+  };
 
   bool      enter_is_async_deflating();
   void      notify_contended_enter(JavaThread *current);
@@ -401,7 +408,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      notify_internal(JavaThread* current);
   ObjectWaiter* dequeue_waiter();
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
-  void      enter_internal(JavaThread* current);
+  void      enter_internal(JavaThread* current, ExitOnSuspend& eos);
   void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
   void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);

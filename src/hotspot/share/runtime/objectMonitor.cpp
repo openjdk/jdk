@@ -331,6 +331,10 @@ void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
   }
 }
 
+void ObjectMonitor::NoOpOnSuspend::operator()(JavaThread* current) {
+
+}
+
 #define assert_mark_word_consistency()                                         \
   assert(UseObjectMonitorTable || object()->mark() == markWord::encode(this),  \
          "object mark must match encoded this: mark=" INTPTR_FORMAT            \
@@ -585,7 +589,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
-        enter_internal(current);
+        enter_internal(current, eos);
         current->set_current_pending_monitor(nullptr);
         // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
@@ -926,7 +930,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-void ObjectMonitor::enter_internal(JavaThread* current) {
+void ObjectMonitor::enter_internal(JavaThread* current, ExitOnSuspend& eos) {
   assert(current->thread_state() == _thread_blocked, "invariant");
 
   // Try the lock - TATAS
@@ -1004,16 +1008,16 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
     }
     assert(!has_owner(current), "invariant");
 
-    // park self
+      // park self
     if (do_timed_parked) {
-      current->_ParkEvent->park((jlong) recheck_interval);
+    current->_ParkEvent->park((jlong) recheck_interval);
       // Increase the recheck_interval, but clamp the value.
       recheck_interval *= 8;
       if (recheck_interval > MAX_RECHECK_INTERVAL) {
         recheck_interval = MAX_RECHECK_INTERVAL;
       }
     } else {
-      current->_ParkEvent->park();
+        current->_ParkEvent->park();
     }
 
     if (try_lock(current) == TryLockResult::Success) {
@@ -1090,50 +1094,68 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
   assert(_waiters > 0, "invariant");
   assert_mark_word_consistency();
 
-  for (;;) {
-    ObjectWaiter::TStates v = currentNode->TState;
-    guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-    assert(!has_owner(current), "invariant");
+  ClearSuccOnSuspend csos(this);
 
-    // This thread has been notified so try to reacquire the lock.
-    if (try_lock(current) == TryLockResult::Success) {
-      break;
-    }
+  {
+    ThreadBlockInVM tbim(current, true /* allow_suspend */);
 
-    // If that fails, spin again.  Note that spin count may be zero so the above TryLock
-    // is necessary.
-    if (try_spin(current)) {
+    for (;;) {
+      ObjectWaiter::TStates v = currentNode->TState;
+      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
+      assert(!has_owner(current), "invariant");
+
+      // This thread has been notified so try to reacquire the lock.
+      if (try_lock(current) == TryLockResult::Success) {
         break;
-    }
+      }
 
-    {
-      OSThreadContendState osts(current->osthread());
-
-      assert(current->thread_state() == _thread_in_vm, "invariant");
+      // If that fails, spin again.  Note that spin count may be zero so the above TryLock
+      // is necessary.
+      if (try_spin(current)) {
+        break;
+      }
 
       {
-        ClearSuccOnSuspend csos(this);
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+        OSThreadContendState osts(current->osthread());
+
+
+        //assert(current->thread_state() == _thread_in_vm, "invariant");
+
+        //{
+        //  ClearSuccOnSuspend csos(this);
+        //  ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+        //  current->_ParkEvent->park();
+        //}
+
         current->_ParkEvent->park();
+
+        current->set_thread_state_fence(_thread_in_vm);
+
+        if (SafepointMechanism::should_process(current, true)) {
+          csos.operator()(current);
+          SafepointMechanism::process_if_requested(current, true, false /* check_async_exception */);
+        }
+
+        ThreadStateTransition::transition_from_vm(current, _thread_blocked);
       }
+
+      // Try again, but just so we distinguish between futile wakeups and
+      // successful wakeups.  The following test isn't algorithmically
+      // necessary, but it helps us maintain sensible statistics.
+      if (try_lock(current) == TryLockResult::Success) {
+        break;
+      }
+
+      // The lock is still contested.
+
+      // Assuming this is not a spurious wakeup we'll normally
+      // find that _succ == current.
+      if (has_successor(current)) clear_successor();
+
+      // Invariant: after clearing _succ a contending thread
+      // *must* retry  _owner before parking.
+      OrderAccess::fence();
     }
-
-    // Try again, but just so we distinguish between futile wakeups and
-    // successful wakeups.  The following test isn't algorithmically
-    // necessary, but it helps us maintain sensible statistics.
-    if (try_lock(current) == TryLockResult::Success) {
-      break;
-    }
-
-    // The lock is still contested.
-
-    // Assuming this is not a spurious wakeup we'll normally
-    // find that _succ == current.
-    if (has_successor(current)) clear_successor();
-
-    // Invariant: after clearing _succ a contending thread
-    // *must* retry  _owner before parking.
-    OrderAccess::fence();
   }
 
   // Current has acquired the lock -- Unlink current from the _entry_list.
