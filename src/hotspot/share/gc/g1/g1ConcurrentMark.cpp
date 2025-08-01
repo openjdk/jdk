@@ -3118,9 +3118,11 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group(G1CSetCandidateG
                           G1PPRL_GID_LIVENESS_FORMAT
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
-                          group->group_id(), group->length(),
+                          group->group_id(),
+                          group->length(),
                           group->gc_efficiency(),
-                          group->liveness_percent(), group->card_set()->mem_size(),
+                          group->liveness_percent(),
+                          group->card_set()->mem_size(),
                           type);
 }
 
