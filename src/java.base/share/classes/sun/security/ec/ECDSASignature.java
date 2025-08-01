@@ -426,8 +426,8 @@ abstract class ECDSASignature extends SignatureSpi {
 
         byte[] seedBytes = new byte[(seedBits + 7) / 8];
         byte[] s = priv instanceof ECPrivateKeyImpl
-                           ? ((ECPrivateKeyImpl)priv).getArrayS()
-                           : ECUtil.sArray(priv.getS(), priv.getParams());
+               ? ((ECPrivateKeyImpl)priv).getArrayS()
+               : ECUtil.sArray(priv.getS(), priv.getParams());
 
         // Attempt to create the signature in a loop that uses new random input
         // each time. The chance of failure is very small assuming the
