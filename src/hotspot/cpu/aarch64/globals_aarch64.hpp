@@ -129,9 +129,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Always merge DMB instructions in code emission")             \
   develop(bool, TraceWXHealing, false,                                  \
           "track occurrences of W^X mode healing")                      \
-  develop(int, DefaultWXWriteMode, 2,                                   \
-          "default WX setting")                                         \
-          range(0, 2)
+  MACOS_ONLY(develop(bool, UseOldWX, false,                             \
+          "Choose old W^X implementation."))
 
 // end of ARCH_FLAGS
 

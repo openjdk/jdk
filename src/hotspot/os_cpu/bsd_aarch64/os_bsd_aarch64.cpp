@@ -85,6 +85,8 @@
 #define SPELL_REG_SP "sp"
 
 #ifdef __APPLE__
+WXMode DefaultWXWriteMode;
+
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
 // 10.5 UNIX03 member name prefixes
@@ -247,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
       if (thread->_cur_wx_mode) {
         if (TraceWXHealing) {
-          fprintf(stderr, "Healing pointer at %p to WXWrite\n", thread->_cur_wx_mode);
+          tty->print_cr("Healing pointer at %p to WXWrite", thread->_cur_wx_mode);
         }
         *(thread->_cur_wx_mode) = WXWrite;
       }
@@ -568,7 +570,7 @@ static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
 // thread-local variable os_bsd_jit_exec_enabled.
 void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
-  if (exec_enabled != os_bsd_jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == 0)) {
+  if (exec_enabled != os_bsd_jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
     permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
     os_bsd_jit_exec_enabled = exec_enabled;
     NOT_PRODUCT(pthread_jit_write_protect_np_counter++);

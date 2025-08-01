@@ -148,6 +148,8 @@ enum WXMode {
   WXArmedForWrite = 2,
 };
 
+extern WXMode DefaultWXWriteMode;
+
 #define WX_MODE 1
 
 #endif // WX_MODE

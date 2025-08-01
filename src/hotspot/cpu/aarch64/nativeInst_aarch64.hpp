@@ -95,13 +95,13 @@ protected:
   address ptr_at(int offset) const  { return *(address*)addr_at(offset); }
   oop oop_at(int offset) const      { return *(oop*)addr_at(offset); }
 
-#define APPLE_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
-  void set_char_at(int offset, char c)     { APPLE_WX_WRITE;  *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i)      { APPLE_WX_WRITE;  *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i)     { APPLE_WX_WRITE;  *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { APPLE_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o)       { APPLE_WX_WRITE;  *(oop*)addr_at(offset) = o; }
-#undef APPLE_WX_WRITE
+#define MACOS_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
+  void set_char_at(int offset, char c)     { MACOS_WX_WRITE;  *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i)      { MACOS_WX_WRITE;  *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, jint i)     { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { MACOS_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o)       { MACOS_WX_WRITE;  *(oop*)addr_at(offset) = o; }
+#undef MACOS_WX_WRITE
 
   void wrote(int offset);
 
