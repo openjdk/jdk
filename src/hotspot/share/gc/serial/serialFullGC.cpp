@@ -49,6 +49,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -66,6 +67,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -483,13 +485,22 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(0);
 
-    CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
-    gch->process_roots(SerialHeap::SO_None,
-                       &follow_root_closure,
-                       &follow_cld_closure,
-                       weak_cld_closure,
-                       &mark_code_closure);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
+                                            !NMethodToOopClosure::FixRelocations,
+                                            true);
+
+    // Start tracing from roots, there are 3 kinds of roots in full-gc.
+    //
+    // 1. CLD. This method internally takes care of whether class loading is
+    // enabled or not, applying the closure to both strong and weak or only
+    // strong CLDs.
+    ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
+
+    // 2. Threads stack frames and active nmethods in them.
+    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+
+    // 3. VM internal roots.
+    OopStorageSet::strong_oops_do(&follow_root_closure);
   }
 
   // Process reference objects found during marking
@@ -498,7 +509,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
-    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, nullptr, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
@@ -514,7 +525,9 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
 
-    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
+                              false /* lock_nmethod_free_separately */);
 
     bool unloading_occurred;
     {
@@ -530,7 +543,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     {
       GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
       // Release unloaded nmethod's memory.
-      ctx->purge_nmethods();
+      ctx.purge_nmethods();
     }
     {
       GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", gc_timer());
@@ -538,7 +551,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_nmethods();
+      ctx.free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -546,6 +559,13 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Clean JVMCI metadata handles.
     JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
+
+    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
+    DEBUG_ONLY(MetaspaceUtils::verify();)
+
+    // Need to clear claim bits for the next mark.
+    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {
@@ -717,13 +737,20 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+    // Remap strong and weak roots in adjust phase.
+    // 1. All (strong and weak) CLDs.
+    ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
 
+    // 2. Threads stack frames. No need to visit on-stack nmethods, because all
+    // nmethods are visited in one go via CodeCache::nmethods_do.
+    Threads::oops_do(&adjust_pointer_closure, nullptr);
+    NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+    CodeCache::nmethods_do(&nmethod_cl);
+
+    // 3. VM internal roots
+    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
+
+    // 4. VM internal weak roots
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
     adjust_marks();

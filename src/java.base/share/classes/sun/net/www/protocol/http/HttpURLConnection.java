@@ -77,6 +77,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 import static sun.net.www.protocol.http.AuthScheme.BASIC;
 import static sun.net.www.protocol.http.AuthScheme.DIGEST;
 import static sun.net.www.protocol.http.AuthScheme.NTLM;
@@ -854,7 +855,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses = new MessageHeader(maxHeaderSize);
         userHeaders = new MessageHeader();
         this.handler = handler;
-        instProxy = p;
+        instProxy = copyProxy(p);
         cookieHandler = CookieHandler.getDefault();
         cacheHandler = ResponseCache.getDefault();
     }
@@ -956,7 +957,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     final Iterator<Proxy> it = proxies.iterator();
                     Proxy p;
                     while (it.hasNext()) {
-                        p = it.next();
+                        p = copyProxy(it.next());
                         try {
                             if (!failedOnce) {
                                 http = getNewHttpClient(url, p, connectTimeout);

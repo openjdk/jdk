@@ -1041,6 +1041,13 @@ oop JvmtiThreadState::get_thread_oop() {
   return _thread_oop_h.resolve();
 }
 
+void JvmtiThreadState::update_thread_oop_during_vm_start() {
+  assert(_thread->threadObj() != nullptr, "santity check");
+  if (get_thread_oop() == nullptr) {
+    _thread_oop_h.replace(_thread->threadObj());
+  }
+}
+
 void JvmtiThreadState::set_thread(JavaThread* thread) {
   _thread_saved = nullptr;  // Common case.
   if (!_is_virtual && thread == nullptr) {

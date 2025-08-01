@@ -618,9 +618,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintAdapterHandlers, false, DIAGNOSTIC,                    \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
-  product(bool, VerifyAdapterCalls, trueInDebug, DIAGNOSTIC,                \
-          "Verify that i2c/c2i adapters are called properly")               \
-                                                                            \
   develop(bool, VerifyAdapterSharing, false,                                \
           "Verify that the code for shared adapters is the equivalent")     \
                                                                             \
@@ -950,10 +947,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
-                                                                            \
-  develop(bool, GenerateSynchronizationCode, true,                          \
-          "generate locking/unlocking code for synchronized methods and "   \
-          "monitors")                                                       \
                                                                             \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \
@@ -1570,9 +1563,7 @@ const int ObjectAlignmentInBytes = 8;
           range(0.0, 100.0)                                                 \
                                                                             \
   product(uintx, StartAggressiveSweepingAt, 10,                             \
-          "Start aggressive sweeping if X[%] of the code cache is free."    \
-          "Segmented code cache: X[%] of the non-profiled heap."            \
-          "Non-segmented code cache: X[%] of the total code cache")         \
+          "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
   /* interpreter debugging */                                               \
