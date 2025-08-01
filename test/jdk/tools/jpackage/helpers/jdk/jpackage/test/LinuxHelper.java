@@ -507,21 +507,29 @@ public final class LinuxHelper {
                 cmd.pathToPackageFile(cmd.appLauncherPath(launcherName)).toString(),
                 String.format("Check the value of [Exec] key references [%s] app launcher", launcherName));
 
+        var appLayout = cmd.appLayout();
+
         LauncherShortcut.LINUX_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).map(shortcutWorkDirType -> {
             switch (shortcutWorkDirType) {
                 case DEFAULT -> {
                     return (Path)null;
                 }
+                case APP_DIR -> {
+                    return cmd.pathToPackageFile(appLayout.appDirectory());
+                }
+                case INSTALL_DIR -> {
+                    return cmd.pathToPackageFile(appLayout.launchersDirectory());
+                }
                 default -> {
                     throw new AssertionError();
                 }
             }
-        }).ifPresentOrElse(shortcutWorkDir -> {
-            var actualShortcutWorkDir = data.findQuotedValue("Path");
+        }).map(Path::toString).ifPresentOrElse(shortcutWorkDir -> {
+            var actualShortcutWorkDir = data.find("Path");
             TKit.assertTrue(actualShortcutWorkDir.isPresent(), "Check [Path] key exists");
             TKit.assertEquals(actualShortcutWorkDir.get(), shortcutWorkDir, "Check the value of [Path] key");
         }, () -> {
-            TKit.assertTrue(data.findQuotedValue("Path").isEmpty(), "Check there is no [Path] key");
+            TKit.assertTrue(data.find("Path").isEmpty(), "Check there is no [Path] key");
         });
 
         for (var e : List.<Map.Entry<Map.Entry<String, Optional<String>>, Function<ApplicationLayout, Path>>>of(
@@ -531,7 +539,7 @@ public final class LinuxHelper {
                 return data.findQuotedValue(e.getKey().getKey());
             }).map(Path::of).get();
             TKit.assertFileExists(cmd.pathToUnpackedPackageFile(path));
-            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(cmd.appLayout()));
+            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(appLayout));
             TKit.assertTrue(path.getParent().equals(expectedDir), String.format(
                     "Check the value of [%s] key references a file in [%s] folder",
                     e.getKey().getKey(), expectedDir));
