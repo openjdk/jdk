@@ -525,18 +525,28 @@ void ShenandoahRegionPartitions::one_region_is_no_longer_empty(ShenandoahFreeSet
 
 // All members of partition between low_idx and high_idx inclusive have been removed.
 void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
-  ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
+  ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx, size_t num_regions) {
   assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
 #undef KELVIN_INTERVALS
 #ifdef KELVIN_INTERVALS
   log_info(gc)("shrink_interval_if_range_modifies_either_boundary(%s, %zd, %zd)", partition_name(partition), low_idx, high_idx);
 #endif
+  size_t span = high_idx + 1 - low_idx;
+  bool regions_are_contiguous = (span == num_regions);
   if (low_idx == leftmost(partition)) {
     assert (!_membership[int(partition)].is_set(low_idx), "Do not shrink interval if region not removed");
     if (high_idx + 1 == _max) {
-      _leftmosts[int(partition)] = _max;
+      if (regions_are_contiguous) {
+        _leftmosts[int(partition)] = _max;
+      } else {
+        _leftmosts[int(partition)] = find_index_of_next_available_region(partition, low_idx + 1);
+      }
     } else {
-      _leftmosts[int(partition)] = find_index_of_next_available_region(partition, high_idx + 1);
+      if (regions_are_contiguous) {
+        _leftmosts[int(partition)] = find_index_of_next_available_region(partition, high_idx + 1);
+      } else {
+        _leftmosts[int(partition)] = find_index_of_next_available_region(partition, low_idx + 1);
+      }
     }
     if (_leftmosts_empty[int(partition)] < _leftmosts[int(partition)]) {
       // This gets us closer to where we need to be; we'll scan further when leftmosts_empty is requested.
@@ -546,9 +556,17 @@ void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_bounda
   if (high_idx == _rightmosts[int(partition)]) {
     assert (!_membership[int(partition)].is_set(high_idx), "Do not shrink interval if region not removed");
     if (low_idx == 0) {
-      _rightmosts[int(partition)] = -1;
+      if (regions_are_contiguous) {
+        _rightmosts[int(partition)] = -1;
+      } else {
+        _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, high_idx - 1);
+      }
     } else {
-      _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, low_idx - 1);
+      if (regions_are_contiguous) {
+        _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, low_idx - 1);
+      } else {
+        _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, high_idx - 1);
+      }
     }
     if (_rightmosts_empty[int(partition)] > _rightmosts[int(partition)]) {
       // This gets us closer to where we need to be; we'll scan further when rightmosts_empty is requested.
@@ -599,7 +617,7 @@ void ShenandoahRegionPartitions::establish_interval(ShenandoahFreeSetPartitionId
 }
 
 inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx) {
-  shrink_interval_if_range_modifies_either_boundary(partition, idx, idx);
+  shrink_interval_if_range_modifies_either_boundary(partition, idx, idx, 1);
 }
 
 // Some members of partition between low_idx and high_idx inclusive have been added.
@@ -674,7 +692,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   size_t num_regions = high_idx + 1 - low_idx;
   decrease_region_counts(partition, num_regions);
   decrease_empty_region_counts(partition, num_regions);
-  shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
+  shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
 }
 
 size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t used_bytes) {
@@ -2485,9 +2503,9 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
       if (idx > mutator_high_idx) {
         mutator_high_idx = idx;
       }
-      used_transfer = _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, which_collector,
-                                                                                            ShenandoahFreeSetPartitionId::Mutator,
-                                                                                            region_size_bytes);
+      used_transfer += _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, which_collector,
+                                                                                             ShenandoahFreeSetPartitionId::Mutator,
+                                                                                             region_size_bytes);
       transferred_regions++;
       bytes_transferred += region_size_bytes;
     }
@@ -2496,7 +2514,8 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
   assert(used_transfer == 0, "empty regions should have no used");
   _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator, mutator_low_idx,
                                                                 mutator_high_idx, mutator_low_idx, mutator_high_idx);
-  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
+  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
+                                                                transferred_regions);
 
   _partitions.decrease_region_counts(which_collector, transferred_regions);
   _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
@@ -2556,7 +2575,8 @@ transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPa
   _partitions.decrease_used(which_collector, used_transfer);
   _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
                                                                 mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
-  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
+  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
+                                                                transferred_regions);
 
   _partitions.decrease_region_counts(which_collector, transferred_regions);
   _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);

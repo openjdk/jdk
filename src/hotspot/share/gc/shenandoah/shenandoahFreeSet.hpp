@@ -185,7 +185,7 @@ public:
 
   // Shrink the intervals associated with partition when regions low_idx through high_idx inclusive are removed from this free set
   void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
-                                                         idx_t low_idx, idx_t high_idx);
+                                                         idx_t low_idx, idx_t high_idx, size_t num_regions);
 
   void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t capacity);
   void expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
