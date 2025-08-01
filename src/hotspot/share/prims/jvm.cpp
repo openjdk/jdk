@@ -507,7 +507,7 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable, 
   if (!ShowCodeDetailsInExceptionMessages) return nullptr;
 
   oop exc = JNIHandles::resolve_non_null(throwable);
-  bool explicit_search = search_slot < 0;
+  bool explicit_search = search_slot >= 0;
 
   Method* method;
   int bci;
