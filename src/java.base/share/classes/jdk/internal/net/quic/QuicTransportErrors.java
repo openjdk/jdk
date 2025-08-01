@@ -334,4 +334,12 @@ public enum QuicTransportErrors {
     public static Optional<QuicTransportErrors> ofCode(long code) {
         return Stream.of(values()).filter(e -> e.isFor(code)).findAny();
     }
+
+    public static String toString(long code) {
+        Optional<QuicTransportErrors> c = Stream.of(values()).filter(e -> e.isFor(code)).findAny();
+        if (c.isEmpty()) return "Unknown [0x"+Long.toHexString(code) + "]";
+        if (c.get().hasCode()) return c.get().toString();
+        return c.get() + " [0x" + Long.toHexString(code) + "]";
+
+    }
 }

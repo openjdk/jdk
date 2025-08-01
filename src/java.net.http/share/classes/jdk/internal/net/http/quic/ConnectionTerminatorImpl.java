@@ -272,26 +272,22 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             return;
         }
         final boolean isAppLayerClose = incomingFrame.variant();
-        final String closeCodeHex = (isAppLayerClose ? "(app layer) " : "") +
-                "0x" + Long.toHexString(incomingFrame.errorCode());
+        final String closeCodeString = isAppLayerClose ?
+                "[app]" + connection.quicInstance().appErrorToString(incomingFrame.errorCode()) :
+                QuicTransportErrors.toString(incomingFrame.errorCode());
         final String reason = incomingFrame.reasonString();
         final String peer = connection.isClientConnection() ? "server" : "client";
-        final String msg = "Connection closed by " + peer + " peer" +
-                (reason == null || reason.isEmpty() ? "" : (": " + reason));
+        final String msg = "Connection closed by " + peer + " peer: " +
+                closeCodeString +
+                (reason == null || reason.isEmpty() ? "" : (" " + reason));
         final TerminationCause terminationCause;
         if (isAppLayerClose) {
-            terminationCause = appLayerClose(incomingFrame.errorCode())
-                    .peerVisibleReason(reason)
-                    .loggedAs(msg);
+            terminationCause = appLayerClose(incomingFrame.errorCode(), msg)
+                    .peerVisibleReason(reason);
         } else {
-            final QuicTransportErrors err = QuicTransportErrors.ofCode(
-                            incomingFrame.errorCode())
-                    // fallback to INTERNAL_ERROR if the peer sends an unexpected error code
-                    // in the CONNECTION_CLOSE frame
-                    .orElse(INTERNAL_ERROR);
-            terminationCause = forTransportError(err)
-                    .peerVisibleReason(reason)
-                    .loggedAs(msg);
+            terminationCause = forTransportError(incomingFrame.errorCode(), msg,
+                    incomingFrame.errorFrameType())
+                    .peerVisibleReason(reason);
         }
         // switch to draining state
         if (!markDraining(terminationCause)) {
@@ -303,10 +299,10 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         connection.idleTimeoutManager.shutdown();
 
         if (Log.quic()) {
-            Log.logQuic("{0} entering draining state, code {1} - {2}", logTag, closeCodeHex,
+            Log.logQuic("{0} entering draining state, {1}", logTag,
                     terminationCause.getLogMsg());
         } else if (debug.on()) {
-            debug.log("entering draining state, code " + closeCodeHex + " - "
+            debug.log("entering draining state, "
                     + terminationCause.getLogMsg());
         }
         // RFC-9000, section 10.2.2:

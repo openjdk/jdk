@@ -88,6 +88,10 @@ public abstract sealed class TerminationCause {
         return new TransportError(err);
     }
 
+    public static TerminationCause forTransportError(long errorCode, String loggedAs, long frameType) {
+        return new TransportError(errorCode, loggedAs, frameType);
+    }
+
     static SilentTermination forSilentTermination(final String loggedAs) {
         return new SilentTermination(loggedAs);
     }
@@ -105,7 +109,11 @@ public abstract sealed class TerminationCause {
     // and the QUIC layer can now do an immediate close of the connection using
     // the {@code closeCode}
     public static TerminationCause appLayerClose(final long closeCode) {
-        return new AppLayerClose(closeCode, null);
+        return new AppLayerClose(closeCode, (Throwable)null);
+    }
+
+    public static TerminationCause appLayerClose(final long closeCode, String loggedAs) {
+        return new AppLayerClose(closeCode, loggedAs);
     }
 
     public static TerminationCause appLayerException(final long closeCode,
@@ -146,6 +154,12 @@ public abstract sealed class TerminationCause {
             peerVisibleReason(exception.getReason());
         }
 
+        public TransportError(long errorCode, String loggedAs, long frameType) {
+            super(errorCode, loggedAs);
+            this.frameType = frameType;
+            keySpace = null;
+        }
+
         @Override
         public boolean isAppLayer() {
             return false;
@@ -165,6 +179,10 @@ public abstract sealed class TerminationCause {
     }
 
     static final class AppLayerClose extends TerminationCause {
+        private AppLayerClose(final long closeCode, String loggedAs) {
+            super(closeCode, loggedAs);
+        }
+
         // TODO: allow optionally to specify "name" of the close code for app layer
         // like "H3_GENERAL_PROTOCOL_ERROR" (helpful in logging)
         private AppLayerClose(final long closeCode, final Throwable cause) {

@@ -29,6 +29,8 @@ import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.quic.QuicConnectionId;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
+import jdk.internal.net.quic.QuicTransportErrors;
+import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
@@ -41,6 +43,7 @@ import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ProtocolException;
 import java.net.URI;
@@ -273,6 +276,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
     public void testTwoControlStreams(byte type) throws Exception {
         CompletableFuture<TerminationCause> errorCF = new CompletableFuture<>();
         server.addHandler((c,s)-> {
+
             QuicSenderStream controlStream, controlStream2;
             controlStream = c.openNewLocalUniStream(Duration.ZERO).resultNow();
             controlStream2 = c.openNewLocalUniStream(Duration.ZERO).resultNow();
@@ -830,6 +834,109 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         });
         triggerError(errorCF, Http3Error.H3_STREAM_CREATION_ERROR);
     }
+
+    /**
+     * Server closes the connection with a known QUIC error
+     */
+    @Test
+    public void testConnectionCloseQUIC() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.forException(
+                    new QuicTransportException("ignored", null, 0,
+                            QuicTransportErrors.INTERNAL_ERROR)
+            );
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("INTERNAL_ERROR", "testtest");
+    }
+
+    /**
+     * Server closes the connection with a known crypto error
+     */
+    @Test
+    public void testConnectionCloseCryptoQUIC() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.forException(
+                    new QuicTransportException("ignored", null, 0,
+                            QuicTransportErrors.CRYPTO_ERROR.from() + 80 /*Alert.INTERNAL_ERROR.id*/, null)
+            );
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("CRYPTO_ERROR", "150", "testtest");
+    }
+
+    /**
+     * Server closes the connection with an unknown QUIC error
+     */
+    @Test
+    public void testConnectionCloseUnknownQUIC() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.forException(
+                    new QuicTransportException("ignored", null, 0,
+                            QuicTransportErrors.CRYPTO_ERROR.to() + 1 /*0x200*/, null)
+            );
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("200", "testtest");
+    }
+
+    /**
+     * Server closes the connection with a known H3 error
+     */
+    @Test
+    public void testConnectionCloseH3() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.appLayerClose(Http3Error.H3_EXCESSIVE_LOAD.code());
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("H3_EXCESSIVE_LOAD", "testtest");
+    }
+
+    /**
+     * Server closes the connection with an unknown H3 error
+     */
+    @Test
+    public void testConnectionCloseH3Unknown() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.appLayerClose(0x1f21);
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("1F21", "testtest");
+    }
+
+
+    private void triggerClose(String... reasons) throws Exception {
+        HttpClient client = getHttpClient();
+        try {
+            HttpRequest request = getRequest();
+            final HttpResponse<Void> response = client.sendAsync(
+                            request,
+                            BodyHandlers.discarding())
+                    .get(10, TimeUnit.SECONDS);
+            fail("Expected the request to fail, got " + response);
+        } catch (ExecutionException e) {
+            System.out.println("Client exception [expected]: " + e);
+            var cause = e.getCause();
+            assertTrue(cause instanceof IOException, "Expected IOException");
+            for (String reason : reasons) {
+                assertTrue(cause.getMessage().contains(reason),
+                        cause.getMessage() + " does not contain " + reason);
+            }
+        } finally {
+            client.shutdownNow();
+        }
+    }
+
 
     private void triggerError(CompletableFuture<TerminationCause> errorCF, Http3Error expected) throws Exception {
         HttpClient client = getHttpClient();
