@@ -30,6 +30,10 @@
  * @run main PasswordFieldInputMapWordTest
  */
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.TreeSet;
+
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JPasswordField;
@@ -38,9 +42,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.text.DefaultEditorKit;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.TreeSet;
 
 public class PasswordFieldInputMapWordTest {
     public static void main(String[] args) throws Exception {
