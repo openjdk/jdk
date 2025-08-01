@@ -309,7 +309,7 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
     JfrThreadGroupManager::thread_group_id(JavaThread::cast(_thread), Thread::current());
   writer.write(thread_group_id);
   writer.write<bool>(is_vthread); // isVirtual
-  if (!is_vthread) {
+  if (thread_group_id > 1) {
     JfrThreadGroupManager::serialize(writer, thread_group_id, _to_blob);
   }
   // VirtualThread threadgroup already serialized invariant.
