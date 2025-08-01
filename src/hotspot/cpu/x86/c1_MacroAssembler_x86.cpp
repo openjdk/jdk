@@ -42,8 +42,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
-  const int aligned_mask = BytesPerWord -1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
   assert(hdr == rax, "hdr must be rax, for the cmpxchg instruction");
   assert_different_registers(hdr, obj, disp_hdr, tmp);
   int null_check_offset = -1;
@@ -61,11 +59,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 }
 
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
-  const int aligned_mask = BytesPerWord -1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
   assert(disp_hdr == rax, "disp_hdr must be rax, for the cmpxchg instruction");
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
-  Label done;
 
   // load object
   movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));

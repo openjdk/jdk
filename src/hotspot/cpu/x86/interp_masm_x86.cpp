@@ -1029,15 +1029,9 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
   const Register swap_reg = rax; // Must use rax for cmpxchg instruction
   const Register tmp_reg = rbx;
   const Register obj_reg = c_rarg3; // Will contain the oop
-  const Register rklass_decode_tmp = rscratch1;
-
-  const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
-  const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-  const int mark_offset = lock_offset +
-                          BasicLock::displaced_header_offset_in_bytes();
 
   // Load object pointer into obj_reg
-  movptr(obj_reg, Address(lock_reg, obj_offset));
+  movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
   lightweight_lock(lock_reg, obj_reg, swap_reg, tmp_reg, slow_case);
   jmp(done);

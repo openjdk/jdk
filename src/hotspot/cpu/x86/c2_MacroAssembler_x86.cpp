@@ -219,12 +219,11 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 
 
 // obj: object to lock
-// box: on-stack box address (displaced header location) - Must be EBX -- KILLED
+// box: on-stack box address -- KILLED
 // rax: tmp -- KILLED
 // t  : tmp -- KILLED
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                                               Register t, Register thread) {
-  assert(box == rbx, "Used for displaced header location");
   assert(rax_reg == rax, "Used for CAS");
   assert_different_registers(obj, box, rax_reg, t, thread);
 
