@@ -143,7 +143,6 @@ void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
   while (elt != nullptr) {
     KlassInfoEntry* next = elt->next();
     cic->do_cinfo(elt);
-    this->remove_from_list(elt);
     elt = next;
   }
 }
