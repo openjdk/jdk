@@ -112,10 +112,11 @@ public class DebugOptions {
     }
 
     /**
-     * This method will change the input string to have all letters uppercase
+     * This method will change the input string to have
+     * first and last letters uppercase
      * <p>
      * e.g.:
-     * hello -> HELLO
+     * hello -> HellO
      *
      * @param paramString string to change. Must not be null or empty
      * @return resulting string
