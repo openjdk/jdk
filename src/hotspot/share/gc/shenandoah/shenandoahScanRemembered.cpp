@@ -624,7 +624,7 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 
 #ifdef ASSERT
   CardValue* start_bp = &(_card_table->write_byte_map())[0];
-  CardValue* end_bp = &(new_ptr)[_card_table->last_valid_index()];
+  CardValue* end_bp = &(start_bp[_card_table->last_valid_index()]);
 
   while (start_bp <= end_bp) {
     assert(*start_bp == CardTable::clean_card_val(), "Should be clean: " PTR_FORMAT, p2i(start_bp));

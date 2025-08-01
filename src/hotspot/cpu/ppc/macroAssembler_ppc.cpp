@@ -3928,8 +3928,10 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   Label L_outer_loop, L_inner_loop, L_last;
 
   // Set DSCR pre-fetch to deepest.
-  load_const_optimized(t0, VM_Version::_dscr_val | 7);
-  mtdscr(t0);
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val | 7);
+    mtdscr(t0);
+  }
 
   mtvrwz(VCRC, crc); // crc lives in VCRC, now
 
@@ -4073,8 +4075,10 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   // ********** Main loop end **********
 
   // Restore DSCR pre-fetch value.
-  load_const_optimized(t0, VM_Version::_dscr_val);
-  mtdscr(t0);
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val);
+    mtdscr(t0);
+  }
 
   // ********** Simple loop for remaining 16 byte blocks **********
   {

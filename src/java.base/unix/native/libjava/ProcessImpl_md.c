@@ -732,7 +732,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
         (fds[2] == -1 && pipe(err) < 0) ||
         (pipe(childenv) < 0) ||
         (pipe(fail) < 0)) {
-        throwInternalIOException(env, errno, "Bad file descriptor", c->mode);
+        throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }
     c->fds[0] = fds[0];

@@ -25,11 +25,12 @@
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 
-void* GuardedMemory::wrap_copy(const void* ptr, const size_t len, const void* tag) {
+void* GuardedMemory::wrap_copy(const void* ptr, const size_t len,
+                               const void* tag, const void* tag2) {
   size_t total_sz = GuardedMemory::get_total_size(len);
   void* outerp = os::malloc(total_sz, mtInternal);
   if (outerp != nullptr) {
-    GuardedMemory guarded(outerp, len, tag);
+    GuardedMemory guarded(outerp, len, tag, tag2);
     void* innerp = guarded.get_user_ptr();
     if (ptr != nullptr) {
       memcpy(innerp, ptr, len);
@@ -58,8 +59,8 @@ void GuardedMemory::print_on(outputStream* st) const {
     return;
   }
   st->print_cr("GuardedMemory(" PTR_FORMAT ") base_addr=" PTR_FORMAT
-      " tag=" PTR_FORMAT " user_size=%zu user_data=" PTR_FORMAT,
-      p2i(this), p2i(_base_addr), p2i(get_tag()), get_user_size(), p2i(get_user_ptr()));
+      " tag=" PTR_FORMAT " tag2=" PTR_FORMAT " user_size=%zu user_data=" PTR_FORMAT,
+      p2i(this), p2i(_base_addr), p2i(get_tag()), p2i(get_tag2()), get_user_size(), p2i(get_user_ptr()));
 
   Guard* guard = get_head_guard();
   st->print_cr("  Header guard @" PTR_FORMAT " is %s", p2i(guard), (guard->verify() ? "OK" : "BROKEN"));

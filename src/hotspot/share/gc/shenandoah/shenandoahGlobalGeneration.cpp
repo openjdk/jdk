@@ -50,10 +50,6 @@ size_t ShenandoahGlobalGeneration::used_regions_size() const {
   return ShenandoahHeap::heap()->capacity();
 }
 
-size_t ShenandoahGlobalGeneration::soft_max_capacity() const {
-  return ShenandoahHeap::heap()->soft_max_capacity();
-}
-
 size_t ShenandoahGlobalGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.
@@ -65,8 +61,8 @@ size_t ShenandoahGlobalGeneration::soft_available() const {
   size_t available = this->available();
 
   // Make sure the code below treats available without the soft tail.
-  assert(max_capacity() >= soft_max_capacity(), "Max capacity must be greater than soft max capacity.");
-  size_t soft_tail = max_capacity() - soft_max_capacity();
+  assert(max_capacity() >= ShenandoahHeap::heap()->soft_max_capacity(), "Max capacity must be greater than soft max capacity.");
+  size_t soft_tail = max_capacity() - ShenandoahHeap::heap()->soft_max_capacity();
   return (available > soft_tail) ? (available - soft_tail) : 0;
 }
 

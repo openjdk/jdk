@@ -36,14 +36,6 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
 
-class JfrRecorderThread : public JavaThread {
- public:
-  JfrRecorderThread(ThreadFunction entry_point) : JavaThread(entry_point) {}
-  virtual ~JfrRecorderThread() {}
-
-  virtual bool is_JfrRecorder_thread() const { return true; }
-};
-
 static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAPS) {
   assert(thread_oop.not_null(), "invariant");
   assert(proc != nullptr, "invariant");

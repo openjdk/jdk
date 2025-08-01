@@ -30,7 +30,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"

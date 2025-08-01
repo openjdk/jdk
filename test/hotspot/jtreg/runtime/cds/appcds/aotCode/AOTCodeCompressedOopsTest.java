@@ -173,7 +173,7 @@ public class AOTCodeCompressedOopsTest {
                   *    [0.022s][info][cds]     narrow_oop_mode = 3, narrow_oop_base = 0x0000000300000000, narrow_oop_shift = 3
                   *    [0.022s][info][cds]     heap range = [0x0000000301000000 - 0x0000000ac1000000]
                   */
-                 Pattern p = Pattern.compile("narrow_oop_base = 0x(\\d+), narrow_oop_shift = (\\d)");
+                 Pattern p = Pattern.compile("narrow_oop_base = 0x([0-9a-fA-F]+), narrow_oop_shift = (\\d)");
                  for (int i = 0; i < list.size(); i++) {
                      String line = list.get(i);
                      if (line.indexOf("CDS archive was created with max heap size") != -1) {

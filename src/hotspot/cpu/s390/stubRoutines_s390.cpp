@@ -78,14 +78,17 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
 #endif
 }
 
+address StubRoutines::crc_table_addr()    { return (address)StubRoutines::zarch::_crc_table; }
+address StubRoutines::crc32c_table_addr() { return (address)StubRoutines::zarch::_crc32c_table; }
+
 void StubRoutines::zarch::generate_load_crc_table_addr(MacroAssembler* masm, Register table) {
   const uint64_t table_contents = 0x77073096UL;  // required contents of table[1]
-  generate_load_absolute_address(masm, table, StubRoutines::_crc_table_adr, table_contents);
+  generate_load_absolute_address(masm, table, StubRoutines::crc_table_addr(), table_contents);
 }
 
 void StubRoutines::zarch::generate_load_crc32c_table_addr(MacroAssembler* masm, Register table) {
   const uint64_t table_contents = 0xf26b8303UL;  // required contents of table[1]
-  generate_load_absolute_address(masm, table, StubRoutines::_crc32c_table_addr, table_contents);
+  generate_load_absolute_address(masm, table, StubRoutines::crc32c_table_addr(), table_contents);
 }
 
 

@@ -26,14 +26,31 @@
 package sun.lwawt.macosx;
 
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.HeadlessException;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.print.*;
+import java.awt.print.Pageable;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterAbortException;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.print.*;
+import javax.print.DocFlavor;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.StreamPrintService;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Chromaticity;
@@ -48,8 +65,16 @@ import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.Attribute;
 
-import sun.java2d.*;
-import sun.print.*;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.SurfaceData;
+import sun.print.CustomMediaTray;
+import sun.print.CustomOutputBin;
+import sun.print.GrayscaleProxyGraphics2D;
+import sun.print.PeekGraphics;
+import sun.print.RasterPrinterJob;
+import sun.print.SunPageSelection;
 
 public final class CPrinterJob extends RasterPrinterJob {
     // NOTE: This uses RasterPrinterJob as a base, but it doesn't use
@@ -82,7 +107,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     //  PageFormat data is passed in and set on the fNSPrintInfo on a per call
     //  basis.
     private long fNSPrintInfo = -1;
-    private Object fNSPrintInfoLock = new Object();
+    private final Object fNSPrintInfoLock = new Object();
+    private final Object disposerReferent = new Object();
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -610,25 +636,29 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     // The following methods are CPrinterJob specific.
 
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        synchronized (fNSPrintInfoLock) {
-            if (fNSPrintInfo != -1) {
-                dispose(fNSPrintInfo);
-            }
-            fNSPrintInfo = -1;
+    static class NSPrintInfoDisposer implements DisposerRecord {
+
+        private final long fNSPrintInfo;
+
+        NSPrintInfoDisposer(long ptr) {
+            fNSPrintInfo = ptr;
+        }
+
+        public void dispose() {
+            CPrinterJob.disposeNSPrintInfo(fNSPrintInfo);
         }
     }
 
-    private native long createNSPrintInfo();
-    private native void dispose(long printInfo);
+    private static native long createNSPrintInfo();
+    private static native void disposeNSPrintInfo(long printInfo);
 
     private long getNSPrintInfo() {
         // This is called from the native side.
         synchronized (fNSPrintInfoLock) {
             if (fNSPrintInfo == -1) {
                 fNSPrintInfo = createNSPrintInfo();
+                Disposer.addRecord(disposerReferent,
+                                   new NSPrintInfoDisposer(fNSPrintInfo));
             }
             return fNSPrintInfo;
         }
@@ -984,7 +1014,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     // FlipPageFormat preserves the original PageFormat class
     // to pass it to Printable.print(Graphics, PageFormat, int)
     // method overridden by a user.
-    private static class FlipPageFormat extends PageFormat {
+    private static final class FlipPageFormat extends PageFormat {
 
         private final PageFormat original;
 

@@ -155,8 +155,15 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
-  if (CodeCacheSegmentSize < (uintx)CodeEntryAlignment) {
+JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "CodeCacheSegmentSize (%zu) must be "
+                        "a power of two\n", CodeCacheSegmentSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (CodeCacheSegmentSize < (size_t)CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to CodeEntryAlignment (%zd) "
@@ -174,7 +181,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   }
 
 #ifdef COMPILER2
-  if (CodeCacheSegmentSize < (uintx)OptoLoopAlignment) {
+  if (CodeCacheSegmentSize < (size_t)OptoLoopAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to OptoLoopAlignment (%zd) "
@@ -203,7 +210,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if ((uintx)CodeEntryAlignment > CodeCacheSegmentSize) {
+  if ((size_t)CodeEntryAlignment > CodeCacheSegmentSize) {
     JVMFlag::printError(verbose,
                         "CodeEntryAlignment (%zd) must be "
                         "less than or equal to CodeCacheSegmentSize (%zu) "
@@ -299,8 +306,9 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
+  const int max_modes = 4;
   uint original_value = value;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < max_modes; i++) {
     if (value % 10 > 1) {
       JVMFlag::printError(verbose,
                           "Invalid value (" UINT32_FORMAT ") "
@@ -312,7 +320,7 @@ JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
   if (value != 0) {
     JVMFlag::printError(verbose,
                         "Invalid value (" UINT32_FORMAT ") "
-                        "for VerifyIterativeGVN: maximal 2 digits\n", original_value);
+                        "for VerifyIterativeGVN: maximal %d digits\n", original_value, max_modes);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;

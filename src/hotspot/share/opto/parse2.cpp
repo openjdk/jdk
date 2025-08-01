@@ -1097,11 +1097,11 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 
 Node* Parse::floating_point_mod(Node* a, Node* b, BasicType type) {
   assert(type == BasicType::T_FLOAT || type == BasicType::T_DOUBLE, "only float and double are floating points");
-  CallNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
+  CallLeafPureNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallLeafPureNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
 
-  Node* prev_mem = set_predefined_input_for_runtime_call(mod);
-  mod = _gvn.transform(mod)->as_Call();
-  set_predefined_output_for_runtime_call(mod, prev_mem, TypeRawPtr::BOTTOM);
+  set_predefined_input_for_runtime_call(mod);
+  mod = _gvn.transform(mod)->as_CallLeafPure();
+  set_predefined_output_for_runtime_call(mod);
   Node* result = _gvn.transform(new ProjNode(mod, TypeFunc::Parms + 0));
   record_for_igvn(mod);
   return result;

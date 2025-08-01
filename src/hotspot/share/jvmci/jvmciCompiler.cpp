@@ -144,7 +144,7 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
       if (excludeModules.not_null()) {
         ModuleEntry* moduleEntry = method->method_holder()->module();
         for (int i = 0; i < excludeModules->length(); i++) {
-          if (excludeModules->obj_at(i) == moduleEntry->module()) {
+          if (excludeModules->obj_at(i) == moduleEntry->module_oop()) {
             return true;
           }
         }

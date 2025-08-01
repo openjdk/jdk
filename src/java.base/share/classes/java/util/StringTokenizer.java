@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,8 @@ public class StringTokenizer implements Enumeration<Object> {
      * @throws    NullPointerException if delim is {@code null}
      */
     public String nextToken(String delim) {
+        Objects.requireNonNull(delim);
+
         delimiters = delim;
 
         /* delimiter string specified, so set the appropriate flag. */

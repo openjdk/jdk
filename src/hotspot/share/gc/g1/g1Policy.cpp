@@ -58,7 +58,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _old_gen_alloc_tracker(),
   _ihop_control(create_ihop_control(&_old_gen_alloc_tracker, &_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
-  _full_collection_start_sec(0.0),
+  _cur_pause_start_sec(0.0),
   _young_list_desired_length(0),
   _young_list_target_length(0),
   _eden_surv_rate_group(new G1SurvRateGroup()),
@@ -74,8 +74,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _g1h(nullptr),
   _phase_times_timer(gc_timer),
   _phase_times(nullptr),
-  _mark_remark_start_sec(0),
-  _mark_cleanup_start_sec(0),
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
   _survivors_age_table(true)
@@ -572,7 +570,7 @@ void G1Policy::revise_young_list_target_length(size_t card_rs_length, size_t cod
 }
 
 void G1Policy::record_full_collection_start() {
-  _full_collection_start_sec = os::elapsedTime();
+  record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
@@ -593,8 +591,9 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_in_young_gc_before_mixed(false);
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
   collector_state()->set_in_concurrent_start_gc(false);
+  collector_state()->set_mark_in_progress(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clearing_bitmap(false);
+  collector_state()->set_clear_bitmap_in_progress(false);
 
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -605,7 +604,8 @@ void G1Policy::record_full_collection_end() {
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
 
-  record_pause(G1GCPauseType::FullGC, _full_collection_start_sec, end_sec);
+  double start_time_sec = cur_pause_start_sec();
+  record_pause(G1GCPauseType::FullGC, start_time_sec, end_sec);
 }
 
 static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
@@ -650,7 +650,7 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
   // Record mutator's card logging rate.
   double mut_start_time = _analytics->prev_collection_pause_end_ms();
-  double mut_end_time = phase_times()->cur_collection_start_sec() * MILLIUNITS;
+  double mut_end_time = cur_pause_start_sec() * MILLIUNITS;
   double mut_time = mut_end_time - mut_start_time;
   // Unlike above for conc-refine rate, here we should not require a
   // non-empty sample, since an application could go some time with only
@@ -669,8 +669,13 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
   return live_bytes < threshold;
 }
 
-void G1Policy::record_young_collection_start() {
+void G1Policy::record_pause_start_time() {
   Ticks now = Ticks::now();
+  _cur_pause_start_sec = now.seconds();
+}
+
+void G1Policy::record_young_collection_start() {
+  record_pause_start_time();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -680,8 +685,6 @@ void G1Policy::record_young_collection_start() {
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
-
-  phase_times()->record_cur_collection_start_sec(now.seconds());
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();
@@ -695,19 +698,13 @@ void G1Policy::record_concurrent_mark_init_end() {
   collector_state()->set_in_concurrent_start_gc(false);
 }
 
-void G1Policy::record_concurrent_mark_remark_start() {
-  _mark_remark_start_sec = os::elapsedTime();
-}
-
 void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
-  double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
+  double start_time_sec = cur_pause_start_sec();
+  double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
-}
-
-void G1Policy::record_concurrent_mark_cleanup_start() {
-  _mark_cleanup_start_sec = os::elapsedTime();
+  record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
+  collector_state()->set_mark_in_progress(false);
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
@@ -795,7 +792,7 @@ double G1Policy::logged_cards_processing_time() const {
 void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
-  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double start_time_sec = cur_pause_start_sec();
   double end_time_sec = Ticks::now().seconds();
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
@@ -941,6 +938,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
          "If the last pause has been concurrent start, we should not have been in the marking window");
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
+    collector_state()->set_mark_in_progress(concurrent_operation_is_full_mark);
     collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
   }
 
@@ -1227,6 +1225,17 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
+static const char* requester_for_mixed_abort(GCCause::Cause cause) {
+  if (cause == GCCause::_wb_breakpoint) {
+    return "run_to breakpoint";
+  } else if (GCCause::is_codecache_requested_gc(cause)) {
+    return "codecache";
+  } else {
+    assert(G1CollectedHeap::heap()->is_user_requested_concurrent_full_gc(cause), "must be");
+    return "user";
+  }
+}
+
 void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
@@ -1259,8 +1268,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
     } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
-               (cause == GCCause::_codecache_GC_threshold) ||
-               (cause == GCCause::_codecache_GC_aggressive) ||
+               GCCause::is_codecache_requested_gc(cause) ||
                (cause == GCCause::_wb_breakpoint)) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.
@@ -1275,7 +1283,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
-                          (cause == GCCause::_wb_breakpoint) ? "run_to breakpoint" : "user");
+                          requester_for_mixed_abort(cause));
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles
@@ -1318,13 +1326,14 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clearing_bitmap(true);
+  collector_state()->set_clear_bitmap_in_progress(true);
 
   double end_sec = os::elapsedTime();
-  double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
+  double start_sec = cur_pause_start_sec();
+  double elapsed_time_ms = (end_sec - start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
 
-  record_pause(G1GCPauseType::Cleanup, _mark_cleanup_start_sec, end_sec);
+  record_pause(G1GCPauseType::Cleanup, start_sec, end_sec);
 }
 
 void G1Policy::abandon_collection_set_candidates() {

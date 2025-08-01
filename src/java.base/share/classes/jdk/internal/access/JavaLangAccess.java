@@ -302,10 +302,10 @@ public interface JavaLangAccess {
 
     /**
      * Count the number of leading positive bytes in the range.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
-    int uncheckedCountPositives(byte[] ba, int off, int len);
+    int countPositives(byte[] ba, int off, int len);
 
     /**
      * Count the number of leading non-zero ascii chars in the String.
@@ -390,20 +390,20 @@ public interface JavaLangAccess {
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
      * {@code StringLatin1.inflate}.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
-    void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      *
      * @return the number of bytes successfully decoded, at most len
      */
-    int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Returns the initial `System.in` to determine if it is replaced

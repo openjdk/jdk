@@ -25,13 +25,11 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
@@ -147,6 +145,9 @@ class oopDesc;
 #endif
 #ifndef JULONG_FORMAT_X
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
+#endif
+#ifndef JULONG_FORMAT_W
+#define JULONG_FORMAT_W(width)   UINT64_FORMAT_W(width)
 #endif
 
 // Format pointers and padded integral values which change size between 32- and 64-bit.
@@ -771,6 +772,14 @@ inline jlong min_signed_integer(BasicType bt) {
   return min_jlong;
 }
 
+inline julong max_unsigned_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_juint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_julong;
+}
+
 inline uint bits_per_java_integer(BasicType bt) {
   if (bt == T_INT) {
     return BitsPerJavaInteger;
@@ -1008,6 +1017,8 @@ enum LockingMode {
   // New lightweight locking, with monitors as 2nd tier
   LM_LIGHTWEIGHT = 2
 };
+
+extern const int LockingMode;
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging

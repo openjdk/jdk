@@ -88,6 +88,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         // Thread.dumpStack();
     }
 
+    @Override
     public void validatePipe(SunGraphics2D sg2d) {
 
         if (sg2d.compositeState <= SunGraphics2D.COMP_ALPHA) {
@@ -121,11 +122,13 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         sg2d.textpipe = sCocoaTextPipe;
     }
 
+    @Override
     public Rectangle getBounds() {
         // gznote: always return a copy, not the rect itself and translate into device space
         return new Rectangle(fBounds.x, fBounds.y, fBounds.width, fBounds.height - fBounds.y);
     }
 
+    @Override
     public GraphicsConfiguration getDeviceConfiguration() {
         return fConfig;
     }
@@ -194,6 +197,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
 
     // END compositing support API
 
+    @Override
     public void invalidate() {
         // always valid
     }

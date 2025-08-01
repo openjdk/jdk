@@ -30,7 +30,11 @@ import jdk.internal.module.Checks;
  * Class that represents the filter a user can specify for the MethodTrace and
  * MethodTiming event.
  */
-record Filter(String className, String methodName, String annotationName, Modification modification) {
+public record Filter(String className, String methodName, String annotationName, Modification modification) {
+
+    public static boolean isValid(String filter) {
+        return of(filter, Modification.NONE) != null;
+    }
 
     static Filter of(String filter, Modification modification) {
         if (filter.startsWith("@")) {

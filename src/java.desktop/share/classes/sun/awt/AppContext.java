@@ -42,8 +42,6 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
 
-import jdk.internal.access.JavaAWTAccess;
-import jdk.internal.access.SharedSecrets;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -55,7 +53,7 @@ import java.util.function.Supplier;
  * The AppContext is a table referenced by ThreadGroup which stores
  * application service instances.  (If you are not writing an application
  * service, or don't know what one is, please do not use this class.)
- * The AppContext allows applet access to what would otherwise be
+ * The AppContext allows a context access to what would otherwise be
  * potentially dangerous services, such as the ability to peek at
  * EventQueues or change the look-and-feel of a Swing application.<p>
  *
@@ -81,7 +79,7 @@ import java.util.function.Supplier;
  * }</pre><p>
  *
  * The problem with the above is that the Foo service is global in scope,
- * so that applets and other untrusted code can execute methods on the
+ * so that untrusted code can execute methods on the
  * single, shared Foo instance.  The Foo service therefore either needs
  * to block its use by untrusted code using a SecurityManager test, or
  * restrict its capabilities so that it doesn't matter if untrusted code
@@ -106,20 +104,14 @@ import java.util.function.Supplier;
  * Since a separate AppContext can exist for each ThreadGroup, trusted
  * and untrusted code have access to different Foo instances.  This allows
  * untrusted code access to "system-wide" services -- the service remains
- * within the AppContext "sandbox".  For example, say a malicious applet
+ * within the AppContext "sandbox".  For example, say malicious code
  * wants to peek all of the key events on the EventQueue to listen for
  * passwords; if separate EventQueues are used for each ThreadGroup
- * using AppContexts, the only key events that applet will be able to
- * listen to are its own.  A more reasonable applet request would be to
+ * using AppContexts, the only key events that code will be able to
+ * listen to are its own.  A more reasonable request would be to
  * change the Swing default look-and-feel; with that default stored in
- * an AppContext, the applet's look-and-feel will change without
- * disrupting other applets or potentially the browser itself.<p>
- *
- * Because the AppContext is a facility for safely extending application
- * service support to applets, none of its methods may be blocked by a
- * a SecurityManager check in a valid Java implementation.  Applets may
- * therefore safely invoke any of its methods without worry of being
- * blocked.
+ * an AppContext, the look-and-feel will change without
+ * disrupting other contexts.
  *
  * @author  Thomas Ball
  * @author  Fred Ecks
@@ -157,7 +149,7 @@ public final class AppContext {
 
     /* The main "system" AppContext, used by everything not otherwise
        contained in another AppContext. It is implicitly created for
-       standalone apps only (i.e. not applets)
+       standalone apps only.
      */
     private static volatile AppContext mainAppContext;
 
@@ -285,9 +277,7 @@ public final class AppContext {
             ThreadGroup threadGroup = currentThreadGroup;
 
             // Special case: we implicitly create the main app context
-            // if no contexts have been created yet. This covers standalone apps
-            // and excludes applets because by the time applet starts
-            // a number of contexts have already been created by the plugin.
+            // if no contexts have been created yet.
             synchronized (getAppContextLock) {
                 if (numAppContexts.get() == 0) {
                     if (System.getProperty("javaplugin.version") == null &&
@@ -744,67 +734,6 @@ public final class AppContext {
             return new PropertyChangeListener[0];
         }
         return changeSupport.getPropertyChangeListeners(propertyName);
-    }
-
-    // Set up JavaAWTAccess in SharedSecrets
-    static {
-        SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
-            private boolean hasRootThreadGroup(final AppContext ecx) {
-                return ecx.threadGroup.getParent() == null;
-            }
-
-            /**
-             * Returns the AppContext used for applet logging isolation, or null if
-             * the default global context can be used.
-             * If there's no applet, or if the caller is a stand alone application,
-             * or running in the main app context, returns null.
-             * Otherwise, returns the AppContext of the calling applet.
-             * @return null if the global default context can be used,
-             *         an AppContext otherwise.
-             **/
-            public Object getAppletContext() {
-                // There's no AppContext: return null.
-                // No need to call getAppContext() if numAppContext == 0:
-                // it means that no AppContext has been created yet, and
-                // we don't want to trigger the creation of a main app
-                // context since we don't need it.
-                if (numAppContexts.get() == 0) return null;
-
-                AppContext ecx = null;
-
-                // Not sure we really need to re-check numAppContexts here.
-                // If all applets have gone away then we could have a
-                // numAppContexts coming back to 0. So we recheck
-                // it here because we don't want to trigger the
-                // creation of a main AppContext in that case.
-                // This is probably not 100% MT-safe but should reduce
-                // the window of opportunity in which that issue could
-                // happen.
-                if (numAppContexts.get() > 0) {
-                    // Defaults to thread group caching.
-                    // This is probably not required as we only really need
-                    // isolation in a deployed applet environment, in which
-                    // case ecx will not be null when we reach here
-                    // However it helps emulate the deployed environment,
-                    // in tests for instance.
-                    ecx = ecx != null ? ecx : getAppContext();
-                }
-
-                // getAppletContext() may be called when initializing the main
-                // app context - in which case mainAppContext will still be
-                // null. To work around this issue we simply use
-                // AppContext.threadGroup.getParent() == null instead, since
-                // mainAppContext is the only AppContext which should have
-                // the root TG as its thread group.
-                // See: JDK-8023258
-                final boolean isMainAppContext = ecx == null
-                        || mainAppContext == ecx
-                        || mainAppContext == null && hasRootThreadGroup(ecx);
-
-                return isMainAppContext ? null : ecx;
-            }
-
-        });
     }
 
     public static <T> T getSoftReferenceValue(Object key,

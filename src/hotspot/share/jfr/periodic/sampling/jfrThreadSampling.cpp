@@ -28,6 +28,8 @@
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
@@ -160,7 +162,7 @@ static inline bool is_valid(const PcDesc* pc_desc) {
   return pc_desc != nullptr && pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null;
 }
 
-static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt) {
+static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
   assert(jt != nullptr, "invariant");
 
   if (!jt->has_last_Java_frame()) {
@@ -177,6 +179,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
     // A biased sample is requested or no code blob.
     top_frame = jt->last_frame();
     in_continuation = is_in_continuation(top_frame, jt);
+    biased = true;
     return true;
   }
 
@@ -226,6 +229,8 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
 
   assert(!stream.current()->is_safepoint_blob_frame(), "invariant");
 
+  biased = true;
+
   // Search the first frame that is above the sampled sp.
   for (; !stream.is_done(); stream.next()) {
     frame* const current = stream.current();
@@ -249,6 +254,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
         const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
         if (is_valid(pc_desc)) {
           current->adjust_pc(pc_desc->real_pc(sampled_nm));
+          biased = false;
         }
       }
     }
@@ -269,8 +275,9 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   assert(current != nullptr, "invariant");
 
   frame top_frame;
+  bool biased = false;
   bool in_continuation;
-  if (!compute_top_frame(request, top_frame, in_continuation, jt)) {
+  if (!compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
     return;
   }
 
@@ -292,6 +299,42 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
 }
 
+#ifdef LINUX
+static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
+  assert(jt != nullptr, "invariant");
+  assert(tl != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+  frame top_frame;
+  bool biased = false;
+  bool in_continuation = false;
+  bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
+  const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+
+  if (!could_compute_top_frame) {
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+    return;
+  }
+  traceid sid;
+  {
+    ResourceMark rm(current);
+    JfrStackTrace stacktrace;
+    if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
+      // Unable to record stacktrace. Fail.
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+      return;
+    }
+    sid = JfrStackTraceRepository::add(stacktrace);
+  }
+  assert(sid != 0, "invariant");
+
+
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  if (current == jt) {
+    send_safepoint_latency_event(request._request, now, sid, jt);
+  }
+}
+#endif
+
 static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(tl != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
@@ -307,23 +350,48 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
   assert(!tl->has_enqueued_requests(), "invariant");
 }
 
-class SampleMonitor : public StackObj {
- private:
-  JfrThreadLocal* const _tl;
-  Monitor* const _sample_monitor;
- public:
-  SampleMonitor(JfrThreadLocal* tl) : _tl(tl), _sample_monitor(tl->sample_monitor()) {
-    assert(tl != nullptr, "invariant");
-    assert(_sample_monitor != nullptr, "invariant");
-    _sample_monitor->lock_without_safepoint_check();
+static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current, bool lock) {
+  assert(tl != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+#ifdef LINUX
+  tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
+  if (lock) {
+    tl->acquire_cpu_time_jfr_dequeue_lock();
   }
-  ~SampleMonitor() {
-    assert_lock_strong(_sample_monitor);
-    _tl->set_sample_state(NO_SAMPLE);
-    _sample_monitor->notify_all();
-    _sample_monitor->unlock();
+  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  for (u4 i = 0; i < queue.size(); i++) {
+    record_cpu_time_thread(queue.at(i), now, tl, jt, current);
   }
-};
+  queue.clear();
+  assert(queue.is_empty(), "invariant");
+  tl->set_has_cpu_time_jfr_requests(false);
+  if (queue.lost_samples() > 0) {
+    JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
+  }
+  if (lock) {
+    tl->release_cpu_time_jfr_queue_lock();
+  }
+#endif
+}
+
+// Entry point for a thread that has been sampled in native code and has a pending JFR CPU time request.
+void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock) {
+  assert(jt != nullptr, "invariant");
+
+  const JfrTicks now = JfrTicks::now();
+  drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
+}
+
+static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
+  assert(tl != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+  drain_enqueued_requests(now, tl, jt, current);
+  if (tl->has_cpu_time_jfr_requests()) {
+    drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
+  }
+}
 
 // Only entered by the JfrSampler thread.
 bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread) {
@@ -334,7 +402,9 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
   assert(tl == jt->jfr_thread_local(), "invariant");
   assert(jt != sampler_thread, "only asynchronous processing of native samples");
   assert(jt->has_last_Java_frame(), "invariant");
-  assert(tl->sample_state() == NATIVE_SAMPLE, "invariant");
+  assert(tl->sample_state() >= NATIVE_SAMPLE, "invariant");
+
+  assert_lock_strong(Threads_lock);
 
   const JfrTicks start_time = JfrTicks::now();
 
@@ -342,7 +412,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
   traceid sid;
 
   {
-    SampleMonitor sm(tl);
+    JfrSampleMonitor sm(tl);
 
     // Because the thread was in native, it is in a walkable state, because
     // it will hit a safepoint poll on the way back from native. To ensure timely
@@ -384,14 +454,19 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   for (;;) {
     const int sample_state = tl->sample_state();
     if (sample_state == NATIVE_SAMPLE) {
+      tl->set_sample_state(WAITING_FOR_NATIVE_SAMPLE);
       // Wait until stack trace is processed.
       ml.wait();
     } else if (sample_state == JAVA_SAMPLE) {
       tl->enqueue_request();
+    } else if (sample_state == WAITING_FOR_NATIVE_SAMPLE) {
+      // Handle spurious wakeups. Again wait until stack trace is processed.
+      ml.wait();
     } else {
       // State has been processed.
       break;
     }
   }
-  drain_enqueued_requests(now, tl, jt, jt);
+  drain_all_enqueued_requests(now, tl, jt, jt);
 }
+

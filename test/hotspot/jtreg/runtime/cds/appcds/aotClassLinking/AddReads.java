@@ -27,8 +27,6 @@
  * @bug 8354083
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver AddReads
  * @summary sanity test the --add-reads option

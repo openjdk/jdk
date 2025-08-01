@@ -1897,21 +1897,31 @@ public abstract sealed class $Type$Buffer
 #if[char]
 
     /**
-     * Absolute bulk <i>get</i> method.
+     * Relative bulk <i>get</i> method.
      *
      * <p> This method transfers {@code srcEnd-srcBegin} characters from this
-     * buffer into the given array, starting at index {@code srcBegin} in this
-     * buffer and at offset {@code dstBegin} in the array. The position of this
-     * buffer is unchanged.
+     * buffer into the given array, starting at index
+     * {@code position() + srcBegin} in this buffer and at offset
+     * {@code dstBegin} in the array. The position of this buffer is unchanged.
+     *
+     * <p> An invocation of this method behaves exactly the same was as the
+     * invocation
+     *
+     * {@snippet lang=java :
+     *     get(position() + srcBegin, dst, dstBegin, srcEnd - srcBegin)
+     * }
      *
      * @param  srcBegin
-     *         The index in this buffer from which the first character will be
-     *         read; must be non-negative and less than {@code limit()}
+     *         The index in this buffer, relative to the current position,
+     *         of the first character to
+     *         read; must be non-negative and less than
+     *         {@code limit() - position()}
      *
      * @param  srcEnd
-     *         The index in this buffer directly before the last character to
-     *         read; must be non-negative and less or equal than {@code limit()}
-     *         and must be greater or equal than {@code srcBegin}
+     *         The index in this buffer, relative to the current position,
+     *         after the last character to read;
+     *         must be greater than or equal to {@code srcBegin} and less than
+     *         or equal to {@code limit() - position()}
      *
      * @param  dst
      *         The destination array
@@ -1924,14 +1934,16 @@ public abstract sealed class $Type$Buffer
      *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
      *          and {@code dstBegin} parameters do not hold
      *
-     * @implSpec This method is equivalent to
-     *           {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
-     *
      * @since 25
      */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        // Check [srcBegin,srcEnd) is a subset of [0,limit()-position)
+        int pos = position();
+        int lim = limit();
+        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
+
+        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     /**

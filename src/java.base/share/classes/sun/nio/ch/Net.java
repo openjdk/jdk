@@ -94,6 +94,15 @@ public class Net {
         return EXCLUSIVE_BIND;
     }
 
+    private static final StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
+
+    /**
+     * Tells whether a TCP connection should be shutdown for writing before closing.
+     */
+    static boolean shouldShutdownWriteBeforeClose() {
+        return SHUTDOWN_WRITE_BEFORE_CLOSE.orElseSet(Net::shouldShutdownWriteBeforeClose0);
+    }
+
     /**
      * Tells whether both IPV6_XXX and IP_XXX socket options should be set on
      * IPv6 sockets. On some kernels, both IPV6_XXX and IP_XXX socket options
@@ -461,6 +470,8 @@ public class Net {
      * Returns 1 for Windows and -1 for Linux/Mac OS
      */
     private static native int isExclusiveBindAvailable();
+
+    private static native boolean shouldShutdownWriteBeforeClose0();
 
     private static native boolean shouldSetBothIPv4AndIPv6Options0();
 

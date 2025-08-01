@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,19 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static jdk.internal.classfile.impl.verifier.VerificationType.ITEM_Object;
 import static jdk.internal.classfile.impl.verifier.VerificationType.ITEM_Uninitialized;
 import static jdk.internal.classfile.impl.verifier.VerificationType.ITEM_UninitializedThis;
 
-/**
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/stackMapTable.hpp">hotspot/share/classfile/stackMapTable.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/stackMapTable.cpp">hotspot/share/classfile/stackMapTable.cpp</a>
- */
+/// From `stackMapTable.cpp`.
 class VerificationTable {
 
     private final int _code_length;
     private final int _frame_count;
-    private final VerificationFrame[] _frame_array;
+    private final List<VerificationFrame> _frame_array;
     private final VerifierImpl _verifier;
 
     int get_frame_count() {
@@ -44,7 +44,7 @@ class VerificationTable {
     }
 
     int get_offset(int index) {
-        return _frame_array[index].offset();
+        return _frame_array.get(index).offset();
     }
 
     static class StackMapStream {
@@ -76,32 +76,28 @@ class VerificationTable {
         }
     }
 
-    VerificationTable(byte[] stackmap_data, VerificationFrame init_frame, int max_locals, int max_stack, byte[] code_data, int code_len,
+    VerificationTable(StackMapReader reader,
             VerificationWrapper.ConstantPoolWrapper cp, VerifierImpl v) {
         _verifier = v;
-        var reader = new StackMapReader(stackmap_data, code_data, code_len, cp, v);
-        _code_length = code_len;
-        _frame_count = reader.get_frame_count();
-        _frame_array = new VerificationFrame[_frame_count];
+        _code_length = reader.code_length();
+        int _frame_count = reader.get_frame_count();
+        _frame_array = new ArrayList<>(_frame_count);
         if (_frame_count > 0) {
-            VerificationFrame pre_frame = init_frame;
-            for (int i = 0; i < _frame_count; i++) {
-                VerificationFrame frame = reader.next(pre_frame, i == 0, max_locals, max_stack);
-                _frame_array[i] = frame;
-                int offset = frame.offset();
-                if (offset >= code_len || code_data[offset] == 0) {
-                    _verifier.verifyError("StackMapTable error: bad offset");
+            while (!reader.at_end()) {
+                VerificationFrame frame = reader.next();
+                if (frame != null) {
+                    _frame_array.add(frame);
                 }
-                pre_frame = frame;
             }
         }
         reader.check_end();
+        this._frame_count = _frame_array.size();
     }
 
     int get_index_from_offset(int offset) {
         int i = 0;
         for (; i < _frame_count; i++) {
-            if (_frame_array[i].offset() == offset) {
+            if (_frame_array.get(i).offset() == offset) {
                 return i;
             }
         }
@@ -117,7 +113,7 @@ class VerificationTable {
         if (frame_index < 0 || frame_index >= _frame_count) {
             _verifier.verifyError(String.format("Expecting a stackmap frame at branch target %d", target));
         }
-        VerificationFrame stackmap_frame = _frame_array[frame_index];
+        VerificationFrame stackmap_frame = _frame_array.get(frame_index);
         boolean result = true;
         if (match) {
             result = frame.is_assignable_to(stackmap_frame);
@@ -151,6 +147,10 @@ class VerificationTable {
         private final byte[] _code_data;
         private final int _code_length;
         private final int _frame_count;
+        private int _parsed_frame_count;
+        private VerificationFrame _prev_frame;
+        char _max_locals, _max_stack;
+        boolean _first;
 
         void check_verification_type_array_size(int size, int max_size) {
             if (size < 0 || size > max_size) {
@@ -167,25 +167,73 @@ class VerificationTable {
             return _frame_count;
         }
 
+        public VerificationFrame prev_frame() {
+            return _prev_frame;
+        }
+
+        public byte[] code_data() {
+            return _code_data;
+        }
+
+        public int code_length() {
+            return _code_length;
+        }
+
+        public boolean at_end() {
+            return _stream.at_end();
+        }
+
+        public VerificationFrame next() {
+            _parsed_frame_count++;
+            check_size();
+            VerificationFrame frame = next_helper();
+            if (frame != null) {
+                check_offset(frame);
+                _prev_frame = frame;
+            }
+            return frame;
+        }
+
         public void check_end() {
-            if (!_stream.at_end()) {
-                _verifier.classError("wrong attribute size");
+            if (_frame_count != _parsed_frame_count) {
+                _verifier.verifyError("wrong attribute size");
             }
         }
 
         private final VerifierImpl _verifier;
 
-        public StackMapReader(byte[] stackmapData, byte[] code_data, int code_len, VerificationWrapper.ConstantPoolWrapper cp, VerifierImpl context) {
+        public StackMapReader(byte[] stackmapData, byte[] code_data, int code_len,
+                              VerificationFrame init_frame, char max_locals, char max_stack,
+                              VerificationWrapper.ConstantPoolWrapper cp, VerifierImpl context) {
             this._verifier = context;
             _stream = new StackMapStream(stackmapData, _verifier);
-            if (stackmapData != null) {
-                _frame_count = _stream.get_u2();
-            } else {
-                _frame_count = 0;
-            }
             _code_data = code_data;
             _code_length = code_len;
-            _cp = cp;
+            _parsed_frame_count = 0;
+            _prev_frame = init_frame;
+            _max_locals = max_locals;
+            _max_stack = max_stack;
+            _first = true;
+            if (stackmapData != null) {
+                _cp = cp;
+                _frame_count = _stream.get_u2();
+            } else {
+                _cp = null;
+                _frame_count = 0;
+            }
+        }
+
+        void check_offset(VerificationFrame frame) {
+            int offset = frame.offset();
+            if (offset >= _code_length || _code_data[offset] == 0) {
+                _verifier.verifyError("StackMapTable error: bad offset");
+            }
+        }
+
+        void check_size() {
+            if (_frame_count < _parsed_frame_count) {
+                _verifier.verifyError("wrong attribute size");
+            }
         }
 
         int chop(VerificationType[] locals, int length, int chops) {
@@ -232,36 +280,37 @@ class VerificationTable {
             return VerificationType.bogus_type;
         }
 
-        public VerificationFrame next(VerificationFrame pre_frame, boolean first, int max_locals, int max_stack) {
+        VerificationFrame next_helper() {
             VerificationFrame frame;
             int offset;
             VerificationType[] locals = null;
             int frame_type = _stream.get_u1();
             if (frame_type < 64) {
-                if (first) {
+                if (_first) {
                     offset = frame_type;
-                    if (pre_frame.locals_size() > 0) {
-                        locals = new VerificationType[pre_frame.locals_size()];
+                    if (_prev_frame.locals_size() > 0) {
+                        locals = new VerificationType[_prev_frame.locals_size()];
                     }
                 } else {
-                    offset = pre_frame.offset() + frame_type + 1;
-                    locals = pre_frame.locals();
+                    offset = _prev_frame.offset() + frame_type + 1;
+                    locals = _prev_frame.locals();
                 }
-                frame = new VerificationFrame(offset, pre_frame.flags(), pre_frame.locals_size(), 0, max_locals, max_stack, locals, null, _verifier);
-                if (first && locals != null) {
-                    frame.copy_locals(pre_frame);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), 0, _max_locals, _max_stack, locals, null, _verifier);
+                if (_first && locals != null) {
+                    frame.copy_locals(_prev_frame);
                 }
+                _first = false;
                 return frame;
             }
             if (frame_type < 128) {
-                if (first) {
+                if (_first) {
                     offset = frame_type - 64;
-                    if (pre_frame.locals_size() > 0) {
-                        locals = new VerificationType[pre_frame.locals_size()];
+                    if (_prev_frame.locals_size() > 0) {
+                        locals = new VerificationType[_prev_frame.locals_size()];
                     }
                 } else {
-                    offset = pre_frame.offset() + frame_type - 63;
-                    locals = pre_frame.locals();
+                    offset = _prev_frame.offset() + frame_type - 63;
+                    locals = _prev_frame.locals();
                 }
                 VerificationType[] stack = new VerificationType[2];
                 int stack_size = 1;
@@ -270,11 +319,12 @@ class VerificationTable {
                     stack[1] = stack[0].to_category2_2nd(_verifier);
                     stack_size = 2;
                 }
-                check_verification_type_array_size(stack_size, max_stack);
-                frame = new VerificationFrame(offset, pre_frame.flags(), pre_frame.locals_size(), stack_size, max_locals, max_stack, locals, stack, _verifier);
-                if (first && locals != null) {
-                    frame.copy_locals(pre_frame);
+                check_verification_type_array_size(stack_size, _max_stack);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                if (_first && locals != null) {
+                    frame.copy_locals(_prev_frame);
                 }
+                _first = false;
                 return frame;
             }
             int offset_delta = _stream.get_u2();
@@ -282,14 +332,14 @@ class VerificationTable {
                 _verifier.classError("reserved frame type");
             }
             if (frame_type == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
-                if (first) {
+                if (_first) {
                     offset = offset_delta;
-                    if (pre_frame.locals_size() > 0) {
-                        locals = new VerificationType[pre_frame.locals_size()];
+                    if (_prev_frame.locals_size() > 0) {
+                        locals = new VerificationType[_prev_frame.locals_size()];
                     }
                 } else {
-                    offset = pre_frame.offset() + offset_delta + 1;
-                    locals = pre_frame.locals();
+                    offset = _prev_frame.offset() + offset_delta + 1;
+                    locals = _prev_frame.locals();
                 }
                 VerificationType[] stack = new VerificationType[2];
                 int stack_size = 1;
@@ -298,22 +348,23 @@ class VerificationTable {
                     stack[1] = stack[0].to_category2_2nd(_verifier);
                     stack_size = 2;
                 }
-                check_verification_type_array_size(stack_size, max_stack);
-                frame = new VerificationFrame(offset, pre_frame.flags(), pre_frame.locals_size(), stack_size, max_locals, max_stack, locals, stack, _verifier);
-                if (first && locals != null) {
-                    frame.copy_locals(pre_frame);
+                check_verification_type_array_size(stack_size, _max_stack);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                if (_first && locals != null) {
+                    frame.copy_locals(_prev_frame);
                 }
+                _first = false;
                 return frame;
             }
             if (frame_type <= SAME_EXTENDED) {
-                locals = pre_frame.locals();
-                int length = pre_frame.locals_size();
+                locals = _prev_frame.locals();
+                int length = _prev_frame.locals_size();
                 int chops = SAME_EXTENDED - frame_type;
                 int new_length = length;
-                int flags = pre_frame.flags();
+                int flags = _prev_frame.flags();
                 if (chops != 0) {
                     new_length = chop(locals, length, chops);
-                    check_verification_type_array_size(new_length, max_locals);
+                    check_verification_type_array_size(new_length, _max_locals);
                     flags = 0;
                     for (int i=0; i<new_length; i++) {
                         if (locals[i].is_uninitialized_this(_verifier)) {
@@ -322,7 +373,7 @@ class VerificationTable {
                         }
                     }
                 }
-                if (first) {
+                if (_first) {
                     offset = offset_delta;
                     if (new_length > 0) {
                         locals = new VerificationType[new_length];
@@ -330,24 +381,25 @@ class VerificationTable {
                         locals = null;
                     }
                 } else {
-                    offset = pre_frame.offset() + offset_delta + 1;
+                    offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags, new_length, 0, max_locals, max_stack, locals, null, _verifier);
-                if (first && locals != null) {
-                    frame.copy_locals(pre_frame);
+                frame = new VerificationFrame(offset, flags, new_length, 0, _max_locals, _max_stack, locals, null, _verifier);
+                if (_first && locals != null) {
+                    frame.copy_locals(_prev_frame);
                 }
+                _first = false;
                 return frame;
             } else if (frame_type < SAME_EXTENDED + 4) {
                 int appends = frame_type - SAME_EXTENDED;
-                int real_length = pre_frame.locals_size();
+                int real_length = _prev_frame.locals_size();
                 int new_length = real_length + appends*2;
                 locals = new VerificationType[new_length];
-                VerificationType[] pre_locals = pre_frame.locals();
+                VerificationType[] pre_locals = _prev_frame.locals();
                 int i;
-                for (i=0; i<pre_frame.locals_size(); i++) {
+                for (i=0; i< _prev_frame.locals_size(); i++) {
                     locals[i] = pre_locals[i];
                 }
-                int[] flags = new int[]{pre_frame.flags()};
+                int[] flags = new int[]{_prev_frame.flags()};
                 for (i=0; i<appends; i++) {
                     locals[real_length] = parse_verification_type(flags);
                     if (locals[real_length].is_category2()) {
@@ -356,13 +408,14 @@ class VerificationTable {
                     }
                     ++real_length;
                 }
-                check_verification_type_array_size(real_length, max_locals);
-                if (first) {
+                check_verification_type_array_size(real_length, _max_locals);
+                if (_first) {
                     offset = offset_delta;
                 } else {
-                    offset = pre_frame.offset() + offset_delta + 1;
+                    offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags[0], real_length, 0, max_locals, max_stack, locals, null, _verifier);
+                frame = new VerificationFrame(offset, flags[0], real_length, 0, _max_locals, _max_stack, locals, null, _verifier);
+                _first = false;
                 return frame;
             }
             if (frame_type == FULL) {
@@ -377,12 +430,12 @@ class VerificationTable {
                     locals[real_locals_size] = parse_verification_type(flags);
                     if (locals[real_locals_size].is_category2()) {
                         locals[real_locals_size + 1] =
-                            locals[real_locals_size].to_category2_2nd(_verifier);
+                                locals[real_locals_size].to_category2_2nd(_verifier);
                         ++real_locals_size;
                     }
                     ++real_locals_size;
                 }
-                check_verification_type_array_size(real_locals_size, max_locals);
+                check_verification_type_array_size(real_locals_size, _max_locals);
                 int stack_size = _stream.get_u2();
                 int real_stack_size = 0;
                 VerificationType[] stack = null;
@@ -397,13 +450,14 @@ class VerificationTable {
                     }
                     ++real_stack_size;
                 }
-                check_verification_type_array_size(real_stack_size, max_stack);
-                if (first) {
+                check_verification_type_array_size(real_stack_size, _max_stack);
+                if (_first) {
                     offset = offset_delta;
                 } else {
-                    offset = pre_frame.offset() + offset_delta + 1;
+                    offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags[0], real_locals_size, real_stack_size, max_locals, max_stack, locals, stack, _verifier);
+                frame = new VerificationFrame(offset, flags[0], real_locals_size, real_stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                _first = false;
                 return frame;
             }
             _verifier.classError("reserved frame type");

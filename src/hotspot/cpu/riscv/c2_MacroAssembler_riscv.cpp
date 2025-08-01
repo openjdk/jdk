@@ -1952,16 +1952,15 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   mv(pow31_3,  29791);           // [31^^3]
   mv(pow31_2,    961);           // [31^^2]
 
-  slli(chunks_end, chunks, chunks_end_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, chunks, ary, t0, chunks_end_shift);
   andi(cnt, cnt, stride - 1);    // don't forget about tail!
 
   bind(WIDE_LOOP);
-  mulw(result, result, pow31_4); // 31^^4 * h
   arrays_hashcode_elload(t0,   Address(ary, 0 * elsize), eltype);
   arrays_hashcode_elload(t1,   Address(ary, 1 * elsize), eltype);
   arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize), eltype);
   arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize), eltype);
+  mulw(result, result, pow31_4); // 31^^4 * h
   mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
   addw(result, result, t0);
   mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
@@ -1976,8 +1975,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   beqz(cnt, DONE);
 
   bind(TAIL);
-  slli(chunks_end, cnt, chunks_end_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, cnt, ary, t0, chunks_end_shift);
 
   bind(TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
@@ -2170,15 +2168,13 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      assert(false, "Should go to BoolTest::le case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      assert(false, "Should go to BoolTest::lt case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
       break;
     default:
       assert(false, "unsupported compare condition");

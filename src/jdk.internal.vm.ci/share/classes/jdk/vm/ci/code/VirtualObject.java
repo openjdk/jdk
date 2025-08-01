@@ -289,17 +289,18 @@ public final class VirtualObject implements JavaValue {
         if (o == this) {
             return true;
         }
-        if (o instanceof VirtualObject) {
-            VirtualObject l = (VirtualObject) o;
-            if (!l.type.equals(type) || l.values.length != values.length) {
+        if (o instanceof VirtualObject that) {
+            int thatValuesLength = (that.values == null) ? 0 : that.values.length;
+            int valuesLength = (values == null) ? 0 : values.length;
+            if (!that.type.equals(type) || thatValuesLength != valuesLength) {
                 return false;
             }
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 0; i < valuesLength; i++) {
                 /*
                  * Virtual objects can form cycles. Calling equals() could therefore lead to
                  * infinite recursion.
                  */
-                if (!same(values[i], l.values[i])) {
+                if (!same(values[i], that.values[i])) {
                     return false;
                 }
             }
@@ -310,5 +311,12 @@ public final class VirtualObject implements JavaValue {
 
     private static boolean same(Object o1, Object o2) {
         return o1 == o2;
+    }
+
+    /**
+     * Returns a copy of the array containing the Java kinds of the values stored in this virtual object.
+     */
+    public JavaKind[] getSlotKinds() {
+        return (slotKinds == null) ? null : slotKinds.clone();
     }
 }

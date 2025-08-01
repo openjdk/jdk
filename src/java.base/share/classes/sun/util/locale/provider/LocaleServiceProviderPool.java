@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.util.locale.provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.IllformedLocaleException;
 import java.util.List;
@@ -388,8 +387,7 @@ public final class LocaleServiceProviderPool {
      * A dummy locale service provider list that indicates there is no
      * provider available
      */
-    private static final List<LocaleServiceProvider> NULL_LIST =
-        Collections.emptyList();
+    private static final List<LocaleServiceProvider> NULL_LIST = List.of();
 
     /**
      * An interface to get a localized object for each locale sensitive

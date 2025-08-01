@@ -28,6 +28,7 @@
 #include "code/location.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "memory/oopFactory.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
@@ -109,9 +110,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = Universe::typeArrayKlass(elem_bt);
-
-  typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
+  typeArrayOop arr = oopFactory::new_typeArray(elem_bt, num_elem, CHECK_NH); // safepoint
 
   if (location.is_register()) {
     // Value was in a callee-saved register.

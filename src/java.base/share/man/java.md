@@ -1449,9 +1449,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     `report-on-exit=`*identifier*
     :   Specifies the name of the view to display when the Java Virtual Machine
-        (JVM) shuts down. This option is not available if the disk option is set
-        to false. For a list of available views, see `jfr help view`. By default,
-        no report is generated.
+        (JVM) shuts down. To specify more than one view, use the report-on-exit
+        parameter repeatedly. This option is not available if the disk option
+        is set to false. For a list of available views, see `jfr help view`.
+        By default, no report is generated.
 
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
@@ -1513,6 +1514,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     ```
 
     This option is similar to `-Xss`.
+
+`-XX:+UseCompactObjectHeaders`
+:   Enables compact object headers. By default, this option is disabled.
+    Enabling this option reduces memory footprint in the Java heap by
+    4 bytes per object (on average) and often improves performance.
+
+    The feature remains disabled by default while it continues to be evaluated.
+    In a future release it is expected to be enabled by default, and
+    eventually will be the only mode of operation.
 
 `-XX:-UseCompressedOops`
 :   Disables the use of compressed pointers. By default, this option is
@@ -2700,14 +2710,6 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
@@ -2807,9 +2809,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as
@@ -2903,6 +2904,14 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
+`-XX:+ParallelRefProcEnabled`
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
+
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2917,70 +2926,11 @@ when they're used.
 
 ## Removed Java Options
 
-These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
-
->   `Unrecognized VM option` *option-name*
-
-`-XX:RTMAbortRatio=`*abort\_ratio*
-:   Specifies the RTM abort ratio is specified as a percentage (%) of all
-    executed RTM transactions. If a number of aborted transactions becomes
-    greater than this ratio, then the compiled code is deoptimized. This ratio
-    is used when the `-XX:+UseRTMDeopt` option is enabled. The default value of
-    this option is 50. This means that the compiled code is deoptimized if 50%
-    of all transactions are aborted.
-
-`-XX:RTMRetryCount=`*number\_of\_retries*
-:   Specifies the number of times that the RTM locking code is retried, when it
-    is aborted or busy, before falling back to the normal locking mechanism.
-    The default value for this option is 5. The `-XX:UseRTMLocking` option must
-    be enabled.
-
-`-XX:+UseRTMDeopt`
-:   Autotunes RTM locking depending on the abort ratio. This ratio is specified
-    by the `-XX:RTMAbortRatio` option. If the number of aborted transactions
-    exceeds the abort ratio, then the method containing the lock is deoptimized
-    and recompiled with all locks as normal locks. This option is disabled by
-    default. The `-XX:+UseRTMLocking` option must be enabled.
-
-`-XX:+UseRTMLocking`
-:   Generates Restricted Transactional Memory (RTM) locking code for all
-    inflated locks, with the normal locking mechanism as the fallback handler.
-    This option is disabled by default. Options related to RTM are available
-    only on x86 CPUs that support Transactional Synchronization Extensions (TSX).
-
-    RTM is part of Intel's TSX, which is an x86 instruction set extension and
-    facilitates the creation of multithreaded applications. RTM introduces the
-    new instructions `XBEGIN`, `XABORT`, `XEND`, and `XTEST`. The `XBEGIN` and
-    `XEND` instructions enclose a set of instructions to run as a transaction.
-    If no conflict is found when running the transaction, then the memory and
-    register modifications are committed together at the `XEND` instruction.
-    The `XABORT` instruction can be used to explicitly abort a transaction and
-    the `XTEST` instruction checks if a set of instructions is being run in a
-    transaction.
-
-    A lock on a transaction is inflated when another thread tries to access the
-    same transaction, thereby blocking the thread that didn't originally
-    request access to the transaction. RTM requires that a fallback set of
-    operations be specified in case a transaction aborts or fails. An RTM lock
-    is a lock that has been delegated to the TSX's system.
-
-    RTM improves performance for highly contended locks with low conflict in a
-    critical region (which is code that must not be accessed by more than one
-    thread concurrently). RTM also improves the performance of coarse-grain
-    locking, which typically doesn't perform well in multithreaded
-    applications. (Coarse-grain locking is the strategy of holding locks for
-    long periods to minimize the overhead of taking and releasing locks, while
-    fine-grained locking is the strategy of trying to achieve maximum
-    parallelism by locking only when necessary and unlocking as soon as
-    possible.) Also, for lightly contended locks that are used by different
-    threads, RTM can reduce false cache line sharing, also known as cache line
-    ping-pong. This occurs when multiple threads from different processors are
-    accessing different resources, but the resources share the same cache line.
-    As a result, the processors repeatedly invalidate the cache lines of other
-    processors, which forces them to read from main memory instead of their
-    cache.
+No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 25](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
 
@@ -3806,9 +3756,10 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-(The names "static" and "dynamic" are used for historical reasons.
-The only significance is that the "static" archive is loaded first and
-the "dynamic" archive is loaded second).
+The names "static" and "dynamic" are used for historical reasons. The dynamic
+archive, while still useful, supports fewer optimizations than
+available for the static CDS archive. If the full set of CDS/AOT
+optimizations are desired, consider using the AOT cache described below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:

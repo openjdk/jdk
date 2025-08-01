@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,8 @@ void AwtClipboard::RegisterClipboardViewer(JNIEnv *env, jobject jclipboard) {
         return;
     }
 
-    if (theCurrentClipboard == NULL) {
-        theCurrentClipboard = env->NewGlobalRef(jclipboard);
-    }
+    DASSERT(AwtClipboard::theCurrentClipboard != NULL);
+    DASSERT(env->IsSameObject(AwtClipboard::theCurrentClipboard, jclipboard));
 
     jclass cls = env->GetObjectClass(jclipboard);
     AwtClipboard::handleContentsChangedMID =
@@ -128,11 +127,13 @@ Java_sun_awt_windows_WClipboard_init(JNIEnv *env, jclass cls)
  * Signature: (Lsun/awt/windows/WClipboard;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
+Java_sun_awt_windows_WClipboard_openClipboard0(JNIEnv *env, jobject self,
                                               jobject newOwner)
 {
     TRY;
 
+    DASSERT(AwtClipboard::theCurrentClipboard != NULL);
+    DASSERT(newOwner == NULL || env->IsSameObject(AwtClipboard::theCurrentClipboard, newOwner));
     DASSERT(::GetOpenClipboardWindow() != AwtToolkit::GetInstance().GetHWnd());
 
     if (!::OpenClipboard(AwtToolkit::GetInstance().GetHWnd())) {
@@ -142,10 +143,6 @@ Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
     }
     if (newOwner != NULL) {
         AwtClipboard::GetOwnership();
-        if (AwtClipboard::theCurrentClipboard != NULL) {
-            env->DeleteGlobalRef(AwtClipboard::theCurrentClipboard);
-        }
-        AwtClipboard::theCurrentClipboard = env->NewGlobalRef(newOwner);
     }
 
     CATCH_BAD_ALLOC;
@@ -157,7 +154,7 @@ Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WClipboard_closeClipboard(JNIEnv *env, jobject self)
+Java_sun_awt_windows_WClipboard_closeClipboard0(JNIEnv *env, jobject self)
 {
     TRY;
 
@@ -297,23 +294,25 @@ Java_sun_awt_windows_WClipboard_getClipboardFormats
 {
     TRY;
 
-    DASSERT(::GetOpenClipboardWindow() == AwtToolkit::GetInstance().GetHWnd());
+    unsigned int cFormats = 128; // Allocate enough space to hold all
+    unsigned int pcFormatsOut = 0;
+    unsigned int lpuiFormats[128] = { 0 };
 
-    jsize nFormats = ::CountClipboardFormats();
-    jlongArray formats = env->NewLongArray(nFormats);
+    VERIFY(::GetUpdatedClipboardFormats(lpuiFormats, 128, &pcFormatsOut));
+
+    jlongArray formats = env->NewLongArray(pcFormatsOut);
     if (formats == NULL) {
         throw std::bad_alloc();
     }
-    if (nFormats == 0) {
+    if (pcFormatsOut == 0) {
         return formats;
     }
     jboolean isCopy;
     jlong *lFormats = env->GetLongArrayElements(formats, &isCopy),
         *saveFormats = lFormats;
-    UINT num = 0;
 
-    for (jsize i = 0; i < nFormats; i++, lFormats++) {
-        *lFormats = num = ::EnumClipboardFormats(num);
+    for (unsigned int i = 0; i < pcFormatsOut; i++, lFormats++) {
+        *lFormats = lpuiFormats[i];
     }
 
     env->ReleaseLongArrayElements(formats, saveFormats, 0);
@@ -476,6 +475,18 @@ Java_sun_awt_windows_WClipboard_getClipboardData
     return bytes;
 
     CATCH_BAD_ALLOC_RET(NULL);
+}
+
+/*
+ * Class:     sun_awt_windows_WClipboard
+ * Method:    registerClipboard
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WClipboard_registerClipboard(JNIEnv *env, jobject self)
+{
+    DASSERT(AwtClipboard::theCurrentClipboard == NULL);
+    AwtClipboard::theCurrentClipboard = env->NewGlobalRef(self);
 }
 
 } /* extern "C" */

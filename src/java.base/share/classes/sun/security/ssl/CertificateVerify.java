@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1162,6 +1162,14 @@ final class CertificateVerify {
 
             // Clean up this consumer
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_VERIFY.id);
+
+            // Ensure that the Certificate Verify message has not been sent w/o
+            // a Certificate message preceding
+            if (hc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                                  "Unexpected Certificate Verify handshake message");
+            }
 
             T13CertificateVerifyMessage cvm =
                     new T13CertificateVerifyMessage(hc, message);

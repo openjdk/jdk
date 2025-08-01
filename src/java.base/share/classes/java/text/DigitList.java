@@ -177,18 +177,7 @@ final class DigitList implements Cloneable {
         if (count == 0) {
             return 0.0;
         }
-
-        int stringSize = DecimalDigits.stringSize(decimalAt);
-        byte[] buf = new byte[count + 2 + stringSize];
-        buf[0] = '.';
-        System.arraycopy(digits, 0, buf, 1, count);
-        buf[count + 1] = 'E';
-        DecimalDigits.uncheckedGetCharsLatin1(decimalAt, buf.length, buf);
-        try {
-            return Double.parseDouble(JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1));
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
-        }
+        return FloatingDecimal.parseDoubleSignlessDigits(decimalAt, digits, count);
     }
 
     /**
@@ -203,20 +192,21 @@ final class DigitList implements Cloneable {
             return 0;
         }
 
-        // We have to check for this, because this is the one NEGATIVE value
+        // Parse as unsigned to handle Long.MIN_VALUE, which is the one NEGATIVE value
         // we represent.  If we tried to just pass the digits off to parseLong,
         // we'd get a parse failure.
-        if (isLongMIN_VALUE()) {
-            return Long.MIN_VALUE;
+        long v = Long.parseUnsignedLong(new String(digits, 0, count));
+        if (v < 0) {
+            if (v == Long.MIN_VALUE) {
+                return Long.MIN_VALUE;
+            }
+            throw new NumberFormatException("Unexpected negative value");
         }
-
-        int e = Math.max(0, decimalAt - count);
-        byte[] buf = Arrays.copyOf(digits, count + e);
-        Arrays.fill(buf, count, buf.length, (byte) '0');
         try {
-            return Long.parseLong(JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1));
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
+            long pow10 = Math.powExact(10L, Math.max(0, decimalAt - count));
+            return Math.multiplyExact(v, pow10);
+        } catch (ArithmeticException e) {
+            throw new NumberFormatException("Value does not fit into a long");
         }
     }
 
@@ -227,15 +217,11 @@ final class DigitList implements Cloneable {
      */
     public final BigDecimal getBigDecimal() {
         if (count == 0) {
-            if (decimalAt == 0) {
-                return BigDecimal.ZERO;
-            } else {
-                return new BigDecimal("0E" + decimalAt);
-            }
+            return BigDecimal.valueOf(0, -decimalAt);
         }
 
         char[] chars = new char[count];
-        JLA.uncheckedInflateBytesToChars(digits, 0, chars, 0, count);
+        JLA.inflateBytesToChars(digits, 0, chars, 0, count);
         BigDecimal value = new BigDecimal(chars, 0, chars.length);
         if (decimalAt == count) {
             return value;
@@ -757,9 +743,9 @@ final class DigitList implements Cloneable {
             System.arraycopy(digits, 0, newDigits, 0, digits.length);
             other.digits = newDigits;
 
-            // data and tempBuilder do not need to be copied because they do
-            // not carry significant information. They will be recreated on demand.
-            // Setting them to null is needed to avoid sharing across clones.
+            // Data does not need to be copied because it does
+            // not carry significant information. It will be recreated on demand.
+            // Setting it to null is needed to avoid sharing across clones.
             other.data = null;
 
             return other;
@@ -768,23 +754,7 @@ final class DigitList implements Cloneable {
         }
     }
 
-    /**
-     * Returns true if this DigitList represents Long.MIN_VALUE;
-     * false, otherwise.  This is required so that getLong() works.
-     */
-    private boolean isLongMIN_VALUE() {
-        if (decimalAt != count || count != MAX_COUNT) {
-            return false;
-        }
-
-        for (int i = 0; i < count; ++i) {
-            if (digits[i] != LONG_MIN_REP[i]) return false;
-        }
-
-        return true;
-    }
-
-    private static final int parseInt(byte[] str, int offset, int strLen) {
+    private static int parseInt(byte[] str, int offset, int strLen) {
         byte c;
         boolean positive = true;
         if ((c = str[offset]) == '-') {

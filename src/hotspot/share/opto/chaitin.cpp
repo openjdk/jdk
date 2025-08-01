@@ -429,6 +429,9 @@ void PhaseChaitin::Register_Allocate() {
 
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time
+  if (C->failing()) {
+    return;
+  }
 
   // The IFG is/was triangular.  I am 'squaring it up' so Union can run
   // faster.  Union requires a 'for all' operation which is slow on the
@@ -472,6 +475,9 @@ void PhaseChaitin::Register_Allocate() {
   // Build physical interference graph
   uint must_spill = 0;
   must_spill = build_ifg_physical(&live_arena);
+  if (C->failing()) {
+    return;
+  }
   // If we have a guaranteed spill, might as well spill now
   if (must_spill) {
     if(!_lrg_map.max_lrg_id()) {
@@ -513,6 +519,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_INITIAL_SPILLING, 4);
 
     build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
     // Only do conservative coalescing if requested
@@ -596,6 +605,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_ITERATIVE_SPILLING, 4);
 
     must_spill = build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
 

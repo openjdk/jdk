@@ -386,6 +386,13 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+
+  // Whether this node is expanded during code emission into a sequence of
+  // instructions and the first instruction can perform an implicit null check.
+  virtual bool is_late_expanded_null_check_candidate() const {
+    return false;
+  }
+
   void set_removed() { add_flag(Flag_is_removed_by_peephole); }
   bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 

@@ -117,11 +117,11 @@ public final class PrettyWriter extends EventPrintWriter {
     // At the same time, a too large window, means it will take more time
     // before the first event is printed and the tool will feel unresponsive.
     private static final int EVENT_WINDOW_SIZE = 1_000_000;
-    private final PriorityQueue<Timestamp> timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
-    private final Map<Long, TypeInformation> typeInformation = new HashMap<>();
-    private final Map<Long, SequencedSet<RecordedEvent>> contexts = new HashMap<>();
     private final boolean showExact;
     private RecordedEvent currentEvent;
+    private PriorityQueue<Timestamp> timeline;
+    private Map<Long, TypeInformation> typeInformation;
+    private Map<Long, SequencedSet<RecordedEvent>> contexts;
 
     public PrettyWriter(PrintWriter destination, boolean showExact) {
         super(destination);
@@ -133,6 +133,9 @@ public final class PrettyWriter extends EventPrintWriter {
     }
 
     void print(Path source) throws IOException {
+        timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
+        typeInformation = new HashMap<>();
+        contexts = new HashMap<>();
         printBegin();
         int counter = 0;
         try (RecordingFile file = new RecordingFile(source)) {

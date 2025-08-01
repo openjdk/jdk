@@ -1065,7 +1065,7 @@ void Parse::do_exits() {
   // This is done late so that we can common up equivalent exceptions
   // (e.g., null checks) arising from multiple points within this method.
   // See GraphKit::add_exception_state, which performs the commoning.
-  bool do_synch = method()->is_synchronized() && GenerateSynchronizationCode;
+  bool do_synch = method()->is_synchronized();
 
   // record exit from a method if compiled while Dtrace is turned on.
   if (do_synch || C->env()->dtrace_method_probes() || _replaced_nodes_for_exceptions) {
@@ -2189,7 +2189,7 @@ void Parse::return_current(Node* value) {
 
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
-  if (method()->is_synchronized() && GenerateSynchronizationCode) {
+  if (method()->is_synchronized()) {
     shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
   }
   if (C->env()->dtrace_method_probes()) {

@@ -46,6 +46,12 @@
 //
 /******************************************************************************/
 
+/* Represents 0x7FFFFFFFFFFFFFFF double precision in lower 64 bits*/
+ATTRIBUTE_ALIGNED(16) static const juint _ABS_MASK[] =
+{
+    4294967295, 2147483647, 0, 0
+};
+
 ATTRIBUTE_ALIGNED(4) static const juint _SIG_MASK[] =
 {
     0, 1032192
@@ -184,14 +190,14 @@ ATTRIBUTE_ALIGNED(4) static const juint _D_table[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmCbrt() {
-  StubGenStubId stub_id = StubGenStubId::dcbrt_id;
+  StubId stub_id = StubId::stubgen_dcbrt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
-  Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1;
+  Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1;
   Label B1_1, B1_2, B1_4;
 
+  address ABS_MASK        = (address)_ABS_MASK;
   address SIG_MASK        = (address)_SIG_MASK;
   address EXP_MASK        = (address)_EXP_MASK;
   address EXP_MSK2        = (address)_EXP_MSK2;
@@ -208,8 +214,12 @@ address StubGenerator::generate_libmCbrt() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   __ bind(B1_1);
-  __ subq(rsp, 24);
-  __ movsd(Address(rsp), xmm0);
+  __ ucomisd(xmm0, ExternalAddress(ZERON), r11 /*rscratch*/);
+  __ jcc(Assembler::equal, L_2TAG_PACKET_1_0_1); // Branch only if x is +/- zero or NaN
+  __ movq(xmm1, xmm0);
+  __ andpd(xmm1, ExternalAddress(ABS_MASK), r11 /*rscratch*/);
+  __ ucomisd(xmm1, ExternalAddress(INF), r11 /*rscratch*/);
+  __ jcc(Assembler::equal, B1_4); // Branch only if x is +/- INF
 
   __ bind(B1_2);
   __ movq(xmm7, xmm0);
@@ -228,8 +238,6 @@ address StubGenerator::generate_libmCbrt() {
   __ andl(rdx, rax);
   __ cmpl(rdx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_0_0_1); // Branch only if |x| is denormalized
-  __ cmpl(rdx, 524032);
-  __ jcc(Assembler::equal, L_2TAG_PACKET_1_0_1); // Branch only if |x| is INF or NaN
   __ shrl(rdx, 8);
   __ shrq(r9, 8);
   __ andpd(xmm2, xmm0);
@@ -297,8 +305,6 @@ address StubGenerator::generate_libmCbrt() {
   __ andl(rdx, rax);
   __ shrl(rdx, 8);
   __ shrq(r9, 8);
-  __ cmpl(rdx, 0);
-  __ jcc(Assembler::equal, L_2TAG_PACKET_3_0_1); // Branch only if |x| is zero
   __ andpd(xmm2, xmm0);
   __ andpd(xmm0, xmm5);
   __ orpd(xmm3, xmm2);
@@ -322,41 +328,10 @@ address StubGenerator::generate_libmCbrt() {
   __ psllq(xmm7, 52);
   __ jmp(L_2TAG_PACKET_2_0_1);
 
-  __ bind(L_2TAG_PACKET_3_0_1);
-  __ cmpq(r9, 0);
-  __ jcc(Assembler::notEqual, L_2TAG_PACKET_4_0_1); // Branch only if x is negative zero
-  __ xorpd(xmm0, xmm0);
-  __ jmp(B1_4);
-
-  __ bind(L_2TAG_PACKET_4_0_1);
-  __ movsd(xmm0, ExternalAddress(ZERON), r11 /*rscratch*/);
-  __ jmp(B1_4);
-
   __ bind(L_2TAG_PACKET_1_0_1);
-  __ movl(rax, Address(rsp, 4));
-  __ movl(rdx, Address(rsp));
-  __ movl(rcx, rax);
-  __ andl(rcx, 2147483647);
-  __ cmpl(rcx, 2146435072);
-  __ jcc(Assembler::above, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
-  __ cmpl(rdx, 0);
-  __ jcc(Assembler::notEqual, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
-  __ cmpl(rax, 2146435072);
-  __ jcc(Assembler::notEqual, L_2TAG_PACKET_6_0_1); // Branch only if x is negative INF
-  __ movsd(xmm0, ExternalAddress(INF), r11 /*rscratch*/);
-  __ jmp(B1_4);
-
-  __ bind(L_2TAG_PACKET_6_0_1);
-  __ movsd(xmm0, ExternalAddress(NEG_INF), r11 /*rscratch*/);
-  __ jmp(B1_4);
-
-  __ bind(L_2TAG_PACKET_5_0_1);
-  __ movsd(xmm0, Address(rsp));
   __ addsd(xmm0, xmm0);
-  __ movq(Address(rsp, 8), xmm0);
 
   __ bind(B1_4);
-  __ addq(rsp, 24);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 

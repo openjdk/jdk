@@ -51,6 +51,7 @@ final class CDropTargetContextPeer extends SunDropTargetContextPeer {
         super();
     }
 
+    @Override
     protected Object getNativeData(long format) {
         long nativeDropTarget = this.getNativeDragContext();
 
@@ -153,6 +154,7 @@ final class CDropTargetContextPeer extends SunDropTargetContextPeer {
     }
 
     // Signal drop complete:
+    @Override
     protected void doDropDone(boolean success, int dropAction, boolean isLocal) {
         long nativeDropTarget = this.getNativeDragContext();
 

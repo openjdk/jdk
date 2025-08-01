@@ -461,7 +461,7 @@ class methodHandle;
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
-  do_intrinsic(_Reference_get,              java_lang_ref_Reference, get_name,       void_object_signature,    F_R)     \
+  do_intrinsic(_Reference_get0,             java_lang_ref_Reference, get0_name,      void_object_signature,    F_RN)    \
   do_intrinsic(_Reference_refersTo0,        java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_RN)    \
   do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
   do_intrinsic(_Reference_clear0,           java_lang_ref_Reference, clear0_name,    void_method_signature, F_RN)       \
@@ -1269,8 +1269,12 @@ class methodHandle;
                                      "Ljava/lang/Class;"                                                                                       \
                                      "I"                                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
+                                     "I"                                                                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
                                      "J"                                                                                                       \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
+                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
                                      "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
@@ -1286,6 +1290,7 @@ class methodHandle;
                                       "Ljava/lang/Class;"                                                                                      \
                                       "I"                                                                                                      \
                                       "Ljava/lang/Class;"                                                                                      \
+                                      "I"                                                                                                      \
                                       "Ljava/lang/Object;"                                                                                     \
                                       "J"                                                                                                      \
                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                          \

@@ -60,7 +60,9 @@ public class T6414633 {
             String[] opts = { "-proc:only",
                               "-processor", A.class.getName() };
             JavacTask task = tool.getTask(null, fm, dl, Arrays.asList(opts), null, files);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
 
             // two annotations on the same element -- expect 2 diags from the processor
             if (dl.diags != 2)

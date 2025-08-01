@@ -22,27 +22,32 @@
  */
 
 /* @test
- * @bug 4842706 8024695
+ * @bug 4842706 8024695 8361587 8362429
  * @summary Test some file operations with empty path
  * @run junit EmptyPath
  */
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,10 +111,25 @@ public class EmptyPath {
     }
 
     @Test
+    public void getAbsoluteFile() {
+        assertEquals(p.toAbsolutePath().toFile(), f.getAbsoluteFile());
+    }
+
+    @Test
     public void getAbsolutePath() {
         System.out.println(p.toAbsolutePath().toString() + "\n" +
                            f.getAbsolutePath());
         assertEquals(p.toAbsolutePath().toString(), f.getAbsolutePath());
+    }
+
+    @Test
+    public void getCanonicalFile() throws IOException {
+        assertEquals(p.toRealPath().toFile(), f.getCanonicalFile());
+    }
+
+    @Test
+    public void getCanonicalPath() throws IOException {
+        assertEquals(p.toRealPath().toString(), f.getCanonicalPath());
     }
 
     private void checkSpace(long expected, long actual) {
@@ -134,6 +154,11 @@ public class EmptyPath {
     @Test
     public void getParent() {
         assertNull(f.getParent());
+    }
+
+    @Test
+    public void getParentFile() {
+        assertNull(f.getParentFile());
     }
 
     @Test
@@ -190,7 +215,15 @@ public class EmptyPath {
 
     @Test
     public void list() throws IOException {
-        String[] files = f.list();
+        list(f.list());
+    }
+
+    @Test
+    public void listFilenameFilter() throws IOException {
+        list(f.list((FilenameFilter)null));
+    }
+
+    private void list(String[] files) throws IOException {
         assertNotNull(files);
         Set<String> ioSet = new HashSet(Arrays.asList(files));
         Set<String> nioSet = new HashSet();
@@ -199,8 +232,85 @@ public class EmptyPath {
     }
 
     @Test
+    public void listFiles() throws IOException {
+        listFiles(x -> x.listFiles());
+    }
+
+    @Test
+    public void listFilesFileFilter() throws IOException {
+        FileFilter ff = new FileFilter() {
+            public boolean accept(File pathname) { return true; }
+        };
+        listFiles(x -> x.listFiles(ff));
+    }
+
+    @Test
+    public void listFilesNullFileFilter() throws IOException {
+        listFiles(x -> x.listFiles((FileFilter)null));
+    }
+
+    @Test
+    public void listFilesFilenameFilter() throws IOException {
+        FilenameFilter fnf = new FilenameFilter() {
+            public boolean accept(File dir, String name) { return true; }
+        };
+        listFiles(x -> x.listFiles(fnf));
+    }
+
+    @Test
+    public void listFilesNullFilenameFilter() throws IOException {
+        listFiles(x -> x.listFiles((FilenameFilter)null));
+    }
+
+    private void listFiles(Function<File,File[]> func) throws IOException {
+        String childName = "child" + System.nanoTime();
+        File child = new File(f.getAbsoluteFile(), childName);
+        assertTrue(child.createNewFile());
+        child.deleteOnExit();
+
+        File[] files = func.apply(f);
+        for (File file : files)
+            assertEquals(-1, f.toString().indexOf(File.separatorChar));
+
+        Set<String> ioSet = Arrays.stream(files)
+            .map(File::getName)
+            .collect(Collectors.toSet());
+
+        assertTrue(ioSet.contains(child.getName()));
+
+        Set<String> nioSet = Files.list(p)
+            .map(Path::getFileName)
+            .map(Path::toString)
+            .collect(Collectors.toSet());
+        assertEquals(nioSet, ioSet);
+    }
+
+    @Test
+    public void listRoots() {
+        Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
+            .map(File::toString)
+            .collect(Collectors.toSet());
+        Set<String> actual = Arrays.stream(f.listRoots())
+            .map(File::toString)
+            .collect(Collectors.toSet());
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void mkdir() {
         assertFalse(f.mkdir());
+    }
+
+    @Test
+    public void mkdirs() {
+        assertFalse(f.mkdirs());
+    }
+
+    @Test
+    public void renameTo() throws IOException {
+        File tmp = File.createTempFile("foo", "bar", f.getAbsoluteFile());
+        assertTrue(tmp.exists());
+        assertFalse(f.renameTo(tmp));
     }
 
     @Test
@@ -272,7 +382,18 @@ public class EmptyPath {
     }
 
     @Test
+    public String toString() {
+        assertEquals(EMPTY_STRING, f.toString());
+        return EMPTY_STRING;
+    }
+
+    @Test
     public void toURI() {
         assertEquals(f.toPath().toUri(), f.toURI());
+    }
+
+    @Test
+    public void toURL() throws MalformedURLException {
+        assertEquals(f.toPath().toUri().toURL(), f.toURL());
     }
 }

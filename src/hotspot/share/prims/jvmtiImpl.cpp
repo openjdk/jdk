@@ -120,6 +120,7 @@ address JvmtiBreakpoint::getBcp() const {
 }
 
 void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
+  assert(!_method->is_old(), "the breakpoint method shouldn't be old");
   ((Method*)_method->*meth_act)(_bci);
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
@@ -183,8 +184,16 @@ void JvmtiBreakpoint::print_on(outputStream* out) const {
 //
 // Modify the Breakpoints data structure at a safepoint
 //
+// The caller of VM_ChangeBreakpoints operation should ensure that
+// _bp.method is preserved until VM_ChangeBreakpoints is processed.
 
 void VM_ChangeBreakpoints::doit() {
+  if (_bp->method()->is_old()) {
+    // The bp->_method became old because VMOp with class redefinition happened for this class
+    // after JvmtiBreakpoint was created but before JVM_ChangeBreakpoints started.
+    // All class breakpoints are cleared during redefinition, so don't set/clear this breakpoint.
+   return;
+  }
   switch (_operation) {
   case SET_BREAKPOINT:
     _breakpoints->set_at_safepoint(*_bp);
@@ -249,6 +258,9 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
   if (find(bp) != -1) {
     return JVMTI_ERROR_DUPLICATE;
   }
+
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
@@ -259,6 +271,8 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
     return JVMTI_ERROR_NOT_FOUND;
   }
 
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
   VMThread::execute(&clear_breakpoint);
   return JVMTI_ERROR_NONE;

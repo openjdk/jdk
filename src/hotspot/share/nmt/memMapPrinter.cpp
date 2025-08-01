@@ -157,7 +157,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::walk_virtual_memory(this);
+    return VirtualMemoryTracker::Instance::walk_virtual_memory(this);
   }
 };
 

@@ -33,9 +33,9 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -636,7 +636,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
-      _stub_id(-1),
+      _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -736,8 +736,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
-      StressLoopPeeling) {
+      StressIncrementalInlining || StressMacroExpansion ||
+      StressMacroElimination || StressUnstableIfTraps ||
+      StressBailout || StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
@@ -783,19 +784,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       verify_start(s);
-      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
-        // With java.lang.ref.reference.get() we must go through the
-        // intrinsic - even when get() is the root
-        // method of the compile - so that, if necessary, the value in
-        // the referent field of the reference object gets recorded by
-        // the pre-barrier code.
-        cg = find_intrinsic(method(), false);
-      }
-      if (cg == nullptr) {
-        float past_uses = method()->interpreter_invocation_count();
-        float expected_uses = past_uses;
-        cg = CallGenerator::for_inline(method(), expected_uses);
-      }
+      float past_uses = method()->interpreter_invocation_count();
+      float expected_uses = past_uses;
+      cg = CallGenerator::for_inline(method(), expected_uses);
     }
     if (failing())  return;
     if (cg == nullptr) {
@@ -907,7 +898,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
-                 int stub_id,
+                 StubId stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -973,7 +964,8 @@ Compile::Compile(ciEnv* ci_env,
 
   // try to reuse an existing stub
   {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    BlobId blob_id = StubInfo::blob(_stub_id);
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
       RuntimeStub* rs = blob->as_runtime_stub();
       _stub_entry_point = rs->entry_point();
@@ -2431,6 +2423,7 @@ void Compile::Optimize() {
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
         if (failing()) return;
+        print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
 
         igvn.set_delay_transform(false);
         igvn.optimize();
@@ -2530,6 +2523,18 @@ void Compile::Optimize() {
     TracePhase tp(_t_macroExpand);
     print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
+    // Do not allow new macro nodes once we start to eliminate and expand
+    C->reset_allow_macro_nodes();
+    // Last attempt to eliminate macro nodes before expand
+    mex.eliminate_macro_nodes();
+    if (failing()) {
+      return;
+    }
+    mex.eliminate_opaque_looplimit_macro_nodes();
+    if (failing()) {
+      return;
+    }
+    print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
     if (mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
@@ -3298,6 +3303,25 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
+  case Op_CallLeafPure: {
+    // If the pure call is not supported, then lower to a CallLeaf.
+    if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
+      CallNode* call = n->as_Call();
+      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
+                                            call->_name, TypeRawPtr::BOTTOM);
+      new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
+      new_call->init_req(TypeFunc::I_O, C->top());
+      new_call->init_req(TypeFunc::Memory, C->top());
+      new_call->init_req(TypeFunc::ReturnAdr, C->top());
+      new_call->init_req(TypeFunc::FramePtr, C->top());
+      for (unsigned int i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
+        new_call->init_req(i, call->in(i));
+      }
+      n->subsume_by(new_call, this);
+    }
+    frc.inc_call_count();
+    break;
+  }
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
@@ -4521,7 +4545,9 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
   // number.  (The prior range check has ensured this.)
   // This assertion is used by ConvI2LNode::Ideal.
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
-  if (sizetype != nullptr) index_max = sizetype->_hi - 1;
+  if (sizetype != nullptr && sizetype->_hi > 0) {
+    index_max = sizetype->_hi - 1;
+  }
   const TypeInt* iidxtype = TypeInt::make(0, index_max, Type::WidenMax);
   idx = constrained_convI2L(phase, idx, iidxtype, ctrl);
 #endif
@@ -4549,7 +4575,7 @@ void Compile::dump_print_inlining() {
 
 void Compile::log_late_inline(CallGenerator* cg) {
   if (log() != nullptr) {
-    log()->head("late_inline method='%d'  inline_id='" JLONG_FORMAT "'", log()->identify(cg->method()),
+    log()->head("late_inline method='%d' inline_id='" JLONG_FORMAT "'", log()->identify(cg->method()),
                 cg->unique_id());
     JVMState* p = cg->call_node()->jvms();
     while (p != nullptr) {

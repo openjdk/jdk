@@ -31,7 +31,7 @@ package gc.parallel;
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management
  * @library /test/lib /
- * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc gc.parallel.TestDynShrinkHeap
+ * @run main/othervm -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc gc.parallel.TestDynShrinkHeap
  */
 import jdk.test.lib.management.DynamicVMOption;
 import java.lang.management.ManagementFactory;

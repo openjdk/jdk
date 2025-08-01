@@ -540,7 +540,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Long l) return longEntry(l);
         if (c instanceof Float f) return floatEntry(f);
         if (c instanceof Double d) return doubleEntry(d);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
+        throw new IllegalArgumentException("Illegal type: " + c.getClass()); // implicit null check
     }
 
     /**
@@ -559,7 +559,8 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return methodTypeEntry(mtd);
         if (c instanceof DirectMethodHandleDesc dmhd) return methodHandleEntry(dmhd);
         if (c instanceof DynamicConstantDesc<?> dcd) return constantDynamicEntry(dcd);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
+        // Shouldn't reach here
+        throw new IllegalArgumentException("Illegal type: " + c.getClass()); // implicit null check
     }
 
     /**

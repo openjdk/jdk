@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ class G1Policy;
 // cycle, including various marking cleanup.
 class G1ConcurrentMarkThread: public ConcurrentGCThread {
   friend class VMStructs;
-
-  double _vtime_start;  // Initial virtual time.
-  double _vtime_accum;  // Accumulated virtual time.
 
   G1ConcurrentMark* _cm;
 
@@ -88,10 +85,11 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // Constructor
   G1ConcurrentMarkThread(G1ConcurrentMark* cm);
 
-  // Total virtual time so far for this thread and concurrent marking tasks.
-  double vtime_accum();
-  // Marking virtual time so far this thread and concurrent marking tasks.
-  double vtime_mark_accum();
+  // Total cpu time used by all marking related threads (i.e. this thread and the
+  // marking worker threads) in seconds.
+  double total_mark_cpu_time_s();
+  // Cpu time used by all marking worker threads in seconds.
+  double worker_threads_cpu_time_s();
 
   G1ConcurrentMark* cm() { return _cm; }
 
@@ -110,7 +108,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool in_undo_mark() const;
 
   // Update the perf data counter for concurrent mark.
-  void update_threads_cpu_time();
+  void update_perf_counter_cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

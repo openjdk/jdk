@@ -162,8 +162,8 @@ import static java.util.concurrent.Flow.Subscription;
  *     (this.subscription = subscription).request(1);
  *   }
  *   public void onNext(S item) {
- *     subscription.request(1);
  *     submit(function.apply(item));
+ *     subscription.request(1);
  *   }
  *   public void onError(Throwable ex) { closeExceptionally(ex); }
  *   public void onComplete() { close(); }
@@ -292,9 +292,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
 
     /**
      * Creates a new SubmissionPublisher using the {@link
-     * ForkJoinPool#commonPool()} for async delivery to subscribers
-     * (unless it does not support a parallelism level of at least two,
-     * in which case, a new Thread is created to run each task), with
+     * ForkJoinPool#commonPool()} for async delivery to subscribers, with
      * maximum buffer capacity of {@link Flow#defaultBufferSize}, and no
      * handler for Subscriber exceptions in method {@link
      * Flow.Subscriber#onNext(Object) onNext}.
@@ -602,9 +600,11 @@ public class SubmissionPublisher<T> implements Publisher<T>,
     /**
      * Unless already closed, issues {@link
      * Flow.Subscriber#onComplete() onComplete} signals to current
-     * subscribers, and disallows subsequent attempts to publish.
-     * Upon return, this method does <em>NOT</em> guarantee that all
-     * subscribers have yet completed.
+     * subscribers, and disallows subsequent attempts to publish. To
+     * ensure uniform ordering among subscribers, this method may
+     * await completion of in-progress offers.  Upon return, this
+     * method does <em>NOT</em> guarantee that all subscribers have
+     * yet completed.
      */
     public void close() {
         ReentrantLock lock = this.lock;

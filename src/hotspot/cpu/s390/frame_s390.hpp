@@ -410,7 +410,7 @@
 
   // C2I adapter frames:
   //
-  // STACK (interpreted called from compiled, on entry to frame manager):
+  // STACK (interpreted called from compiled, on entry to template interpreter):
   //
   //       [TOP_C2I_FRAME]
   //       [JIT_FRAME]

@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.processing.Processor;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -62,6 +63,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private JavaFileManager fileManager;
     private Consumer<com.sun.source.util.JavacTask> callback;
     private List<Processor> procs;
+    private DiagnosticListener<? super JavaFileObject> diagnosticListener;
 
     private JavaCompiler compiler;
     private StandardJavaFileManager internalFileManager;
@@ -286,6 +288,14 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the diagnostic listener to be used.
+     */
+    public JavacTask diagnosticListener(DiagnosticListener<? super JavaFileObject> diagnosticListener) {
+        this.diagnosticListener = diagnosticListener;
+        return this;
+    }
+
+    /**
      * Sets the file manager to be used by this task.
      * @param fileManager the file manager
      * @return this task object
@@ -406,7 +416,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
             Iterable<? extends JavaFileObject> allFiles = joinFiles(files, fileObjects);
             JavaCompiler.CompilationTask task = compiler.getTask(pw,
                     fileManager,
-                    null,  // diagnostic listener; should optionally collect diags
+                    diagnosticListener,  // diagnostic listener; should optionally collect diags
                     allOpts,
                     classes,
                     allFiles);

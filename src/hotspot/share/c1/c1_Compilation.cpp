@@ -330,7 +330,7 @@ bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
   char* locs_buffer = NEW_RESOURCE_ARRAY(char, locs_buffer_size);
   code->insts()->initialize_shared_locs((relocInfo*)locs_buffer,
                                         locs_buffer_size / sizeof(relocInfo));
-  code->initialize_consts_size(Compilation::desired_max_constant_size());
+  code->initialize_consts_size(Compilation::desired_max_constant_size);
   // Call stubs + two deopt handlers (regular and MH) + exception handler
   int stub_size = (call_stub_estimate * LIR_Assembler::call_stub_size()) +
                    LIR_Assembler::exception_handler_size() +
@@ -668,7 +668,7 @@ ciKlass* Compilation::cha_exact_type(ciType* type) {
   if (type != nullptr && type->is_loaded() && type->is_instance_klass()) {
     ciInstanceKlass* ik = type->as_instance_klass();
     assert(ik->exact_klass() == nullptr, "no cha for final klass");
-    if (DeoptC1 && UseCHA && !(ik->has_subklass() || ik->is_interface())) {
+    if (UseCHA && !(ik->has_subklass() || ik->is_interface())) {
       dependency_recorder()->assert_leaf_type(ik);
       return ik;
     }

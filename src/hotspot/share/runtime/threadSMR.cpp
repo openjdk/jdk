@@ -791,10 +791,16 @@ ThreadsListHandle::~ThreadsListHandle() {
 // associated ThreadsList. This ThreadsListHandle "protects" the
 // returned JavaThread *.
 //
+// If the jthread resolves to a virtual thread then the JavaThread *
+// for its current carrier thread (if any) is returned via *jt_pp.
+// It is up to the caller to prevent the virtual thread from changing
+// its mounted status, or else account for it when acting on the carrier
+// JavaThread.
+//
 // If thread_oop_p is not null, then the caller wants to use the oop
-// after this call so the oop is returned. On success, *jt_pp is set
+// after this call so the oop is always returned. On success, *jt_pp is set
 // to the converted JavaThread * and true is returned. On error,
-// returns false.
+// returns false, and *jt_pp is unchanged.
 //
 bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
                                                          JavaThread ** jt_pp,
@@ -818,10 +824,22 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
 
   JavaThread *java_thread = java_lang_Thread::thread_acquire(thread_oop);
   if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread* so it has not
-    // run enough to be put on a ThreadsList or it has exited enough to
-    // make it past ensure_join() where the JavaThread* is cleared.
-    return false;
+    if (!java_lang_VirtualThread::is_instance(thread_oop)) {
+      // The java.lang.Thread does not contain a JavaThread* so it has not
+      // run enough to be put on a ThreadsList or it has exited enough to
+      // make it past ensure_join() where the JavaThread* is cleared.
+      return false;
+    } else {
+      // For virtual threads we need to extract the carrier's JavaThread - if any.
+       oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+       if (carrier_thread != nullptr) {
+         java_thread = java_lang_Thread::thread(carrier_thread);
+       }
+       if (java_thread == nullptr) {
+         // Virtual thread was unmounted, or else carrier has now terminated.
+         return false;
+       }
+    }
   }
   // Looks like a live JavaThread at this point.
 
@@ -1168,9 +1186,10 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
     // The count is only interesting if we have a _threads_list_ptr.
     st->print(", _nested_threads_hazard_ptr_cnt=%u", thread->_nested_threads_hazard_ptr_cnt);
   }
-  if (SafepointSynchronize::is_at_safepoint() || Thread::current() == thread) {
-    // It is only safe to walk the list if we're at a safepoint or the
-    // calling thread is walking its own list.
+  if ((SafepointSynchronize::is_at_safepoint() && thread->is_Java_thread()) ||
+      Thread::current() == thread) {
+    // It is only safe to walk the list if we're at a safepoint and processing a JavaThread,
+    // or the calling thread is walking its own list.
     SafeThreadsListPtr* current = thread->_threads_list_ptr;
     if (current != nullptr) {
       // Skip the top nesting level as it is always printed above.

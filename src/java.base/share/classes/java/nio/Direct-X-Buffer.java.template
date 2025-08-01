@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package java.nio;
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
+import java.nio.BufferCleaner;
 import java.util.Objects;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
@@ -37,7 +38,7 @@ import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
-import jdk.internal.ref.Cleaner;
+import sun.nio.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 
@@ -114,7 +115,7 @@ class Direct$Type$Buffer$RW$$BO$
             Bits.unreserveMemory(size, cap);
             throw x;
         }
-        UNSAFE.setMemory(base, size, (byte) 0);
+        Bits.setMemory(base, size, (byte) 0);
         if (pa && (base % ps != 0)) {
             // Round up to page boundary
             address = base + ps - (base & (ps - 1));
@@ -122,7 +123,7 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         try {
-            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+            cleaner = BufferCleaner.register(this, new Deallocator(base, size, cap));
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);
@@ -197,7 +198,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         super(-1, 0, cap, cap, fd, isSync, segment);
         address = addr;
-        cleaner = Cleaner.create(this, unmapper);
+        cleaner = (unmapper == null) ? null : BufferCleaner.register(this, unmapper);
         att = null;
 #else[rw]
         super(cap, addr, fd, unmapper, isSync, segment);
@@ -430,8 +431,13 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
+#end[rw]
 
-    private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
+    public $Type$Buffer append(CharSequence csq, int start, int end) {
+#if[rw]
+        if (csq == null)
+            return super.append(csq, start, end);
+
         Objects.checkFromToIndex(start, end, csq.length());
 
         int pos = position();
@@ -448,13 +454,7 @@ class Direct$Type$Buffer$RW$$BO$
             if (count > buf.length)
                 count = buf.length;
 
-            if (csq instanceof String str) {
-                str.getChars(start, start + count, buf, 0);
-            } else if (csq instanceof StringBuilder sb) {
-                sb.getChars(start, start + count, buf, 0);
-            } else if (csq instanceof StringBuffer sb) {
-                sb.getChars(start, start + count, buf, 0);
-            }
+            csq.getChars(start, start + count, buf, 0);
 
             putArray(index, buf, 0, count);
 
@@ -465,27 +465,19 @@ class Direct$Type$Buffer$RW$$BO$
         position(pos + length);
 
         return this;
-    }
-#end[rw] 
 
-    public $Type$Buffer append(CharSequence csq) {
-#if[rw] 
-        if (csq instanceof StringBuilder) 
-            return appendChars(csq, 0, csq.length());
- 
-        return super.append(csq);
 #else[rw]
         throw new ReadOnlyBufferException();
 #end[rw]
     }
- 
-    public $Type$Buffer append(CharSequence csq, int start, int end) { 
-#if[rw]
-        if (csq instanceof String || csq instanceof StringBuffer ||
-            csq instanceof StringBuilder)
-            return appendChars(csq, start, end);
 
-        return super.append(csq, start, end);
+    public $Type$Buffer append(CharSequence csq) {
+#if[rw]
+        // See comment regarding StringBuilder on HeapBuffer.append.
+        if (csq instanceof StringBuilder)
+            return append(csq, 0, csq.length());
+
+        return super.append(csq);
 #else[rw]
         throw new ReadOnlyBufferException();
 #end[rw]

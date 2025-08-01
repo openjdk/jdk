@@ -74,6 +74,7 @@ class PSPromotionManager {
 
   PSYoungPromotionLAB                 _young_lab;
   PSOldPromotionLAB                   _old_lab;
+  bool                                _young_gen_has_alloc_failure;
   bool                                _young_gen_is_full;
   bool                                _old_gen_is_full;
 

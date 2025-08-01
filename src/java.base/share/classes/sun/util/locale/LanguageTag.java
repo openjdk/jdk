@@ -51,7 +51,7 @@ public record LanguageTag(String language, String script, String region, String 
     public static final String UNDETERMINED = "und";
     public static final String PRIVUSE_VARIANT_PREFIX = "lvariant";
     private static final String EMPTY_SUBTAG = "";
-    private static final List<String> EMPTY_SUBTAGS = Collections.emptyList();
+    private static final List<String> EMPTY_SUBTAGS = List.of();
 
     // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt

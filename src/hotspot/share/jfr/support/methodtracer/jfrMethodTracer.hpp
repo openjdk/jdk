@@ -51,7 +51,7 @@ class JfrMethodTracer: AllStatic {
   static GrowableArray<jlong>*                _timing_entries;          // Guarded by ClassLoaderDataGraph_lock
 
   static ModuleEntry* jdk_jfr_module();
-  static void add_timing_entry(const InstanceKlass* ik, traceid klass_id);
+  static void add_timing_entry(traceid klass_id);
   static void retransform(JNIEnv* env, const JfrFilterClassClosure& classes, TRAPS);
   static void add_instrumented_class(InstanceKlass* ik, GrowableArray<JfrTracedMethod>* methods);
 
@@ -61,7 +61,7 @@ class JfrMethodTracer: AllStatic {
   static void add_to_unloaded_set(const Klass* k);
   static void trim_instrumented_classes(bool trim);
   static GrowableArray<JfrInstrumentedClass>* instrumented_classes();
-  static void on_klass_redefinition(const InstanceKlass* ik, Thread* thread);
+  static void on_klass_redefinition(const InstanceKlass* ik, bool has_timing);
   static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
   static jlongArray set_filters(JNIEnv* env,
                                 jobjectArray classes,

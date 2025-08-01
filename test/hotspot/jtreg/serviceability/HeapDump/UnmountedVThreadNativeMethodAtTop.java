@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run junit/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
  */
 
 import java.lang.management.ManagementFactory;
@@ -38,14 +40,29 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.model.ThreadObject;
 import jdk.test.lib.hprof.parser.Reader;
+import jdk.test.whitebox.WhiteBox;
 
 public class UnmountedVThreadNativeMethodAtTop {
+
+    static WhiteBox wb = WhiteBox.getWhiteBox();
+
+    boolean done;
+
+    /**
+     * The tests accumulate previous heap dumps. Trigger GC before each test to get rid of them.
+     * This makes dumps smaller, processing faster, and avoids OOMs
+     */
+    @BeforeEach
+    void doGC() {
+        wb.fullGC();
+    }
 
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.
@@ -96,7 +113,9 @@ public class UnmountedVThreadNativeMethodAtTop {
             started.countDown();
             try {
                 synchronized (lock) {
-                    lock.wait();
+                    while (!done) {
+                        lock.wait();
+                    }
                 }
             } catch (InterruptedException e) { }
         });
@@ -109,11 +128,11 @@ public class UnmountedVThreadNativeMethodAtTop {
 
             Path dumpFile = dumpHeap();
             verifyHeapDump(dumpFile);
-
+        } finally {
             synchronized (lock) {
+                done = true;
                 lock.notify();
             }
-        } finally {
             vthread.join();
         }
     }

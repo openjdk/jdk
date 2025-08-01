@@ -595,7 +595,7 @@ loop:   while (true) {
         int chararr_count=0;
 
         in.readFully(bytearr, 0, utflen);
-        int ascii = JLA.uncheckedCountPositives(bytearr, 0, utflen);
+        int ascii = JLA.countPositives(bytearr, 0, utflen);
         if (ascii == utflen) {
             String str;
             if (trusted) {
@@ -621,7 +621,7 @@ loop:   while (true) {
         }
 
         if (ascii != 0) {
-            JLA.uncheckedInflateBytesToChars(bytearr, 0, chararr, 0, ascii);
+            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, ascii);
             count += ascii;
             chararr_count += ascii;
         }

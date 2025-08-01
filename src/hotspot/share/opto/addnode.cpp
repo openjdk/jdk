@@ -32,8 +32,8 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "opto/utilities/xor.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 

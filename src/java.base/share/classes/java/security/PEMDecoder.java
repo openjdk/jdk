@@ -81,24 +81,24 @@ import java.util.Objects;
  * {@link PEMRecord}.
  *
  * <p> The {@linkplain #decode(String, Class)} and
- * {@linkplain #decode(InputStream, Class)} methods take a Class parameter
+ * {@linkplain #decode(InputStream, Class)} methods take a class parameter
  * which determines the type of {@code DEREncodable} that is returned. These
  * methods are useful when extracting or changing the return class.
  * For example, if the PEM contains both public and private keys, the
- * Class parameter can specify which to return. Use
+ * class parameter can specify which to return. Use
  * {@code PrivateKey.class} to return only the private key.
- * If the Class parameter is set to {@code X509EncodedKeySpec.class}, the
+ * If the class parameter is set to {@code X509EncodedKeySpec.class}, the
  * public key will be returned in that format.  Any type of PEM data can be
  * decoded into a {@code PEMRecord} by specifying {@code PEMRecord.class}.
- * If the Class parameter doesn't match the PEM content, an
- * {@code IllegalArgumentException} will be thrown.
+ * If the class parameter doesn't match the PEM content, a
+ * {@linkplain ClassCastException} will be thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
  * with {@linkplain #withFactory(Provider)} and/or
  * {@linkplain #withDecryption(char[])}. {@linkplain #withFactory(Provider)}
  * configures the decoder to use only {@linkplain KeyFactory} and
  * {@linkplain CertificateFactory} instances from the given {@code Provider}.
- * {@link#withDecryption(char[])} configures the decoder to decrypt all
+ * {@linkplain #withDecryption(char[])} configures the decoder to decrypt all
  * encrypted private key PEM data using the given password.
  * Configuring an instance for decryption does not prevent decoding with
  * unencrypted PEM. Any encrypted PEM that fails decryption
@@ -117,15 +117,15 @@ import java.util.Objects;
  * <p> Here is an example of a {@code PEMDecoder} configured with decryption
  * and a factory provider:
  * {@snippet lang = java:
- *     PEMDecoder pe = PEMDecoder.of().withDecryption(password).
+ *     PEMDecoder pd = PEMDecoder.of().withDecryption(password).
  *         withFactory(provider);
- *     byte[] pemData = pe.decode(privKey);
+ *     byte[] pemData = pd.decode(privKey);
  * }
  *
  * @implNote An implementation may support other PEM types and
- * {@code DEREncodables}. This implementation additionally supports PEM types:
- * {@code X509 CERTIFICATE}, {@code X.509 CERTIFICATE}, {@code CRL},
- * and {@code RSA PRIVATE KEY}.
+ * {@code DEREncodable} objects. This implementation additionally supports
+ * the following PEM types:  {@code X509 CERTIFICATE},
+ * {@code X.509 CERTIFICATE}, {@code CRL}, and {@code RSA PRIVATE KEY}.
  *
  * @see PEMEncoder
  * @see PEMRecord
@@ -179,13 +179,13 @@ public final class PEMDecoder {
             return switch (pem.type()) {
                 case Pem.PUBLIC_KEY -> {
                     X509EncodedKeySpec spec =
-                        new X509EncodedKeySpec(decoder.decode(pem.pem()));
+                        new X509EncodedKeySpec(decoder.decode(pem.content()));
                     yield getKeyFactory(
                         KeyUtil.getAlgorithm(spec.getEncoded())).
                         generatePublic(spec);
                 }
                 case Pem.PRIVATE_KEY -> {
-                    PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.pem()));
+                    PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.content()));
                     String algo = p8key.getAlgorithm();
                     KeyFactory kf = getKeyFactory(algo);
                     DEREncodable d = kf.generatePrivate(
@@ -216,27 +216,27 @@ public final class PEMDecoder {
                 case Pem.ENCRYPTED_PRIVATE_KEY -> {
                     if (password == null) {
                         yield new EncryptedPrivateKeyInfo(decoder.decode(
-                            pem.pem()));
+                            pem.content()));
                     }
-                    yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem())).
+                    yield new EncryptedPrivateKeyInfo(decoder.decode(pem.content())).
                         getKey(password.getPassword());
                 }
                 case Pem.CERTIFICATE, Pem.X509_CERTIFICATE,
                      Pem.X_509_CERTIFICATE -> {
                     CertificateFactory cf = getCertFactory("X509");
                     yield (X509Certificate) cf.generateCertificate(
-                        new ByteArrayInputStream(decoder.decode(pem.pem())));
+                        new ByteArrayInputStream(decoder.decode(pem.content())));
                 }
                 case Pem.X509_CRL, Pem.CRL -> {
                     CertificateFactory cf = getCertFactory("X509");
                     yield (X509CRL) cf.generateCRL(
-                        new ByteArrayInputStream(decoder.decode(pem.pem())));
+                        new ByteArrayInputStream(decoder.decode(pem.content())));
                 }
                 case Pem.RSA_PRIVATE_KEY -> {
                     KeyFactory kf = getKeyFactory("RSA");
                     yield kf.generatePrivate(
                         RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(
-                            pem.pem())));
+                            pem.content())));
                 }
                 default -> pem;
             };
@@ -271,7 +271,6 @@ public final class PEMDecoder {
      */
     public DEREncodable decode(String str) {
         Objects.requireNonNull(str);
-        DEREncodable de;
         try {
             return decode(new ByteArrayInputStream(
                 str.getBytes(StandardCharsets.UTF_8)));
@@ -482,9 +481,6 @@ public final class PEMDecoder {
      * {@link KeyFactory} and {@link CertificateFactory} implementations
      * from the specified {@link Provider} to produce cryptographic objects.
      * Any errors using the {@code Provider} will occur during decoding.
-     *
-     * <p>If {@code provider} is {@code null}, a new instance is returned with
-     * the default provider configuration.
      *
      * @param provider the factory provider
      * @return a new PEMEncoder instance configured to the {@code Provider}.

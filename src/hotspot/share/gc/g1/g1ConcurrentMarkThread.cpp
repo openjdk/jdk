@@ -47,8 +47,6 @@
 
 G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
-  _vtime_start(0.0),
-  _vtime_accum(0.0),
   _cm(cm),
   _state(Idle)
 {
@@ -82,7 +80,7 @@ void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
   if (policy->use_adaptive_young_list_length()) {
     double delay_end_sec = mmu_delay_end(policy, remark);
     // Wait for timeout or thread termination request.
-    MonitorLocker ml(CGC_lock, Monitor::_no_safepoint_check_flag);
+    MonitorLocker ml(G1CGC_lock, Monitor::_no_safepoint_check_flag);
     while (!_cm->has_aborted() && !should_terminate()) {
       double sleep_time_sec = (delay_end_sec - os::elapsedTime());
       jlong sleep_time_ms = ceil(sleep_time_sec * MILLIUNITS);
@@ -113,8 +111,6 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 };
 
 void G1ConcurrentMarkThread::run_service() {
-  _vtime_start = os::elapsedVTime();
-
   while (wait_for_next_cycle()) {
     assert(in_progress(), "must be");
 
@@ -133,9 +129,7 @@ void G1ConcurrentMarkThread::run_service() {
 
     concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
 
-    _vtime_accum = (os::elapsedVTime() - _vtime_start);
-
-    update_threads_cpu_time();
+    update_perf_counter_cpu_time();
   }
   _cm->root_regions()->cancel_scan();
 }
@@ -149,12 +143,12 @@ void G1ConcurrentMarkThread::stop_service() {
     _cm->abort_marking_threads();
   }
 
-  MutexLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
-  CGC_lock->notify_all();
+  MutexLocker ml(G1CGC_lock, Mutex::_no_safepoint_check_flag);
+  G1CGC_lock->notify_all();
 }
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
-  MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!in_progress() && !should_terminate()) {
     ml.wait();
   }
@@ -171,7 +165,7 @@ bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   G1ConcPhaseTimer p(_cm, "Concurrent Scan Root Regions");
   _cm->scan_root_regions();
-  update_threads_cpu_time();
+  update_perf_counter_cpu_time();
   return _cm->has_aborted();
 }
 
@@ -231,7 +225,7 @@ bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
 
 bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
-  update_threads_cpu_time();
+  update_perf_counter_cpu_time();
   VM_G1PauseRemark op;
   VMThread::execute(&op);
   return _cm->has_aborted();
@@ -241,7 +235,7 @@ bool G1ConcurrentMarkThread::phase_rebuild_and_scrub() {
   ConcurrentGCBreakpoints::at("AFTER REBUILD STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets and Scrub Regions");
   _cm->rebuild_and_scrub();
-  update_threads_cpu_time();
+  update_perf_counter_cpu_time();
   return _cm->has_aborted();
 }
 
@@ -342,8 +336,8 @@ void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
   ConcurrentGCBreakpoints::notify_active_to_idle();
 }
 
-void G1ConcurrentMarkThread::update_threads_cpu_time() {
-  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+void G1ConcurrentMarkThread::update_perf_counter_cpu_time() {
+  if (!UsePerfData) {
     return;
   }
   ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_mark);

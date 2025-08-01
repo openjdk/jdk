@@ -22,8 +22,9 @@
  *
  */
 
-#include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "code/vmreg.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -43,7 +44,6 @@
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "code/vmreg.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -918,7 +918,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
   projs->fallthrough_proj      = nullptr;
   projs->fallthrough_catchproj = nullptr;
   projs->fallthrough_ioproj    = nullptr;
@@ -1303,6 +1303,57 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 
 
 //=============================================================================
+bool CallLeafPureNode::is_unused() const {
+  return proj_out_or_null(TypeFunc::Parms) == nullptr;
+}
+
+bool CallLeafPureNode::is_dead() const {
+  return proj_out_or_null(TypeFunc::Control) == nullptr;
+}
+
+/* We make a tuple of the global input state + TOP for the output values.
+ * We use this to delete a pure function that is not used: by replacing the call with
+ * such a tuple, we let output Proj's idealization pick the corresponding input of the
+ * pure call, so jumping over it, and effectively, removing the call from the graph.
+ * This avoids doing the graph surgery manually, but leaves that to IGVN
+ * that is specialized for doing that right. We need also tuple components for output
+ * values of the function to respect the return arity, and in case there is a projection
+ * that would pick an output (which shouldn't happen at the moment).
+ */
+TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
+  // Transparently propagate input state but parameters
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr));
+
+  // And add TOPs for the return values
+  for (uint i = TypeFunc::Parms; i < tf()->range()->cnt(); i++) {
+    tuple->set_req(i, C->top());
+  }
+
+  return tuple;
+}
+
+Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (is_dead()) {
+    return nullptr;
+  }
+
+  // We need to wait until IGVN because during parsing, usages might still be missing
+  // and we would remove the call immediately.
+  if (can_reshape && is_unused()) {
+    // The result is not used. We remove the call by replacing it with a tuple, that
+    // is later disintegrated by the projections.
+    return make_tuple_of_input_state_and_top_return_values(phase->C);
+  }
+
+  return CallRuntimeNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1451,14 +1502,8 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  if (GenerateSynchronizationCode) {
-    ins_req(nextmon,   lock->box_node());
-    ins_req(nextmon+1, lock->obj_node());
-  } else {
-    Node* top = Compile::current()->top();
-    ins_req(nextmon, top);
-    ins_req(nextmon, top);
-  }
+  ins_req(nextmon,   lock->box_node());
+  ins_req(nextmon+1, lock->obj_node());
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }

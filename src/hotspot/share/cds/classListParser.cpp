@@ -30,7 +30,7 @@
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
-#include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"

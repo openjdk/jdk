@@ -29,8 +29,8 @@
     --block-line-height: 1.5;
     --code-line-height: 1.6;
     /* Text colors for body and block elements */
-    --body-text-color: #282828;
-    --block-text-color: #282828;
+    --body-text-color: #181818;
+    --block-text-color: #181818;
     /* Background colors for various elements */
     --body-background-color: #ffffff;
     --section-background-color: var(--body-background-color);
@@ -656,14 +656,14 @@ ul.preview-feature-list input {
 .class-use-page .caption span,
 .package-use-page .caption span,
 .constants-summary-page .caption span,
-.inherited-list.expanded h3 {
+.inherited-list h3 {
     background-color: var(--subnav-background-color);
     color: var(--block-text-color);
 }
 .caption a:link,
 .caption a:visited,
-.inherited-list.expanded h3 a:link,
-.inherited-list.expanded h3 a:visited {
+.inherited-list h3 a:link,
+.inherited-list h3 a:visited {
     color:var(--subnav-link-color);
 }
 div.table-tabs {

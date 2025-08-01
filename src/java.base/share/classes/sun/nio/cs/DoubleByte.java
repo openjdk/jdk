@@ -168,7 +168,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     dp += n;
                     sp += n;
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_GUARDEDMEMORY_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /**
@@ -43,13 +44,14 @@
  * |base_addr          | 0xABABABABABABABAB   | Head guard     |
  * |+16                | <size_t:user_size>   | User data size |
  * |+sizeof(uintptr_t) | <tag>                | Tag word       |
+ * |+sizeof(uintptr_t) | <tag2>               | Tag word       |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
  * |+user_size         | 0xABABABABABABABAB   | Tail guard     |
  * -------------------------------------------------------------
  *
  * Where:
  *  - guard padding uses "badResourceValue" (0xAB)
- *  - tag word is general purpose
+ *  - tag word and tag2 word are general purpose
  *  - user data
  *    -- initially padded with "uninitBlockPad" (0xF1),
  *    -- to "freeBlockPad" (0xBA), when freed
@@ -111,6 +113,10 @@ protected:
     }
 
     bool verify() const {
+      // We may not be able to dereference directly.
+      if (!os::is_readable_range((const void*) _guard, (const void*) (_guard + GUARD_SIZE))) {
+        return false;
+      }
       u_char* c = (u_char*) _guard;
       u_char* end = c + GUARD_SIZE;
       while (c < end) {
@@ -137,6 +143,7 @@ protected:
       size_t _user_size;
     };
     void* _tag;
+    void* _tag2;
    public:
     void set_user_size(const size_t usz) { _user_size = usz; }
     size_t get_user_size() const { return _user_size; }
@@ -144,6 +151,8 @@ protected:
     void set_tag(const void* tag) { _tag = (void*) tag; }
     void* get_tag() const { return _tag; }
 
+    void set_tag2(const void* tag2) { _tag2 = (void*) tag2; }
+    void* get_tag2() const { return _tag2; }
   }; // GuardedMemory::GuardHeader
 
   // Guarded Memory...
@@ -162,9 +171,11 @@ protected:
    * @param base_ptr  allocation wishing to be wrapped, must be at least "GuardedMemory::get_total_size()" bytes.
    * @param user_size the size of the user data to be wrapped.
    * @param tag       optional general purpose tag.
+   * @param tag2      optional second general purpose tag.
    */
-  GuardedMemory(void* base_ptr, const size_t user_size, const void* tag = nullptr) {
-    wrap_with_guards(base_ptr, user_size, tag);
+  GuardedMemory(void* base_ptr, const size_t user_size,
+                const void* tag = nullptr, const void* tag2 = nullptr) {
+    wrap_with_guards(base_ptr, user_size, tag, tag2);
   }
 
   /**
@@ -189,16 +200,19 @@ protected:
    * @param base_ptr  allocation wishing to be wrapped, must be at least "GuardedMemory::get_total_size()" bytes.
    * @param user_size the size of the user data to be wrapped.
    * @param tag       optional general purpose tag.
+   * @param tag2      optional second general purpose tag.
    *
    * @return user data pointer (inner pointer to supplied "base_ptr").
    */
-  void* wrap_with_guards(void* base_ptr, size_t user_size, const void* tag = nullptr) {
+  void* wrap_with_guards(void* base_ptr, size_t user_size,
+                         const void* tag = nullptr, const void* tag2 = nullptr) {
     assert(base_ptr != nullptr, "Attempt to wrap null with memory guard");
     _base_addr = (u_char*)base_ptr;
     get_head_guard()->build();
     get_head_guard()->set_user_size(user_size);
     get_tail_guard()->build();
     set_tag(tag);
+    set_tag2(tag2);
     set_user_bytes(uninitBlockPad);
     assert(verify_guards(), "Expected valid memory guards");
     return get_user_ptr();
@@ -229,6 +243,20 @@ protected:
    * @return the general purpose tag, defaults to null.
    */
   void* get_tag() const { return get_head_guard()->get_tag(); }
+
+  /**
+   * Set the second general purpose tag.
+   *
+   * @param tag general purpose tag.
+   */
+  void set_tag2(const void* tag) { get_head_guard()->set_tag2(tag); }
+
+  /**
+   * Return the second general purpose tag.
+   *
+   * @return the second general purpose tag, defaults to null.
+   */
+  void* get_tag2() const { return get_head_guard()->get_tag2(); }
 
   /**
    * Return the size of the user data.
@@ -302,10 +330,12 @@ protected:
    * @param ptr the memory to be copied
    * @param len the length of the copy
    * @param tag optional general purpose tag (see GuardedMemory::get_tag())
+   * @param tag2 optional general purpose tag (see GuardedMemory::get_tag2())
    *
    * @return guarded wrapped memory pointer to the user area, or null if OOM.
    */
-  static void* wrap_copy(const void* p, const size_t len, const void* tag = nullptr);
+  static void* wrap_copy(const void* p, const size_t len,
+                         const void* tag = nullptr, const void* tag2 = nullptr);
 
   /**
    * Free wrapped copy.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@ import common.TmTool;
  * This tool executes "jstat -gc <pid>" and returns the results as
  * JstatGcToolResults
  */
-public class JstatGcTool extends TmTool<JstatGcResults> {
+public class JstatGcTool extends JstatTool<JstatGcResults> {
 
     public JstatGcTool(long pid) {
         super(JstatGcResults.class, "jstat", "-gc " + pid);
     }
-
 }

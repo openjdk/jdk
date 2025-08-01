@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.util.Pem;
 
-import java.util.Base64;
 import java.util.Objects;
 
 /**
@@ -39,20 +38,20 @@ import java.util.Objects;
  * cryptographic object is not desired or the type has no
  * {@code DEREncodable}.
  *
- * <p> {@code type} and {@code pem} may not be {@code null}.
+ * <p> {@code type} and {@code content} may not be {@code null}.
  * {@code leadingData} may be null if no non-PEM data preceded PEM header
  * during decoding.  {@code leadingData} may be useful for reading metadata
  * that accompanies PEM data.
  *
  * <p> No validation is performed during instantiation to ensure that
- * {@code type} conforms to {@code RFC 7468}, that {@code pem} is valid Base64,
- * or that {@code pem} matches the {@code type}.  {@code leadingData} is not
- * defensively copied and does not return a clone when
- * {@linkplain #leadingData()} is called.
+ * {@code type} conforms to {@code RFC 7468}, that {@code content} is valid
+ * Base64, or that {@code content} matches the {@code type}.
+ * {@code leadingData} is not defensively copied and does not return a
+ * clone when {@linkplain #leadingData()} is called.
  *
  * @param type the type identifier in the PEM header without PEM syntax labels.
  *           For a public key, {@code type} would be "PUBLIC KEY".
- * @param pem any data between the PEM header and footer.
+ * @param content the Base64-encoded data, excluding the PEM header and footer
  * @param leadingData any non-PEM data preceding the PEM header when decoding.
  *
  * @spec https://www.rfc-editor.org/info/rfc7468
@@ -64,25 +63,25 @@ import java.util.Objects;
  * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-public record PEMRecord(String type, String pem, byte[] leadingData)
+public record PEMRecord(String type, String content, byte[] leadingData)
     implements DEREncodable {
 
     /**
      * Creates a {@code PEMRecord} instance with the given parameters.
      *
      * @param type the type identifier
-     * @param pem the Base64-encoded data encapsulated by the PEM header and
-     *           footer.
+     * @param content the Base64-encoded data, excluding the PEM header and
+     *               footer
      * @param leadingData any non-PEM data read during the decoding process
      *                    before the PEM header.  This value maybe {@code null}.
-     * @throws IllegalArgumentException if the {@code type} is incorrectly
+     * @throws IllegalArgumentException if {@code type} is incorrectly
      * formatted.
-     * @throws NullPointerException if {@code type} and/or {@code pem} are
+     * @throws NullPointerException if {@code type} and/or {@code content} are
      * {@code null}.
      */
-    public PEMRecord(String type, String pem, byte[] leadingData) {
+    public PEMRecord {
         Objects.requireNonNull(type, "\"type\" cannot be null.");
-        Objects.requireNonNull(pem, "\"pem\" cannot be null.");
+        Objects.requireNonNull(content, "\"content\" cannot be null.");
 
         // With no validity checking on `type`, the constructor accept anything
         // including lowercase.  The onus is on the caller.
@@ -92,37 +91,22 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
                 "Only the PEM type identifier is allowed");
         }
 
-        this.type = type;
-        this.pem = pem;
-        this.leadingData = leadingData;
     }
 
     /**
      * Creates a {@code PEMRecord} instance with a given {@code type} and
-     * {@code pem} data in String form.  {@code leadingData} is set to null.
+     * {@code content} data in String form.  {@code leadingData} is set to null.
      *
      * @param type the PEM type identifier
-     * @param pem the Base64-encoded data encapsulated by the PEM header and
-     *           footer.
-     * @throws IllegalArgumentException if the {@code type} is incorrectly
+     * @param content the Base64-encoded data, excluding the PEM header and
+     *               footer
+     * @throws IllegalArgumentException if {@code type} is incorrectly
      * formatted.
-     * @throws NullPointerException if {@code type} and/or {@code pem} are
+     * @throws NullPointerException if {@code type} and/or {@code content} are
      * {@code null}.
      */
-    public PEMRecord(String type, String pem) {
-        this(type, pem, null);
-    }
-
-    /**
-     * Returns the binary encoding from the Base64 data contained in
-     * {@code pem}.
-     *
-     * @throws IllegalArgumentException if {@code pem} cannot be decoded.
-     * @return a new array of the binary encoding each time this
-     * method is called.
-     */
-    public byte[] getEncoded() {
-        return Base64.getMimeDecoder().decode(pem);
+    public PEMRecord(String type, String content) {
+        this(type, content, null);
     }
 
     /**

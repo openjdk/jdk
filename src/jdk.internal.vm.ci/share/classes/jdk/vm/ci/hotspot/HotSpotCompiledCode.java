@@ -188,4 +188,88 @@ public class HotSpotCompiledCode implements CompiledCode {
             }
         });
     }
+
+    /**
+     * Returns a copy of the compiled machine code.
+     */
+    public byte[] getTargetCode() {
+        return (targetCode == null) ? null : targetCode.clone();
+    }
+
+    /**
+     * Gets the size of the compiled machine code in bytes.
+     */
+    public int getTargetCodeSize() {
+        return targetCodeSize;
+    }
+
+    /**
+     * Returns a copy of the code annotations describing special sites in {@link #targetCode}.
+     */
+    public Site[] getSites() {
+        return (sites == null) ? null : sites.clone();
+    }
+
+    /**
+     * Returns an array copy of the assumptions this code relies on.
+     */
+    public Assumption[] getAssumptions() {
+        return (assumptions == null) ? null : assumptions.clone();
+    }
+
+    /**
+     * Returns an array copy of the methods whose bytecodes were used as input to the compilation.
+     */
+    public ResolvedJavaMethod[] getMethods() {
+        return (methods == null) ? null : methods.clone();
+    }
+
+    /**
+     * Returns an array copy of the comments that are included in code dumps.
+     */
+    public Comment[] getComments() {
+        return (comments == null) ? null : comments.clone();
+    }
+
+    /**
+     * Returns a copy of the data section containing serialized constants for the emitted machine code.
+     */
+    public byte[] getDataSection() {
+        return (dataSection == null) ? null : dataSection.clone();
+    }
+
+    /**
+     * Gets the minimum alignment of the data section.
+     */
+    public int getDataSectionAlignment() {
+        return dataSectionAlignment;
+    }
+
+    /**
+     * Returns a copy of the {@link #dataSection} relocations.
+     */
+    public DataPatch[] getDataSectionPatches() {
+        return (dataSectionPatches == null) ? null : dataSectionPatches.clone();
+    }
+
+    /**
+     * Checks if this compiled code is immutable and position independent.
+     */
+    public boolean isImmutablePIC() {
+        return isImmutablePIC;
+    }
+
+    /**
+     * Gets the total size of the stack frame of this compiled method.
+     */
+    public int getTotalFrameSize() {
+        return totalFrameSize;
+    }
+
+    /**
+     * Gets the deoptimization rescue slot associated with this compiled code.
+     */
+    public StackSlot getDeoptRescueSlot() {
+        return deoptRescueSlot;
+    }
 }

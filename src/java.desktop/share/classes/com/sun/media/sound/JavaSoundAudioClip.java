@@ -25,16 +25,17 @@
 
 package com.sun.media.sound;
 
-import java.applet.AudioClip;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import javax.sound.SoundClip;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
@@ -59,8 +60,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-@SuppressWarnings("removal")
-public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
+public final class JavaSoundAudioClip implements MetaEventListener, LineListener {
 
     private long lastPlayCall = 0;
     private static final int MINIMUM_PLAY_DELAY = 30;
@@ -103,24 +103,28 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         return clip;
     }
 
-    public static JavaSoundAudioClip create(final URLConnection uc) {
-        JavaSoundAudioClip clip = new JavaSoundAudioClip();
+    /* Used [only] by sun.awt.www.content.MultiMediaContentHandlers */
+    public static SoundClip create(final URLConnection uc) {
+        File tmpFile = null;
         try {
-            clip.init(uc.getInputStream());
-        } catch (final Exception ignored) {
-            // Playing the clip will be a no-op if an exception occured in inititialization.
+            tmpFile = File.createTempFile("javaurl", ".aud");
+        } catch (IOException e) {
+            return null;
         }
-        return clip;
-    }
 
-    public static JavaSoundAudioClip create(final URL url) {
-        JavaSoundAudioClip clip = new JavaSoundAudioClip();
-        try {
-            clip.init(url.openStream());
-        } catch (final Exception ignored) {
-            // Playing the clip will be a no-op if an exception occurred in inititialization.
+        try (InputStream in = uc.getInputStream();
+             FileOutputStream out = new FileOutputStream(tmpFile)) {
+             in.transferTo(out);
+        } catch (IOException e) {
         }
-        return clip;
+
+        try {
+             return SoundClip.createSoundClip(tmpFile);
+        } catch (IOException e) {
+        } finally {
+            tmpFile.delete();
+        }
+        return null;
     }
 
     private void init(InputStream in) throws IOException {
@@ -167,7 +171,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         return false;
     }
 
-    @Override
     public synchronized void play() {
         if (!success) {
             return;
@@ -175,7 +178,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         startImpl(false);
     }
 
-    @Override
     public synchronized void loop() {
         if (!success) {
             return;
@@ -184,7 +186,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     }
 
     private synchronized void startImpl(boolean loop) {
-        // hack for some applets that call the start method very rapidly...
+        // hack for some applications that call the start method very rapidly...
         long currentTime = System.currentTimeMillis();
         long diff = currentTime - lastPlayCall;
         if (diff < MINIMUM_PLAY_DELAY) {
@@ -247,7 +249,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
-    @Override
     public synchronized void stop() {
         if (!success) {
             return;

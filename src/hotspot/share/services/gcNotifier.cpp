@@ -25,6 +25,9 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "memoryManager.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -35,9 +38,6 @@
 #include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
-#include "memoryManager.hpp"
-#include "memory/oopFactory.hpp"
-#include "memory/resourceArea.hpp"
 
 GCNotificationRequest *GCNotifier::first_request = nullptr;
 GCNotificationRequest *GCNotifier::last_request = nullptr;

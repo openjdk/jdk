@@ -48,6 +48,7 @@ enum platform_dependent_constants {
 
 class riscv {
  friend class StubGenerator;
+ friend class StubRoutines;
 #if INCLUDE_JVMCI
   friend class JVMCIVMStructs;
 #endif

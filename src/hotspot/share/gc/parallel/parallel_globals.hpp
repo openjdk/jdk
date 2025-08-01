@@ -41,7 +41,7 @@
           "for a system GC")                                                \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
-          "Process large arrays in chunks")
+          "(Deprecated) Process large arrays in chunks")
 
 // end of GC_PARALLEL_FLAGS
 

@@ -675,6 +675,13 @@ void JvmtiExport::post_early_vm_start() {
 void JvmtiExport::post_vm_start() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_START, ("Trg VM start event triggered" ));
 
+  // The JvmtiThreadState is incomplete if initialized in post_early_vm_start
+  // before classes are initialized. It should be updated now.
+  JavaThread *thread  = JavaThread::current();
+  if (thread->jvmti_thread_state() != nullptr) {
+    thread->jvmti_thread_state()->update_thread_oop_during_vm_start();
+  }
+
   // can now enable some events
   JvmtiEventController::vm_start();
 
@@ -684,7 +691,6 @@ void JvmtiExport::post_vm_start() {
     if (!env->early_vmstart_env() && env->is_enabled(JVMTI_EVENT_VM_START)) {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt VM start event sent" ));
 
-      JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMStart callback = env->callbacks()->VMStart;
@@ -859,47 +865,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   return JVMTI_ERROR_NONE;
 }
 
-// Convert an oop to a JavaThread found on the specified ThreadsList.
-// The ThreadsListHandle in the caller "protects" the returned
-// JavaThread *.
-//
-// On success, *jt_pp is set to the converted JavaThread * and
-// JVMTI_ERROR_NONE is returned. On error, returns various
-// JVMTI_ERROR_* values.
-//
-jvmtiError
-JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                  JavaThread ** jt_pp) {
-  assert(t_list != nullptr, "must have a ThreadsList");
-  assert(thread_oop != nullptr, "must have an oop");
-  assert(jt_pp != nullptr, "must have a return JavaThread pointer");
-
-  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
-    // The oop is not a java.lang.Thread.
-    return JVMTI_ERROR_INVALID_THREAD;
-  }
-  // Looks like a java.lang.Thread oop at this point.
-
-  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
-  if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-  // Looks like a live JavaThread at this point.
-
-  if (!t_list->includes(java_thread)) {
-    // Not on the JavaThreads list so it is not alive.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-
-  // Return a live JavaThread that is "protected" by the
-  // ThreadsListHandle in the caller.
-  *jt_pp = java_thread;
-
-  return JVMTI_ERROR_NONE;
-}
-
 class JvmtiClassFileLoadHookPoster : public StackObj {
  private:
   Symbol*            _h_name;
@@ -943,12 +908,12 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         ModuleEntry* module_entry = InstanceKlass::cast(klass)->module();
         assert(module_entry != nullptr, "module_entry should always be set");
         if (module_entry->is_named() &&
-            module_entry->module() != nullptr &&
+            module_entry->module_oop() != nullptr &&
             !module_entry->has_default_read_edges()) {
           if (!module_entry->set_has_default_read_edges()) {
             // We won a potential race.
             // Add read edges to the unnamed modules of the bootstrap and app class loaders
-            Handle class_module(_thread, module_entry->module()); // Obtain j.l.r.Module
+            Handle class_module(_thread, module_entry->module_oop()); // Obtain j.l.r.Module
             JvmtiExport::add_default_read_edges(class_module, _thread);
           }
         }

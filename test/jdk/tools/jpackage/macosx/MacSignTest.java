@@ -133,14 +133,20 @@ public class MacSignTest {
     }
 
     @Test
-    @Parameter({"IMAGE", "GOOD_SIGNING_KEY_USER_NAME"})
-    @Parameter({"MAC_DMG", "GOOD_SIGNING_KEY_USER_NAME"})
-    @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
+    // Case "--mac-signing-key-user-name": jpackage selects first certificate
+    // found with warning message. Certificate hash is pass to "codesign" in this
+    // case.
+    @Parameter({"IMAGE", "0", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_DMG", "0", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_PKG", "0", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
 
-    @Parameter({"IMAGE", "GOOD_CODESIGN_SIGN_IDENTITY"})
-    @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
-    @Parameter({"MAC_PKG", "GOOD_PKG_SIGN_IDENTITY"})
-    public static void testMultipleCertificates(PackageType type, SignOption... options) {
+    // Case "--mac-app-image-sign-identity": sign identity will be pass to
+    // "codesign" and "codesign" should fail due to multiple certificates with
+    // same common name found.
+    @Parameter({"IMAGE", "1", "GOOD_CODESIGN_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "1", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "1", "GOOD_PKG_SIGN_IDENTITY"})
+    public static void testMultipleCertificates(PackageType type, int jpackageExitCode, SignOption... options) {
 
         final var keychain = SigningBase.StandardKeychain.DUPLICATE.spec().keychain();
 
@@ -154,7 +160,7 @@ public class MacSignTest {
 
             SignOption.configureOutputValidation(cmd, List.of(options), opt -> {
                 return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
-            }).execute(1);
+            }).execute(jpackageExitCode);
         });
     }
 

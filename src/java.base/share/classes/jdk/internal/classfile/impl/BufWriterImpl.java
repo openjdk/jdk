@@ -399,6 +399,7 @@ public final class BufWriterImpl implements BufWriter {
         writeU2(cpIndex(entry));
     }
 
+    // Null checks entry
     public void writeIndex(int bytecode, PoolEntry entry) {
         writeU1U2(bytecode, cpIndex(entry));
     }

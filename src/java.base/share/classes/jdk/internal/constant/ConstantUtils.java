@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.internal.constant;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -41,6 +42,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
  */
+@AOTSafeClassInitializer // initialization dependency of PrimitiveClassDescImpl
 public final class ConstantUtils {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 

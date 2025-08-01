@@ -52,7 +52,7 @@ protected:
 
     ShenandoahHeap::heap()->lock()->lock(false);
 
-    old = new ShenandoahOldGeneration(8, 1024 * 1024, 1024);
+    old = new ShenandoahOldGeneration(8, 1024 * 1024);
     old->set_promoted_reserve(512 * HeapWordSize);
     old->expend_promoted(256 * HeapWordSize);
     old->set_evacuation_reserve(512 * HeapWordSize);

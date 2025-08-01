@@ -239,8 +239,6 @@ public:
   // The number of regions reserved for the heap.
   uint max_num_regions() const { return (uint)_regions.length(); }
 
-  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
-
   MemoryUsage get_auxiliary_data_memory_usage() const;
 
   MemRegion reserved() const { return MemRegion(heap_bottom(), heap_end()); }

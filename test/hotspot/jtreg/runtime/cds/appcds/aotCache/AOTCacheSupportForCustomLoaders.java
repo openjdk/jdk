@@ -27,8 +27,6 @@
  * @summary Test AOT cache support for array classes in custom class loaders.
  * @bug 8353298 8356838
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build ReturnIntegerAsString
  * @build AOTCacheSupportForCustomLoaders

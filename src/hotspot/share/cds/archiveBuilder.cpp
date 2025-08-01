@@ -38,7 +38,6 @@
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -575,6 +574,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     if (ref->msotype() == MetaspaceObj::ClassType) {
       Klass* klass = (Klass*)ref->obj();
       assert(klass->is_klass(), "must be");
+      if (RegeneratedClasses::has_been_regenerated(klass)) {
+        klass = RegeneratedClasses::get_regenerated_object(klass);
+      }
       if (is_excluded(klass)) {
         ResourceMark rm;
         log_debug(cds, dynamic)("Skipping class (excluded): %s", klass->external_name());

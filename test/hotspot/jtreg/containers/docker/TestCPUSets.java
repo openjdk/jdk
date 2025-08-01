@@ -27,6 +27,7 @@
  * @key cgroups
  * @summary Test JVM's awareness of cpu sets (cpus and mems)
  * @requires container.support
+ * @requires !vm.asan
  * @requires (os.arch != "s390x")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

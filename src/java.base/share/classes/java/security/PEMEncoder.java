@@ -71,7 +71,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
  * <p> When encoding a {@link PEMRecord}, the API surrounds the
- * {@linkplain PEMRecord#pem()} with the PEM header and footer
+ * {@linkplain PEMRecord#content()} with the PEM header and footer
  * from {@linkplain PEMRecord#type()}. {@linkplain PEMRecord#leadingData()} is
  * not included in the encoding.  {@code PEMRecord} will not perform
  * validity checks on the data.
@@ -108,7 +108,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and DEREncodables.
+ * @implNote An implementation may support other PEM types and
+ * {@code DEREncodable} objects.
  *
  *
  * @see PEMDecoder
@@ -287,7 +288,7 @@ public final class PEMEncoder {
         }
 
         // If `keySpec` is non-null, then `key` hasn't been established.
-        // Setting a `key' prevents repeated key generations operations.
+        // Setting a `key` prevents repeated key generation operations.
         // withEncryption() is a configuration method and cannot throw an
         // exception; therefore generation is delayed.
         if (keySpec != null) {

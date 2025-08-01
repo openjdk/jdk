@@ -22,10 +22,10 @@
  *
  */
 
-#include "ci/ciEnv.hpp"
-#include "ci/ciMetadata.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciMetadata.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
@@ -35,6 +35,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
@@ -220,8 +221,8 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
         last_ctd = ctd;
       }
     } else {
-       last_ctd = ctd;
-       mtd->notice_toplevel_compilation(level);
+      last_ctd = ctd;
+      mtd->notice_toplevel_compilation(level);
     }
   }
   return ctd;
@@ -432,24 +433,11 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 }
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
-  if (holder() == klass) {
-    return;   // no change to make
-  }
-
-  jobject hmj = _holder_mirror;
-  if (hmj != nullptr) {   // clear out previous handle, if any
-    _holder_mirror = nullptr;
-    assert(JNIHandles::is_global_handle(hmj), "");
-    JNIHandles::destroy_global(hmj);
-  }
-
-  if (klass != nullptr) {
-    Handle hm(JavaThread::current(), klass->java_mirror());
-    hmj = JNIHandles::make_global(hm);
-    Atomic::release_store(&_holder_mirror, hmj);
-  }
-
-  Atomic::release_store(&_holder, const_cast<InstanceKlass*>(klass));
+  assert(klass != nullptr, "");
+  // The OopHandle constructor will allocate a handle. We don't need to ever release it so we don't preserve
+  // the handle object.
+  OopHandle handle(Universe::vm_global(), klass->java_mirror());
+  _holder = klass;
   assert(holder() == klass, "");
 }
 
@@ -772,7 +760,6 @@ void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
 
 void KlassTrainingData::remove_unshareable_info() {
   TrainingData::remove_unshareable_info();
-  _holder_mirror = nullptr;
   _comp_deps.remove_unshareable_info();
 }
 

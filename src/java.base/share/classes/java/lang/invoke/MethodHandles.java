@@ -32,6 +32,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
@@ -83,6 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@AOTSafeClassInitializer
 public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
@@ -4305,9 +4307,10 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T}, with the exception of
-     *     access modes {@code get} and {@code set} for {@code long} and
-     *     {@code double} on 32-bit platforms.
+     * <li>read write access modes for all {@code T}.  Access modes {@code get}
+     *     and {@code set} for {@code long} and {@code double} are supported but
+     *     have no atomicity guarantee, as described in Section {@jls 17.7} of
+     *     <cite>The Java Language Specification</cite>.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional

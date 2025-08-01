@@ -76,7 +76,9 @@ public class TwrAvoidNullCheck {
         DumpLower.preRegister(ctx);
         Iterable<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource(code));
         JavacTask task = JavacTool.create().getTask(null, null, null, null, null, files, ctx);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         boolean hasNullCheck = ((DumpLower) DumpLower.instance(ctx)).hasNullCheck;
 
