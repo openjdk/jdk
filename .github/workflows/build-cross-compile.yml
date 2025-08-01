@@ -40,6 +40,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-cross-compile:
@@ -60,26 +64,26 @@ jobs:
             gnu-arch: aarch64
             debian-arch: arm64
             debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
+            debian-version: bookworm
             tolerate-sysroot-errors: false
           - target-cpu: arm
             gnu-arch: arm
             debian-arch: armhf
             debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
+            debian-version: bookworm
             tolerate-sysroot-errors: false
             gnu-abi: eabihf
           - target-cpu: s390x
             gnu-arch: s390x
             debian-arch: s390x
             debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
+            debian-version: bookworm
             tolerate-sysroot-errors: false
           - target-cpu: ppc64le
             gnu-arch: powerpc64le
             debian-arch: ppc64el
             debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
+            debian-version: bookworm
             tolerate-sysroot-errors: false
           - target-cpu: riscv64
             gnu-arch: riscv64
@@ -189,4 +193,4 @@ jobs:
         with:
           make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}
-        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
+        if: ((steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true') && inputs.dry-run == false)

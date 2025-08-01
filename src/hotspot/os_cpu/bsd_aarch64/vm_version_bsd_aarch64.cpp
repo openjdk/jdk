@@ -92,6 +92,9 @@ void VM_Version::get_os_cpu_info() {
       cpu_has("hw.optional.armv8_2_sha3")) {
     _features |= CPU_SHA3;
   }
+  if (cpu_has("hw.optional.arm.FEAT_SB")) {
+    _features |= CPU_SB;
+  }
 
   int cache_line_size;
   int hw_conf_cache_line[] = { CTL_HW, HW_CACHELINE };
