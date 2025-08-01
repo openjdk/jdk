@@ -2851,6 +2851,16 @@ public class IRNode {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
     }
 
+    public static final String REPLICATE_HF = PREFIX + "REPLICATE_HF" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF, "replicateHF");
+    }
+
+    public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
