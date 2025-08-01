@@ -61,10 +61,11 @@ public class AddressComputationContractTest {
     }
 
     @Test
-    void fastObjectFieldOffset() {
+    void knownObjectFieldOffset() {
         assertDoesNotThrow(() -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "instanceField"));
         assertThrows(NullPointerException.class, () -> getUnsafe().objectFieldOffset(null, "instanceField"));
         assertThrows(NullPointerException.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, null));
+        // Two conventional failure cases, not necessarily complete
         var dneMsg = assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "doesNotExist")).getMessage();
         assertTrue(dneMsg.contains("AddressComputationContractTest.doesNotExist") && dneMsg.contains("not found"), dneMsg);
         var staticMsg = assertThrows(InternalError.class, () -> getUnsafe().objectFieldOffset(AddressComputationContractTest.class, "staticField")).getMessage();
