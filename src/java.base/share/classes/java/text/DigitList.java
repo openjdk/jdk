@@ -41,14 +41,9 @@ package java.text;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FloatingDecimal;
-import jdk.internal.util.DecimalDigits;
 
 /**
  * Digit List. Private to DecimalFormat.
@@ -79,7 +74,6 @@ import jdk.internal.util.DecimalDigits;
  * @author       Mark Davis, Alan Liu
  */
 final class DigitList implements Cloneable {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     /**
      * The maximum number of significant digits in an IEEE 754 double, that
      * is, in a Java double.  This must not be increased, or garbage digits
@@ -195,7 +189,7 @@ final class DigitList implements Cloneable {
         // Parse as unsigned to handle Long.MIN_VALUE, which is the one NEGATIVE value
         // we represent.  If we tried to just pass the digits off to parseLong,
         // we'd get a parse failure.
-        long v = Long.parseUnsignedLong(new String(digits, 0, count));
+        long v = Long.parseUnsignedLong(new String(digits, 0, count, StandardCharsets.ISO_8859_1));
         if (v < 0) {
             if (v == Long.MIN_VALUE) {
                 return Long.MIN_VALUE;
@@ -216,13 +210,12 @@ final class DigitList implements Cloneable {
      * unlike BigDecimal("").
      */
     public final BigDecimal getBigDecimal() {
+        int count = this.count;
         if (count == 0) {
             return BigDecimal.valueOf(0, -decimalAt);
         }
 
-        char[] chars = new char[count];
-        JLA.inflateBytesToChars(digits, 0, chars, 0, count);
-        BigDecimal value = new BigDecimal(chars, 0, chars.length);
+        BigDecimal value = new BigDecimal(new String(digits, 0, count, StandardCharsets.ISO_8859_1));
         if (decimalAt == count) {
             return value;
         } else {

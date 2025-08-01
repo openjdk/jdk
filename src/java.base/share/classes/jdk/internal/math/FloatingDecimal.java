@@ -1552,10 +1552,7 @@ public class FloatingDecimal{
         if (decExp < MIN_DECIMAL_EXPONENT) {
             return A2BC_POSITIVE_ZERO;
         }
-        byte[] buf = new byte[length];
-        for (int i = 0; i < length; i++) {
-            buf[i] = digits[i];
-        }
+        byte[] buf = Arrays.copyOf(digits, length);
         return new ASCIIToBinaryBuffer(false, decExp, buf, length);
     }
 
