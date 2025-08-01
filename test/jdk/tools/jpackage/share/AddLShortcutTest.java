@@ -269,7 +269,7 @@ public class AddLShortcutTest {
             invokeShortcutSpec.execute();
 
             // On Linux, "gtk-launch" is used to launch a .desktop file. It is async and there is no
-            // wait to make it wait for exit of a process it triggers.
+            // way to make it wait for exit of a process it triggers.
             Executor.tryRunMultipleTimes(() -> {
                 if (!Files.exists(expectedOutputFile)) {
                     throw new NoSuchElementException(String.format("[%s] is not avaialble", expectedOutputFile));
