@@ -38,7 +38,7 @@ class NativeNMethodBarrier: public NativeInstruction {
 
   NativeMovRegMem* get_patchable_instruction_handle() const {
     // Endianness is handled by NativeMovRegMem
-    return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
+    return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address());
   }
 
 public:
@@ -95,12 +95,6 @@ public:
 
     uint* current_instruction = reinterpret_cast<uint*>(get_barrier_start_address());
 
-    // calculate_address_from_global_toc (compound instruction)
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
-
-    verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
-
     get_patchable_instruction_handle()->verify();
     current_instruction += 2;
 
@@ -108,6 +102,12 @@ public:
 
     // cmpw (mnemonic)
     verify_op_code(current_instruction, Assembler::CMP_OPCODE);
+
+    // calculate_address_from_global_toc (compound instruction)
+    verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
+    verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
+
+    verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
 
     // bnectrl (mnemonic) (weak check; not checking the exact type)
     verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
