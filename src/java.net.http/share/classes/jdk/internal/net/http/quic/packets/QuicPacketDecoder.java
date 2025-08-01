@@ -42,6 +42,7 @@ import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 
 import javax.crypto.AEADBadTagException;
+import javax.crypto.ShortBufferException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1626,8 +1627,13 @@ public class QuicPacketDecoder {
             buffer.position(offset);
             buffer.limit(payloadStart + payloadLen);
             // buffer's position and limit are set to the boundaries of the encrypted packet
-            context.getTLSEngine().decryptPacket(packetType.keySpace().get(), packetNumber, keyPhase,
-                    buffer, payloadStart - offset, output);
+            try {
+                context.getTLSEngine().decryptPacket(packetType.keySpace().get(), packetNumber, keyPhase,
+                        buffer, payloadStart - offset, output);
+            } catch (ShortBufferException e) {
+                throw new QuicTransportException(e.toString(), null, 0,
+                        QuicTransportErrors.INTERNAL_ERROR);
+            }
             // buffer's position and limit are both at end of the packet
             output.limit(output.position());
             output.reset();
@@ -1711,15 +1717,18 @@ public class QuicPacketDecoder {
                     .formatted(offset, position(), remaining());
         }
 
-        public void unprotectLong(long packetLength) throws QuicKeyUnavailableException {
+        public void unprotectLong(long packetLength)
+                throws QuicKeyUnavailableException, QuicTransportException {
             unprotect(packetLength, (byte) 0x0f);
         }
 
-        public void unprotectShort() throws QuicKeyUnavailableException {
+        public void unprotectShort()
+                throws QuicKeyUnavailableException, QuicTransportException {
             unprotect(buffer.remaining(), (byte) 0x1f);
         }
 
-        private void unprotect(long packetLength, byte headerMask) throws QuicKeyUnavailableException {
+        private void unprotect(long packetLength, byte headerMask)
+                throws QuicKeyUnavailableException, QuicTransportException {
             QuicTLSEngine tlsEngine = context.getTLSEngine();
             int sampleSize = tlsEngine.getHeaderProtectionSampleSize(packetType.keySpace().get());
             if (packetLength > buffer.remaining() || packetLength < sampleSize + 4) {

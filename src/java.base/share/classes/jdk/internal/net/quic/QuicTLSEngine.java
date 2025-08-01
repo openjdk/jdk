@@ -240,7 +240,7 @@ public interface QuicTLSEngine {
      */
     ByteBuffer computeHeaderProtectionMask(KeySpace keySpace,
                                            boolean incoming, ByteBuffer sample)
-            throws QuicKeyUnavailableException;
+            throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * Get the authentication tag size. Encryption adds this number of bytes.
@@ -292,7 +292,7 @@ public interface QuicTLSEngine {
                        Function<Integer, ByteBuffer> headerGenerator,
                        ByteBuffer packetPayload,
                        ByteBuffer output)
-            throws QuicKeyUnavailableException, QuicTransportException;
+            throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException;
 
     /**
      * Decrypt the given packet bytes using keys for the given packet key space.
@@ -334,7 +334,7 @@ public interface QuicTLSEngine {
     void decryptPacket(KeySpace keySpace, long packetNumber, int keyPhase,
             ByteBuffer packet, int headerLength, ByteBuffer output)
             throws IllegalArgumentException, QuicKeyUnavailableException,
-                   AEADBadTagException, QuicTransportException;
+            AEADBadTagException, QuicTransportException, ShortBufferException;
 
     /**
      * Sign the provided retry packet. Input buffer contains the retry packet

@@ -27,8 +27,6 @@ package sun.security.ssl;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,9 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.AEADBadTagException;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.ChaCha20ParameterSpec;
@@ -134,7 +130,8 @@ abstract class QuicCipher {
         return this.hpCipher.headerProtectionKey;
     }
 
-    final ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
+    final ByteBuffer computeHeaderProtectionMask(ByteBuffer sample)
+            throws QuicTransportException {
         return hpCipher.computeHeaderProtectionMask(sample);
     }
 
@@ -197,7 +194,8 @@ abstract class QuicCipher {
         }
 
         final void decryptPacket(long packetNumber, ByteBuffer packet,
-                int headerLength, ByteBuffer output) throws AEADBadTagException {
+                int headerLength, ByteBuffer output)
+                throws AEADBadTagException, ShortBufferException, QuicTransportException {
             doDecrypt(packetNumber, packet, headerLength, output);
             boolean updated;
             do {
@@ -213,7 +211,7 @@ abstract class QuicCipher {
 
         protected abstract void doDecrypt(long packetNumber,
                 ByteBuffer packet, int headerLength, ByteBuffer output)
-                throws AEADBadTagException;
+                throws AEADBadTagException, ShortBufferException, QuicTransportException;
 
         /**
          * Returns the maximum limit on the number of packets that fail
@@ -256,7 +254,8 @@ abstract class QuicCipher {
         final void encryptPacket(final long packetNumber,
                 final ByteBuffer packetHeader,
                 final ByteBuffer packetPayload,
-                final ByteBuffer output) throws QuicTransportException {
+                final ByteBuffer output)
+                throws QuicTransportException, ShortBufferException {
             final long confidentialityLimit = confidentialityLimit();
             final long numEncrypted = this.numPacketsEncrypted.get();
             if (confidentialityLimit > 0 &&
@@ -323,7 +322,8 @@ abstract class QuicCipher {
         }
 
         abstract void doEncryptPacket(long packetNumber, ByteBuffer packetHeader,
-                                      ByteBuffer packetPayload, ByteBuffer output);
+                                      ByteBuffer packetPayload, ByteBuffer output)
+                throws ShortBufferException, QuicTransportException;
 
         /**
          * Returns the maximum limit on the number of packets that are allowed
@@ -350,7 +350,8 @@ abstract class QuicCipher {
             return 16;
         }
 
-        abstract ByteBuffer computeHeaderProtectionMask(ByteBuffer sample);
+        abstract ByteBuffer computeHeaderProtectionMask(ByteBuffer sample)
+                throws QuicTransportException;
 
         final void discard() {
             safeDiscard(this.headerProtectionKey);
@@ -378,7 +379,8 @@ abstract class QuicCipher {
 
         @Override
         protected void doDecrypt(long packetNumber, ByteBuffer packet,
-                                 int headerLength, ByteBuffer output) throws AEADBadTagException {
+                                 int headerLength, ByteBuffer output)
+                throws AEADBadTagException, ShortBufferException, QuicTransportException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -392,22 +394,16 @@ abstract class QuicCipher {
             synchronized (cipher) {
                 try {
                     cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
-                } catch (InvalidKeyException |
-                         InvalidAlgorithmParameterException e) {
-                    throw new AssertionError("Should never happen", e);
-                }
-
-                try {
                     int limit = packet.limit();
                     packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);
-                } catch (AEADBadTagException e) {
+                } catch (AEADBadTagException | ShortBufferException e) {
                     throw e;
-                } catch (IllegalBlockSizeException | BadPaddingException |
-                         ShortBufferException e) {
-                    throw new AssertionError("Should never happen", e);
+                } catch (Exception e) {
+                    throw new QuicTransportException("Decryption failed",
+                            null, 0, Alert.INTERNAL_ERROR.id, e);
                 }
             }
         }
@@ -454,7 +450,8 @@ abstract class QuicCipher {
 
         @Override
         void doEncryptPacket(long packetNumber, ByteBuffer packetHeader,
-                             ByteBuffer packetPayload, ByteBuffer output) {
+                             ByteBuffer packetPayload, ByteBuffer output)
+                throws ShortBufferException, QuicTransportException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -468,16 +465,13 @@ abstract class QuicCipher {
             synchronized (cipher) {
                 try {
                     cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
-                } catch (InvalidKeyException |
-                         InvalidAlgorithmParameterException e) {
-                    throw new AssertionError("Should never happen", e);
-                }
-                try {
                     cipher.updateAAD(packetHeader);
                     cipher.doFinal(packetPayload, output);
-                } catch (IllegalBlockSizeException | BadPaddingException |
-                         ShortBufferException e) {
-                    throw new AssertionError("Should never happen", e);
+                } catch (ShortBufferException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new QuicTransportException("Encryption failed",
+                            null, 0, Alert.INTERNAL_ERROR.id, e);
                 }
             }
         }
@@ -502,7 +496,8 @@ abstract class QuicCipher {
         }
 
         @Override
-        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
+        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample)
+                throws QuicTransportException {
             if (sample.remaining() != getHeaderProtectionSampleSize()) {
                 throw new IllegalArgumentException("Invalid sample size");
             }
@@ -517,9 +512,9 @@ abstract class QuicCipher {
                 output.flip();
                 assert output.remaining() >= 5;
                 return output;
-            } catch (IllegalBlockSizeException | BadPaddingException |
-                     ShortBufferException | InvalidKeyException e) {
-                throw new AssertionError("Should never happen", e);
+            } catch (Exception e) {
+                throw new QuicTransportException("Encryption failed",
+                        null, 0, Alert.INTERNAL_ERROR.id, e);
             }
         }
     }
@@ -545,7 +540,8 @@ abstract class QuicCipher {
 
         @Override
         protected void doDecrypt(long packetNumber, ByteBuffer packet,
-                                 int headerLength, ByteBuffer output) throws AEADBadTagException {
+                                 int headerLength, ByteBuffer output)
+                throws AEADBadTagException, ShortBufferException, QuicTransportException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -559,22 +555,16 @@ abstract class QuicCipher {
             synchronized (cipher) {
                 try {
                     cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
-                } catch (InvalidKeyException |
-                         InvalidAlgorithmParameterException e) {
-                    throw new AssertionError("Should never happen", e);
-                }
-
-                try {
                     int limit = packet.limit();
                     packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);
-                } catch (AEADBadTagException e) {
+                } catch (AEADBadTagException | ShortBufferException e) {
                     throw e;
-                } catch (IllegalBlockSizeException | BadPaddingException |
-                         ShortBufferException e) {
-                    throw new AssertionError("Should never happen", e);
+                } catch (Exception e) {
+                    throw new QuicTransportException("Decryption failed",
+                            null, 0, Alert.INTERNAL_ERROR.id, e);
                 }
             }
         }
@@ -622,7 +612,8 @@ abstract class QuicCipher {
 
         @Override
         void doEncryptPacket(final long packetNumber, final ByteBuffer packetHeader,
-                             final ByteBuffer packetPayload, final ByteBuffer output) {
+                             final ByteBuffer packetPayload, final ByteBuffer output)
+                throws ShortBufferException, QuicTransportException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -637,16 +628,13 @@ abstract class QuicCipher {
             synchronized (cipher) {
                 try {
                     cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
-                } catch (InvalidKeyException |
-                         InvalidAlgorithmParameterException e) {
-                    throw new AssertionError("Should never happen", e);
-                }
-                try {
                     cipher.updateAAD(packetHeader);
                     cipher.doFinal(packetPayload, output);
-                } catch (IllegalBlockSizeException | BadPaddingException |
-                         ShortBufferException e) {
-                    throw new AssertionError("Should never happen", e);
+                } catch (ShortBufferException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new QuicTransportException("Encryption failed",
+                            null, 0, Alert.INTERNAL_ERROR.id, e);
                 }
             }
         }
@@ -671,7 +659,8 @@ abstract class QuicCipher {
         }
 
         @Override
-        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
+        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample)
+                throws QuicTransportException {
             if (sample.remaining() != getHeaderProtectionSampleSize()) {
                 throw new IllegalArgumentException("Invalid sample size");
             }
@@ -700,10 +689,9 @@ abstract class QuicCipher {
                     assert numBytes == 5;
                 }
                 return ByteBuffer.wrap(output);
-            } catch (IllegalBlockSizeException | BadPaddingException |
-                     ShortBufferException | InvalidKeyException |
-                     InvalidAlgorithmParameterException e) {
-                throw new AssertionError("Should never happen", e);
+            } catch (Exception e) {
+                throw new QuicTransportException("Encryption failed",
+                        null, 0, Alert.INTERNAL_ERROR.id, e);
             }
         }
     }

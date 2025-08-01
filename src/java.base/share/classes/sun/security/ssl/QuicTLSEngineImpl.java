@@ -36,9 +36,7 @@ import sun.security.ssl.QuicKeyManager.InitialKeyManager;
 import sun.security.ssl.QuicKeyManager.OneRttKeyManager;
 
 import javax.crypto.AEADBadTagException;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.net.ssl.SSLHandshakeException;
@@ -313,7 +311,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     @Override
     public ByteBuffer computeHeaderProtectionMask(KeySpace keySpace,
                                                   boolean incoming, ByteBuffer sample)
-            throws QuicKeyUnavailableException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         final QuicKeyManager keyManager = keyManager(keySpace);
         if (incoming) {
             final QuicCipher.QuicReadCipher quicCipher =
@@ -340,7 +338,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     public void encryptPacket(final KeySpace keySpace, final long packetNumber,
                               final Function<Integer, ByteBuffer> headerGenerator,
                               final ByteBuffer packetPayload, final ByteBuffer output)
-            throws QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {
         final QuicKeyManager keyManager = keyManager(keySpace);
         keyManager.encryptPacket(packetNumber, headerGenerator, packetPayload, output);
     }
@@ -351,7 +349,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             final ByteBuffer packet, final int headerLength,
             final ByteBuffer output)
             throws QuicKeyUnavailableException, AEADBadTagException,
-            QuicTransportException {
+            QuicTransportException, ShortBufferException {
         final QuicKeyManager keyManager = keyManager(keySpace);
         keyManager.decryptPacket(packetNumber, keyPhase, packet, headerLength,
                 output);

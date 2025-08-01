@@ -29,8 +29,6 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -43,8 +41,8 @@ import java.util.function.Function;
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.KDF;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -115,7 +113,7 @@ sealed abstract class QuicKeyManager
             final ByteBuffer packet,final int headerLength,
             final ByteBuffer output) throws QuicKeyUnavailableException,
             IllegalArgumentException, AEADBadTagException,
-            QuicTransportException {
+            QuicTransportException, ShortBufferException {
         // keyPhase is only applicable for 1-RTT packets; the decryptPacket
         // method is overridden by OneRttKeyManager, so this check is for
         // other packet types
@@ -141,7 +139,7 @@ sealed abstract class QuicKeyManager
                        final Function<Integer, ByteBuffer> headerGenerator,
                        final ByteBuffer packetPayload,
                        final ByteBuffer output)
-            throws QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {
         // generate the packet header passing the generator the key phase
         final ByteBuffer header = headerGenerator.apply(0); // key phase is always 0 for non-ONE_RTT
         getWriteCipher().encryptPacket(packetNumber, header, packetPayload, output);
@@ -592,7 +590,7 @@ sealed abstract class QuicKeyManager
         void decryptPacket(final long packetNumber, final int keyPhase,
                 final ByteBuffer packet, final int headerLength,
                 final ByteBuffer output) throws QuicKeyUnavailableException,
-                QuicTransportException, AEADBadTagException {
+                QuicTransportException, AEADBadTagException, ShortBufferException {
             if (keyPhase != 0 && keyPhase != 1) {
                 throw new IllegalArgumentException("Unexpected key phase " +
                         "value: " + keyPhase);
@@ -668,7 +666,7 @@ sealed abstract class QuicKeyManager
                            final Function<Integer, ByteBuffer> headerGenerator,
                            final ByteBuffer packetPayload,
                            final ByteBuffer output)
-                throws QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {
             KeySeries currentSeries = requireKeySeries();
             if (currentSeries.next == null) {
                 // next keys haven't yet been generated,
@@ -800,7 +798,8 @@ sealed abstract class QuicKeyManager
                 final ByteBuffer packet,
                 final int headerLength,
                 final ByteBuffer output)
-                throws QuicKeyUnavailableException, AEADBadTagException {
+                throws QuicKeyUnavailableException, AEADBadTagException,
+                ShortBufferException, QuicTransportException {
             if (currentKeySeries.next == null) {
                 // this can happen if the peer initiated another
                 // key update before we could generate the next

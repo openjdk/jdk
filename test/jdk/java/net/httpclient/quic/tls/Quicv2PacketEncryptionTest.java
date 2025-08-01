@@ -409,7 +409,7 @@ public class Quicv2PacketEncryptionTest {
 
     private void protect(QuicTLSEngine.KeySpace space, ByteBuffer buffer, int packetNumberStart,
                          int packetNumberLength, QuicTLSEngine tlsEngine, int headersMask)
-            throws QuicKeyUnavailableException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         ByteBuffer sample = buffer.slice(packetNumberStart + 4, 16);
         ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(space, false, sample);
         byte headers = buffer.get(0);
@@ -420,7 +420,7 @@ public class Quicv2PacketEncryptionTest {
 
     private void unprotect(QuicTLSEngine.KeySpace keySpace, ByteBuffer buffer, int packetNumberStart,
                            int packetNumberLength, QuicTLSEngine tlsEngine, int headersMask)
-            throws QuicKeyUnavailableException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         ByteBuffer sample = buffer.slice(packetNumberStart + 4, 16);
         ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(keySpace, true, sample);
         byte headers = buffer.get(0);

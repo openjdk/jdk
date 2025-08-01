@@ -1586,8 +1586,13 @@ public class QuicPacketEncoder {
             final ByteBuffer packetHeader = buffer.slice(offset, headersLength);
             final ByteBuffer packetPayload = buffer.slice(payloadstart, payloadLength)
                     .asReadOnlyBuffer();
-            context.getTLSEngine().encryptPacket(packetType.keySpace().get(), packetNumber,
-                    new HeaderGenerator(this.packetType, packetHeader), packetPayload, buffer);
+            try {
+                context.getTLSEngine().encryptPacket(packetType.keySpace().get(), packetNumber,
+                        new HeaderGenerator(this.packetType, packetHeader), packetPayload, buffer);
+            } catch (ShortBufferException e) {
+                throw new QuicTransportException(e.toString(), null, 0,
+                        QuicTransportErrors.INTERNAL_ERROR);
+            }
         }
 
         public void writePayload(List<QuicFrame> frames) {
@@ -1618,17 +1623,17 @@ public class QuicPacketEncoder {
         }
 
         public void protectHeaderLong(int packetNumberStart, int packetNumberLength)
-                throws QuicKeyUnavailableException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             protectHeader(packetNumberStart, packetNumberLength, (byte) 0x0f);
         }
 
         public void protectHeaderShort(int packetNumberStart, int packetNumberLength)
-                throws QuicKeyUnavailableException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             protectHeader(packetNumberStart, packetNumberLength, (byte) 0x1f);
         }
 
         private void protectHeader(int packetNumberStart, int packetNumberLength, byte headerMask)
-                throws QuicKeyUnavailableException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             // expect position at the end of packet
             QuicTLSEngine tlsEngine = context.getTLSEngine();
             int sampleSize = tlsEngine.getHeaderProtectionSampleSize(packetType.keySpace().get());
