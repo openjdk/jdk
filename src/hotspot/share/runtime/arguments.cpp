@@ -1487,19 +1487,16 @@ jint Arguments::set_ergonomics_flags() {
 }
 
 size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  size_t max_allocatable;
-  size_t result = limit;
-  if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    // The AggressiveHeap check is a temporary workaround to avoid calling
-    // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
-    // selected. This works because AggressiveHeap implies UseParallelGC
-    // where we know the ratio will be 1. Once the AggressiveHeap option is
-    // removed, this can be cleaned up.
-    size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-    size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
-    result = MIN2(result, max_allocatable / fraction);
-  }
-  return result;
+  // The AggressiveHeap check is a temporary workaround to avoid calling
+  // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
+  // selected. This works because AggressiveHeap implies UseParallelGC
+  // where we know the ratio will be 1. Once the AggressiveHeap option is
+  // removed, this can be cleaned up.
+  size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
+  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
+  size_t max_allocatable = os::commit_memory_limit();
+
+  return MIN2(limit, max_allocatable / fraction);
 }
 
 // Use static initialization to get the default before parsing

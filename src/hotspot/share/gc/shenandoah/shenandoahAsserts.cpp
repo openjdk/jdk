@@ -567,11 +567,15 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   }
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) { // look in forwardee
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (!os::is_readable_pointer(fwd)) {
-        return false;
+      markWord mark = obj->mark();
+      if (mark.is_marked()) {
+        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+        if (!os::is_readable_pointer(fwd)) {
+          return false;
+        }
+        mark = fwd->mark();
       }
-      nk = fwd->mark().narrow_klass();
+      nk = mark.narrow_klass();
     } else {
       nk = obj->narrow_klass();
     }
