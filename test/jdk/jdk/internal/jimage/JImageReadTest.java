@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,11 +344,9 @@ public class JImageReadTest {
             Assert.fail("Reader should be openable with native byte order.");
         }
 
+        // Reader should not be openable with the wrong byte order.
         ByteOrder otherOrder = ByteOrder.nativeOrder() == BIG_ENDIAN ? LITTLE_ENDIAN : BIG_ENDIAN;
-        try (ImageReader badReader = ImageReader.open(imageFile, otherOrder)) {
-            Assert.fail("Reader should not be openable with the wrong byte order.");
-        } catch (IOException expected) {
-        }
+        Assert.assertThrows(IOException.class, () -> ImageReader.open(imageFile, otherOrder));
     }
 
     // main method to run standalone from jtreg

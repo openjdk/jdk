@@ -67,7 +67,7 @@ import java.util.stream.Stream;
  * parent directory.
  *
  * <p>While similar to {@code BasicImageReader}, this class is not a conceptual
- * subtype of, it and deliberately hides types such as {@code ImageLocation} to
+ * subtype of it, and deliberately hides types such as {@code ImageLocation} to
  * give a focused API based only on nodes.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -169,7 +169,7 @@ public final class ImageReader implements AutoCloseable {
     public ByteBuffer getResourceBuffer(Node node) {
         requireOpen();
         if (!node.isResource()) {
-            throw new IllegalStateException("Not a resource node: " + node);
+            throw new IllegalArgumentException("Not a resource node: " + node);
         }
         return reader.getResourceBuffer(node.getLocation());
     }
@@ -186,13 +186,13 @@ public final class ImageReader implements AutoCloseable {
         // List of openers for this shared image.
         private final Set<ImageReader> openers = new HashSet<>();
 
-        // Attributes of the .jimage file. The jimage file does not contain
+        // Attributes of the jimage file. The jimage file does not contain
         // attributes for the individual resources (yet). We use attributes
         // of the jimage file itself (creation, modification, access times).
         private final BasicFileAttributes imageFileAttributes;
 
         // Cache of all user visible nodes, guarded by synchronizing 'this' instance.
-        private final HashMap<String, Node> nodes;
+        private final Map<String, Node> nodes;
         // Used to classify ImageLocation instances without string comparison.
         private final int modulesStringOffset;
         private final int packagesStringOffset;
@@ -313,9 +313,9 @@ public final class ImageReader implements AutoCloseable {
          * <p>Called by {@link #findNode(String)} if a {@code /modules/...} node
          * is not present in the cache.
          */
-        Node buildModulesNode(String name) {
+        private Node buildModulesNode(String name) {
             assert name.startsWith(MODULES_ROOT + "/") : "Invalid module node name: " + name;
-            // Will fail for non-directory resources since the jimage name does not
+            // Returns null for non-directory resources, since the jimage name does not
             // start with "/modules" (e.g. "/java.base/java/lang/Object.class").
             ImageLocation loc = findLocation(name);
             if (loc != null) {
@@ -636,8 +636,8 @@ public final class ImageReader implements AutoCloseable {
         /**
          * Returns the fully qualified names of any child nodes for a directory.
          *
-         * <p>If this node is not a directory ({@code isDirectory() == false})
-         * then this method will throw {@link IllegalStateException}.
+         * <p>By default, this method throws {@link IllegalStateException} and
+         * is overridden for directories.
          */
         public Stream<String> getChildNames() {
             throw new IllegalStateException("not a directory: " + getName());
