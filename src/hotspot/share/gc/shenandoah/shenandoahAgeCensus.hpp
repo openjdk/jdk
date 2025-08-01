@@ -115,6 +115,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   uint *_tenuring_threshold;         // An array of the last N tenuring threshold values we
                                      // computed.
 
+  uint _max_workers;                 // Maximum number of workers for parallel tasks
+
   // Mortality rate of a cohort, given its population in
   // previous and current epochs
   double mortality_rate(size_t prev_pop, size_t cur_pop);
@@ -165,11 +167,13 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   };
 
   ShenandoahAgeCensus();
+  ShenandoahAgeCensus(uint max_workers);
+  ~ShenandoahAgeCensus();
 
   // Return the local age table (population vector) for worker_id.
   // Only used in the case of (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac)
   AgeTable* get_local_age_table(uint worker_id) {
-    return (AgeTable*) _local_age_table[worker_id];
+    return _local_age_table[worker_id];
   }
 
   // Update the local age table for worker_id by size for
