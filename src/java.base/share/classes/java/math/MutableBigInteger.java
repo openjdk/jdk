@@ -1982,6 +1982,7 @@ class MutableBigInteger {
                 // Set the shift to the root's bit length and then the initial estimate to 1
                 rootSh = (bitLength - 1) / n + 1;
             } else {
+                // Set up the initial estimate of the iteration.
                 /* Since the following equality holds:
                  * nthRoot(x, n) == nthRoot(x/2^sh, n) * 2^(sh/n),
                  *
@@ -1996,14 +1997,10 @@ class MutableBigInteger {
                  * trailing zeros in the double value of s after the significand (minimizing
                  * non-significant bits), avoiding to lose bits in the significand.
                  */
-                // Set up the initial estimate of the iteration.
                 // Determine a right shift that is a multiple of n into finite double range.
-                long sh = bitLength - Double.PRECISION;
-                int shExcess = (int) (sh % n);
-
-                // Shift as many bits as possible without losing precision in the significand.
+                int sh = bitLength - Double.PRECISION;
                 /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
-                 * bl = bitLength, ex = shExcess
+                 * bl = bitLength, ex = sh % n
                  *
                  * We have bl-(sh-ex) = bl-(bl-P-ex) = P + ex
                  * Since ex < n < P, we get P + ex ≤ ME, and so bl-(sh-ex) ≤ ME.
@@ -2016,15 +2013,15 @@ class MutableBigInteger {
                  * which shows that x >> (sh-ex) has at least P bits of precision,
                  * since bl-(sh-ex) is its bit length.
                  */
-                sh -= shExcess; // Adjust shift to a multiple of n
+                sh -= sh % n; // Adjust shift to a multiple of n
                 // Shift the value into finite double range
-                rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
+                rad = this.toBigInteger().shiftRight(sh).doubleValue();
 
                 // Use the root of the shifted value as an estimate.
                 // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
                 rad = Math.nextUp(rad);
                 approx = nthRootApprox(rad, n);
-                rootSh = (int) (sh / n);
+                rootSh = sh / n;
             }
 
             if (rootSh == 0) {
@@ -2034,7 +2031,7 @@ class MutableBigInteger {
                 // Allocate sufficient space to store the final root
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
 
-                if (n >= Double.PRECISION) {
+                if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
                     // Set the initial estimate to 1
                     s.value[0] = 1;
                     s.intLen = 1;
