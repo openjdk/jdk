@@ -521,7 +521,7 @@ public abstract class SSLSocket extends Socket
      * This method is synchronous for the initial handshake on a connection
      * and returns when the negotiated handshake is complete. Some
      * protocols may not support multiple handshakes on an existing socket
-     * and may throw an IOException.
+     * and may throw an {@code IOException}.
      *
      * @throws IOException on a network level error
      * @see #addHandshakeCompletedListener(HandshakeCompletedListener)

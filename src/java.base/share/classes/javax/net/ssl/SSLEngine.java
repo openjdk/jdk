@@ -1112,9 +1112,6 @@ public abstract class SSLEngine {
      * SSLSocket#startHandshake()} method, this method does not block
      * until handshaking is completed.
      * <P>
-     * To force a complete SSL/TLS/DTLS session renegotiation, the current
-     * session should be invalidated prior to calling this method.
-     * <P>
      * Some protocols may not support multiple handshakes on an existing
      * engine and may throw an {@code SSLException}.
      *
