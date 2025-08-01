@@ -76,7 +76,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                     SSLHandshake.CERTIFICATE_VERIFY.id, HANDSHAKE,
                     SSLHandshake.FINISHED.id, HANDSHAKE,
                     SSLHandshake.NEW_SESSION_TICKET.id, ONE_RTT);
-    private static final long BASE_CRYPTO_ERROR = 256;
+    static final long BASE_CRYPTO_ERROR = 256;
 
     private static final Set<QuicVersion> SUPPORTED_QUIC_VERSIONS =
             Set.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2);
@@ -381,7 +381,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             throw e;
         } catch (Exception e) {
             throw new QuicTransportException("Failed to sign packet",
-                    null, 0, Alert.INTERNAL_ERROR.id, e);
+                    null, 0, BASE_CRYPTO_ERROR + Alert.INTERNAL_ERROR.id, e);
         }
     }
 
@@ -417,7 +417,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             throw e;
         } catch (Exception e) {
             throw new QuicTransportException("Failed to verify packet",
-                    null, 0, Alert.INTERNAL_ERROR.id, e);
+                    null, 0, BASE_CRYPTO_ERROR + Alert.INTERNAL_ERROR.id, e);
         }
     }
 
@@ -496,7 +496,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             }
         } catch (IOException e) {
             throw new QuicTransportException(e.toString(), null, 0,
-                    Alert.INTERNAL_ERROR.id, e);
+                    BASE_CRYPTO_ERROR + Alert.INTERNAL_ERROR.id, e);
         }
         // previously unconsumed bytes in incomingCryptoBuffer, new bytes in
         // payload. if incomingCryptoBuffer is not null, it's either 4 bytes

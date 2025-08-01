@@ -64,6 +64,7 @@ import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.INITIAL;
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.ONE_RTT;
 import static jdk.internal.net.quic.QuicTransportErrors.AEAD_LIMIT_REACHED;
 import static jdk.internal.net.quic.QuicTransportErrors.KEY_UPDATE_ERROR;
+import static sun.security.ssl.QuicTLSEngineImpl.BASE_CRYPTO_ERROR;
 
 sealed abstract class QuicKeyManager
         permits QuicKeyManager.HandshakeKeyManager,
@@ -676,7 +677,7 @@ sealed abstract class QuicKeyManager
                             this.negotiatedVersion, currentSeries);
                 } catch (GeneralSecurityException | IOException e) {
                     throw new QuicTransportException("Failed to update keys",
-                            ONE_RTT, 0, Alert.INTERNAL_ERROR.id, e);
+                            ONE_RTT, 0, BASE_CRYPTO_ERROR + Alert.INTERNAL_ERROR.id, e);
                 }
             }
             maybeInitiateKeyUpdate(currentSeries, packetNumber);
@@ -1201,7 +1202,7 @@ sealed abstract class QuicKeyManager
                         retryKey, retryIvSpec);
             } catch (Exception e) {
                 throw new QuicTransportException("Cipher not available",
-                        null, 0, Alert.INTERNAL_ERROR.id, e);
+                        null, 0, BASE_CRYPTO_ERROR + Alert.INTERNAL_ERROR.id, e);
             }
             return retryCipher;
         }
