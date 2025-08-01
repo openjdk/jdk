@@ -495,7 +495,8 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 conContext.kickstart();
             }
         } catch (IOException e) {
-            throw new AssertionError("Should not fail", e);
+            throw new QuicTransportException(e.toString(), null, 0,
+                    Alert.INTERNAL_ERROR.id, e);
         }
         // previously unconsumed bytes in incomingCryptoBuffer, new bytes in
         // payload. if incomingCryptoBuffer is not null, it's either 4 bytes
