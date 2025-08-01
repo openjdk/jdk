@@ -881,6 +881,46 @@ reg_class vectorx_reg(
     V31, V31_H, V31_J, V31_K
 );
 
+// Class for vector register V10
+reg_class v10_veca_reg(
+    V10, V10_H, V10_J, V10_K
+);
+
+// Class for vector register V11
+reg_class v11_veca_reg(
+    V11, V11_H, V11_J, V11_K
+);
+
+// Class for vector register V12
+reg_class v12_veca_reg(
+    V12, V12_H, V12_J, V12_K
+);
+
+// Class for vector register V13
+reg_class v13_veca_reg(
+    V13, V13_H, V13_J, V13_K
+);
+
+// Class for vector register V17
+reg_class v17_veca_reg(
+    V17, V17_H, V17_J, V17_K
+);
+
+// Class for vector register V18
+reg_class v18_veca_reg(
+    V18, V18_H, V18_J, V18_K
+);
+
+// Class for vector register V23
+reg_class v23_veca_reg(
+    V23, V23_H, V23_J, V23_K
+);
+
+// Class for vector register V24
+reg_class v24_veca_reg(
+    V24, V24_H, V24_J, V24_K
+);
+
 // Class for 128 bit register v0
 reg_class v0_reg(
     V0, V0_H
@@ -4963,6 +5003,86 @@ operand vReg()
   match(VecA);
   match(VecD);
   match(VecX);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V17()
+%{
+  constraint(ALLOC_IN_RC(v17_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V18()
+%{
+  constraint(ALLOC_IN_RC(v18_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V23()
+%{
+  constraint(ALLOC_IN_RC(v23_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V24()
+%{
+  constraint(ALLOC_IN_RC(v24_veca_reg));
+  match(vReg);
 
   op_cost(0);
   format %{ %}
