@@ -1994,45 +1994,31 @@ class MutableBigInteger {
                  *
                  * The value of the shift sh is chosen in order to have the smallest number of
                  * trailing zeros in the double value of s after the significand (minimizing
-                 * non-significant bits), and the shift is performed in order to lose
-                 * the smallest number of bits in the significand if necessary (minimizing loss of precision).
+                 * non-significant bits), avoiding to lose bits in the significand.
                  */
                 // Set up the initial estimate of the iteration.
                 // Determine a right shift that is a multiple of n into finite double range.
                 long sh = bitLength - Double.PRECISION;
                 int shExcess = (int) (sh % n);
 
-                // Try to shift as many bits as possible
-                // without losing precision in double's representation.
-                if (shExcess <= Double.MAX_EXPONENT - Double.PRECISION) {
-                    /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
-                     * bl = bitLength, ex = shExcess
-                     *
-                     * We have bl-(sh-ex) = bl-(bl-P-ex) = P + ex,
-                     * so ex ≤ ME - P ⇔ bl-(sh-ex) ≤ ME.
-                     *
-                     * Recalling x < 2^bl:
-                     * x >> (sh-ex) < 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
-                     * Thus, rad ≤ 2^ME is in the range of finite doubles.
-                     *
-                     * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
-                     * which shows that x >> (sh-ex) has at least P bits of precision,
-                     * since bl-(sh-ex) is its bit length.
-                     */
-                    sh -= shExcess; // Adjust shift to a multiple of n
-                    // Shift the value into finite double range
-                    rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
-                } else { // x >> (sh-ex) could exceed finite double range, may lose precision
-                    // Shift the value into finite double range
-                    // x >> sh < 2^(bl-sh) = 2^(bl-(bl-P)) = 2^P < Double.MAX_VALUE
-                    rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
-                    // Complete the shift to a multiple of n,
-                    // avoiding to lose more bits (possibly all) than necessary.
-                    // The instruction rad = Math.nextUp(rad) below ensures rad > 0.0
-                    int shLack = n - shExcess;
-                    sh += shLack; // sh is long, no overflow
-                    rad = Math.scalb(rad, -shLack);
-                }
+                // Shift as many bits as possible without losing precision in the significand.
+                /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
+                 * bl = bitLength, ex = shExcess
+                 *
+                 * We have bl-(sh-ex) = bl-(bl-P-ex) = P + ex
+                 * Since ex < n < P, we get P + ex ≤ ME, and so bl-(sh-ex) ≤ ME.
+                 *
+                 * Recalling x < 2^bl:
+                 * x >> (sh-ex) < 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
+                 * Thus, rad ≤ 2^ME is in the range of finite doubles.
+                 *
+                 * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
+                 * which shows that x >> (sh-ex) has at least P bits of precision,
+                 * since bl-(sh-ex) is its bit length.
+                 */
+                sh -= shExcess; // Adjust shift to a multiple of n
+                // Shift the value into finite double range
+                rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
 
                 // Use the root of the shifted value as an estimate.
                 // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
@@ -2053,31 +2039,14 @@ class MutableBigInteger {
                     s.value[0] = 1;
                     s.intLen = 1;
                 } else {
-                    // Discard wrong bits from the initial estimate
-                    int radExp = Math.getExponent(rad);
-                    if (radExp == Double.MIN_EXPONENT - 1) // Handle subnormals
-                        radExp = Double.MIN_EXPONENT;
+                    // Discard wrong integer bits from the initial estimate
+                    // The radicand has Math.getExponent(rad)+1 integer bits, but only
+                    // the first Double.PRECISION leftmost bits are correct
+                    // We scale the corresponding wrong bits of approx in the fraction part.
+                    int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
+                    rootSh += wrongBits;
+                    approx = Math.scalb(approx, -wrongBits);
 
-                    if (radExp >= Double.PRECISION - 1) { // Discard wrong integer bits
-                        // The radicand has radExp+1 integer bits, but only
-                        // the first Double.PRECISION leftmost bits are correct
-                        // We scale the corresponding wrong bits of approx in the fraction part.
-                        int wrongBits = ((radExp + 1) - Double.PRECISION) / n;
-                        rootSh += wrongBits;
-                        approx = Math.scalb(approx, -wrongBits);
-                    } else { // Save correct fraction bits
-                        /* Some correct bits of the radicand are fraction bits.
-                         * If radExp >= 0, there are (Double.PRECISION - 1) - radExp
-                         * correct fraction bits in the radicand.
-                         * If radExp < 0, there are (Double.PRECISION - 1) + |radExp|
-                         * correct fraction bits in the radicand.
-                         * We scale the corresponding bits of approx in the integer part,
-                         * rounding up correctBits for simmetry with then-case.
-                         */
-                        int correctBits = ((Double.PRECISION - 1) - radExp - 1) / n + 1;
-                        rootSh -= correctBits;
-                        approx = Math.scalb(approx, correctBits);
-                    }
                     // now approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
                     s.value[0] = (int) approx + 1;
                     s.intLen = 1;
