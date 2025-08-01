@@ -531,38 +531,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-// DEBUG CODE: REMOVE BEFORE SHIPPING
-#if defined(__APPLE__) && defined(AARCH64)
-
-#ifndef PRODUCT
-
-long pthread_jit_write_protect_np_counter;
-long pthread_jit_write_protect_not_counter;
-
-bool aph_do_trace;
-FILE *aph_do_trace_file;
-
-void poo() __attribute__((constructor));
-void poo() {
-  atexit([]() {
-    fclose(aph_do_trace_file);
-    if (getenv("JDK_PRINT_WX_COUNTER")) {
-      printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter);
-      printf("pthread_jit_write_protect_not_counter == %ld\n", pthread_jit_write_protect_not_counter);
-    }
-  });
-  aph_do_trace = getenv("APH_DO_TRACE");
-  if (aph_do_trace) {
-    errno = 0;
-    aph_do_trace_file = fopen("/Users/aph/aph_trace", "w+");
-    if (errno) {
-      perror("fopen failed\n");
-    }
-  }
-}
-
-#endif // ! PRODUCT
-
+#ifdef __APPLE__
 static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
 // This is a wrapper around the standard library function
 // pthread_jit_write_protect_np(3). We keep track of the state of
@@ -573,9 +542,6 @@ void os::current_thread_enable_wx(WXMode mode) {
   if (exec_enabled != os_bsd_jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
     permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
     os_bsd_jit_exec_enabled = exec_enabled;
-    NOT_PRODUCT(pthread_jit_write_protect_np_counter++);
-  } else {
-    NOT_PRODUCT(pthread_jit_write_protect_not_counter++);
   }
 }
 
@@ -597,7 +563,7 @@ void os::thread_wx_enable_write() {
   Thread::current()->wx_enable_write();
 }
 
-#endif // defined(__APPLE__) && defined(AARCH64)
+#endif // defined(__APPLE__)
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;

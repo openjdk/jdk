@@ -383,7 +383,7 @@ void JavaThread::check_possible_safepoint() {
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
-    // assert_wx_state(WXWrite);
+    assert_wx_state(WXWrite);
   }
 #endif
 }
