@@ -175,6 +175,11 @@ public sealed interface CodeBuilder
      * A builder for blocks of code.  Its {@link #startLabel()} and {@link
      * #endLabel()} do not enclose the entire method body, but from the start to
      * the end of the block.
+     * <p>
+     * The location where a block of code merges back to its parent block, as
+     * represented by the {@link #breakLabel()}, is expected to be reachable,
+     * either from this block or the parent block.  The built code may be
+     * malformed if there is no executable code at that location.
      *
      * @since 24
      */
