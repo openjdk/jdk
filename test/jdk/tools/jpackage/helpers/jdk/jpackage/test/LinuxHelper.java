@@ -514,12 +514,6 @@ public final class LinuxHelper {
                 case DEFAULT -> {
                     return (Path)null;
                 }
-                case APP_DIR -> {
-                    return cmd.pathToPackageFile(appLayout.appDirectory());
-                }
-                case INSTALL_DIR -> {
-                    return cmd.pathToPackageFile(appLayout.launchersDirectory());
-                }
                 default -> {
                     throw new AssertionError();
                 }
