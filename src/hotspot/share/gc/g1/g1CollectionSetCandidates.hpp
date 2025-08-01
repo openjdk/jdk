@@ -102,7 +102,7 @@ public:
 
   void calculate_efficiency();
 
-  size_t liveness() const;
+  double liveness() const;
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.

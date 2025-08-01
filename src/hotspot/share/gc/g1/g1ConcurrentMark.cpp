@@ -2981,6 +2981,7 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
 #define G1PPRL_LEN_H_FORMAT           "  %14s"
 #define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
+#define G1PPRL_GID_LIVENESS_FORMAT    "  %#.3g"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -3114,7 +3115,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group(G1CSetCandidateG
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
                           G1PPRL_GID_GCEFF_FORMAT
-                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_GID_LIVENESS_FORMAT
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(), group->length(),

@@ -63,10 +63,10 @@ void G1CSetCandidateGroup::calculate_efficiency() {
   _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
 }
 
-size_t G1CSetCandidateGroup::liveness() const {
+double G1CSetCandidateGroup::liveness() const {
   size_t capacity = length() * G1HeapRegion::GrainBytes;
 
-  return (size_t) ceil(((capacity - _reclaimable_bytes) * 100.0) / capacity);
+  return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
 void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
