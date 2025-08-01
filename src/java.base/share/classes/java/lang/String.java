@@ -1294,7 +1294,7 @@ public final class String
             System.arraycopy(val, 0, dst, 0, positives);
         }
         int dp = positives;
-        for (int i=dp; i<val.length; ++i) {
+        for (int i = dp; i < val.length; i++) {
             byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
