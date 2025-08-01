@@ -915,7 +915,7 @@ bool CDSConfig::is_preserving_verification_dependencies() {
   // Verification dependencies are classes used in assignability checks by the
   // bytecode verifier. In the following example, the verification dependencies
   // for X are A and B.
-  // 
+  //
   //     class X {
   //        A getA() { return new B(); }
   //     }

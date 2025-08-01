@@ -480,7 +480,7 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     return true;
   }
 
-  if (CDSConfig::is_preserving_verification_dependencies()) { 
+  if (CDSConfig::is_preserving_verification_dependencies()) {
     iterate_all_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
       if (check_verification_dependency_exclusion(k, dependency_class_name)) {
         // If one of the verification dependency class has been excluded, the assignability checks

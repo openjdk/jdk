@@ -100,7 +100,7 @@ public class AOTClassLinkingVerification {
                 return new String[] {
                     "AOTClassLinkingVerificationApp", app1Jar, "ASSEMBLY"
                 };
-            } else { 
+            } else {
                 return new String[] {
                     "AOTClassLinkingVerificationApp", app1Jar, "PRODUCTION"
                 };
