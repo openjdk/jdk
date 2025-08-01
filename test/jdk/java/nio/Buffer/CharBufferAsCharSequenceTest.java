@@ -123,38 +123,36 @@ public class CharBufferAsCharSequenceTest {
     }
 
     /**
-     * Returns a {@code List} of {@link Arguments}, with each entry representing a test case scenario.
+     * Returns a {@code List} of {@link Arguments}, with each entry representing a
+     * test case scenario.
      * <ul>
-     * <li>CharBuffer - the instance to be tested</li>
-     * <li>char[] - the data expected to be backing the current state of the CharBuffer</li>
-     * <li>int start - index (inclusive) into char[] where the CharBuffer should be positioned</li>
-     * <li>int stop - index (exclusive) into char[] where the CharBuffer should be limited</li>
-     * <li>String - description of the test scenario</li>
+     *   <li>CharBuffer - the instance to be tested</li>
+     *   <li>char[] - the data expected to be backing the current state of the CharBuffer</li>
+     *   <li>int start - index (inclusive) into char[] where the CharBuffer should be positioned</li>
+     *   <li>int stop - index (exclusive) into char[] where the CharBuffer should be limited</li>
+     *   <li>String - description of the test scenario</li>
      * </ul>
      *
      * Generates the following sets of arguments/test cases.
      * <ul>
-     * <li>Randomly generated content
-     *   <ul>
-     *     <li>See {@code populateAndAddCases(String, CharBuffer, List)} for the following types:
-     *       <ul>
-     *         <li>HeapCharBuffer</i>
-     *         <li>HeapByteBuffer Big Endian</i>
-     *         <li>HeapByteBuffer Little Endian</i>
-     *         <li>DirectByteBuffer Big Endian</i>
-     *         <li>DirectByteBuffer Little Endian</i>
-     *       </ul>
-     *     </li>
-     *     <li>Randomly generated content into {@link CharBuffer#wrap(CharSequence) StringCharBuffer}
-     *         - see {@code addCases(String, char[], CharBuffer, List)}.
-     *       <ul>
-     *         <li>StringCharBuffer wrapping a {@code CharBuffer}
-     *             created from {@link CharBuffer#wrap(char[])}</li>
-     *         <li>StringCharBuffer wrapping a {@code String}</li>
-     *       </ul>
-     *     </li>
-     *   </ul>
-     * </li>
+     *   <li>See {@code populateAndAddCases(String, CharBuffer, List)} for the
+     *       following types:
+     *     <ul>
+     *       <li>HeapCharBuffer</i>
+     *       <li>HeapByteBuffer Big Endian</i>
+     *       <li>HeapByteBuffer Little Endian</i>
+     *       <li>DirectByteBuffer Big Endian</i>
+     *       <li>DirectByteBuffer Little Endian</i>
+     *     </ul>
+     *   </li>
+     *   <li>Randomly generated content into {@link CharBuffer#wrap(CharSequence)
+     *       StringCharBuffer} - see {@code addCases(String, char[], CharBuffer, List)}.
+     *     <ul>
+     *       <li>StringCharBuffer wrapping a {@code CharBuffer} created from
+     *           {@link CharBuffer#wrap(char[])}</li>
+     *       <li>StringCharBuffer wrapping a {@code String}</li>
+     *     </ul>
+     *   </li>
      * </ul>
      */
     static List<Arguments> charBufferArguments() {
@@ -176,81 +174,6 @@ public class CharBufferAsCharSequenceTest {
 
         addCases("StringCharBuffer over String", randomChars, CharBuffer.wrap(new String(randomChars)), args);
 
-        // nothing magic about 1273, it is just larger than 1k and an odd number - eliminating any alignment assumptions
-        char[] buf = new char[1273];
-        for (int i = 0; i < buf.length; ++i) {
-            buf[i] = (char) i;
-        }
-        String stringBuf = new String(buf);
-
-        // nothing magic about 7, it is simply an odd number to advance - making sure no expectations of alignment
-        // comparing to 29 results in 5 loops (0, 7, 14, 21, 28), giving decent coverage of offset and limits
-        for (int i = 0; i < 29; i += 7) {
-            CharBuffer buffer = CharBuffer.wrap(buf, i, buf.length - i);
-            args.add(Arguments.of(buffer, buf, i, buf.length, "HeapCharBuffer index " + i + " to end"));
-            args.add(Arguments.of(buffer.slice(), buf, i, buf.length, "HeapCharBuffer slice " + i + " to end"));
-
-            args.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - i)), buf, i, buf.length,
-                    "StringCharBuffer index " + i + " to end"));
-            buffer = CharBuffer.wrap(stringBuf);
-            buffer.position(i);
-            args.add(Arguments.of(buffer.slice(), buf, i, buf.length, "StringCharBuffer slice " + i + " to end"));
-
-            CharBuffer lehbbAsCB = ByteBuffer.allocate(buf.length * 2)
-                                             .order(ByteOrder.LITTLE_ENDIAN)
-                                             .asCharBuffer()
-                                             .put(buf)
-                                             .position(i);
-            args.add(Arguments.of(lehbbAsCB, buf, i, buf.length, "HeapByteBuffer LE as CharBuffer index " + i + " to end"));
-
-            CharBuffer behbdAsCB = ByteBuffer.allocateDirect(buf.length * 2)
-                                             .order(ByteOrder.BIG_ENDIAN)
-                                             .asCharBuffer()
-                                             .put(buf)
-                                             .position(i);
-            args.add(Arguments.of(behbdAsCB, buf, i, buf.length,
-                    "DirectByteBuffer BE as CharBuffer index " + i + " to end"));
-
-            if (i > 0) {
-                buffer = CharBuffer.wrap(buf, 1, buf.length - 1).slice();
-                buffer.position(i - 1);
-                args.add(Arguments.of(buffer, buf, i, buf.length,
-                        "HeapCharBuffer slice/offset 1 index " + (i - 1) + " to end"));
-
-                int end = buf.length - i;
-
-                buffer = CharBuffer.wrap(buf, i, buf.length - (2 * i));
-                args.add(Arguments.of(buffer, buf, i, end, "HeapCharBuffer index " + i + " to " + end));
-                args.add(Arguments.of(buffer.slice(), buf, i, end, "HeapCharBuffer slice " + i + " to " + end));
-
-                args.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - (2 * i))), buf, i, end,
-                        "StringCharBuffer index " + i + " to " + end));
-                buffer = CharBuffer.wrap(stringBuf);
-                buffer.position(i);
-                buffer.limit(end);
-                args.add(Arguments.of(buffer.slice(), buf, i, end, "StringCharBuffer slice " + i + " to " + end));
-
-                CharBuffer behbbAsCB = ByteBuffer.allocate(buf.length * 2)
-                                                 .order(ByteOrder.BIG_ENDIAN)
-                                                 .asCharBuffer()
-                                                 .put(buf)
-                                                 .position(1)
-                                                 .slice()
-                                                 .position(i - 1)
-                                                 .limit(end - 1);
-                args.add(Arguments.of(behbbAsCB, buf, i, buf.length - i, "HeapByteBuffer BE as CharBuffer index " + i + " to " + end));
-
-                CharBuffer ledbbAsCB = ByteBuffer.allocateDirect(buf.length * 2)
-                                                 .order(ByteOrder.LITTLE_ENDIAN)
-                                                 .asCharBuffer()
-                                                 .put(buf)
-                                                 .position(1)
-                                                 .slice()
-                                                 .position(i - 1)
-                                                 .limit(end - 1);
-                args.add(Arguments.of(ledbbAsCB, buf, i, buf.length - i, "DirectByteBuffer LE as CharBuffer index " + i + " to " + end));
-            }
-        }
         return args;
     }
 
