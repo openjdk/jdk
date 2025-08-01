@@ -1083,9 +1083,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     @Override
     public void setVisible(boolean vis) {
-        if(isVisible() == vis) {
-            return;
-        }
         if (!isVisible() && vis) {
             isBeforeFirstMapNotify = true;
             winAttr.initialFocus = isAutoRequestFocus();
@@ -1101,7 +1098,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 suppressWmTakeFocus(true);
             }
         }
-        updateFocusability();
+        if(isVisible() != vis )
+        {
+            updateFocusability();
+        }
         promoteDefaultPosition();
         boolean refreshChildsTransientFor = isVisible() != vis;
         super.setVisible(vis);
