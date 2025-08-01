@@ -209,7 +209,7 @@ static traceid find_tgid(const JfrThreadGroupLookup& lookup) {
     tg = find_or_add(lookup.next(), ptg);
     ptg = tg;
   }
-  return tg->id();
+  return tg != nullptr ? tg->id() : 0;
 }
 
 static traceid find(const JfrThreadGroupLookup& lookup) {
