@@ -65,6 +65,13 @@ public class DecimalFormatParseBench {
     }
 
     private DecimalFormat dnf = new DecimalFormat();
+    private DecimalFormat dnfDecimal = creaeDecimalFormat();
+
+    private static DecimalFormat creaeDecimalFormat() {
+        DecimalFormat dnf = new DecimalFormat();
+        dnf.setParseBigDecimal(true);
+        return dnf;
+    }
 
     @Benchmark
     @OperationsPerInvocation(13)
@@ -81,6 +88,15 @@ public class DecimalFormatParseBench {
             blackhole.consume(this.dnf.parse(value));
         }
     }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testParseDecimals(final Blackhole blackhole) throws ParseException {
+        for (String value : valuesDouble) {
+            blackhole.consume(this.dnfDecimal.parse(value));
+        }
+    }
+
     public static void main(String... args) throws Exception {
         Options opts = new OptionsBuilder().include(DefFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
         new Runner(opts).run();
