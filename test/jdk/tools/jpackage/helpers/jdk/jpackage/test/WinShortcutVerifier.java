@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
+import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
 import jdk.jpackage.test.MsiDatabase.Shortcut;
 import jdk.jpackage.test.WindowsHelper.SpecialFolder;
 
@@ -197,8 +198,8 @@ public final class WinShortcutVerifier {
 
         final List<Shortcut> shortcuts = new ArrayList<>();
 
-        final boolean isWinMenu = WIN_START_MENU_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).isPresent();
-        final boolean isDesktop = WIN_DESKTOP_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).isPresent();
+        final var winMenu = WIN_START_MENU_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName);
+        final var desktop = WIN_DESKTOP_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName);
 
         final var isUserLocalInstall = WindowsHelper.isUserLocalInstall(cmd);
 
@@ -209,26 +210,30 @@ public final class WinShortcutVerifier {
             installRoot = SpecialFolder.PROGRAM_FILES;
         }
 
-        final var workDir = Path.of(installRoot.getMsiPropertyName()).resolve(getInstallationSubDirectory(cmd));
+        final var installDir = Path.of(installRoot.getMsiPropertyName()).resolve(getInstallationSubDirectory(cmd));
 
-        if (isWinMenu) {
+        final Function<StartupDirectory, Path> workDir = startupDirectory -> {
+            return installDir;
+        };
+
+        if (winMenu.isPresent()) {
             ShortcutType type;
             if (isUserLocalInstall) {
                 type = ShortcutType.USER_START_MENU;
             } else {
                 type = ShortcutType.COMMON_START_MENU;
             }
-            shortcuts.add(createLauncherShortcutSpec(cmd, launcherName, installRoot, workDir, type));
+            shortcuts.add(createLauncherShortcutSpec(cmd, launcherName, installRoot, winMenu.map(workDir).orElseThrow(), type));
         }
 
-        if (isDesktop) {
+        if (desktop.isPresent()) {
             ShortcutType type;
             if (isUserLocalInstall) {
                 type = ShortcutType.USER_DESKTOP;
             } else {
                 type = ShortcutType.COMMON_DESKTOP;
             }
-            shortcuts.add(createLauncherShortcutSpec(cmd, launcherName, installRoot, workDir, type));
+            shortcuts.add(createLauncherShortcutSpec(cmd, launcherName, installRoot, desktop.map(workDir).orElseThrow(), type));
         }
 
         return shortcuts;
