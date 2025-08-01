@@ -163,6 +163,17 @@ void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
     delete entry;
     return;
   }
+  
+  KlassInfoEntry* current = _list;
+  while (current != nullptr && current->next() != entry) {
+    current = current->next();
+  }
+  
+  if (current != nullptr && current->next() == entry) {
+    KlassInfoEntry* next = entry->next();
+    current->set_next(next);
+    delete entry;
+  }
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
