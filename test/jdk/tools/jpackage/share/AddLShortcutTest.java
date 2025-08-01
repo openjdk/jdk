@@ -34,6 +34,7 @@ import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.FileAssociations;
@@ -206,7 +207,11 @@ public class AddLShortcutTest {
     }
 
     @Test(ifNotOS = OperatingSystem.MACOS)
-    public void testInvokeShortcuts() {
+    @Parameter(value = "DEFAULT")
+    @Parameter(value = "APP_DIR")
+    // On Windows, `DEFAULT` and `INSTALL_DIR` are equivalent, run only one of them.
+    @Parameter(value = "INSTALL_DIR", ifNotOS = OperatingSystem.WINDOWS) 
+    public void testInvokeShortcuts(StartupDirectory startupDirectory) {
 
         var testApp = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
 
@@ -220,7 +225,7 @@ public class AddLShortcutTest {
 
         var shortcutStartupDirectoryVerifier = new ShortcutStartupDirectoryVerifier(name, "a");
 
-        shortcutStartupDirectoryVerifier.applyTo(test, StartupDirectory.DEFAULT);
+        shortcutStartupDirectoryVerifier.applyTo(test, startupDirectory);
 
         test.addInstallVerifier(cmd -> {
             if (!cmd.isPackageUnpacked("Not invoking launcher shortcuts")) {
@@ -353,6 +358,8 @@ public class AddLShortcutTest {
         DEFAULT(""),
         TRUE("true"),
         FALSE("false"),
+        INSTALL_DIR(StartupDirectory.INSTALL_DIR.asStringValue()),
+        APP_DIR(StartupDirectory.APP_DIR.asStringValue())
         ;
 
         StartupDirectoryValueSetter(String value) {
@@ -368,7 +375,7 @@ public class AddLShortcutTest {
                     cmd.addArgument(shortcut.optionName());
                 }
                 default -> {
-                    cmd.addArgument(shortcut.optionName() + "=" + value);
+                    cmd.addArguments(shortcut.optionName(), value);
                 }
             }
         }
@@ -380,12 +387,16 @@ public class AddLShortcutTest {
         private final String value;
 
         static final List<StartupDirectoryValueSetter> MAIN_LAUNCHER_VALUES = List.of(
-                StartupDirectoryValueSetter.DEFAULT
+                StartupDirectoryValueSetter.DEFAULT,
+                StartupDirectoryValueSetter.INSTALL_DIR,
+                StartupDirectoryValueSetter.APP_DIR
         );
 
         static final List<StartupDirectoryValueSetter> ADD_LAUNCHER_VALUES = List.of(
                 StartupDirectoryValueSetter.TRUE,
-                StartupDirectoryValueSetter.FALSE
+                StartupDirectoryValueSetter.FALSE,
+                StartupDirectoryValueSetter.INSTALL_DIR,
+                StartupDirectoryValueSetter.APP_DIR
         );
     }
 
