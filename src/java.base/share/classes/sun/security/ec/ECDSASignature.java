@@ -425,14 +425,9 @@ abstract class ECDSASignature extends SignatureSpi {
         throws SignatureException {
 
         byte[] seedBytes = new byte[(seedBits + 7) / 8];
-        byte[] s;
-        boolean extraCopyToZero = false;
-        if(priv instanceof ECPrivateKeyImpl) {
-            s = ((ECPrivateKeyImpl) priv).getArrayS();
-        } else {
-            extraCopyToZero = true;
-            s = ECUtil.sArray(priv.getS(), priv.getParams());
-        }
+        byte[] s = priv instanceof ECPrivateKeyImpl
+                           ? ((ECPrivateKeyImpl)priv).getArrayS()
+                           : ECUtil.sArray(priv.getS(), priv.getParams());
 
         // Attempt to create the signature in a loop that uses new random input
         // each time. The chance of failure is very small assuming the
@@ -446,7 +441,7 @@ abstract class ECDSASignature extends SignatureSpi {
                 // returning it, is a trade-off to zero-out the local
                 // value for "s" when necessary
                 byte[] retValue = ops.signDigest(s, digest, seed);
-                if(extraCopyToZero) {
+                if (!(priv instanceof ECPrivateKeyImpl)) {
                     Arrays.fill(s, (byte)0x00);
                 }
                 return retValue;
