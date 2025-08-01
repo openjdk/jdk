@@ -1741,19 +1741,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofC
 }
 JVM_END
 
-JVM_ENTRY(jint, JVM_GetClassAccessFlags(JNIEnv *env, jclass cls))
-{
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    // Primitive type
-    return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-  }
-
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  return k->access_flags().as_class_flags();
-}
-JVM_END
-
 JVM_ENTRY(jboolean, JVM_AreNestMates(JNIEnv *env, jclass current, jclass member))
 {
   Klass* c = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(current));

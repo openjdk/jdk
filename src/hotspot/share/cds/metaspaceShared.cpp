@@ -62,8 +62,8 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -1603,8 +1603,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
       // Set up compressed Klass pointer encoding: the encoding range must
       //  cover both archive and class space.
-      const address encoding_base = (address)mapped_base_address;
-      const address klass_range_start = encoding_base + prot_zone_size;
+      const address klass_range_start = (address)mapped_base_address;
       const size_t klass_range_size = (address)class_space_rs.end() - klass_range_start;
       if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
         // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
@@ -1615,13 +1614,19 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // mapping start (including protection zone), shift should be the shift used at archive generation time.
         CompressedKlassPointers::initialize_for_given_encoding(
           klass_range_start, klass_range_size,
-          encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
+          klass_range_start, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
+        assert(CompressedKlassPointers::base() == klass_range_start, "must be");
       } else {
         // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
+        assert(CompressedKlassPointers::base() == nullptr ||
+               CompressedKlassPointers::base() == klass_range_start, "must be");
       }
-      CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);
+      // Establish protection zone, but only if we need one
+      if (CompressedKlassPointers::base() == klass_range_start) {
+        CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
+      }
 
       // map_or_load_heap_region() compares the current narrow oop and klass encodings
       // with the archived ones, so it must be done after all encodings are determined.

@@ -574,14 +574,14 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
     montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
   } else {
     assert(VM_Version::supports_avxifma(), "Require AVX_IFMA support");
-    __ push(r12);
-    __ push(r13);
-    __ push(r14);
+    __ push_ppx(r12);
+    __ push_ppx(r13);
+    __ push_ppx(r14);
     #ifdef _WIN64
-    __ push(rsi);
-    __ push(rdi);
+    __ push_ppx(rsi);
+    __ push_ppx(rdi);
     #endif
-    __ push(rbp);
+    __ push_ppx(rbp);
     __ movq(rbp, rsp);
   __ andq(rsp, -32);
   __ subptr(rsp, 32);
@@ -608,14 +608,14 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
                            tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, _masm);
 
     __ movq(rsp, rbp);
-    __ pop(rbp);
+    __ pop_ppx(rbp);
     #ifdef _WIN64
-    __ pop(rdi);
-    __ pop(rsi);
+    __ pop_ppx(rdi);
+    __ pop_ppx(rsi);
     #endif
-    __ pop(r14);
-    __ pop(r13);
-    __ pop(r12);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+    __ pop_ppx(r12);
   }
 
   __ leave();
