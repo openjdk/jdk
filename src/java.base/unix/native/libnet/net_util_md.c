@@ -188,8 +188,11 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     if (error_string == NULL)
         error_string = "unknown error";
     int enhancedExceptions = getEnhancedExceptionsAllowed(env);
+    if (enhancedExceptions == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
+        return;
+    }
 
-    if (enhancedExceptions) {
+    if (enhancedExceptions == ENH_ENABLED) {
         size = strlen(hostname);
     } else {
         size = 0;
@@ -200,7 +203,7 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     if (buf) {
         jstring s;
         int n;
-        if (enhancedExceptions) {
+        if (enhancedExceptions == ENH_ENABLED) {
             n = snprintf(buf, size, "%s: %s", hostname, error_string);
         } else {
             n = snprintf(buf, size, " %s", error_string);

@@ -121,7 +121,7 @@ source %{
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
       // Vector API intrinsics.
-      if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
+      if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
@@ -179,6 +179,18 @@ source %{
           return false;
         }
         break;
+      case Op_AddReductionVI:
+      case Op_AndReductionV:
+      case Op_OrReductionV:
+      case Op_XorReductionV:
+      case Op_MinReductionV:
+      case Op_MaxReductionV:
+        // Reductions with less than 8 bytes vector length are
+        // not supported.
+        if (length_in_bytes < 8) {
+          return false;
+        }
+        break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
       case Op_MulReductionVI:
@@ -232,6 +244,28 @@ source %{
       case Op_FmaVHF:
         // UseFMA flag needs to be checked along with FEAT_FP16
         if (!UseFMA || (UseSVE == 0 && !is_feat_fp16_supported())) {
+          return false;
+        }
+        break;
+      case Op_SelectFromTwoVector:
+        // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
+        // false if vector length > 16B but supported SVE version < 2.
+        // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
+        // generate Neon "tbl" instruction to select from two vectors.
+        // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
+        // the default VectorRearrange + VectorBlend is generated because the performance of the default
+        // implementation was better than or equal to the implementation for SelectFromTwoVector.
+        if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
+          return false;
+        }
+
+        // Because the SVE2 "tbl" instruction is unpredicated and partial operations cannot be generated
+        // using masks, we disable this operation on machines where length_in_bytes < MaxVectorSize
+        // on that machine with the only exception of 8B vector length. This is because at the time of
+        // writing this, there is no SVE2 machine available with length_in_bytes > 8 and
+        // length_in_bytes < MaxVectorSize to test this operation on (for example - there isn't an
+        // SVE2 machine available with MaxVectorSize = 32 to test a case with length_in_bytes = 16).
+        if (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize) {
           return false;
         }
         break;
@@ -2502,31 +2536,31 @@ instruct reinterpret_resize_gt128b(vReg dst, vReg src, pReg ptmp, rFlagsReg cr) 
 %}
 
 // ---------------------------- Vector zero extend --------------------------------
-dnl VECTOR_ZERO_EXTEND($1,      $2,     $3,      $4,       $5        $6,        $7,         )
-dnl VECTOR_ZERO_EXTEND(op_name, dst_bt, src_bt,  dst_size, src_size, assertion, neon_comment)
+dnl VECTOR_ZERO_EXTEND($1,      $2,     $3,       $4,        $5,         )
+dnl VECTOR_ZERO_EXTEND(op_name, src_bt, src_size, assertion, neon_comment)
 define(`VECTOR_ZERO_EXTEND', `
 instruct vzeroExt$1toX(vReg dst, vReg src) %{
   match(Set dst (VectorUCast`$1'2X src));
   format %{ "vzeroExt$1toX $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    assert($6, "must be");
+    assert($4, "must be");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      // $7
-      __ neon_vector_extend($dst$$FloatRegister, $2, length_in_bytes,
-                            $src$$FloatRegister, $3, /* is_unsigned */ true);
+      // $5
+      __ neon_vector_extend($dst$$FloatRegister, bt, length_in_bytes,
+                            $src$$FloatRegister, $2, /* is_unsigned */ true);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_vector_extend($dst$$FloatRegister, __ $4,
-                           $src$$FloatRegister, __ $5, /* is_unsigned */ true);
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                           $src$$FloatRegister, __ $3, /* is_unsigned */ true);
     }
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-VECTOR_ZERO_EXTEND(B, bt,     T_BYTE,  elemType_to_regVariant(bt), B, bt == T_SHORT || bt == T_INT || bt == T_LONG, `4B to 4S/4I, 8B to 8S')
-VECTOR_ZERO_EXTEND(S, T_INT,  T_SHORT, elemType_to_regVariant(bt), H, bt == T_INT || bt == T_LONG,                  `4S to 4I')
-VECTOR_ZERO_EXTEND(I, T_LONG, T_INT,   D,                          S, bt == T_LONG,                                 `2I to 2L')
+VECTOR_ZERO_EXTEND(B, T_BYTE,  B, bt == T_SHORT || bt == T_INT || bt == T_LONG, `4B to 4S/4I, 8B to 8S')
+VECTOR_ZERO_EXTEND(S, T_SHORT, H, bt == T_INT || bt == T_LONG,                  `2S to 2I/2L, 4S to 4I')
+VECTOR_ZERO_EXTEND(I, T_INT,   S, bt == T_LONG,                                 `2I to 2L')
 
 // ------------------------------ Vector cast ----------------------------------
 
@@ -2595,11 +2629,15 @@ instruct vcvtStoX_extend(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      // 4S to 4I/4F
-      __ neon_vector_extend($dst$$FloatRegister, T_INT, length_in_bytes,
-                            $src$$FloatRegister, T_SHORT);
-      if (bt == T_FLOAT) {
-        __ scvtfv(__ T4S, $dst$$FloatRegister, $dst$$FloatRegister);
+      if (is_floating_point_type(bt)) {
+        // 2S to 2F/2D, 4S to 4F
+        __ neon_vector_extend($dst$$FloatRegister, bt == T_FLOAT ? T_INT : T_LONG,
+                              length_in_bytes, $src$$FloatRegister, T_SHORT);
+        __ scvtfv(get_arrangement(this), $dst$$FloatRegister, $dst$$FloatRegister);
+      } else {
+        // 2S to 2I/2L, 4S to 4I
+        __ neon_vector_extend($dst$$FloatRegister, bt, length_in_bytes,
+                              $src$$FloatRegister, T_SHORT);
       }
     } else {
       assert(UseSVE > 0, "must be sve");
@@ -2623,7 +2661,7 @@ instruct vcvtItoX_narrow_neon(vReg dst, vReg src) %{
   effect(TEMP_DEF dst);
   format %{ "vcvtItoX_narrow_neon $dst, $src" %}
   ins_encode %{
-    // 4I to 4B/4S
+    // 2I to 2S, 4I to 4B/4S
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
     __ neon_vector_narrow($dst$$FloatRegister, bt,
@@ -2686,28 +2724,29 @@ instruct vcvtItoX(vReg dst, vReg src) %{
 
 // VectorCastL2X
 
-instruct vcvtLtoI_neon(vReg dst, vReg src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_INT &&
+instruct vcvtLtoX_narrow_neon(vReg dst, vReg src) %{
+  predicate((Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_SHORT) &&
             VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))));
   match(Set dst (VectorCastL2X src));
-  format %{ "vcvtLtoI_neon $dst, $src" %}
+  format %{ "vcvtLtoX_narrow_neon $dst, $src" %}
   ins_encode %{
-    // 2L to 2I
+    // 2L to 2S/2I
+    BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
-    __ neon_vector_narrow($dst$$FloatRegister, T_INT,
+    __ neon_vector_narrow($dst$$FloatRegister, bt,
                           $src$$FloatRegister, T_LONG, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtLtoI_sve(vReg dst, vReg src, vReg tmp) %{
-  predicate((Matcher::vector_element_basic_type(n) == T_INT &&
-             !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1)))) ||
-            Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT);
+instruct vcvtLtoX_narrow_sve(vReg dst, vReg src, vReg tmp) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))) &&
+            !is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) <= 4);
   match(Set dst (VectorCastL2X src));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "vcvtLtoI_sve $dst, $src\t# KILL $tmp" %}
+  format %{ "vcvtLtoX_narrow_sve $dst, $src\t# KILL $tmp" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -2773,10 +2812,11 @@ instruct vcvtFtoX_narrow_neon(vReg dst, vReg src) %{
   effect(TEMP_DEF dst);
   format %{ "vcvtFtoX_narrow_neon $dst, $src" %}
   ins_encode %{
-    // 4F to 4B/4S
+    // 2F to 2S, 4F to 4B/4S
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
-    __ fcvtzs($dst$$FloatRegister, __ T4S, $src$$FloatRegister);
+    __ fcvtzs($dst$$FloatRegister, length_in_bytes == 16 ? __ T4S : __ T2S,
+              $src$$FloatRegister);
     __ neon_vector_narrow($dst$$FloatRegister, bt,
                           $dst$$FloatRegister, T_INT, length_in_bytes);
   %}
@@ -2842,12 +2882,14 @@ instruct vcvtFtoX(vReg dst, vReg src) %{
 // VectorCastD2X
 
 instruct vcvtDtoI_neon(vReg dst, vReg src) %{
-  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) == T_INT);
+  predicate(UseSVE == 0 &&
+            (Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_SHORT));
   match(Set dst (VectorCastD2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtDtoI_neon $dst, $src\t# 2D to 2I" %}
+  format %{ "vcvtDtoI_neon $dst, $src\t# 2D to 2S/2I" %}
   ins_encode %{
-    // 2D to 2I
+    // 2D to 2S/2I
     __ ins($dst$$FloatRegister, __ D, $src$$FloatRegister, 0, 1);
     // We can't use fcvtzs(vector, integer) instruction here because we need
     // saturation arithmetic. See JDK-8276151.
@@ -2855,6 +2897,10 @@ instruct vcvtDtoI_neon(vReg dst, vReg src) %{
     __ fcvtzdw(rscratch2, $dst$$FloatRegister);
     __ fmovs($dst$$FloatRegister, rscratch1);
     __ mov($dst$$FloatRegister, __ S, 1, rscratch2);
+    if (Matcher::vector_element_basic_type(this) == T_SHORT) {
+      __ neon_vector_narrow($dst$$FloatRegister, T_SHORT,
+                            $dst$$FloatRegister, T_INT, 8);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2928,7 +2974,7 @@ instruct vcvtHFtoF(vReg dst, vReg src) %{
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      // 4HF to 4F
+      // 2HF to 2F, 4HF to 4F
       __ fcvtl($dst$$FloatRegister, __ T4S, $src$$FloatRegister, __ T4H);
     } else {
       assert(UseSVE > 0, "must be sve");
@@ -2944,9 +2990,9 @@ instruct vcvtHFtoF(vReg dst, vReg src) %{
 instruct vcvtFtoHF_neon(vReg dst, vReg src) %{
   predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))));
   match(Set dst (VectorCastF2HF src));
-  format %{ "vcvtFtoHF_neon $dst, $src\t# 4F to 4HF" %}
+  format %{ "vcvtFtoHF_neon $dst, $src\t# 2F/4F to 2HF/4HF" %}
   ins_encode %{
-    // 4F to 4HF
+    // 2F to 2HF, 4F to 4HF
     __ fcvtn($dst$$FloatRegister, __ T4H, $src$$FloatRegister, __ T4S);
   %}
   ins_pipe(pipe_slow);
@@ -4417,14 +4463,12 @@ instruct vpopcountI(vReg dst, vReg src) %{
     } else {
       assert(bt == T_SHORT || bt == T_INT, "unsupported");
       if (UseSVE == 0) {
-        assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
-        __ cnt($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-               $src$$FloatRegister);
-        __ uaddlp($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-                  $dst$$FloatRegister);
+        assert(length_in_bytes <= 16, "unsupported");
+        bool isQ = length_in_bytes == 16;
+        __ cnt($dst$$FloatRegister, isQ ? __ T16B : __ T8B, $src$$FloatRegister);
+        __ uaddlp($dst$$FloatRegister, isQ ? __ T16B : __ T8B, $dst$$FloatRegister);
         if (bt == T_INT) {
-          __ uaddlp($dst$$FloatRegister, length_in_bytes == 16 ? __ T8H : __ T4H,
-                    $dst$$FloatRegister);
+          __ uaddlp($dst$$FloatRegister, isQ ? __ T8H : __ T4H, $dst$$FloatRegister);
         }
       } else {
         __ sve_cnt($dst$$FloatRegister, __ elemType_to_regVariant(bt),
@@ -4475,7 +4519,7 @@ instruct vblend_neon(vReg dst, vReg src1, vReg src2) %{
   format %{ "vblend_neon $dst, $src1, $src2" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+    assert(length_in_bytes <= 16, "must be");
     __ bsl($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
            $src2$$FloatRegister, $src1$$FloatRegister);
   %}
@@ -4851,7 +4895,7 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
     } else {
       assert(bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported type");
       if (UseSVE == 0) {
-        assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+        assert(length_in_bytes <= 16, "unsupported");
         __ neon_reverse_bits($dst$$FloatRegister, $src$$FloatRegister,
                              bt, /* isQ */ length_in_bytes == 16);
         if (bt != T_LONG) {
@@ -4910,7 +4954,7 @@ instruct vreverse(vReg dst, vReg src) %{
     } else {
       assert(bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported type");
       if (UseSVE == 0) {
-        assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+        assert(length_in_bytes <= 16, "unsupported");
         __ neon_reverse_bits($dst$$FloatRegister, $src$$FloatRegister,
                              bt, /* isQ */ length_in_bytes == 16);
       } else {
@@ -4935,7 +4979,7 @@ instruct vreverseBytes(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+      assert(length_in_bytes <= 16, "unsupported");
       if (bt == T_BYTE) {
         if ($dst$$FloatRegister != $src$$FloatRegister) {
           __ orr($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
@@ -5132,3 +5176,34 @@ BITPERM(vcompressBits, CompressBitsV, sve_bext)
 
 // ----------------------------------- ExpandBitsV ---------------------------------
 BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
+
+// ------------------------------------- SelectFromTwoVector ------------------------------------
+// The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
+// consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
+// for src1 and src2.
+// Four combinations of vector registers for vselect_from_two_vectors are chosen at random
+// (two from volatile and two from non-volatile set) which gives more freedom to the register
+// allocator to choose the best pair of source registers at that point.
+dnl
+dnl SELECT_FROM_TWO_VECTORS($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS(first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS', `
+instruct vselect_from_two_vectors_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                        vReg index, vReg tmp) %{
+  effect(TEMP_DEF dst, TEMP tmp);
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister,
+                               $src2$$FloatRegister, $index$$FloatRegister,
+                               $tmp$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+SELECT_FROM_TWO_VECTORS(10, 11)
+SELECT_FROM_TWO_VECTORS(12, 13)
+SELECT_FROM_TWO_VECTORS(17, 18)
+SELECT_FROM_TWO_VECTORS(23, 24)
