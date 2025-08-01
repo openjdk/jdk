@@ -39,7 +39,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#include "iostream"
 
 // HeapInspection
 
@@ -158,26 +157,12 @@ void KlassInfoBucket::empty() {
 }
 
 void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
-  // If entry is the head, delete it
   if (_list == entry) {
     KlassInfoEntry* next = _list->next();
     _list = next;
     delete entry;
     return;
   }
-
-  KlassInfoEntry* elt = _list;
-  KlassInfoEntry* prev = nullptr;
-  while (elt != nullptr) {
-    KlassInfoEntry* next = elt->next();
-    if (elt == entry) {
-      prev->set_next(next);
-      delete elt;
-      return;
-    }
-    prev = elt;
-    elt = next;
-  } 
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {

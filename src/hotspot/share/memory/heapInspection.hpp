@@ -67,7 +67,6 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
     _do_print(false), _subclasses(nullptr)
   {}
   ~KlassInfoEntry();
-  void set_next(KlassInfoEntry* next) { _next = next; }
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
   Klass* klass()  const          { return _klass; }
