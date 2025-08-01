@@ -712,8 +712,8 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   // full-gc phases, and purge dead classes (invoking
   // ClassLoaderDataGraph::purge) after all phases of full-gc.
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                          false /* unregister_nmethods_during_purge */,
-                          false /* lock_nmethod_free_separately */);
+                            false /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
 
   phase1_mark(clear_all_softrefs);
 
