@@ -1521,14 +1521,14 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      os::physical_memory(physical_mem_val);
+      physical_mem_val = os::physical_memory();
       phys_mem = static_cast<julong>(physical_mem_val);
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
       phys_mem = (julong)MaxRAM;
     }
   } else {
-    os::physical_memory(physical_mem_val);
+    physical_mem_val = os::physical_memory();
     phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(physical_mem_val), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
@@ -1651,8 +1651,7 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  size_t phys_mem = os::physical_memory();
   julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {

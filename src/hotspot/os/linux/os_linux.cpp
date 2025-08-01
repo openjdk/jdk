@@ -358,18 +358,18 @@ bool os::free_swap_space(size_t& value) {
   return true;
 }
 
-void os::physical_memory(size_t& value) {
+size_t os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      value = static_cast<size_t>(mem_limit);
+      return static_cast<size_t>(mem_limit);
     }
   }
 
   size_t phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: %zu", phys_mem);
-  value = phys_mem;
+  return phys_mem;
 }
 
 size_t os::rss() {
@@ -2571,8 +2571,7 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   sysinfo(&si);
-  size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  size_t phys_mem = physical_memory();
   st->print(", physical %zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;

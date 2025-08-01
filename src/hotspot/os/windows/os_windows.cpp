@@ -894,8 +894,8 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-void os::physical_memory(size_t& value) {
-  value = win32::physical_memory();
+size_t os::physical_memory() {
+  return win32::physical_memory();
 }
 
 size_t os::rss() {

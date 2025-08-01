@@ -290,8 +290,8 @@ bool os::free_swap_space(size_t& value) {
   return true;
 }
 
-void os::physical_memory(size_t& value) {
-  value = Aix::physical_memory();
+size_t os::physical_memory() {
+  return Aix::physical_memory();
 }
 
 size_t os::rss() { return (size_t)0; }
