@@ -368,6 +368,27 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
     void operator()(JavaThread* current);
   };
+  class NoOpOnSuspend {
+  protected:
+    ObjectMonitor* _om;
+  public:
+    NoOpOnSuspend(ObjectMonitor* om) : _om(om) {}
+    void operator()(JavaThread* current);
+  };
+  template<typename ProcIn = void(JavaThread*), typename ProcPost = void(JavaThread*)>
+   class EnterInternalHelper {
+   private:
+     bool fast_track(JavaThread* current, ObjectWaiter *node) const;
+     void loop(JavaThread* current, ObjectWaiter* node, ProcIn* proc_in, int& recheck_interval, bool do_timed_parked) const;
+     void egress(JavaThread* current, ObjectWaiter* node) const;
+     void loop_and_egress(JavaThread* current, ObjectWaiter* node, ProcIn* proc_in, ProcPost* proc_post, int& recheck_interval, bool do_timed_parked) const;
+     void park(JavaThread* current, ProcIn* proc_in, int& recheck_interval, bool do_timed_parked) const;
+   protected:
+     ObjectMonitor* _om;
+   public:
+     EnterInternalHelper(ObjectMonitor* om) : _om(om) {}
+     void enter_internal(JavaThread* current, ObjectWaiter* node, ProcIn* proc_in, ProcPost* proc_post) const;
+  };
 
   bool      enter_is_async_deflating();
   void      notify_contended_enter(JavaThread *current);
@@ -401,8 +422,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      notify_internal(JavaThread* current);
   ObjectWaiter* dequeue_waiter();
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
-  void      enter_internal(JavaThread* current);
-  void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
   void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
