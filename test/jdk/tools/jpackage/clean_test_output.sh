@@ -73,6 +73,9 @@ filterFile () {
 
       # Convert variable part of rpmbuild output `Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.CMO6a9`
       -e 's|/rpm-tmp\...*$|/rpm-tmp.V|'
+
+      # Convert variable part of stack trace entry `at jdk.jpackage.test.JPackageCommand.execute(JPackageCommand.java:863)`
+      -e 's/^\(.*\b\.java:\)[0-9]\{1,\}\()\r\{0,1\}\)$/\1N\2/'
   )
 
   sed $sed_inplace_option "$1" "${expressions[@]}"
