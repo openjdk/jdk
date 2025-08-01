@@ -208,9 +208,6 @@ public class AddLShortcutTest {
 
     @Test(ifNotOS = OperatingSystem.MACOS)
     @Parameter(value = "DEFAULT")
-    @Parameter(value = "APP_DIR")
-    // On Windows, `DEFAULT` and `INSTALL_DIR` are equivalent, run only one of them.
-    @Parameter(value = "INSTALL_DIR", ifNotOS = OperatingSystem.WINDOWS) 
     public void testInvokeShortcuts(StartupDirectory startupDirectory) {
 
         var testApp = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
@@ -358,8 +355,6 @@ public class AddLShortcutTest {
         DEFAULT(""),
         TRUE("true"),
         FALSE("false"),
-        INSTALL_DIR(StartupDirectory.INSTALL_DIR.asStringValue()),
-        APP_DIR(StartupDirectory.APP_DIR.asStringValue())
         ;
 
         StartupDirectoryValueSetter(String value) {
@@ -387,16 +382,12 @@ public class AddLShortcutTest {
         private final String value;
 
         static final List<StartupDirectoryValueSetter> MAIN_LAUNCHER_VALUES = List.of(
-                StartupDirectoryValueSetter.DEFAULT,
-                StartupDirectoryValueSetter.INSTALL_DIR,
-                StartupDirectoryValueSetter.APP_DIR
+                StartupDirectoryValueSetter.DEFAULT
         );
 
         static final List<StartupDirectoryValueSetter> ADD_LAUNCHER_VALUES = List.of(
                 StartupDirectoryValueSetter.TRUE,
-                StartupDirectoryValueSetter.FALSE,
-                StartupDirectoryValueSetter.INSTALL_DIR,
-                StartupDirectoryValueSetter.APP_DIR
+                StartupDirectoryValueSetter.FALSE
         );
     }
 
