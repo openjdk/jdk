@@ -519,8 +519,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isHidden:
-  case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
+  case vmIntrinsics::_getSuperclass:            return inline_native_Class_query(intrinsic_id());
 
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_floatToIntBits:
@@ -4007,10 +4006,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = null();
     return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
     break;
-  case vmIntrinsics::_getClassAccessFlags:
-    prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
-    return_type = TypeInt::CHAR;
-    break;
   default:
     fatal_unexpected_iid(id);
     break;
@@ -4104,11 +4099,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (!stopped()) {
       query_value = load_mirror_from_klass(kls);
     }
-    break;
-
-  case vmIntrinsics::_getClassAccessFlags:
-    p = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-    query_value = make_load(nullptr, p, TypeInt::CHAR, T_CHAR, MemNode::unordered);
     break;
 
   default:
