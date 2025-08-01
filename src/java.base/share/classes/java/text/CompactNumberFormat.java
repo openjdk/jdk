@@ -216,9 +216,9 @@ import java.util.stream.Collectors;
  *      0 <i>MinimumInteger</i>
  * </pre></blockquote>
  *
- * @implNote The default implementation follows the LDML specification for
- * {@code parseLenient} elements to interpret minus sign patterns when lenient
- * parsing is enabled.
+ * @implNote The default implementation follows the LDML specification
+ * to enable loose matching of minus sign patterns when {@link #isStrict()}
+ * returns {@code false}.
  *
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
