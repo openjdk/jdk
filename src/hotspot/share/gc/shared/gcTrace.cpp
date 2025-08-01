@@ -82,20 +82,17 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   const size_t _total_size_in_words;
   const Ticks _timestamp;
-  KlassInfoTable* _cit;
 
  public:
-  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp, KlassInfoTable* cit) :
+  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp) :
     _size_threshold_percentage(ObjectCountCutOffPercent / 100),
     _total_size_in_words(total_size_in_words),
-    _timestamp(timestamp),
-    _cit(cit)
+    _timestamp(timestamp)
   {}
 
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       ObjectCountEventSender::send<Event>(entry, _timestamp);
-      _cit->delete_entry(entry);
     }
   }
 
@@ -106,7 +103,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-// Assumes that the get_cit a member of the heap class
+// Assumes that the get_cit is a member of the heap class
 template <typename T>
 void GCTracer::report_object_count(T* heap) {
   KlassInfoTable* cit = heap->get_cit();
@@ -114,7 +111,7 @@ void GCTracer::report_object_count(T* heap) {
     return;
   }
 
-  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
+  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
   cit->iterate(&event_sender);
 }
 
@@ -127,7 +124,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now(), &cit);
+      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
