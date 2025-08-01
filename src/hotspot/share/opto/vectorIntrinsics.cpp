@@ -1173,8 +1173,8 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   return true;
 }
 
-// Generate a vector mask by casting the input mask from "byte|short" type to "int" type for vector
-// gather load with subword types. The elements to be extended are decided by the "part" parameter.
+// Widen the input mask "in" from "byte|short" to "int" for use in vector gather loads.
+// The "part" parameter selects which segment of the original mask to extend.
 Node* LibraryCallKit::gen_mask_for_subword_gather(Node* in, const TypeVect* vt, uint part) {
   assert(vt->element_basic_type() == T_INT, "must be");
   const TypeVect* in_vt = in->bottom_type()->is_vect();
@@ -1183,18 +1183,18 @@ Node* LibraryCallKit::gen_mask_for_subword_gather(Node* in, const TypeVect* vt, 
   if (in_bt == T_BYTE) {
     assert(part < 4, "must be");
     const TypeVect* temp_vt = TypeVect::makemask(T_SHORT, vt->length() * 2);
-    // If part == 0, the elements of the lowest 1/4 part are extended.
-    // If part == 1, the elements of the 2/4 part are extended.
-    // If part == 2, the elements of the 3/4 part are extended.
-    // If part == 3, the elements of the 4/4 part are extended.
+    // If part == 0, extend elements from the lowest 1/4 of the input.
+    // If part == 1, extend elements from the second 1/4 of the input.
+    // If part == 2, extend elements from the third 1/4 of the input.
+    // If part == 3, extend elements from the highest 1/4 of the input.
     Node* mask = gvn().transform(new VectorMaskWidenNode(in, temp_vt, /* is_hi */ (part & 2) != 0));
     return gvn().transform(new VectorMaskWidenNode(mask, vt, /* is_hi */ (part & 1) != 0));
   }
 
   assert(in_bt == T_SHORT, "must be a subword type");
   assert(part == 0 || part == 1, "must be");
-  // If part == 0, the lower half of the input mask is extended.
-  // If part == 1, the upper half of the input mask is extended.
+  // If part == 0, extend elements from the lower half of the input.
+  // If part == 1, extend elements from the upper half of the input.
   return gvn().transform(new VectorMaskWidenNode(in, vt, /* is_hi */ part == 1));
 }
 
