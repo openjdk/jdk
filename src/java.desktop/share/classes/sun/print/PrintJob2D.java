@@ -30,9 +30,7 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.PrintJob;
 import java.awt.JobAttributes;
-import java.awt.JobAttributes.*;
 import java.awt.PageAttributes;
-import java.awt.PageAttributes.*;
 import java.util.Properties;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -75,6 +73,12 @@ public class PrintJob2D extends PrintJob {
      * @see java.awt.PrintGraphics
      */
     public Graphics getGraphics() {
+        /* The caller wants a Graphics instance but we do
+         * not want them to make 2D calls. We can't hand
+         * back a Graphics2D. The returned Graphics also
+         * needs to implement PrintGraphics, so we wrap
+         * the Graphics2D instance.
+         */
         return new ProxyPrintGraphics(printJobDelegate.getGraphics(), this);
     }
 
@@ -102,7 +106,7 @@ public class PrintJob2D extends PrintJob {
      * Returns true if the last page will be printed first.
      */
     public boolean lastPageFirst() {
-        return false;
+        return printJobDelegate.lastPageFirst();
     }
 
     /**
@@ -120,6 +124,7 @@ public class PrintJob2D extends PrintJob {
         }
 
         public void dispose() {
+            Thread.dumpStack();
             printJobDelegate.end();
         }
     }

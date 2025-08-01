@@ -812,15 +812,9 @@ public class PrintJobDelegate implements Printable, Runnable {
             double awtScale = 72.0/getPageResolutionInternal();
             currentGraphics.scale(awtScale, awtScale);
 
-            /* The caller wants a Graphics instance but we do
-             * not want them to make 2D calls. We can't hand
-             * back a Graphics2D. The returned Graphics also
-             * needs to implement PrintGraphics, so we wrap
-             * the Graphics2D instance. The PrintJob API has
-             * the application dispose of the Graphics so
+            /* The PrintJob API has the application dispose of the Graphics so
              * we create a copy of the one returned by PrinterJob.
              */
-            //printGraphics = new ProxyPrintGraphics(currentGraphics.create(), this);
             printGraphics =  currentGraphics.create();
         }
 
