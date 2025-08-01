@@ -705,12 +705,12 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   allocate_stacks();
 
-  // Usually, all classunloading works occurs at the end of phase 1, but Serial
+  // Usually, all class unloading works occurs at the end of phase 1, but Serial
   // full-gc accesses dead-objs' klass to find out the start of next live-obj
   // during phase 2. This requires klasses of dead-objs to be kept loaded.
-  // Therefore, we declare classunloading context in the same level as various
-  // phases, and purge dead classes (invoking ClassLoaderDataGraph::purge)
-  // after all phases of full-gc.
+  // Therefore, we declare ClassUnloadingContext at the same level as
+  // full-gc phases, and purge dead classes (invoking
+  // ClassLoaderDataGraph::purge) after all phases of full-gc.
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                           false /* unregister_nmethods_during_purge */,
                           false /* lock_nmethod_free_separately */);
@@ -765,7 +765,7 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
     compacter.phase4_compact();
   }
 
-  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+  // Delete metaspaces for unloaded class loaders and clean up CLDG.
   ClassLoaderDataGraph::purge(true /* at_safepoint */);
   DEBUG_ONLY(MetaspaceUtils::verify();)
 
