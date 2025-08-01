@@ -63,9 +63,8 @@ void G1CSetCandidateGroup::calculate_efficiency() {
   _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
 }
 
-double G1CSetCandidateGroup::liveness() const {
+double G1CSetCandidateGroup::liveness_percent() const {
   size_t capacity = length() * G1HeapRegion::GrainBytes;
-
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
