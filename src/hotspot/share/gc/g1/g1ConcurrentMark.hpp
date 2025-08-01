@@ -42,6 +42,7 @@
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;
+class G1CSetCandidateGroup;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1CMOopClosure;
@@ -974,7 +975,8 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
-  void do_cset_groups();
+  void log_cset_candidate_group(G1CSetCandidateGroup* gr, const char* type);
+  void log_cset_candidate_groups();
 
 public:
   // The header and footer are printed in the constructor and
