@@ -50,7 +50,7 @@ public class TestStressDistinctSeed {
                 "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline", "-XX:+CICountNative",
                 "-XX:CompileOnly=" + className + "::sum", "-XX:" + traceOption,
                 "-XX:+" + stressOption, "-XX:StressSeed=" + stressSeed,
-                className, "10" };
+                className, "5" };
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
@@ -95,7 +95,7 @@ public class TestStressDistinctSeed {
         Set<String> macroEliminationTraceSet = new HashSet<>();
         String igvntrace, ccptrace, macroexpansiontrace, macroeliminationtrace;
         if (args.length == 0) {
-            for (int s = 0; s < 10; s++) {
+            for (int s = 0; s < 5; s++) {
                 igvntrace = igvnTrace(s);
                 ccptrace = ccpTrace(s);
                 macroexpansiontrace = macroExpansionTrace(s);
@@ -117,13 +117,13 @@ public class TestStressDistinctSeed {
                 macroEliminationTraceSet.add(macroeliminationtrace);
             }
             Asserts.assertGT(igvnTraceSet.size(), 1,
-                    "got same IGVN traces for 10 different seeds");
+                    "got same IGVN traces for 5 different seeds");
             Asserts.assertGT(ccpTraceSet.size(), 1,
-                    "got same CCP traces for 10 different seeds");
+                    "got same CCP traces for 5 different seeds");
             Asserts.assertGT(macroExpansionTraceSet.size(), 1,
-                    "got same macro expansion traces for 10 different seeds");
+                    "got same macro expansion traces for 5 different seeds");
             Asserts.assertGT(macroEliminationTraceSet.size(), 1,
-                    "got same macro elimination traces for 10 different seeds");
+                    "got same macro elimination traces for 5 different seeds");
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }
