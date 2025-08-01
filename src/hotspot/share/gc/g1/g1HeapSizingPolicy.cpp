@@ -39,9 +39,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-// Initialize static member
-Tickspan G1HeapSizingPolicy::_uncommit_delay;
-
 G1HeapSizingPolicy* G1HeapSizingPolicy::create(const G1CollectedHeap* g1h, const G1Analytics* analytics) {
   return new G1HeapSizingPolicy(g1h, analytics);
 }
@@ -54,8 +51,6 @@ G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analy
   _gc_cpu_usage_deviation_counter((G1CPUUsageExpandThreshold / 2) + 1),
   _recent_cpu_usage_deltas(long_term_count_limit()),
   _long_term_count(0) {
-  // Initialize static uncommit delay from flag value
-  _uncommit_delay = Tickspan::from_milliseconds(G1UncommitDelayMillis);
 }
 
 void G1HeapSizingPolicy::reset_cpu_usage_tracking_data() {
@@ -497,10 +492,10 @@ bool G1HeapSizingPolicy::should_uncommit_region(G1HeapRegion* hr) const {
   Tickspan elapsed = current_time - last_access;
 
   log_trace(gc, sizing)("Region %u uncommit check: elapsed=" JLONG_FORMAT "ms threshold=" JLONG_FORMAT "ms last_access=" JLONG_FORMAT " now=" JLONG_FORMAT " empty=%s",
-                     hr->hrm_index(), (jlong)elapsed.milliseconds(), (jlong)_uncommit_delay.milliseconds(), last_access.value(), current_time.value(),
+                     hr->hrm_index(), (jlong)elapsed.milliseconds(), (jlong)G1UncommitDelayMillis, last_access.value(), current_time.value(),
                      hr->is_empty() ? "true" : "false");
 
-  bool should_uncommit = elapsed > _uncommit_delay;
+  bool should_uncommit = elapsed.milliseconds() > G1UncommitDelayMillis;
   if (should_uncommit) {
     log_debug(gc, sizing)("Region state transition: Region %u transitioning from active to inactive after " JLONG_FORMAT "ms idle",
                   hr->hrm_index(), (jlong)elapsed.milliseconds());
