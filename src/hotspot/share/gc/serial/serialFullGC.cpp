@@ -525,9 +525,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
 
-    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                              false /* unregister_nmethods_during_purge */,
-                              false /* lock_nmethod_free_separately */);
+    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
 
     bool unloading_occurred;
     {
@@ -543,7 +541,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     {
       GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
       // Release unloaded nmethod's memory.
-      ctx.purge_nmethods();
+      ctx->purge_nmethods();
     }
     {
       GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", gc_timer());
@@ -551,7 +549,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx.free_nmethods();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -559,13 +557,6 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Clean JVMCI metadata handles.
     JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
-
-    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-    ClassLoaderDataGraph::purge(true /* at_safepoint */);
-    DEBUG_ONLY(MetaspaceUtils::verify();)
-
-    // Need to clear claim bits for the next mark.
-    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {
