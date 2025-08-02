@@ -81,6 +81,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -169,7 +170,7 @@ class JavaThread: public Thread {
   // attached thread cases where this field can have a temporary value.
   int64_t _monitor_owner_id;
 
- public:
+public:
   void set_monitor_owner_id(int64_t id) {
     ThreadIdentifier::verify_id(id);
     _monitor_owner_id = id;
@@ -1266,6 +1267,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#if defined(__APPLE__) && defined(AARCH64)
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 

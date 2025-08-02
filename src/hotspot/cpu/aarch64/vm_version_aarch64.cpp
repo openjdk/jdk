@@ -618,6 +618,10 @@ void VM_Version::initialize() {
 
   check_virtualizations();
 
+#ifdef __APPLE__
+  DefaultWXWriteMode = UseOldWX ? WXWrite : WXArmedForWrite;
+#endif
+
   // Sync SVE related CPU features with flags
   if (UseSVE < 2) {
     _features &= ~CPU_SVE2;
