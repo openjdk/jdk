@@ -1351,4 +1351,9 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // handled.
 bool IEEE_subnormal_handling_OK();
 
+//----------------------------------------------------------------------------------------------------
+
+// Dummy placeholder for use of [[nodiscard]]
+#define ATTRIBUTE_NODISCARD
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
