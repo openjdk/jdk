@@ -85,11 +85,14 @@ public enum LauncherShortcut {
 
     LauncherShortcut(String propertyName) {
         this.propertyName = Objects.requireNonNull(propertyName);
-        this.predefinedAppImagePropertyName = propertyName.substring(propertyName.indexOf('-') + 1);
     }
 
     public String propertyName() {
         return propertyName;
+    }
+
+    public String appImageFilePropertyName() {
+        return propertyName.substring(propertyName.indexOf('-') + 1);
     }
 
     public String optionName() {
@@ -106,7 +109,7 @@ public enum LauncherShortcut {
         } else {
             String[] propertyName = new String[1];
             return findAddLauncherShortcut(cmd, predefinedAppImage.map(appImage -> {
-                propertyName[0] = this.predefinedAppImagePropertyName;
+                propertyName[0] = appImageFilePropertyName();
                 return new PropertyFile(appImage.addLaunchers().get(launcherName));
             }).orElseGet(() -> {
                 propertyName[0] = this.propertyName;
@@ -161,5 +164,4 @@ public enum LauncherShortcut {
     }
 
     private final String propertyName;
-    private final String predefinedAppImagePropertyName;
 }
