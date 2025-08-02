@@ -33,12 +33,10 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
-import java.util.function.Supplier;
 
 /**
  * Optimized implementation of a stable Function with enums as keys.
@@ -46,20 +44,21 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param enumType     the class type of the Enum
- * @param firstOrdinal the lowest ordinal used
- * @param member       an int predicate that can be used to test if an enum is a member
- *                     of the valid inputs (as there might be "holes")
- * @param delegates    a delegate array of inputs to StableValue mappings
- * @param original     the original Function
- * @param <E>          the type of the input to the function
- * @param <R>          the type of the result of the function
+ * @param enumType         the class type of the Enum
+ * @param firstOrdinal     the lowest ordinal used
+ * @param member           an int predicate that can be used to test if an enum is a member
+ *                         of the valid inputs (as there might be "holes")
+ * @param delegates        a delegate array of inputs to StableValue mappings
+ * @param underlyingHolder of the original underlying Function
+ * @param <E>              the type of the input to the function
+ * @param <R>              the type of the result of the function
  */
 public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
                                                        int firstOrdinal,
                                                        IntPredicate member,
                                                        @Stable StableValueImpl<R>[] delegates,
-                                                       Function<? super E, ? extends R> original) implements Function<E, R> {
+                                                       UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder) implements Function<E, R> {
+
     @ForceInline
     @Override
     public R apply(E value) {
@@ -68,9 +67,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int index = value.ordinal() - firstOrdinal;
         // Since we did the member.test above, we know the index is in bounds
-        return delegates[index].orElseSet(new Supplier<R>() {
-                    @Override public R get() { return original.apply(value); }});
-
+        return delegates[index].orElseSet(value, underlyingHolder);
     }
 
     @Override
@@ -96,9 +93,10 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         return StableUtil.renderMappings(this, "StableFunction", entries, true);
     }
 
+
     @SuppressWarnings("unchecked")
     public static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
-                                                              Function<? super T, ? extends R> original) {
+                                                              Function<? super T, ? extends R> underlying) {
         // The input set is not empty
         final Class<E> enumType = ((E) inputs.iterator().next()).getDeclaringClass();
         final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
@@ -112,7 +110,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int size = max - min + 1;
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), (Function<E, R>) original);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), new UnderlyingHolder<>((Function<E, R>) underlying, bitSet.cardinality()));
     }
 
 }
