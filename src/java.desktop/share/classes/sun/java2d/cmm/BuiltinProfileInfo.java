@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
 package sun.java2d.cmm;
 
 /**
- * A class to pass information about a profile to be loaded from a file to the
- * static getInstance(int cspace) method of ICC_Profile. Loading of the profile
- * data and initialization of the CMM is to be deferred as long as possible.
+ * Stores information about a built-in profile used by
+ * ICC_Profile.getInstance(int cspace) to defer the loading of profile data and
+ * CMM initialization. Since built-in profiles are immutable, this information
+ * is always valid.
  */
-public final class ProfileDeferralInfo {
+public final class BuiltinProfileInfo {
 
     /**
-     * Need to have this info for ICC_ColorSpace without causing a deferred
-     * profile to be loaded.
+     * Used by ICC_ColorSpace without triggering built-in profile loading.
      */
     public final int colorSpaceType, numComponents, profileClass;
 
@@ -43,7 +43,7 @@ public final class ProfileDeferralInfo {
      */
     public final String filename;
 
-    public ProfileDeferralInfo(String fn, int type, int ncomp, int pclass) {
+    public BuiltinProfileInfo(String fn, int type, int ncomp, int pclass) {
         filename = fn;
         colorSpaceType = type;
         numComponents = ncomp;
