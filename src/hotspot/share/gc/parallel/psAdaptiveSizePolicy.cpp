@@ -67,7 +67,8 @@ void PSAdaptiveSizePolicy::print_stats(bool is_survivor_overflowing) {
     mutator_time_percent(),
     minor_gc_time_estimate() * 1000.0,
     _gc_distance_seconds_seq.davg(), _gc_distance_seconds_seq.last(),
-    PROPERFMTARGS(promoted_bytes_estimate()), PROPERFMTARGS(_promoted_bytes.last()),
+    byte_size_in_proper_unit(promoted_bytes_estimate()), proper_unit_for_byte_size((size_t)promoted_bytes_estimate()),
+    byte_size_in_proper_unit(_promoted_bytes.last()), proper_unit_for_byte_size((size_t)_promoted_bytes.last()),
     _promotion_rate_bytes_per_sec.davg()/M, _promotion_rate_bytes_per_sec.last()/M,
     is_survivor_overflowing ? "true" : "false");
 }
