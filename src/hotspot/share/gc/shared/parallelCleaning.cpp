@@ -95,7 +95,7 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
 }
 
 KlassCleaningTask::KlassCleaningTask() :
-  _clean_klass_tree_claimed(0),
+  _clean_klass_tree_claimed(false),
   _klass_iterator() {
 }
 
@@ -104,7 +104,7 @@ bool KlassCleaningTask::claim_clean_klass_tree_task() {
     return false;
   }
 
-  return Atomic::cmpxchg(&_clean_klass_tree_claimed, 0, 1) == 0;
+  return !Atomic::cmpxchg(&_clean_klass_tree_claimed, false, true);
 }
 
 InstanceKlass* KlassCleaningTask::claim_next_klass() {
@@ -118,8 +118,6 @@ InstanceKlass* KlassCleaningTask::claim_next_klass() {
 }
 
 void KlassCleaningTask::work() {
-  ResourceMark rm;
-
   // One worker will clean the subklass/sibling klass tree.
   if (claim_clean_klass_tree_task()) {
     Klass::clean_weak_klass_links(true /* class_unloading_occurred */, false /* clean_alive_klasses */);

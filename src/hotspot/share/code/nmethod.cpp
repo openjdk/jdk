@@ -2446,7 +2446,7 @@ void nmethod::do_unloading(bool unloading_occurred) {
   }
 }
 
-void nmethod::oops_do(OopClosure* f, bool allow_dead) {
+void nmethod::oops_do(OopClosure* f) {
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {
     RelocIterator iter(this, oops_reloc_begin());

@@ -919,8 +919,7 @@ public:
   bool jvmci_skip_profile_deopt() const;
 #endif
 
-  void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool allow_dead);
+  void oops_do(OopClosure* f);
 
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.

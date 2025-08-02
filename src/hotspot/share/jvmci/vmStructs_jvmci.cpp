@@ -147,6 +147,7 @@
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+  static_field(CompilerToVM::Data,             crc_table_addr,                         address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
@@ -417,8 +418,6 @@
   static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
   static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
-  static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
-  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
   static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
   static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
   static_field(StubRoutines,                _multiplyToLen,                                   address)                               \
@@ -763,6 +762,7 @@
   declare_constant(Deoptimization::Reason_constraint)                     \
   declare_constant(Deoptimization::Reason_div0_check)                     \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_type_checked_inlining)          \
   declare_constant(Deoptimization::Reason_optimized_type_check)           \
@@ -1152,7 +1152,6 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 #endif
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };
-#undef DECLARE_CPU_FEATURE_FLAG
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,

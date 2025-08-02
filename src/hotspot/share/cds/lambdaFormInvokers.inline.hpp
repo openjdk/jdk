@@ -26,6 +26,7 @@
 #define SHARE_CDS_LAMBDAFORMINVOKERS_INLINE_HPP
 
 #include "cds/lambdaFormInvokers.hpp"
+
 #include "classfile/vmSymbols.hpp"
 
 inline bool LambdaFormInvokers::may_be_regenerated_class(Symbol* name) {

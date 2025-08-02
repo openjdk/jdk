@@ -1138,7 +1138,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // Mark phase midway, which might have also left stale marks in old generation regions.
       // There might actually have been scheduled multiple collections, but at that point we do
       // not care that much about performance and just do the work multiple times if needed.
-      return (_g1h->collector_state()->clearing_bitmap() ||
+      return (_g1h->collector_state()->clear_bitmap_in_progress() ||
               _g1h->concurrent_mark_is_terminating()) &&
               hr->is_old();
     }

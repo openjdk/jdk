@@ -804,25 +804,32 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
 void ShenandoahHeapRegion::do_commit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_heap_region_special() && !os::commit_memory((char *) bottom(), RegionSizeBytes, false)) {
-    report_java_out_of_memory("Unable to commit region");
+  if (!heap->is_heap_region_special()) {
+    os::commit_memory_or_exit((char*) bottom(), RegionSizeBytes, false, "Unable to commit region");
   }
-  if (!heap->commit_bitmap_slice(this)) {
-    report_java_out_of_memory("Unable to commit bitmaps for region");
+  if (!heap->is_bitmap_region_special()) {
+    heap->commit_bitmap_slice(this);
   }
   if (AlwaysPreTouch) {
     os::pretouch_memory(bottom(), end(), heap->pretouch_heap_page_size());
+  }
+  if (ZapUnusedHeapArea) {
+    SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }
   heap->increase_committed(ShenandoahHeapRegion::region_size_bytes());
 }
 
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes)) {
-    report_java_out_of_memory("Unable to uncommit region");
+  if (!heap->is_heap_region_special()) {
+    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
+    if (!success) {
+      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
+      assert(false, "Region uncommit should always succeed");
+    }
   }
-  if (!heap->uncommit_bitmap_slice(this)) {
-    report_java_out_of_memory("Unable to uncommit bitmaps for region");
+  if (!heap->is_bitmap_region_special()) {
+    heap->uncommit_bitmap_slice(this);
   }
   heap->decrease_committed(ShenandoahHeapRegion::region_size_bytes());
 }

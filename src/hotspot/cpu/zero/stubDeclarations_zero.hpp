@@ -37,7 +37,7 @@
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
                                       do_arch_entry_init)               \
-  do_arch_blob(initial, 0)                                              \
+  do_arch_blob(initial, 32)                                             \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
@@ -58,7 +58,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 0)                                                \
+  do_arch_blob(final, 32)                                               \
 
 
 #endif // CPU_ZERO_STUBDECLARATIONS_HPP

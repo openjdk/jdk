@@ -379,8 +379,8 @@ public:
   static void init2() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
   static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
-  static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
-  static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
+  static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
+  static bool is_on_for_dump() CDS_ONLY({ return is_on() && _cache->for_dump(); }) NOT_CDS_RETURN_(false);
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
   static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
   static bool is_using_stub() NOT_CDS_RETURN_(false);

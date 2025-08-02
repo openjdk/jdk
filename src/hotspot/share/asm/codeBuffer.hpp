@@ -641,6 +641,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // copies combined relocations to the blob, returns bytes copied
   // (if target is null, it is a dry run only, just for sizing)
   csize_t copy_relocations_to(CodeBlob* blob) const;
+  csize_t copy_relocations_to(address buf, csize_t buf_limit) const;
 
   // copies combined code to the blob (assumes relocs are already in there)
   void copy_code_to(CodeBlob* blob);
@@ -790,8 +791,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   csize_t total_relocation_size() const;
 
   int total_skipped_instructions_size() const;
-
-  csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
 
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {

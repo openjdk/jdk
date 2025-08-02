@@ -152,7 +152,7 @@ public:
     if (!klass->is_instance_klass()) {
       return false;
     }
-    return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
+    return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
   }
 };
 

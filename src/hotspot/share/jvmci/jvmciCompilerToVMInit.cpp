@@ -151,6 +151,8 @@ address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
 address CompilerToVM::Data::dpow;
 
+address CompilerToVM::Data::crc_table_addr;
+
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
 
@@ -289,6 +291,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   SET_TRIGFUNC_OR_NULL(dtanh);
   SET_TRIGFUNC_OR_NULL(dcbrt);
+  SET_TRIGFUNC_OR_NULL(crc_table_addr);
 
 #undef SET_TRIGFUNC_OR_NULL
 

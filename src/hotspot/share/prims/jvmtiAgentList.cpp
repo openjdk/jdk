@@ -273,11 +273,13 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
   return nullptr;
 }
 
-void JvmtiAgentList::disable_agent_list() {
+bool JvmtiAgentList::disable_agent_list() {
 #if INCLUDE_CDS
-  assert(CDSConfig::is_dumping_final_static_archive(), "use this only for -XX:AOTMode=create!");
   assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
-  log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
-  _head = nullptr; // Pretend that no agents have been added.
+  if (_head != nullptr) {
+    _head = nullptr; // Pretend that no agents have been added.
+    return true;
+  }
 #endif
+  return false;
 }

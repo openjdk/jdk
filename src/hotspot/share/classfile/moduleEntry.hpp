@@ -186,10 +186,10 @@ public:
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
   // Note caller requires ResourceMark
-  const char* name_as_C_string() {
+  const char* name_as_C_string() const {
     return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
   }
-  void print(outputStream* st = tty);
+  void print(outputStream* st = tty) const;
   void verify();
 
   CDS_ONLY(int shared_path_index() { return _shared_path_index;})
@@ -197,6 +197,7 @@ public:
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
 #if INCLUDE_CDS_JAVA_HEAP
+  bool should_be_archived() const;
   void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();

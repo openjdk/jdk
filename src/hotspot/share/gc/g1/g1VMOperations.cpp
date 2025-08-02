@@ -59,6 +59,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
   VM_GC_Collect_Operation(gc_count_before, gc_cause),
   _transient_failure(false),
+  _mark_in_progress(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
   _terminating(false),
@@ -83,6 +84,9 @@ void VM_G1TryInitiateConcMark::doit() {
   // Record for handling by caller.
   _terminating = g1h->concurrent_mark_is_terminating();
 
+  _mark_in_progress = g1h->collector_state()->mark_in_progress();
+  _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
+
   if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
     // When terminating, the request to initiate a concurrent cycle will be
     // ignored by do_collection_pause_at_safepoint; instead it will just do
@@ -91,9 +95,8 @@ void VM_G1TryInitiateConcMark::doit() {
     // requests the alternative GC might still be needed.
   } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
-    // there is already a concurrent marking cycle in progress.  Set flag
-    // to notify the caller and return immediately.
-    _cycle_already_in_progress = true;
+    // there is already a concurrent marking cycle in progress. Flags to indicate
+    // that were already set, so return immediately.
   } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
              ConcurrentGCBreakpoints::is_controlled()) {
     // WhiteBox wants to be in control of concurrent cycles, so don't try to

@@ -29,8 +29,8 @@
 #include "cds/dumpTimeClassInfo.hpp"
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"

@@ -547,21 +547,24 @@ public:
   }
 
   void send_event(bool successful) {
-    EventZPageAllocation event;
+    if (!EventZPageAllocation::is_enabled()) {
+      // Event not enabled, exit early
+      return;
+    }
 
     Ticks end_timestamp = Ticks::now();
     const ZPageAllocationStats st = stats();
 
-    event.commit(_start_timestamp,
-                 end_timestamp,
-                 (u8)_type,
-                 size(),
-                 st._total_harvested,
-                 st._total_committed_capacity,
-                 (unsigned)st._num_harvested_vmems,
-                 _is_multi_partition,
-                 successful,
-                 _flags.non_blocking());
+    EventZPageAllocation::commit(_start_timestamp,
+                                 end_timestamp,
+                                 (u8)_type,
+                                 size(),
+                                 st._total_harvested,
+                                 st._total_committed_capacity,
+                                 (unsigned)st._num_harvested_vmems,
+                                 _is_multi_partition,
+                                 successful,
+                                 _flags.non_blocking());
   }
 };
 

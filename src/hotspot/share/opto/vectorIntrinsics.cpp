@@ -2706,6 +2706,9 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     index_elem_bt = T_LONG;
   }
 
+  // Check if the platform requires a VectorLoadShuffle node to be generated
+  bool need_load_shuffle = Matcher::vector_rearrange_requires_load_shuffle(index_elem_bt, num_elem);
+
   bool lowerSelectFromOp = false;
   if (!arch_supports_vector(Op_SelectFromTwoVector, num_elem, elem_bt, VecMaskNotUsed)) {
     int cast_vopc = VectorCastNode::opcode(-1, elem_bt, true);
@@ -2715,7 +2718,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
         !arch_supports_vector(Op_VectorMaskCast, num_elem, elem_bt, VecMaskNotUsed)          ||
         !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)             ||
         !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed)         ||
-        !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        (need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed)) ||
         !arch_supports_vector(Op_Replicate, num_elem, index_elem_bt, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
                     Op_SelectFromTwoVector, num_elem, type2name(elem_bt));

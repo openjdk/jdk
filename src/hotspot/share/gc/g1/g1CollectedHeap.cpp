@@ -959,7 +959,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   HeapWord* result =
     satisfy_failed_allocation_helper(word_size,
                                      true,  /* do_gc */
-                                     false, /* maximum_collection */
+                                     false, /* maximal_compaction */
                                      false /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
@@ -969,7 +969,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   // Attempts to allocate followed by Full GC that will collect all soft references.
   result = satisfy_failed_allocation_helper(word_size,
                                             true, /* do_gc */
-                                            true, /* maximum_collection */
+                                            true, /* maximal_compaction */
                                             true /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
@@ -979,7 +979,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   // Attempts to allocate, no GC
   result = satisfy_failed_allocation_helper(word_size,
                                             false, /* do_gc */
-                                            false, /* maximum_collection */
+                                            false, /* maximal_compaction */
                                             true  /* expect_null_mutator_alloc_region */);
 
   if (result != nullptr) {
@@ -1134,7 +1134,7 @@ public:
 
     if (SafepointSynchronize::is_at_safepoint()) {
       guarantee(Thread::current()->is_VM_thread() ||
-                FreeList_lock->owned_by_self() || OldSets_lock->owned_by_self(),
+                G1FreeList_lock->owned_by_self() || G1OldSets_lock->owned_by_self(),
                 "master old set MT safety protocol at a safepoint");
     } else {
       guarantee(Heap_lock->owned_by_self(), "master old set MT safety protocol outside a safepoint");
@@ -1157,7 +1157,7 @@ public:
 
     if (SafepointSynchronize::is_at_safepoint()) {
       guarantee(Thread::current()->is_VM_thread() ||
-                OldSets_lock->owned_by_self(),
+                G1OldSets_lock->owned_by_self(),
                 "master humongous set MT safety protocol at a safepoint");
     } else {
       guarantee(Heap_lock->owned_by_self(),
@@ -1732,6 +1732,66 @@ static bool gc_counter_less_than(uint x, uint y) {
 #define LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, result) \
   LOG_COLLECT_CONCURRENTLY(cause, "complete %s", BOOL_TO_STR(result))
 
+bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
+                                              uint old_marking_started_before,
+                                              uint old_marking_started_after,
+                                              uint old_marking_completed_after) {
+  // Request is finished if a full collection (concurrent or stw)
+  // was started after this request and has completed, e.g.
+  // started_before < completed_after.
+  if (gc_counter_less_than(old_marking_started_before,
+                           old_marking_completed_after)) {
+    LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+    return true;
+  }
+
+  if (old_marking_started_after != old_marking_completed_after) {
+    // If there is an in-progress cycle (possibly started by us), then
+    // wait for that cycle to complete, e.g.
+    // while completed_now < started_after.
+    LOG_COLLECT_CONCURRENTLY(cause, "wait");
+    MonitorLocker ml(G1OldGCCount_lock);
+    while (gc_counter_less_than(_old_marking_cycles_completed,
+                                old_marking_started_after)) {
+      ml.wait();
+    }
+    // Request is finished if the collection we just waited for was
+    // started after this request.
+    if (old_marking_started_before != old_marking_started_after) {
+      LOG_COLLECT_CONCURRENTLY(cause, "complete after wait");
+      return true;
+    }
+  }
+  return false;
+}
+
+// After calling wait_full_mark_finished(), this method determines whether we
+// previously failed for ordinary reasons (concurrent cycle in progress, whitebox
+// has control). Returns if this has been such an ordinary reason.
+static bool should_retry_vm_op(GCCause::Cause cause,
+                               VM_G1TryInitiateConcMark* op) {
+  if (op->cycle_already_in_progress()) {
+    // If VMOp failed because a cycle was already in progress, it
+    // is now complete.  But it didn't finish this user-requested
+    // GC, so try again.
+    LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
+    return true;
+  } else if (op->whitebox_attached()) {
+    // If WhiteBox wants control, wait for notification of a state
+    // change in the controller, then try again.  Don't wait for
+    // release of control, since collections may complete while in
+    // control.  Note: This won't recognize a STW full collection
+    // while waiting; we can't wait on multiple monitors.
+    LOG_COLLECT_CONCURRENTLY(cause, "whitebox control stall");
+    MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
+    if (ConcurrentGCBreakpoints::is_controlled()) {
+      ml.wait();
+    }
+    return true;
+  }
+  return false;
+}
+
 bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
                                                uint gc_counter,
                                                uint old_marking_started_before) {
@@ -1792,7 +1852,45 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         LOG_COLLECT_CONCURRENTLY(cause, "ignoring STW full GC");
         old_marking_started_before = old_marking_started_after;
       }
+    } else if (GCCause::is_codecache_requested_gc(cause)) {
+      // For a CodeCache requested GC, before marking, progress is ensured as the
+      // following Remark pause unloads code (and signals the requester such).
+      // Otherwise we must ensure that it is restarted.
+      //
+      // For a CodeCache requested GC, a successful GC operation means that
+      // (1) marking is in progress. I.e. the VMOp started the marking or a
+      //     Remark pause is pending from a different VM op; we will potentially
+      //     abort a mixed phase if needed.
+      // (2) a new cycle was started (by this thread or some other), or
+      // (3) a Full GC was performed.
+      //
+      // Cases (2) and (3) are detected together by a change to
+      // _old_marking_cycles_started.
+      //
+      // Compared to other "automatic" GCs (see below), we do not consider being
+      // in whitebox as sufficient too because we might be anywhere within that
+      // cycle and we need to make progress.
+      if (op.mark_in_progress() ||
+          (old_marking_started_before != old_marking_started_after)) {
+        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+        return true;
+      }
+
+      if (wait_full_mark_finished(cause,
+                                  old_marking_started_before,
+                                  old_marking_started_after,
+                                  old_marking_completed_after)) {
+        return true;
+      }
+
+      if (should_retry_vm_op(cause, &op)) {
+        continue;
+      }
     } else if (!GCCause::is_user_requested_gc(cause)) {
+      assert(cause == GCCause::_g1_humongous_allocation ||
+             cause == GCCause::_g1_periodic_collection,
+             "Unsupported cause %s", GCCause::to_string(cause));
+
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //
@@ -1804,11 +1902,6 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // (5) a Full GC was performed.
       // Cases (4) and (5) are detected together by a change to
       // _old_marking_cycles_started.
-      //
-      // Note that (1) does not imply (4).  If we're still in the mixed
-      // phase of an earlier concurrent collection, the request to make the
-      // collection a concurrent start won't be honored.  If we don't check for
-      // both conditions we'll spin doing back-to-back collections.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
           op.whitebox_attached() ||
@@ -1832,31 +1925,11 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
              BOOL_TO_STR(op.gc_succeeded()),
              old_marking_started_before, old_marking_started_after);
 
-      // Request is finished if a full collection (concurrent or stw)
-      // was started after this request and has completed, e.g.
-      // started_before < completed_after.
-      if (gc_counter_less_than(old_marking_started_before,
-                               old_marking_completed_after)) {
-        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+      if (wait_full_mark_finished(cause,
+                                  old_marking_started_before,
+                                  old_marking_started_after,
+                                  old_marking_completed_after)) {
         return true;
-      }
-
-      if (old_marking_started_after != old_marking_completed_after) {
-        // If there is an in-progress cycle (possibly started by us), then
-        // wait for that cycle to complete, e.g.
-        // while completed_now < started_after.
-        LOG_COLLECT_CONCURRENTLY(cause, "wait");
-        MonitorLocker ml(G1OldGCCount_lock);
-        while (gc_counter_less_than(_old_marking_cycles_completed,
-                                    old_marking_started_after)) {
-          ml.wait();
-        }
-        // Request is finished if the collection we just waited for was
-        // started after this request.
-        if (old_marking_started_before != old_marking_started_after) {
-          LOG_COLLECT_CONCURRENTLY(cause, "complete after wait");
-          return true;
-        }
       }
 
       // If VMOp was successful then it started a new cycle that the above
@@ -1865,23 +1938,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // a new cycle was started.
       assert(!op.gc_succeeded(), "invariant");
 
-      if (op.cycle_already_in_progress()) {
-        // If VMOp failed because a cycle was already in progress, it
-        // is now complete.  But it didn't finish this user-requested
-        // GC, so try again.
-        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
-        continue;
-      } else if (op.whitebox_attached()) {
-        // If WhiteBox wants control, wait for notification of a state
-        // change in the controller, then try again.  Don't wait for
-        // release of control, since collections may complete while in
-        // control.  Note: This won't recognize a STW full collection
-        // while waiting; we can't wait on multiple monitors.
-        LOG_COLLECT_CONCURRENTLY(cause, "whitebox control stall");
-        MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
-        if (ConcurrentGCBreakpoints::is_controlled()) {
-          ml.wait();
-        }
+      if (should_retry_vm_op(cause, &op)) {
         continue;
       }
     }
@@ -2329,7 +2386,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
   assert(!_cm_thread->in_progress(), "Can not start concurrent operation while in progress");
 
-  MutexLocker x(CGC_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
     _cm->post_concurrent_mark_start();
     _cm_thread->start_full_mark();
@@ -2337,7 +2394,7 @@ void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_m
     _cm->post_concurrent_undo_start();
     _cm_thread->start_undo_mark();
   }
-  CGC_lock->notify();
+  G1CGC_lock->notify();
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(G1HeapRegion* r) const {
@@ -2691,7 +2748,7 @@ void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,
 void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
                                                const uint humongous_regions_removed) {
   if (old_regions_removed > 0 || humongous_regions_removed > 0) {
-    MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
   }
@@ -2701,7 +2758,7 @@ void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
 void G1CollectedHeap::prepend_to_freelist(G1FreeRegionList* list) {
   assert(list != nullptr, "list can't be null");
   if (!list->is_empty()) {
-    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1FreeList_lock, Mutex::_no_safepoint_check_flag);
     _hrm.insert_list_into_free_list(list);
   }
 }
@@ -2936,7 +2993,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
 }
 
 G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest, uint node_index) {
-  assert(FreeList_lock->owned_by_self(), "pre-condition");
+  assert(G1FreeList_lock->owned_by_self(), "pre-condition");
 
   if (!has_more_regions(dest)) {
     return nullptr;

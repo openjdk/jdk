@@ -292,7 +292,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   address start = __ pc();
 
   // Exception pc is 'return address' for stack walker
-  __ push(rdx);
+  __ push_ppx(rdx);
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Prolog
 
   // Save callee-saved registers.  See x86_64.ad.
@@ -347,7 +347,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ movptr(rbp, Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt));
 
   __ addptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog
-  __ pop(rdx);                  // No need for exception pc anymore
+  __ pop_ppx(rdx);                  // No need for exception pc anymore
 
   // rax: exception handler
 

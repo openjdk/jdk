@@ -1880,14 +1880,20 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
 // after the call, if this call has restricted memory effects.
 Node* GraphKit::set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem) {
   // Set fixed predefined input arguments
-  Node* memory = reset_memory();
-  Node* m = narrow_mem == nullptr ? memory : narrow_mem;
-  call->init_req( TypeFunc::Control,   control()  );
-  call->init_req( TypeFunc::I_O,       top()      ); // does no i/o
-  call->init_req( TypeFunc::Memory,    m          ); // may gc ptrs
-  call->init_req( TypeFunc::FramePtr,  frameptr() );
-  call->init_req( TypeFunc::ReturnAdr, top()      );
-  return memory;
+  call->init_req(TypeFunc::Control, control());
+  call->init_req(TypeFunc::I_O, top()); // does no i/o
+  call->init_req(TypeFunc::ReturnAdr, top());
+  if (call->is_CallLeafPure()) {
+    call->init_req(TypeFunc::Memory, top());
+    call->init_req(TypeFunc::FramePtr, top());
+    return nullptr;
+  } else {
+    Node* memory = reset_memory();
+    Node* m = narrow_mem == nullptr ? memory : narrow_mem;
+    call->init_req(TypeFunc::Memory, m); // may gc ptrs
+    call->init_req(TypeFunc::FramePtr, frameptr());
+    return memory;
+  }
 }
 
 //-------------------set_predefined_output_for_runtime_call--------------------
@@ -1905,6 +1911,11 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
                                                       const TypePtr* hook_mem) {
   // no i/o
   set_control(_gvn.transform( new ProjNode(call,TypeFunc::Control) ));
+  if (call->is_CallLeafPure()) {
+    // Pure function have only control (for now) and data output, in particular
+    // they don't touch the memory, so we don't want a memory proj that is set after.
+    return;
+  }
   if (keep_mem) {
     // First clone the existing memory state
     set_all_memory(keep_mem);
@@ -2491,6 +2502,8 @@ Node* GraphKit::make_runtime_call(int flags,
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+  } else if (flags & RC_PURE) {
+    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -4050,6 +4063,11 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All
 // Runtime Predicates inside a Runtime Predicate block share the same uncommon trap as the Parse Predicate.
 void GraphKit::add_parse_predicates(int nargs) {
+  if (ShortRunningLongLoop) {
+    // Will narrow the limit down with a cast node. Predicates added later may depend on the cast so should be last when
+    // walking up from the loop.
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, nargs);
+  }
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, nargs);
     if (UseProfiledLoopPredicate) {

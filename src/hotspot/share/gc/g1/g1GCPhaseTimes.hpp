@@ -191,7 +191,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_resize_heap_time_ms;
   double _cur_ref_proc_time_ms;
 
-  double _cur_collection_start_sec;
   // Not included in _gc_pause_time_ms
   double _root_region_scan_wait_time_ms;
 
@@ -367,10 +366,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_prepare_for_mutator_time_ms = time_ms;
   }
 
-  void record_cur_collection_start_sec(double time_ms) {
-    _cur_collection_start_sec = time_ms;
-  }
-
   void record_verify_before_time_ms(double time_ms) {
     _cur_verify_before_time_ms = time_ms;
   }
@@ -385,10 +380,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
     _recorded_prepare_heap_roots_time_ms = recorded_prepare_heap_roots_time_ms;
-  }
-
-  double cur_collection_start_sec() {
-    return _cur_collection_start_sec;
   }
 
   double cur_distribute_log_buffers_time_ms() {

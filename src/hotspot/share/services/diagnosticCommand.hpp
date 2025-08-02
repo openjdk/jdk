@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/method.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
@@ -37,7 +38,6 @@
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "oops/method.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:

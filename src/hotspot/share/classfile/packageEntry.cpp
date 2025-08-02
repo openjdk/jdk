@@ -30,6 +30,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -218,8 +219,12 @@ typedef ResourceHashtable<
   AnyObj::C_HEAP> ArchivedPackageEntries;
 static ArchivedPackageEntries* _archived_packages_entries = nullptr;
 
+bool PackageEntry::should_be_archived() const {
+  return module()->should_be_archived();
+}
+
 PackageEntry* PackageEntry::allocate_archived_entry() const {
-  assert(!in_unnamed_module(), "unnamed packages/modules are not archived");
+  precond(should_be_archived());
   PackageEntry* archived_entry = (PackageEntry*)ArchiveBuilder::rw_region_alloc(sizeof(PackageEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
 
@@ -257,6 +262,12 @@ void PackageEntry::init_as_archived_entry() {
   ArchivePtrMarker::mark_pointer((address*)&_name);
   ArchivePtrMarker::mark_pointer((address*)&_module);
   ArchivePtrMarker::mark_pointer((address*)&_qualified_exports);
+
+  LogStreamHandle(Info, aot, package) st;
+  if (st.is_enabled()) {
+    st.print("archived ");
+    print(&st);
+  }
 }
 
 void PackageEntry::load_from_archive() {
@@ -280,7 +291,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   // First count the packages in named modules
   int n = 0;
   auto count = [&] (const SymbolHandle& key, PackageEntry*& p) {
-    if (p->module()->is_named()) {
+    if (p->should_be_archived()) {
       n++;
     }
   };
@@ -290,9 +301,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   // reset n
   n = 0;
   auto grab = [&] (const SymbolHandle& key, PackageEntry*& p) {
-    if (p->module()->is_named()) {
-      // We don't archive unnamed modules, or packages in unnamed modules. They will be
-      // created on-demand at runtime as classes in such packages are loaded.
+    if (p->should_be_archived()) {
       archived_packages->at_put(n++, p);
     }
   };

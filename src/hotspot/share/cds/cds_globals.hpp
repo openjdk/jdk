@@ -121,6 +121,7 @@
                                                                             \
   product(ccstr, AOTCacheOutput, nullptr,                                   \
           "Specifies the file name for writing the AOT cache")              \
+          constraint(AOTCacheOutputConstraintFunc, AtParse)                 \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \

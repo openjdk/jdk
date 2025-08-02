@@ -631,7 +631,7 @@
                                     do_arch_entry, do_arch_entry_init)  \
   end_blob(preuniverse)                                                 \
 
-#define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                      \
+#define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
                                  do_stub,                               \
                                  do_entry, do_entry_init,               \
                                  do_entry_array,                        \
@@ -651,12 +651,9 @@
   do_stub(initial, updateBytesCRC32)                                    \
   do_entry(initial, updateBytesCRC32, updateBytesCRC32,                 \
            updateBytesCRC32)                                            \
-  do_entry(initial, updateBytesCRC32, crc_table_adr, crc_table_addr)    \
   do_stub(initial, updateBytesCRC32C)                                   \
   do_entry(initial, updateBytesCRC32C, updateBytesCRC32C,               \
            updateBytesCRC32C)                                           \
-  do_entry(initial, updateBytesCRC32C, crc32c_table_addr,               \
-           crc32c_table_addr)                                           \
   do_stub(initial, f2hf)                                                \
   do_entry(initial, f2hf, f2hf, f2hf_adr)                               \
   do_stub(initial, hf2f)                                                \
@@ -886,6 +883,9 @@
   do_stub(final, verify_oop)                                            \
   do_entry(final, verify_oop, verify_oop_subroutine_entry,              \
            verify_oop_subroutine_entry)                                 \
+  do_stub(final, unsafecopy_common)                                     \
+  do_entry(final, unsafecopy_common, unsafecopy_common_exit,            \
+           unsafecopy_common_exit)                                      \
   do_stub(final, jbyte_arraycopy)                                       \
   do_entry_init(final, jbyte_arraycopy, jbyte_arraycopy,                \
                 jbyte_arraycopy, StubRoutines::jbyte_copy)              \

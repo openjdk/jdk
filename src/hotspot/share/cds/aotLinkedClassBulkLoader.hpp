@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
 #define SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
 
-#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"

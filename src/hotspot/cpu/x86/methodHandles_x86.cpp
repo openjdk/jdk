@@ -131,7 +131,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
 
     const Register method_holder = temp;
     __ load_method_holder(method_holder, method);
-    __ push(method_holder); // keep holder around for diagnostic purposes
+    __ push_ppx(method_holder); // keep holder around for diagnostic purposes
 
     switch (iid) {
       case vmIntrinsicID::_invokeBasic:
@@ -165,7 +165,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
     __ STOP("Method holder klass is not initialized");
 
     __ BIND(L_ok);
-    __ pop(method_holder); // restore stack layout
+    __ pop_ppx(method_holder); // restore stack layout
   }
   BLOCK_COMMENT("} verify_method");
 }

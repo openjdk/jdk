@@ -1240,7 +1240,7 @@ public:
   void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
-      return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
+      return 2 * MacroAssembler::instruction_size;  // auipc + jalr, see far_call() & far_jump()
   }
 
   void load_byte_map_base(Register reg);
@@ -1644,9 +1644,9 @@ public:
 public:
   enum {
     // movptr
-    movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
-    movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
-    load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
+    movptr1_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
   static bool is_load_pc_relative_at(address branch);
@@ -1701,11 +1701,11 @@ public:
   //     addi/jalr/load
   static bool check_movptr1_data_dependency(address instr) {
     address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address last_instr = slli2 + instruction_size;
+    address addi1 = lui + MacroAssembler::instruction_size;
+    address slli1 = addi1 + MacroAssembler::instruction_size;
+    address addi2 = slli1 + MacroAssembler::instruction_size;
+    address slli2 = addi2 + MacroAssembler::instruction_size;
+    address last_instr = slli2 + MacroAssembler::instruction_size;
     return extract_rs1(addi1) == extract_rd(lui) &&
            extract_rs1(addi1) == extract_rd(addi1) &&
            extract_rs1(slli1) == extract_rd(addi1) &&
@@ -1725,10 +1725,10 @@ public:
   //     addi/jalr/load
   static bool check_movptr2_data_dependency(address instr) {
     address lui1 = instr;
-    address lui2 = lui1 + instruction_size;
-    address slli = lui2 + instruction_size;
-    address add  = slli + instruction_size;
-    address last_instr = add + instruction_size;
+    address lui2 = lui1 + MacroAssembler::instruction_size;
+    address slli = lui2 + MacroAssembler::instruction_size;
+    address add  = slli + MacroAssembler::instruction_size;
+    address last_instr = add + MacroAssembler::instruction_size;
     return extract_rd(add) == extract_rd(lui2) &&
            extract_rs1(add) == extract_rd(lui2) &&
            extract_rs2(add) == extract_rd(slli) &&
@@ -1742,7 +1742,7 @@ public:
   //     srli
   static bool check_li16u_data_dependency(address instr) {
     address lui = instr;
-    address srli = lui + instruction_size;
+    address srli = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(srli) == extract_rd(lui) &&
            extract_rs1(srli) == extract_rd(srli);
@@ -1753,7 +1753,7 @@ public:
   //     addiw
   static bool check_li32_data_dependency(address instr) {
     address lui = instr;
-    address addiw = lui + instruction_size;
+    address addiw = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(addiw) == extract_rd(lui) &&
            extract_rs1(addiw) == extract_rd(addiw);
@@ -1764,7 +1764,7 @@ public:
   //     jalr/addi/load/float_load
   static bool check_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address last_instr = auipc + instruction_size;
+    address last_instr = auipc + MacroAssembler::instruction_size;
 
     return extract_rs1(last_instr) == extract_rd(auipc);
   }
@@ -1774,7 +1774,7 @@ public:
   //     load
   static bool check_load_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address load = auipc + instruction_size;
+    address load = auipc + MacroAssembler::instruction_size;
 
     return extract_rd(load) == extract_rd(auipc) &&
            extract_rs1(load) == extract_rd(load);

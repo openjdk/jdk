@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
         List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
         for (ThrowsTree t : exceptionTags) {
+            config.tagletManager.checkTags(holder, t.getDescription());
             Element exceptionElement = getExceptionType(t, executable);
             outputAnExceptionTagDeeply(exceptionSection, exceptionElement, t, executable, alreadyDocumentedExceptions, typeSubstitutions);
         }
@@ -364,9 +365,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         alreadyDocumentedExceptions.add(exceptionType);
         var description = tag.getDescription();
         int i = indexOfInheritDoc(tag, holder);
-        if (i == -1) {
-            // Since the description does not contain {@inheritDoc}, we either add a new entry, or
-            // append to the current one. Here's an example of when we add a new entry:
+        // Constructors do not support {@inheritDoc}, but we still want to render the remaining tag.
+        if (i == -1 || holder.getKind() != ElementKind.METHOD) {
+            // Since the description does not contain or support {@inheritDoc}, we either add a new entry,
+            // or append to the current one. Here's an example of when we add a new entry:
             //
             //     ... -> {@inheritDoc} -> <text>
             //
@@ -387,7 +389,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 exceptionSection.endEntry();
             }
         } else { // expand a single {@inheritDoc}
-            assert holder.getKind() == ElementKind.METHOD : holder.getKind(); // only methods can use {@inheritDoc}
             // Is the {@inheritDoc} that we found standalone (i.e. without preceding and following text)?
             boolean loneInheritDoc = description.size() == 1;
             assert !loneInheritDoc || i == 0 : i;

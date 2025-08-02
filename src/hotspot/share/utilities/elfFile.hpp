@@ -67,8 +67,8 @@ typedef Elf32_Sym       Elf_Sym;
 #endif
 #endif
 
-#include "jvm_md.h"
 #include "globalDefinitions.hpp"
+#include "jvm_md.h"
 #include "memory/allocation.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"

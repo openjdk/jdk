@@ -1685,6 +1685,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return result;
   }
 
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   Elf32_Ehdr elf_head;
   size_t prefix_len = strlen(ebuf);
   ssize_t diag_msg_max_length = ebuflen - prefix_len;

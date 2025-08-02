@@ -340,7 +340,6 @@ class os: AllStatic {
   static jlong free_swap_space();
 
   static julong physical_memory();
-  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
   static size_t rss();
 
@@ -448,6 +447,16 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
+
+  // Returns an upper limit beyond which reserve_memory() calls are guaranteed
+  // to fail. It is not guaranteed that reserving less memory than this will
+  // succeed, however.
+  static size_t reserve_memory_limit();
+
+  // Returns an upper limit beyond which commit_memory() calls are guaranteed
+  // to fail. It is not guaranteed that committing less memory than this will
+  // succeed, however.
+  static size_t commit_memory_limit();
 
   inline static size_t cds_core_region_alignment();
 

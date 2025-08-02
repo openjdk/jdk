@@ -795,6 +795,22 @@ void MacroAssembler::pop_d(XMMRegister r) {
   addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
+void MacroAssembler::push_ppx(Register src) {
+  if (VM_Version::supports_apx_f()) {
+    pushp(src);
+  } else {
+    Assembler::push(src);
+  }
+}
+
+void MacroAssembler::pop_ppx(Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    popp(dst);
+  } else {
+    Assembler::pop(dst);
+  }
+}
+
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   // Used in sign-masking with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
