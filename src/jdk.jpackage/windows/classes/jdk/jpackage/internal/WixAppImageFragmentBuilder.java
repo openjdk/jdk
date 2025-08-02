@@ -471,11 +471,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 if (folder.isRequestedFor(launcher)) {
                     var workDirectory = folder.shortcut(launcher).startupDirectory().map(v -> {
                         switch (v) {
-                            case DEFAULT, INSTALL_DIR -> {
+                            case DEFAULT -> {
                                 return INSTALLDIR;
-                            }
-                            case APP_DIR -> {
-                                return installedAppImage.appDirectory();
                             }
                             default -> {
                                 throw new AssertionError();

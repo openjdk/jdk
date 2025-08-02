@@ -36,24 +36,12 @@ public enum LauncherShortcutStartupDirectory {
      * Platform-specific default value.
      * <p>
      * On Windows, it indicates that the startup directory should be the package's
-     * installation directory. I.e. same as {@link #INSTALL_DIR}.
+     * installation directory.
      * <p>
      * On Linux, it indicates that a shortcut doesn't have the startup directory
      * configured explicitly.
      */
-    DEFAULT("true"),
-
-    /**
-     * The 'app' directory in the installed application app image. This is the
-     * directory that is referenced with {@link ApplicationLayout#appDirectory()}
-     * method.
-     */
-    APP_DIR("app-dir"),
-
-    /**
-     * The installation directory of the package.
-     */
-    INSTALL_DIR("install-dir");
+    DEFAULT("true");
 
     LauncherShortcutStartupDirectory(String stringValue) {
         this.stringValue = Objects.requireNonNull(stringValue);
