@@ -289,7 +289,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  LIR_Opr tmp = LockingMode == LM_LIGHTWEIGHT ? new_register(T_ADDRESS) : LIR_OprFact::illegalOpr;
+  LIR_Opr tmp = new_register(T_ADDRESS);
   monitor_enter(obj.result(), lock, syncTempOpr(), tmp,
                         x->monitor_no(), info_for_exception, info);
 }
