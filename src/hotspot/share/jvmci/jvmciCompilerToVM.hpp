@@ -124,6 +124,7 @@ class CompilerToVM {
     static address dsin;
     static address dcos;
     static address dtan;
+    static address dsinh;
     static address dtanh;
     static address dcbrt;
     static address dexp;
