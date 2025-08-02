@@ -92,7 +92,7 @@ public enum LauncherShortcut {
     }
 
     public String appImageFilePropertyName() {
-        return propertyName.substring(propertyName.indexOf('-') + 1);
+        return propertyName;
     }
 
     public String optionName() {
