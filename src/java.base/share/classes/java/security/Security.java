@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import jdk.internal.util.StaticProperty;
 import sun.security.jca.GetInstance;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
+import sun.security.jca.ProvidersFilter;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -380,23 +381,26 @@ public final class Security {
     }
 
     /**
-     * Returns the property (if any) mapping the key for the given provider.
+     * Returns a service allowed by the Providers filter given a service type,
+     * algorithm and provider. Search is case-insensitive.
      */
-    private static String getProviderProperty(String key, Provider provider) {
-        String prop = provider.getProperty(key);
-        if (prop == null) {
-            // Is there a match if we do a case-insensitive property name
-            // comparison? Let's try ...
-            for (Enumeration<Object> e = provider.keys();
-                                e.hasMoreElements(); ) {
-                String matchKey = (String)e.nextElement();
-                if (key.equalsIgnoreCase(matchKey)) {
-                    prop = provider.getProperty(matchKey);
+    private static Provider.Service findService(String type, String algo,
+            Provider provider) {
+        // Try the fast path (when "type" has the exact case).
+        Provider.Service foundSvc = provider.getService(type, algo);
+        if (foundSvc == null) {
+            // Try the slow path (when "type" does not have the exact case).
+            for (Provider.Service svc : provider.getServices()) {
+                if (svc.getType().equalsIgnoreCase(type)) {
+                    foundSvc = provider.getService(svc.getType(), algo);
                     break;
                 }
             }
         }
-        return prop;
+        if (foundSvc != null && ProvidersFilter.isAllowed(foundSvc)) {
+            return foundSvc;
+        }
+        return null;
     }
 
     /**
@@ -596,6 +600,14 @@ public final class Security {
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. A service that is not enabled by the providers filter
+     * will not match the selection criteria for its provider.
+     *
      * @param filter the criterion for selecting
      * providers. The filter is case-insensitive.
      *
@@ -673,6 +685,14 @@ public final class Security {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
+     *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. A service that is not enabled by the providers filter
+     * will not match the selection criteria for its provider.
      *
      * @param filter the criteria for selecting
      * providers. The filter is case-insensitive.
@@ -912,30 +932,9 @@ public final class Security {
          * the selection criterion key:value.
          */
         private boolean isCriterionSatisfied(Provider prov) {
-            // Constructed key have ONLY 1 space between algName and attrName
-            String key = serviceName + '.' + algName +
-                    (attrName != null ? (' ' + attrName) : "");
-
-            // Check whether the provider has a property
-            // whose key is the same as the given key.
-            String propValue = getProviderProperty(key, prov);
-
-            if (propValue == null) {
-                // Check whether we have an alias instead
-                // of a standard name in the key.
-                String standardName = getProviderProperty("Alg.Alias." +
-                        serviceName + "." + algName, prov);
-                if (standardName != null) {
-                    key = serviceName + "." + standardName +
-                            (attrName != null ? ' ' + attrName : "");
-                    propValue = getProviderProperty(key, prov);
-                }
-
-                if (propValue == null) {
-                    // The provider doesn't have the given
-                    // key in its property list.
-                    return false;
-                }
+            Provider.Service svc = findService(serviceName, algName, prov);
+            if (svc == null) {
+                return false;
             }
 
             // If the key is in the format of:
@@ -943,6 +942,11 @@ public final class Security {
             // there is no need to check the value.
             if (attrName == null) {
                 return true;
+            }
+
+            String foundAttrValue = svc.getAttribute(attrName);
+            if (foundAttrValue == null) {
+                return false;
             }
 
             // If we get here, the key must be in the
@@ -955,24 +959,24 @@ public final class Security {
             // for a specific <crypto_service>.<algorithm>.
             if (attrName.equalsIgnoreCase("KeySize")) {
                 int requestedSize = Integer.parseInt(attrValue);
-                int maxSize = Integer.parseInt(propValue);
+                int maxSize = Integer.parseInt(foundAttrValue);
                 return requestedSize <= maxSize;
             }
 
             // Handle attributes with composite values
             if (isCompositeValue()) {
                 String attrValue2 = attrValue.toUpperCase(Locale.ENGLISH);
-                propValue = propValue.toUpperCase(Locale.ENGLISH);
+                foundAttrValue = foundAttrValue.toUpperCase(Locale.ENGLISH);
 
                 // match value to the property components
-                String[] propComponents = propValue.split("\\|");
+                String[] propComponents = foundAttrValue.split("\\|");
                 for (String pc : propComponents) {
                     if (attrValue2.equals(pc)) return true;
                 }
                 return false;
             } else {
                 // direct string compare (ignore case)
-                return attrValue.equalsIgnoreCase(propValue);
+                return attrValue.equalsIgnoreCase(foundAttrValue);
             }
         }
     }
@@ -988,6 +992,14 @@ public final class Security {
      * {@extLink security_guide_jca
      * Java Cryptography Architecture (JCA) Reference Guide}.
      * Note: the returned set is immutable.
+     *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. The algorithm of a service that is not enabled by the providers
+     * filter will be in the returned set but may not be available for use.
      *
      * @param serviceName the name of the Java cryptographic
      * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
