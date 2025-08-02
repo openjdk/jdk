@@ -392,8 +392,30 @@ public final class Utils {
     public static IllegalArgumentException newIAE(String message, Object... args) {
         return new IllegalArgumentException(format(message, args));
     }
+
+    /**
+     * {@return a new {@link ByteBuffer} instance of {@link #BUFSIZE} capacity}
+     */
     public static ByteBuffer getBuffer() {
         return ByteBuffer.allocate(BUFSIZE);
+    }
+
+    /**
+     * {@return a new {@link ByteBuffer} instance whose capacity is set to the
+     * smaller of the specified {@code maxCapacity} and the default
+     * ({@value BUFSIZE})}
+     *
+     * @param maxCapacity a buffer capacity, in bytes
+     * @throws IllegalArgumentException if {@code maxCapacity < 0}
+     */
+    public static ByteBuffer getBufferWithAtMost(long maxCapacity) {
+        if (maxCapacity < 0) {
+            throw new IllegalArgumentException(
+                    // Match the message produced by `ByteBuffer::createCapacityException`
+                    "capacity < 0: (%s < 0)".formatted(maxCapacity));
+        }
+        int effectiveCapacity = (int) Math.min(maxCapacity, BUFSIZE);
+        return ByteBuffer.allocate(effectiveCapacity);
     }
 
     public static Throwable getCompletionCause(Throwable x) {
