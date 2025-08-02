@@ -3297,10 +3297,24 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 }
 
 size_t os::commit_memory_limit() {
-  MEMORYSTATUSEX ms;
-  ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (size_t)ms.ullAvailVirtual;
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+  BOOL res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
+
+  // If there was an error calling QueryInformationJobObject, conservatively assume no limit.
+  if (!res) {
+    return SIZE_MAX;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) {
+    return jeli.ProcessMemoryLimit;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_JOB_MEMORY) {
+    return jeli.JobMemoryLimit;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 size_t os::reserve_memory_limit() {
