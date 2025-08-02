@@ -1917,6 +1917,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
                                         Register tmp4, Register tmp5, Register tmp6,
                                         BasicType eltype)
 {
+  assert(!UseRVV, "sanity");
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   const int elsize = arrays_hashcode_elsize(eltype);
@@ -1989,6 +1990,104 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   BLOCK_COMMENT("} // arrays_hashcode");
 }
 
+void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register result,
+                                          Register tmp1, Register tmp2, Register tmp3,
+                                          BasicType eltype)
+{
+  assert(UseRVV, "sanity");
+  assert(MaxVectorSize >= 16, "sanity");
+  assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, t0, t1);
+
+  // The MaxVectorSize should have been set by detecting RVV max vector register
+  // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
+  // Let's use T_INT as all hashCode calculations eventually deal with ints.
+  const int ints_in_vec_reg = MaxVectorSize/arrays_hashcode_elsize(T_INT);
+
+  const int elsize_bytes = arrays_hashcode_elsize(eltype);
+  const int elsize_shift = exact_log2(elsize_bytes);
+  const int lmul = 4;
+  const int max_vec_len = ints_in_vec_reg * lmul;
+  const int MAX_VEC_MASK = ~(max_vec_len-1);
+
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode_v(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode_v(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode_v(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode_v(int) {");           break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  const Register pow31_highest  = tmp1;
+  const Register ary_end = tmp2;
+  const Register consumed = tmp3;
+
+  const VectorRegister v_coeffs =  v4;
+  const VectorRegister v_src    =  v8;
+  const VectorRegister v_sum    = v12;
+  const VectorRegister v_powmax = v16;
+  const VectorRegister v_result = v20;
+  const VectorRegister v_tmp    = v24;
+  const VectorRegister v_zred   = v28;
+
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                           + sizeof(jint);
+  Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
+
+  // NB: at this point (a) 'result' already has some value,
+  // (b) 'cnt' is not 0 or 1, see java code for details.
+
+  andi(t1, cnt, MAX_VEC_MASK);
+  beqz(t1, SCALAR_TAIL);
+
+  vsetvli(t0, x0, Assembler::e64, Assembler::m8);
+  vmv_v_x(v0, x0);
+  vmv_v_x(v8, x0);
+  vmv_v_x(v16, x0);
+  vmv_v_x(v24, x0);
+
+  // load pre-calculated data
+  la(t1, ExternalAddress(adr_pows31));
+  lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
+  vsetvli(x0, x0, Assembler::e32, Assembler::m4);
+  vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
+  // set initial values
+  vmv_s_x(v_result, result);
+  vmv_s_x(v_powmax, pow31_highest);
+
+  vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
+
+  bind(VEC_LOOP);
+  vmul_vv(v_result, v_result, v_powmax);
+  arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
+  vmul_vv(v_src, v_src, v_coeffs);
+  vredsum_vs(v_sum, v_src, v_zred);
+  vadd_vv(v_result, v_result, v_sum);
+  shadd(ary, consumed, ary, t0, elsize_shift);
+  subw(cnt, cnt, consumed);
+  andi(t1, cnt, MAX_VEC_MASK);
+  bne(t1, x0, VEC_LOOP);
+
+  vmv_x_s(result, v_result);
+  beqz(cnt, DONE);
+
+  bind(SCALAR_TAIL);
+  shadd(ary_end, cnt, ary, t0, elsize_shift);
+
+  bind(SCALAR_TAIL_LOOP);
+  arrays_hashcode_elload(t0, Address(ary), eltype);
+  slli(t1, result, 5);           // optimize 31 * result
+  subw(result, t1, result);      // with result<<5 - result
+  addw(result, result, t0);
+  addi(ary, ary, elsize_bytes);
+  bne(ary, ary_end, SCALAR_TAIL_LOOP);
+
+  bind(DONE);
+  BLOCK_COMMENT("} // arrays_hashcode_v");
+}
+
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
   case T_BOOLEAN: return sizeof(jboolean);
@@ -2010,6 +2109,36 @@ void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicT
   case T_SHORT:    lh(dst, src);   break;
   case T_CHAR:    lhu(dst, src);   break;
   case T_INT:      lw(dst, src);   break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_vec_elload(VectorRegister varr,
+                                                   VectorRegister vtmp,
+                                                   Register array,
+                                                   BasicType eltype) {
+  assert((T_INT == eltype) || (varr != vtmp), "should be");
+  switch (eltype) {
+  case T_BOOLEAN:
+    vle8_v(vtmp, array);
+    vzext_vf4(varr, vtmp);
+    break;
+  case T_BYTE:
+    vle8_v(vtmp, array);
+    vsext_vf4(varr, vtmp);
+    break;
+  case T_CHAR:
+    vle16_v(vtmp, array);
+    vzext_vf2(varr, vtmp);
+    break;
+  case T_SHORT:
+    vle16_v(vtmp, array);
+    vsext_vf2(varr, vtmp);
+    break;
+  case T_INT:
+    vle32_v(varr, array);
+    break;
   default:
     ShouldNotReachHere();
   }
