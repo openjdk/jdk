@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/cds_globals.hpp"
-#include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
+#include "cds/filemap.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"

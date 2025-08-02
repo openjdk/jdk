@@ -27,8 +27,8 @@
 
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/vmEnums.hpp"
 
 class Method;
