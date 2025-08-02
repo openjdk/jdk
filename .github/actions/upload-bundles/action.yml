@@ -91,5 +91,5 @@ runs:
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}${{ inputs.bundle-suffix }}
         path: bundles
-        retention-days: 1
+        retention-days: 5
       if: steps.bundles.outputs.bundles-found == 'true'
