@@ -124,7 +124,6 @@ public class PrintJob2D extends PrintJob {
         }
 
         public void dispose() {
-            Thread.dumpStack();
             printJobDelegate.end();
         }
     }
