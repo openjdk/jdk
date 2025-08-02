@@ -332,26 +332,18 @@ public:
   // save and restore API for non-enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
-                              uint id, const char* name,
-                              int entry_offset_count = 0,
-                              int* entry_offsets = nullptr) NOT_CDS_RETURN_(false);
+                              uint id, const char* name) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  uint id, const char* name,
-                                  int entry_offset_count = 0,
-                                  int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
+                                  uint id, const char* name) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API for enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
-                              BlobId id,
-                              int entry_offset_count = 0,
-                              int* entry_offsets = nullptr) NOT_CDS_RETURN_(false);
+                              BlobId id) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  BlobId id,
-                                  int entry_offset_count = 0,
-                                  int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
+                                  BlobId id) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -414,7 +406,7 @@ private:
 public:
   AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
 
-  CodeBlob* compile_code_blob(const char* name, int entry_offset_count, int* entry_offsets);
+  CodeBlob* compile_code_blob(const char* name);
 
   ImmutableOopMapSet* read_oop_map_set();
 
