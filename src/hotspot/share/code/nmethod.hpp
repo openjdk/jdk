@@ -827,9 +827,9 @@ public:
   inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
-  // Accessor/mutator for the original pc of a frame before a frame was deopted.
-  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
-  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+  int orig_pc_offset() const {
+    return _orig_pc_offset;
+  }
 
   const char* state() const;
 
@@ -951,8 +951,6 @@ public:
 
  private:
   ScopeDesc* scope_desc_in(address begin, address end);
-
-  address* orig_pc_addr(const frame* fr);
 
   // used by jvmti to track if the load events has been reported
   bool  load_reported() const                     { return _load_reported; }

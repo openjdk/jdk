@@ -188,10 +188,10 @@
     object_field(ValueKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                    \
   end_class                                                                                                   \
   start_class(HotSpotStackFrameReference, jdk_vm_ci_hotspot_HotSpotStackFrameReference)                       \
-    object_field(HotSpotStackFrameReference, compilerToVM, "Ljdk/vm/ci/hotspot/CompilerToVM;")                \
     boolean_field(HotSpotStackFrameReference, objectsMaterialized)                                            \
-    long_field(HotSpotStackFrameReference, stackPointer)                                                      \
+    long_field(HotSpotStackFrameReference, startingFrameId)                                                   \
     int_field(HotSpotStackFrameReference, frameNumber)                                                        \
+    int_field(HotSpotStackFrameReference, vframeId)                                                           \
     int_field(HotSpotStackFrameReference, bci)                                                                \
     object_field(HotSpotStackFrameReference, method, "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")         \
     objectarray_field(HotSpotStackFrameReference, locals, "[Ljava/lang/Object;")                              \

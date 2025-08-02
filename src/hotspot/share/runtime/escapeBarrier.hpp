@@ -31,6 +31,7 @@
 #include "utilities/macros.hpp"
 
 class JavaThread;
+class compiledVFrame;
 
 // EscapeBarriers should be put on execution paths where JVMTI agents can access object
 // references held by java threads.
@@ -59,12 +60,12 @@ class EscapeBarrier : StackObj {
   void resume_all();
 
   // Deoptimize the given frame and deoptimize objects with optimizations based on escape analysis.
-  bool deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id);
+  bool deoptimize_objects_internal(JavaThread* deoptee, compiledVFrame* cvf);
 
   // Deoptimize objects, i.e. reallocate and relock them. The target frames are deoptimized.
   // The methods return false iff at least one reallocation failed.
-  bool deoptimize_objects(intptr_t* fr_id) {
-    return deoptimize_objects_internal(deoptee_thread(), fr_id);
+  bool deoptimize_objects(compiledVFrame* cvf) {
+    return deoptimize_objects_internal(deoptee_thread(), cvf);
   }
 
 public:
@@ -118,7 +119,7 @@ public:
 
 #if COMPILER2_OR_JVMCI
   // Returns true iff objects were reallocated and relocked because of access through JVMTI.
-  static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
+  static bool objs_are_deoptimized(JavaThread* thread, compiledVFrame* cvf);
 
   ~EscapeBarrier() {
     if (!barrier_active()) return;

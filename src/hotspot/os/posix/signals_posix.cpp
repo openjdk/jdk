@@ -627,7 +627,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
-        nm->set_original_pc(&fr, pc);
+        fr.set_original_pc(nullptr, nm, pc);
 
         os::Posix::ucontext_set_pc(uc, deopt);
         signal_was_handled = true;

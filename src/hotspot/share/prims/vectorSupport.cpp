@@ -104,7 +104,7 @@ void VectorSupport::init_payload_element(typeArrayOop arr, BasicType elem_bt, in
   }
 }
 
-Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS) {
+Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, const RegisterMap* reg_map, Location location, TRAPS) {
   int num_elem = klass2length(ik);
   BasicType elem_bt = klass2bt(ik);
   int elem_size = type2aelembytes(elem_bt);
@@ -133,7 +133,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   return Handle(THREAD, arr);
 }
 
-Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
+Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, const RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
   if (payload->is_location()) {
     Location location = payload->as_LocationValue()->location();
     if (location.type() == Location::vector) {
@@ -157,7 +157,7 @@ Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, Regi
   return Handle(THREAD, nullptr);
 }
 
-instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
+instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, const RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
   assert(is_vector(ik), "%s not a vector", ik->name()->as_C_string());
   assert(ov->field_size() == 1, "%s not a vector", ik->name()->as_C_string());
 
