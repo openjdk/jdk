@@ -31,7 +31,6 @@ class CollectedHeap;
 
 class SerialArguments : public GenArguments {
 private:
-  virtual void initialize();
   virtual CollectedHeap* create_heap();
 };
 
