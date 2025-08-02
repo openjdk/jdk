@@ -50,7 +50,9 @@ ifeq ($(INCLUDE_COMPILER2), true)
     ifeq ($(call isTargetCpu, riscv64), true)
       LIBSLEEF_CFLAGS := -march=rv64gcv
     endif
-
+    ifeq ($(TOOLCHAIN_TYPE), gcc)
+      SVE_CFLAGS += -ftrivial-auto-var-init=zero
+    endif
     $(eval $(call SetupJdkLibrary, BUILD_LIBSLEEF, \
         NAME := sleef, \
         OPTIMIZATION := HIGH, \
