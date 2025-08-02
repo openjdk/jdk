@@ -29,6 +29,7 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -1968,6 +1969,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   ArchiveHeapLoader::finish_initialization();
   Universe::load_archived_object_instances();
   AOTCodeCache::initialize();
+
+  if (AOTMapLogger::is_logging_at_bootstrap()) {
+    AOTMapLogger::runtime_log(static_mapinfo);
+  }
 
   // Close the mapinfo file
   static_mapinfo->close();
