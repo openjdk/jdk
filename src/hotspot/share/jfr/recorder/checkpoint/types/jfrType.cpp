@@ -32,7 +32,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
-#include "jfr/recorder/checkpoint/types/jfrThreadGroup.hpp"
+#include "jfr/recorder/checkpoint/types/jfrThreadGroupManager.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -106,7 +106,7 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
   } else {
     _writer.write(name);
     _writer.write(tid);
-    _writer.write(JfrThreadGroup::thread_group_id(JavaThread::cast(t), _curthread));
+    _writer.write(JfrThreadGroupManager::thread_group_id(JavaThread::cast(t), _curthread));
   }
   _writer.write<bool>(false); // isVirtual
 }
@@ -115,7 +115,10 @@ void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
   JfrCheckpointThreadClosure tc(writer);
   JfrJavaThreadIterator javathreads;
   while (javathreads.has_next()) {
-    tc.do_thread(javathreads.next());
+    JavaThread* const jt = javathreads.next();
+    if (jt->jfr_thread_local()->should_write()) {
+      tc.do_thread(jt);
+    }
   }
   JfrNonJavaThreadIterator nonjavathreads;
   while (nonjavathreads.has_next()) {
@@ -124,7 +127,7 @@ void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
 }
 
 void JfrThreadGroupConstant::serialize(JfrCheckpointWriter& writer) {
-  JfrThreadGroup::serialize(writer);
+  JfrThreadGroupManager::serialize(writer);
 }
 
 static const char* flag_value_origin_to_string(JVMFlagOrigin origin) {
@@ -303,11 +306,11 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   writer.write(JfrThreadId::jfr_id(_thread, _tid));
   // java thread group - VirtualThread threadgroup reserved id 1
   const traceid thread_group_id = is_vthread ? 1 :
-    JfrThreadGroup::thread_group_id(JavaThread::cast(_thread), Thread::current());
+    JfrThreadGroupManager::thread_group_id(JavaThread::cast(_thread), Thread::current());
   writer.write(thread_group_id);
   writer.write<bool>(is_vthread); // isVirtual
-  if (!is_vthread) {
-    JfrThreadGroup::serialize(&writer, thread_group_id);
+  if (thread_group_id > 1) {
+    JfrThreadGroupManager::serialize(writer, thread_group_id, _to_blob);
   }
   // VirtualThread threadgroup already serialized invariant.
 }
