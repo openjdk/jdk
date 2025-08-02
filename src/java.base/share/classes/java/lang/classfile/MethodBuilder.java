@@ -58,7 +58,8 @@ public sealed interface MethodBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
-     * @throws IllegalArgumentException if the {@link ClassFile#ACC_STATIC
+     * @throws IllegalArgumentException if {@code flags} is not in the range
+     *         {@code [0, 65535]}, or the {@link ClassFile#ACC_STATIC
      *         ACC_STATIC} flag is modified
      * @see AccessFlags
      * @see AccessFlag.Location#METHOD

@@ -103,6 +103,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
+     * @throws IllegalArgumentException if {@code exportFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleExportInfo of(PackageEntry exports, int exportFlags,
                                List<ModuleEntry> exportsTo) {
@@ -131,6 +133,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
+     * @throws IllegalArgumentException if {@code exportFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleExportInfo of(PackageEntry exports,
                                int exportFlags,
@@ -161,6 +165,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
+     * @throws IllegalArgumentException if {@code exportFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleExportInfo of(PackageDesc exports, int exportFlags,
                                List<ModuleDesc> exportsTo) {
@@ -191,6 +197,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
+     * @throws IllegalArgumentException if {@code exportFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleExportInfo of(PackageDesc exports,
                                int exportFlags,
