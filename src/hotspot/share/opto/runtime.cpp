@@ -1780,6 +1780,55 @@ static const TypeFunc* make_osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
+#ifndef PRODUCT
+void OptoRuntime::debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
+  const Type *type = Type::get_const_basic_type(parm->bottom_type()->basic_type());
+  if (type == TypePtr::NULL_PTR) { // half of long and double
+    fields[(*argp)++] = Type::HALF;
+  } else {
+    fields[(*argp)++] = type;
+  }
+}
+
+const TypeFunc* OptoRuntime::debug_print_Type(Node* parm0, Node* parm1,
+                                        Node* parm2, Node* parm3,
+                                        Node* parm4, Node* parm5,
+                                        Node* parm6) {
+  int argcnt = 1;
+  if (parm0 != nullptr) { argcnt++;
+  if (parm1 != nullptr) { argcnt++;
+  if (parm2 != nullptr) { argcnt++;
+  if (parm3 != nullptr) { argcnt++;
+  if (parm4 != nullptr) { argcnt++;
+  if (parm5 != nullptr) { argcnt++;
+  if (parm6 != nullptr) { argcnt++;
+  /* close each nested if ===> */  } } } } } } }
+
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+
+  if (parm0 != nullptr) { debug_print_convert_type(fields, &argp, parm0);
+  if (parm1 != nullptr) { debug_print_convert_type(fields, &argp, parm1);
+  if (parm2 != nullptr) { debug_print_convert_type(fields, &argp, parm2);
+  if (parm3 != nullptr) { debug_print_convert_type(fields, &argp, parm3);
+  if (parm4 != nullptr) { debug_print_convert_type(fields, &argp, parm4);
+  if (parm5 != nullptr) { debug_print_convert_type(fields, &argp, parm5);
+  if (parm6 != nullptr) { debug_print_convert_type(fields, &argp, parm6);
+  /* close each nested if ===> */  } } } } } } }
+
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+#endif // PRODUCT
+
 //-------------------------------------------------------------------------------------
 // register policy
 
