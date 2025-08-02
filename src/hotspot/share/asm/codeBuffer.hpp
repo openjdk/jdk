@@ -33,6 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
+#include "utilities/pair.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
@@ -540,7 +541,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
-  typedef LinkedListImpl<int> Offsets;
+  typedef Pair<relocInfo::relocType, LinkedListImpl<int>> Offsets;
   typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
