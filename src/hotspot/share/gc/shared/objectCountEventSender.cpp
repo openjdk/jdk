@@ -26,14 +26,16 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "runtime/mutex.hpp"
 #include "memory/heapInspection.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_SERVICES
 
+template <class Event>
 bool ObjectCountEventSender::should_send_event() {
 #if INCLUDE_JFR
-  return _should_send_requestable_event || EventObjectCountAfterGC::is_enabled();
+  return _should_send_requestable_event || Event::is_enabled();
 #else
   return false;
 #endif // INCLUDE_JFR
@@ -63,13 +65,25 @@ void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, ju
   }
 }
 
+
+template <class Event>
 void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
   Klass* klass = entry->klass();
   jlong count = entry->count();
   julong total_size = entry->words() * BytesPerWord;
 
-  send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
-  send_event_if_enabled<EventObjectCountAfterGC>(klass, count, total_size, timestamp);
+  send_event_if_enabled<Event>(klass, count, total_size, timestamp);
+  // If sending ObjectCountAfterGCEvent, check if ObjectCount is enabled and send event data to ObjectCount
+  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent
+  if (std::is_same<Event, EventObjectCountAfterGC>::value && ObjectCountEventSender::should_send_event<EventObjectCount>()) {
+    send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
+  }
 }
+
+template bool ObjectCountEventSender::should_send_event<EventObjectCount>();
+template bool ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
+
+template void ObjectCountEventSender::send<EventObjectCount>(const KlassInfoEntry*, const Ticks&);
+template void ObjectCountEventSender::send<EventObjectCountAfterGC>(const KlassInfoEntry*, const Ticks&);
 
 #endif // INCLUDE_SERVICES

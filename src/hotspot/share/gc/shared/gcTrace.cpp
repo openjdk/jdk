@@ -27,6 +27,8 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "gc/shared/objectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
@@ -74,6 +76,8 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 }
 
 #if INCLUDE_SERVICES
+
+template <typename Event>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   const size_t _total_size_in_words;
@@ -88,7 +92,8 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
-      ObjectCountEventSender::send(entry, _timestamp);
+      ObjectCountEventSender::send<Event>(entry, _timestamp);
+      ObjectCountClosure::reset_table(entry);
     }
   }
 
@@ -99,21 +104,32 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
+void GCTracer::report_object_count() {
+  KlassInfoTable* cit = ObjectCountClosure::get_table();
+  if (cit == nullptr || !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
+    return;
+  }
+
+  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
+  cit->iterate(&event_sender);
+  // ObjectCountClosure::reset_table();
+}
+
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
-
-  if (ObjectCountEventSender::should_send_event()) {
+  if (ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
     ResourceMark rm;
 
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
 }
+
 #endif // INCLUDE_SERVICES
 
 void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const {

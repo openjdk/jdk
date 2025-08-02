@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -35,6 +36,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -314,6 +316,8 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   heap->try_inject_alloc_failure();
   VM_ShenandoahFinalMarkStartEvac op(this);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should not be at safepoint");
+  heap->tracer()->report_object_count();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
@@ -764,6 +768,8 @@ void ShenandoahConcurrentGC::op_final_mark() {
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded();
   }
+
+
 
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();

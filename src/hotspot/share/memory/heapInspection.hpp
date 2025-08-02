@@ -30,6 +30,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 class ParallelObjectIterator;
@@ -66,13 +67,17 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
     _do_print(false), _subclasses(nullptr)
   {}
   ~KlassInfoEntry();
+  void set_next(KlassInfoEntry* next) { _next = next; }
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
   Klass* klass()  const          { return _klass; }
   uint64_t count()    const      { return _instance_count; }
   void set_count(uint64_t ct)    { _instance_count = ct; }
+  void atomic_inc_count()        { Atomic::inc(&_instance_count); }
+  void atomic_add_count(uint64_t add) { Atomic::add(&_instance_count, add); }
   size_t words()  const          { return _instance_words; }
   void set_words(size_t wds)     { _instance_words = wds; }
+  void atomic_add_words(size_t add) { Atomic::add(&_instance_words, add); }
   void set_index(int64_t index)  { _index = index; }
   int64_t index()    const       { return _index; }
   GrowableArray<KlassInfoEntry*>* subclasses() const { return _subclasses; }
@@ -99,6 +104,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* lookup(Klass* k);
   void initialize() { _list = nullptr; }
   void empty();
+  void remove_from_list(KlassInfoEntry* entry);
   void iterate(KlassInfoClosure* cic);
 };
 
@@ -126,7 +132,9 @@ class KlassInfoTable: public StackObj {
   size_t size_of_instances_in_words() const;
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
-
+  // Clears entries in the table
+  void clear_entries();
+  void delete_entry(KlassInfoEntry* entry);
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };
