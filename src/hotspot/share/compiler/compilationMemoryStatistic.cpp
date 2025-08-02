@@ -30,7 +30,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compilerThread.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/arena.hpp"
