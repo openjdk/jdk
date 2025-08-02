@@ -3451,12 +3451,13 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
                                                            (size_t)addr - stack_extent);
     }
 
-    if (stack_extent < (uintptr_t)addr) {
-      ::munmap((void*)stack_extent, (uintptr_t)(addr - stack_extent));
+    if (stack_extent < (uintptr_t)addr + size) {
+      ::munmap((void*)stack_extent, (uintptr_t)(addr + size - stack_extent));
     }
+    return os::pd_attempt_reserve_memory_at(addr, size, !ExecMem) != nullptr;
   }
 
-  return os::commit_memory(addr, size, !ExecMem);
+  return true;
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
@@ -3472,7 +3473,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
     return ::munmap(addr, size) == 0;
   }
 
-  return os::uncommit_memory(addr, size);
+  return true;
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
