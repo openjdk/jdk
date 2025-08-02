@@ -366,6 +366,8 @@ public final class GlyphLayout {
             AttributeValues values = ((AttributeMap)font.getAttributes()).getValues();
             if (values.getKerning() != 0) _typo_flags |= 0x1;
             if (values.getLigatures() != 0) _typo_flags |= 0x2;
+            if (values.getProportionalFigures() != 0) _typo_flags |= 0x4;
+            if (values.getTabularFigures() != 0) _typo_flags |= 0x8;
         }
 
         _offset = offset;
