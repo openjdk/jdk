@@ -34,7 +34,10 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CardSet;
 class G1CardSetConfiguration;
@@ -70,7 +73,9 @@ class nmethod;
 // room for filler objects to pad out to the end of the region.
 class G1HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
+  friend class G1Allocator;  // For access to record_activity()
 
+private:
   HeapWord* const _bottom;
   HeapWord* const _end;
 
@@ -248,6 +253,9 @@ private:
 
   // NUMA node.
   uint _node_index;
+
+  // Time-based heap sizing: tracks last allocation/access time
+  Ticks _last_access_timestamp;
 
   // Number of objects in this region that are currently pinned.
   volatile size_t _pinned_object_count;
@@ -549,6 +557,25 @@ public:
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
+
+  // Time-based heap sizing methods
+  void record_activity() {
+    _last_access_timestamp = Ticks::now();
+  }
+
+  Ticks last_access_time() const {
+    return _last_access_timestamp;
+  }
+
+  // Returns true if the region has been inactive for longer than the uncommit delay
+  bool should_uncommit(Tickspan delay) const {
+    if (!is_empty()) {
+      return false;
+    }
+    Ticks current_time = Ticks::now();
+    Tickspan elapsed = current_time - _last_access_timestamp;
+    return elapsed > delay;
+  }
 
   // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
