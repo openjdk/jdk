@@ -126,7 +126,7 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
+    os::snprintf_checked(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
 

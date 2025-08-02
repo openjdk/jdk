@@ -820,7 +820,7 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
                                     const char* kind,
                                     Mutex::Rank rank) {
   char name[256];
-  os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
+  os::snprintf_checked(name, sizeof(name), "%s %s lock", storage_name, kind);
   return new PaddedMutex(rank, name);
 }
 
