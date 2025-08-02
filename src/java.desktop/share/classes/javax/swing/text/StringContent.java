@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.util.Vector;
 import java.io.Serializable;
 import javax.swing.undo.*;
+import java.lang.ref.WeakReference;
 
 /**
  * An implementation of the AbstractDocument.Content interface that is
@@ -227,7 +228,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         int n = marks.size();
         for (int i = 0; i < n; i++) {
             PosRec mark = marks.elementAt(i);
-            if (mark.unused) {
+            if (mark.get() == null) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
                 i -= 1;
@@ -242,7 +243,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         int n = marks.size();
         for (int i = 0; i < n; i++) {
             PosRec mark = marks.elementAt(i);
-            if (mark.unused) {
+            if (mark.get() == null) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
                 i -= 1;
@@ -278,7 +279,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         Vector placeIn = (v == null) ? new Vector() : v;
         for (int i = 0; i < n; i++) {
             PosRec mark = marks.elementAt(i);
-            if (mark.unused) {
+            if (mark.get() == null) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
                 i -= 1;
@@ -303,7 +304,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
             UndoPosRef ref = (UndoPosRef) positions.elementAt(counter);
             // Check if the Position is still valid.
-            if(ref.rec.unused) {
+            if(ref.rec.get() == null) {
                 positions.removeElementAt(counter);
             }
             else
@@ -323,38 +324,25 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * it.... the update table holds only a reference
      * to this grungy thing.
      */
-    static final class PosRec {
+    static final class PosRec extends WeakReference<StickyPosition> {
 
-        PosRec(int offset) {
+        PosRec(int offset, StickyPosition position) {
+            super(position);
             this.offset = offset;
         }
 
         int offset;
-        boolean unused;
     }
 
-    /**
-     * This really wants to be a weak reference but
-     * in 1.1 we don't have a 100% pure solution for
-     * this... so this class tries to hack a solution
-     * to causing the marks to be collected.
-     */
     final class StickyPosition implements Position {
 
         StickyPosition(int offset) {
-            rec = new PosRec(offset);
+            rec = new PosRec(offset, this);
             marks.addElement(rec);
         }
 
         public int getOffset() {
             return rec.offset;
-        }
-
-        @SuppressWarnings("removal")
-        protected void finalize() throws Throwable {
-            // schedule the record to be removed later
-            // on another thread.
-            rec.unused = true;
         }
 
         public String toString() {
