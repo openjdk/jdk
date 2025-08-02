@@ -56,9 +56,6 @@ public class VMDeprecatedOptions {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // { <flag name> , <expected default value> }
-            // deprecated non-alias flags:
-            {"AllowRedefinitionToAddDeleteMethods", "true"},
-
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
           }
