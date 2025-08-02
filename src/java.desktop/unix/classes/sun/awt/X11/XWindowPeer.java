@@ -1098,7 +1098,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 suppressWmTakeFocus(true);
             }
         }
-        updateFocusability();
+        if(isVisible() != vis) {
+            updateFocusability();
+        }
         promoteDefaultPosition();
         boolean refreshChildsTransientFor = isVisible() != vis;
         super.setVisible(vis);
