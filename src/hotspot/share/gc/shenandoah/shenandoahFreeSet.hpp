@@ -634,8 +634,7 @@ public:
     return _total_old_used;
   }
 
-  void increase_young_used(size_t bytes);
-  void decrease_young_used(size_t bytes);
+  void prepare_to_promote_in_place(size_t idx, size_t bytes);
 
   // Return bytes used by young
   inline size_t young_used() {
@@ -696,7 +695,7 @@ public:
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.
-  void add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region, size_t pip_pad_bytes);
+  void add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region);
 
   // Move up to cset_regions number of regions from being available to the collector to being available to the mutator.
   //

@@ -184,12 +184,14 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
   make_all_regions_unavailable();
 }
 
-void ShenandoahFreeSet::increase_young_used(size_t bytes) {
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, bytes);
-}
-
-void ShenandoahFreeSet::decrease_young_used(size_t bytes) {
-  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, bytes);
+void ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  ShenandoahFreeSetPartitionId p =  _partitions.membership(idx);
+  assert((p == ShenandoahFreeSetPartitionId::Mutator) || (p == ShenandoahFreeSetPartitionId::Collector),
+         "PIP region must be associated with young");
+  _partitions.increase_used(p, bytes);
+  recompute_total_young_used();
+  recompute_total_global_used();
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
@@ -1282,51 +1284,67 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
 }
 
-void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region, size_t pip_pad_bytes) {
+// was pip_pad_bytes
+void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
   size_t plab_min_size_in_bytes = ShenandoahGenerationalHeap::heap()->plab_min_size() * HeapWordSize;
   size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
   size_t available_in_region = alloc_capacity(region);
-  size_t used_in_region = region->used();
-#ifdef ASSERT
-  size_t idx = region->index();
-  assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree,
+  size_t region_index = region->index();
+  ShenandoahFreeSetPartitionId p = _partitions.membership(region_index);
+  assert(_partitions.membership(region_index) == ShenandoahFreeSetPartitionId::NotFree,
          "Regions promoted in place should have been excluded from Mutator partition");
-#endif
-  if (available_in_region < plab_min_size_in_bytes) {
-    // If region had been retired, its end-of-region alignment pad is counted as used
-    used_in_region += available_in_region;
+
+  // If region had been retired, its end-of-region alignment pad had been counted as used within the Mutator partition
+  size_t used_while_awaiting_pip = region_size_bytes;
+  size_t used_after_pip = region_size_bytes;
+  if (available_in_region >= plab_min_size_in_bytes) {
+    used_after_pip -= available_in_region;
+  } else {
+    if (available_in_region >= ShenandoahHeap::min_fill_size() * HeapWordSize) {
+      size_t fill_words = available_in_region / HeapWordSize;
+      ShenandoahHeap::heap()->old_generation()->card_scan()->register_object(region->top());
+      region->allocate_fill(fill_words);
+    }
+    available_in_region = 0;
   }
-  
-  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_in_region + pip_pad_bytes);
+
+  assert(p == ShenandoahFreeSetPartitionId::NotFree, "pip region must be NotFree");
+  assert(region->is_young(), "pip region must be young");
+  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_while_awaiting_pip);
+
   // decrease capacity adjusts available
   _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
   _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);
 
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_in_region);
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, 1);
-
-  if (available_in_region >= plab_min_size_in_bytes) {
-    // region counts represents regions from which we are currently allocating.
-    _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_after_pip);
+  region->set_affiliation(ShenandoahAffiliation::OLD_GENERATION);
+  if (available_in_region > 0) {
+    assert(available_in_region >= plab_min_size_in_bytes, "enforced above");
     _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, 1);
-    _partitions.make_free(idx, ShenandoahFreeSetPartitionId::OldCollector, available_in_region);
+    // make_free() adjusts bounds for OldCollector partition
+    _partitions.make_free(region_index, ShenandoahFreeSetPartitionId::OldCollector, available_in_region);
     _heap->old_generation()->augment_promoted_reserve(available_in_region);
     assert(available_in_region != region_size_bytes, "Nothing to promote in place");
   }
+  // else, leave this region as NotFree
+
   recompute_total_used();
   recompute_total_affiliated();
   _partitions.assert_bounds(true);
 #ifdef KELVIN_CAPACITY
-  log_info(gc)("Ater add_pip_to_old(%zu), Mutate used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
+  log_info(gc)("Ater add_pip_to_old(%zu) from partition %s, "
+               " used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
                region->index(),
-               _partitions.get_used(ShenandoahFreeSetPartitionId::Mutator),
-               _partitions.get_capacity(ShenandoahFreeSetPartitionId::Mutator),
-               _partitions.get_available(ShenandoahFreeSetPartitionId::Mutator),
-               _partitions.get_region_counts(ShenandoahFreeSetPartitionId::Mutator),
-               _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator));
-  log_info(gc)("                      OldCollect used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
+               partition_name(p),
+               _partitions.get_used(p),
+               _partitions.get_capacity(p),
+               _partitions.get_available(p),
+               _partitions.get_region_counts(p),
+               _partitions.get_total_region_counts(p));
+  log_info(gc)(" OldCollect used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
                _partitions.get_used(ShenandoahFreeSetPartitionId::OldCollector),
                _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector),
                _partitions.get_available(ShenandoahFreeSetPartitionId::OldCollector),

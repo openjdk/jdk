@@ -574,17 +574,17 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
           // phase.
           r->save_top_before_promote();
 
-          size_t remnant_size = r->free() / HeapWordSize;
+          size_t remnant_bytes = r->free();
+          size_t remnant_size = remnant_bytes / HeapWordSize;
           if (remnant_size > ShenandoahHeap::min_fill_size()) {
             ShenandoahHeap::fill_with_object(original_top, remnant_size);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
             // newly allocated objects will not be parsable when promote in place tries to register them.  Furthermore, any
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
-            promote_in_place_pad += remnant_size * HeapWordSize;
-
-            free_set->increase_young_used(remnant_size);
-            young_gen->increase_used(remnant_size);
+            promote_in_place_pad += remnant_bytes;
+            free_set->prepare_to_promote_in_place(i, remnant_bytes);
+            young_gen->increase_used(remnant_bytes);
           } else {
             // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
             // allocations occurring within this region before the region is promoted in place.

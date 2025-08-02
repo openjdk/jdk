@@ -172,9 +172,10 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   assert(!_heap->gc_generation()->is_old(), "Sanity check");
   ShenandoahMarkingContext* const marking_context = _heap->young_generation()->complete_marking_context();
   HeapWord* const tams = marking_context->top_at_mark_start(region);
+  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   {
-    const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
+    const size_t old_garbage_threshold = (region_size_bytes * ShenandoahOldGarbageThreshold) / 100;
     shenandoah_assert_generations_reconciled();
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region %zu has too much garbage for promotion", region->index());
@@ -224,14 +225,19 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     ShenandoahHeapLocker locker(_heap->lock());
 
     HeapWord* update_watermark = region->get_update_watermark();
-
+    // pip_unpadded is memory too small to be filled above original top
+    size_t pip_unpadded = (region->end() - region->top()) * HeapWordSize;
+    assert((region->top() == region->end())
+           || (pip_unpadded == (size_t) ((region->end() - region->top()) * HeapWordSize)), "Invariant");
+    assert(pip_unpadded < ShenandoahHeap::min_fill_size(), "Sanity");
     size_t pip_pad_bytes = (region->top() - region->get_top_before_promote()) * HeapWordSize;
+    assert((pip_unpadded == 0) || (pip_pad_bytes == 0), "Only one of pip_unpadded and pip_pad_bytes is non-zero");
 
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.
     region->restore_top_before_promote();
-
     size_t region_used = region->used();
+    assert(region_used + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.
     assert(update_watermark >= region->top(), "original top cannot exceed preserved update_watermark");
@@ -251,10 +257,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
       region_used += available_in_region;
     }
 
-    region->set_affiliation(OLD_GENERATION);
-
     // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
-    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region, pip_pad_bytes);
+    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
+    region->set_affiliation(OLD_GENERATION);
 
     young_gen->decrease_used(region_used + pip_pad_bytes);
     young_gen->decrement_affiliated_region_count();
