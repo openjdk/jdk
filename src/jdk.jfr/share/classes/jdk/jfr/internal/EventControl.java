@@ -285,18 +285,23 @@ public final class EventControl {
 
     private SettingControl instantiateSettingControl(Class<? extends SettingControl> settingControlClass) throws IllegalAccessException, InstantiationException {
         SecuritySupport.makeVisibleToJFR(settingControlClass);
-        final Constructor<?> cc;
         try {
-            cc = settingControlClass.getDeclaredConstructors()[0];
-        } catch (Exception e) {
-            throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
-        }
-        cc.setAccessible(true);
-        try {
+            Constructor<?> cc = findDefaultConstructor(settingControlClass);
+            cc.setAccessible(true);
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
         }
+    }
+
+    private Constructor<?> findDefaultConstructor(Class<? extends SettingControl> settingControlClass) {
+        for (Constructor<?> c : settingControlClass.getDeclaredConstructors()) {
+            if (c.getParameterCount() == 0) {
+                return c;
+            }
+        }
+        // Programming error by user, fail fast
+        throw new InstantiationError("Could not find default constructor for " + settingControlClass.getName());
     }
 
     private static Control defineEnabled(PlatformEventType type) {
