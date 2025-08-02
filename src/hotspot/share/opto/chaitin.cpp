@@ -1468,6 +1468,15 @@ static OptoReg::Name find_first_set(LRG &lrg, RegMask mask, int chunk) {
   return assigned;
 }
 
+static OptoReg::Name find_random_set(LRG& lrg, RegMask mask, int chunk) {
+  if (lrg.is_scalable()) {
+    // FIXME: Enable randomization for SVE scalable vector registers,
+    // for now simply return the first available register.
+    return find_first_set(lrg, mask, chunk);
+  }
+  return mask.find_random_elem(lrg.num_regs());
+}
+
 // Choose a color using the biasing heuristic
 OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
 
@@ -1507,16 +1516,27 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     }
   }
 
+  bool pick_random_color = StressRegisterAllocation && Compile::current()->stress_seed() != 0;
   // If no bias info exists, just go with the register selection ordering
   if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
-    return OptoReg::add(find_first_set(lrg, lrg.mask(), chunk), chunk);
+
+    if (!pick_random_color) {
+      return OptoReg::add(find_first_set(lrg, lrg.mask(), chunk), chunk);
+    } else {
+      return OptoReg::add(find_random_set(lrg, lrg.mask(), chunk), chunk);
+    }
   }
 
+  OptoReg::Name reg = OptoReg::Bad;
+  if (!pick_random_color) {
+    reg = lrg.mask().find_first_elem();
+  } else {
+    reg = lrg.mask().find_random_elem(lrg.num_regs());
+  }
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
   // copy removal to remove many more copies, by preventing a just-assigned
   // register from being repeatedly assigned.
-  OptoReg::Name reg = lrg.mask().find_first_elem();
   if( (++_alternate & 1) && OptoReg::is_valid(reg) ) {
     // This 'Remove; find; Insert' idiom is an expensive way to find the
     // SECOND element in the mask.
