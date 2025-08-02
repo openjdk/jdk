@@ -57,6 +57,7 @@ public class NullPointerException extends RuntimeException {
      */
     public NullPointerException() {
         super();
+        extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
     /**
@@ -67,11 +68,37 @@ public class NullPointerException extends RuntimeException {
      */
     public NullPointerException(String s) {
         super(s);
+        extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
-    // 0: no backtrace filled in, no message computed.
-    // 1: backtrace filled in, no message computed.
-    // 2: message computed
+    /// Creates an NPE with a custom backtrace configuration.
+    /// The exception has no message if detailed NPE is not enabled.
+    NullPointerException(int stackOffset, int searchSlot) {
+        extendedMessageState = setupCustomBackTrace(stackOffset, searchSlot);
+        this();
+    }
+
+    private static int setupCustomBackTrace(int stackOffset, int searchSlot) {
+        if ((stackOffset & ~STACK_OFFSET_MAX) != 0 || (searchSlot & ~SEARCH_SLOT_MAX) != 0)
+            throw new InternalError(); // Bad arguments from trusted callers
+        return CUSTOM_TRACE
+                | ((stackOffset & STACK_OFFSET_MAX) << STACK_OFFSET_SHIFT)
+                | ((searchSlot & SEARCH_SLOT_MAX) << SEARCH_SLOT_SHIFT);
+    }
+
+    private static final int
+            CONSTRUCTOR_FINISHED = 0x1,
+            MESSAGE_COMPUTED = 0x2,
+            CUSTOM_TRACE = 0x4;
+    private static final int
+            STACK_OFFSET_SHIFT = 4,
+            STACK_OFFSET_MAX = (1 << 4) - 1,
+            STACK_OFFSET_MASK = STACK_OFFSET_MAX << STACK_OFFSET_SHIFT,
+            SEARCH_SLOT_SHIFT = 8,
+            SEARCH_SLOT_MAX = (1 << 4) - 1,
+            SEARCH_SLOT_MASK = SEARCH_SLOT_MAX << SEARCH_SLOT_SHIFT;
+
+    // Access these fields in object monitor only
     private transient int extendedMessageState;
     private transient String extendedMessage;
 
@@ -81,12 +108,7 @@ public class NullPointerException extends RuntimeException {
     public synchronized Throwable fillInStackTrace() {
         // If the stack trace is changed the extended NPE algorithm
         // will compute a wrong message. So compute it beforehand.
-        if (extendedMessageState == 0) {
-            extendedMessageState = 1;
-        } else if (extendedMessageState == 1) {
-            extendedMessage = getExtendedNPEMessage();
-            extendedMessageState = 2;
-        }
+        ensureMessageComputed();
         return super.fillInStackTrace();
     }
 
@@ -110,22 +132,32 @@ public class NullPointerException extends RuntimeException {
         String message = super.getMessage();
         if (message == null) {
             synchronized(this) {
-                if (extendedMessageState == 1) {
-                    // Only the original stack trace was filled in. Message will
-                    // compute correctly.
-                    extendedMessage = getExtendedNPEMessage();
-                    extendedMessageState = 2;
-                }
+                ensureMessageComputed();
                 return extendedMessage;
             }
         }
         return message;
     }
 
-    /**
-     * Get an extended exception message. This returns a string describing
-     * the location and cause of the exception. It returns null for
-     * exceptions where this is not applicable.
-     */
-    private native String getExtendedNPEMessage();
+    // Methods below must be called in object monitor
+
+    private void ensureMessageComputed() {
+        if ((extendedMessageState & (MESSAGE_COMPUTED | CONSTRUCTOR_FINISHED)) == CONSTRUCTOR_FINISHED) {
+            int stackOffset = (extendedMessageState & STACK_OFFSET_MASK) >> STACK_OFFSET_SHIFT;
+            int searchSlot = (extendedMessageState & CUSTOM_TRACE) != 0
+                    ? (extendedMessageState & SEARCH_SLOT_MASK) >> SEARCH_SLOT_SHIFT
+                    : -1;
+            extendedMessage = getExtendedNPEMessage(stackOffset, searchSlot);
+            extendedMessageState |= MESSAGE_COMPUTED;
+        }
+    }
+
+    /// Gets an extended exception message. There are two modes:
+    /// 1. `searchSlot == -1`, extend from the nullary constructor to find the
+    ///    location and the cause of the exception.
+    /// 2. `searchSlot >= 0`, follow the explicit stack offset and search slot
+    ///    configurations to trace how a particular argument, which turns out to
+    ///    be `null`, was evaluated
+    /// If the backtracking cannot find a verifiable result, this method returns `null`.
+    private native String getExtendedNPEMessage(int stackOffset, int searchSlot);
 }
