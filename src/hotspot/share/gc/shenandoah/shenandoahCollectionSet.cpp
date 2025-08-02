@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
@@ -100,6 +101,9 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
     _young_available_bytes_collected += free;
     if (ShenandoahHeap::heap()->mode()->is_generational() && r->age() >= ShenandoahGenerationalHeap::heap()->age_census()->tenuring_threshold()) {
       _young_bytes_to_promote += live;
+    }
+    if (r->reserved_for_direct_allocation()) {
+      _heap->free_set()->release_directly_allocatable_region(r);
     }
   } else if (r->is_old()) {
     _old_bytes_to_evacuate += live;
