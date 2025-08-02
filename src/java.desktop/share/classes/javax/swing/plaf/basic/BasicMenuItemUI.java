@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,52 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.MenuElement;
+import javax.swing.MenuSelectionManager;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.MenuDragMouseEvent;
+import javax.swing.event.MenuDragMouseListener;
+import javax.swing.event.MenuKeyListener;
+
+import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.ComponentInputMapUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.MenuItemUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
-import sun.swing.*;
+import com.sun.java.swing.SwingUtilities3;
+import sun.swing.MenuItemCheckIconFactory;
+import sun.swing.MenuItemLayoutHelper;
+import sun.swing.SwingUtilities2;
+import sun.swing.UIAction;
+
 
 /**
  * BasicMenuItem implementation
@@ -670,84 +705,22 @@ public class BasicMenuItemUI extends MenuItemUI
 
     private void paintIcon(Graphics g, MenuItemLayoutHelper lh,
                            MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
-        if (lh.getIcon() != null) {
-            Icon icon;
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (!model.isEnabled()) {
-                icon = lh.getMenuItem().getDisabledIcon();
-            } else if (model.isPressed() && model.isArmed()) {
-                icon = lh.getMenuItem().getPressedIcon();
-                if (icon == null) {
-                    // Use default icon
-                    icon = lh.getMenuItem().getIcon();
-                }
-            } else {
-                icon = lh.getMenuItem().getIcon();
-            }
-
-            if (icon != null) {
-                icon.paintIcon(lh.getMenuItem(), g, lr.getIconRect().x,
-                        lr.getIconRect().y);
-                g.setColor(holdc);
-            }
-        }
+        SwingUtilities3.paintIcon(g, lh, lr, holdc);
     }
 
     private void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
                                 MenuItemLayoutHelper.LayoutResult lr,
                                 Color holdc, Color foreground) {
-        if (lh.getCheckIcon() != null) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
-                    && model.isSelected())) {
-                g.setColor(foreground);
-            } else {
-                g.setColor(holdc);
-            }
-            if (lh.useCheckAndArrow()) {
-                lh.getCheckIcon().paintIcon(lh.getMenuItem(), g,
-                        lr.getCheckRect().x, lr.getCheckRect().y);
-            }
-            g.setColor(holdc);
-        }
+        SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
     }
 
     private void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        if (!lh.getAccText().isEmpty()) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            g.setFont(lh.getAccFontMetrics().getFont());
-            if (!model.isEnabled()) {
-                // *** paint the accText disabled
-                if (disabledForeground != null) {
-                    g.setColor(disabledForeground);
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                        lh.getAccText(), lr.getAccRect().x,
-                        lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
-                } else {
-                    g.setColor(lh.getMenuItem().getBackground().brighter());
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                        lh.getAccText(), lr.getAccRect().x,
-                        lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
-                    g.setColor(lh.getMenuItem().getBackground().darker());
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                        lh.getAccText(), lr.getAccRect().x - 1,
-                        lr.getAccRect().y + lh.getFontMetrics().getAscent() - 1);
-                }
-            } else {
-                // *** paint the accText normally
-                if (model.isArmed()
-                        || (lh.getMenuItem() instanceof JMenu
-                        && model.isSelected())) {
-                    g.setColor(acceleratorSelectionForeground);
-                } else {
-                    g.setColor(acceleratorForeground);
-                }
-                SwingUtilities2.drawString(lh.getMenuItem(), g, lh.getAccText(),
-                        lr.getAccRect().x, lr.getAccRect().y +
-                        lh.getAccFontMetrics().getAscent());
-            }
-        }
+        SwingUtilities3.setDisabledForeground(disabledForeground);
+        SwingUtilities3.setAcceleratorSelectionForeground(
+                        acceleratorSelectionForeground);
+        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
+        SwingUtilities3.paintAccText(g, lh, lr);
     }
 
     private void paintText(Graphics g, MenuItemLayoutHelper lh,
@@ -766,26 +739,11 @@ public class BasicMenuItemUI extends MenuItemUI
     private void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
                                 MenuItemLayoutHelper.LayoutResult lr,
                                 Color foreground) {
-        if (lh.getArrowIcon() != null) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
-                                && model.isSelected())) {
-                g.setColor(foreground);
-            }
-            if (lh.useCheckAndArrow()) {
-                lh.getArrowIcon().paintIcon(lh.getMenuItem(), g,
-                        lr.getArrowRect().x, lr.getArrowRect().y);
-            }
-        }
+        SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
     }
 
     private void applyInsets(Rectangle rect, Insets insets) {
-        if(insets != null) {
-            rect.x += insets.left;
-            rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
-            rect.height -= (insets.bottom + rect.y);
-        }
+        SwingUtilities3.applyInsets(rect, insets);
     }
 
     /**
