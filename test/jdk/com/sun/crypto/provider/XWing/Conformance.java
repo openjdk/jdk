@@ -8,7 +8,9 @@ import sun.security.x509.NamedX509Key;
 import javax.crypto.KEM;
 import java.lang.Override;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.SecureRandom;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.HexFormat;
 
 /*
@@ -23,7 +25,7 @@ public class Conformance {
 
     private static final HexFormat HEX = HexFormat.of();
 
-    // test vectors from https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#appendix-C
+    // test vectors from https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-08#appendix-C
     // TODO update tests, as soon as the RFC contains final test vectors
     public record TestData(byte[] sk, byte[] pk, byte[] eseed, byte[] ct, byte[] ss) {}
 
@@ -269,10 +271,11 @@ public class Conformance {
     @ParameterizedTest
     @FieldSource("TEST_VECTORS")
     public static void generateKeyPairDerand(TestData test) {
-        // test derivation of pk from sk; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.2.1
+        // test derivation of pk from sk; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-08#section-5.2.1
 
-        byte[] pk = XWingKeyPairGenerator.derivePublicKey(test.sk);
-        Assertions.assertArrayEquals(test.pk, pk);
+        byte[][] generated = XWingKeyPairGenerator.generateKeyPairDerand(test.sk);
+        Assertions.assertEquals(3, generated.length);
+        Assertions.assertArrayEquals(test.pk, generated[0]);
     }
 
     @ParameterizedTest
@@ -296,7 +299,8 @@ public class Conformance {
     @ParameterizedTest
     @FieldSource("TEST_VECTORS")
     public static void decapsulate(TestData test) throws GeneralSecurityException {
-        var sk = new NamedPKCS8Key("X-Wing", "X-Wing", test.sk);
+        var kf = KeyFactory.getInstance("X-Wing", "SunJCE");
+        var sk = kf.generatePrivate(new PKCS8EncodedKeySpec(test.sk));
         var kem = KEM.getInstance("X-Wing", "SunJCE");
 
         var decapsulated = kem.newDecapsulator(sk).decapsulate(test.ct);

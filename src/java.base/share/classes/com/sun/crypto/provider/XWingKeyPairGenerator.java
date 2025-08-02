@@ -17,26 +17,32 @@ public class XWingKeyPairGenerator extends NamedKeyPairGenerator {
             sr = JCAUtil.getDefSecureRandom();
         }
 
-        // https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-07.html#section-5.2
+        // https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-08.html#section-5.2
         byte[] sk = new byte[32];
         sr.nextBytes(sk);
-        byte[] pk = derivePublicKey(sk);
-        return new byte[][]{pk, sk};
+        return generateKeyPairDerand(sk);
     }
 
     // visible for testing
-    // similar to `GenerateKeyPairDerand` defined in https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-07.html#section-5.2.1
-    public static byte[] derivePublicKey(byte[] sk) {
-        var expanded = XWing.expandDecapsulationKey(sk);
+    // similar to `GenerateKeyPairDerand` defined in https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-08.html#section-5.2.1
+    /// @return the public key, the private key in its encoding format, and the private key in its expanded format (in this order) in raw bytes.
+    public static byte[][] generateKeyPairDerand(byte[] sk) {
+        var privateKey = XWingKeyFactory.XWingPrivateKey.of(sk);
+        try {
+            var publicKey = privateKey.derivePublicKey();
+            var pkM = publicKey.m();
+            var pkX = publicKey.x();
 
-        var pkM = expanded.pkM();
-        var pkX = expanded.pkX();
+            byte[] pk = new byte[pkM.length + pkX.length];
+            System.arraycopy(pkM, 0, pk, 0, pkM.length);
+            System.arraycopy(pkX, 0, pk, pkM.length, pkX.length);
 
-        byte[] pk = new byte[pkM.length + pkX.length];
-        System.arraycopy(pkM, 0, pk, 0, pkM.length);
-        System.arraycopy(pkX, 0, pk, pkM.length, pkX.length);
+            byte[] expandedSk = privateKey.expanded();
 
-        return pk;
+            return new byte[][]{pk, sk, expandedSk};
+        } finally {
+            privateKey.destroy();
+        }
     }
 
 }

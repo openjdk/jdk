@@ -57,11 +57,11 @@ public class EncapDecap {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {0, 31, 33}) // correct size is 32 bytes
+    @ValueSource(ints = {0, 2431, 2433}) // correct size is 2400 + 32 bytes
     public void newDecapsulatorWithInvalidKey(int invalidKeySize) throws GeneralSecurityException {
         var kem = KEM.getInstance("X-Wing", "SunJCE");
 
-        var privateKey = new NamedPKCS8Key("X-Wing", "X-Wing", new byte[invalidKeySize]);
+        var privateKey = NamedPKCS8Key.internalCreate("X-Wing", "X-Wing", new byte[32], new byte[invalidKeySize]);
 
         Assertions.assertThrows(InvalidKeyException.class, () -> {
             kem.newDecapsulator(privateKey);

@@ -1,11 +1,8 @@
 package com.sun.crypto.provider;
 
 import sun.security.jca.JCAUtil;
-import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.provider.NamedKEM;
-import sun.security.provider.SHA3;
 import sun.security.util.ArrayUtil;
-import sun.security.x509.NamedX509Key;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
@@ -15,7 +12,6 @@ import javax.security.auth.Destroyable;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
-import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -37,12 +33,12 @@ public final class XWing extends NamedKEM {
     private static final byte[] X_WING_LABEL = {0x5c, 0x2e, 0x2f, 0x2f, 0x5e, 0x5c};
 
     public XWing() {
-        super("X-Wing", "X-Wing");
+        super("X-Wing", new XWingKeyFactory());
     }
 
     @Override
     protected byte[][] implEncapsulate(String name, byte[] pk, Object pk2, SecureRandom sr) {
-        if (!(pk2 instanceof XWingPublicKey parsedPk)) {
+        if (!(pk2 instanceof XWingKeyFactory.XWingPublicKey parsedPk)) {
             throw new IllegalStateException("Invalid X-Wing public key type");
         }
 
@@ -66,7 +62,7 @@ public final class XWing extends NamedKEM {
         var ctM = encapsulated.encapsulation();
 
         // X25519:
-        var pkX = parsedPk.pkX();
+        var pkX = parsedPk.x();
         var pkXKey = parsedPk.getX25519PublicKey();
         byte[] ekX = new byte[32];
         sr.nextBytes(ekX);
@@ -92,12 +88,12 @@ public final class XWing extends NamedKEM {
         if (encap.length < 1088 + 32) {
             throw new DecapsulateException("Invalid encapsulation length");
         }
-        if (!(sk2 instanceof XWingKeyPair keys)) {
+        if (!(sk2 instanceof XWingKeyFactory.XWingPrivateKey parsedSk)) {
             throw new IllegalStateException("Invalid X-Wing private key type");
         }
 
         // ML-KEM:
-        var skM = keys.getMLKemPrivateKey();
+        var skM = parsedSk.getMLKemPrivateKey();
         var ctM = Arrays.copyOfRange(encap, 0, 1088);
         byte[] ssM;
         try {
@@ -113,15 +109,15 @@ public final class XWing extends NamedKEM {
         }
 
         // X25519:
-        var skX = keys.getX25519PrivateKey();
+        var skX = parsedSk.getX25519PrivateKey();
         var ctX = Arrays.copyOfRange(encap, 1088, 1120);
-        var pkX = keys.pkX();
+        var pkX = parsedSk.derivePublicKey().x();
         byte[] ssX;
         try {
             ssX = X25519.dh(skX, X25519.publicKey(ctX));
         } finally {
             destroyQuietly(skX);
-            destroyQuietly(keys);
+            destroyQuietly(parsedSk);
         }
 
         // Combine:
@@ -151,126 +147,21 @@ public final class XWing extends NamedKEM {
         }
         var pkM = Arrays.copyOfRange(pk, 0, 1184);
         var pkX = Arrays.copyOfRange(pk, 1184, 1216);
-        record XWingPublicKeyImpl(byte[] pkM, byte[] pkX) implements XWingPublicKey {}
-        return new XWingPublicKeyImpl(pkM, pkX);
+        return XWingKeyFactory.XWingPublicKey.of(pkM, pkX);
     }
 
     @Override
     protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
-        // X-Wing private key is a 32-byte secret key that is expanded to ML-KEM and X25519
-        if (sk == null || sk.length != 32) {
+        // expanded X-Wing private key is a concatenation of ML-KEM-768 private key (1184 bytes) + X25519 private key (32 bytes)
+        if (sk == null || sk.length != 2400 + 32) {
             throw new InvalidKeyException("Invalid X-Wing private key length");
         }
-        return expandDecapsulationKey(sk);
+        var skM = Arrays.copyOfRange(sk, 0, 2400);
+        var skX = Arrays.copyOfRange(sk, 2400, 2432);
+        return XWingKeyFactory.XWingPrivateKey.of(skM, skX);
     }
 
-    interface XWingPublicKey {
-
-        /// returns the ML-KEM public key part (`pk_M = pk[0:1184]`)
-        /// @return subkey bytes of length 1184
-        byte[] pkM();
-
-        /// returns the ML-KEM public key part (`pk_M = pk[0:1184]`)
-        /// @return a new {@link PublicKey} instance constructed from {@link #pkM()}
-        default PublicKey getMLKemPublicKey() {
-            try {
-                KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM", SunJCE.getInstance());
-                PublicKey key = new NamedX509Key("ML-KEM", "ML-KEM-768", pkM().clone()); // get translatable key from raw bytes
-                return (PublicKey) keyFactory.translateKey(key);
-            } catch (NoSuchAlgorithmException e) {
-                throw new AssertionError("SunJCE known to support ML-KEM", e);
-            } catch (InvalidKeyException e) {
-                throw new IllegalStateException("Implementation-internal key invalid", e);
-            }
-        }
-
-        /// returns the X25519 public key part (`pk_X = pk[1184:1216]`)
-        /// @return subkey bytes of length 32
-        byte[] pkX();
-
-        /// returns the X25519 public key part (`pk_X = pk[1184:1216]`)
-        /// @return a new {@link PublicKey} instance constructed from {@link #pkX()}
-        default PublicKey getX25519PublicKey() {
-            return X25519.publicKey(pkX());
-        }
-    }
-
-    record XWingKeyPair(ML_KEM.ML_KEM_KeyPair m, KeyPair x) implements XWingPublicKey, Destroyable {
-        @Override
-        public byte[] pkM() {
-            return m.encapsulationKey().keyBytes();
-        }
-
-        public byte[] skM() {
-            return m.decapsulationKey().keyBytes();
-        }
-
-        public PrivateKey getMLKemPrivateKey() {
-            try {
-                KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM", SunJCE.getInstance());
-                PrivateKey key = new NamedPKCS8Key("ML-KEM", "ML-KEM-768", skM().clone()); // get translatable key from raw bytes
-                return (PrivateKey) keyFactory.translateKey(key);
-            } catch (NoSuchAlgorithmException e) {
-                throw new AssertionError("SunJCE known to support ML-KEM", e);
-            } catch (InvalidKeyException e) {
-                throw new IllegalStateException("Implementation-internal key invalid", e);
-            }
-        }
-
-        @Override
-        public byte[] pkX() {
-            if (!(x.getPublic() instanceof XECPublicKey p)) {
-                throw new IllegalStateException("Unexpected type of X25519 public key: " + x.getPublic().getClass());
-            }
-
-            BigInteger u = p.getU();
-            byte[] uBytes = u.toByteArray();
-            ArrayUtil.reverse(uBytes);
-
-            return Arrays.copyOf(uBytes, 32); // Ensure it is 32 bytes long
-        }
-
-        /// returns the X25519 private key
-        /// @return the contained {@link PrivateKey} instance
-        public PrivateKey getX25519PrivateKey() {
-            return x.getPrivate();
-        }
-
-        @Override
-        public void destroy() {
-            Arrays.fill(m.decapsulationKey().keyBytes(), (byte) 0);
-            destroyQuietly(x.getPrivate());
-        }
-    }
-
-    // https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-07.html#section-5.2
-    static XWingKeyPair expandDecapsulationKey(byte[] sk) {
-        assert sk.length == 32;
-
-        var expanded = shake256(sk, 96);
-        byte[] d = Arrays.copyOfRange(expanded, 0, 32);
-        byte[] z = Arrays.copyOfRange(expanded, 32, 64);
-        byte[] skX = Arrays.copyOfRange(expanded, 64, 96);
-        Arrays.fill(expanded, (byte) 0);
-
-        ML_KEM.ML_KEM_KeyPair m;
-        try {
-            m = new ML_KEM("ML-KEM-768").generateKemKeyPair(d, z);
-        } finally {
-            Arrays.fill(d, (byte) 0);
-            Arrays.fill(z, (byte) 0);
-        }
-
-        KeyPair x;
-        try {
-            x = deriveX25519KeyPair(skX);
-        } finally {
-            Arrays.fill(skX, (byte) 0);
-        }
-        return new XWingKeyPair(m, x);
-    }
-
-    // https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.3
+    // https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-08.html#section-5.3
     private static byte[] combiner(byte[] ssM, byte[] ssX, byte[] ctX, byte[] pkX) {
         var input = new byte[ssM.length + ssX.length + ctX.length + pkX.length + X_WING_LABEL.length];
         System.arraycopy(ssM, 0, input, 0, ssM.length);
@@ -286,24 +177,6 @@ public final class XWing extends NamedKEM {
         }
     }
 
-    private static KeyPair deriveX25519KeyPair(byte[] sk) {
-        assert sk.length == 32;
-
-        var privateKey = XWing.X25519.privateKey(sk);
-
-        // applying x25519 on secret key and base point yields the public key:
-        byte[] pk = X25519.dh(privateKey, X25519.basePoint());
-
-        // turn public key bytes into an object:
-        var publicKey = X25519.publicKey(pk);
-        return new KeyPair(publicKey, privateKey);
-    }
-
-    private static byte[] shake256(byte[] input, int byteLength) {
-        var digest = new SHA3.SHAKE256(byteLength);
-        digest.update(input);
-        return digest.digest();
-    }
 
     private static void destroyQuietly(Destroyable destroyable) {
         if (destroyable != null) {
@@ -318,7 +191,7 @@ public final class XWing extends NamedKEM {
     /**
      * Utility class for X25519 operations.
      */
-    private static class X25519 {
+    static class X25519 {
 
         private X25519() {}
 
