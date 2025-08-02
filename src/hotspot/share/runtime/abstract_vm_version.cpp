@@ -325,19 +325,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-const char* Abstract_VM_Version::extract_features_string(const char* cpu_info_string,
-                                                         size_t cpu_info_string_len,
-                                                         size_t features_offset) {
-  assert(features_offset <= cpu_info_string_len, "");
-  if (features_offset < cpu_info_string_len) {
-    assert(cpu_info_string[features_offset + 0] == ',', "");
-    assert(cpu_info_string[features_offset + 1] == ' ', "");
-    return cpu_info_string + features_offset + 2; // skip initial ", "
-  } else {
-    return ""; // empty
-  }
-}
-
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
   FILE* fp = os::fopen(filename, "r");

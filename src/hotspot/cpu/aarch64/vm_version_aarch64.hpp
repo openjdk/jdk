@@ -30,6 +30,10 @@
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
+class stringStream;
+
+#define BIT_MASK(flag) (1ULL<<(flag))
+
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -65,6 +69,8 @@ public:
   // Initialization
   static void initialize();
   static void check_virtualizations();
+
+  static void insert_features_names(uint64_t features, stringStream& ss);
 
   static void print_platform_virtualization_info(outputStream*);
 
@@ -139,16 +145,31 @@ enum Ampere_CPU_Model {
     decl(A53MAC,        a53mac,        31)
 
   enum Feature_Flag {
-#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
+#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
+    MAX_CPU_FEATURES
   };
+
+  STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
+
+  static const char* _features_names[MAX_CPU_FEATURES];
 
   // Feature identification
 #define CPU_FEATURE_DETECTION(id, name, bit) \
-  static bool supports_##name() { return (_features & CPU_##id) != 0; };
+  static bool supports_##name() { return supports_feature(CPU_##id); }
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION
+
+  static void set_feature(Feature_Flag flag) {
+    _features |= BIT_MASK(flag);
+  }
+  static void clear_feature(Feature_Flag flag) {
+    _features &= (~BIT_MASK(flag));
+  }
+  static bool supports_feature(Feature_Flag flag) {
+    return (_features & BIT_MASK(flag)) != 0;
+  }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
