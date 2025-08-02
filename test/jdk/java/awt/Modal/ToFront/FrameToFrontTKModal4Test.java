@@ -31,9 +31,8 @@ import java.awt.Dialog;
  *          blocking toolkit modal dialog having a hidden Dialog parent
  *          does not bring the frame to the top of the modal dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame

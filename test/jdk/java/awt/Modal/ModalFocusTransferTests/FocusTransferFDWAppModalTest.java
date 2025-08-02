@@ -31,9 +31,8 @@ import java.awt.Dialog;
  *          the following happens: a frame is shown; an application modal dialog (D)
  *          having a null frame owner is shown; a window having D as owner is shown.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame

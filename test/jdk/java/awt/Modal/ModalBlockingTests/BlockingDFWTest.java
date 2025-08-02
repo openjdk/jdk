@@ -30,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
 public class BlockingDFWTest {
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     public enum Parent {DIALOG, FRAME};
 
@@ -43,7 +43,7 @@ public class BlockingDFWTest {
 
     public BlockingDFWTest(Parent parentWin, Dialog.ModalityType modalityType) throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(() -> { createGUI(parentWin, modalityType); });
     }
 
