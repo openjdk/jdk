@@ -100,6 +100,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
+#include "services/shorthist.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
@@ -827,6 +828,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
   }
+
+  ShortHistory::initialize();
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution

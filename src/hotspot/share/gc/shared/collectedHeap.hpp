@@ -260,6 +260,7 @@ protected:
 
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
+  virtual size_t used_unlocked() const = 0; // like used(), but guaranteed to not lock
 
   // Returns unused capacity.
   virtual size_t unused() const;
