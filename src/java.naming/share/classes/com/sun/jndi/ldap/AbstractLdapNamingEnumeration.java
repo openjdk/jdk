@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import javax.naming.*;
 import javax.naming.directory.Attributes;
 import javax.naming.ldap.Control;
 
+import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.Reference;
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * Basic enumeration for NameClassPair, Binding, and SearchResults.
  */
@@ -42,16 +46,56 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
     protected Name listArg;
 
-    private boolean cleaned = false;
-    private LdapResult res;
-    private LdapClient enumClnt;
     private Continuation cont;  // used to fill in exceptions
     private Vector<LdapEntry> entries = null;
     private int limit = 0;
     private int posn = 0;
-    protected LdapCtx homeCtx;
+
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
+
+    /* Context class containing the pieces of state that need to be cleaned up (or
+     * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
+     *
+     * reachabilityFences are used to ensure that an AbstractLdapNamingEnumeration
+     * instance does not become unreachable while one of its methods is still
+     * executing (possibly leading to EnumCtx being cleaned up while it's still in use).
+     * The fences also ensure that changes made to mutable state on the
+     * main/program thread are visible on the cleanup thread. See
+     * "Memory Consistency Properties" in the java.lang.ref package spec.
+     */
+    private static class EnumCtx implements Runnable {
+        private LdapCtx homeCtx;
+        private LdapResult res;
+        private LdapClient enumClnt;
+
+        private EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
+            this.homeCtx = homeCtx;
+            this.res = answer;
+            this.enumClnt = client;
+        }
+
+        @Override
+        public void run() {
+            if (enumClnt != null) {
+                if (homeCtx != null) {
+                    enumClnt.clearSearchReply(res, homeCtx.reqCtls);
+                }
+                enumClnt = null;
+            }
+            if (homeCtx != null) {
+                homeCtx.decEnumCount();
+                homeCtx = null;
+            }
+        }
+    }
+
+    private final EnumCtx enumCtx;
+    private final Cleanable cleanable;
+
+    // Subclasses interact directly with the LdapCtx. This method provides
+    // access to the LdapCtx within the EnumCtx.
+    protected final LdapCtx getHomeCtx() { return enumCtx.homeCtx; }
 
     /*
      * Record the next set of entries and/or referrals.
@@ -84,7 +128,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             // otherwise continue
 
-            res = answer;
             entries = answer.entries;
             limit = (entries == null) ? 0 : entries.size(); // handle empty set
             this.listArg = listArg;
@@ -94,10 +137,10 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 refEx = answer.refEx;
             }
 
+            this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.homeCtx = homeCtx;
-            homeCtx.incEnumCount();
-            enumClnt = homeCtx.clnt; // remember
+            this.enumCtx.homeCtx.incEnumCount();
+            this.cleanable = CleanerFactory.cleaner().register(this, this.enumCtx);
     }
 
     @Override
@@ -108,6 +151,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             // can't throw exception
             cleanup();
             return null;
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -119,6 +165,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             // can't throw exception
             cleanup();
             return false;
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -126,45 +175,49 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      * Retrieve the next set of entries and/or referrals.
      */
     private void getNextBatch() throws NamingException {
-
-        res = homeCtx.getSearchReply(enumClnt, res);
-        if (res == null) {
-            limit = posn = 0;
-            return;
-        }
-
-        entries = res.entries;
-        limit = (entries == null) ? 0 : entries.size(); // handle empty set
-        posn = 0; // reset
-
-        // minimize the number of calls to processReturnCode()
-        // (expensive when batchSize is small and there are many results)
-        if ((res.status != LdapClient.LDAP_SUCCESS) ||
-            ((res.status == LdapClient.LDAP_SUCCESS) &&
-                (res.referrals != null))) {
-
-            try {
-                // convert referrals into a chain of LdapReferralException
-                homeCtx.processReturnCode(res, listArg);
-
-            } catch (LimitExceededException | PartialResultException e) {
-                setNamingException(e);
-
+        try {
+            enumCtx.res = enumCtx.homeCtx.getSearchReply(enumCtx.enumClnt, enumCtx.res);
+            if (enumCtx.res == null) {
+                limit = posn = 0;
+                return;
             }
-        }
 
-        // merge any newly received referrals with any current referrals
-        if (res.refEx != null) {
-            if (refEx == null) {
-                refEx = res.refEx;
-            } else {
-                refEx = refEx.appendUnprocessedReferrals(res.refEx);
+            entries = enumCtx.res.entries;
+            limit = (entries == null) ? 0 : entries.size(); // handle empty set
+            posn = 0; // reset
+
+            // minimize the number of calls to processReturnCode()
+            // (expensive when batchSize is small and there are many results)
+            if ((enumCtx.res.status != LdapClient.LDAP_SUCCESS) ||
+                ((enumCtx.res.status == LdapClient.LDAP_SUCCESS) &&
+                    (enumCtx.res.referrals != null))) {
+
+                try {
+                    // convert referrals into a chain of LdapReferralException
+                    enumCtx.homeCtx.processReturnCode(enumCtx.res, listArg);
+
+                } catch (LimitExceededException | PartialResultException e) {
+                    setNamingException(e);
+
+                }
             }
-            res.refEx = null; // reset
-        }
 
-        if (res.resControls != null) {
-            homeCtx.respCtls = res.resControls;
+            // merge any newly received referrals with any current referrals
+            if (enumCtx.res.refEx != null) {
+                if (refEx == null) {
+                    refEx = enumCtx.res.refEx;
+                } else {
+                    refEx = refEx.appendUnprocessedReferrals(enumCtx.res.refEx);
+                }
+                enumCtx.res.refEx = null; // reset
+            }
+
+            if (enumCtx.res.resControls != null) {
+                enumCtx.homeCtx.respCtls = enumCtx.res.resControls;
+            }
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -176,17 +229,21 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public final boolean hasMore() throws NamingException {
+        try {
+            if (hasMoreCalled) {
+                return more;
+            }
 
-        if (hasMoreCalled) {
-            return more;
-        }
+            hasMoreCalled = true;
 
-        hasMoreCalled = true;
-
-        if (!more) {
-            return false;
-        } else {
-            return (more = hasMoreImpl());
+            if (!more) {
+                return false;
+            } else {
+                return (more = hasMoreImpl());
+            }
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -195,49 +252,58 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public final T next() throws NamingException {
-
-        if (!hasMoreCalled) {
-            hasMore();
+        try {
+            if (!hasMoreCalled) {
+                hasMore();
+            }
+            hasMoreCalled = false;
+            return nextImpl();
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
-        hasMoreCalled = false;
-        return nextImpl();
     }
 
     /*
      * Test if unprocessed entries or referrals exist.
      */
     private boolean hasMoreImpl() throws NamingException {
-        // when page size is supported, this
-        // might generate an exception while attempting
-        // to fetch the next batch to determine
-        // whether there are any more elements
+        try {
+            // when page size is supported, this
+            // might generate an exception while attempting
+            // to fetch the next batch to determine
+            // whether there are any more elements
 
-        // test if the current set of entries has been processed
-        if (posn == limit) {
-            getNextBatch();
-        }
-
-        // test if any unprocessed entries exist
-        if (posn < limit) {
-            return true;
-        } else {
-
-            try {
-                // try to process another referral
-                return hasMoreReferrals();
-
-            } catch (LdapReferralException |
-                     LimitExceededException |
-                     PartialResultException e) {
-                cleanup();
-                throw e;
-
-            } catch (NamingException e) {
-                cleanup();
-                PartialResultException pre = new PartialResultException();
-                pre.setRootCause(e);
-                throw pre;
+            // test if the current set of entries has been processed
+            if (posn == limit) {
+                getNextBatch();
             }
+
+            // test if any unprocessed entries exist
+            if (posn < limit) {
+                return true;
+            } else {
+
+                try {
+                    // try to process another referral
+                    return hasMoreReferrals();
+
+                } catch (LdapReferralException |
+                        LimitExceededException |
+                        PartialResultException e) {
+                    cleanup();
+                    throw e;
+
+                } catch (NamingException e) {
+                    cleanup();
+                    PartialResultException pre = new PartialResultException();
+                    pre.setRootCause(e);
+                    throw pre;
+                }
+            }
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -250,23 +316,31 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         } catch (NamingException e) {
             cleanup();
             throw cont.fillInException(e);
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
     private T nextAux() throws NamingException {
-        if (posn == limit) {
-            getNextBatch();  // updates posn and limit
+        try {
+            if (posn == limit) {
+                getNextBatch();  // updates posn and limit
+            }
+
+            if (posn >= limit) {
+                cleanup();
+                throw new NoSuchElementException("invalid enumeration handle");
+            }
+
+            LdapEntry result = entries.elementAt(posn++);
+
+            // gets and outputs DN from the entry
+            return createItem(result.DN, result.attributes, result.respCtls);
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
-
-        if (posn >= limit) {
-            cleanup();
-            throw new NoSuchElementException("invalid enumeration handle");
-        }
-
-        LdapEntry result = entries.elementAt(posn++);
-
-        // gets and outputs DN from the entry
-        return createItem(result.DN, result.attributes, result.respCtls);
     }
 
     protected final String getAtom(String dn) {
@@ -278,6 +352,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         } catch (NamingException e) {
             return dn;
         }
+        // No fences - method clearly does not access cleanable state
     }
 
     protected abstract T createItem(String dn, Attributes attrs,
@@ -289,15 +364,21 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public void appendUnprocessedReferrals(LdapReferralException ex) {
-        if (refEx != null) {
-            refEx = refEx.appendUnprocessedReferrals(ex);
-        } else {
-            refEx = ex.appendUnprocessedReferrals(refEx);
+        try {
+            if (refEx != null) {
+                refEx = refEx.appendUnprocessedReferrals(ex);
+            } else {
+                refEx = ex.appendUnprocessedReferrals(refEx);
+            }
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
     final void setNamingException(NamingException e) {
         errEx = e;
+        // No fences - method clearly does not access cleanable state
     }
 
     protected abstract AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
@@ -309,53 +390,56 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      * results.
      */
     protected final boolean hasMoreReferrals() throws NamingException {
+        try {
+            if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
+                (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
 
-        if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
-            (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
-
-            if (homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
-                throw (NamingException)(refEx.fillInStackTrace());
-            }
-
-            // process the referrals sequentially
-            while (true) {
-
-                LdapReferralContext refCtx =
-                    (LdapReferralContext)refEx.getReferralContext(
-                    homeCtx.envprops, homeCtx.reqCtls);
-
-                try {
-
-                    update(getReferredResults(refCtx));
-                    break;
-
-                } catch (LdapReferralException re) {
-
-                    // record a previous exception and quit if any limit is reached
-                    var namingException = re.getNamingException();
-                    if (namingException instanceof LimitExceededException) {
-                        errEx = namingException;
-                        break;
-                    } else if (errEx == null) {
-                        errEx = namingException;
-                    }
-                    refEx = re;
-                    continue;
-
-                } finally {
-                    // Make sure we close referral context
-                    refCtx.close();
+                if (enumCtx.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
+                    throw (NamingException)(refEx.fillInStackTrace());
                 }
-            }
-            return hasMoreImpl();
 
-        } else {
-            cleanup();
+                // process the referrals sequentially
+                while (true) {
 
-            if (errEx != null) {
-                throw errEx;
+                    LdapReferralContext refCtx =
+                        (LdapReferralContext)refEx.getReferralContext(
+                        enumCtx.homeCtx.envprops, enumCtx.homeCtx.reqCtls);
+
+                    try {
+
+                        update(getReferredResults(refCtx));
+                        break;
+
+                    } catch (LdapReferralException re) {
+                        // record a previous exception and quit if any limit is reached
+                        var namingException = re.getNamingException();
+                        if (namingException instanceof LimitExceededException) {
+                            errEx = namingException;
+                            break;
+                        } else if (errEx == null) {
+                            errEx = namingException;
+                        }
+                        refEx = re;
+                        continue;
+
+                    } finally {
+                        // Make sure we close referral context
+                        refCtx.close();
+                    }
+                }
+                return hasMoreImpl();
+
+            } else {
+                cleanup();
+
+                if (errEx != null) {
+                    throw errEx;
+                }
+                return (false);
             }
-            return (false);
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -364,49 +448,41 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      * with those of the current enumeration.
      */
     protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
-        // Cleanup previous context first
-        homeCtx.decEnumCount();
+        try {
+            // Cleanup previous context first
+            getHomeCtx().decEnumCount();
 
-        // New enum will have already incremented enum count and recorded clnt
-        homeCtx = ne.homeCtx;
-        enumClnt = ne.enumClnt;
+            // New enum will have already incremented enum count and recorded clnt
+            enumCtx.homeCtx = ne.enumCtx.homeCtx;
+            enumCtx.enumClnt = ne.enumCtx.enumClnt;
 
-        // Do this to prevent referral enumeration (ne) from decrementing
-        // enum count because we'll be doing that here from this
-        // enumeration.
-        ne.homeCtx = null;
+            // 'this' and 'ne' now both refer to ne's homeCtx. 'this' will
+            // decrement homeCtx's enum count later (via cleanup() or Cleaner).
+            // Clear ne's reference to homeCtx so ne's Cleaner doesn't
+            // *also* decrement the count.
+            ne.enumCtx.homeCtx = null;
 
-        // Record rest of information from new enum
-        posn = ne.posn;
-        limit = ne.limit;
-        res = ne.res;
-        entries = ne.entries;
-        refEx = ne.refEx;
-        listArg = ne.listArg;
-        // record a previous exception and quit if any limit is reached
-        if (errEx == null || ne.errEx instanceof LimitExceededException) {
-            errEx = ne.errEx;
+            // Record rest of information from new enum
+            posn = ne.posn;
+            limit = ne.limit;
+            enumCtx.res = ne.enumCtx.res;
+            entries = ne.entries;
+            refEx = ne.refEx;
+            listArg = ne.listArg;
+            // record a previous exception and quit if any limit is reached
+            if (errEx == null || ne.errEx instanceof LimitExceededException) {
+                errEx = ne.errEx;
+            }
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(ne);
+            Reference.reachabilityFence(this);
         }
-    }
-
-    @SuppressWarnings("removal")
-    protected final void finalize() {
-        cleanup();
     }
 
     protected final void cleanup() {
-        if (cleaned) return; // been there; done that
-
-        if(enumClnt != null) {
-            enumClnt.clearSearchReply(res, homeCtx.reqCtls);
-        }
-
-        enumClnt = null;
-        cleaned = true;
-        if (homeCtx != null) {
-            homeCtx.decEnumCount();
-            homeCtx = null;
-        }
+        // Run the cleaning action (if it has not run already)
+        cleanable.clean();
     }
 
     @Override
