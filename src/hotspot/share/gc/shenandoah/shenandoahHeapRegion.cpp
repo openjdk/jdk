@@ -80,7 +80,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 #ifdef SHENANDOAH_CENSUS_NOISE
   _youth(0),
 #endif // SHENANDOAH_CENSUS_NOISE
-  _needs_bitmap_reset(false)
+  _needs_bitmap_reset(false),
+  _fwd_table(this)
   {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
