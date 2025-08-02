@@ -147,7 +147,7 @@ public class BulkLoaderTest {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
-                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+                out.shouldContain("Skipping BadOldClassA: Failed verification");
                 out.shouldContain("Skipping SimpleCusty: Duplicated unregistered class");
             }
 

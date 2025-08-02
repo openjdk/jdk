@@ -67,9 +67,14 @@ public class OldClassVerifierTrouble extends DynamicArchiveTestBase {
             TestCommon.list("VerifierTroubleApp", "VerifierTroublev49", "ChildOldSuper"),
             "-Xlog:class+load,cds+class=debug");
         TestCommon.checkDump(output);
-        // Check the ChildOldSuper and VerifierTroublev49 are being dumped into the base archive.
-        output.shouldMatch(".cds.class.*klass.*0x.*app.*ChildOldSuper.*unlinked")
-              .shouldMatch(".cds.class.*klass.*0x.*app.*VerifierTroublev49.*unlinked");
+        if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
+            // Check the ChildOldSuper and VerifierTroublev49 are being dumped into the base archive.
+            output.shouldMatch(".cds.class.*klass.*0x.*app.*ChildOldSuper.*unlinked")
+                  .shouldMatch(".cds.class.*klass.*0x.*app.*VerifierTroublev49.*unlinked");
+        } else {
+            output.shouldContain("Skipping ChildOldSuper: Failed verification")
+                  .shouldContain("Skipping VerifierTroublev49: Failed verification");
+        }
 
         String baseArchiveName = TestCommon.getCurrentArchiveName();
 
@@ -82,11 +87,16 @@ public class OldClassVerifierTrouble extends DynamicArchiveTestBase {
               "-cp", appJar,
               appClass)
             .assertAbnormalExit(out -> {
-                    out.shouldContain("VerifierTroublev49 source: shared objects file")
-                       .shouldContain("ChildOldSuper source: shared objects file")
-                       .shouldContain("java.lang.VerifyError: " +
+                    out.shouldContain("java.lang.VerifyError: " +
                                       "(class: VerifierTroublev49, method: doit signature: ()Ljava/lang/String;)" +
                                       " Wrong return type in function");
+                    if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
+                        out.shouldContain("VerifierTroublev49 source: shared objects file")
+                           .shouldContain("ChildOldSuper source: shared objects file");
+                    } else {
+                        out.shouldMatch(".class.load. VerifierTroublev49.source:.*oldsuper-fail-verifier.jar")
+                           .shouldMatch(".class.load. ChildOldSuper.source:.*oldsuper-fail-verifier.jar");
+                    }
                 });
     }
 }

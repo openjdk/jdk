@@ -172,9 +172,6 @@ public class ResolvedConstants {
         // Indy References ---
         if (aotClassLinking) {
             testGroup("Indy References", out)
-               .shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
-               .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
-               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit")
                .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
                .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/")
