@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,17 @@
 
 /*
  * @test
- * @bug 8312306
+ * @bug 8312306 8358451
  * @summary Check the destroy()/isDestroyed() of the PBEKey impl from SunJCE
  * @library /test/lib
  * @run testng/othervm PBEKeyDestroyTest
  */
+import java.io.ByteArrayOutputStream;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +41,16 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class PBEKeyDestroyTest {
+
+    private static final Class<IllegalStateException> ISE =
+            IllegalStateException.class;
+
+    private static void printKeyInfo(SecretKey k, String name) {
+        System.out.println(name);
+        System.out.println("algo: " + k.getAlgorithm());
+        System.out.println("format: " + k.getFormat());
+        System.out.println("hashCode: " + k.hashCode());
+    }
 
     @Test
     public void test() throws Exception {
@@ -47,17 +63,33 @@ public class PBEKeyDestroyTest {
         SecretKey key1 = skf.generateSecret(keySpec);
         SecretKey key2 = skf.generateSecret(keySpec);
 
-        // should be equal
+        printKeyInfo(key1, "key1");
+
+        // both keys should be equal
         Assert.assertFalse(key1.isDestroyed());
         Assert.assertFalse(key2.isDestroyed());
         Assert.assertTrue(key1.equals(key2));
         Assert.assertTrue(key2.equals(key1));
+        Assert.assertTrue(key1.hashCode() == key2.hashCode());
 
         // destroy key1
         key1.destroy();
+
+        // make sure no exception when retrieving algo, format, hashCode
+        printKeyInfo(key1, "destroyed key1");
+
         Assert.assertTrue(key1.isDestroyed());
         Assert.assertFalse(key1.equals(key2));
         Assert.assertFalse(key2.equals(key1));
+
+        Assert.assertThrows(ISE, () -> key1.getEncoded());
+
+        // serialization should fail
+        ObjectOutputStream oos = new ObjectOutputStream(
+                new ByteArrayOutputStream());
+        Assert.assertThrows(ISE, () -> oos.writeObject(key1));
+        Assert.assertThrows(ISE, () -> skf.translateKey(key1));
+        Assert.assertThrows(ISE, () -> skf.getKeySpec(key1, PBEKeySpec.class));
 
         // also destroy key2
         key2.destroy();
