@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,14 @@
 
 package p.two;
 
-// Package-private interface, exposed in public methods.
-// Has publicly accessible supertype and subtype for
-// proxy public method usage.
-interface B extends Cloneable {
+/**
+ * A public interface with package-private types in signatures.
+ * In the language, external code cannot access package-private
+ * types unless passing a public subtypes or null, or using an
+ * instance as one of its supertype (such as Object).
+ */
+public interface WithPackageReference {
+    // For example, this call type can be converted to
+    // (Bar) => Cloneable
+    B process(B input);
 }
