@@ -562,6 +562,13 @@ public:
   bool verify(VerifyOption vo) const;
 };
 
+// Closure that returns true or false for a given G1HeapRegion.
+class G1HeapRegionBoolClosure : public StackObj {
+public:
+
+  virtual bool do_heap_region(G1HeapRegion* r) const = 0;
+};
+
 // G1HeapRegionClosure is used for iterating over regions.
 // Terminates the iteration when the "do_heap_region" method returns "true".
 class G1HeapRegionClosure : public StackObj {
