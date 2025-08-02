@@ -142,27 +142,17 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (!Universe::is_fully_initialized() ||
-          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() ||
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-          "Only for STW GC or when Universe is initializing (CDS)");
+          "Only for STW GC");
   reset_age();
-  auto cur_state = state();
-  switch (cur_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
     case _cset:
     case _humongous_start:
     case _humongous_cont:
-      if (cur_state == _humongous_start || cur_state == _humongous_cont) {
-        // CDS allocates chunks of the heap to fill with regular objects. The allocator
-        // will dutifully track any waste in the unused portion of the last region. Once
-        // CDS has finished initializing the objects, it will convert these regions to
-        // regular regions. The 'waste' in the last region is no longer wasted at this point,
-        // so we must stop treating it as such.
-        decrement_humongous_waste();
-      }
       set_state(_regular);
       return;
     case _pinned_cset:
