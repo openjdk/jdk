@@ -24,37 +24,43 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
-public interface WinLauncherMixin {
+/**
+ * A shortcut to launch an application launcher.
+ */
+public record LauncherShortcut(Optional<LauncherShortcutStartupDirectory> startupDirectory) {
 
-    boolean isConsole();
+    public LauncherShortcut {
+        Objects.requireNonNull(startupDirectory);
+    }
+
+    void store(String propertyName, BiConsumer<String, String> sink) {
+        Objects.requireNonNull(propertyName);
+        Objects.requireNonNull(sink);
+        if (startupDirectory.isEmpty()) {
+            sink.accept(propertyName, Boolean.FALSE.toString());
+        } else {
+            startupDirectory.ifPresent(v -> {
+                sink.accept(propertyName, v.asStringValue());
+            });
+        }
+    }
 
     /**
-     * Gets the start menu shortcut of this application launcher.
+     * Converts the given shortcut into a shortcut request.
      * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the start
-     * menu shortcut for this application launcher was made and an empty
-     * {@link Optional} instance if there was no request about the start menu
-     * shortcut for this application launcher.
-     *
-     * @return the start menu shortcut of this application launcher
-     */
-    Optional<LauncherShortcut> startMenuShortcut();
-
-    /**
-     * Gets the desktop shortcut of this application launcher.
+     * Returns <code>true</code> if shortcut was explicitly requested.
      * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the desktop
-     * shortcut for this application launcher was made and an empty {@link Optional}
-     * instance if there was no request about the desktop shortcut for this
-     * application launcher.
+     * Returns <code>false</code> if no shortcut was explicitly requested.
+     * <p>
+     * Returns an empty {@link Optional} instance if there was no shortcut request.
      *
-     * @return the start menu shortcut of this application launcher
+     * @return shortcut request
      */
-    Optional<LauncherShortcut> desktopShortcut();
-
-    record Stub(boolean isConsole, Optional<LauncherShortcut> startMenuShortcut,
-            Optional<LauncherShortcut> desktopShortcut) implements WinLauncherMixin {
+    public static Optional<Boolean> toRequest(Optional<LauncherShortcut> shortcut) {
+        return shortcut.map(v -> v.startupDirectory().isPresent());
     }
 }
