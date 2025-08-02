@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
@@ -410,13 +411,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
- *
  * @implSpec
  * When formatting a {@code Number} other than {@code BigInteger} and
  * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
  * and {@code 340} as the upper limit for fraction digits. This occurs, even if
  * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
  * returns a numerically greater value.
+ *
+ * @implNote The default implementation follows the LDML specification
+ * to enable loose matching of minus sign patterns when {@link #isStrict()}
+ * returns {@code false}.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
@@ -2392,10 +2396,8 @@ public class DecimalFormat extends NumberFormat {
         boolean gotPositive, gotNegative;
 
         // check for positivePrefix; take longest
-        gotPositive = text.regionMatches(position, positivePrefix, 0,
-                positivePrefix.length());
-        gotNegative = text.regionMatches(position, negativePrefix, 0,
-                negativePrefix.length());
+        gotPositive = matchAffix(text, position, positivePrefix);
+        gotNegative = matchAffix(text, position, negativePrefix);
 
         if (gotPositive && gotNegative) {
             if (positivePrefix.length() > negativePrefix.length()) {
@@ -2431,15 +2433,13 @@ public class DecimalFormat extends NumberFormat {
         // When lenient, text only needs to contain the suffix.
         if (!isExponent) {
             if (gotPositive) {
-                boolean containsPosSuffix =
-                        text.regionMatches(position, positiveSuffix, 0, positiveSuffix.length());
+                boolean containsPosSuffix = matchAffix(text, position, positiveSuffix);
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
                 gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
-                boolean containsNegSuffix =
-                        text.regionMatches(position, negativeSuffix, 0, negativeSuffix.length());
+                boolean containsNegSuffix = matchAffix(text, position, negativeSuffix);
                 boolean endsWithNegSuffix =
                         containsNegSuffix && text.length() == position + negativeSuffix.length();
                 gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
@@ -3506,6 +3506,44 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         if (needQuote) buffer.append('\'');
+    }
+
+    /**
+     * {@return if the text matches the affix} In lenient mode, lenient
+     * minus signs also match the hyphen-minus (U+002D).
+     * Package-private access, as it is being called from CompactNumberFormat.
+     */
+    boolean matchAffix(String text, int position, String affix) {
+        var alen = affix.length();
+        var tlen = text.length();
+
+        if (alen == 0) {
+            return true;
+        }
+        if (position >= tlen) {
+            return false;
+        }
+        if (parseStrict) {
+            return text.regionMatches(position, affix, 0, alen);
+        }
+
+        var lms = symbols.getLenientMinusSign();
+        if (alen == 1) {
+            var a = affix.codePointAt(0);
+            var c = text.codePointAt(position);
+            if (lms.indexOf(a) >= 0) {
+                return lms.indexOf(c) >= 0;
+            } else {
+                return a == c;
+            }
+        } else {
+            // slow path. normalize lenient minus to "-" and compare
+            var lmsp = Pattern.compile("[" + lms + "]", Pattern.CANON_EQ);
+            var a = lmsp.matcher(affix).replaceAll("-");
+            var t = lmsp.matcher(text.substring(position, Math.min(tlen, position + alen)))
+                .replaceAll("-");
+            return t.equals(a);
+        }
     }
 
     /**

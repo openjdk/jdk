@@ -79,6 +79,7 @@ class Bundle {
         "NumberElements/nan",
         "NumberElements/currencyDecimal",
         "NumberElements/currencyGroup",
+        "NumberElements/lenientMinusSign",
     };
 
     private static final String[] TIME_PATTERN_KEYS = {
