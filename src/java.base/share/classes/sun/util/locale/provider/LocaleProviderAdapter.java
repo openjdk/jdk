@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,9 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import jdk.internal.vm.annotation.Stable;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
+import sun.util.cldr.CLDRLocaleProviderAdapter;
 import sun.util.spi.CalendarProvider;
 
 import static java.lang.System.*;
@@ -64,28 +66,20 @@ public abstract class LocaleProviderAdapter {
      * Adapter type.
      */
     public enum Type {
-        JRE("sun.util.locale.provider.JRELocaleProviderAdapter", "sun.util.resources", "sun.text.resources"),
-        CLDR("sun.util.cldr.CLDRLocaleProviderAdapter", "sun.util.resources.cldr", "sun.text.resources.cldr"),
-        SPI("sun.util.locale.provider.SPILocaleProviderAdapter"),
-        HOST("sun.util.locale.provider.HostLocaleProviderAdapter"),
-        FALLBACK("sun.util.locale.provider.FallbackLocaleProviderAdapter", "sun.util.resources", "sun.text.resources");
+        JRE("sun.util.resources", "sun.text.resources"),
+        CLDR("sun.util.resources.cldr", "sun.text.resources.cldr"),
+        SPI(null, null),
+        HOST(null, null),
+        FALLBACK("sun.util.resources", "sun.text.resources");
 
-        private final String CLASSNAME;
         private final String UTIL_RESOURCES_PACKAGE;
         private final String TEXT_RESOURCES_PACKAGE;
+        @Stable
+        private volatile LocaleProviderAdapter adapter;
 
-        Type(String className) {
-            this(className, null, null);
-        }
-
-        Type(String className, String util, String text) {
-            CLASSNAME = className;
+        Type(String util, String text) {
             UTIL_RESOURCES_PACKAGE = util;
             TEXT_RESOURCES_PACKAGE = text;
-        }
-
-        public String getAdapterClassName() {
-            return CLASSNAME;
         }
 
         public String getUtilResourcesPackage() {
@@ -95,6 +89,29 @@ public abstract class LocaleProviderAdapter {
         public String getTextResourcesPackage() {
             return TEXT_RESOURCES_PACKAGE;
         }
+
+        public LocaleProviderAdapter getAdapter() {
+            if (adapter != null) {
+                return adapter;
+            }
+            return getAdapter0();
+        }
+
+        private synchronized LocaleProviderAdapter getAdapter0() {
+            if (adapter == null) {
+                // lazily load adapters here
+                adapter = switch (this) {
+                    case JRE -> new JRELocaleProviderAdapter();
+                    case CLDR -> new CLDRLocaleProviderAdapter();
+                    case SPI -> new SPILocaleProviderAdapter();
+                    case HOST -> new HostLocaleProviderAdapter();
+                    case FALLBACK -> new FallbackLocaleProviderAdapter();
+                    default -> throw new ServiceConfigurationError("Locale provider adapter \"" +
+                            this + "\"cannot be instantiated.");
+                };
+            }
+            return adapter;
+        }
     }
 
     /**
@@ -103,15 +120,22 @@ public abstract class LocaleProviderAdapter {
     private static final List<Type> adapterPreference;
 
     /**
-     * LocaleProviderAdapter instances
-     */
-    private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
-
-    /**
      * Adapter lookup cache.
      */
-    private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, ConcurrentMap<Locale, LocaleProviderAdapter>>
-        adapterCache = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Locale, LocaleProviderAdapter>
+            breakIteratorProviderAdapterMap           = new ConcurrentHashMap<>(),
+            collatorProviderAdapterMap                = new ConcurrentHashMap<>(),
+            dateFormatProviderAdapterMap              = new ConcurrentHashMap<>(),
+            dateFormatSymbolsProviderAdapterMap       = new ConcurrentHashMap<>(),
+            decimalFormatSymbolsProviderAdapterMap    = new ConcurrentHashMap<>(),
+            numberFormatProviderAdapterMap            = new ConcurrentHashMap<>(),
+            currencyNameProviderAdapterMap            = new ConcurrentHashMap<>(),
+            localeNameProviderAdapterMap              = new ConcurrentHashMap<>(),
+            timeZoneNameProviderAdapterMap            = new ConcurrentHashMap<>(),
+            calendarDataProviderAdapterMap            = new ConcurrentHashMap<>(),
+            calendarNameProviderAdapterMap            = new ConcurrentHashMap<>(),
+            calendarProviderAdapterMap                = new ConcurrentHashMap<>(),
+            javaTimeDateTimePatternProviderAdapterMap = new ConcurrentHashMap<>();
 
     static {
         String order = System.getProperty("java.locale.providers");
@@ -167,49 +191,17 @@ public abstract class LocaleProviderAdapter {
      * Returns the singleton instance for each adapter type
      */
     public static LocaleProviderAdapter forType(Type type) {
-        switch (type) {
-        case JRE:
-        case CLDR:
-        case SPI:
-        case HOST:
-        case FALLBACK:
-            LocaleProviderAdapter adapter = adapterInstances.get(type);
-            if (adapter == null) {
-                try {
-                    // lazily load adapters here
-                    adapter = (LocaleProviderAdapter)Class.forName(type.getAdapterClassName())
-                            .getDeclaredConstructor().newInstance();
-                    LocaleProviderAdapter cached = adapterInstances.putIfAbsent(type, adapter);
-                    if (cached != null) {
-                        adapter = cached;
-                    }
-                } catch (NoSuchMethodException |
-                         InvocationTargetException |
-                         ClassNotFoundException |
-                         IllegalAccessException |
-                         InstantiationException |
-                         UnsupportedOperationException e) {
-                    throw new ServiceConfigurationError("Locale provider adapter \"" +
-                            type + "\"cannot be instantiated.", e);
-                }
-            }
-            return adapter;
-        default:
-            throw new InternalError("unknown locale data adapter type");
-        }
+        return type.getAdapter();
     }
 
     public static LocaleProviderAdapter forJRE() {
-        return forType(Type.JRE);
+        return Type.JRE.getAdapter();
     }
 
     public static LocaleProviderAdapter getResourceBundleBased() {
         for (Type type : getAdapterPreference()) {
             if (type == Type.JRE || type == Type.CLDR || type == Type.FALLBACK) {
-                LocaleProviderAdapter adapter = forType(type);
-                if (adapter != null) {
-                    return adapter;
-                }
+                return type.getAdapter();
             }
         }
         // Shouldn't happen.
@@ -221,6 +213,24 @@ public abstract class LocaleProviderAdapter {
      */
     public static List<Type> getAdapterPreference() {
         return adapterPreference;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ConcurrentMap<Locale, LocaleProviderAdapter> getAdapterMap(Class<? extends LocaleServiceProvider> providerClass) {
+        if (providerClass == BreakIteratorProvider.class)           return breakIteratorProviderAdapterMap;
+        if (providerClass == CollatorProvider.class)                return collatorProviderAdapterMap;
+        if (providerClass == DateFormatProvider.class)              return dateFormatProviderAdapterMap;
+        if (providerClass == DateFormatSymbolsProvider.class)       return dateFormatSymbolsProviderAdapterMap;
+        if (providerClass == DecimalFormatSymbolsProvider.class)    return decimalFormatSymbolsProviderAdapterMap;
+        if (providerClass == NumberFormatProvider.class)            return numberFormatProviderAdapterMap;
+        if (providerClass == CurrencyNameProvider.class)            return currencyNameProviderAdapterMap;
+        if (providerClass == LocaleNameProvider.class)              return localeNameProviderAdapterMap;
+        if (providerClass == TimeZoneNameProvider.class)            return timeZoneNameProviderAdapterMap;
+        if (providerClass == CalendarDataProvider.class)            return calendarDataProviderAdapterMap;
+        if (providerClass == CalendarNameProvider.class)            return calendarNameProviderAdapterMap;
+        if (providerClass == CalendarProvider.class)                return calendarProviderAdapterMap;
+        if (providerClass == JavaTimeDateTimePatternProvider.class) return javaTimeDateTimePatternProviderAdapterMap;
+        throw new InternalError("should not come down here");
     }
 
     /**
@@ -237,23 +247,23 @@ public abstract class LocaleProviderAdapter {
         LocaleProviderAdapter adapter;
 
         // cache lookup
-        ConcurrentMap<Locale, LocaleProviderAdapter> adapterMap = adapterCache.get(providerClass);
-        if (adapterMap != null) {
-            if ((adapter = adapterMap.get(locale)) != null) {
-                return adapter;
-            }
-        } else {
-            adapterMap = new ConcurrentHashMap<>();
-            adapterCache.putIfAbsent(providerClass, adapterMap);
+        ConcurrentMap<Locale, LocaleProviderAdapter> adapterMap = getAdapterMap(providerClass);
+        if ((adapter = adapterMap.get(locale)) != null) {
+            return adapter;
         }
 
+        return getAdapter0(providerClass, locale, adapterMap);
+    }
+
+    private static LocaleProviderAdapter getAdapter0(Class<? extends LocaleServiceProvider> providerClass,
+                                                     Locale locale,
+                                                     ConcurrentMap<Locale, LocaleProviderAdapter> adapterMap) {
         // Fast look-up for the given locale
-        adapter = findAdapter(providerClass, locale);
+        LocaleProviderAdapter adapter = findAdapter(providerClass, locale);
         if (adapter != null) {
             adapterMap.putIfAbsent(locale, adapter);
             return adapter;
         }
-
         // Try finding an adapter in the normal candidate locales path of the given locale.
         List<Locale> lookupLocales = ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT)
                                         .getCandidateLocales("", locale);
@@ -270,20 +280,18 @@ public abstract class LocaleProviderAdapter {
         }
 
         // returns the adapter for FALLBACK as the last resort
-        adapterMap.putIfAbsent(locale, forType(Type.FALLBACK));
-        return forType(Type.FALLBACK);
+        adapterMap.putIfAbsent(locale, Type.FALLBACK.getAdapter());
+        return Type.FALLBACK.getAdapter();
     }
 
     private static LocaleProviderAdapter findAdapter(Class<? extends LocaleServiceProvider> providerClass,
                                                  Locale locale) {
         for (Type type : getAdapterPreference()) {
-            LocaleProviderAdapter adapter = forType(type);
-            if (adapter != null) {
-                LocaleServiceProvider provider = adapter.getLocaleServiceProvider(providerClass);
-                if (provider != null) {
-                    if (provider.isSupportedLocale(locale)) {
-                        return adapter;
-                    }
+            LocaleProviderAdapter adapter = type.getAdapter();
+            LocaleServiceProvider provider = adapter.getLocaleServiceProvider(providerClass);
+            if (provider != null) {
+                if (provider.isSupportedLocale(locale)) {
+                    return adapter;
                 }
             }
         }
