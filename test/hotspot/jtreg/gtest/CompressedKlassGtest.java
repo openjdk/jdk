@@ -33,6 +33,7 @@
 
 /* @test id=use-zero-based-encoding
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
@@ -40,6 +41,7 @@
 
 /* @test id=ccp_off
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompressedClassPointers -Xlog:metaspace* -Xmx6g -Xms128m
@@ -47,6 +49,7 @@
 
 /* @test id=use-zero-based-encoding-coh
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
@@ -54,7 +57,20 @@
 
 /* @test id=use-zero-based-encoding-coh-large-class-space
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=4g
+ */
+
+/* Very basic test on 32-bit, where we only support a pro-forma Compressed Class Pointers implementation without
+ * class space.
+ */
+
+/* @test id=32-bit
+ * @library /test/lib
+ * @requires vm.bits == "32"
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -Xlog:metaspace* -Xmx128m -Xms128m -Xshare:off
  */
