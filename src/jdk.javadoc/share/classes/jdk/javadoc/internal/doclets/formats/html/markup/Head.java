@@ -372,6 +372,7 @@ public class Head extends Content {
         if (addDefaultScript) {
             addScriptElement(head, DocPaths.SCRIPT_JS);
         }
+        addScriptElement(head, DocPaths.TOC_JS);
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
