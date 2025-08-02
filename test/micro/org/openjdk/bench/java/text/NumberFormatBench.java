@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -35,7 +36,12 @@ import java.util.Locale;
 public class NumberFormatBench {
 
     @Benchmark
-    public void getInstance() {
-        NumberFormat.getInstance(Locale.ENGLISH);
+    public NumberFormat getInstanceNumberFormat() {
+        return NumberFormat.getInstance(Locale.ENGLISH);
+    }
+
+    @Benchmark
+    public NumberFormat getInstanceDecimalFormat() {
+        return new DecimalFormat();
     }
 }
