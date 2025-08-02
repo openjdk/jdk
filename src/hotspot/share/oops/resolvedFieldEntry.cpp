@@ -46,7 +46,7 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   u2 saved_cpool_index = _cpool_index;
-  memset(this, 0, sizeof(*this));
+  memset((void *) this, 0, sizeof(*this));
   _cpool_index = saved_cpool_index;
 }
 
