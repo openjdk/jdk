@@ -603,9 +603,6 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
-  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                            false /* unregister_nmethods_during_purge */,
-                            false /* lock_nmethod_free_separately */);
 
   STWGCTimer* gc_timer = SerialFullGC::gc_timer();
   gc_timer->register_gc_start();
@@ -629,13 +626,6 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   // Adjust generation sizes.
   _old_gen->compute_new_size();
   _young_gen->compute_new_size();
-
-  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-  DEBUG_ONLY(MetaspaceUtils::verify();)
-
-  // Need to clear claim bits for the next mark.
-  ClassLoaderDataGraph::clear_claimed_marks();
 
   _old_gen->update_promote_stats();
 
