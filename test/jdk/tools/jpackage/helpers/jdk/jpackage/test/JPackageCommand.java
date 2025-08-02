@@ -1161,12 +1161,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else {
             assertFileInAppImage(lookupPath);
 
+            final Path rootDir = isImagePackageType() ? outputBundle() :
+                pathToUnpackedPackageFile(appInstallationDirectory());
+
+            final AppImageFile aif = AppImageFile.load(rootDir);
+
             if (TKit.isOSX()) {
-                final Path rootDir = isImagePackageType() ? outputBundle() :
-                        pathToUnpackedPackageFile(appInstallationDirectory());
-
-                AppImageFile aif = AppImageFile.load(rootDir);
-
                 boolean expectedValue = MacHelper.appImageSigned(this);
                 boolean actualValue = aif.macSigned();
                 TKit.assertEquals(expectedValue, actualValue,
@@ -1177,6 +1177,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertEquals(expectedValue, actualValue,
                     "Check for unexpected value of <app-store> property in app image file");
             }
+
+            TKit.assertStringListEquals(
+                    addLauncherNames().stream().sorted().toList(),
+                    aif.addLaunchers().keySet().stream().sorted().toList(),
+                    "Check additional launcher names");
         }
     }
 
