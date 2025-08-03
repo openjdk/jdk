@@ -64,6 +64,22 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-NoShortRunningLongLoop
+ * @bug 8329273 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoShortRunningLongLoop
+ */
+
+/*
+ * @test id=byte-array-AlignVector-NoShortRunningLongLoop
+ * @bug 8329273 8348263 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoShortRunningLongLoop
+ */
+
+/*
  * @test id=char-array
  * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
@@ -193,6 +209,7 @@ public class TestMemorySegment {
             switch (tag) {
                 case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
                 case "NoSpeculativeAliasingCheck" -> framework.addFlags("-XX:-UseAutoVectorizationSpeculativeAliasingChecks");
+                case "NoShortRunningLongLoop" ->     framework.addFlags("-XX:-ShortRunningLongLoop");
                 default ->                           throw new RuntimeException("Bad tag: " + tag);
             }
         }
@@ -798,7 +815,10 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false", "AlignVector", "true"},
+        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
+                     "ShortRunningLongLoop", "false",
+                     "AlignVector", "true"},
+        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
@@ -806,7 +826,9 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "ShortRunningLongLoop", "true",
+                      "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
@@ -826,7 +848,9 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false", "AlignVector", "true"},
+        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
+                     "ShortRunningLongLoop", "false",
+                     "AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
@@ -834,7 +858,9 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "ShortRunningLongLoop", "true",
+                      "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.

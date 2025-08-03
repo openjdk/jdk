@@ -66,11 +66,16 @@ void ParallelArguments::initialize() {
     }
   }
 
+  // True in product build, since tests using debug build often stress GC
+  if (FLAG_IS_DEFAULT(UseGCOverheadLimit)) {
+    FLAG_SET_DEFAULT(UseGCOverheadLimit, trueInProduct);
+  }
+
   if (InitialSurvivorRatio < MinSurvivorRatio) {
     if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
       if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
         jio_fprintf(defaultStream::error_stream(),
-          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %d vs %d\n", MinSurvivorRatio, InitialSurvivorRatio);
+          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %zu vs %zu\n", MinSurvivorRatio, InitialSurvivorRatio);
       }
       FLAG_SET_DEFAULT(MinSurvivorRatio, InitialSurvivorRatio);
     } else {

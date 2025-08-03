@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8344706
+ *      8362237
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -712,6 +713,42 @@ public class SourceLauncherTest extends TestRunner {
                 "at Thrower.throwWhenZero(Thrower.java:8)",
                 "at Thrower.throwWhenZero(Thrower.java:8)",
                 "at Thrower.main(Thrower.java:4)");
+    }
+
+    /*
+     * Tests in which main throws an exception without a stacktrace.
+     */
+    @Test
+    public void testTargetException2(Path base) throws IOException {
+        tb.writeJavaFiles(base, """
+                public class TestLauncher {
+                    public static TestLauncher testCheckcast(Object arg) {
+                        return (TestLauncher)arg;
+                    }
+
+                    public static void main(String[] args) {
+                        // Warmup to trigger C2 compilation
+                        TestLauncher t = new TestLauncher();
+                        for (int i = 0; i < 10_000; ++i) {
+                            testCheckcast(t);
+                            try {
+                                testCheckcast(42);
+                            } catch (Exception e) {
+                                // Expected
+                            }
+                        }
+                        // This will throw a ClassCastException without
+                        // a stack trace if OmitStackTraceInFastThrow
+                        // is enabled (default)
+                        testCheckcast(42);
+                    }
+                }
+                """);
+        Path file = base.resolve("TestLauncher.java");
+        Result r = run(file, Collections.emptyList(), List.of("3"));
+        checkEmpty("stdout", r.stdOut);
+        checkEmpty("stderr", r.stdErr);
+        checkTrace("exception", r.exception, "java.lang.ClassCastException");
     }
 
     @Test
