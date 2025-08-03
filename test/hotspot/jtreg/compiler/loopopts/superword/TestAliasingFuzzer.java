@@ -173,7 +173,7 @@ public class TestAliasingFuzzer {
 
         long t0 = System.nanoTime();
         // Add a java source file.
-        comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
+        comp.addJavaSourceCode("compiler.loopopts.superword.templated.AliasingFuzzer", generate(comp));
 
         long t1 = System.nanoTime();
         // Compile the source file.
@@ -187,8 +187,8 @@ public class TestAliasingFuzzer {
             default -> throw new RuntimeException("unknown run id=" + args[0]);
         };
         // Run the tests without any additional VM flags.
-        // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {flags});
+        // compiler.loopopts.superword.templated.AliasingFuzzer.main(new String[] {});
+        comp.invoke("compiler.loopopts.superword.templated.AliasingFuzzer", "main", new Object[] {flags});
         long t3 = System.nanoTime();
 
         System.out.println("Code Generation:  " + (t1-t0) * 1e-9f);

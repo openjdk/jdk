@@ -832,8 +832,10 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   Node* shallow = d1 > d2 ? s2 : s1;
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
 
   ResourceMark rm;
   Unique_Node_List worklist;
@@ -841,7 +843,7 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
-      if (!with_weak_memory_edges && preds.is_current_weak_memory_edge()) { continue; }
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -874,13 +876,15 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
     nodes_set.set(_body.bb_idx(n));
   }
 
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
 
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
-      if (!with_weak_memory_edges && preds.is_current_weak_memory_edge()) { continue; }
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
