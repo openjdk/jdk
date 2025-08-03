@@ -193,6 +193,9 @@ public interface Comparator<T> {
      * If the arguments are equal with respect to this comparator,
      * the {@code o1} argument is returned.
      *
+     * @implSpec This default implementation behaves as if
+     *           {@code compare(o1, o2) >= 0 ? o1 : o2}.
+     *
      * @param   o1   an argument.
      * @param   o2   another argument.
      * @param   <U> the type of the arguments and the result.
@@ -212,6 +215,9 @@ public interface Comparator<T> {
      * Returns the smaller of two values according to this comparator.
      * If the arguments are equal with respect to this comparator,
      * the {@code o1} argument is returned.
+     *
+     * @implSpec This default implementation behaves as if
+     *           {@code compare(o1, o2) <= 0 ? o1 : o2}.
      *
      * @param   o1   an argument.
      * @param   o2   another argument.
