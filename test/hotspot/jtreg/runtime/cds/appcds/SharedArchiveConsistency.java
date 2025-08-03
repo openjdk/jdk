@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class SharedArchiveConsistency {
     };
 
     public static final String HELLO_WORLD = "Hello World";
+    public static final String errMsg = "An error has occurred while processing the shared archive file.";
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
@@ -170,6 +171,7 @@ public class SharedArchiveConsistency {
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
         output.shouldNotContain("Checksum verification failed");
+        output.shouldContain(errMsg);
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }
@@ -194,6 +196,7 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file version " + hex(version) + " does not match the required version " + hex(currentCDSArchiveVersion));
+        output.shouldContain(errMsg);
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }
@@ -237,26 +240,26 @@ public class SharedArchiveConsistency {
         System.out.println("\n5. Insert bytes at beginning of data section, should fail\n");
         String insertBytes = startNewArchive("insert-bytes");
         CDSArchiveUtils.insertBytesRandomlyAfterHeader(orgJsaFile, insertBytes);
-        testAndCheck(verifyExecArgs);
+        testAndCheck(verifyExecArgs, errMsg);
 
         // delete bytes in data section forward
         System.out.println("\n6a. Delete bytes at beginning of data section, should fail\n");
         String deleteBytes = startNewArchive("delete-bytes");
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
-        testAndCheck(verifyExecArgs);
+        testAndCheck(verifyExecArgs, errMsg);
 
         // delete bytes at the end
         System.out.println("\n6b. Delete bytes at the end, should fail\n");
         deleteBytes = startNewArchive("delete-bytes-end");
         CDSArchiveUtils.deleteBytesAtTheEnd(orgJsaFile, deleteBytes);
-        testAndCheck(verifyExecArgs, "The shared archive file has been truncated.");
+        testAndCheck(verifyExecArgs, "The shared archive file has been truncated.", errMsg);
 
         // modify contents in random area
         System.out.println("\n7. modify Content in random areas, should fail\n");
         String randomAreas = startNewArchive("random-areas");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, randomAreas);
         CDSArchiveUtils.modifyRegionContentRandomly(copiedJsa);
-        testAndCheck(verifyExecArgs);
+        testAndCheck(verifyExecArgs, errMsg);
 
         // modify _base_archive_name_offet to non-zero
         System.out.println("\n8. modify _base_archive_name_offset to non-zero\n");
@@ -267,16 +270,6 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), 1024);
         baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
         System.out.println("new baseArchiveNameOffset = " + baseArchiveNameOffset);
-        testAndCheck(verifyExecArgs);
-
-        // modify _common_app_classpath_size
-        String wrongCommonAppClasspathOffset = startNewArchive("wrongCommonAppClasspathOffset");
-        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, wrongCommonAppClasspathOffset);
-        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
-        System.out.println("    commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
-        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), commonAppClasspathPrefixSize * 2);
-        commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
-        System.out.println("new commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
         testAndCheck(verifyExecArgs);
     }
 }

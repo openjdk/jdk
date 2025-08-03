@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
@@ -30,7 +30,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 
@@ -70,7 +69,6 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
 
   LogTarget(Debug, gc, heap, coops) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     print_mode(&ls);
   }

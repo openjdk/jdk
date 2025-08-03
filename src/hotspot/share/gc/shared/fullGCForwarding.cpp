@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals_extension.hpp"

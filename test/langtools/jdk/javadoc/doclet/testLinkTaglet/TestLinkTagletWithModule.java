@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,17 +73,17 @@ public class TestLinkTagletWithModule extends JavadocTester {
         checkOutput("m3/com/m3/app/App.html", true,
                 """
                     <div class="block"><a href="../../../../m1/module-summary.html"><code>m1</code></a>
-                     <a href="../../../../m1/module-summary.html"><code>m1</code></a>
-                     <a href="../../../../m1/com/m1/lib/package-summary.html"><code>package link</code></a>
-                     <a href="../../../../m1/com/m1/lib/Lib.html" title="class in com.m1.lib"><code>Lib</code></a>
-                     <a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a>
-                     <a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a>
-                     <a href="../../../../m2/module-summary.html">m2</a>
-                     <a href="../../../../m2/module-summary.html">m2</a>
-                     <a href="../../../../m2/com/m2/lib/package-summary.html">com.m2.lib</a>
-                     <a href="../../../../m2/com/m2/lib/Lib.html" title="class in com.m2.lib">Lib</a>
-                     <a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)">class link</a>
-                     <a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)">Lib.method(String)</a></div>
+                    <a href="../../../../m1/module-summary.html"><code>m1</code></a>
+                    <a href="../../../../m1/com/m1/lib/package-summary.html"><code>package link</code></a>
+                    <a href="../../../../m1/com/m1/lib/Lib.html" title="class in com.m1.lib"><code>Lib</code></a>
+                    <a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a>
+                    <a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a>
+                    <a href="../../../../m2/module-summary.html">m2</a>
+                    <a href="../../../../m2/module-summary.html">m2</a>
+                    <a href="../../../../m2/com/m2/lib/package-summary.html">com.m2.lib</a>
+                    <a href="../../../../m2/com/m2/lib/Lib.html" title="class in com.m2.lib">Lib</a>
+                    <a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)">class link</a>
+                    <a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)">Lib.method(String)</a></div>
                     """);
     }
 
@@ -105,21 +105,21 @@ public class TestLinkTagletWithModule extends JavadocTester {
         checkOutput("m3/com/m3/app/App.html", true,
                 """
                     <div class="block"><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a>
-                     <a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a>
-                     <a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>package link</code></a>
-                     <a href="../../../../../out1/m1/com/m1/lib/Lib.html" title="class or interface in com.m1.lib"\
+                    <a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a>
+                    <a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>package link</code></a>
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html" title="class or interface in com.m1.lib"\
                      class="external-link"><code>Lib</code></a>
-                     <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
                      interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a>
-                     <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
                      interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a>
-                     <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
-                     <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
-                     <a href="../../../../../out1/m2/com/m2/lib/package-summary.html" class="external-link">m2/com.m2.lib</a>
-                     <a href="../../../../../out1/m2/com/m2/lib/Lib.html" title="class or interface in com.m2.lib" class="external-link">Lib</a>
-                     <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
+                    <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
+                    <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
+                    <a href="../../../../../out1/m2/com/m2/lib/package-summary.html" class="external-link">m2/com.m2.lib</a>
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html" title="class or interface in com.m2.lib" class="external-link">Lib</a>
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
                      interface in com.m2.lib" class="external-link">class link</a>
-                     <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
                      interface in com.m2.lib" class="external-link">Lib.method(String)</a></div>
                     """);
     }
@@ -136,13 +136,13 @@ public class TestLinkTagletWithModule extends JavadocTester {
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
                     <div class="block"><a href="../../../com.ex1/com/ex1/package-summary.html"><code>package link</code></a>
-                     <a href="../../../com.ex1/module-summary.html"><code>module link</code></a>
-                     <a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a>
-                     <a href="../../../com.ex1/com/ex1/A.html" title="class in com.ex1"><code>class link</code></a>
-                     <a href="../../../com.ex1/com/ex1/A.html#m()"><code>A.m()</code></a>
-                     <a href="../../../com.ex1/com/ex1/A.html#m()"><code>A.m()</code></a>
-                     <a href="package-summary.html"><code>com.ex2</code></a>
-                     <a href="../../module-summary.html"><code>com.ex2</code></a></div>
+                    <a href="../../../com.ex1/module-summary.html"><code>module link</code></a>
+                    <a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a>
+                    <a href="../../../com.ex1/com/ex1/A.html" title="class in com.ex1"><code>class link</code></a>
+                    <a href="../../../com.ex1/com/ex1/A.html#m()"><code>A.m()</code></a>
+                    <a href="../../../com.ex1/com/ex1/A.html#m()"><code>A.m()</code></a>
+                    <a href="package-summary.html"><code>com.ex2</code></a>
+                    <a href="../../module-summary.html"><code>com.ex2</code></a></div>
                     """);
     }
 
@@ -162,13 +162,13 @@ public class TestLinkTagletWithModule extends JavadocTester {
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
                     <div class="block"><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>package link</code></a>
-                     <a href="../../../../out1/com.ex1/module-summary.html" class="external-link"><code>module link</code></a>
-                     <a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1/com.ex1</code></a>
-                     <a href="../../../../out1/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link"><code>class link</code></a>
-                     <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
-                     <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
-                     <a href="package-summary.html"><code>com.ex2</code></a>
-                     <a href="../../module-summary.html"><code>com.ex2</code></a></div>
+                    <a href="../../../../out1/com.ex1/module-summary.html" class="external-link"><code>module link</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1/com.ex1</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link"><code>class link</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
+                    <a href="package-summary.html"><code>com.ex2</code></a>
+                    <a href="../../module-summary.html"><code>com.ex2</code></a></div>
                     """);
     }
     void generateSources() throws Exception {

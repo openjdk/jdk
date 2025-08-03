@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ class UnixPath implements Path {
     private static byte[] encode(UnixFileSystem fs, String input) {
         input = fs.normalizeNativePath(input);
         try {
-            return JLA.getBytesNoRepl(input, Util.jnuEncoding());
+            return JLA.uncheckedGetBytesNoRepl(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
             throw new InvalidPathException(input,
                 "Malformed input or input contains unmappable characters");

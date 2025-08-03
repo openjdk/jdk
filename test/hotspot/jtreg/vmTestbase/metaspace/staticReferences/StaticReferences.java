@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Random;
 
 import metaspace.share.TriggerUnloadingHelper;
-import metaspace.share.TriggerUnloadingWithWhiteBox;
+import metaspace.share.TriggerUnloadingWithFullGC;
 import nsk.share.gc.GCTestBase;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
@@ -86,7 +86,7 @@ public class StaticReferences extends GCTestBase {
 
     private Random random;
 
-    private TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithWhiteBox();
+    private TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithFullGC();
 
     private String[] typesArray = new String[] {"Object object", "boolean boolean", "byte byte", "char char", "double double", "float float", "int int", "long long", "short short"};
 

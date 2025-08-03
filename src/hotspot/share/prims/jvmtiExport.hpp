@@ -309,7 +309,11 @@ class JvmtiExport : public AllStatic {
   // If the jvmti_thread_state is absent and any thread filtered event
   // is enabled globally then it is created.
   // Otherwise, the thread->jvmti_thread_state() is returned.
-  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread);
+  // The 'allow_suspend' parameter is passed as 'true' by default which work for almost all call sites.
+  // It means that a suspend point need to be organized by this function for virtual threads if the call
+  // to jvmtiEventController::thread_started hits a safepoint and gets a new suspend request.
+  // The 'allow_suspend' parameter must be passed as 'false' if thread is holding a VM lock.
+  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread, bool allow_suspend = true);
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
@@ -450,8 +454,6 @@ class JvmtiExport : public AllStatic {
                                                      jthread thread,
                                                      JavaThread ** jt_pp,
                                                      oop * thread_oop_p);
-  static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                         JavaThread ** jt_pp);
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It

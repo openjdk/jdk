@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -43,7 +42,7 @@ ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t max_capacity = _space_info->max_capacity();
-  size_t capacity = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->available();
 
   // Make sure the code below treats available without the soft tail.
@@ -56,6 +55,7 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
+    accept_trigger();
     return true;
   }
   return ShenandoahHeuristics::should_start_gc();

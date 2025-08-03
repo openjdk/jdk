@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -58,16 +57,16 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
-#include "services/writeableFlags.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
-#include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "services/threadService.hpp"
+#include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"

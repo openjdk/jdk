@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4316678
+ * @bug 4316678 8347841
  * @summary test that Calendar's Serialization works correctly.
  * @run junit bug4316678
  */
@@ -53,7 +53,7 @@ public class bug4316678 {
     // Set custom JVM default TimeZone
     @BeforeAll
     static void initAll() {
-        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
     // Restore JVM default Locale and TimeZone

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,6 +305,7 @@ public abstract class SSLSocket extends Socket
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
      * @see #setEnabledCipherSuites(String [])
@@ -331,6 +332,7 @@ public abstract class SSLSocket extends Socket
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getSupportedCipherSuites()
      * @see #setEnabledCipherSuites(String [])
@@ -358,6 +360,7 @@ public abstract class SSLSocket extends Socket
      * on why a specific ciphersuite may never be used on a connection.
      *
      * @param suites Names of all the cipher suites to enable
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException when one or more of the ciphers
      *          named by the parameter is not supported, or when the
      *          parameter is null.

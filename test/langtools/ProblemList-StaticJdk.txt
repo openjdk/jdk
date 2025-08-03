@@ -1,0 +1,29 @@
+# Requires javadoc
+jdk/javadoc/tool/6964914/TestStdDoclet.java                                8346719 generic-all
+jdk/javadoc/tool/6964914/TestUserDoclet.java                               8346719 generic-all
+jdk/javadoc/tool/AddOpensTest.java                                         8346719 generic-all
+jdk/javadoc/tool/EncodingTest.java                                         8346719 generic-all
+jdk/javadoc/tool/EnsureNewOldDoclet.java                                   8346719 generic-all
+jdk/javadoc/tool/QuietOption.java                                          8346719 generic-all
+jdk/javadoc/tool/testLocaleOption/TestLocaleOption.java                    8346719 generic-all
+
+# Requires javac
+tools/javac/ClassPathTest/ClassPathTest.java                               8346719 generic-all
+tools/javac/Paths/ClassPath.java                                           8346719 generic-all
+tools/javac/Paths/WildcardMineField.java                                   8346719 generic-all
+tools/javac/T8132562/ClassPathWithDoubleQuotesTest.java                    8346719 generic-all
+tools/javac/file/MultiReleaseJar/MultiReleaseJarTest.java                  8346719 generic-all
+tools/javac/modules/AllDefaultTest.java                                    8346719 generic-all
+tools/javac/modules/EnvVarTest.java                                        8346719 generic-all
+tools/javac/modules/InheritRuntimeEnvironmentTest.java                     8346719 generic-all
+tools/javac/modules/NPEEmptyFileTest.java                                  8346719 generic-all
+tools/javac/newlines/NewLineTest.java                                      8346719 generic-all
+tools/javac/options/smokeTests/OptionSmokeTest.java                        8346719 generic-all
+tools/javac/platform/PlatformProviderTest.java                             8346719 generic-all
+tools/javac/processing/options/testPrintProcessorInfo/TestWithXstdout.java 8346719 generic-all
+
+# Requires jar
+tools/jdeps/MultiReleaseJar.java                                           8346719 generic-all
+
+# Requires jimage
+tools/javac/Paths/MineField.java                                           8346719 generic-all

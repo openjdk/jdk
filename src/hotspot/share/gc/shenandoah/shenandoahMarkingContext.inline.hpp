@@ -28,6 +28,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "logging/log.hpp"
 

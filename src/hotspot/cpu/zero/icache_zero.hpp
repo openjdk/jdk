@@ -33,7 +33,7 @@
 
 class ICache : public AbstractICache {
  public:
-  static void initialize() {}
+  static void initialize(int phase) {}
   static void invalidate_word(address addr) {}
   static void invalidate_range(address start, int nbytes) {}
 };

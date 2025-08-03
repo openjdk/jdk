@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
 #include "oops/compressedOops.hpp"
@@ -66,11 +64,9 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
     // Compressed oops logging.
     log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     // JVM style warning that we did not succeed in using large pages.
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "
-                                   "req_addr: " PTR_FORMAT " bytes: %zu",
-                                   req_addr, bytes);
-    warning("%s", msg);
+    warning("Failed to reserve and commit memory using large pages. "
+            "req_addr: " PTR_FORMAT " bytes: %zu",
+            p2i(req_addr), bytes);
   }
 }
 
@@ -91,13 +87,13 @@ static char* reserve_memory_inner(char* requested_address,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
-    return os::attempt_reserve_memory_at(requested_address, size, exec, mem_tag);
+    return os::attempt_reserve_memory_at(requested_address, size, mem_tag, exec);
   }
 
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::reserve_memory(size, exec, mem_tag);
+  char* base = os::reserve_memory(size, mem_tag, exec);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -108,7 +104,7 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Map using the requested alignment.
-  return os::reserve_memory_aligned(size, alignment, exec);
+  return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
 }
 
 ReservedSpace MemoryReserver::reserve_memory(char* requested_address,
@@ -131,9 +127,9 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t alignment,
                                                      size_t page_size,
                                                      bool exec) {
-  log_trace(pagesize)("Attempt special mapping: size: %zu%s, alignment: %zu%s",
-                      byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_trace(pagesize)("Attempt special mapping: size: " EXACTFMT ", alignment: " EXACTFMT,
+                      EXACTFMTARGS(size),
+                      EXACTFMTARGS(alignment));
 
   char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
 
@@ -262,7 +258,7 @@ static char* map_memory_to_file(char* requested_address,
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::map_memory_to_file(size, fd);
+  char* base = os::map_memory_to_file(size, fd, mem_tag);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -425,19 +421,17 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
                                                         size_t size,
                                                         size_t alignment,
                                                         size_t page_size) {
-  const size_t attach_range = highest_start - lowest_start;
-  // Cap num_attempts at possible number.
-  // At least one is possible even for 0 sized attach range.
-  const uint64_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
-  const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
+  assert(is_aligned(highest_start, attach_point_alignment), "precondition");
+  assert(is_aligned(lowest_start, attach_point_alignment), "precondition");
 
-  const size_t stepsize = (attach_range == 0) ? // Only one try.
-    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
+  const size_t attach_range = pointer_delta(highest_start, lowest_start, sizeof(char));
+  const size_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
+  const size_t num_attempts_to_try   = MIN2((size_t)HeapSearchSteps, num_attempts_possible);
+  const size_t num_intervals = num_attempts_to_try - 1;
+  const size_t stepsize = num_intervals == 0 ? 0 : align_down(attach_range / num_intervals, attach_point_alignment);
 
-  // Try attach points from top to bottom.
-  for (char* attach_point = highest_start;
-       attach_point >= lowest_start && attach_point <= highest_start;  // Avoid wrap around.
-       attach_point -= stepsize) {
+  for (size_t i = 0; i < num_attempts_to_try; ++i) {
+    char* const attach_point = highest_start - stepsize * i;
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
     if (reserved.is_reserved()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
@@ -52,21 +51,12 @@ uintptr_t VM_Version::_pac_mask;
 SpinWait VM_Version::_spin_wait;
 
 static SpinWait get_spin_wait_desc() {
-  if (strcmp(OnSpinWaitInst, "nop") == 0) {
-    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
-    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
-    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "none") != 0) {
-    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
+  SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
+  if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
+    vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
   }
 
-  if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
-    vm_exit_during_initialization("OnSpinWaitInstCount cannot be used for OnSpinWaitInst 'none'");
-  }
-
-  return SpinWait{};
+  return spin_wait;
 }
 
 void VM_Version::initialize() {
@@ -162,6 +152,9 @@ void VM_Version::initialize() {
         (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
       FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
+    }
   }
 
   // ThunderX
@@ -241,7 +234,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (_features & (CPU_FP | CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -377,7 +370,7 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
     }
-  } else if (UseSHA3Intrinsics) {
+  } else if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
@@ -413,6 +406,28 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else if (UseDilithiumIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          warning("Dilithium intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -618,6 +633,7 @@ void VM_Version::initialize() {
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }
+  size_t features_offset = strnlen(buf, sizeof(buf));
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
   do {                                                          \
     if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
@@ -625,7 +641,11 @@ void VM_Version::initialize() {
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = extract_features_string(_cpu_info_string,
+                                             strnlen(_cpu_info_string, sizeof(buf)),
+                                             features_offset);
 }
 
 #if defined(LINUX)
@@ -692,7 +712,7 @@ void VM_Version::initialize_cpu_information(void) {
   int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
-  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
 
   _initialized = true;
 }

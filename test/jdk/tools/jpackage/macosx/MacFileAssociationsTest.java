@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static java.util.Map.entry;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.MacHelper.PListWrapper;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.test.Annotations.Test;
 
 /**
@@ -74,19 +74,19 @@ public class MacFileAssociationsTest {
         verifyPList(appImage);
     }
 
-    private static void checkStringValue(PListWrapper plist, String key, String value) {
+    private static void checkStringValue(PListReader plist, String key, String value) {
         String result = plist.queryValue(key);
         TKit.assertEquals(value, result, String.format(
                 "Check value of %s plist key", key));
     }
 
-    private static void checkBoolValue(PListWrapper plist, String key, Boolean value) {
+    private static void checkBoolValue(PListReader plist, String key, Boolean value) {
         Boolean result = plist.queryBoolValue(key);
         TKit.assertEquals(value.toString(), result.toString(), String.format(
                 "Check value of %s plist key", key));
     }
 
-    private static void checkArrayValue(PListWrapper plist, String key,
+    private static void checkArrayValue(PListReader plist, String key,
             List<String> values) {
         List<String> result = plist.queryArrayValue(key);
         TKit.assertStringListEquals(values, result, String.format(
@@ -94,7 +94,7 @@ public class MacFileAssociationsTest {
     }
 
     private static void verifyPList(Path appImage) throws Exception {
-        PListWrapper plist = MacHelper.readPListFromAppImage(appImage);
+        var plist = MacHelper.readPListFromAppImage(appImage);
         checkStringValue(plist, "CFBundleTypeRole", "Viewer");
         checkStringValue(plist, "LSHandlerRank", "Default");
         checkStringValue(plist, "NSDocumentClass", "SomeClass");

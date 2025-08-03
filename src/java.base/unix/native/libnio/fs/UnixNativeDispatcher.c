@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <sys/xattr.h>
+#endif
+
+#if defined(_AIX)
+#include <sys/ea.h>
 #endif
 
 /* For POSIX-compliant getpwuid_r */
@@ -387,11 +391,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports extended attributes */
 
-#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_)
+#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_) || defined(_AIX)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
     return capabilities;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
+#if defined(__linux__)
+    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -788,6 +802,19 @@ Java_sun_nio_fs_UnixNativeDispatcher_fchmod0(JNIEnv* env, jclass this, jint file
     int err;
 
     RESTARTABLE(fchmod((int)filedes, (mode_t)mode), err);
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodat0(JNIEnv* env, jclass this,
+    jint fd, jlong pathAddress, jint mode, jint flag)
+{
+    int err;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    RESTARTABLE(fchmodat((int)fd, path, (mode_t)mode, (int)flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }
@@ -1381,6 +1408,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     res = fgetxattr(fd, name, value, valueLen);
 #elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fgetea(fd, name, value, valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1402,6 +1431,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
     res = fsetxattr(fd, name, value, valueLen, 0);
 #elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fsetea(fd, name, value, valueLen, 0);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1421,6 +1452,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
     res = fremovexattr(fd, name);
 #elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
+#elif defined(_AIX)
+    res = fremoveea(fd, name);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1440,6 +1473,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     res = flistxattr(fd, list, (size_t)size);
 #elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
+#elif defined(_AIX)
+    res = flistea(fd, list, (size_t)size);
 #else
     throwUnixException(env, ENOTSUP);
 #endif

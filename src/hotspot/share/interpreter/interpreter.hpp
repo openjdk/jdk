@@ -44,7 +44,6 @@ class InterpreterMacroAssembler;
 
 class InterpreterCodelet: public Stub {
   friend class VMStructs;
-  friend class CodeCacheDumper; // possible extension [do not remove]
  private:
   NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
   NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.

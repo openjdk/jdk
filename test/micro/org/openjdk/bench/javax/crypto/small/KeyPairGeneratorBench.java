@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,5 +31,23 @@ public class KeyPairGeneratorBench extends org.openjdk.bench.javax.crypto.full.K
 
     @Param({"2048"})
     private int keyLength;
+
+    public static class MLDSA extends KeyPairGeneratorBench {
+
+        @Param({"ML-DSA-65"})
+        private String algorithm;
+
+        @Param({"0"}) // ML_DSA key length is not supported
+        private int keyLength;
+    }
+
+    public static class MLKEM extends KeyPairGeneratorBench {
+
+        @Param({"ML-KEM-768"})
+        private String algorithm;
+
+        @Param({"0"}) // ML-KEM key length is not supported
+        private int keyLength;
+    }
 
 }

@@ -19,6 +19,11 @@ public class UserInterruptException extends RuntimeException {
 
     private final String partialLine;
 
+    public UserInterruptException(Throwable cause) {
+        super(cause);
+        this.partialLine = null;
+    }
+
     public UserInterruptException(String partialLine) {
         this.partialLine = partialLine;
     }

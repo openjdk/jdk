@@ -58,6 +58,7 @@ public sealed interface ModuleExportInfo
 
     /**
      * {@return the flags associated with this export declaration, as a bit mask}
+     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
      *
      * @see ModuleDescriptor.Exports#modifiers()
      * @see AccessFlag.Location#MODULE_EXPORTS

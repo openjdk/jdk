@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlassFlags.hpp"
@@ -38,36 +37,19 @@ void InstanceKlassFlags::print_on(outputStream* st) const {
 #undef IK_FLAGS_PRINT
 }
 
-#if INCLUDE_CDS
-void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {
-  switch (loader_type) {
-  case ClassLoader::BOOT_LOADER:
-    _flags |= _misc_is_shared_boot_class;
-    break;
-  case ClassLoader::PLATFORM_LOADER:
-    _flags |= _misc_is_shared_platform_class;
-    break;
-  case ClassLoader::APP_LOADER:
-    _flags |= _misc_is_shared_app_class;
-    break;
-  default:
-    ShouldNotReachHere();
-    break;
-  }
-}
+void InstanceKlassFlags::set_class_loader_type(const ClassLoaderData* cld) {
+  assert((_flags & builtin_loader_type_bits()) == 0, "set only once");
 
-void InstanceKlassFlags::assign_class_loader_type(const ClassLoaderData* cld) {
   if (cld->is_boot_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
+    _flags |= _misc_defined_by_boot_loader;
   }
   else if (cld->is_platform_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
+    _flags |= _misc_defined_by_platform_loader;
   }
   else if (cld->is_system_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::APP_LOADER);
+    _flags |= _misc_defined_by_app_loader;
   }
 }
-#endif // INCLUDE_CDS
 
 #ifdef ASSERT
 void InstanceKlassFlags::assert_is_safe(bool set) {

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -30,6 +29,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -61,6 +61,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -166,8 +167,8 @@ uintx Universe::_the_array_interfaces_bitmap = 0;
 uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
-debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
-debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
+DEBUG_ONLY(OopHandle Universe::_fullgc_alot_dummy_array;)
+DEBUG_ONLY(int Universe::_fullgc_alot_dummy_next = 0;)
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -437,6 +438,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -444,7 +448,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
@@ -573,7 +576,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       }
     }
     if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_scratch_objects(CHECK);
+      HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
     }
 }
 
@@ -895,17 +898,24 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
-
 #if INCLUDE_CDS
-  DynamicArchive::check_for_dynamic_dump();
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
   }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
-    MetaspaceShared::prepare_for_dumping();
+    CDSConfig::prepare_for_dumping();
   }
 #endif
 
@@ -942,8 +952,9 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
+  assert(is_aligned(heap_size, alignment), "precondition");
 
-  size_t total_reserved = align_up(heap_size, alignment);
+  size_t total_reserved = heap_size;
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
@@ -959,37 +970,34 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // Now create the space.
   ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
-  if (rhs.is_reserved()) {
-    assert(total_reserved == rhs.size(),    "must be exactly of required size");
-    assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
-
-    assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
-           "area must be distinguishable from marks for mark-sweep");
-    assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
-           &rhs.base()[rhs.size()],
-           "area must be distinguishable from marks for mark-sweep");
-
-    // We are good.
-
-    if (AllocateHeapAt != nullptr) {
-      log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
-    }
-
-    if (UseCompressedOops) {
-      CompressedOops::initialize(rhs);
-    }
-
-    Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
-
-    return rhs;
+  if (!rhs.is_reserved()) {
+    vm_exit_during_initialization(
+      err_msg("Could not reserve enough space for %zu KB object heap",
+              total_reserved/K));
   }
 
-  vm_exit_during_initialization(
-    err_msg("Could not reserve enough space for %zuKB object heap",
-            total_reserved/K));
+  assert(total_reserved == rhs.size(),    "must be exactly of required size");
+  assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
 
-  // satisfy compiler
-  ShouldNotReachHere();
+  assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
+      "area must be distinguishable from marks for mark-sweep");
+  assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
+      &rhs.base()[rhs.size()],
+      "area must be distinguishable from marks for mark-sweep");
+
+  // We are good.
+
+  if (AllocateHeapAt != nullptr) {
+    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+  }
+
+  if (UseCompressedOops) {
+    CompressedOops::initialize(rhs);
+  }
+
+  Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
+
+  return rhs;
 }
 
 OopStorage* Universe::vm_weak() {
@@ -1164,7 +1172,10 @@ void Universe::compute_base_vtable_size() {
 void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
-  heap()->print_on(st);
+
+  StreamIndentor si(st, 1);
+  heap()->print_heap_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void Universe::print_heap_at_SIGBREAK() {

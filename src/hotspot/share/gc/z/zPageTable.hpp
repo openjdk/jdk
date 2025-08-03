@@ -45,6 +45,8 @@ private:
 public:
   ZPageTable();
 
+  int count() const;
+
   ZPage* get(zaddress addr) const;
   ZPage* get(volatile zpointer* p) const;
 

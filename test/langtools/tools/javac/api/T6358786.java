@@ -25,7 +25,7 @@
  * @test
  * @bug     6358786
  * @summary Doccomments are not returned from Tree API
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler/com.sun.tools.javac.api
  * @run main T6358786 T6358786.java
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
@@ -41,8 +40,6 @@
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
   ConcurrentGCThread(),
-  _vtime_start(0.0),
-  _vtime_accum(0.0),
   _notifier(Mutex::nosafepoint, FormatBuffer<>("G1 Refine#%d", worker_id), true),
   _requested_active(false),
   _refinement_stats(),
@@ -54,8 +51,6 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
 }
 
 void G1ConcurrentRefineThread::run_service() {
-  _vtime_start = os::elapsedVTime();
-
   while (wait_for_completed_buffers()) {
     SuspendibleThreadSetJoiner sts_join;
     G1ConcurrentRefineStats active_stats_start = _refinement_stats;
@@ -75,7 +70,7 @@ void G1ConcurrentRefineThread::run_service() {
       }
     }
     report_inactive("Deactivated", _refinement_stats - active_stats_start);
-    track_usage();
+    update_perf_counter_cpu_time();
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
@@ -129,12 +124,17 @@ void G1ConcurrentRefineThread::stop_service() {
   activate();
 }
 
+jlong G1ConcurrentRefineThread::cpu_time() {
+  return os::thread_cpu_time(this);
+}
+
 // The (single) primary thread drives the controller for the refinement threads.
 class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
   bool maybe_deactivate() override;
   void do_refinement_step() override;
-  void track_usage() override;
+  // Updates jstat cpu usage for all refinement threads.
+  void update_perf_counter_cpu_time() override;
 
 public:
   G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr) :
@@ -180,10 +180,8 @@ void G1PrimaryConcurrentRefineThread::do_refinement_step() {
   }
 }
 
-void G1PrimaryConcurrentRefineThread::track_usage() {
-  G1ConcurrentRefineThread::track_usage();
-  // The primary thread is responsible for updating the CPU time for all workers.
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+void G1PrimaryConcurrentRefineThread::update_perf_counter_cpu_time() {
+  if (UsePerfData) {
     ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
     cr()->threads_do(&tttc);
   }
@@ -192,6 +190,7 @@ void G1PrimaryConcurrentRefineThread::track_usage() {
 class G1SecondaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
   void do_refinement_step() override;
+  void update_perf_counter_cpu_time() override { /* Nothing to do. The primary thread does all the work. */ }
 
 public:
   G1SecondaryConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :

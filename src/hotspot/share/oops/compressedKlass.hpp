@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ class CompressedKlassPointers : public AllStatic {
   static address _base;
   static int _shift;
 
-  // Start and end of the Klass Range.
+  // Start and end of the Klass Range. Start includes the protection zone if one exists.
   // Note: guaranteed to be aligned to 1<<shift (klass_alignment_in_bytes)
   static address _klass_range_start;
   static address _klass_range_end;
@@ -134,9 +134,12 @@ class CompressedKlassPointers : public AllStatic {
   static narrowKlass _lowest_valid_narrow_klass_id;
   static narrowKlass _highest_valid_narrow_klass_id;
 
+  // Protection zone size (0 if not set up)
+  static size_t _protection_zone_size;
 
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
+  static char* reserve_address_space_below_4G(size_t size, bool aslr);
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
@@ -211,6 +214,7 @@ public:
 
   // Can only be used after initialization
   static address  base()             { check_init(_base); return  _base; }
+  static address  base_addr()        { return (address)&_base; }
   static int      shift()            { check_init(_shift); return  _shift; }
 
   static address  klass_range_start()  { return  _klass_range_start; }
@@ -227,17 +231,18 @@ public:
   // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }
 
-  static bool is_null(Klass* v)      { return v == nullptr; }
-  static bool is_null(narrowKlass v) { return v == 0; }
+  static bool is_null(const Klass* v)  { return v == nullptr; }
+  static bool is_null(narrowKlass v)   { return v == 0; }
 
   // Versions without asserts
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v);
   static inline Klass* decode_without_asserts(narrowKlass v);
   static inline Klass* decode_not_null(narrowKlass v);
   static inline Klass* decode(narrowKlass v);
 
-  static inline narrowKlass encode_not_null_without_asserts(Klass* k, address narrow_base, int shift);
-  static inline narrowKlass encode_not_null(Klass* v);
-  static inline narrowKlass encode(Klass* v);
+  static inline narrowKlass encode_not_null_without_asserts(const Klass* k, address narrow_base, int shift);
+  static inline narrowKlass encode_not_null(const Klass* v);
+  static inline narrowKlass encode(const Klass* v);
 
 #ifdef ASSERT
   // Given an address, check that it can be encoded with the current encoding
@@ -245,6 +250,9 @@ public:
   // Given a narrow Klass ID, check that it is valid according to current encoding
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
+
+  // Given a narrow Klass ID, returns true if it appears to be valid
+  inline static bool is_valid_narrow_klass_id(narrowKlass nk);
 
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
@@ -257,6 +265,12 @@ public:
     return (address)addr >= _klass_range_start && (address)addr < _klass_range_end &&
         is_aligned(addr, klass_alignment_in_bytes());
   }
+
+  // Protect a zone a the start of the encoding range
+  static void establish_protection_zone(address addr, size_t size);
+
+  // Returns true if address points into protection zone (for error reporting)
+  static bool is_in_protection_zone(address addr);
 
 #if defined(AARCH64) && !defined(ZERO)
   // Check that with the given base, shift and range, aarch64 code can encode and decode the klass pointer.

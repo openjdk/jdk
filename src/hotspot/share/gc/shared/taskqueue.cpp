@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"

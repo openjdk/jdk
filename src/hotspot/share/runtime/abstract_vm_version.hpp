@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,10 @@ class Abstract_VM_Version: AllStatic {
 
   // CPU feature flags, can be affected by VM settings.
   static uint64_t _features;
+
   static const char* _features_string;
+
+  static const char* _cpu_info_string;
 
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
@@ -110,6 +113,7 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_info_string();
   static const char* vm_release();
   static const char* vm_platform_string();
+  static const char* vm_variant();
 
   static int vm_major_version()               { return _vm_major_version; }
   static int vm_minor_version()               { return _vm_minor_version; }
@@ -125,9 +129,12 @@ class Abstract_VM_Version: AllStatic {
   static const char* jdk_debug_level();
   static const char* printable_jdk_debug_level();
 
-  static uint64_t features()           { return _features; }
   static const char* features_string() { return _features_string; }
-  static void insert_features_names(char* buf, size_t buflen, const char* features_names[]);
+
+  static const char* cpu_info_string() { return _cpu_info_string; }
+  static const char* extract_features_string(const char* cpu_info_string,
+                                             size_t cpu_info_string_len,
+                                             size_t features_offset);
 
   static VirtualizationType get_detected_virtualization() {
     return _detected_virtualization;

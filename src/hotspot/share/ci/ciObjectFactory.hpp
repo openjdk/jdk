@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ private:
     return p->object()->get_oop() == key;
   }
 
-  NonPermObject* &find_non_perm(oop key);
-  void insert_non_perm(NonPermObject* &where, oop key, ciObject* obj);
+  NonPermObject* &find_non_perm(Handle keyHandle);
+  void insert_non_perm(NonPermObject* &where, Handle keyHandle, ciObject* obj);
 
   void init_ident_of(ciBaseObject* obj);
 
@@ -106,6 +106,9 @@ public:
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
   static ciSymbol* vm_symbol_at(vmSymbolID index);
+
+  // Called on every new object made.
+  void notice_new_object(ciBaseObject* new_object);
 
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,

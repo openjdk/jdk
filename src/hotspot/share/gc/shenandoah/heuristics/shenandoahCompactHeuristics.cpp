@@ -23,10 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -48,7 +47,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
   size_t max_capacity = _space_info->max_capacity();
-  size_t capacity = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->available();
 
   // Make sure the code below treats available without the soft tail.
@@ -62,6 +61,7 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    accept_trigger();
     return true;
   }
 
@@ -70,6 +70,7 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     log_trigger("Allocated since last cycle (%zu%s) is larger than allocation threshold (%zu%s)",
                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
+    accept_trigger();
     return true;
   }
 

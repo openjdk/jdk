@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
@@ -367,8 +366,8 @@ void PhaseChaitin::Register_Allocate() {
   _alternate = 0;
   _matcher._allocation_started = true;
 
-  ResourceArea split_arena(mtCompiler);     // Arena for Split local resources
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness & IFG info
+  ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
 
   // Need live-ness for the IFG; need the IFG for coalescing.  If the
@@ -407,6 +406,8 @@ void PhaseChaitin::Register_Allocate() {
     _live = &live;                // Mark LIVE as being available
   }
 
+  C->print_method(PHASE_INITIAL_LIVENESS, 4);
+
   // Base pointers are currently "used" by instructions which define new
   // derived pointers.  This makes base pointers live up to the where the
   // derived pointer is made, but not beyond.  Really, they need to be live
@@ -423,12 +424,14 @@ void PhaseChaitin::Register_Allocate() {
     gather_lrg_masks(false);
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
+    C->print_method(PHASE_LIVE_RANGE_STRETCHING, 4);
   }
-
-  C->print_method(PHASE_INITIAL_LIVENESS, 4);
 
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time
+  if (C->failing()) {
+    return;
+  }
 
   // The IFG is/was triangular.  I am 'squaring it up' so Union can run
   // faster.  Union requires a 'for all' operation which is slow on the
@@ -472,6 +475,9 @@ void PhaseChaitin::Register_Allocate() {
   // Build physical interference graph
   uint must_spill = 0;
   must_spill = build_ifg_physical(&live_arena);
+  if (C->failing()) {
+    return;
+  }
   // If we have a guaranteed spill, might as well spill now
   if (must_spill) {
     if(!_lrg_map.max_lrg_id()) {
@@ -513,6 +519,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_INITIAL_SPILLING, 4);
 
     build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
     // Only do conservative coalescing if requested
@@ -596,6 +605,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_ITERATIVE_SPILLING, 4);
 
     must_spill = build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
 
@@ -1324,7 +1336,7 @@ void PhaseChaitin::Simplify( ) {
     bool bound = lrgs(lo_score)._is_bound;
 
     // Find cheapest guy
-    debug_only( int lo_no_simplify=0; );
+    DEBUG_ONLY( int lo_no_simplify=0; );
     for (uint i = _hi_degree; i; i = lrgs(i)._next) {
       assert(!_ifg->_yanked->test(i), "");
       // It's just vaguely possible to move hi-degree to lo-degree without
@@ -1336,7 +1348,7 @@ void PhaseChaitin::Simplify( ) {
         lo_score = i;
         break;
       }
-      debug_only( if( lrgs(i)._was_lo ) lo_no_simplify=i; );
+      DEBUG_ONLY( if( lrgs(i)._was_lo ) lo_no_simplify=i; );
       double iscore = lrgs(i).score();
       double iarea = lrgs(i)._area;
       double icost = lrgs(i)._cost;
@@ -1578,7 +1590,7 @@ uint PhaseChaitin::Select( ) {
 
     // Remove neighbor colors
     IndexSet *s = _ifg->neighbors(lidx);
-    debug_only(RegMask orig_mask = lrg->mask();)
+    DEBUG_ONLY(RegMask orig_mask = lrg->mask();)
 
     if (!s->is_empty()) {
       IndexSetIterator elements(s);
@@ -1707,8 +1719,8 @@ uint PhaseChaitin::Select( ) {
         ttyLocker ttyl;
         tty->print("L%d spilling with neighbors: ", lidx);
         s->dump();
-        debug_only(tty->print(" original mask: "));
-        debug_only(orig_mask.dump());
+        DEBUG_ONLY(tty->print(" original mask: "));
+        DEBUG_ONLY(orig_mask.dump());
         dump_lrg(lidx);
       }
 #endif

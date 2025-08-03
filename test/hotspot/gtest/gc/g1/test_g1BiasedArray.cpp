@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,29 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "unittest.hpp"
 
 class TestMappedArray : public G1BiasedMappedArray<int> {
+  void verify_biased_index_inclusive_end(idx_t biased_index) const {
+    guarantee(_biased_base != 0, "Array not initialized");
+    guarantee(biased_index >= bias() && biased_index <= (bias() + length()),
+              "Biased index out of inclusive bounds, index: %zu bias: %zu length: %zu",
+              biased_index, bias(), length());
+  }
+
 public:
   virtual int default_value() const {
     return 0xBAADBABE;
   }
+
   int* my_address_mapped_to(HeapWord* address) {
-    return address_mapped_to(address);
+    idx_t biased_index = ((uintptr_t)address) >> shift_by();
+    verify_biased_index_inclusive_end(biased_index);
+    return biased_base_at(biased_index);
   }
+
+  int* base() const { return G1BiasedMappedArray<int>::base(); }
 };
 
 TEST_VM(G1BiasedArray, simple) {

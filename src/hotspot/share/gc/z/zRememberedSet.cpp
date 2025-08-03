@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBitMap.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -53,12 +52,6 @@ void ZRememberedSet::initialize(size_t page_size) {
   const BitMap::idx_t size_in_bits = to_bit_size(page_size);
   _bitmap[0].initialize(size_in_bits, true /* clear */);
   _bitmap[1].initialize(size_in_bits, true /* clear */);
-}
-
-void ZRememberedSet::delete_all() {
-  assert(is_initialized(), "precondition");
-  _bitmap[0].resize(0);
-  _bitmap[1].resize(0);
 }
 
 bool ZRememberedSet::is_cleared_current() const {

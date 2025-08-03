@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,16 @@
  * questions.
  */
 
-#include "kludge_c++11.h"
-
+#include <set>
 #include <fstream>
 #include <algorithm>
 #include "CfgFile.h"
+#include "SysInfo.h"
 #include "Log.h"
 #include "Toolbox.h"
 #include "FileUtils.h"
 #include "ErrorHandling.h"
+#include "StringProcessing.h"
 
 
 const CfgFile::Properties& CfgFile::getProperties(
@@ -60,37 +61,81 @@ CfgFile& CfgFile::setPropertyValue(const SectionName& sectionName,
 
 namespace {
 
-tstring expandMacros(const tstring& str, const CfgFile::Macros& macros) {
-    tstring reply = str;
-    CfgFile::Macros::const_iterator it = macros.begin();
-    const CfgFile::Macros::const_iterator end = macros.end();
-    for (; it != end; ++it) {
-        reply = tstrings::replace(reply, it->first, it->second);
+template <typename CfgFileType, typename OpType>
+void iterateProperties(CfgFileType& cfgFile, OpType& op) {
+    for (auto mapIt = cfgFile.begin(), mapEnd = cfgFile.end(); mapIt != mapEnd; ++mapIt) {
+        for (auto propertyIt = mapIt->second.begin(), propertyEnd = mapIt->second.end(); propertyIt != propertyEnd; ++propertyIt) {
+            for (auto strIt = propertyIt->second.begin(), strEnd = propertyIt->second.end(); strIt != strEnd; ++strIt) {
+                op(strIt);
+            }
+        }
     }
-    return reply;
 }
+
+struct tokenize_strings {
+    void operator () (tstring_array::const_iterator& strIt) {
+        const auto tokens = StringProcessing::tokenize(*strIt);
+        values.push_back(tokens);
+    }
+
+    std::set<tstring> variableNames() const {
+        std::set<tstring> allVariableNames;
+        for (auto it = values.begin(), end = values.end(); it != end; ++it) {
+            const auto variableNames = StringProcessing::extractVariableNames(*it);
+            allVariableNames.insert(variableNames.begin(), variableNames.end());
+        }
+
+        return allVariableNames;
+    }
+
+    std::vector<StringProcessing::TokenizedString> values;
+};
+
+class expand_macros {
+public:
+    expand_macros(const CfgFile::Macros& m,
+        std::vector<StringProcessing::TokenizedString>::iterator iter) : macros(m), curTokenizedString(iter) {
+    }
+
+    void operator () (tstring_array::iterator& strIt) {
+        StringProcessing::expandVariables(*curTokenizedString, macros);
+        auto newStr = StringProcessing::stringify(*curTokenizedString);
+        ++curTokenizedString;
+        if (*strIt != newStr) {
+            LOG_TRACE(tstrings::any() << "Map [" << *strIt << "] into [" << newStr << "]");
+        }
+        strIt->swap(newStr);
+    }
+
+private:
+    const CfgFile::Macros& macros;
+    std::vector<StringProcessing::TokenizedString>::iterator curTokenizedString;
+};
 
 } // namespace
 
 CfgFile CfgFile::expandMacros(const Macros& macros) const {
     CfgFile copyCfgFile = *this;
 
-    PropertyMap::iterator mapIt = copyCfgFile.data.begin();
-    const PropertyMap::iterator mapEnd = copyCfgFile.data.end();
-    for (; mapIt != mapEnd; ++mapIt) {
-        Properties::iterator propertyIt = mapIt->second.begin();
-        const Properties::iterator propertyEnd = mapIt->second.end();
-        for (; propertyIt != propertyEnd; ++propertyIt) {
-            tstring_array::iterator strIt = propertyIt->second.begin();
-            const tstring_array::iterator strEnd = propertyIt->second.end();
-            for (; strIt != strEnd; ++strIt) {
-                tstring newValue;
-                while ((newValue = ::expandMacros(*strIt, macros)) != *strIt) {
-                    strIt->swap(newValue);
-                }
+    tokenize_strings tokenizedStrings;
+    iterateProperties(static_cast<const CfgFile::PropertyMap&>(copyCfgFile.data), tokenizedStrings);
+
+    Macros allMacros(macros);
+
+    const auto variableNames = tokenizedStrings.variableNames();
+    for (auto it = variableNames.begin(), end = variableNames.end(); it != end; ++it) {
+        if (macros.find(*it) == macros.end()) {
+            // Not one of the reserved macro names. Assuming an environment variable.
+            const auto envVarName = *it;
+            if (SysInfo::isEnvVariableSet(envVarName)) {
+                const auto envVarValue = SysInfo::getEnvVariable(envVarName);
+                allMacros[envVarName] = envVarValue;
             }
         }
     }
+
+    expand_macros expandMacros(allMacros, tokenizedStrings.values.begin());
+    iterateProperties(copyCfgFile.data, expandMacros);
 
     return copyCfgFile;
 }

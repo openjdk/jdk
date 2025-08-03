@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             addAnnotationDetailsMarker(target);
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    contents.annotationTypeDetailsLabel, TableOfContents.Level.FIRST);
 
             for (Element member : members) {
                 currentMember = member;
@@ -102,11 +102,10 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
                 writer.tableOfContents.addLink(htmlIds.forMember((ExecutableElement) member).getFirst(),
-                        Text.of(name(member)));
+                        Text.of(name(member)), TableOfContents.Level.SECOND);
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
             target.add(annotationDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

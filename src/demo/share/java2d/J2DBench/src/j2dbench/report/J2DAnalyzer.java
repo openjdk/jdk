@@ -270,7 +270,7 @@ public class J2DAnalyzer {
             } else {
                 double overallscore = totalscore[i]/numtests[i];
                 System.out.println("    Number of tests:  "+numtests[i]);
-                System.out.println("    Overall average:  "+overallscore);
+                System.out.printf( "    Overall average:  %-10.4f%n", overallscore);
                 System.out.println("    Best spread:      "+bestspread[i]+
                                    "% variance");
                 System.out.println("    Worst spread:     "+worstspread[i]+

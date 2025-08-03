@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,19 +111,27 @@ class CompilerToVM {
 #if INCLUDE_ZGC
     static int sizeof_ZStoreBarrierEntry;
 #endif
+#if INCLUDE_SHENANDOAHGC
+    static address shenandoah_in_cset_fast_test_addr;
+    static int shenandoah_region_size_bytes_shift;
+#endif
 
 #ifdef X86
     static int L1_line_size;
+    static bool supports_avx512_simd_sort;
 #endif
 
     static address dsin;
     static address dcos;
     static address dtan;
     static address dtanh;
+    static address dcbrt;
     static address dexp;
     static address dlog;
     static address dlog10;
     static address dpow;
+
+    static address crc_table_addr;
 
     static address symbol_init;
     static address symbol_clinit;

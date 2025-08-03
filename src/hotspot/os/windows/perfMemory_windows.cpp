@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -55,7 +54,7 @@ typedef BOOL (WINAPI *SetSecurityDescriptorControlFnPtr)(
 static char* create_standard_memory(size_t size) {
 
   // allocate an aligned chuck of memory
-  char* mapAddress = os::reserve_memory(size);
+  char* mapAddress = os::reserve_memory(size, mtInternal);
 
   if (mapAddress == nullptr) {
     return nullptr;
@@ -1607,10 +1606,8 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   // using resource arrays for these names prevents the leaks
   // that would otherwise occur.
   //
-  char* rfilename = NEW_RESOURCE_ARRAY(char, strlen(filename) + 1);
-  char* robjectname = NEW_RESOURCE_ARRAY(char, strlen(objectname) + 1);
-  strcpy(rfilename, filename);
-  strcpy(robjectname, objectname);
+  char* rfilename = ResourceArea::strdup(THREAD, filename);
+  char* robjectname = ResourceArea::strdup(THREAD, objectname);
 
   // free the c heap resources that are no longer needed
   FREE_C_HEAP_ARRAY(char, luser);
@@ -1805,7 +1802,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     // it does not go through os api, the operation has to record from here
     MemTracker::NmtVirtualMemoryLocker nvml;
     remove_file_mapping(addr);
-    MemTracker::record_virtual_memory_release((address)addr, bytes);
+    MemTracker::record_virtual_memory_release(addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

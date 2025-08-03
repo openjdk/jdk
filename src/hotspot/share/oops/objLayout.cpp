@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/markWord.hpp"
 #include "oops/objLayout.hpp"
 #include "runtime/globals.hpp"

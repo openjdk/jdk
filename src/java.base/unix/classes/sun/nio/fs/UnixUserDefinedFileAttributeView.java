@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,10 +166,10 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (dst instanceof sun.nio.ch.DirectBuffer ddst) {
+        if (dst.isDirect()) {
             NIO_ACCESS.acquireSession(dst);
             try {
-                long address = ddst.address() + pos;
+                long address = NIO_ACCESS.getBufferAddress(dst) + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
                 return n;
@@ -182,7 +182,7 @@ abstract class UnixUserDefinedFileAttributeView
                 int n = read(name, address, rem);
 
                 // copy from buffer into backing array
-                long off = dst.arrayOffset() + pos + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                long off = dst.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
                 unsafe.copyMemory(null, address, dst.array(), off, n);
                 dst.position(pos + n);
 
@@ -225,10 +225,10 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (src instanceof sun.nio.ch.DirectBuffer buf) {
+        if (src.isDirect()) {
             NIO_ACCESS.acquireSession(src);
             try {
-                long address = buf.address() + pos;
+                long address = NIO_ACCESS.getBufferAddress(src) + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;
@@ -241,7 +241,7 @@ abstract class UnixUserDefinedFileAttributeView
 
                 if (src.hasArray()) {
                     // copy from backing array into buffer
-                    long off = src.arrayOffset() + pos + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                    long off = src.arrayOffset() + pos + Unsafe.ARRAY_BYTE_BASE_OFFSET;
                     unsafe.copyMemory(src.array(), off, null, address, rem);
                 } else {
                     // backing array not accessible so transfer via temporary array

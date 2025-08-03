@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,46 +321,101 @@ public final class RSAPadding {
      * Note that we want to make it a constant-time operation
      */
     private byte[] unpadV15(byte[] padded) {
-        int k = 0;
-        boolean bp = false;
+        int paddedLength = padded.length;
 
-        if (padded[k++] != 0) {
-            bp = true;
+        if (paddedLength < 2) {
+            return null;
         }
-        if (padded[k++] != type) {
-            bp = true;
-        }
-        int p = 0;
-        while (k < padded.length) {
+
+        // The following check ensures that the lead byte is zero and
+        // the second byte is equivalent to the padding type.  The
+        // bp (bad padding) variable throughout this unpadding process will
+        // be updated and remain 0 if good padding, 1 if bad.
+        int p0 = padded[0];
+        int p1 = padded[1];
+        int bp = (-(p0 & 0xff) | ((p1 - type) | (type - p1))) >>> 31;
+
+        int padLen = 0;
+        int k = 2;
+        // Walk through the random, nonzero padding bytes.  For each padding
+        // byte bp and padLen will remain zero.  When the end-of-padding
+        // byte (0x00) is reached then padLen will be set to the index of the
+        // first byte of the message content.
+        while (k < paddedLength) {
             int b = padded[k++] & 0xff;
-            if ((b == 0) && (p == 0)) {
-                p = k;
+            padLen += (k * (1 - ((-(b | padLen)) >>> 31)));
+            if (k == paddedLength) {
+                bp = bp | (1 - ((-padLen) >>> 31));
             }
-            if ((k == padded.length) && (p == 0)) {
-                bp = true;
-            }
-            if ((type == PAD_BLOCKTYPE_1) && (b != 0xff) &&
-                    (p == 0)) {
-                bp = true;
-            }
+            bp = bp | (1 - (-(((type - PAD_BLOCKTYPE_1) & 0xff) |
+                    padLen | (1 - ((b - 0xff) >>> 31))) >>> 31));
         }
-        int n = padded.length - p;
-        if (n > maxDataSize) {
-            bp = true;
-        }
+        int n = paddedLength - padLen;
+        // So long as n <= maxDataSize, bp will remain zero
+        bp = bp | ((maxDataSize - n) >>> 31);
 
         // copy useless padding array for a constant-time method
-        byte[] padding = new byte[p];
-        System.arraycopy(padded, 0, padding, 0, p);
+        byte[] padding = new byte[padLen + 2];
+        for (int i = 0; i < padLen; i++) {
+            padding[i] = padded[i];
+        }
 
         byte[] data = new byte[n];
-        System.arraycopy(padded, p, data, 0, n);
+        for (int i = 0; i < n; i++) {
+            data[i] = padded[padLen + i];
+        }
 
-        if (bp) {
+        if ((bp | padding[bp]) != 0) {
+            // using the array padding here hoping that this way
+            // the compiler does not eliminate the above useless copy
             return null;
         } else {
             return data;
         }
+    }
+
+    public byte[] unpadForTls(byte[] padded, int clientVersion,
+            int serverVersion) {
+        int paddedLength = padded.length;
+
+        // bp is positive if the padding is bad and 0 if it is good so far
+        int bp = (((int) padded[0] | ((int)padded[1] - PAD_BLOCKTYPE_2)) &
+                0xFFF);
+
+        int k = 2;
+        while (k < paddedLength - 49) {
+            int b = padded[k++] & 0xFF;
+            bp = bp | (1 - (-b >>> 31)); // if (padded[k] == 0) bp |= 1;
+        }
+        bp |= ((int)padded[k++] & 0xFF);
+        int encodedVersion = ((padded[k] & 0xFF) << 8) | (padded[k + 1] & 0xFF);
+
+        int bv1 = clientVersion - encodedVersion;
+        bv1 |= -bv1;
+        int bv3 = serverVersion - encodedVersion;
+        bv3 |= -bv3;
+        int bv2 = (0x301 - clientVersion);
+
+        bp |= ((bv1 & (bv2 | bv3)) >>> 28);
+
+        byte[] data = Arrays.copyOfRange(padded, paddedLength - 48,
+                paddedLength);
+        if (random == null) {
+            random = JCAUtil.getSecureRandom();
+        }
+
+        byte[] fake = new byte[48];
+        random.nextBytes(fake);
+
+        bp = (-bp >> 24);
+
+        // Now bp is 0 if the padding and version number were good and
+        // -1 otherwise.
+        for (int i = 0; i < 48; i++) {
+            data[i] = (byte)((~bp & data[i]) | (bp & fake[i]));
+        }
+
+        return data;
     }
 
     /**

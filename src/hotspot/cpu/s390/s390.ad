@@ -5317,23 +5317,6 @@ instruct membar_storestore() %{
 
 
 //----------Register Move Instructions-----------------------------------------
-instruct roundDouble_nop(regD dst) %{
-  match(Set dst (RoundDouble dst));
-  ins_cost(0);
-  // TODO: s390 port size(FIXED_SIZE);
-  // z/Architecture results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode();
-  ins_pipe(pipe_class_dummy);
-%}
-
-instruct roundFloat_nop(regF dst) %{
-  match(Set dst (RoundFloat dst));
-  ins_cost(0);
-  // TODO: s390 port size(FIXED_SIZE);
-  // z/Architecture results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode();
-  ins_pipe(pipe_class_dummy);
-%}
 
 // Cast Long to Pointer for unsafe natives.
 instruct castX2P(iRegP dst, iRegL src) %{
@@ -6598,7 +6581,7 @@ instruct mulHiL_reg_reg(revenRegL Rdst, roddRegL Rsrc1, iRegL Rsrc2, iRegL Rtmp1
     Register tmp1 = $Rtmp1$$Register;
     Register tmp2 = $Rdst$$Register;
     // z/Architecture has only unsigned multiply (64 * 64 -> 128).
-    // implementing mulhs(a,b) = mulhu(a,b) – (a & (b>>63)) – (b & (a>>63))
+    // implementing mulhs(a,b) = mulhu(a,b) - (a & (b>>63)) - (b & (a>>63))
     __ z_srag(tmp2, src1, 63);  // a>>63
     __ z_srag(tmp1, src2, 63);  // b>>63
     __ z_ngr(tmp2, src2);       // b & (a>>63)
@@ -10097,7 +10080,8 @@ instruct ShouldNotReachHere() %{
   format %{ "ILLTRAP; ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(pipe_class_dummy);

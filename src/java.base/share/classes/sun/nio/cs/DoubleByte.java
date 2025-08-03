@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.cs.Surrogate;
-import sun.nio.cs.ArrayDecoder;
-import sun.nio.cs.ArrayEncoder;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 /*
@@ -602,7 +600,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     sp += n;
                     dp += n;
                 }
@@ -688,7 +686,7 @@ public class DoubleByte {
             int dp = 0;
             int sl = sp + len;
             if (isASCIICompatible) {
-                int n = JLA.encodeASCII(src, sp, dst, dp, len);
+                int n = JLA.uncheckedEncodeASCII(src, sp, dst, dp, len);
                 sp += n;
                 dp += n;
             }

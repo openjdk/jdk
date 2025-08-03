@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1480,7 +1480,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="7">जुल॰</month>
 							<month type="8">अग॰</month>
 							<month type="9">सित॰</month>
-							<month type="10">अक्तू॰</month>
+							<month type="10">अक्टू॰</month>
 							<month type="11">नव॰</month>
 							<month type="12">दिस॰</month>
 						</monthWidth>
@@ -1494,7 +1494,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
 							<month type="9">सितंबर</month>
-							<month type="10">अक्तूबर</month>
+							<month type="10">अक्टूबर</month>
 							<month type="11">नवंबर</month>
 							<month type="12">दिसंबर</month>
 						</monthWidth>
@@ -1867,7 +1867,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G" draft="contributed">GGGGG M/y – GGGGG M/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">GGGGG M/y – M/</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG M/y – M/y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">GGGGG M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">

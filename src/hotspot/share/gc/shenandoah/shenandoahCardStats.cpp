@@ -24,7 +24,6 @@
  */
 
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "logging/log.hpp"

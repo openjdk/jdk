@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/universe.hpp"
