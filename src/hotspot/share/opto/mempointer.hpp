@@ -407,8 +407,8 @@
 //
 //   Then:
 //     Both p and mp have a linear form for v in r:
-//       p(v)  = p(lo)  - lo * scale_v + iv * scale_v              (Corrolary P)
-//       mp(v) = mp(lo) - lo * scale_v + iv * scale_v              (Corrolary MP)
+//       p(v)  = p(lo)  - lo * scale_v + v * scale_v              (Corrolary P)
+//       mp(v) = mp(lo) - lo * scale_v + v * scale_v              (Corrolary MP)
 //
 //     Note: the calculations are done in long, and hence there can be no int overflow.
 //           Thus, p(v) and mp(v) can be considered linear functions for v in r.
@@ -416,9 +416,9 @@
 //   It can be useful to "anchor" at hi instead of lo:
 //     p(hi) = p(lo) - lo * scale_v + hi * scale_v
 //
-//     p(v) = p(lo) - lo * scale_v + iv * scale_v
+//     p(v) = p(lo) - lo * scale_v + v * scale_v
 //            --------------------
-//          = p(hi) - hi * scale_v + iv * scale_v             (Alternative Corrolary P)
+//          = p(hi) - hi * scale_v + v * scale_v             (Alternative Corrolary P)
 //
 //
 // Proof of "MemPointer Linearity Corrolary":
@@ -438,10 +438,10 @@
 //
 //     We take the form of mp, and further apply SAFE1 decompositions, i.e. long addition,
 //     subtraction and multiplication:
-//       mp(v1) = summand_rest + scale_v * v1                                    + con
-//              = summand_rest + scale_v * (v0 + stride_v)                       + con
-//              = summand_rest + scale_v * v0              + scale_v * stride_v * con
-//              = summand_rest + scale_v * v0              + scale_v * stride_v * con
+//       mp(v1) = summand_rest + scale_v * v1                                   + con
+//              = summand_rest + scale_v * (v0 + stride_v)                      + con
+//              = summand_rest + scale_v * v0              + scale_v * stride_v + con
+//              = summand_rest + scale_v * v0              + scale_v * stride_v + con
 //              = mp(v0)                                   + scale_v * stride_v
 //
 //     From this it follows that we can see mp(v0) and mp(v1) as two MemPointer with the
@@ -660,6 +660,13 @@ public:
 #endif
 };
 
+// We need two different ways of tracking the summands:
+// - MemPointerRawSummand: designed to keep track of the original form of
+//                         the pointer, preserving its overflow behavior.
+// - MemPointerSummand:    designed to allow simplification of the MemPointer
+//                         form, does not preserve the original form and
+//                         ignores overflow from ConvI2L.
+//
 // The MemPointerSummand is designed to allow the simplification of
 // the MemPointer form as much as possible, to allow aliasing checks
 // to be as simple as possible. For example, the pointer:
@@ -703,7 +710,8 @@ public:
 //
 // Note: we also need to track constants as separate raw summands. For
 //       this, we say that a raw summand tracks a constant iff _variable == null,
-//       and we store the constant value in _scaleI.
+//       and we store the constant value in _scaleI (for int constant) and in
+//       _scaleL (for long constants).
 //
 class MemPointerRawSummand : public StackObj {
 private:
