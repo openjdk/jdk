@@ -153,11 +153,13 @@ public class NullPointerException extends RuntimeException {
     }
 
     /// Gets an extended exception message. There are two modes:
-    /// 1. `searchSlot == -1`, extend from the nullary constructor to find the
-    ///    location and the cause of the exception.
-    /// 2. `searchSlot >= 0`, follow the explicit stack offset and search slot
+    /// 1. `searchSlot >= 0`, follow the explicit stack offset and search slot
     ///    configurations to trace how a particular argument, which turns out to
-    ///    be `null`, was evaluated
+    ///    be `null`, was evaluated.
+    /// 2. `searchSlot < 0`, stack offset is 0 (a call to the nullary constructor)
+    ///    and the search slot will be derived by bytecode tracing.  The message
+    ///    will also include the action that caused the NPE besides the source of
+    ///    the `null`.
     /// If the backtracking cannot find a verifiable result, this method returns `null`.
     private native String getExtendedNPEMessage(int stackOffset, int searchSlot);
 }

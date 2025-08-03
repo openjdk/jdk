@@ -1464,7 +1464,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
 }
 
 // Main API
-bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci) {
+bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot) {
 
   NoSafepointVerifier _nsv;   // Cannot use this object over a safepoint.
 
@@ -1478,9 +1478,17 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   ResourceMark rm;
   ExceptionMessageBuilder emb(method, bci);
 
+  // Is an explicit slot given?
+  bool explicit_search = slot >= 0;
+  if (explicit_search) {
+    // Search from the given slot in bci in Method.
+    // Omit the failed action.
+    return emb.print_NPE_cause(ss, bci, slot, false);
+  }
+
   // The slot of the operand stack that contains the null reference.
   // Also checks for NPE explicitly constructed and returns NPE_EXPLICIT_CONSTRUCTED.
-  int slot = emb.get_NPE_null_slot(bci);
+  slot = emb.get_NPE_null_slot(bci);
 
   // Build the message.
   if (slot == NPE_EXPLICIT_CONSTRUCTED) {
@@ -1504,18 +1512,3 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   return true;
 }
 
-bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot) {
-  NoSafepointVerifier _nsv;   // Cannot use this object over a safepoint.
-
-  // If this NPE was created via reflection, we have no real NPE.
-  if (method->method_holder() ==
-      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
-    return false;
-  }
-
-  // Analyse the bytecodes.
-  ResourceMark rm;
-  ExceptionMessageBuilder emb(method, bci);
-
-  return emb.print_NPE_cause(ss, bci, slot, false);
-}
