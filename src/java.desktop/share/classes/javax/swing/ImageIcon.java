@@ -65,9 +65,10 @@ import sun.awt.AppContext;
  * <p>
  * If the image source parameter to a constructor or method is non-null,
  * but does not reference valid accessible image data,
- * no exceptions will be thrown but the image will be unset,
- * as it will have no dimensions and never be drawn, and
- * {@link #getImageLoadStatus()} will report {@code MediaTracker.ERRORED}.
+ * no exceptions will be thrown but no image will be rendered
+ * even though {@link #getImage()} will return a non-null value,
+ * as the image will have no dimensions
+ * and {@link #getImageLoadStatus()} will report {@code MediaTracker.ERRORED}.
  *
  * <p>
  * For further information and examples of using image icons, see
