@@ -276,13 +276,13 @@ private:
 // Strong edges: union of data edges and strong memory edges.
 //               These must be respected by scheduling in all cases.
 //
-// The C2 IR Node memory edges essencially define a linear order of all memory operations
+// The C2 IR Node memory edges essentially define a linear order of all memory operations
 // (only Loads with the same memory input can be executed in an arbitrary order). This is
-// efficient, because it means ever Load and Store has exactly one input memory edge,
+// efficient, because it means every Load and Store has exactly one input memory edge,
 // which keeps the memory edge count linear. This is approach is too restrictive for
 // vectorization, for example, we could never vectorize stores, since they are all in a
 // dependency chain. Instead, we model the memory edges between all memory nodes, which
-// could be quadratic in the worst case. For vectorization, we must essencially reorder the
+// could be quadratic in the worst case. For vectorization, we must essentially reorder the
 // instructions in the graph. For this we must model all memory dependencies.
 class VTransformNode : public ArenaObj {
 public:

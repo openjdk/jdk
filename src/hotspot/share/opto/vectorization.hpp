@@ -237,7 +237,7 @@ public:
       return true;
     }
 
-    // But in some cases, we ctrl of n is between the pre and
+    // But in some cases, the ctrl of n is between the pre and
     // main loop, but the early ctrl is before the pre-loop.
     // As long as the early ctrl is before the pre-loop, we can
     // compute n before the pre-loop.

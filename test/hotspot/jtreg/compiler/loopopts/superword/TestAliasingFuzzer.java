@@ -267,7 +267,7 @@ public class TestAliasingFuzzer {
     //   [index, index + size]
     //
     // The idea is that invarRest is always close to zero, with some small range [-err .. err].
-    // The invar variables for invarRest must be in the range [-1, 1, 1], so that we can
+    // The invar variables for invarRest must be in the range [-1, 0, 1], so that we can
     // estimate the error range from the invarRestScales.
     //
     // At runtime, we will have to generate inputs for the iv.lo/iv.hi, as well as the invar0,
