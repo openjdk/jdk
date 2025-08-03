@@ -77,13 +77,16 @@ public class ShareTmpDir {
         started1.delete();
         started2.delete();
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "WaitForFlagFile");
+        Object lock = new Object();
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp/");
         opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf+memops=debug", "-cp", "/test-classes/");
 
         Thread t1 = new Thread() {
                 public void run() {
-                    opts.addClassOptions("1");
+                    synchronized(lock) {
+                        opts.addClassOptions("1");
+                    }
                     try { out1 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
@@ -91,7 +94,9 @@ public class ShareTmpDir {
 
         Thread t2 = new Thread() {
                 public void run() {
-                    opts.addClassOptions("2");
+                    synchronized(lock) {
+                        opts.addClassOptions("2");
+                    }
                     try { out2 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
