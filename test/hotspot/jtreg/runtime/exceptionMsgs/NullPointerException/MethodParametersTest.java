@@ -26,6 +26,7 @@
  * @summary Test the MethodParameters-based NPE messages.
  * @bug 8233268
  * @library /test/lib
+ * @modules java.base/jdk.internal.access
  * @clean MethodParametersTest InnerClass
  * @compile -parameters -g:none MethodParametersTest.java
  * @run junit/othervm -XX:+ShowCodeDetailsInExceptionMessages MethodParametersTest
@@ -34,14 +35,26 @@
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodParametersTest {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    // An arbitrary null-checking API
+    static void nullCheck(Object arg) {
+        if (arg == null) {
+            throw JLA.extendedNullPointerException(1, 0);
+        }
+    }
 
     class InnerClass {}
 
+    @Disabled("Requires javac's API support")
     @Test
     void testOuterThis() {
         var npe = assertThrows(NullPointerException.class, () -> {
@@ -54,10 +67,10 @@ public class MethodParametersTest {
         assertEquals("\"this$0\" is null", npe.getMessage());
     }
 
-    // Random slot to param index mappings, both raw and requireNonNull NPEs
+    // Random slot to param index mappings, both raw and null-check API NPEs
     // 0, 1, 3, 5
     static void myMethod(String firstArg, long l1, double l2, int[] lastArg) {
-        Objects.requireNonNull(firstArg);
+        nullCheck(firstArg);
         System.out.println(lastArg.length);
         Object a = l1 > 100 ? null : ""; // 6
         a.toString();

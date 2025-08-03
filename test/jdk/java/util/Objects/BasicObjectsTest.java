@@ -208,7 +208,7 @@ public class BasicObjectsTest {
         errors += testRNN_NonNull(rnn2, RNN_2);
         errors += testRNN_NonNull(rnn3, RNN_3);
 
-        // No message constraint for 1-arg
+        errors += testRNN_Null(rnn1, RNN_1, null);
         errors += testRNN_Null(rnn2, RNN_2, "trousers");
         errors += testRNN_Null(rnn3, RNN_3, "trousers");
         return errors;

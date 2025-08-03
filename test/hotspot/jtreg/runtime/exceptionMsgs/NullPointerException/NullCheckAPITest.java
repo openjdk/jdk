@@ -23,24 +23,48 @@
 
 /*
  * @test
- * @summary Test the messages for 1-arg requireNonNull.
+ * @summary Test the messages for arbitrary null-check APIs.
  * @bug 8233268
  * @library /test/lib
- * @compile -g RequireNonNullTest.java
- * @run junit/othervm -XX:+ShowCodeDetailsInExceptionMessages RequireNonNullTest
+ * @modules java.base/jdk.internal.access
+ * @compile -g NullCheckAPITest.java
+ * @run junit/othervm -DnullCheckAPI.nestedThrow=true -XX:+ShowCodeDetailsInExceptionMessages NullCheckAPITest
+ * @run junit/othervm -DnullCheckAPI.nestedThrow=false -XX:+ShowCodeDetailsInExceptionMessages NullCheckAPITest
  */
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
-import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class RequireNonNullTest {
+public class NullCheckAPITest {
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final boolean NESTED_THROW = Boolean.getBoolean("nullCheckAPI.nestedThrow");
+
+    // An arbitrary null-checking API
+    static void nullCheck(Object arg) {
+        if (arg == null) {
+            if (NESTED_THROW) {
+                // 2 offset: nullCheck, throwNpe;
+                throwNpe();
+            } else {
+                // 1 offset: nullCheck
+                throw JLA.extendedNullPointerException(1, 0);
+            }
+        }
+    }
+
+    static void throwNpe() {
+        throw JLA.extendedNullPointerException(2, 0);
+    }
 
     /// A simple NPE message for an expression
     static String simpleMessage(String cause) {
@@ -64,32 +88,38 @@ public class RequireNonNullTest {
 
     class Dummy { Object field; }
 
+    @Test
+    void test() {
+        checkSimpleMessage(() -> generateVariableNpe(null), "myA");
+        checkSimpleMessage(() -> generateVariableNpe(new Dummy()), "myA.field");
+
+        checkInvocationMessage(() -> nullCheck(int.class.getSuperclass()), "java.lang.Class.getSuperclass()");
+    }
+
     static class One extends Dummy {
-        One(RequireNonNullTest rnnt) {
+        One(NullCheckAPITest rnnt) {
             rnnt.super();
         }
     }
 
     @Test
-    void test() {
-        checkSimpleMessage(() -> generateVariableNpe(null), "myA");
-        checkSimpleMessage(() -> generateVariableNpe(new Dummy()), "myA.field");
+    @Disabled("Requires javac's API support")
+    void testRequireNonNull() {
         checkSimpleMessage(() -> {
-            RequireNonNullTest t = null;
+            NullCheckAPITest t = null;
             t.new Dummy();
         }, "t");
         checkSimpleMessage(() -> new One(null), "rnnt");
 
         var npe = assertThrows(NullPointerException.class, () -> {
             try {
-                Dummy.class.getDeclaredConstructor(RequireNonNullTest.class).newInstance((Object) null);
+                Dummy.class.getDeclaredConstructor(NullCheckAPITest.class).newInstance((Object) null);
             } catch (InvocationTargetException ex) {
                 throw ex.getCause();
             }
         });
         assertEquals("\"this$0\" is null", npe.getMessage());
 
-        checkInvocationMessage(() -> Objects.requireNonNull(int.class.getSuperclass()), "java.lang.Class.getSuperclass()");
         checkInvocationMessage(() -> {
             switch (int.class.getGenericSuperclass()) {
                 case ParameterizedType pt -> {}
@@ -101,7 +131,7 @@ public class RequireNonNullTest {
 
     // A method that generate NPE from variables
     static void generateVariableNpe(Dummy myA) {
-        Objects.requireNonNull(myA);
-        Objects.requireNonNull(myA.field);
+        nullCheck(myA);
+        nullCheck(myA.field);
     }
 }
