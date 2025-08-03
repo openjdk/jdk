@@ -272,7 +272,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
   const size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
-  const size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
+  size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
   // clamped by the old generation space available.
@@ -351,6 +351,11 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // and identify regions that will promote in place. These use the tenuring threshold.
   const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
+
+  // If any regions have been selected for promotion in place, this has the effect of decreasing available within mutator
+  // and collector partitions, due to padding of remnant memory within each promoted in place region.  This will affect
+  // young_evacuation_reserve but not old_evacuation_reserve or consumed_by_advance_promotion.  So recompute.
+  young_evacuation_reserve = MIN2(young_evacuation_reserve, young_generation->available_with_reserve());
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
