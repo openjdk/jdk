@@ -815,25 +815,35 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
-                     "ShortRunningLongLoop", "false",
-                     "AlignVector", "true"},
-        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
+                      "ShortRunningLongLoop", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8331659
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
         applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
-                      "ShortRunningLongLoop", "true",
+                      "ShortRunningLongLoop", "false",
                       "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8331659
     // After JDK-8324751, we now insert a aliasing runtime check, but it will always fail, which is a suboptimal.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"ShortRunningLongLoop", "true",
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // If we don't create the loop nest for the long loop, then the issue with different Casts
+    // seems to disappear. We also don't need multiversioning because the pointers are seen
+    // as identical.
     static Object[] testLongLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
@@ -845,27 +855,38 @@ class TestMemorySegmentImpl {
     }
 
    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+   @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
-                     "ShortRunningLongLoop", "false",
-                     "AlignVector", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
+                      "ShortRunningLongLoop", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8331659
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
         applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
-                      "ShortRunningLongLoop", "true",
+                      "ShortRunningLongLoop", "false",
                       "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8331659
     // After JDK-8324751, we now insert a aliasing runtime check, but it will always fail, which is a suboptimal.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"ShortRunningLongLoop", "true",
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // If we don't create the loop nest for the long loop, then the issue with different Casts
+    // seems to disappear. We also don't need multiversioning because the pointers are seen
+    // as identical.
     static Object[] testLongLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
