@@ -45,6 +45,7 @@
  * |+GUARD_SIZE        | <size_t:user_size>   | User data size |
  * |+sizeof(size_t)    | <tag>                | Tag word       |
  * |+sizeof(void*)     | <tag2>               | Tag word       |
+ * |+sizeof(void*)     | <pad bytes>          | Padding        |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
  * |+user_size         | 0xABABABABABABABAB   | Tail guard     |
  * -------------------------------------------------------------
@@ -52,6 +53,8 @@
  * Where:
  *  - guard padding uses "badResourceValue" (0xAB)
  *  - tag word and tag2 word are general purpose
+ *  - padding is inserted as-needed by the compiler to ensure
+ *    the user data is aligned on a 16-byte boundary
  *  - user data
  *    -- initially padded with "uninitBlockPad" (0xF1),
  *    -- to "freeBlockPad" (0xBA), when freed
