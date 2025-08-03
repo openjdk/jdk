@@ -236,8 +236,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.
     region->restore_top_before_promote();
-    size_t region_used = region->used();
-    assert(region_used + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
+    size_t region_to_be_used_in_old = region->used();
+    assert(region_to_be_used_in_old + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.
     assert(update_watermark >= region->top(), "original top cannot exceed preserved update_watermark");
@@ -254,21 +254,21 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     size_t plab_min_size_in_bytes = _heap->plab_min_size() * HeapWordSize;
     if (available_in_region < plab_min_size_in_bytes) {
       // The available memory in young had been retired.  Retire it in old also.
-      region_used += available_in_region;
+      region_to_be_used_in_old += available_in_region;
     }
 
     // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
     region->set_affiliation(OLD_GENERATION);
 
-    young_gen->decrease_used(region_used + pip_pad_bytes);
+    young_gen->decrease_used(region_size_bytes);
     young_gen->decrement_affiliated_region_count();
 
     // transfer_to_old() increases capacity of old and decreases capacity of young
     _heap->generation_sizer()->force_transfer_to_old(1);
 
     old_gen->increment_affiliated_region_count();
-    old_gen->increase_used(region_used);
+    old_gen->increase_used(region_to_be_used_in_old);
   }
 }
 

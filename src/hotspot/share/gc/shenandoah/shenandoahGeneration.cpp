@@ -589,11 +589,12 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
             r->set_top(r->end());
             promote_in_place_pad += remnant_bytes;
             free_set->prepare_to_promote_in_place(i, remnant_bytes);
-            young_gen->increase_used(remnant_bytes);
           } else {
             // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
             // allocations occurring within this region before the region is promoted in place.
           }
+          // Even when we do not fill the remnant, we count the remnant as used
+          young_gen->increase_used(remnant_bytes);
         }
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
