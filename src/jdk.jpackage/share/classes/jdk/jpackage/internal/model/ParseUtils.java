@@ -22,41 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 
-record ParsedLauncherShortcutStartupDirectory(Optional<LauncherShortcutStartupDirectory> value) {
+/**
+ * Collection of functions to create instances of types defined in this package from strings.
+ */
+public final class ParseUtils {
 
-    ParsedLauncherShortcutStartupDirectory {
-        Objects.requireNonNull(value);
+    private ParseUtils() {
     }
 
-    ParsedLauncherShortcutStartupDirectory() {
-        this(Optional.empty());
-    }
-
-    ParsedLauncherShortcutStartupDirectory(LauncherShortcutStartupDirectory value) {
-        this(Optional.of(value));
-    }
-
-    static ParsedLauncherShortcutStartupDirectory parseForMainLauncher(String str) {
+    public static LauncherShortcut parseLauncherShortcutForMainLauncher(String str) {
         return parse(str,
                 LauncherShortcutStartupDirectory.APP_DIR,
                 LauncherShortcutStartupDirectory.INSTALL_DIR
-        ).map(ParsedLauncherShortcutStartupDirectory::new).orElseThrow(IllegalArgumentException::new);
+        ).map(LauncherShortcut::new).orElseThrow(IllegalArgumentException::new);
     }
 
-    static ParsedLauncherShortcutStartupDirectory parseForAddLauncher(String str) {
-        return parse(str, LauncherShortcutStartupDirectory.values()).map(ParsedLauncherShortcutStartupDirectory::new).orElseGet(() -> {
+    public static LauncherShortcut parseLauncherShortcutForAddLauncher(String str) {
+        return parse(str, LauncherShortcutStartupDirectory.values()).map(LauncherShortcut::new).orElseGet(() -> {
             if (Boolean.valueOf(str)) {
-                return new ParsedLauncherShortcutStartupDirectory(LauncherShortcutStartupDirectory.DEFAULT);
+                return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
             } else {
-                return new ParsedLauncherShortcutStartupDirectory();
+                return new LauncherShortcut();
             }
         });
     }

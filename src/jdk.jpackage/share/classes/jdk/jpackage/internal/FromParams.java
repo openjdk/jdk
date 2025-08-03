@@ -70,6 +70,7 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.ParseUtils;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 
@@ -183,19 +184,19 @@ final class FromParams {
             launcherValue = shortcutParam.findIn(launcherParams);
         }
 
-        return launcherValue.map(ParsedLauncherShortcutStartupDirectory::parseForAddLauncher).or(() -> {
+        return launcherValue.map(ParseUtils::parseLauncherShortcutForAddLauncher).or(() -> {
             return Optional.ofNullable(mainParams.get(shortcutParam.getID())).map(toFunction(value -> {
                 if (value instanceof Boolean) {
-                    return new ParsedLauncherShortcutStartupDirectory(LauncherShortcutStartupDirectory.DEFAULT);
+                    return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
                 } else {
                     try {
-                        return ParsedLauncherShortcutStartupDirectory.parseForMainLauncher((String)value);
+                        return ParseUtils.parseLauncherShortcutForMainLauncher((String)value);
                     } catch (IllegalArgumentException ex) {
                         throw I18N.buildConfigException("error.invalid-option-value", value, "--" + shortcutParam.getID()).create();
                     }
                 }
             }));
-        }).map(ParsedLauncherShortcutStartupDirectory::value).map(LauncherShortcut::new);
+        });
     }
 
     private static ApplicationLaunchers createLaunchers(
