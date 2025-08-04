@@ -377,7 +377,8 @@ public abstract class OverlappingTestBase {
 
     private static boolean isValidForPixelCheck(Component component) {
         if (component == null ||
-                (component instanceof java.awt.Scrollbar) || isMac && (component instanceof java.awt.Button)) {
+                (component instanceof java.awt.Scrollbar) ||
+                isMac && (component instanceof java.awt.Button)) {
             return false;
         }
         return true;
