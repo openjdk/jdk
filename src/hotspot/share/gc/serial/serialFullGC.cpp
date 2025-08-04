@@ -705,7 +705,7 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   allocate_stacks();
 
-  // Usually, all class unloading works occurs at the end of phase 1, but Serial
+  // Usually, all class unloading work occurs at the end of phase 1, but Serial
   // full-gc accesses dead-objs' klass to find out the start of next live-obj
   // during phase 2. This requires klasses of dead-objs to be kept loaded.
   // Therefore, we declare ClassUnloadingContext at the same level as
