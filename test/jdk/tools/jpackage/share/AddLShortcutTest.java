@@ -25,18 +25,17 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.LauncherShortcut;
@@ -272,11 +271,7 @@ public class AddLShortcutTest {
 
             // On Linux, "gtk-launch" is used to launch a .desktop file. It is async and there is no
             // way to make it wait for exit of a process it triggers.
-            Executor.tryRunMultipleTimes(() -> {
-                if (!Files.exists(expectedOutputFile)) {
-                    throw new NoSuchElementException(String.format("[%s] is not avaialble", expectedOutputFile));
-                }
-            }, 3 /* Number of attempts */, 3 /* Seconds between attempts */);
+            TKit.waitForFileCreated(expectedOutputFile, Duration.ofSeconds(10), Duration.ofSeconds(3));
 
             TKit.assertFileExists(expectedOutputFile);
             var actualStr = Files.readAllLines(expectedOutputFile).getFirst();
