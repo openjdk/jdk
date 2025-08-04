@@ -23,6 +23,8 @@
 package org.openjdk.bench.vm.gc;
 
 import java.util.concurrent.TimeUnit;
+
+import org.openjdk.bench.vm.gc.RawAllocationRate.BaseClass;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -37,7 +39,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 public class RawAllocationRate {
 
-    @Param({"32", "64", "256", "1024", "2048", "4096", "8192", "16384", "65536", "131072"})  // Object size in bytes.
+    @Param({"32", "48", "64", "80", "96", "128", "256", "1024", "2048", "4096", "8192", "16384", "65536", "131072"})  // Object size in bytes.
     public int size;
 
     Object[] objects;
@@ -113,10 +115,15 @@ public class RawAllocationRate {
 
     static class BaseClass {
     }
-
     static class Class32 extends BaseClass {
        long i0;
        long i1;
+    }
+    static class Class48 extends BaseClass {
+       long i0;
+       long i1;
+       long i2;
+       long i3;
     }
     static class Class64 extends BaseClass {
        long i0;
@@ -125,6 +132,44 @@ public class RawAllocationRate {
        long i3;
        long i4;
        long i5;
+    }
+    static class Class80 extends BaseClass {
+       long i0;
+       long i1;
+       long i2;
+       long i3;
+       long i4;
+       long i5;
+       long i6;
+       long i7;
+    }
+    static class Class96 extends BaseClass {
+       long i0;
+       long i1;
+       long i2;
+       long i3;
+       long i4;
+       long i5;
+       long i6;
+       long i7;
+       long i8;
+       long i9;
+    }
+    static class Class128 extends BaseClass {
+       long i0;
+       long i1;
+       long i2;
+       long i3;
+       long i4;
+       long i5;
+       long i6;
+       long i7;
+       long i8;
+       long i9;
+       long i10;
+       long i11;
+       long i12;
+       long i13;
     }
     static class Class256 extends BaseClass {
        long i0;
@@ -28707,8 +28752,16 @@ public class RawAllocationRate {
         switch (size) {
         case 32:
             return new Class32();
+        case 48:
+            return new Class48();
         case 64:
             return new Class64();
+        case 80:
+            return new Class80();
+        case 96:
+            return new Class96();
+        case 128:
+            return new Class128();
         case 256:
             return new Class256();
         case 1024:

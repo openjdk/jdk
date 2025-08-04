@@ -642,9 +642,9 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // The inner part of zero_words().  This is the bulk operation,
-  // zeroing words in blocks, possibly using DC ZVA to do it.  The
-  // caller is responsible for zeroing the last few words.
+  // The inner part of zero_words(). This is the bulk operation,
+  // zeroing words in blocks, using DC ZVA.
+  // The caller is responsible for zeroing the last few words.
   //
   // Inputs:
   // r10: the HeapWord-aligned base address of an array to zero.
@@ -653,10 +653,8 @@ class StubGenerator: public StubCodeGenerator {
   // Returns r10 and r11, adjusted for the caller to clear.
   // r10: the base address of the tail of words left to clear.
   // r11: the number of words in the tail.
-  //      r11 < MacroAssembler::zero_words_block_size.
-
+  //      r11 < MAX2(zva_length * 2, (int)BlockZeroingLowLimit)
   address generate_zero_blocks() {
-    Label done;
     Label base_aligned;
 
     Register base = r10, cnt = r11;
@@ -666,44 +664,27 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
-    if (UseBlockZeroing) {
-      int zva_length = VM_Version::zva_length();
+    assert (UseBlockZeroing, "only work when UseBlockZeroing is true");
 
-      // Ensure ZVA length can be divided by 16. This is required by
-      // the subsequent operations.
-      assert (zva_length % 16 == 0, "Unexpected ZVA Length");
+    int zva_length = VM_Version::zva_length();
 
-      __ tbz(base, 3, base_aligned);
-      __ str(zr, Address(__ post(base, 8)));
-      __ sub(cnt, cnt, 1);
-      __ bind(base_aligned);
+    // Ensure ZVA length can be divided by 16. This is required by
+    // the subsequent operations.
+    assert (zva_length % 16 == 0, "Unexpected ZVA Length");
 
-      // Ensure count >= zva_length * 2 so that it still deserves a zva after
-      // alignment.
-      Label small;
-      int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
-      __ subs(rscratch1, cnt, low_limit >> 3);
-      __ br(Assembler::LT, small);
-      __ zero_dcache_blocks(base, cnt);
-      __ bind(small);
-    }
+    __ tbz(base, 3, base_aligned);
+    __ str(zr, Address(__ post(base, 8)));
+    __ sub(cnt, cnt, 1);
+    __ bind(base_aligned);
 
-    {
-      // Number of stp instructions we'll unroll
-      const int unroll =
-        MacroAssembler::zero_words_block_size / 2;
-      // Clear the remaining blocks.
-      Label loop;
-      __ subs(cnt, cnt, unroll * 2);
-      __ br(Assembler::LT, done);
-      __ bind(loop);
-      for (int i = 0; i < unroll; i++)
-        __ stp(zr, zr, __ post(base, 16));
-      __ subs(cnt, cnt, unroll * 2);
-      __ br(Assembler::GE, loop);
-      __ bind(done);
-      __ add(cnt, cnt, unroll * 2);
-    }
+    // Ensure count >= zva_length * 2 so that it still deserves a zva after
+    // alignment.
+    Label small;
+    int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
+    __ subs(rscratch1, cnt, low_limit >> 3);
+    __ br(Assembler::LT, small);
+    __ zero_dcache_blocks(base, cnt);
+    __ bind(small);
 
     __ ret(lr);
 
