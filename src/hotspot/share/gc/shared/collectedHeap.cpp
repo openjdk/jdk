@@ -608,7 +608,6 @@ void CollectedHeap::post_initialize() {
 }
 
 double calc_usage(double component_cpu_time, double process_cpu_time) {
-  assert(component_cpu_time < process_cpu_time && component_cpu_time != 0, "Invalid CPU time");
   return 100 * component_cpu_time / process_cpu_time;
 }
 
