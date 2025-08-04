@@ -78,7 +78,7 @@ public:
       // Only bits in the mask are changed
       int old_value = nativeMovRegMem_at(old_mov_instr.buf)->offset();
       int new_value = value | (old_value & ~bit_mask);
-      if (new_value == old_value) break;
+      if (new_value == old_value) return; // skip icache flush if nothing changed
       nativeMovRegMem_at(new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
       // Swap in the new value
       uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
