@@ -713,7 +713,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::commit_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -731,31 +731,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  struct rlimit rlim;
-  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
-  // if there was an error when calling getrlimit, assume that there is no limitation
-  // on virtual memory.
-  bool result;
-  if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
-    result = false;
-  } else {
-    *limit = (size_t)rlim.rlim_cur;
-    result = true;
-  }
 #ifdef _LP64
-  return result;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
-  } else {
-    *limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -769,15 +757,15 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -790,10 +778,29 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    actual_limit = lower_limit;
   }
-  return true;
+
+  return actual_limit;
 #endif
+}
+
+size_t os::reserve_memory_limit() {
+  struct rlimit rlim;
+  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+
+  // If there was an error calling getrlimit, conservatively assume no limit.
+  if (getrlimit_res != 0) {
+    return SIZE_MAX;
+  }
+
+  // If the current limit is not infinity, there is a limit.
+  if (rlim.rlim_cur != RLIM_INFINITY) {
+    return (size_t)rlim.rlim_cur;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {

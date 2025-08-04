@@ -941,6 +941,8 @@ public:
     _jdk_internal_ValueBased,
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
+    _jdk_internal_vm_annotation_AOTSafeClassInitializer,
+    _method_AOTRuntimeSetup,
     _annotation_LIMIT
   };
   const Location _location;
@@ -976,6 +978,8 @@ public:
 
   void set_stable(bool stable) { set_annotation(_field_Stable); }
   bool is_stable() const { return has_annotation(_field_Stable); }
+
+  bool has_aot_runtime_setup() const { return has_annotation(_method_AOTRuntimeSetup); }
 };
 
 // This class also doubles as a holder for metadata cleanup.
@@ -1896,6 +1900,16 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_AOTSafeClassInitializer;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTRuntimeSetup_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_AOTRuntimeSetup;
+    }
     default: {
       break;
     }
@@ -1974,6 +1988,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       Method* m = methods->at(i);
       m->set_deprecated_for_removal();
     }
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
+    ik->set_has_aot_safe_initializer();
   }
 }
 
@@ -2660,6 +2677,13 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
     m->set_is_hidden();
+  }
+  if (parsed_annotations.has_aot_runtime_setup()) {
+    if (name != vmSymbols::runtimeSetup() || signature != vmSymbols::void_method_signature() ||
+        !access_flags.is_private() || !access_flags.is_static()) {
+      classfile_parse_error("@AOTRuntimeSetup method must be declared private static void runtimeSetup() for class %s", CHECK_NULL);
+    }
+    _has_aot_runtime_setup_method = true;
   }
 
   // Copy annotations
@@ -3978,6 +4002,15 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     const jint lh = Klass::instance_layout_helper(ik->size_helper(), true);
     ik->set_layout_helper(lh);
   }
+
+  // Propagate the AOT runtimeSetup method discovery
+  if (_has_aot_runtime_setup_method) {
+    ik->set_is_runtime_setup_required();
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Found @AOTRuntimeSetup class %s", ik->external_name());
+    }
+  }
 }
 
 // utility methods for appending an array with check for duplicates
@@ -5117,8 +5150,47 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   check_methods_for_intrinsics(ik, methods);
 
   // Fill in field values obtained by parse_classfile_attributes
-  if (_parsed_annotations->has_any_annotations()) {
+  if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
+
+  // AOT-related checks.
+  // Note we cannot check this in general due to instrumentation or module patching
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
+    // Check the aot initialization safe status.
+    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
+    // in the AOT assembly phase.
+    if (ik->has_aot_safe_initializer()) {
+      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
+      //   - all super classes must be included
+      //   - all super interfaces that have <clinit> must be included.
+      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
+      // ik's <clinit>.
+      if (_super_klass != nullptr) {
+        guarantee_property(_super_klass->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superclass %s for class %s",
+                           _super_klass->external_name(),
+                           CHECK);
+      }
+
+      int len = _local_interfaces->length();
+      for (int i = 0; i < len; i++) {
+        InstanceKlass* intf = _local_interfaces->at(i);
+        guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
+                           intf->external_name(),
+                           CHECK);
+      }
+
+      if (log_is_enabled(Info, aot, init)) {
+        ResourceMark rm;
+        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
+      }
+    } else {
+      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
+      guarantee_property(!ik->is_runtime_setup_required(),
+                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
+                         CHECK);
+    }
   }
 
   apply_parsed_class_attributes(ik);
@@ -5326,6 +5398,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _has_aot_runtime_setup_method(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {
