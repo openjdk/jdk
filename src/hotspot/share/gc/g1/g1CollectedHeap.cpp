@@ -2785,6 +2785,7 @@ class G1AbandonCollectionSetClosure : public G1HeapRegionClosure {
 public:
   virtual bool do_heap_region(G1HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u must have been in collection set", r->hrm_index());
+    G1CollectedHeap::heap()->clear_region_attr(r);
     r->clear_young_index_in_cset();
     return false;
   }
