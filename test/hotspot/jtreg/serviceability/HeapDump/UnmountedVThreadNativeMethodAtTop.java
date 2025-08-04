@@ -27,7 +27,9 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run junit/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
  */
 
 import java.lang.management.ManagementFactory;
@@ -38,16 +40,29 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.model.ThreadObject;
 import jdk.test.lib.hprof.parser.Reader;
+import jdk.test.whitebox.WhiteBox;
 
 public class UnmountedVThreadNativeMethodAtTop {
 
+    static WhiteBox wb = WhiteBox.getWhiteBox();
+
     boolean done;
+
+    /**
+     * The tests accumulate previous heap dumps. Trigger GC before each test to get rid of them.
+     * This makes dumps smaller, processing faster, and avoids OOMs
+     */
+    @BeforeEach
+    void doGC() {
+        wb.fullGC();
+    }
 
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.

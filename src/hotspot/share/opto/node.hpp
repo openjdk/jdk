@@ -54,6 +54,7 @@ class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
 class CallLeafNoFPNode;
+class CallLeafPureNode;
 class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
@@ -674,6 +675,7 @@ public:
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
               DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
+              DEFINE_CLASS_ID(CallLeafPure,     CallLeaf, 1)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
@@ -909,6 +911,7 @@ public:
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
   DEFINE_CLASS_QUERY(CallLeafNoFP)
+  DEFINE_CLASS_QUERY(CallLeafPure)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
@@ -1291,8 +1294,6 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
-
-  bool is_pure_function() const;
 
   bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 

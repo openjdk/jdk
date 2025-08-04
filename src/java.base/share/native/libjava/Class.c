@@ -75,7 +75,6 @@ static JNINativeMethod methods[] = {
     {"isRecord0",            "()Z",         (void *)&JVM_IsRecord},
     {"getPermittedSubclasses0", "()[" CLS,  (void *)&JVM_GetPermittedSubclasses},
     {"getClassFileVersion0", "()I",         (void *)&JVM_GetClassFileVersion},
-    {"getClassAccessFlagsRaw0", "()I",      (void *)&JVM_GetClassAccessFlags},
 };
 
 #undef OBJ
