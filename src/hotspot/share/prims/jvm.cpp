@@ -2949,13 +2949,9 @@ JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   return JNIHandles::make_local(THREAD, trace);
 JVM_END
 
-JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
-#if INCLUDE_JVMTI
-  oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
+JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread, jboolean suspendedByCaller))
+  oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, suspendedByCaller, THREAD);
   return JNIHandles::make_local(THREAD, snapshot);
-#else
-  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
-#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))

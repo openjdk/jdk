@@ -45,8 +45,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
-
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
@@ -607,6 +607,15 @@ public interface JavaLangAccess {
      * Returns the virtual thread default scheduler.
      */
     Executor virtualThreadDefaultScheduler();
+
+    /**
+     * Invokes a supplier to produce a non-null result if this virtual thread is unmounted.
+     * @param supplier1 invoked if this virtual thread is unmounted and alive. The virtual
+     *     thread is suspended while this supplier executes
+     * @param supplier2 invoked if this virtual thread is not alive
+     * @return the result; {@code null} if mounted, suspended or in transition
+     */
+    <T> T supplyIfUnmounted(Thread thread, Supplier<T> supplier1, Supplier<T> supplier2);
 
     /**
      * Creates a new StackWalker
