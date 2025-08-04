@@ -48,9 +48,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif
@@ -60,9 +57,12 @@
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 const char* aot_code_entry_kind_name[] = {
 #define DECL_KIND_STRING(kind) XSTR(kind),
