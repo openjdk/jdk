@@ -93,11 +93,6 @@ public:
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
-
-  void  trunc_to(int length)    {
-    assert(length <= _len,"cannot increase length");
-    _len = length;
-  }
 };
 
 template <typename E> class GrowableArrayIterator;
@@ -287,7 +282,7 @@ public:
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
     }
-    trunc_to(length() - (end - start));
+    this->_len -= (end - start);
   }
 
   // The order is changed.
@@ -512,6 +507,11 @@ public:
 
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
+
+  void trunc_to(int length) {
+    assert(length <= this->_len,"cannot increase length");
+    this->_len = length;
+  }
 
   // Reduce capacity to length.
   void shrink_to_fit();
