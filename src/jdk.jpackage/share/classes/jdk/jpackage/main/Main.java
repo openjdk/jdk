@@ -94,6 +94,10 @@ public class Main {
                     // processArguments() will log error message if failed.
                     return 1;
                 }
+                int status = jdk.jpackage.internal.cli.Main.run(out, err, newArgs);
+                if (status != 0) {
+                    throw new AssertionError("Unexpected exit code=" + status);
+                }
             }
             return 0;
         } finally {
