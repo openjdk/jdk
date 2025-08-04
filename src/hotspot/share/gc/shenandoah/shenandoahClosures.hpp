@@ -36,7 +36,6 @@ class BarrierSetNMethod;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
-class ShenandoahObjectCountClosure;
 class ShenandoahReferenceProcessor;
 class SATBMarkQueueSet;
 
@@ -112,6 +111,7 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkRefsAndCountClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   ShenandoahObjectCountClosure* _count;
+  
   template <class T>
   inline void do_oop_work(T* p) {
     bool newly_marked = work<T, GENERATION>(p);

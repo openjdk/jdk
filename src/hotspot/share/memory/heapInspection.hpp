@@ -104,8 +104,9 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* lookup(Klass* k);
   void initialize() { _list = nullptr; }
   void empty();
-  // Deletes the KlassInfoEntry in the list
-  void remove_from_list(KlassInfoEntry* entry);
+  // Remove from the bucket list, and delete `entry`.
+  // `entry` must exist in the list.
+  void remove_from_list(KlassInfoEntry*& entry);
   void iterate(KlassInfoClosure* cic);
 };
 

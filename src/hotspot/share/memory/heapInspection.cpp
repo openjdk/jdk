@@ -156,14 +156,15 @@ void KlassInfoBucket::empty() {
   }
 }
 
-void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
+void KlassInfoBucket::remove_from_list(KlassInfoEntry*& entry) {
   if (_list == entry) {
     KlassInfoEntry* next = _list->next();
     _list = next;
     delete entry;
+    entry = nullptr;
     return;
   }
-  
+
   KlassInfoEntry* current = _list;
   while (current != nullptr && current->next() != entry) {
     current = current->next();
@@ -173,7 +174,10 @@ void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
     KlassInfoEntry* next = entry->next();
     current->set_next(next);
     delete entry;
+    entry = nullptr;
   }
+
+  assert(entry == nullptr, "Entry should be deleted");
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
