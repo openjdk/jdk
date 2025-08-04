@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
@@ -39,7 +40,6 @@
 #include "runtime/threads.hpp"
 #include "services/shorthist.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/deferredStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -208,7 +208,7 @@ public:
   }
 };
 
-class ShortHistoryStore {
+class ShortHistoryStore : public CHeapObj<mtInternal> {
 public:
 
   // A short-term buffer spans the last 10 minutes; a long-term buffer the last 5 hours
@@ -245,7 +245,7 @@ public:
   }
 };
 
-DeferredStatic<ShortHistoryStore> g_store;
+static ShortHistoryStore* g_store = nullptr;
 
 struct ShortHistoryTask : public PeriodicTask {
 
@@ -263,7 +263,7 @@ DeferredStatic<ShortHistoryTask> g_task;
 
 void ShortHistory::initialize() {
   if (UseHistory) {
-    g_store.initialize();
+    g_store = new ShortHistoryStore();
     g_task.initialize(HistoryInterval);
     g_task->enroll();
     log_info(os)("History task enrolled (interval: %u ms)", HistoryInterval);
@@ -280,6 +280,7 @@ void ShortHistory::cleanup() {
 void ShortHistory::print(outputStream* st) {
   st->print_cr("History:");
   if (UseHistory) {
+    assert(g_store != nullptr, "Not initialized?");
     // Measure current values to show in case this is called during a crash
     if (VMError::is_error_reported_in_current_thread()) {
       Data d_now;
