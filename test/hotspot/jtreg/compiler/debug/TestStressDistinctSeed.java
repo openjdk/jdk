@@ -93,28 +93,28 @@ public class TestStressDistinctSeed {
         Set<String> ccpTraceSet = new HashSet<>();
         Set<String> macroExpansionTraceSet = new HashSet<>();
         Set<String> macroEliminationTraceSet = new HashSet<>();
-        String igvntrace, ccptrace, macroexpansiontrace, macroeliminationtrace;
+        String igvnTraceOutput, ccpTraceOutput, macroExpansionTraceOutput, macroEliminationTraceOutput;
         if (args.length == 0) {
             for (int s = 0; s < 5; s++) {
-                igvntrace = igvnTrace(s);
-                ccptrace = ccpTrace(s);
-                macroexpansiontrace = macroExpansionTrace(s);
-                macroeliminationtrace = macroEliminationTrace(s);
+                igvnTraceOutput = igvnTrace(s);
+                ccpTraceOutput = ccpTrace(s);
+                macroExpansionTraceOutput = macroExpansionTrace(s);
+                macroEliminationTraceOutput = macroEliminationTrace(s);
                 // Test same seed produce same result to test that different traces come from different seed and
                 // not indeterminism with the test.
-                Asserts.assertEQ(igvntrace, igvnTrace(s),
+                Asserts.assertEQ(igvnTraceOutput, igvnTrace(s),
                         "got different IGVN traces for the same seed");
-                Asserts.assertEQ(ccptrace, ccpTrace(s),
+                Asserts.assertEQ(ccpTraceOutput, ccpTrace(s),
                         "got different CCP traces for the same seed");
-                Asserts.assertEQ(macroexpansiontrace, macroExpansionTrace(s),
+                Asserts.assertEQ(macroExpansionTraceOutput, macroExpansionTrace(s),
                         "got different macro expansion traces for the same seed");
-                Asserts.assertEQ(macroeliminationtrace, macroEliminationTrace(s),
+                Asserts.assertEQ(macroEliminationTraceOutput, macroEliminationTrace(s),
                         "got different macro elimination traces for the same seed");
 
-                igvnTraceSet.add(igvntrace);
-                ccpTraceSet.add(ccptrace);
-                macroExpansionTraceSet.add(macroexpansiontrace);
-                macroEliminationTraceSet.add(macroeliminationtrace);
+                igvnTraceSet.add(igvnTraceOutput);
+                ccpTraceSet.add(ccpTraceOutput);
+                macroExpansionTraceSet.add(macroExpansionTraceOutput);
+                macroEliminationTraceSet.add(macroEliminationTraceOutput);
             }
             Asserts.assertGT(igvnTraceSet.size(), 1,
                     "got same IGVN traces for 5 different seeds");
