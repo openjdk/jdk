@@ -6339,7 +6339,7 @@ public final class DateTimeFormatterBuilder {
 
                     /*
                      *  if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
-                     *      return super.parse(text, formatter, query);
+                     *      return super.format(context, buf);
                      *  }
                      */
                     var L0 = cb.newLabel();
