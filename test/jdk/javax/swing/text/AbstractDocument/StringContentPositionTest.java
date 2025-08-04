@@ -33,9 +33,9 @@ import javax.swing.text.StringContent;
 public class StringContentPositionTest {
 
     static final int SIZE = 20;
-    static final String text = "hello";
-    static final int LEN = text.length();
-    static final StringContent st = new StringContent();
+    static final String TEXT = "hello";
+    static final int LEN = TEXT.length();
+    static final StringContent SC = new StringContent();
 
     public static void main(String[] args) throws BadLocationException {
 
@@ -50,19 +50,19 @@ public class StringContentPositionTest {
         Position[] positions = new Position[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
-            st.insertString(0, "hello");
-            positions[i] = st.createPosition(5);
+            SC.insertString(0, TEXT);
+            positions[i] = SC.createPosition(5);
         }
-        for (int i=0; i<SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
            int expected = ((SIZE - i) * LEN);
            if (positions[i].getOffset() != expected) {
-               System.err.println("insert: Bad offset i=" + i + " off=" + positions[i].getOffset());
+               throw new RuntimeException("insert: Bad offset i=" + i + " off=" + positions[i].getOffset());
            }
         }
-        st.remove(0,  SIZE * LEN);
-        for (int i=0; i<SIZE; i++) {
+        SC.remove(0, SIZE * LEN);
+        for (int i = 0; i < SIZE; i++) {
             if (positions[i].getOffset() != 0) {
-               System.err.println("remove: Bad offset i=" + i + " off=" + positions[i].getOffset());
+               throw new RuntimeException("remove: Bad offset i=" + i + " off=" + positions[i].getOffset());
             }
         }
      }
