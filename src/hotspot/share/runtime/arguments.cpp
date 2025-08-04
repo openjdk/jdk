@@ -1504,7 +1504,6 @@ static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
   julong phys_mem;
-  size_t physical_mem_val = 0;
 
   // If the user specified one of these options, they
   // want specific memory sizing so do not limit memory
@@ -1518,15 +1517,13 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      physical_mem_val = os::physical_memory();
-      phys_mem = static_cast<julong>(physical_mem_val);
+      phys_mem = static_cast<julong>(os::physical_memory());
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
       phys_mem = (julong)MaxRAM;
     }
   } else {
-    physical_mem_val = os::physical_memory();
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(physical_mem_val), (julong)MaxRAM)
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(os::physical_memory()), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
 
