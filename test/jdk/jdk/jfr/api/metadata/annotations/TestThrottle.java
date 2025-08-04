@@ -141,40 +141,6 @@ public class TestThrottle {
         testThrottleDynamic();
     }
 
-    private static void testThrottleDynamic() throws Exception {
-        List<AnnotationElement> offAnnotations = new ArrayList<>();
-        offAnnotations.add(new AnnotationElement(Name.class, "DynamicZero"));
-        offAnnotations.add(new AnnotationElement(Throttle.class, "0/s"));
-        EventFactory offFactory = EventFactory.create(offAnnotations, List.of());
-
-        List<AnnotationElement> highRateAnnotations = new ArrayList<>();
-        highRateAnnotations.add(new AnnotationElement(Name.class, "DynamicHighRate"));
-        highRateAnnotations.add(new AnnotationElement(Throttle.class, "1000/s"));
-        EventFactory highRateFactory = EventFactory.create(highRateAnnotations, List.of());
-
-        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
-        try (RecordingStream r = new RecordingStream()) {
-            r.enable("DynamicZero");
-            r.enable("DynamicHighRate");
-            r.onEvent(events::add);
-            r.startAsync();
-            Event offEvent = offFactory.newEvent();
-            offEvent.commit();
-            Event highRateEvent = highRateFactory.newEvent();
-            highRateEvent.begin();
-            highRateEvent.commit();
-            r.stop();
-            if (events.size() != 1) {
-                System.out.println(events);
-                throw new Exception("Expected one dynamic event");
-            }
-            if (!events.get(0).getEventType().getName().equals("DynamicHighRate")) {
-                System.out.println(events);
-                throw new Exception("Expected DynamicHighRate");
-            }
-        }
-    }
-
     private static void testUnthrottled() throws Exception {
         testEvent(UnthrottledEvent.class, true);
     }
@@ -270,6 +236,40 @@ public class TestThrottle {
                 e5.commit();
             }
             assertEvents(r, eventName, emit ? 5 : 0);
+        }
+    }
+
+    private static void testThrottleDynamic() throws Exception {
+        List<AnnotationElement> offAnnotations = new ArrayList<>();
+        offAnnotations.add(new AnnotationElement(Name.class, "DynamicZero"));
+        offAnnotations.add(new AnnotationElement(Throttle.class, "0/s"));
+        EventFactory offFactory = EventFactory.create(offAnnotations, List.of());
+
+        List<AnnotationElement> highRateAnnotations = new ArrayList<>();
+        highRateAnnotations.add(new AnnotationElement(Name.class, "DynamicHighRate"));
+        highRateAnnotations.add(new AnnotationElement(Throttle.class, "1000/s"));
+        EventFactory highRateFactory = EventFactory.create(highRateAnnotations, List.of());
+
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream r = new RecordingStream()) {
+            r.enable("DynamicZero");
+            r.enable("DynamicHighRate");
+            r.onEvent(events::add);
+            r.startAsync();
+            Event offEvent = offFactory.newEvent();
+            offEvent.commit();
+            Event highRateEvent = highRateFactory.newEvent();
+            highRateEvent.begin();
+            highRateEvent.commit();
+            r.stop();
+            if (events.size() != 1) {
+                System.out.println(events);
+                throw new Exception("Expected one dynamic event");
+            }
+            if (!events.get(0).getEventType().getName().equals("DynamicHighRate")) {
+                System.out.println(events);
+                throw new Exception("Expected DynamicHighRate");
+            }
         }
     }
 
