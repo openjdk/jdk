@@ -459,7 +459,7 @@ protected:
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
-  PhaseIterGVN(); // Used after Parser
+  PhaseIterGVN();
 
   // Reset IGVN: call deconstructor, and placement new.
   void reset() {
