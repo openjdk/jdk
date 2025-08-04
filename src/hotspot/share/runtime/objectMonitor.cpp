@@ -1087,7 +1087,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ExitOnSuspend& eos) {
 //
 // In the future we should reconcile enter_internal() and reenter_internal().
 
-void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentNode) {
+void ObjectMonitor::reenter_internal(JavaThread* current, ClearSuccOnSuspend&csos, ObjectWaiter* currentNode) {
   assert(current != nullptr, "invariant");
   assert(current->thread_state() != _thread_blocked, "invariant");
   assert(currentNode != nullptr, "invariant");
@@ -1095,10 +1095,10 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
   assert(_waiters > 0, "invariant");
   assert_mark_word_consistency();
 
-  ClearSuccOnSuspend csos(this);
+  NoOpOnSuspend noos(this);
 
   {
-    ThreadBlockInVM tbim(current, true /* allow_suspend */);
+    ThreadBlockInVMPreprocess<NoOpOnSuspend> tbivs(current, noos, true /* allow_suspend */);
 
     for (;;) {
       ObjectWaiter::TStates v = currentNode->TState;
@@ -1118,15 +1118,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
       {
         OSThreadContendState osts(current->osthread());
-
-
-        //assert(current->thread_state() == _thread_in_vm, "invariant");
-
-        //{
-        //  ClearSuccOnSuspend csos(this);
-        //  ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
-        //  current->_ParkEvent->park();
-        //}
 
         current->_ParkEvent->park();
 
@@ -1956,7 +1947,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       enter(current);
     } else {
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-      reenter_internal(current, &node);
+      ClearSuccOnSuspend csos(this);
+      reenter_internal(current, csos, &node);
       node.wait_reenter_end(this);
     }
 
