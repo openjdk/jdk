@@ -45,7 +45,7 @@ class RegionsTree : public VMATree {
   SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
   SummaryDiff uncommit_region(address addr, size_t size);
 
-  using Node = VMATree::TreapNode;
+  using Node = VMATree::TNode;
 
   class NodeHelper {
       Node* _node;
