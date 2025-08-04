@@ -1680,8 +1680,6 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return true;
 }
 
-// If this is a growable mapping, remove the guard pages entirely by
-// munmap()ping them.  If not, just call uncommit_memory().
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
   ShouldNotReachHere();
   return true;
