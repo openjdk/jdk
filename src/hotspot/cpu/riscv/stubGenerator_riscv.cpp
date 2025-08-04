@@ -6461,7 +6461,7 @@ static const int64_t right_3_bits = right_n_bits(3);
   address generate_arrays_hashcode_powers_of_31() {
     const int num_8bit_elems_in_vec_reg = MaxVectorSize;
     const int ints_in_vec_reg = num_8bit_elems_in_vec_reg/sizeof(jint);
-    const int lmul = 1;
+    const int lmul = 4;
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "arrays_hashcode_powers_of_31");
     address start = __ pc();
