@@ -556,7 +556,7 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
 
   const double old_vs_young_efficiency_ratio = current_old_bytes_freed_per_gc_time / current_young_bytes_freed_per_gc_time;
 
-  return old_vs_young_efficiency_ratio;
+  return MIN2(old_vs_young_efficiency_ratio, (double)ZOldGCThreads);
 }
 
 static bool rule_major_proactive(const ZDirectorStats& stats) {
