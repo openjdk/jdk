@@ -1456,6 +1456,29 @@ static OptoReg::Name find_first_set(LRG &lrg, RegMask mask, int chunk) {
   return assigned;
 }
 
+OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG& lrg, uint bias_lrg, int chunk) {
+  if (bias_lrg != 0) {
+    // If first bias lrg has a color.
+    if(!_ifg->_yanked->test(bias_lrg)) {
+      OptoReg::Name reg = lrgs(bias_lrg).reg();
+      //  And it is legal for you,
+      if (is_legal_reg(lrg, reg, chunk)) {
+        return reg;
+      }
+    } else if( chunk == 0 ) {
+      // Choose a color which is legal for him
+      RegMask tempmask = lrg.mask();
+      tempmask.AND(lrgs(bias_lrg).mask());
+      tempmask.clear_to_sets(lrg.num_regs());
+      OptoReg::Name reg = find_first_set(lrg, tempmask, chunk);
+      if (OptoReg::is_valid(reg)) {
+        return reg;
+      }
+    }
+  }
+  return OptoReg::Bad;
+}
+
 // Choose a color using the biasing heuristic
 OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
 
@@ -1476,42 +1499,18 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     }
   }
 
+  // Try biasing the color with non-interfering first input's lrg.
   uint copy_lrg = _lrg_map.find(lrg._copy_bias);
-  if (copy_lrg != 0) {
-    // If he has a color,
-    if(!_ifg->_yanked->test(copy_lrg)) {
-      OptoReg::Name reg = lrgs(copy_lrg).reg();
-      //  And it is legal for you,
-      if (is_legal_reg(lrg, reg, chunk))
-        return reg;
-    } else if( chunk == 0 ) {
-      // Choose a color which is legal for him
-      RegMask tempmask = lrg.mask();
-      tempmask.AND(lrgs(copy_lrg).mask());
-      tempmask.clear_to_sets(lrg.num_regs());
-      OptoReg::Name reg = find_first_set(lrg, tempmask, chunk);
-      if (OptoReg::is_valid(reg))
-        return reg;
-    }
+  OptoReg::Name reg = select_bias_lrg_color(lrg, copy_lrg, chunk);
+  if (reg != OptoReg::Bad) {
+    return reg;
   }
-
+  // For commutative operations, try biasing the color with non-interfering
+  // second input's lrg.
   copy_lrg = _lrg_map.find(lrg._copy_bias2);
-  if (copy_lrg != 0) {
-    // If he has a color,
-    if(!_ifg->_yanked->test(copy_lrg)) {
-      OptoReg::Name reg = lrgs(copy_lrg).reg();
-      //  And it is legal for you,
-      if (is_legal_reg(lrg, reg, chunk))
-        return reg;
-    } else if( chunk == 0 ) {
-      // Choose a color which is legal for him
-      RegMask tempmask = lrg.mask();
-      tempmask.AND(lrgs(copy_lrg).mask());
-      tempmask.clear_to_sets(lrg.num_regs());
-      OptoReg::Name reg = find_first_set(lrg, tempmask, chunk);
-      if (OptoReg::is_valid(reg))
-        return reg;
-    }
+  reg = select_bias_lrg_color(lrg, copy_lrg, chunk);
+  if (reg != OptoReg::Bad) {
+    return reg;
   }
 
   // If no bias info exists, just go with the register selection ordering
@@ -1523,7 +1522,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
   // copy removal to remove many more copies, by preventing a just-assigned
   // register from being repeatedly assigned.
-  OptoReg::Name reg = lrg.mask().find_first_elem();
+  reg = lrg.mask().find_first_elem();
   if( (++_alternate & 1) && OptoReg::is_valid(reg) ) {
     // This 'Remove; find; Insert' idiom is an expensive way to find the
     // SECOND element in the mask.
@@ -1655,26 +1654,28 @@ uint PhaseChaitin::Select( ) {
 
     if (X86_ONLY(UseAPX) NOT_X86(false)) {
       Node* def = lrg->_def;
-      MachNode* mdef = def->is_Mach() ? def->as_Mach() : nullptr;
-      uint16_t num_oprds = mdef != nullptr ? mdef->num_opnds() : 0;
-      if (num_oprds >= 2) {
-        Node* in1 = mdef->in(mdef->operand_index(1));
-        uint lrin1 = _lrg_map.find(in1);
-        // If a def does not interfere with first input's def,
-        // then bias its color towards its input's def.
-        if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
-          lrg->_copy_bias = lrin1;
+      MachNode* mdef = lrg->is_singledef() && !lrg->_is_bound && def->is_Mach() ? def->as_Mach() : nullptr;
+      if (mdef != nullptr && mdef->req() > 1) {
+        Node* in1 = mdef->in(mdef->oper_input_base());
+        if (in1 != nullptr) {
+          uint lrin1 = _lrg_map.find(in1);
+          // If a def does not interfere with first input's def,
+          // then bias its color towards its input's def.
+          if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
+            lrg->_copy_bias = lrin1;
+          }
         }
       }
 
-      if (is_commutative_oper(mdef)) {
-        assert(num_oprds >= 3, "");
-        Node* in2 = mdef->in(mdef->operand_index(2));
-        uint lrin2 = _lrg_map.find(in2);
-        // If a def does not interfere with second input's def,
-        // then bias its color towards its input's def.
-        if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
-          lrg->_copy_bias2 = lrin2;
+      if (is_commutative_oper(mdef) && mdef->req() > 2) {
+        Node* in2 = mdef->in(mdef->oper_input_base() + 1);
+        if (in2 != nullptr) {
+          uint lrin2 = _lrg_map.find(in2);
+          // If a def does not interfere with second input's def,
+          // then bias its color towards its input's def.
+          if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
+            lrg->_copy_bias2 = lrin2;
+          }
         }
       }
     }

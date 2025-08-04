@@ -698,6 +698,8 @@ private:
   OptoReg::Name choose_color( LRG &lrg, int chunk );
   // Helper function which implements biasing heuristic
   OptoReg::Name bias_color( LRG &lrg, int chunk );
+  // Helper function which implements color biasing
+  OptoReg::Name select_bias_lrg_color(LRG& lrg, uint bias_lrg, int chunk);
 
   // Split uncolorable live ranges
   // Return new number of live ranges
