@@ -81,7 +81,7 @@ public:
       if (new_value == old_value) return; // skip icache flush if nothing changed
       nativeMovRegMem_at(new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
       // Swap in the new value
-      uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
+      uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_relaxed);
       if (v == old_mov_instr.u64) break;
       old_mov_instr.u64 = v;
     }
