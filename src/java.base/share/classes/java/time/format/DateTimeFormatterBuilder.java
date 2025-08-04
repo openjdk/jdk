@@ -6896,7 +6896,7 @@ public final class DateTimeFormatterBuilder {
         //-----------------------------------------------------------------------
         // Wrapper for speeding up access to TemporalField
         //-----------------------------------------------------------------------
-        static record TemporalAccessorWrapper(TemporalAccessor ta, LocalDate localDate, LocalTime localTime) {
+        record TemporalAccessorWrapper(TemporalAccessor ta, LocalDate localDate, LocalTime localTime) {
             public int get(TemporalField field) {
                 return ta.get(field);
             }
