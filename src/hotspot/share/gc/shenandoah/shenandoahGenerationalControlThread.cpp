@@ -379,6 +379,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
 
   TraceCollectorStats tcs(_heap->monitoring_support()->concurrent_collection_counters());
 
+  _heap->increment_total_collections(false);
+
   switch (original_state) {
     case ShenandoahOldGeneration::FILLING: {
       ShenandoahGCSession session(request.cause, old_generation);
@@ -528,6 +530,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   assert(!generation->is_old(), "Old GC takes a different control path");
 
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
+  _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
@@ -595,6 +598,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());
   maybe_set_aging_cycle();
   ShenandoahFullGC gc;
@@ -604,6 +608,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  _heap->increment_total_collections(false);
 
   ShenandoahGCSession session(request.cause, request.generation);
 

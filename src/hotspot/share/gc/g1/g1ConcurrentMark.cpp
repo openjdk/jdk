@@ -1221,21 +1221,25 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       _num_humongous_regions_removed(0),
       _local_cleanup_list(local_cleanup_list) {}
 
-    void reclaim_empty_humongous_region(G1HeapRegion* hr) {
+    void reclaim_empty_region(G1HeapRegion* hr) {
       assert(!hr->has_pinned_objects(), "precondition");
+      assert(hr->used() > 0, "precondition");
+
+      _freed_bytes += hr->used();
+      hr->set_containing_set(nullptr);
+      hr->clear_cardtable();
+      _cm->clear_statistics(hr);
+      G1HeapRegionPrinter::mark_reclaim(hr);
+    }
+
+    void reclaim_empty_humongous_region(G1HeapRegion* hr) {
       assert(hr->is_starts_humongous(), "precondition");
 
       auto on_humongous_region = [&] (G1HeapRegion* hr) {
-        assert(hr->used() > 0, "precondition");
-        assert(!hr->has_pinned_objects(), "precondition");
         assert(hr->is_humongous(), "precondition");
 
+        reclaim_empty_region(hr);
         _num_humongous_regions_removed++;
-        _freed_bytes += hr->used();
-        hr->set_containing_set(nullptr);
-        hr->clear_cardtable();
-        _g1h->concurrent_mark()->clear_statistics(hr);
-        G1HeapRegionPrinter::mark_reclaim(hr);
         _g1h->free_humongous_region(hr, _local_cleanup_list);
       };
 
@@ -1243,16 +1247,10 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
     }
 
     void reclaim_empty_old_region(G1HeapRegion* hr) {
-      assert(hr->used() > 0, "precondition");
-      assert(!hr->has_pinned_objects(), "precondition");
       assert(hr->is_old(), "precondition");
 
+      reclaim_empty_region(hr);
       _num_old_regions_removed++;
-      _freed_bytes += hr->used();
-      hr->set_containing_set(nullptr);
-      hr->clear_cardtable();
-      _g1h->concurrent_mark()->clear_statistics(hr);
-      G1HeapRegionPrinter::mark_reclaim(hr);
       _g1h->free_region(hr, _local_cleanup_list);
     }
 
@@ -1284,7 +1282,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         const bool is_live = hr->live_bytes() != 0
                           || hr->has_pinned_objects();
         if (is_live) {
-          if (tracker->update_old_before_rebuild(hr)) {
+          const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
+          if (selected_for_rebuild) {
             _num_selected_for_rebuild++;
           }
           _cm->update_top_at_rebuild_start(hr);
@@ -3052,10 +3051,10 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_groud_gid     = 0;
+  uint cset_group_id     = 0;
 
   if (r->rem_set()->is_added_to_cset_group()) {
-    cset_groud_gid = r->rem_set()->cset_group_id();
+    cset_group_id = r->rem_set()->cset_group_id();
   }
 
   _total_used_bytes      += used_bytes;
@@ -3076,7 +3075,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_groud_gid);
+                        cset_group_id);
 
   return false;
 }

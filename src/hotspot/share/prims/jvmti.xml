@@ -6127,7 +6127,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Local Variable - Double</synopsis>
       <description>
         This function can be used to retrieve the value of a local
-        variable whose type is <code>long</code>.
+        variable whose type is <code>double</code>.
         <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
