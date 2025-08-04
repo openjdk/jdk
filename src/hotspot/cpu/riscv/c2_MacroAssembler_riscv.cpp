@@ -2003,14 +2003,14 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   // The MaxVectorSize should have been set by detecting RVV max vector register
   // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
+  const int num_8bit_elems_in_vec_reg = MaxVectorSize;
   // Let's use T_INT as all hashCode calculations eventually deal with ints.
-  const int ints_in_vec_reg = MaxVectorSize/arrays_hashcode_elsize(T_INT);
+  const int ints_in_vec_reg = num_8bit_elems_in_vec_reg/sizeof(jint);
+  const int lmul = 1;
 
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
-  const int lmul = 4;
-  const int max_vec_len = ints_in_vec_reg * lmul;
-  const int MAX_VEC_MASK = ~(max_vec_len-1);
+  const int MAX_VEC_MASK = ~(ints_in_vec_reg*lmul - 1);
 
   switch (eltype) {
   case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
@@ -2057,7 +2057,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmv_v_x(v_powmax, pow31_highest);
   vmv_s_x(v_result, result);
 
-  vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
+  vsetvli(consumed, cnt, Assembler::e32, Assembler::m1);
 
   bind(VEC_LOOP);
   vmul_vv(v_result, v_result, v_powmax);
