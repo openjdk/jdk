@@ -737,6 +737,8 @@ void JavaThread::run() {
   assert(JavaThread::current() == this, "sanity check");
   assert(!Thread::current()->owns_locks(), "sanity check");
 
+  JFR_ONLY(Jfr::on_thread_start(this);)
+
   DTRACE_THREAD_PROBE(start, this);
 
   // This operation might block. We call that after all safepoint checks for a new thread has
