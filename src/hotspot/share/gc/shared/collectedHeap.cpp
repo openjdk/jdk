@@ -608,7 +608,7 @@ void CollectedHeap::post_initialize() {
 }
 
 double calc_usage(double component_cpu_time, double process_cpu_time) {
-  return 100 * component_cpu_time / process_cpu_time;
+  return process_cpu_time == 0 ? 0 : 100 * component_cpu_time / process_cpu_time;
 }
 
 void CollectedHeap::log_cpu_time() const {
