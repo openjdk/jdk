@@ -162,7 +162,6 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
             // before we release whitebox control, i.e. before the expected garbage collection
             // can start.
             System.out.println(TestCodeCacheUnloadDuringConcCycle.AFTER_FIRST_CYCLE_MARKER);
-            System.out.flush();
             WB.concurrentGCReleaseControl();
         }
         Thread.sleep(1000);
