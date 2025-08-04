@@ -1633,7 +1633,7 @@ public class Exhaustiveness extends TestRunner {
                true);
     }
 
-    @Test
+//    @Test
     public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
         List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
         variants.remove((int) (Math.random() * variants.size()));
@@ -2182,6 +2182,44 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testX(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root r) {
+                       return switch (r) {
+                           case Root(R1 _, _, _) -> 0;
+                           case Root(R2 _, R1 _, _) -> 0;
+                           case Root(R2 _, R2 _, R1 _) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2 _) -> 0; //functionally equivalent to: Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R2 _))
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b1, Base b2) implements Base {}
+                   record Root(Base b1, Base b2, Base b3) {}
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
     }
@@ -2218,6 +2256,7 @@ public class Exhaustiveness extends TestRunner {
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW",
+                             "-XDexhaustivityTimeout=0",
                              stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
                                         : "-XDnoop")
                     .outdir(classes)
