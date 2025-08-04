@@ -588,7 +588,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
     for (;;) {
       ExitOnSuspend eos(this);
       {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         enter_internal(current, eos);
         current->set_current_pending_monitor(nullptr);
         // We can go to a safepoint at the end of this block. If we
@@ -931,7 +930,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
 }
 
 void ObjectMonitor::enter_internal(JavaThread* current, ExitOnSuspend& eos) {
-  assert(current->thread_state() == _thread_blocked, "invariant");
+  assert(current->thread_state() != _thread_blocked, "invariant");
 
   // Try the lock - TATAS
   if (try_lock(current) == TryLockResult::Success) {
@@ -1000,6 +999,8 @@ void ObjectMonitor::enter_internal(JavaThread* current, ExitOnSuspend& eos) {
   if (ce != nullptr && ce->is_virtual_thread()) {
     do_timed_parked = true;
   }
+
+  ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
 
   for (;;) {
 
