@@ -426,6 +426,11 @@ childProcess(void *arg)
         sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
     }
 
+    // Childs should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
+        goto WhyCantJohnnyExec;
+    }
+
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 
  WhyCantJohnnyExec:
