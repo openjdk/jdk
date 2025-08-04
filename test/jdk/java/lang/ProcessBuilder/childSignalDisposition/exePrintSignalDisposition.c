@@ -27,44 +27,22 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define SIGNALS(XX) \
-    XX(SIGABRT) \
-    XX(SIGALRM) \
-    XX(SIGBUS) \
-    XX(SIGCHLD) \
-    XX(SIGCONT) \
-    XX(SIGFPE) \
-    XX(SIGHUP) \
-    XX(SIGILL) \
-    XX(SIGINT) \
-    XX(SIGKILL) \
-    XX(SIGPIPE) \
-    XX(SIGQUIT) \
-    XX(SIGSEGV) \
-    XX(SIGSTOP) \
-    XX(SIGTERM) \
-    XX(SIGTSTP) \
-    XX(SIGTTIN) \
-    XX(SIGTTOU) \
-    XX(SIGUSR1) \
-    XX(SIGUSR2) \
-    XX(SIGPOLL) \
-    XX(SIGPROF) \
-    XX(SIGSYS) \
-    XX(SIGTRAP) \
-    XX(SIGURG) \
-    XX(SIGVTALRM) \
-    XX(SIGXCPU) \
-    XX(SIGXFSZ)
-
-#define DEF_SIGNALS(name) { name, #name },
 static const struct { int sig; const char* name; } signals[] = {
-    SIGNALS(DEF_SIGNALS)
-    { -1, NULL }
+    { SIGABRT, "SIGABRT" }, { SIGALRM, "SIGALRM" }, { SIGBUS, "SIGBUS" }, { SIGCHLD, "SIGCHLD" }, { SIGCONT, "SIGCONT" },
+    { SIGFPE, "SIGFPE" }, { SIGHUP, "SIGHUP" }, { SIGILL, "SIGILL" }, { SIGINT, "SIGINT" }, { SIGKILL, "SIGKILL" },
+    { SIGPIPE, "SIGPIPE" }, { SIGQUIT, "SIGQUIT" }, { SIGSEGV, "SIGSEGV" }, { SIGSTOP, "SIGSTOP" }, { SIGTERM, "SIGTERM" },
+    { SIGTSTP, "SIGTSTP" }, { SIGTTIN, "SIGTTIN" }, { SIGTTOU, "SIGTTOU" }, { SIGUSR1, "SIGUSR1" }, { SIGUSR2, "SIGUSR2" },
+#ifdef SIGPOLL
+    { SIGPOLL, "SIGPOLL" },
+#endif
+    { SIGPROF, "SIGPROF" }, { SIGSYS, "SIGSYS" }, { SIGTRAP, "SIGTRAP" }, { SIGURG, "SIGURG" }, { SIGVTALRM, "SIGVTALRM" },
+    { SIGXCPU, "SIGXCPU" }, { SIGXFSZ, "SIGXFSZ" }, { -1, NULL }
 };
 
 int main(int argc, char** argv) {
+
     printf("PID: %d\n", getpid());
+
     sigset_t current_mask;
     sigemptyset(&current_mask);
     if (sigprocmask(SIG_BLOCK /* ignored */, NULL, &current_mask) != 0) {
@@ -78,16 +56,12 @@ int main(int argc, char** argv) {
             printf("blocked ");
         }
         struct sigaction act;
-        const void* handler;
         if (sigaction(signals[n].sig, NULL, &act) != 0) {
             perror("sigaction");
             return -1;
         }
-        if (act.sa_flags & SA_SIGINFO) {
-            handler = (void*)act.sa_sigaction;
-        } else {
-            handler = (void*)act.sa_handler;
-        }
+        const void* const handler = (act.sa_flags & SA_SIGINFO ?
+                                    (void*)act.sa_sigaction : (void*)act.sa_handler);
         if (handler == (void*)SIG_DFL) {
             printf("default ");
         } else if (handler == (void*)SIG_IGN) {

@@ -30,9 +30,9 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   if (signal(SIGPIPE, SIG_IGN) != SIG_ERR) {
-    printf("pid %d: changed signal disposition for SIGPIPE to SIG_IGN\n");
+    printf("changed signal disposition for SIGPIPE to SIG_IGN\n");
   } else {
-    printf("pid %d: FAILED to change signal disposition for SIGPIPE to SIG_IGN (%d)\n", errno);
+    printf("FAILED to change signal disposition for SIGPIPE to SIG_IGN (%d)\n", errno);
     return JNI_ERR;
   }
 
