@@ -2052,7 +2052,8 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   la(t1, ExternalAddress(adr_pows31));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
-  vsetvli(x0, x0, Assembler::e32, Assembler::m4);
+  li(t0, ints_in_vec_reg);
+  vsetvli(x0, t0, Assembler::e32, Assembler::m1);
   vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
   vmv_v_x(v_powmax, pow31_highest);
   vmv_s_x(v_result, result);
