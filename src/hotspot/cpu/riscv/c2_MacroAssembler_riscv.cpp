@@ -2050,28 +2050,28 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmv_v_x(v16, x0);
   vmv_v_x(v24, x0);
 
-  // load pre-calculated data
   la(t1, ExternalAddress(adr_pows31));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
   vsetvli(x0, x0, Assembler::e32, Assembler::m4);
   vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
-  // set initial values
+  vmv_v_x(v_powmax, pow31_highest);
   vmv_s_x(v_result, result);
-  vmv_s_x(v_powmax, pow31_highest);
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
 
   bind(VEC_LOOP);
   vmul_vv(v_result, v_result, v_powmax);
+  vmul_vv(v_sum, v_sum, v_powmax);
   arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
   vmul_vv(v_src, v_src, v_coeffs);
-  vredsum_vs(v_sum, v_src, v_zred);
-  vadd_vv(v_result, v_result, v_sum);
+  vadd_vv(v_sum, v_sum, v_src);
   shadd(ary, consumed, ary, t0, elsize_shift);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, MAX_VEC_MASK);
   bne(t1, x0, VEC_LOOP);
 
+  vredsum_vs(v_sum, v_sum, v_zred);
+  vadd_vv(v_result, v_result, v_sum);
   vmv_x_s(result, v_result);
   beqz(cnt, DONE);
 
