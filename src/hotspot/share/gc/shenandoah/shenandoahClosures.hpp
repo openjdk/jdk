@@ -114,6 +114,7 @@ private:
   
   template <class T>
   inline void do_oop_work(T* p) {
+    // If the object was not previously marked, then it is considered newly marked and we record it's instance in the KlassInfoTable
     bool newly_marked = work<T, GENERATION>(p);
     if (newly_marked) {
       _count->do_oop(p);

@@ -38,7 +38,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
-class ShenandoahHeap;
 
 bool GCTracer::should_report_cpu_time_event() const {
   return should_send_cpu_time_event();

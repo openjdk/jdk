@@ -19,18 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
+package jdk.jfr.event.gc.objectcount;
+import jdk.test.lib.jfr.GCHelper;
 
-#include "gc/shared/objectCountEventSender.hpp"
-
-bool ObjectCountEventSender::_should_send_requestable_event = false;
-
-void ObjectCountEventSender::enable_requestable_event() {
-  _should_send_requestable_event = true;
-}
-
-void ObjectCountEventSender::disable_requestable_event() {
-  _should_send_requestable_event = false;
+/**
+ * @test
+ * @requires vm.flagless
+ * @requires vm.hasJFR
+ * @requires (vm.gc == "Shenandoah" | vm.gc == null)
+ *           & vm.opt.ExplicitGCInvokesConcurrent != true
+ * @library /test/lib /test/jdk
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseShenandoahGC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithShenandoah
+ */
+public class TestObjectCountAfterGCEventWithShenandoah {
+    public static void main(String[] args) throws Exception {
+        ObjectCountAfterGCEvent.test(GCHelper.gcShenandoah);
+    }
 }
