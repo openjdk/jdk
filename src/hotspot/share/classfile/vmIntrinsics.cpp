@@ -27,12 +27,12 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // These are flag-matching functions:
 inline bool match_F_R(u2 flags) {

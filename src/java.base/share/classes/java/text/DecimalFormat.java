@@ -114,12 +114,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
  * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
  * on parsing behavior.
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
  *
  * <h3>Special Values</h3>
  * <ul>
@@ -416,6 +410,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
+ *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)

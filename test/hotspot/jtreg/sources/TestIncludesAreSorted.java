@@ -47,6 +47,7 @@ public class TestIncludesAreSorted {
                     "share/c1",
                     "share/cds",
                     "share/ci",
+                    "share/classfile",
                     "share/compiler",
                     "share/jvmci",
                     "share/libadt",
