@@ -3451,6 +3451,27 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
                                                            (size_t)addr - stack_extent);
     }
 
+    // stack grows towards lower address
+    //
+    // lower address first
+    //
+    // |             |
+    // |    stack    |
+    // |    frame    |
+    // |             | <----- stack_extent (stack end)
+    // |             |
+    // |xxxxxxxxxxxxx| <------ addr
+    // |xxxxxxxxxxxxx|
+    // |xxxxxxxxxxxxx|         stack-guard-pages
+    // |xxxxxxxxxxxxx| <------ addr + size
+    // |             |
+    // |             |
+    // |ooooooooooooo| <------ actually used by thread
+    // |ooooooooooooo|
+    // |ooooooooooooo|
+    // |ooooooooooooo| <------ stack start
+    //
+    // Truncate the mapping if there is overlapping.
     if (stack_extent < (uintptr_t)addr + size) {
       ::munmap((void*)stack_extent, (uintptr_t)(addr + size - stack_extent));
     }
