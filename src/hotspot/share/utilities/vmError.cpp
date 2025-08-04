@@ -111,12 +111,13 @@ volatile intptr_t VMError::_safepoint_timeout_thread = p2i(nullptr);
 static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-  "PATH", "USERNAME",
+  "JDK_AOT_VM_OPTIONS",
+  "JAVA_OPTS", "PATH", "USERNAME",
 
   "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
-  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
+  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY", "WAYLAND_DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
   "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
   "TERM", "TMPDIR", "TZ",
@@ -1397,6 +1398,7 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedOops::print_mode(st);
     st->cr();
   }
+#endif
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
@@ -1405,7 +1407,6 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedKlassPointers::print_mode(st);
     st->cr();
   }
-#endif
 
   // Take heap lock over heap, GC and metaspace printing so that information
   // is consistent.
@@ -1872,7 +1873,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log.set_fd(-1);
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(true);)
+  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);
