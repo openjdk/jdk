@@ -716,10 +716,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * {@return the lenient minus signs}
+     * {@return the lenient minus signs} Multiple lenient minus signs
+     * are concatenated to form the returned string.
      */
-    String getLenientMinusSign() {
-        return lenientMinusSign;
+    String getLenientMinusSigns() {
+        return lenientMinusSigns;
     }
 
     //------------------------------------------------------------
@@ -848,7 +849,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             groupingSeparator : numberElements[12].charAt(0);
 
         // Lenient minus signs
-        lenientMinusSign = numberElements.length < 14 ? minusSignText : numberElements[13];
+        lenientMinusSigns = numberElements.length < 14 ? minusSignText : numberElements[13];
 
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
@@ -1011,9 +1012,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         if (loadNumberData(locale) instanceof Object[] d &&
             d[0] instanceof String[] numberElements &&
             numberElements.length >= 14) {
-            lenientMinusSign =  numberElements[13];
+            lenientMinusSigns = numberElements[13];
         } else {
-            lenientMinusSign = minusSignText;
+            lenientMinusSigns = minusSignText;
         }
     }
 
@@ -1195,7 +1196,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private transient volatile boolean currencyInitialized;
 
     // Lenient minus. No need to be set by applications
-    private transient String lenientMinusSign;
+    private transient String lenientMinusSigns;
 
     /**
      * Cached hash code.

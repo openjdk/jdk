@@ -108,24 +108,21 @@ public class LenientMinusSignTest {
         assertEquals(nfDeser.parse(MINUS_PATTERN + "1,5"), -1.5);
     }
 
+    // White box test. modifies the private `lenientMinusSigns` field in the DFS
     @Test
     void testSupplementary() throws IllegalAccessException, NoSuchFieldException, ParseException {
         var dfs = new DecimalFormatSymbols(Locale.ROOT);
         MethodHandles.privateLookupIn(DecimalFormatSymbols.class, MethodHandles.lookup())
-            .findVarHandle(DecimalFormatSymbols.class, "lenientMinusSign", String.class)
+            .findVarHandle(DecimalFormatSymbols.class, "lenientMinusSigns", String.class)
             .set(dfs, "-🙂");
+        // Direct match. Should succeed
         var df = new DecimalFormat("#.#;🙂#.#", dfs);
         assertEquals(df.parse("🙂1.5"), -1.5);
-    }
 
-    @Test
-    void testCanonEq() throws IllegalAccessException, NoSuchFieldException, ParseException {
-        var dfs = new DecimalFormatSymbols(Locale.ROOT);
-        MethodHandles.privateLookupIn(DecimalFormatSymbols.class, MethodHandles.lookup())
-            .findVarHandle(DecimalFormatSymbols.class, "lenientMinusSign", String.class)
-            .set(dfs, "-\u00E5");
-        var df = new DecimalFormat("#.#;a\u0308#.#", dfs);
-        assertEquals(df.parse("a\u03081.5"), -1.5);
+        // Fail if the lengths of negative prefixes differ
+        assertThrows(ParseException.class, () -> df.parse("-1.5"));
+        var df2= new DecimalFormat("#.#;-#.#", dfs);
+        assertThrows(ParseException.class, () -> df2.parse("🙂1.5"));
     }
 
     @Nested

@@ -51,7 +51,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
@@ -411,6 +410,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
+ *
  * @implSpec
  * When formatting a {@code Number} other than {@code BigInteger} and
  * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
@@ -418,9 +418,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
  * returns a numerically greater value.
  *
- * @implNote The default implementation follows the LDML specification
- * to enable loose matching of minus sign patterns when {@link #isStrict()}
- * returns {@code false}.
+ * @implNote The implementation follows the LDML specification to enable loose
+ * matching of minus sign patterns when {@link #isStrict()} returns
+ * {@code false}.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
@@ -3509,15 +3509,20 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@return if the text matches the affix} In lenient mode, lenient
-     * minus signs also match the hyphen-minus (U+002D).
-     * Package-private access, as it is being called from CompactNumberFormat.
+     * {@return true if the text matches the affix}
+     * In lenient mode, lenient minus signs also match the hyphen-minus
+     * (U+002D). Package-private access, as this is called from
+     * CompactNumberFormat.
+     * @implNote The implementation does not account for lenient minuses
+     * in non-BMP ranges or normalizations, as these could change the affix
+     * length.
      */
     boolean matchAffix(String text, int position, String affix) {
         var alen = affix.length();
         var tlen = text.length();
 
         if (alen == 0) {
+            // always match with an empty affix, as affix is optional
             return true;
         }
         if (position >= tlen) {
@@ -3527,23 +3532,28 @@ public class DecimalFormat extends NumberFormat {
             return text.regionMatches(position, affix, 0, alen);
         }
 
-        var lms = symbols.getLenientMinusSign();
-        if (alen == 1) {
-            var a = affix.codePointAt(0);
-            var c = text.codePointAt(position);
-            if (lms.indexOf(a) >= 0) {
-                return lms.indexOf(c) >= 0;
+        var lms = symbols.getLenientMinusSigns();
+        int i = 0;
+        int limit = Math.min(tlen, position + alen);
+        for (; position + i < limit; i++) {
+            char t = text.charAt(position + i);
+            char a = affix.charAt(i);
+            int tIndex = lms.indexOf(t);
+            int aIndex = lms.indexOf(a);
+            // Non LMS. Match direct
+            if (tIndex < 0 && aIndex < 0) {
+                if (t != a) {
+                    return false;
+                }
             } else {
-                return a == c;
+                // By here, at least one LMS. Ensure both LMS.
+                if (tIndex < 0 || aIndex < 0) {
+                    return false;
+                }
             }
-        } else {
-            // slow path. normalize lenient minus to "-" and compare
-            var lmsp = Pattern.compile("[" + lms + "]", Pattern.CANON_EQ);
-            var a = lmsp.matcher(affix).replaceAll("-");
-            var t = lmsp.matcher(text.substring(position, Math.min(tlen, position + alen)))
-                .replaceAll("-");
-            return t.equals(a);
         }
+        // Return true if entire affix was matched
+        return i == alen;
     }
 
     /**

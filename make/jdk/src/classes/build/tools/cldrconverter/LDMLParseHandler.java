@@ -858,7 +858,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             if (currentContainer instanceof KeyContainer kc &&
                 kc.getKey().equals("number") &&
                 attributes.getValue("sample").equals("-")) {
-                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/lenientMinusSign");
+                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/lenientMinusSigns");
             } else {
                 pushIgnoredContainer(qName);
             }
