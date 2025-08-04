@@ -62,8 +62,8 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -245,7 +245,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
   size_t alignment = MetaspaceShared::core_region_alignment();
-  if (UseCompressedClassPointers) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
     alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
 
@@ -1428,7 +1428,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
 MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                                bool use_requested_addr) {
   if (use_requested_addr && static_mapinfo->requested_base_address() == nullptr) {
-    report_loading_error("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
+    aot_log_info(aot)("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
     return MAP_ARCHIVE_MMAP_FAILURE;
   }
 
@@ -1436,12 +1436,12 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       // For product build only -- this is for benchmarking the cost of doing relocation.
       // For debug builds, the check is done below, after reserving the space, for better test coverage
       // (see comment below).
-      report_loading_error("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+      aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
       return MAP_ARCHIVE_MMAP_FAILURE;
     });
 
   if (ArchiveRelocationMode == 2 && !use_requested_addr) {
-    report_loading_error("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
+    aot_log_info(aot)("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
     return MAP_ARCHIVE_MMAP_FAILURE;
   };
 
@@ -1603,8 +1603,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
       // Set up compressed Klass pointer encoding: the encoding range must
       //  cover both archive and class space.
-      const address encoding_base = (address)mapped_base_address;
-      const address klass_range_start = encoding_base + prot_zone_size;
+      const address klass_range_start = (address)mapped_base_address;
       const size_t klass_range_size = (address)class_space_rs.end() - klass_range_start;
       if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
         // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
@@ -1615,13 +1614,19 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // mapping start (including protection zone), shift should be the shift used at archive generation time.
         CompressedKlassPointers::initialize_for_given_encoding(
           klass_range_start, klass_range_size,
-          encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
+          klass_range_start, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
+        assert(CompressedKlassPointers::base() == klass_range_start, "must be");
       } else {
         // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
+        assert(CompressedKlassPointers::base() == nullptr ||
+               CompressedKlassPointers::base() == klass_range_start, "must be");
       }
-      CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);
+      // Establish protection zone, but only if we need one
+      if (CompressedKlassPointers::base() == klass_range_start) {
+        CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
+      }
 
       // map_or_load_heap_region() compares the current narrow oop and klass encodings
       // with the archived ones, so it must be done after all encodings are determined.
