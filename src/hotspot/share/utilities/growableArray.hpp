@@ -94,7 +94,6 @@ public:
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
 
-  void  clear()                 { _len = 0; }
   void  trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
     _len = length;
@@ -517,6 +516,7 @@ public:
   // Reduce capacity to length.
   void shrink_to_fit();
 
+  void clear() { this->_len = 0; }
   void clear_and_deallocate();
 };
 
