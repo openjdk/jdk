@@ -53,6 +53,7 @@ void ZeroInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_sin   );
     method_entry(java_lang_math_cos   );
     method_entry(java_lang_math_tan   );
+    method_entry(java_lang_math_sinh  );
     method_entry(java_lang_math_tanh  );
     method_entry(java_lang_math_cbrt  );
     method_entry(java_lang_math_abs   );
@@ -96,6 +97,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_sinh    : // fall thru
   case Interpreter::java_lang_math_tanh    : // fall thru
   case Interpreter::java_lang_math_cbrt    : // fall thru
   case Interpreter::java_lang_math_abs     : // fall thru
