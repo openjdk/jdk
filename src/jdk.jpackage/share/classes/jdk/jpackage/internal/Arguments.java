@@ -726,6 +726,7 @@ public class Arguments {
             Log.verbose(MessageFormat.format(
                     I18N.getString("message.bundle-created"),
                     bundler.getName()));
+            ModelAsserter.instance().notifyFromParams(localParams);
         } catch (ConfigException e) {
             Log.verbose(e);
             if (e.getAdvice() != null)  {
