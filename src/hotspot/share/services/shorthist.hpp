@@ -26,8 +26,8 @@
 #ifndef SHARE_RUNTIME_SHORTHIST_HPP
 #define SHARE_RUNTIME_SHORTHIST_HPP
 
-#include "runtime/globals.hpp"
 #include "memory/allStatic.hpp"
+#include "runtime/globals.hpp"
 
 class outputStream;
 

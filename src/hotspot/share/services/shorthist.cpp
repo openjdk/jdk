@@ -63,11 +63,11 @@ struct ShortHistoryData_pd {
 struct Data {
   struct {
     time_t time;
-    ShortHistoryData_pd pd;       // os-dependend data
+    ShortHistoryData_pd pd;       // OS-dependent data, see shorthist_<OS>.hpp
     ssize_t heap_committed;
     ssize_t heap_used;
-    ssize_t meta_nclass_used;     // non-class metaspace used
-    ssize_t meta_class_used;      // class space used
+    ssize_t meta_nclass_used;     // non-class metaspace, used
+    ssize_t meta_class_used;      // class space, used
     ssize_t meta_gc_threshold;    // metaspace gc threshold
     ssize_t nmt_malloc_total;     // NMT: outstanding mallocs, total
     ssize_t nmt_malloc_peak;      // NMT: outstanding mallocs, peak
@@ -211,10 +211,8 @@ public:
 class ShortHistoryStore {
 public:
 
-  // We keep a short-term buffer spanning the last 10 minutes and
-  // a long-term buffer spanning the last 5 hours (if we run with the
-  // default interval of 10 seconds). We feed the long term buffer
-  // every five minutes (so, twice during the short-term buffer time span).
+  // A short-term buffer spans the last 10 minutes; a long-term buffer the last 5 hours
+  // (if we run with the default interval of 10 seconds)
   static constexpr int default_interval = 10;
   static constexpr int timespan_short = 10 * 60;
   static constexpr int timespan_long = 5 * 60 * 60;
@@ -275,7 +273,7 @@ void ShortHistory::initialize() {
 void ShortHistory::cleanup() {
   if (UseHistory) {
     g_task->disenroll();
-    log_info(os)("History task disenrolled");
+    log_info(os)("History task dis-enrolled");
   }
 }
 

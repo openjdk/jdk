@@ -24,9 +24,9 @@
  */
 
 #include "runtime/os.hpp"
+#include "shorthist_linux.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "shorthist_linux.hpp"
 #include OS_HEADER(os)
 
 // all memory sizes in KB
