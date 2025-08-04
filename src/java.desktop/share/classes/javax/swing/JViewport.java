@@ -378,7 +378,7 @@ public class JViewport extends JComponent implements Accessible
      * To avoid excessive validation when the containment hierarchy is
      * being created this will not validate if one of the ancestors does not
      * have a peer, or there is no validate root ancestor, or one of the
-     * ancestors is not a <code>Window</code> or <code>Applet</code>.
+     * ancestors is not a <code>Window</code>.
      * <p>
      * Note that this method will not scroll outside of the
      * valid viewport; for example, if <code>contentRect</code> is larger

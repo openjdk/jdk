@@ -51,21 +51,12 @@ uintptr_t VM_Version::_pac_mask;
 SpinWait VM_Version::_spin_wait;
 
 static SpinWait get_spin_wait_desc() {
-  if (strcmp(OnSpinWaitInst, "nop") == 0) {
-    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
-    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
-    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "none") != 0) {
-    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
+  SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
+  if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
+    vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
   }
 
-  if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
-    vm_exit_during_initialization("OnSpinWaitInstCount cannot be used for OnSpinWaitInst 'none'");
-  }
-
-  return SpinWait{};
+  return spin_wait;
 }
 
 void VM_Version::initialize() {
@@ -379,7 +370,7 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
     }
-  } else if (UseSHA3Intrinsics) {
+  } else if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }

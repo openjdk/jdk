@@ -498,6 +498,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _pending_interrupted_exception(false),
 
   _handshake(this),
+  _suspend_resume_manager(this, &_handshake._lock),
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -1123,16 +1124,16 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   }
 }
 
-void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
+void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
-    delete aeh;
+    delete aehc;
     return;
   }
 
-  oop exception = aeh->exception();
-  Handshake::execute(aeh, this);  // Install asynchronous handshake
+  oop exception = aehc->exception();
+  Handshake::execute(aehc, this);  // Install asynchronous handshake
 
   ResourceMark rm;
   if (log_is_enabled(Info, exceptions)) {
@@ -1145,30 +1146,29 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   oop vt_oop = vthread();
   if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-    java_lang_Thread::set_interrupted(threadObj(), true);
     this->interrupt();
   }
 }
 
-class InstallAsyncExceptionHandshake : public HandshakeClosure {
-  AsyncExceptionHandshake* _aeh;
+class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
+  AsyncExceptionHandshakeClosure* _aehc;
 public:
-  InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
-    HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
-  ~InstallAsyncExceptionHandshake() {
-    // If InstallAsyncExceptionHandshake was never executed we need to clean up _aeh.
-    delete _aeh;
+  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aehc) :
+    HandshakeClosure("InstallAsyncException"), _aehc(aehc) {}
+  ~InstallAsyncExceptionHandshakeClosure() {
+    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aehc.
+    delete _aehc;
   }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
-    target->install_async_exception(_aeh);
-    _aeh = nullptr;
+    target->install_async_exception(_aehc);
+    _aehc = nullptr;
   }
 };
 
 void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   OopHandle e(Universe::vm_global(), java_throwable);
-  InstallAsyncExceptionHandshake iaeh(new AsyncExceptionHandshake(e));
+  InstallAsyncExceptionHandshakeClosure iaeh(new AsyncExceptionHandshakeClosure(e));
   Handshake::execute(&iaeh, target);
 }
 
@@ -1200,13 +1200,13 @@ bool JavaThread::java_suspend(bool register_vthread_SR) {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_state()->suspend(register_vthread_SR);
+  return this->suspend_resume_manager()->suspend(register_vthread_SR);
 }
 
 bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_state()->resume(register_vthread_SR);
+  return this->suspend_resume_manager()->resume(register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -1337,7 +1337,7 @@ void JavaThread::make_zombies() {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
       assert(nm != nullptr, "did not find nmethod");
-      nm->make_not_entrant("zombie");
+      nm->make_not_entrant(nmethod::InvalidationReason::ZOMBIE);
     }
   }
 }
@@ -1795,7 +1795,7 @@ void JavaThread::print_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, false/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
@@ -1837,7 +1837,7 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, true/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
@@ -2097,7 +2097,7 @@ bool JavaThread::sleep(jlong millis) {
 
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
-// if the thread was interrupted.
+// if the thread was interrupted or async exception was installed.
 bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
   assert(nanos >= 0, "nanos are in range");
@@ -2117,6 +2117,9 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   jlong nanos_remaining = nanos;
 
   for (;;) {
+    if (has_async_exception_condition()) {
+      return false;
+    }
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;

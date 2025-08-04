@@ -908,6 +908,11 @@ inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)         
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
+inline void Assembler::xvminsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmindp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaxsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaxdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+
 inline void Assembler::mtvrd(   VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
@@ -1022,15 +1027,19 @@ inline void Assembler::vavguh(  VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vmaxsb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXSB_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vmaxsw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXSW_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vmaxsh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXSH_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vmaxsd(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXSD_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vmaxub(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXUB_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vmaxuw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXUW_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vmaxuh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXUH_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vmaxud(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMAXUD_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminsb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINSB_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminsw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINSW_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminsh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINSH_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vminsd(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINSD_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminub(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINUB_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminuw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINUW_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vminuh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINUH_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vminud(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VMINUD_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vcmpequb(VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCMPEQUB_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(0)); }
 inline void Assembler::vcmpequh(VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCMPEQUH_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(0)); }
 inline void Assembler::vcmpequw(VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCMPEQUW_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(0)); }
@@ -1082,6 +1091,9 @@ inline void Assembler::vctzw(   VectorRegister d, VectorRegister b)             
 inline void Assembler::vctzd(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZD_OPCODE    | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
+
+// Vector Negate Word (introduced with Power 9)
+inline void Assembler::vnegw(   VectorRegister d, VectorRegister b)                   { emit_int32( VNEGW_OPCODE    | vrt(d) | vrb(b)); }
 
 // AES (introduced with Power 8)
 inline void Assembler::vcipher(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHER_OPCODE      | vrt(d) | vra(a) | vrb(b)); }
