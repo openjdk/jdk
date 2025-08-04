@@ -127,6 +127,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         final var outputDir = OptionUtils.outputDir(options).resolve(app.appImageDirName());
 
+        ModelAsserter.instance().notifyFromOptions(app);
+        ModelAsserter.instance().assertEquals(outputDir.getParent());
+
+/*
         IOUtils.writableOutputDir(outputDir.getParent());
 
         final var env = new BuildEnvFromOptions()
@@ -141,6 +145,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         pipelineBuilder.excludeDirFromCopying(outputDir.getParent())
                 .create().execute(BuildEnv.withAppImageDir(env, outputDir), app);
+*/
     }
 
     static <T extends Package> void createNativePackage(Options options,
@@ -167,11 +172,15 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         var pkg = Objects.requireNonNull(createPackage.apply(options));
 
+        ModelAsserter.instance().notifyFromOptions(pkg);
+        ModelAsserter.instance().assertEquals(OptionUtils.outputDir(options));
+/*
         Packager.<T>build().pkg(pkg)
             .outputDir(OptionUtils.outputDir(options))
             .env(Objects.requireNonNull(createBuildEnv.apply(options, pkg)))
             .pipelineBuilderMutatorFactory(pipelineBuilderMutatorFactory)
             .execute(Objects.requireNonNull(createPipelineBuilder.apply(pkg)));
+*/
     }
 
     @Override
