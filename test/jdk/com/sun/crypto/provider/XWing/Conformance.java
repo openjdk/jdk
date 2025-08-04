@@ -270,7 +270,7 @@ public class Conformance {
 
     @ParameterizedTest
     @FieldSource("TEST_VECTORS")
-    public static void generateKeyPairDerand(TestData test) {
+    public void generateKeyPairDerand(TestData test) {
         // test derivation of pk from sk; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-08#section-5.2.1
 
         byte[][] generated = XWingKeyPairGenerator.generateKeyPairDerand(test.sk);
@@ -280,8 +280,8 @@ public class Conformance {
 
     @ParameterizedTest
     @FieldSource("TEST_VECTORS")
-    public static void encapsulateDerand(TestData test) throws GeneralSecurityException {
-        // test encapsulation; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.4.1
+    public void encapsulateDerand(TestData test) throws GeneralSecurityException {
+        // test encapsulation; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-08#section-5.4.1
         var pk = new NamedX509Key("X-Wing", "X-Wing", test.pk);
         var kem = KEM.getInstance("X-Wing", "SunJCE");
         var randomMock = new DerandomizedRandom(test.eseed);
@@ -298,9 +298,10 @@ public class Conformance {
 
     @ParameterizedTest
     @FieldSource("TEST_VECTORS")
-    public static void decapsulate(TestData test) throws GeneralSecurityException {
+    public void decapsulate(TestData test) throws GeneralSecurityException {
+        var pkcs8Encoded = NamedPKCS8Key.internalCreate("X-Wing", "X-Wing", test.sk, null).getEncoded();
         var kf = KeyFactory.getInstance("X-Wing", "SunJCE");
-        var sk = kf.generatePrivate(new PKCS8EncodedKeySpec(test.sk));
+        var sk = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8Encoded));
         var kem = KEM.getInstance("X-Wing", "SunJCE");
 
         var decapsulated = kem.newDecapsulator(sk).decapsulate(test.ct);

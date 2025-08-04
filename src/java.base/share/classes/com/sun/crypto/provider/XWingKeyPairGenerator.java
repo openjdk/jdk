@@ -39,7 +39,11 @@ public class XWingKeyPairGenerator extends NamedKeyPairGenerator {
 
             byte[] expandedSk = privateKey.expanded();
 
-            return new byte[][]{pk, sk, expandedSk};
+            return new byte[][]{
+                    pk,
+                    sk,
+                    expandedSk
+            };
         } finally {
             privateKey.destroy();
         }

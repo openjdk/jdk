@@ -61,7 +61,7 @@ public class EncapDecap {
     public void newDecapsulatorWithInvalidKey(int invalidKeySize) throws GeneralSecurityException {
         var kem = KEM.getInstance("X-Wing", "SunJCE");
 
-        var privateKey = NamedPKCS8Key.internalCreate("X-Wing", "X-Wing", new byte[32], new byte[invalidKeySize]);
+        var privateKey = NamedPKCS8Key.internalCreate("X-Wing", "X-Wing", new byte[invalidKeySize], null);
 
         Assertions.assertThrows(InvalidKeyException.class, () -> {
             kem.newDecapsulator(privateKey);

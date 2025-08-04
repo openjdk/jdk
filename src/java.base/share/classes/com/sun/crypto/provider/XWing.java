@@ -29,7 +29,7 @@ public final class XWing extends NamedKEM {
 
     // \./
     // /^\
-    // https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.3
+    // https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-08#section-5.3
     private static final byte[] X_WING_LABEL = {0x5c, 0x2e, 0x2f, 0x2f, 0x5e, 0x5c};
 
     public XWing() {

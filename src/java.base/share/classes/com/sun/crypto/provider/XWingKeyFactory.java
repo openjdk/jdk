@@ -98,15 +98,7 @@ public class XWingKeyFactory extends NamedKeyFactory {
         /// returns the ML-KEM private key part (`sk_M = sk[0:1184]`)
         /// @return a new {@link PrivateKey} instance constructed from {@link #m()}
         default PrivateKey getMLKemPrivateKey() {
-            try {
-                KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM", SunJCE.getInstance());
-                PrivateKey key = NamedPKCS8Key.internalCreate("ML-KEM", "ML-KEM-768", null, m().clone()); // FIXME we don't have the seed, only the expanded key
-                return (PrivateKey) keyFactory.translateKey(key);
-            } catch (NoSuchAlgorithmException e) {
-                throw new AssertionError("SunJCE known to support ML-KEM", e);
-            } catch (InvalidKeyException e) {
-                throw new IllegalStateException("Implementation-internal key invalid", e);
-            }
+            return NamedPKCS8Key.internalCreate("ML-KEM", "ML-KEM-768", m().clone(), null); // NamedPKCS8Key: "If the two formats are the same, only privKeyMaterial is included, and expanded must be null."
         }
 
         /// returns the X25519 private key part (`sk_X = sk[1184:1216]`)
@@ -143,7 +135,6 @@ public class XWingKeyFactory extends NamedKeyFactory {
             return XWingPublicKey.of(pkM, pkX);
         }
     }
-
 
     private static byte[] shake256(byte[] input, int byteLength) {
         var digest = new SHA3.SHAKE256(byteLength);
