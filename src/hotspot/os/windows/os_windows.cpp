@@ -3300,8 +3300,12 @@ size_t os::commit_memory_limit() {
   JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
   BOOL res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
 
-  // If there was an error calling QueryInformationJobObject, conservatively assume no limit.
   if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling QueryInformationJobObject.
     return SIZE_MAX;
   }
 
