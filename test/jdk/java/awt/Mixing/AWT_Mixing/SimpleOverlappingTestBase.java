@@ -21,12 +21,21 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.*;
-import javax.swing.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.SpringLayout;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
