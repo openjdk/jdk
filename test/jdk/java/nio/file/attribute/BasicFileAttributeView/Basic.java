@@ -143,9 +143,6 @@ public class Basic {
             FileUtils.createDirectoryJunction(junction.toString(),
                                               dir.toString());
             checkAttributesOfJunction(junction);
-            // TestUtil::removeAll will not delete the directory junction,
-            // so it must be deleted manually
-            junction.toFile().delete();
         }
     }
 

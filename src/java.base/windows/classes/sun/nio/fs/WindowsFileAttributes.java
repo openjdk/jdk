@@ -412,6 +412,13 @@ class WindowsFileAttributes
         return isSymbolicLink() && ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
     }
 
+    boolean isDirectoryJunction() {
+        if (isSymbolicLink())
+            return false;
+        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
+                (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0);
+    }
+
     @Override
     public boolean isSymbolicLink() {
         return reparseTag == IO_REPARSE_TAG_SYMLINK;
