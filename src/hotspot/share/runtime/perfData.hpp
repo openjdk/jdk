@@ -752,7 +752,7 @@ class PerfTraceTime : public StackObj {
     ~PerfTraceTime() {
       if (!UsePerfData || !_t.is_active()) { return; }
       _t.stop();
-      _timerp->inc(_t.ticks() - 8);
+      _timerp->inc(_t.ticks());
     }
 };
 

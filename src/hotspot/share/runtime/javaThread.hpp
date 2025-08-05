@@ -1268,7 +1268,7 @@ public:
 
 private:
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
   friend class ThreadWXEnable;
   friend class PosixSignals;
 

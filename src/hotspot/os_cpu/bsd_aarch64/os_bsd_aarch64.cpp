@@ -243,24 +243,27 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
-      if (thread->_cur_wx_mode) {
+      WXMode *entry_mode = thread->_cur_wx_mode;
+      if (entry_mode == WXArmedForWrite) {
         if (TraceWXHealing) {
-          tty->print_cr("Healing pointer at %p to WXWrite", thread->_cur_wx_mode);
+          static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
+          tty->print_cr("Healing WXMode %s at %p to WXWrite",
+                        mode_names[*entry_mode], entry_mode);
         }
         *(thread->_cur_wx_mode) = WXWrite;
       }
       return thread->wx_enable_write();
     }
-#endif
 
     // Enable WXWrite for the duration of this handler: this function
     // is called by the signal handler at arbitrary point of
     // execution.
     ThreadWXEnable wx(WXWrite, thread);
+#endif
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -563,7 +566,7 @@ void os::thread_wx_enable_write() {
   Thread::current()->wx_enable_write();
 }
 
-#endif // defined(__APPLE__)
+#endif // MACOS_W_XOR_X
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;

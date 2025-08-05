@@ -28,7 +28,7 @@
 
 // No threadWXSetters.hpp
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
 
 #include "classfile/classLoader.hpp"
 #include "runtime/perfData.inline.hpp"
@@ -81,7 +81,7 @@ public:
     }
   }
 };
-#endif // __APPLE__ && AARCH64
+#endif // MACOS_W_XOR_X
 
 #endif // SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
 

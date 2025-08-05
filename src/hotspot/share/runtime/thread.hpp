@@ -610,7 +610,7 @@ protected:
   static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
  private:
   DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
@@ -624,7 +624,7 @@ protected:
   WXMode get_wx_state() {
     return _wx_state;
   }
-#endif // __APPLE__ && AARCH64
+#endif // MACOS_W_XOR_X
 
  private:
   bool _in_asgct = false;

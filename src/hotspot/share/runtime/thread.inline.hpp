@@ -32,7 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
 #include "runtime/os.hpp"
 #endif
 

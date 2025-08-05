@@ -140,8 +140,7 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
-#ifndef WX_MODE
-
+#ifdef MACOS_W_XOR_X
 enum WXMode {
   WXWrite = 0,
   WXExec = 1,
@@ -149,10 +148,7 @@ enum WXMode {
 };
 
 extern WXMode DefaultWXWriteMode;
-
-#define WX_MODE 1
-
-#endif // WX_MODE
+#endif // MACOS_W_XOR_X
 
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
@@ -1077,7 +1073,7 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_W_XOR_X
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
   // Macos-AArch64 only.

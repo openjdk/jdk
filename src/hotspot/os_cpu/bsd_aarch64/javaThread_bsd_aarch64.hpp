@@ -53,7 +53,7 @@ public:
   }
 
 #ifdef __APPLE__
-#define APPLE_W_XOR_X 1
+#define MACOS_W_XOR_X 1
 #endif
 
 #endif // OS_CPU_BSD_AARCH64_JAVATHREAD_BSD_AARCH64_HPP
