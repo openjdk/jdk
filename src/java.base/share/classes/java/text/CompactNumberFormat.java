@@ -159,7 +159,10 @@ import java.util.stream.Collectors;
  * the negative prefix and suffix. The number of minimum integer digits,
  * and other characteristics are all the same as the positive pattern.
  * That means that {@code "0K;-00K"} produces precisely the same behavior
- * as {@code "0K;-0K"}.
+ * as {@code "0K;-0K"}. In {@link NumberFormat##leniency lenient parsing}
+ * mode, loose matching of the minus sign pattern is enabled, following the
+ * LDML’s <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <h4>Escaping Special Characters</h4>
  * Many characters in a compact pattern are taken literally, they are matched
@@ -215,10 +218,6 @@ import java.util.stream.Collectors;
  *      0
  *      0 <i>MinimumInteger</i>
  * </pre></blockquote>
- *
- * @implNote The implementation follows the LDML specification to enable loose
- * matching of minus sign patterns when {@link #isStrict()} returns
- * {@code false}.
  *
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)

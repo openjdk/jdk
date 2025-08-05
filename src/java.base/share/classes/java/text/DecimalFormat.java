@@ -307,7 +307,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * serves only to specify the negative prefix and suffix; the number of digits,
  * minimal digits, and other characteristics are all the same as the positive
  * pattern. That means that {@code "#,##0.0#;(#)"} produces precisely
- * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}.
+ * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}. In
+ * {@link NumberFormat##leniency lenient parsing} mode, loose matching of the
+ * minus sign pattern is enabled, following the LDML’s
+ * <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <p>The prefixes, suffixes, and various symbols used for infinity, digits,
  * grouping separators, decimal separators, etc. may be set to arbitrary
@@ -417,10 +421,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and {@code 340} as the upper limit for fraction digits. This occurs, even if
  * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
  * returns a numerically greater value.
- *
- * @implNote The implementation follows the LDML specification to enable loose
- * matching of minus sign patterns when {@link #isStrict()} returns
- * {@code false}.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
@@ -3513,9 +3513,9 @@ public class DecimalFormat extends NumberFormat {
      * In lenient mode, lenient minus signs also match the hyphen-minus
      * (U+002D). Package-private access, as this is called from
      * CompactNumberFormat.
-     * @implNote The implementation does not account for lenient minuses
-     * in non-BMP ranges or normalizations, as these could change the affix
-     * length.
+     *
+     * Note: Minus signs in the supplementary character range or normalization
+     * equivalents are not matched, as they may alter the affix length.
      */
     boolean matchAffix(String text, int position, String affix) {
         var alen = affix.length();

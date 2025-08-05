@@ -717,7 +717,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
 
     /**
      * {@return the lenient minus signs} Multiple lenient minus signs
-     * are concatenated to form the returned string.
+     * are concatenated to form the returned string. Each codepoint
+     * in the string is a valid minus sign pattern. If there are no
+     * lenient minus signs defined in this locale, {@code minusSignText}
+     * is returned.
      */
     String getLenientMinusSigns() {
         return lenientMinusSigns;
