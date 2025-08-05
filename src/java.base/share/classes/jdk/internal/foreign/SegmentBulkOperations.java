@@ -52,7 +52,7 @@ public final class SegmentBulkOperations {
     private static final long LONG_MASK = ~7L; // The last three bits are zero
 
     // All the threshold values below MUST be a power of two and greater or equal to 2^3.
-    private static final int NATIVE_THRESHOLD_FILL = 32;
+    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 6);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
