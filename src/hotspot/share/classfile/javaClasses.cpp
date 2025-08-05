@@ -3075,7 +3075,9 @@ bool java_lang_Throwable::get_method_and_bci(oop throwable, Method** method, int
   // Get the backtrace element.
   do {
     // No backtrace available.
-    if (!iter.repeat()) return false;
+    if (!iter.repeat()) { 
+       return false;
+    }
 
 
     if (--depth > 0) {

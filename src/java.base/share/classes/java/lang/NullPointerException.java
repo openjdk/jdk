@@ -71,8 +71,8 @@ public class NullPointerException extends RuntimeException {
         extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
-    /// Creates an NPE with a custom backtrace configuration.
-    /// The exception has no message if detailed NPE is not enabled.
+    // Creates an NPE with a custom backtrace configuration.
+    // The exception has no message if detailed NPE is not enabled.
     NullPointerException(int stackOffset, int searchSlot) {
         extendedMessageState = setupCustomBackTrace(stackOffset, searchSlot);
         this();
@@ -98,7 +98,7 @@ public class NullPointerException extends RuntimeException {
             SEARCH_SLOT_MAX = (1 << 4) - 1,
             SEARCH_SLOT_MASK = SEARCH_SLOT_MAX << SEARCH_SLOT_SHIFT;
 
-    // Access these fields in object monitor only
+    // Access these fields only while holding this object's monitor lock.
     private transient int extendedMessageState;
     private transient String extendedMessage;
 
@@ -158,8 +158,8 @@ public class NullPointerException extends RuntimeException {
     ///    be `null`, was evaluated.
     /// 2. `searchSlot < 0`, stack offset is 0 (a call to the nullary constructor)
     ///    and the search slot will be derived by bytecode tracing.  The message
-    ///    will also include the action that caused the NPE besides the source of
-    ///    the `null`.
+    ///    will also include the action that caused the NPE along with the source
+    ///    of the `null`.
     /// If the backtracking cannot find a verifiable result, this method returns `null`.
     private native String getExtendedNPEMessage(int stackOffset, int searchSlot);
 }
