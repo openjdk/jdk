@@ -47,7 +47,7 @@
  * <p>
  * An {@code ImageInputStream} or {@code ImageInputStream} may internally allocate
  * system resources, such as a temporary cache file.
- * Clients are encouraged to use a try-with-resources statement to ensure the 
+ * Clients are encouraged to use a try-with-resources statement to ensure the
  * {@link ImageInputStream#close()} or {@link ImageOutputStream#close()}
  * method is called which can promptly free those native resources.
  * Otherwise there is the possibility they will leak and eventually cause the

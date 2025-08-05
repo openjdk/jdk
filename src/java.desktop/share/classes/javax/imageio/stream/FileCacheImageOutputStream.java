@@ -233,7 +233,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
 
         private final File cacheFile;
         private final RandomAccessFile cache;
-        private volatile boolean disposed; 
+        private volatile boolean disposed;
 
         public FileCacheDisposerRecord(File cacheFile, RandomAccessFile cache) {
             this.cacheFile = cacheFile;
@@ -246,15 +246,15 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
                 return;
             }
             try {
-                cache.close(); 
-                cacheFile.delete(); 
+                cache.close();
+                cacheFile.delete();
             } catch (IOException e) {
             } finally {
                  disposed = true;
             }
        }
     }
-        
+
     /**
      * Closes this {@code FileCacheImageOutputStream}.  All
      * pending data is flushed to the output, and the cache file
