@@ -554,8 +554,6 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/HotSpotDiagnosticMXBean/DumpThreads.java     8364314 generic-all
-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.jfr.api.settings;
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
 
-import java.util.Set;
-import java.util.regex.Pattern;
+#include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
 
-import jdk.jfr.SettingControl;
+class JfrCheckpointWriter;
 
-public final class RegExpControl extends SettingControl {
-    private Pattern pattern = Pattern.compile(".*");
+class JfrThreadGroupManager : public AllStatic {
+  friend class JfrRecorder;
 
-    // Purpose of this constructor is to ensure that the correct
-    // constructor is picked when the event class is registered
-    public RegExpControl(String dummy) {
-    }
+ private:
+  static bool create();
+  static void destroy();
 
-    public RegExpControl() {
-    }
+ public:
+  static void serialize(JfrCheckpointWriter& w);
+  static void serialize(JfrCheckpointWriter& w, traceid tgid, bool is_blob);
 
-    public void setValue(String value) {
-        this.pattern = Pattern.compile(value);
-    }
+  static traceid thread_group_id(JavaThread* thread);
+  static traceid thread_group_id(const JavaThread* thread, Thread* current);
+};
 
-    public String combine(Set<String> values) {
-        return String.join("|", values);
-    }
-
-    public String getValue() {
-        return pattern.toString();
-    }
-
-    public boolean matches(String uri) {
-        return pattern.matcher(uri).find();
-    }
-}
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
