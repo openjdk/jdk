@@ -38,7 +38,6 @@ import java.beans.PropertyDescriptor;
 
 import java.lang.reflect.Method;
 
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -70,7 +69,6 @@ public class Test4682386 {
     private static final boolean DEBUG = true;
 
     private static final Class[] TYPES = {
-            JApplet.class,
             JButton.class,
             JCheckBox.class,
             JComboBox.class,

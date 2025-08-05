@@ -34,7 +34,7 @@ import sun.awt.image.*;
 import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 
-public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe, TextPipe {
+public final class CompositeCRenderer extends CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe, TextPipe {
     static final int fPadding = 4;
     static final int fPaddingHalf = fPadding / 2;
 
@@ -49,6 +49,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
     Ellipse2D ellipse = new Ellipse2D.Float();
     Arc2D arc = new Arc2D.Float();
 
+    @Override
     public synchronized void drawLine(SunGraphics2D sg2d, int x1, int y1, int x2, int y2) {
         // create shape corresponding to this primitive
         line.setLine(x1, y1, x2, y2);
@@ -56,6 +57,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, line);
     }
 
+    @Override
     public synchronized void drawRect(SunGraphics2D sg2d, int x, int y, int width, int height) {
         // create shape corresponding to this primitive
         rectangle.setRect(x, y, width, height);
@@ -63,6 +65,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, rectangle);
     }
 
+    @Override
     public synchronized void drawRoundRect(SunGraphics2D sg2d, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         // create shape corresponding to this primitive
         roundrectangle.setRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -70,6 +73,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, roundrectangle);
     }
 
+    @Override
     public synchronized void drawOval(SunGraphics2D sg2d, int x, int y, int width, int height) {
         // create shape corresponding to this primitive
         ellipse.setFrame(x, y, width, height);
@@ -77,6 +81,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, ellipse);
     }
 
+    @Override
     public synchronized void drawArc(SunGraphics2D sg2d, int x, int y, int width, int height, int startAngle, int arcAngle) {
         // create shape corresponding to this primitive
         arc.setArc(x, y, width, height, startAngle, arcAngle, Arc2D.OPEN);
@@ -84,14 +89,17 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, arc);
     }
 
+    @Override
     public synchronized void drawPolyline(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, false, false);
     }
 
+    @Override
     public synchronized void drawPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, true, false);
     }
 
+    @Override
     public synchronized void fillRect(SunGraphics2D sg2d, int x, int y, int width, int height) {
         // create shape corresponding to this primitive
         rectangle.setRect(x, y, width, height);
@@ -99,6 +107,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         fill(sg2d, rectangle);
     }
 
+    @Override
     public synchronized void fillRoundRect(SunGraphics2D sg2d, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         // create shape corresponding to this primitive
         roundrectangle.setRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -106,6 +115,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         fill(sg2d, roundrectangle);
     }
 
+    @Override
     public synchronized void fillOval(SunGraphics2D sg2d, int x, int y, int width, int height) {
         // create shape corresponding to this primitive
         ellipse.setFrame(x, y, width, height);
@@ -113,6 +123,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         fill(sg2d, ellipse);
     }
 
+    @Override
     public synchronized void fillArc(SunGraphics2D sg2d, int x, int y, int width, int height, int startAngle, int arcAngle) {
         // create shape corresponding to this primitive
         arc.setArc(x, y, width, height, startAngle, arcAngle, Arc2D.PIE);
@@ -120,6 +131,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         fill(sg2d, arc);
     }
 
+    @Override
     public synchronized void fillPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, true, true);
     }
@@ -140,10 +152,12 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         doShape(sg2d, (OSXSurfaceData) sg2d.getSurfaceData(), (Shape) gp, isfill);
     }
 
+    @Override
     public synchronized void draw(SunGraphics2D sg2d, Shape shape) {
         doShape(sg2d, (OSXSurfaceData) sg2d.getSurfaceData(), shape, false);
     }
 
+    @Override
     public synchronized void fill(SunGraphics2D sg2d, Shape shape) {
         doShape(sg2d, (OSXSurfaceData) sg2d.getSurfaceData(), shape, true);
     }
@@ -192,10 +206,12 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         }
     }
 
+    @Override
     public synchronized void drawString(SunGraphics2D sg2d, String str, double x, double y) {
         drawGlyphVector(sg2d, sg2d.getFont().createGlyphVector(sg2d.getFontRenderContext(), str), x, y);
     }
 
+    @Override
     public synchronized void drawChars(SunGraphics2D sg2d, char[] data, int offset, int length, int x, int y) {
         drawString(sg2d, new String(data, offset, length), x, y);
     }
@@ -204,6 +220,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         drawGlyphVector(sg2d, glyphVector, (float) x, (float) y);
     }
 
+    @Override
     public synchronized void drawGlyphVector(SunGraphics2D sg2d, GlyphVector glyphVector, float x, float y) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
 
@@ -242,6 +259,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         }
     }
 
+    @Override
     protected boolean blitImage(SunGraphics2D sg2d, Image img, boolean fliph, boolean flipv, int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh, Color bgColor) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
 

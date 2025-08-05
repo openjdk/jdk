@@ -24,7 +24,7 @@
 /*
  * @test id=Xcomp
  * @bug 8333252
- * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one iteration loop.
+ * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one-iteration loop.
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,*TestTemplateWithoutOpaqueLoopNodes::test
  *                   compiler.predicates.assertion.TestTemplateWithoutOpaqueLoopNodes
  */
@@ -32,7 +32,7 @@
 /*
  * @test id=Xbatch
  * @bug 8333252
- * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one iteration loop.
+ * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one-iteration loop.
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestTemplateWithoutOpaqueLoopNodes::test
  *                   compiler.predicates.assertion.TestTemplateWithoutOpaqueLoopNodes
  */

@@ -31,6 +31,7 @@
  *          namespace such as PID namespace, specific sub-directories, IPC and more.
  * @requires container.support
  * @requires vm.flagless
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
