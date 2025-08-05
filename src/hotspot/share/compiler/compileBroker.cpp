@@ -229,11 +229,11 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
+  thread->timeout_disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
       MutexLocker notifier(thread, CompileTaskWait_lock);
-      thread->timeout_disarm();
       task->mark_complete();
 #if INCLUDE_JVMCI
       if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
@@ -255,7 +255,6 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       delete task;
     }
   } else {
-    thread->timeout_disarm();
     task->mark_complete();
 
     // By convention, the compiling thread is responsible for deleting
