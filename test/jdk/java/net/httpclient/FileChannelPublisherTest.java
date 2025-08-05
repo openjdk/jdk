@@ -71,7 +71,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -495,41 +494,14 @@ class FileChannelPublisherTest {
      * To circumvent this, use this <em>big enough</em> file size.
      * </p>
      *
-     * @see #testChannelCloseDuringPublisherReadAsync(ServerRequestPair, Path)
-     * @see #testChannelCloseDuringPublisherReadSync(ServerRequestPair, Path)
-     * @see #testFileModificationDuringPublisherReadAsync(ServerRequestPair, Path)
-     * @see #testFileModificationDuringPublisherReadSync(ServerRequestPair, Path)
+     * @see #testChannelCloseDuringPublisherRead(ServerRequestPair, Path)
+     * @see #testFileModificationDuringPublisherRead(ServerRequestPair, Path)
      */
     private static final int BIG_FILE_LENGTH = 8 * 1024 * 1024;  // 8 MiB
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testChannelCloseDuringPublisherReadAsync(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
-        testChannelCloseDuringPublisherRead(pair, tempDir, Requestor.ASYNC, responseFuture -> {
-            Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-            assertInstanceOf(ClosedChannelException.class, requestFailure1.getCause());
-        });
-    }
-
-    @ParameterizedTest
-    @MethodSource("serverRequestPairs")
-    void testChannelCloseDuringPublisherReadSync(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
-        testChannelCloseDuringPublisherRead(pair, tempDir, Requestor.SYNC, responseFuture -> {
-            Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-            Exception requestFailure1 = assertInstanceOf(RuntimeException.class, requestFailure0.getCause());
-            Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
-            Exception requestFailure3 = assertInstanceOf(UncheckedIOException.class, requestFailure2.getCause());
-            assertInstanceOf(ClosedChannelException.class, requestFailure3.getCause());
-        });
-    }
-
-    private static void testChannelCloseDuringPublisherRead(
-            ServerRequestPair pair,
-            Path tempDir,
-            // Receiving an explicit requestor to cover exceptions thrown by both `send()` and `sendAsync()`
-            Requestor requestor,
-            Consumer<Future<HttpResponse<Void>>> responseVerifier) throws Exception {
+    void testChannelCloseDuringPublisherRead(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
         establishInitialConnection(pair);
         ServerRequestPair.SERVER_REQUEST_RECEIVED_SIGNAL = new CountDownLatch(1);
         ServerRequestPair.SERVER_READ_PERMISSION = new CountDownLatch(1);
@@ -545,7 +517,7 @@ class FileChannelPublisherTest {
                         .requestBuilder
                         .POST(BodyPublishers.ofFileChannel(fileChannel, 0, fileLength))
                         .build();
-                responseFutureRef.set(requestor.request(request, discarding()));
+                responseFutureRef.set(CLIENT.sendAsync(request, discarding()));
 
                 // Wait for server to receive the request
                 LOGGER.log("Waiting for the request to be received");
@@ -561,7 +533,9 @@ class FileChannelPublisherTest {
 
             // Verifying the client failure
             LOGGER.log("Verifying the client failure");
-            responseVerifier.accept(responseFutureRef.get());
+            Exception requestFailure0 = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
+            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
+            assertInstanceOf(ClosedChannelException.class, requestFailure1.getCause());
 
             verifyServerIncompleteRead(pair, fileLength);
 
@@ -573,40 +547,7 @@ class FileChannelPublisherTest {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testFileModificationDuringPublisherReadAsync(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
-        testFileModificationDuringPublisherRead(pair, tempDir, Requestor.ASYNC, responseFuture -> {
-            Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-            Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
-            String requestFailure2Message = requestFailure2.getMessage();
-            assertTrue(
-                    requestFailure2Message.contains("Unexpected EOF"),
-                    "unexpected message: " + requestFailure2Message);
-        });
-    }
-
-    @ParameterizedTest
-    @MethodSource("serverRequestPairs")
-    void testFileModificationDuringPublisherReadSync(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
-        testFileModificationDuringPublisherRead(pair, tempDir, Requestor.SYNC, responseFuture -> {
-            Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-            Exception requestFailure1 = assertInstanceOf(RuntimeException.class, requestFailure0.getCause());
-            Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
-            Exception requestFailure3 = assertInstanceOf(UncheckedIOException.class, requestFailure2.getCause());
-            Exception requestFailure4 = assertInstanceOf(IOException.class, requestFailure3.getCause());
-            String requestFailure4Message = requestFailure4.getMessage();
-            assertTrue(
-                    requestFailure4Message.contains("Unexpected EOF"),
-                    "unexpected message: " + requestFailure4Message);
-        });
-    }
-
-    private static void testFileModificationDuringPublisherRead(
-            ServerRequestPair pair,
-            Path tempDir,
-            // Receiving an explicit requestor to cover exceptions thrown by both `send()` and `sendAsync()`
-            Requestor requestor,
-            Consumer<Future<HttpResponse<Void>>> responseVerifier) throws Exception {
+    void testFileModificationDuringPublisherRead(ServerRequestPair pair, @TempDir Path tempDir) throws Exception {
         establishInitialConnection(pair);
         ServerRequestPair.SERVER_REQUEST_RECEIVED_SIGNAL = new CountDownLatch(1);
         ServerRequestPair.SERVER_READ_PERMISSION = new CountDownLatch(1);
@@ -622,7 +563,7 @@ class FileChannelPublisherTest {
                         .requestBuilder
                         .POST(BodyPublishers.ofFileChannel(fileChannel, 0, fileLength))
                         .build();
-                Future<HttpResponse<Void>> responseFuture = requestor.request(request, discarding());
+                Future<HttpResponse<Void>> responseFuture = CLIENT.sendAsync(request, discarding());
 
                 // Wait for server to receive the request
                 LOGGER.log("Waiting for the request to be received");
@@ -638,7 +579,13 @@ class FileChannelPublisherTest {
 
                 // Verifying the client failure
                 LOGGER.log("Verifying the client failure");
-                responseVerifier.accept(responseFuture);
+                Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
+                Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
+                Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
+                String requestFailure2Message = requestFailure2.getMessage();
+                assertTrue(
+                        requestFailure2Message.contains("Unexpected EOF"),
+                        "unexpected message: " + requestFailure2Message);
 
                 verifyServerIncompleteRead(pair, fileLength);
 
@@ -758,33 +705,6 @@ class FileChannelPublisherTest {
             bytes[i] = (byte) i;
         }
         return bytes;
-    }
-
-    @FunctionalInterface
-    private interface Requestor {
-
-        Requestor ASYNC = CLIENT::sendAsync;
-
-        Requestor SYNC = new Requestor() {
-            @Override
-            public <V> Future<HttpResponse<V>> request(
-                    HttpRequest request,
-                    HttpResponse.BodyHandler<V> responseHandler) {
-                return EXECUTOR.submit(() -> {
-                    try {
-                        return CLIENT.send(request, responseHandler);
-                    } catch (Throwable t) {
-                        if (t instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();     // Restore the interrupt
-                        }
-                        throw new RuntimeException(t);
-                    }
-                });
-            }
-        };
-
-        <V> Future<HttpResponse<V>> request(HttpRequest request, HttpResponse.BodyHandler<V> responseHandler);
-
     }
 
 }
