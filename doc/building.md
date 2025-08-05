@@ -1285,12 +1285,10 @@ at least the following targets are known to work:
 | ppc64le-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or "Fedora" (if
-not specified "OEL6" will be the default). If the base OS is "Fedora" the
-corresponding Fedora release can be specified with the help of the
-`BASE_OS_VERSION` option (with "27" as default version). If the build is
-successful, the new devkits can be found in the `build/devkit/result`
-subdirectory:
+`BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
+base OS is `Fedora` the corresponding Fedora release can be specified with the
+help of the `BASE_OS_VERSION` option. If the build is successful, the new
+devkits can be found in the `build/devkit/result` subdirectory:
 
 ```
 cd make/devkit

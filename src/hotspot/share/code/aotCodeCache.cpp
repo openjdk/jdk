@@ -61,8 +61,8 @@
 #include "gc/z/zBarrierSetRuntime.hpp"
 #endif
 
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 const char* aot_code_entry_kind_name[] = {
 #define DECL_KIND_STRING(kind) XSTR(kind),

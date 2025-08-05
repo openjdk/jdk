@@ -1382,6 +1382,7 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedOops::print_mode(st);
     st->cr();
   }
+#endif
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
@@ -1390,7 +1391,6 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedKlassPointers::print_mode(st);
     st->cr();
   }
-#endif
 
   // Take heap lock over heap, GC and metaspace printing so that information
   // is consistent.
