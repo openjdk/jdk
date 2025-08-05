@@ -3161,7 +3161,6 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
-  _total_remset_bytes += g1h->young_regions_cset_group()->card_set()->mem_size();
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
   log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
