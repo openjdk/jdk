@@ -3663,6 +3663,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         ciKlass* klass = t->is_klassptr()->exact_klass();
         if (klass->is_in_encoding_range()) {
           n->subsume_by(ConNode::make(t->make_narrowklass()), this);
+        } else {
+          assert(false, "unencodable klass in ConP -> EncodeP");
+          C->record_failure("unencodable klass in ConP -> EncodeP");
         }
       }
     }
