@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,7 +508,7 @@ public final class DynamicTable implements HeadersTable {
                 long absIndex = index - 1;
                 // Check if found entry can be referenced,
                 // if not issue duplicate instruction
-                if (absIndex < drain) {
+                if (!canReferenceEntry(absIndex)) {
                     return duplicateWithEncoderStreamUpdate(writer,
                             absIndex, encoderStreams, encodingContext);
                 }
@@ -517,7 +517,7 @@ public final class DynamicTable implements HeadersTable {
             SectionReference evictionLimitSR;
             if (nameOnlyDynamicEntry) {
                 long nameIndex = entry.index();
-                if (nameIndex < drain) {
+                if (!canReferenceEntry(nameIndex)) {
                     return ENTRY_NOT_INSERTED;
                 }
                 evictionLimitSR = encodingContext.evictionLimit()
@@ -832,11 +832,18 @@ public final class DynamicTable implements HeadersTable {
         }
     }
 
-    public boolean canReferenceEntry(long absId) {
+    public boolean tryReferenceEntry(TableEntry tableEntry, EncodingContext context) {
         var readLock = lock.readLock();
         readLock.lock();
         try {
-            return absId > drain;
+            long absId = tableEntry.index();
+            if (canReferenceEntry(absId)) {
+                context.registerSessionReference(absId);
+                context.referenceEntry(tableEntry);
+                return true;
+            } else {
+                return false;
+            }
         } finally {
             readLock.unlock();
         }
@@ -853,6 +860,11 @@ public final class DynamicTable implements HeadersTable {
         } finally {
             readLock.unlock();
         }
+    }
+
+    private boolean canReferenceEntry(long absId) {
+        // The dynamic table lock is acquired by the calling methods
+        return absId > drain;
     }
 
     private double usedSpace() {

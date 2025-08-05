@@ -25,7 +25,6 @@
  * @test
  * @key randomness
  * @library /test/lib
- * @bug 8268050
  * @modules java.net.http/jdk.internal.net.http.qpack:+open
  *          java.net.http/jdk.internal.net.http.qpack.readers
  * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL DynamicTableTest

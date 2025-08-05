@@ -44,7 +44,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8268050
  * @modules java.net.http/jdk.internal.net.http.hpack
  *          java.net.http/jdk.internal.net.http.qpack
  *          java.net.http/jdk.internal.net.http.qpack.readers

@@ -42,7 +42,6 @@ import static org.testng.Assert.assertNotEquals;
 
 /*
  * @test
- * @bug 8268050
  * @summary check that unacknowledged header is not inserted
  *          twice to the dynamic table
  * @modules java.base/jdk.internal.net.quic

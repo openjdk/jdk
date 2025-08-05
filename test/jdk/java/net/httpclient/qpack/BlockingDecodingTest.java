@@ -47,7 +47,6 @@ import static org.testng.Assert.assertNotEquals;
 
 /*
  * @test
- * @bug 8268050
  * @modules java.base/jdk.internal.net.quic
  *          java.net.http/jdk.internal.net.http.hpack
  *          java.net.http/jdk.internal.net.http.qpack:+open

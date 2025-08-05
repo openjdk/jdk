@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @bug 8268050
  * @summary test dynamic table entry eviction scenarios
  * @modules java.base/jdk.internal.net.quic
  *          java.net.http/jdk.internal.net.http.hpack

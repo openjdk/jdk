@@ -246,11 +246,7 @@ public class Encoder {
         // and can be referenced
         if (!tableEntry.isStaticTable() && tableEntry.index() >= 0 &&
                 tableEntry.type() != EntryType.NEITHER) {
-            long entryIndex = tableEntry.index();
-            if (dynamicTable.canReferenceEntry(entryIndex)) {
-                context.registerSessionReference(entryIndex);
-                context.referenceEntry(tableEntry);
-            } else {
+            if (!dynamicTable.tryReferenceEntry(tableEntry, context)) {
                 // If entry cannot be referenced - use literal encoding instead
                 tableEntry = tableEntry.toLiteralsEntry();
             }
@@ -269,7 +265,7 @@ public class Encoder {
     }
 
     /**
-     * Sets a capacity of the encoder's dynamic table and notifies the decoder by
+     * Sets the capacity of the encoder's dynamic table and notifies the decoder by
      * issuing "Set Dynamic Table Capacity" instruction.
      *
      * <p> The value has to be agreed between decoder and encoder out-of-band,
@@ -563,6 +559,7 @@ public class Encoder {
                             "table - not enough space, or unacknowledged entry needs to be evicted",
                             entry));
                 }
+                // Return what we previously found in the dynamic or static table
                 return entry;
             }
 

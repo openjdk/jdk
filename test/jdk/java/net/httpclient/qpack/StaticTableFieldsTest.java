@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @bug 8268050
  * @modules java.net.http/jdk.internal.net.http.qpack
  * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL StaticTableFieldsTest
  */

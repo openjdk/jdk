@@ -53,7 +53,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8268050
  * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.net.quic
