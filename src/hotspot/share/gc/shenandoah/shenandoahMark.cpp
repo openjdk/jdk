@@ -72,10 +72,11 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
     if (object_count) {
       KlassInfoTable* _cit = heap->get_cit();
-      ShenandoahObjectCountClosure _count(_cit);
+      ShenandoahObjectCountClosure _count;
       using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
       Closure cl(q, rp, old_q, &_count);
       mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+      _count.merge_tables(_cit);
     } else {
       using Closure = ShenandoahMarkRefsClosure<GENERATION>;
       Closure cl(q, rp, old_q);

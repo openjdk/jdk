@@ -37,6 +37,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
+#include "iostream"
 
 
 bool GCTracer::should_report_cpu_time_event() const {
@@ -111,10 +113,12 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 template <typename T>
 void GCTracer::report_object_count(T* heap) {
   KlassInfoTable* cit = heap->get_cit();
+  ShenandoahObjectCountClosure t;
+  KlassInfoTable* new_cit = t.get_table();
+
   if (cit == nullptr && !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
     return;
   }
-
   ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
   cit->iterate(&event_sender);
 }

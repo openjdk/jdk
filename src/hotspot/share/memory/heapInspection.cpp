@@ -179,7 +179,7 @@ void KlassInfoBucket::remove_from_list(KlassInfoEntry*& entry) {
     entry = nullptr;
   }
 
-  assert(entry == nullptr, "Entry should be deleted");
+  assert(entry == nullptr, "Entry was not deleted");
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
@@ -244,10 +244,9 @@ bool KlassInfoTable::record_instance(const oop obj) {
   // elt may be null if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
   if (elt != nullptr) {
-    elt->atomic_inc_count();
-    size_t obj_size = obj->size();
-    elt->atomic_add_words(obj_size);
-    Atomic::add(&_size_of_instances_in_words, obj_size);
+    elt->set_count(elt->count() + 1);
+    elt->set_words(elt->words() + obj->size());
+    _size_of_instances_in_words += obj->size();
     return true;
   } else {
     return false;

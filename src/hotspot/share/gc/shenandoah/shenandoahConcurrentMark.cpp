@@ -176,12 +176,13 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
   if (object_count) {
     KlassInfoTable* _cit = ShenandoahHeap::heap()->get_cit();
-    ShenandoahObjectCountClosure _count(_cit);
+    ShenandoahObjectCountClosure _count;
     ShenandoahMarkRefsAndCountClosure<GENERATION> cl(q, _rp, old_q, &_count);
     _root_scanner.roots_do(&cl, worker_id);
+    _count.merge_tables(_cit);
   } else {
-    ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
-    _root_scanner.roots_do(&cl, worker_id);
+  ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
+  _root_scanner.roots_do(&cl, worker_id);
   }
 }
 
