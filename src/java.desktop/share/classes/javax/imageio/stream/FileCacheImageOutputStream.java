@@ -31,6 +31,8 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import com.sun.imageio.stream.StreamCloser;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 /**
  * An implementation of {@code ImageOutputStream} that writes its
@@ -46,6 +48,9 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
 
     private RandomAccessFile cache;
 
+    private final Object disposerReferent = new Object();
+
+    private final FileCacheDisposerRecord disposerRecord;
     // Pos after last (rightmost) byte written
     private long maxStreamPos = 0L;
 
@@ -91,6 +96,13 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
                                   .toFile();
         this.cache = new RandomAccessFile(cacheFile, "rw");
 
+        // If this instance becomes unreachable the disposer will clean up resources
+        // used for caching. This can't flush any un-flushed cache.
+        this.disposerRecord = new FileCacheDisposerRecord(cacheFile, cache);
+        Disposer.addRecord(this.disposerReferent, this.disposerRecord);
+        // If the VM is exiting and this instance is still reachable,
+        // StreamCloser will call close() to flush the cache and clean up resources.
+        // However closing the java.io.OutputStream is the application's responsibility.
         this.closeAction = StreamCloser.createCloseAction(this);
         StreamCloser.addToQueue(closeAction);
     }
@@ -217,6 +229,32 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         return false;
     }
 
+    private static class FileCacheDisposerRecord implements DisposerRecord {
+
+        private final File cacheFile;
+        private final RandomAccessFile cache;
+        private volatile boolean disposed; 
+
+        public FileCacheDisposerRecord(File cacheFile, RandomAccessFile cache) {
+            this.cacheFile = cacheFile;
+            this.cache = cache;
+        }
+
+        @Override
+        public synchronized void dispose() {
+            if (disposed) {
+                return;
+            }
+            try {
+                cache.close(); 
+                cacheFile.delete(); 
+            } catch (IOException e) {
+            } finally {
+                 disposed = true;
+            }
+       }
+    }
+        
     /**
      * Closes this {@code FileCacheImageOutputStream}.  All
      * pending data is flushed to the output, and the cache file
@@ -231,9 +269,10 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         seek(maxStreamPos);
         flushBefore(maxStreamPos);
         super.close();
-        cache.close();
+        disposerRecord.dispose();
+        //cache.close();
         cache = null;
-        cacheFile.delete();
+        //cacheFile.delete();
         cacheFile = null;
         stream.flush();
         stream = null;
