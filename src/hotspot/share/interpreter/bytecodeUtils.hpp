@@ -34,11 +34,18 @@ class outputStream;
 
 class BytecodeUtils : public AllStatic {
  public:
+  // The slot where the null value comes from.
+  enum class NullSlot : int {
+    // Unknown; perform a search at the given bci to check instead.
+    SEARCH = -1,
+    // A given slot value to search from.
+    EXPLICIT
+  };
   // NPE extended message. Return true if string is printed.
   // Slot can be nonnegative to indicate an explicit search for the source of null.
-  // If slot is negative (default), also search for the action that caused the NPE before
+  // If slot is SEARCH (default), also search for the action that caused the NPE before
   // deriving the actual slot and source of null by code parsing.
-  static bool get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot = -1);
+  static bool get_NPE_message_at(outputStream* ss, Method* method, int bci, NullSlot slot = NullSlot::SEARCH);
 };
 
 #endif // SHARE_INTERPRETER_BYTECODEUTILS_HPP
