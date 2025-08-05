@@ -140,6 +140,8 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
 void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
   KlassInfoEntry* elt = _list;
   while (elt != nullptr) {
+    // The remove_from_list method will delete elt if ObjectCountEventSenderClosure decides to send the event
+    // If the event is sent, we should save the next entry of the bucket and define elt as that next entry, since could be deleted
     KlassInfoEntry* next = elt->next();
     cic->do_cinfo(elt);
     elt = next;

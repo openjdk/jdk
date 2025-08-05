@@ -12,10 +12,8 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      _cit->record_instance(obj);
-    }
+    oop obj = CompressedOops::decode_not_null(o);
+    _cit->record_instance(obj);
   }
 
 public:
