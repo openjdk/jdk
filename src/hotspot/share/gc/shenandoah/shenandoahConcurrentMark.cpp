@@ -44,6 +44,9 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/threads.hpp"
+#include "gc/shared/objectCountEventSender.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
+
 
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask : public WorkerTask {
@@ -170,8 +173,16 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ?
           nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
-  _root_scanner.roots_do(&cl, worker_id);
+  bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
+  if (object_count) {
+    KlassInfoTable* _cit = ShenandoahHeap::heap()->get_cit();
+    ShenandoahObjectCountClosure _count(_cit);
+    ShenandoahMarkRefsAndCountClosure<GENERATION> cl(q, _rp, old_q, &_count);
+    _root_scanner.roots_do(&cl, worker_id);
+  } else {
+    ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

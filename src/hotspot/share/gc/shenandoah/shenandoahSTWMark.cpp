@@ -36,6 +36,8 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shared/objectCountEventSender.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:
@@ -122,8 +124,16 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
-      _root_scanner.roots_do(&init_mark, worker_id);
+      bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
+      if (object_count) {
+        KlassInfoTable* _cit = ShenandoahHeap::heap()->get_cit();
+        ShenandoahObjectCountClosure _count(_cit);
+        ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &_count);
+        _root_scanner.roots_do(&init_mark, worker_id);
+      } else {
+        ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
+        _root_scanner.roots_do(&init_mark, worker_id);
+      }
       break;
     }
     case GLOBAL: {
