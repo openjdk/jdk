@@ -58,7 +58,8 @@ int main(int argc, char** argv) {
         struct sigaction act;
         if (sigaction(signals[n].sig, NULL, &act) != 0) {
             perror("sigaction");
-            return -1;
+            printf("\n");
+            continue;
         }
         const void* const handler = (act.sa_flags & SA_SIGINFO ?
                                     (void*)act.sa_sigaction : (void*)act.sa_handler);
