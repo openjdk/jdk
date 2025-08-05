@@ -510,8 +510,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _last_freeze_fail_result(freeze_ok),
 #endif
 
+#ifdef APPLE_W_XOR_X
   _cur_wx_enable(nullptr),
   _cur_wx_mode(0),
+#endif
 
   _lock_stack(this),
   _om_cache(this) {
