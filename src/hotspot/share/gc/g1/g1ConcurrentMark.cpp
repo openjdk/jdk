@@ -3110,7 +3110,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group(G1CSetCandidateGroup* group, const char* type) {
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
@@ -3124,6 +3124,13 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group(G1CSetCandidateG
                           group->liveness_percent(),
                           group->card_set()->mem_size(),
                           type);
+  _total_remset_bytes += group->card_set()->mem_size();
+}
+
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
+  for (G1CSetCandidateGroup* group : gl) {
+    log_cset_candidate_group_add_total(group, type);
+  }
 }
 
 void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
@@ -3154,16 +3161,9 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_cset_candidate_group(g1h->young_regions_cset_group(), "Y");
-  _total_remset_bytes += g1h->young_regions_cset_group()->card_set()->mem_size();
+  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
 
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
-    log_cset_candidate_group(group, "M");
-    _total_remset_bytes += group->card_set()->mem_size();
-  }
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
-    log_cset_candidate_group(group, "R");
-    _total_remset_bytes += group->card_set()->mem_size();
-  }
+  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
+  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
 }
