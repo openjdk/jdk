@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
@@ -46,9 +47,9 @@ final class BuildEnvFromParams {
         final var pkg = FromParams.getCurrentPackage(params);
 
         if (app.isRuntime()) {
-            builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
+            PREDEFINED_RUNTIME_IMAGE.copyInto(params, builder::appImageDir);
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-            builder.appImageDir(StandardBundlerParam.getPredefinedAppImage(params));
+            PREDEFINED_APP_IMAGE.copyInto(params, builder::appImageDir);
         } else if (pkg.isPresent()) {
             builder.appImageDirForPackage();
         } else {
