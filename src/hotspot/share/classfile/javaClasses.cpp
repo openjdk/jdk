@@ -55,15 +55,14 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbol.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -870,6 +869,7 @@ int java_lang_Class::_classRedefinedCount_offset;
 int java_lang_Class::_reflectionData_offset;
 int java_lang_Class::_modifiers_offset;
 int java_lang_Class::_is_primitive_offset;
+int java_lang_Class::_raw_access_flags_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1073,6 +1073,10 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
+  // Set the raw access_flags, this is used by reflection instead of modifier flags.
+  // The Java code for array classes gets the access flags from the element type.
+  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
+  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1378,6 +1382,8 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
   set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+  set_raw_access_flags(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+
   set_is_primitive(java_class);
   return java_class;
 }
@@ -1519,6 +1525,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false); \
   macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
+  macro(_raw_access_flags_offset,    k, "classFileAccessFlags",      char_signature,    false); \
   macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
   macro(_is_primitive_offset,        k, "primitive",           bool_signature,         false);
 
@@ -1562,6 +1569,16 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
+}
+
+int java_lang_Class::raw_access_flags(oop the_class_mirror) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->char_field(_raw_access_flags_offset);
+}
+
+void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  the_class_mirror->char_field_put(_raw_access_flags_offset, value);
 }
 
 
