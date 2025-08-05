@@ -394,21 +394,21 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 // interpreter - such methods won't be compiled to use fast_lock and fast_unlock.
 // The interpreter provides two properties:
 // I1:  At return-time the interpreter automatically and quietly unlocks any
-//      objects acquired the current activation (frame).  Recall that the
+//      objects acquired in the current activation (frame).  Recall that the
 //      interpreter maintains an on-stack list of locks currently held by
 //      a frame.
 // I2:  If a method attempts to unlock an object that is not held by the
-//      the frame the interpreter throws IMSX.
+//      frame the interpreter throws IMSX.
 //
 // Lets say A(), which has provably balanced locking, acquires O and then calls B().
 // B() doesn't have provably balanced locking so it runs in the interpreter.
 // Control returns to A() and A() unlocks O.  By I1 and I2, above, we know that O
 // is still locked by A().
 //
-// The only other source of unbalanced locking would be JNI.  The "Java Native Interface:
-// Programmer's Guide and Specification" claims that an object locked by jni_monitorenter
-// should not be unlocked by "normal" java-level locking and vice-versa.  The specification
-// doesn't specify what will occur if a program engages in such mixed-mode locking, however.
+// The only other source of unbalanced locking would be JNI.  The "Java Native Interface
+// Specification" states that an object locked by JNI's_MonitorEnter should not be
+// unlocked by "normal" java-level locking and vice-versa.  The specification doesn't
+// specify what will occur if a program engages in such mixed-mode locking, however.
 // Arguably given that the spec legislates the JNI case as undefined our implementation
 // could reasonably *avoid* checking owner in fast_unlock().
 // In the interest of performance we elide m->Owner==Self check in unlock.
