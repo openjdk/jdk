@@ -285,4 +285,3 @@ public final class KeyChoices {
         input[from + 2] = (byte) (value);
     }
 }
-

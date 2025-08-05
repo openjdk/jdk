@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,13 +590,13 @@ public class ML_DSA {
         // take it out of NTT domain later, it was modified for a while.
         var s1 = deepClone(sk.s1);
         mlDsaVectorNtt(s1); //s1 now in NTT domain
-        int[][] As1 = new int[mlDsa_k][ML_DSA_N];
+        int[][] As1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         matrixVectorPointwiseMultiply(As1, keygenA, s1);
 
         mlDsaVectorInverseNtt(As1);
         int[][] t = vectorAddPos(As1, sk.s2);
-        int[][] t0 = new int[mlDsa_k][ML_DSA_N];
-        int[][] t1 = new int[mlDsa_k][ML_DSA_N];
+        int[][] t0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] t1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         power2Round(t, t0, t1);
         if (!Arrays.deepEquals(t0, sk.t0)) {
             throw new IllegalArgumentException("t0 does not patch");
