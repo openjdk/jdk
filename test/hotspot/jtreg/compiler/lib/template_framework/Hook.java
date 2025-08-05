@@ -75,7 +75,7 @@ public record Hook(String name) {
      * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
      */
     public Token anchor(Object... tokens) {
-        return new HookAnchorToken(this, Token.parse(tokens));
+        return new HookAnchorToken(this, TokenParser.parse(tokens));
     }
 
     /**

@@ -28,11 +28,12 @@ package com.sun.tools.javac.launcher;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.code.Preview;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import com.sun.tools.javac.util.Log;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -120,8 +121,11 @@ final class MemoryContext {
         }
         var opts = options.forProgramCompilation();
         var context = new Context();
-        MemoryPreview.registerInstance(context);
         var task = compiler.getTask(out, memoryFileManager, null, opts, null, units, context);
+
+        // This suppresses diagnostics like "Note: Recompile with -Xlint:preview for details."
+        Log.instance(context).suppressAggregatedWarningNotes(LintCategory.PREVIEW);
+
         var ok = task.call();
         if (!ok) {
             throw new Fault(Errors.CompilationFailed);
@@ -267,21 +271,6 @@ final class MemoryContext {
                 continue;
             }
             controller.enableNativeAccess(module);
-        }
-    }
-
-    static class MemoryPreview extends Preview {
-        static void registerInstance(Context context) {
-            context.put(previewKey, (Factory<Preview>)MemoryPreview::new);
-        }
-
-        MemoryPreview(Context context) {
-            super(context);
-        }
-
-        @Override
-        public void reportDeferredDiagnostics() {
-            // suppress diagnostics like "Note: Recompile with -Xlint:preview for details."
         }
     }
 }

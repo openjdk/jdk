@@ -67,8 +67,6 @@ import java.net.ServerSocket;
  *   using JVMDI strict mode
  * <li> <code>-pipe.port=</code>&lt;<i>port</i>&gt; -
  *   port number for internal IOPipe connection
- * <li> <code>-bind.port=</code>&lt;<i>port</i>&gt; -
- *   port number for BindServer connection
  * </ul>
  * <p>
  * See also list of basic options recognized by
@@ -421,47 +419,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         return (java_home == null);
     }
 
-    private boolean bindPortInited = false;
-    /**
-     * Return string representation of the port number for BindServer connection,
-     * specified by <code>-bind.port</code> command line option, or
-     * "<i>DEFAULT_BIND_PORT</i>" string by default.
-     *
-     * @see #getBindPortNumber()
-     * @see #setRawArguments(String[])
-     */
-    public String getBindPort() {
-        String port = options.getProperty("bind.port");
-        if (port == null) {
-            if (!bindPortInited) {
-                port = findFreePort();
-                if (port == null) {
-                    port = DEFAULT_BIND_PORT;
-                }
-                options.setProperty("bind.port", port);
-                bindPortInited = true;
-            }
-        }
-        return port;
-    }
-
-    /**
-     * Return port number for BindServer connection,
-     * specified by <code>-bind.port</code> command line option, or
-     * "<i>DEFAULT_BIND_PORT</i>" port number by default.
-     *
-     * @see #getBindPort()
-     * @see #setRawArguments(String[])
-     */
-    public int getBindPortNumber() {
-        String value = getBindPort();
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            throw new TestBug("Not integer value of \"bind.port\" argument: " + value);
-        }
-    }
-
     /**
      * Return JVMDI strict mode for launching debugee VM, specified by.
      * <code>-jvmdi.strict</code> command line option, or
@@ -683,7 +640,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
 
         // option with positive integer port value
         if (option.equals("transport.port")
-            || option.equals("bind.port")
             || option.equals("pipe.port")) {
             try {
                 int number = Integer.parseInt(value);

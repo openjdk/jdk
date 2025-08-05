@@ -147,6 +147,7 @@ private:
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
   // The following are parameters that affect MethodData layout.
+  u1      _compiler_type;
   uint    _type_profile_level;
   int     _type_profile_args_limit;
   int     _type_profile_parms_limit;
