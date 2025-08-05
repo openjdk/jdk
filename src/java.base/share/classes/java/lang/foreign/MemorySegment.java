@@ -407,6 +407,21 @@ import java.util.stream.Stream;
  * MemorySegment segment = ...
  * boolean isAligned = segment.maxByteAlignment() >= layout.byteAlignment();
  * }
+ * <h2 id="string-conversion">String conversion</h2>
+ * All methods involving conversion to or from Strings (such as
+ * {@linkplain #setString(long, String, Charset)} and
+ * {@linkplain #getString(long, Charset)}) are restricted to the
+ * {@linkplain StandardCharsets standard charsets}, all of which encodes bytes that are
+ * {@code N}-aligned (including the string terminator). Hence, every character in the
+ * segment (including the terminator) will be at an {@code N}-aligned offset counted from
+ * the beginning where conversion is about to begin. For example:
+ * <ul>
+ *     <li>{@code N}=1 for {@link StandardCharsets#UTF_8} (e.g., A BBB C DD 0)</li>
+ *     <li>{@code N}=2 for {@link StandardCharsets#UTF_16} (e.g., AA BBBB CC DDDD 00)</li>
+ *     <li>{@code N}=4 for {@link StandardCharsets#UTF_32} (e.g., AAAA BBBB CCCC DDDD 0000)</li>
+ * </ul>
+ * Note: UTF_8 and UFT_16 are using a variable-length encoder whereas UTF_32 is using
+ *       a constant-length encoder.
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
  *
@@ -1295,14 +1310,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
-     * All valid {@linkplain Charset Charsets} decode strings using chunks of a fixed
-     * octet length N. For example:
-     * <ul>
-     *     <li>N=1 for {@link StandardCharsets#UTF_8} (A B C D 0)</li>
-     *     <li>N=2 for {@link StandardCharsets#UTF_16} (AA BB CC DD 00)</li>
-     *     <li>N=4 for {@link StandardCharsets#UTF_16} (AAAA BBBB CCCC DDDD 0000)</li>
-     *</ul>
-     * <p>
      * Getting a string from a segment with a known byte offset and
      * known byte length can be done like so:
      * {@snippet lang=java :
@@ -1315,7 +1322,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
      *                string bytes. The {@code charset} must be a
-     *                {@linkplain StandardCharsets standard charset}
+     *                {@linkplain StandardCharsets standard charset} as described
+     *                in the {@link ##string-conversion String conversion} section
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to (but not including) the first {@code '\0'} terminator
      *         character (assuming one is found)
@@ -1382,7 +1390,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param str     the Java string to be written into this segment
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
      *                string bytes. The {@code charset} must be a
-     *                {@linkplain StandardCharsets standard charset}
+     *                {@linkplain StandardCharsets standard charset} as described
+     *                in the {@link ##string-conversion String conversion} section
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
      *         <ul>
