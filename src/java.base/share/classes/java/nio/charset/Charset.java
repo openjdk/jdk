@@ -384,16 +384,7 @@ public abstract class Charset
             };
     }
 
-    private static final Supplier<ThreadTracker> TRACKER = StableValue.supplier(
-            new Supplier<>() { public ThreadTracker get() { return new ThreadTracker(); }});
-
-    private static Object tryBeginLookup() {
-        return TRACKER.get().tryBegin();
-    }
-
-    private static void endLookup(Object key) {
-        TRACKER.get().end(key);
-    }
+    private static final ScopedValue<Boolean> IN_LOOKUP = ScopedValue.newInstance();
 
     private static Charset lookupViaProviders(final String charsetName) {
 
@@ -408,22 +399,30 @@ public abstract class Charset
         if (!VM.isBooted())
             return null;
 
-        Object key = tryBeginLookup();
-        if (key == null) {
+        if (IN_LOOKUP.isBound()) {
             // Avoid recursive provider lookups
             return null;
         }
         try {
-            for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
-                CharsetProvider cp = i.next();
-                Charset cs = cp.charsetForName(charsetName);
-                if (cs != null)
-                    return cs;
-            }
-            return null;
-        } finally {
-            endLookup(key);
+            return ScopedValue.where(IN_LOOKUP, true).call(
+                    new ScopedValue.CallableOp<Charset, Exception>() {
+                        @Override
+                        public Charset call() {
+                            for (Iterator<CharsetProvider> i = providers(); i.hasNext(); ) {
+                                CharsetProvider cp = i.next();
+                                Charset cs = cp.charsetForName(charsetName);
+                                if (cs != null)
+                                    return cs;
+                            }
+                            return null;
+                        }
+                    }
+            );
+        } catch (Exception t) {
+            // Should not happen
+            throw new RuntimeException(t);
         }
+
     }
 
     /* The extended set of charsets */
@@ -622,9 +621,11 @@ public abstract class Charset
             new Supplier<>() { public Charset get() { return defaultCharset0(); }});
 
     private static Charset defaultCharset0() {
-        return Objects.requireNonNullElse(
-                standardProvider.charsetForName(StaticProperty.fileEncoding()),
-                sun.nio.cs.UTF_8.INSTANCE);
+        // do not look for providers other than the standard one
+        final Charset cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
+        return (cs == null)
+                ? sun.nio.cs.UTF_8.INSTANCE
+                : cs;
     }
 
     /**
@@ -653,9 +654,9 @@ public abstract class Charset
     /* -- Instance fields and methods -- */
 
     @Stable
-    private final String name;          // tickles a bug in oldjavac
+    private final String name;
     @Stable
-    private final String[] aliases;     // tickles a bug in oldjavac
+    private final String[] aliases;
     @Stable
     private final Supplier<Set<String>> aliasSet = StableValue.supplier(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
