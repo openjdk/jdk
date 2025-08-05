@@ -809,7 +809,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize from scratch
 PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
-                              _worklist(*C->igvn_worklist())
+                               _worklist(*C->igvn_worklist())
 {
   _iterGVN = true;
   uint max;
