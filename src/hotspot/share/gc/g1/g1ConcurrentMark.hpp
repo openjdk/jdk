@@ -976,7 +976,7 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
-  void log_cset_candidate_group(G1CSetCandidateGroup* gr, const char* type);
+  void log_cset_candidate_group_add_total(G1CSetCandidateGroup* gr, const char* type);
   void log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type);
   void log_cset_candidate_groups();
 
