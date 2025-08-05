@@ -1633,7 +1633,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
     } else if (VectorNode::is_reinterpret_opcode(opc)) {
-      retValue = true;
+      retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
       // Java API for Math.min/max operations supports only int, long, float
       // and double types. Thus, avoid generating vector min/max nodes for
