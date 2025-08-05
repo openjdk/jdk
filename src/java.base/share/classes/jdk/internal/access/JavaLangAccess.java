@@ -113,6 +113,11 @@ public interface JavaLangAccess {
     byte[] getRawExecutableTypeAnnotations(Executable executable);
 
     /**
+     * Get the int value of the Class's class-file access flags.
+     */
+    int getClassFileAccessFlags(Class<?> klass);
+
+    /**
      * Returns the elements of an enum class or null if the
      * Class object does not represent an enum type;
      * the result is uncloned, cached, and shared by all callers.

@@ -1223,21 +1223,21 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       _local_cleanup_list(local_cleanup_list) {}
 
     void reclaim_empty_region_common(G1HeapRegion* hr) {
+      assert(!hr->has_pinned_objects(), "precondition");
+      assert(hr->used() > 0, "precondition");
+
       _freed_bytes += hr->used();
       hr->set_containing_set(nullptr);
       hr->clear_both_card_tables();
-      _g1h->concurrent_mark()->clear_statistics(hr);
+      _cm->clear_statistics(hr);
       G1HeapRegionPrinter::mark_reclaim(hr);
       _g1h->concurrent_refine()->notify_region_reclaimed(hr);
     }
 
     void reclaim_empty_humongous_region(G1HeapRegion* hr) {
-      assert(!hr->has_pinned_objects(), "precondition");
       assert(hr->is_starts_humongous(), "precondition");
 
       auto on_humongous_region = [&] (G1HeapRegion* hr) {
-        assert(hr->used() > 0, "precondition");
-        assert(!hr->has_pinned_objects(), "precondition");
         assert(hr->is_humongous(), "precondition");
 
         _num_humongous_regions_removed++;
@@ -1249,8 +1249,6 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
     }
 
     void reclaim_empty_old_region(G1HeapRegion* hr) {
-      assert(hr->used() > 0, "precondition");
-      assert(!hr->has_pinned_objects(), "precondition");
       assert(hr->is_old(), "precondition");
 
       _num_old_regions_removed++;
@@ -1286,7 +1284,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         const bool is_live = hr->live_bytes() != 0
                           || hr->has_pinned_objects();
         if (is_live) {
-          if (tracker->update_old_before_rebuild(hr)) {
+          const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
+          if (selected_for_rebuild) {
             _num_selected_for_rebuild++;
           }
           _cm->update_top_at_rebuild_start(hr);
@@ -2978,7 +2977,6 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_BYTE_FORMAT            "  %9zu"
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
 #define G1PPRL_DOUBLE_FORMAT          "%14.1f"
-#define G1PPRL_GCEFF_FORMAT           "  %14s"
 #define G1PPRL_GCEFF_H_FORMAT         "  %14s"
 #define G1PPRL_GID_H_FORMAT           "  %9s"
 #define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(9)
@@ -3054,10 +3052,10 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_groud_gid     = 0;
+  uint cset_group_id     = 0;
 
   if (r->rem_set()->is_added_to_cset_group()) {
-    cset_groud_gid = r->rem_set()->cset_group_id();
+    cset_group_id = r->rem_set()->cset_group_id();
   }
 
   _total_used_bytes      += used_bytes;
@@ -3078,7 +3076,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_groud_gid);
+                        cset_group_id);
 
   return false;
 }
@@ -3093,7 +3091,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
 
-  do_cset_groups();
+  log_cset_candidate_groups();
 
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
@@ -3113,10 +3111,33 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_FORMAT
+                          G1PPRL_LEN_FORMAT
+                          G1PPRL_GID_GCEFF_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          group->group_id(),
+                          group->length(),
+                          group->gc_efficiency(),
+                          group->liveness(),
+                          group->card_set()->mem_size(),
+                          type);
+  _total_remset_bytes += group->card_set()->mem_size();
+}
+
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
+  for (G1CSetCandidateGroup* group : gl) {
+    log_cset_candidate_group_add_total(group, type);
+  }
+}
+
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collectionset Candidate Groups");
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young Regions, M=From Marking Regions, R=Retained Regions");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young, M=From Marking Regions, R=Retained Regions");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_H_FORMAT
                           G1PPRL_LEN_H_FORMAT
@@ -3140,49 +3161,10 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                           "(bytes)", "");
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CSetCandidateGroup* young_only_cset_group =g1h->young_regions_cset_group();
 
-  _total_remset_bytes += young_only_cset_group->card_set()->mem_size();
+  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
 
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                          G1PPRL_GID_FORMAT
-                          G1PPRL_LEN_FORMAT
-                          G1PPRL_GCEFF_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_TYPE_H_FORMAT,
-                          young_only_cset_group->group_id(), young_only_cset_group->length(),
-                          "-",
-                          size_t(0), young_only_cset_group->card_set()->mem_size(),
-                          "Y");
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
-    _total_remset_bytes += group->card_set()->mem_size();
-    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                            G1PPRL_GID_FORMAT
-                            G1PPRL_LEN_FORMAT
-                            G1PPRL_GID_GCEFF_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_TYPE_H_FORMAT,
-                            group->group_id(), group->length(),
-                            group->gc_efficiency(),
-                            group->liveness(), group->card_set()->mem_size(),
-                            "M");
-  }
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
-    _total_remset_bytes += group->card_set()->mem_size();
-    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                            G1PPRL_GID_FORMAT
-                            G1PPRL_LEN_FORMAT
-                            G1PPRL_GID_GCEFF_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_TYPE_H_FORMAT,
-                            group->group_id(), group->length(),
-                            group->gc_efficiency(),
-                            group->liveness(), group->card_set()->mem_size(),
-                            "R");
-  }
+  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
+  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
 }

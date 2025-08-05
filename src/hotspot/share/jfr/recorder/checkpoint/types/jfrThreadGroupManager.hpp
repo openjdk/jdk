@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package gc.g1.humongousObjects.objectGraphTest;
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
 
-/**
- * Contains tokens that could appear in gc log
- */
-public final class GCTokens {
-    // Private c-tor to prevent instantiating
-    private GCTokens() {
-    }
+#include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
 
-    public static final String WB_INITIATED_YOUNG_GC = "Young (Normal) (WhiteBox Initiated Young GC)";
-    public static final String WB_INITIATED_MIXED_GC = "Young (Mixed) (WhiteBox Initiated Young GC)";
-    public static final String WB_INITIATED_CMC = "WhiteBox Initiated Run to Breakpoint";
-    public static final String FULL_GC = "Full (System.gc())";
-    public static final String FULL_GC_MEMORY_PRESSURE = "WhiteBox Initiated Full GC";
-    public static final String CMC = "Concurrent Mark)";
-    public static final String YOUNG_GC = "GC pause (young)";
-}
+class JfrCheckpointWriter;
+
+class JfrThreadGroupManager : public AllStatic {
+  friend class JfrRecorder;
+
+ private:
+  static bool create();
+  static void destroy();
+
+ public:
+  static void serialize(JfrCheckpointWriter& w);
+  static void serialize(JfrCheckpointWriter& w, traceid tgid, bool is_blob);
+
+  static traceid thread_group_id(JavaThread* thread);
+  static traceid thread_group_id(const JavaThread* thread, Thread* current);
+};
+
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
