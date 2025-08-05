@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 6315717
- * @summary verifies that drag events are coming for every button if the property is set to true
+ * @summary Verifies that mouse drag events received for every button if the property is set to true
  * @run main ExtraButtonDrag
  */
 
