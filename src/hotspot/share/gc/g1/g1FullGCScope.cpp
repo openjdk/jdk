@@ -40,6 +40,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool do_maximal_compaction,
                              G1FullGCTracer* tracer) :
     _rm(),
+    _should_clear_soft_refs(clear_soft),
     _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
@@ -47,16 +48,11 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _tracer(tracer),
     _active(),
     _tracer_mark(&_timer, _tracer),
-    _soft_refs(clear_soft, _g1h->soft_ref_policy()),
     _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
                                  G1HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * G1HeapRegion::GrainWords) { }
-
-bool G1FullGCScope::should_clear_soft_refs() {
-  return _soft_refs.should_clear();
-}
 
 STWGCTimer* G1FullGCScope::timer() {
   return &_timer;
