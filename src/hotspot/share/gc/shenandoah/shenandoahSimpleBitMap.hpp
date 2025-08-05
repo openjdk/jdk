@@ -57,7 +57,7 @@ class ShenandoahSimpleBitMap {
   uintx* const _bitmap;
 
 public:
-  ShenandoahSimpleBitMap(size_t num_bits);
+  ShenandoahSimpleBitMap(idx_t num_bits);
 
   ~ShenandoahSimpleBitMap();
 
@@ -116,7 +116,6 @@ public:
 
   inline void clear_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
@@ -125,7 +124,6 @@ public:
 
   inline bool is_set(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);

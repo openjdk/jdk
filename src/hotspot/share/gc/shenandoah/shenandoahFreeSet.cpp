@@ -186,12 +186,19 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 
 void ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
   shenandoah_assert_heaplocked();
+  size_t min_fill_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
   ShenandoahFreeSetPartitionId p =  _partitions.membership(idx);
-  assert((p == ShenandoahFreeSetPartitionId::Mutator) || (p == ShenandoahFreeSetPartitionId::Collector),
-         "PIP region must be associated with young");
-  _partitions.increase_used(p, bytes);
-  recompute_total_young_used();
-  recompute_total_global_used();
+  if (bytes >= min_fill_size) {
+    assert((p == ShenandoahFreeSetPartitionId::Mutator) || (p == ShenandoahFreeSetPartitionId::Collector),
+           "PIP region must be associated with young");
+    _partitions.increase_used(p, bytes);
+    _partitions.decrease_region_counts(p, 1);
+    _partitions.raw_clear_membership(idx, p);
+    recompute_total_young_used();
+    recompute_total_global_used();
+  } else {
+    assert(p == ShenandoahFreeSetPartitionId::NotFree, "We did not fill this region and do not need to adjust used");
+  }
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
@@ -856,18 +863,6 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
 
 const char* ShenandoahRegionPartitions::partition_membership_name(idx_t idx) const {
   return partition_name(membership(idx));
-}
-
-inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(idx_t idx) const {
-  assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
-  ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
-  for (uint partition_id = 0; partition_id < UIntNumPartitions; partition_id++) {
-    if (_membership[partition_id].is_set(idx)) {
-      assert(result == ShenandoahFreeSetPartitionId::NotFree, "Region should reside in only one partition");
-      result = (ShenandoahFreeSetPartitionId) partition_id;
-    }
-  }
-  return result;
 }
 
 #ifdef ASSERT
@@ -2196,7 +2191,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t young_cset_regions = 0;
 
   size_t region_size_bytes = _partitions.region_size_bytes();
-  size_t max_regions = _partitions.max_regions();
+  size_t max_regions = _partitions.max();
 
   size_t mutator_leftmost = max_regions;
   size_t mutator_rightmost = 0;

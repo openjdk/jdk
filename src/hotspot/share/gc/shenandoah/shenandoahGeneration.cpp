@@ -554,12 +554,22 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   // Sort the promotion-eligible regions in order of increasing live-data-bytes so that we can first reclaim regions that require
   // less evacuation effort.  This prioritizes garbage first, expanding the allocation pool early before we reclaim regions that
   // have more live data.
-  const size_t num_regions = heap->num_regions();
+  const idx_t num_regions = heap->num_regions();
 
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
 
-  for (size_t i = 0; i < num_regions; i++) {
+  ShenandoahFreeSet* freeset = heap->free_set();
+
+  // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
+  idx_t pip_low_collector_idx = freeset->max_regions();
+  idx_t pip_high_collector_idx = -1;
+  idx_t pip_low_mutator_idx = freeset->max_regions();
+  idx_t pip_high_mutator_idx = -1;
+  size_t collector_regions_to_pip = 0;
+  size_t mutator_regions_to_pip = 0;
+
+  for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
       // skip over regions that aren't regular young with some live data
@@ -568,8 +578,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
     if (r->age() >= tenuring_threshold) {
       if ((r->garbage() < old_garbage_threshold)) {
         // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
-        // reclaim the garbage; instead this region may be eligible for promotion-in-place to the
-        // old generation.
+        // reclaim the garbage; instead this region may be eligible for promotion-in-place to old generation.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
         if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top) {
@@ -578,20 +587,46 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
           // we use this field to indicate that this region should be promoted in place during the evacuation
           // phase.
           r->save_top_before_promote();
-
           size_t remnant_bytes = r->free();
-          size_t remnant_size = remnant_bytes / HeapWordSize;
-          if (remnant_size >= ShenandoahHeap::min_fill_size()) {
-            ShenandoahHeap::fill_with_object(original_top, remnant_size);
+          size_t remnant_words = remnant_bytes / HeapWordSize;
+          if (remnant_words >= ShenandoahHeap::min_fill_size()) {
+            ShenandoahHeap::fill_with_object(original_top, remnant_words);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
             // newly allocated objects will not be parsable when promote in place tries to register them.  Furthermore, any
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
+            // The region r is either in the Mutator or Collector partition if remnant_words > heap()->plab_min_size.
+            // Otherwise, the region is in the NotFree partition.
+            ShenandoahFreeSetPartitionId p = free_set->membership(i);
+            if (p == ShenandoahFreeSetPartitionId::Mutator) {
+              mutator_regions_to_pip++;
+              if (i < pip_low_mutator_idx) {
+                pip_low_mutator_idx = i;
+              }
+              if (i > pip_high_mutator_idx) {
+                pip_high_mutator_idx = i;
+              }
+            } else if (p == ShenandoahFreeSetPartitionId::Collector) {
+              collector_regions_to_pip++;
+              if (i < pip_low_collector_idx) {
+                pip_low_collector_idx = i;
+              }
+              if (i > pip_high_collector_idx) {
+                pip_high_collector_idx = i;
+              }
+            } else {
+              assert((p == ShenandoahFreeSetPartitionId::NotFree) && (remnant_words < heap->plab_min_size()),
+                     "Should be NotFree if not in Collector or Mutator partitions");
+              // In this case, we'll count the remnant_bytes as used even though we will not create a fill object.
+            }
             promote_in_place_pad += remnant_bytes;
             free_set->prepare_to_promote_in_place(i, remnant_bytes);
           } else {
             // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
             // allocations occurring within this region before the region is promoted in place.
+
+            // This region was already not in the Collector or Mutator set, so no need to remove it.
+            assert(free_set->membership(i) == ShenandoahFreeSetPartitionId::NotFree, "sanity");
           }
           // Even when we do not fill the remnant, we count the remnant as used
           young_gen->increase_used(remnant_bytes);
@@ -633,6 +668,19 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
     // Note that we keep going even if one region is excluded from selection.
     // Subsequent regions may be selected if they have smaller live data.
   }
+
+  // Retire any regions that have been selected for promote in place
+  if (collector_regions_to_pip > 0) {
+    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Collector,
+                                                               pip_low_collector_idx, pip_high_collector_idx,
+                                                               collector_regions_to_pip);
+  }
+  if (mutator_regions_to_pip > 0) {
+    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
+                                                               pip_low_mutator_idx, pip_high_mutator_idx,
+                                                               mutator_regions_to_pip);
+  }
+
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
   if (candidates > 0) {

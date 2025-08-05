@@ -65,7 +65,6 @@ private:
   const ShenandoahFreeSet* _free_set;
   // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
   ShenandoahSimpleBitMap _membership[UIntNumPartitions];
-
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
   // represents its least index, and its _rightmosts[p] its greatest index. Empty intervals are indicated by the
@@ -104,8 +103,7 @@ private:
   // adjust used values when flipping from mutator to collector.  Flip to old collector does not need to adjust used because
   // only empty regions can be flipped to old collector.
   //
-  // All memory quantities (capacty, available, used) are represented in bytes.
-
+  // All memory quantities (capacity, available, used) are represented in bytes.
 
   size_t _capacity[UIntNumPartitions];
 
@@ -156,6 +154,11 @@ public:
   // Set the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
   inline void raw_assign_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
     _membership[int(p)].set_bit(idx);
+  }
+
+  // Clear the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
+  inline void raw_clear_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
+    _membership[int(p)].clear_bit(idx);
   }
 
   inline void one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition);
@@ -240,15 +243,23 @@ public:
 
   // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
-  inline ShenandoahFreeSetPartitionId membership(idx_t idx) const;
+  inline ShenandoahFreeSetPartitionId membership(idx_t idx) const {
+    assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
+    ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
+    for (uint partition_id = 0; partition_id < UIntNumPartitions; partition_id++) {
+      if (_membership[partition_id].is_set(idx)) {
+        assert(result == ShenandoahFreeSetPartitionId::NotFree, "Region should reside in only one partition");
+        result = (ShenandoahFreeSetPartitionId) partition_id;
+      }
+    }
+    return result;
+  }
 
 #ifdef ASSERT
   // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
   // that the region has allocation capacity.
   inline bool partition_id_matches(idx_t idx, ShenandoahFreeSetPartitionId which_partition) const;
 #endif
-
-  inline size_t max_regions() const { return _max; }
 
   inline size_t region_size_bytes() const { return _region_size_bytes; };
 
@@ -624,6 +635,13 @@ public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
 
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
+
+  inline size_t max_regions() const { return _partitions.max(); }
+  ShenandoahFreeSetPartitionId membership(size_t index) const { return _partitions.membership(index); }
+  inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
+                                                                idx_t low_idx, idx_t high_idx, size_t num_regions) {
+    return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
+  }
 
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
