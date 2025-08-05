@@ -52,6 +52,11 @@ class ObjArrayKlass : public ArrayKlass {
   static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
 
   objArrayOop allocate_instance(int length, TRAPS);
+
+ protected:
+  // Create array_name for element klass
+  static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
+
  public:
   // For dummy objects
   ObjArrayKlass() {}

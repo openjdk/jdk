@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,22 +281,7 @@ public class SymLinks {
         assertTrue(link2dir.isDirectory());
         assertTrue(link2link2dir.isDirectory());
 
-        // on Windows we test with the DOS hidden attribute set
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            DosFileAttributeView view = Files
-                .getFileAttributeView(file.toPath(), DosFileAttributeView.class);
-            view.setHidden(true);
-            try {
-                assertTrue(file.isHidden());
-                assertTrue(link2file.isHidden());
-                assertTrue(link2link2file.isHidden());
-            } finally {
-                view.setHidden(false);
-            }
-            assertFalse(file.isHidden());
-            assertFalse(link2file.isHidden());
-            assertFalse(link2link2file.isHidden());
-        }
+        testDOSHiddenAttributes();
 
         header("length");
 
@@ -359,6 +344,26 @@ public class SymLinks {
             assertTrue(file.canWrite());
             assertTrue(link2file.canWrite());
             assertTrue(link2link2file.canWrite());
+        }
+    }
+
+     static void testDOSHiddenAttributes() throws IOException {
+        // on Windows we test with the DOS hidden attribute set
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            header("testDOSHiddenAttributes");
+            DosFileAttributeView view = Files
+                .getFileAttributeView(file.toPath(), DosFileAttributeView.class);
+            view.setHidden(true);
+            try {
+                assertTrue(file.isHidden());
+                assertTrue(link2file.isHidden());
+                assertTrue(link2link2file.isHidden());
+            } finally {
+                view.setHidden(false);
+            }
+            assertFalse(file.isHidden());
+            assertFalse(link2file.isHidden());
+            assertFalse(link2link2file.isHidden());
         }
     }
 

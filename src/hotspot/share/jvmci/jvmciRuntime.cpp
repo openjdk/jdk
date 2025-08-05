@@ -746,6 +746,8 @@ JVM_END
 void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
+                                  bool is_default,
+                                  bool profile_deopt,
                                   FailedSpeculation** failed_speculations)
 {
   _failed_speculations = failed_speculations;
@@ -753,16 +755,19 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
   guarantee(nmethod_entry_patch_offset != -1, "missing entry barrier");
   _nmethod_entry_patch_offset = nmethod_entry_patch_offset;
   if (nmethod_mirror_name != nullptr) {
-    _has_name = true;
+    _properties.bits._has_name = 1;
     char* dest = (char*) name();
     strcpy(dest, nmethod_mirror_name);
   } else {
-    _has_name = false;
+    _properties.bits._has_name = 0;
   }
+  _properties.bits._is_default = is_default;
+  _properties.bits._profile_deopt = profile_deopt;
 }
 
 void JVMCINMethodData::copy(JVMCINMethodData* data) {
-  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_failed_speculations);
+  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_properties.bits._is_default,
+             data->_properties.bits._profile_deopt, data->_failed_speculations);
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
@@ -797,7 +802,7 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
   Universe::heap()->register_nmethod(nm);
 }
 
-void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
+void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm, nmethod::InvalidationReason invalidation_reason) {
   oop nmethod_mirror = get_nmethod_mirror(nm);
   if (nmethod_mirror == nullptr) {
     return;
@@ -816,12 +821,20 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
+      if (HotSpotJVMCI::HotSpotNmethod::invalidationReason(jvmciEnv, nmethod_mirror) ==
+        static_cast<int>(nmethod::InvalidationReason::NOT_INVALIDATED)) {
+        HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
+      }
     } else if (nm->is_not_entrant()) {
       // Zero the entry point so any new invocation will fail but keep
       // the address link around that so that existing activations can
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
+      if (HotSpotJVMCI::HotSpotNmethod::invalidationReason(jvmciEnv, nmethod_mirror) ==
+        static_cast<int>(nmethod::InvalidationReason::NOT_INVALIDATED)) {
+        HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
+      }
     }
   }
 
@@ -2076,6 +2089,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   char* failure_detail = nullptr;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;
+  bool profile_deopt = JVMCIENV->get_HotSpotNmethod_profileDeopt(nmethod_mirror) != 0;
   assert(JVMCIENV->isa_HotSpotNmethod(nmethod_mirror), "must be");
   JVMCIObject name = JVMCIENV->get_InstalledCode_name(nmethod_mirror);
   const char* nmethod_mirror_name = name.is_null() ? nullptr : JVMCIENV->as_utf8_string(name);
@@ -2122,7 +2136,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     JVMCICompileState* compile_state = JVMCIENV->compile_state();
     bool failing_dep_is_call_site;
     result = validate_compile_task_dependencies(dependencies, compile_state, &failure_detail, failing_dep_is_call_site);
-    if (result != JVMCI::ok) {
+    if (install_default && result != JVMCI::ok) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdp = method()->method_data();
       if (mdp != nullptr && !failing_dep_is_call_site) {
@@ -2143,6 +2157,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
       JVMCINMethodData* data = JVMCINMethodData::create(nmethod_mirror_index,
                                                         nmethod_entry_patch_offset,
                                                         nmethod_mirror_name,
+                                                        install_default,
+                                                        profile_deopt,
                                                         failed_speculations);
       nm =  nmethod::new_nmethod(method,
                                  compile_id,
@@ -2184,7 +2200,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               tty->print_cr("Replacing method %s", method_name);
             }
             if (old != nullptr) {
-              old->make_not_entrant(nmethod::ChangeReason::JVMCI_register_method);
+              old->make_not_entrant(nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE);
             }
 
             LogTarget(Info, nmethod, install) lt;

@@ -204,7 +204,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_pow  )
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
-  method_entry(java_lang_ref_reference_get)
+  method_entry(java_lang_ref_reference_get0)
   AbstractInterpreter::initialize_method_handle_entries();
 
   method_entry(java_util_zip_CRC32C_updateBytes)
@@ -228,6 +228,7 @@ void TemplateInterpreterGenerator::generate_all() {
   // entries for `native` methods to use the same address in case
   // intrinsic is disabled.
   native_method_entry(java_lang_Thread_currentThread)
+  native_method_entry(java_lang_ref_reference_get0)
 
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
@@ -465,7 +466,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_math_sqrt_strict
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
-  case Interpreter::java_lang_ref_reference_get
+  case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;

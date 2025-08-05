@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  */
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -41,8 +40,29 @@ public class Basic {
     @DataProvider(name = "urls")
     public Object[][] urls() {
         Object[][] data = {
-            { "jrt:/java.base/java/lang/Object.class",    true },
-            { "jrt:/java.desktop/java/lang/Object.class", false },
+                {"jrt:/java.base/java/lang/Object.class", true},
+                // Valid resource with and without percent-encoding.
+                {"jrt:/java.base/java/lang/Runtime$Version.class", true},
+                {"jrt:/java.base/java%2Flang%2FRuntime%24Version.class", true},
+                // Unnecessary percent encoding (just Object again).
+                {"jrt:/java.base/%6a%61%76%61%2f%6c%61%6e%67%2f%4f%62%6a%65%63%74%2e%63%6c%61%73%73", true},
+                // Query parameters and fragments are silently ignored.
+                {"jrt:/java.base/java/lang/Object.class?yes=no", true},
+                {"jrt:/java.base/java/lang/Object.class#anchor", true},
+
+                // Missing resource (no such class).
+                {"jrt:/java.base/java/lang/NoSuchClass.class", false},
+                // Missing resource (wrong module).
+                {"jrt:/java.desktop/java/lang/Object.class", false},
+                // Entries in jimage which don't reference resources.
+                {"jrt:/modules/java.base/java/lang", false},
+                {"jrt:/packages/java.lang", false},
+                // Invalid (incomplete/corrupt) URIs.
+                {"jrt:/", false},
+                {"jrt:/java.base", false},
+                {"jrt:/java.base/", false},
+                // Cannot escape anything in the module name.
+                {"jrt:/java%2Ebase/java/lang/Object.class", false},
         };
         return data;
     }

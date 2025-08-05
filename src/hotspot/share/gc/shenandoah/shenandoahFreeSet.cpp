@@ -880,7 +880,7 @@ HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAll
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
-    if (alloc_capacity(r) >= min_size) {
+    if (alloc_capacity(r) >= min_size * HeapWordSize) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
         return result;
@@ -1263,10 +1263,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     r->set_top(r->bottom() + used_words);
   }
   generation->increase_affiliated_region_count(num);
-  if (remainder != 0) {
-    // Record this remainder as allocation waste
-    _heap->notify_mutator_alloc_words(ShenandoahHeapRegion::region_size_words() - remainder, true);
-  }
 
   // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
   _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
