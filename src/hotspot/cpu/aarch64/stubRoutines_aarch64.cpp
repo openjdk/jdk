@@ -71,6 +71,10 @@ ATTRIBUTE_ALIGNED(64) uint32_t StubRoutines::aarch64::_dilithiumConsts[] =
 /**
  *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h
  */
+
+address StubRoutines::crc_table_addr()    { return (address)StubRoutines::aarch64::_crc_table; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+
 ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
 {
     // Table 0

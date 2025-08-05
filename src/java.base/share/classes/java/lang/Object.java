@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -35,6 +36,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @see     java.lang.Class
  * @since   1.0
  */
+@AOTSafeClassInitializer // for hierarchy checks
 public class Object {
 
     /**
