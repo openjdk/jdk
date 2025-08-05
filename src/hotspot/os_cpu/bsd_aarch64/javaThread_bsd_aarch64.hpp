@@ -52,8 +52,4 @@ public:
     return Thread::current();
   }
 
-#ifdef __APPLE__
-#define MACOS_W_XOR_X 1
-#endif
-
 #endif // OS_CPU_BSD_AARCH64_JAVATHREAD_BSD_AARCH64_HPP

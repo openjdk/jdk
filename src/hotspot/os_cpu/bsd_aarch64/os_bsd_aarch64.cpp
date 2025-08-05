@@ -248,7 +248,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
       WXMode *entry_mode = thread->_cur_wx_mode;
-      if (entry_mode == WXArmedForWrite) {
+      if (*entry_mode == WXArmedForWrite) {
         if (TraceWXHealing) {
           static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
           tty->print_cr("Healing WXMode %s at %p to WXWrite",

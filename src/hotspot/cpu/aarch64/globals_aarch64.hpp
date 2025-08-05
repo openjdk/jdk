@@ -78,20 +78,6 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 define_pd_global(intx, InlineSmallCode,          1000);
 #endif
 
-#ifdef MACOS_W_XOR_X
-#define MACOS_ARCH_FLAGS(develop,                                       \
-                         product,                                       \
-                         range,                                         \
-                         constraint)                                    \
-  ,                                                                     \
-  develop(bool, TraceWXHealing, false,                                  \
-          "track occurrences of W^X mode healing"),                     \
-  develop(bool, UseOldWX, false,                                        \
-          "Choose old W^X implementation.")
-#else
-#define MACOS_ARCH_FLAGS
-#endif // MACOS_W_XOR_X
-
 #define ARCH_FLAGS(develop,                                             \
                    product,                                             \
                    range,                                               \
@@ -141,7 +127,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
-  MACOS_ARCH_FLAGS
 
 // end of ARCH_FLAGS
 
