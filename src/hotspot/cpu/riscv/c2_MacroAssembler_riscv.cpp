@@ -2061,10 +2061,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   bind(VEC_LOOP);
   vmul_vv(v_result, v_result, v_powmax);
-  vmul_vv(v_sum, v_sum, v_powmax);
   arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
   vmul_vv(v_src, v_src, v_coeffs);
-  vadd_vv(v_sum, v_sum, v_src);
+  vmadd_vv(v_sum, v_powmax, v_src);
   shadd(ary, consumed, ary, t0, elsize_shift);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, MAX_VEC_MASK);
