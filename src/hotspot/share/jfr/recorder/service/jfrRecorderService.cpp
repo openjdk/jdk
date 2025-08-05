@@ -645,7 +645,7 @@ static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
 
 size_t JfrRecorderService::flush() {
   size_t total_elements = flush_metadata(_chunkwriter);
-  total_elements = flush_storage(_storage, _chunkwriter);
+  total_elements += flush_storage(_storage, _chunkwriter);
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
