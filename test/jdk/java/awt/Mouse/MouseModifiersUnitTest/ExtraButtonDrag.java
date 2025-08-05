@@ -50,7 +50,7 @@ public class ExtraButtonDrag {
     private static volatile boolean moved = false;
     private static volatile Point centerFrame;
     private static volatile Point outboundsFrame;
-    private static String tk = Toolkit.getDefaultToolkit().getClass().getName();
+    static String osName = System.getProperty("os.name");
     private static MouseAdapter mAdapter = new MouseAdapter() {
         @Override
         public void mouseDragged(MouseEvent e) {
@@ -59,7 +59,6 @@ public class ExtraButtonDrag {
 
         @Override
         public void mouseMoved(MouseEvent e) {
-            System.out.println("Moved " + e);
             moved = true;
         }
     };
@@ -114,15 +113,15 @@ public class ExtraButtonDrag {
             // XToolkit: extra buttons should report MOVED events only
             // WToolkit: extra buttons should report DRAGGED events only
             if (i > 2) { // extra buttons only
-                if (tk.equals("sun.awt.X11.XToolkit")) {
+                if (osName.equals("Linux")) {
                     if (!moved || dragged) {
-                        throw new RuntimeException("Test failed." + tk
+                        throw new RuntimeException("Test failed." + osName
                             + " Button = " + (i + 1) + " moved = " + moved
                             + " : dragged = " + dragged);
                     }
                 } else { // WToolkit
                     if (moved || !dragged) {
-                        throw new RuntimeException("Test failed." + tk
+                        throw new RuntimeException("Test failed." + osName
                             + " Button = " + (i + 1) + " moved = " + moved
                             + " : dragged = " + dragged);
                     }
