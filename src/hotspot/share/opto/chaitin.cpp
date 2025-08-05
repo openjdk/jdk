@@ -1516,7 +1516,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     }
   }
 
-  bool pick_random_color = StressRegisterAllocation && Compile::current()->stress_seed() != 0;
+  bool pick_random_color = StressRegisterAllocation && Compile::current()->stress_seed() != 0 && !lrg._is_bound && !lrg.mask().is_bound1();
   // If no bias info exists, just go with the register selection ordering
   if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
@@ -1537,7 +1537,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
   // copy removal to remove many more copies, by preventing a just-assigned
   // register from being repeatedly assigned.
-  if( (++_alternate & 1) && OptoReg::is_valid(reg) ) {
+  if( (++_alternate & 1) && !pick_random_color && OptoReg::is_valid(reg) ) {
     // This 'Remove; find; Insert' idiom is an expensive way to find the
     // SECOND element in the mask.
     lrg.Remove(reg);
