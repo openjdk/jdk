@@ -280,7 +280,7 @@ void* CodeHeap::allocate(size_t instance_size) {
   }
 
   // Ensure minimum size for allocation to the heap.
-  number_of_segments = MAX2((int)CodeCacheMinBlockLength, (int)number_of_segments);
+  number_of_segments = MAX2(CodeCacheMinBlockLength, number_of_segments);
 
   if (_next_segment + number_of_segments <= _number_of_committed_segments) {
     mark_segmap_as_used(_next_segment, _next_segment + number_of_segments, false);
