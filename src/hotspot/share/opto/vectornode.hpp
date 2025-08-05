@@ -86,7 +86,6 @@ class VectorNode : public TypeNode {
   static bool is_shift_opcode(int opc);
   static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
-  static bool is_move_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
@@ -1823,7 +1822,6 @@ class VectorReinterpretNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual int Opcode() const;
-  static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 };
 
 class VectorCastNode : public VectorNode {

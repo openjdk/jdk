@@ -571,18 +571,6 @@ bool VectorNode::is_convert_opcode(int opc) {
   }
 }
 
-bool VectorNode::is_move_opcode(int opc) {
-  switch (opc) {
-    case Op_MoveF2I:
-    case Op_MoveD2L:
-    case Op_MoveL2D:
-    case Op_MoveI2F:
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool VectorNode::is_minmax_opcode(int opc) {
   return opc == Op_MinI || opc == Op_MaxI;
 }
@@ -994,6 +982,10 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
 
 bool VectorNode::is_reinterpret_opcode(int opc) {
   switch (opc) {
+    case Op_MoveF2I:
+    case Op_MoveD2L:
+    case Op_MoveL2D:
+    case Op_MoveI2F:
     case Op_ReinterpretHF2S:
     case Op_ReinterpretS2HF:
       return true;
@@ -1825,17 +1817,6 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
     }
   }
   return this;
-}
-
-bool VectorReinterpretNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
-  if ((src_type == T_FLOAT && dst_type == T_INT) ||
-      (src_type == T_DOUBLE && dst_type == T_LONG) ||
-      (src_type == T_LONG && dst_type == T_DOUBLE) ||
-      (src_type == T_INT && dst_type == T_FLOAT)) {
-    int vopc = Op_VectorReinterpret;
-    return Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
-  }
-  return false;
 }
 
 Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& gvn) {

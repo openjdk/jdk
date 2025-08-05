@@ -576,7 +576,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
-  } else if (VectorNode::is_reinterpret_opcode(opc) || VectorNode::is_move_opcode(opc)) {
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     const TypeVect* vt = TypeVect::make(bt, vlen);
     vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
