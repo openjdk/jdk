@@ -2512,8 +2512,7 @@ WB_END
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
-  size_t phys_mem = os::physical_memory();
-  return static_cast<jlong>(phys_mem);
+  return static_cast<jlong>(os::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)

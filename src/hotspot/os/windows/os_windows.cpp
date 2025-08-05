@@ -862,11 +862,13 @@ bool os::win32::available_memory(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
-  if (res) {
+  if (res == TRUE) {
     value = static_cast<size_t>(ms.ullAvailPhys);
     return true;
   } else {
-    return false;
+    errno = ::GetLastError();
+    log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return res == TRUE;
   }
 }
 
@@ -874,11 +876,13 @@ bool os::total_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
-  if (res) {
+  if (res == TRUE) {
     value = static_cast<size_t>(ms.ullTotalPageFile);
     return true;
   } else {
-    return false;
+    errno = ::GetLastError();
+    log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return res == TRUE;
   }
 }
 
@@ -886,11 +890,13 @@ bool os::free_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
-  if (res) {
+  if (res == TRUE) {
     value = static_cast<size_t>(ms.ullAvailPageFile);
     return true;
   } else {
-    return false;
+    errno = ::GetLastError();
+    log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return res == TRUE;
   }
 }
 
