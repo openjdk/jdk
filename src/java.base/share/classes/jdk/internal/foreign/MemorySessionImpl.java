@@ -196,7 +196,7 @@ public abstract sealed class MemorySessionImpl
      * please use {@link #checkValidState()}.
      */
     @ForceInline
-    public void checkValidStateRaw() {
+    public final void checkValidStateRaw() {
         if (owner != null && owner != Thread.currentThread()) {
             throw WRONG_THREAD;
         }
@@ -210,7 +210,7 @@ public abstract sealed class MemorySessionImpl
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside the owner thread.
      */
-    public void checkValidState() {
+    public final void checkValidState() {
         try {
             checkValidStateRaw();
         } catch (ScopedMemoryAccess.ScopedAccessError error) {
