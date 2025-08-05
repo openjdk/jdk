@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
+import static jdk.internal.util.Exceptions.filterUserName;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * A SecurityDescriptor for use when setting a file's ACL or creating a file
@@ -136,8 +138,8 @@ class WindowsSecurityDescriptor {
                         Math.max(SIZEOF_ACCESS_ALLOWED_ACE, SIZEOF_ACCESS_DENIED_ACE);
 
                 } catch (WindowsException x) {
-                    throw new IOException("Failed to get SID for " + user.getName()
-                        + ": " + x.errorString());
+                    throw new IOException(formatMsg("Failed to get SID %s : " + x.errorString(),
+                                                    filterUserName(user.getName()).prefixWith("for ")));
                 }
             }
 

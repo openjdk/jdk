@@ -29,17 +29,21 @@
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
+ * @requires vm.debug
  *
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb 1
  */
 
 package compiler.onSpinWait;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -47,16 +51,16 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestOnSpinWaitAArch64 {
+
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
         String spinWaitInst = args[1];
-        String spinWaitInstCount = (args.length == 3) ? args[2] : "1";
+        String spinWaitInstCount = args[2];
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
         command.add("-XX:-BackgroundCompilation");
         command.add("-XX:+UnlockDiagnosticVMOptions");
-        command.add("-XX:+PrintAssembly");
         if (compiler.equals("c2")) {
             command.add("-XX:-TieredCompilation");
         } else if (compiler.equals("c1")) {
@@ -69,11 +73,17 @@ public class TestOnSpinWaitAArch64 {
         command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
         command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
+        command.add("-XX:CompileCommand=print," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+
+        if ("sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
+            System.out.println("Skipping the test. The current CPU does not support SB instruction.");
+            return;
+        }
 
         analyzer.shouldHaveExitValue(0);
 
@@ -84,123 +94,85 @@ public class TestOnSpinWaitAArch64 {
 
     private static String getSpinWaitInstHex(String spinWaitInst) {
       if ("nop".equals(spinWaitInst)) {
-          return "1f20 03d5";
+          return "1f2003d5";
       } else if ("isb".equals(spinWaitInst)) {
-          return "df3f 03d5";
+          return "df3f03d5";
       } else if ("yield".equals(spinWaitInst)) {
-          return "3f20 03d5";
+          return "3f2003d5";
+      } else if ("sb".equals(spinWaitInst)) {
+          return "ff3003d5";
       } else {
           throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }
     }
 
-    private static void addInstrs(String line, ArrayList<String> instrs) {
-        for (String instr : line.split("\\|")) {
-            instrs.add(instr.trim());
-        }
-    }
-
-    // The expected output of PrintAssembly for example for a spin wait with three NOPs:
+    // The expected output for a spin wait with three NOPs
+    // if the hsdis library is available:
     //
-    // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
-    // #           [sp+0x40]  (sp of caller)
-    // 0x0000ffff9d557680: 1f20 03d5 | e953 40d1 | 3f01 00f9 | ff03 01d1 | fd7b 03a9 | 1f20 03d5 | 1f20 03d5
+    // ;; spin_wait {
+    // 0x0000000111dfa58c:   nop
+    // 0x0000000111dfa590:   nop
+    // 0x0000000111dfa594:   nop
+    // ;; }
     //
-    // 0x0000ffff9d5576ac: ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
-    //                     ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 161)
-    // 0x0000ffff9d5576ac: 1f20 03d5 | fd7b 43a9 | ff03 0191
-    //
-    // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
-    // it to a list. The list is traversed from the end to count spin wait instructions.
-    //
-    // If JVM finds the hsdis library the output is like:
-    //
-    // # {method} {0x0000ffff63000370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
-    // #           [sp+0x20]  (sp of caller)
-    // 0x0000ffffa409da80:   nop
-    // 0x0000ffffa409da84:   sub sp, sp, #0x20
-    // 0x0000ffffa409da88:   stp x29, x30, [sp, #16]         ;*synchronization entry
-    //                                                       ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@-1 (line 187)
-    // 0x0000ffffa409da8c:   nop
-    // 0x0000ffffa409da90:   nop
-    // 0x0000ffffa409da94:   nop
-    // 0x0000ffffa409da98:   nop
-    // 0x0000ffffa409da9c:   nop
-    // 0x0000ffffa409daa0:   nop
-    // 0x0000ffffa409daa4:   nop                                 ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
-    //                                                           ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 187)
-    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
+    private static void checkOutput(OutputAnalyzer output, final String spinWaitInst, final int expectedCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
-        String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'");
-        if (match == null) {
-            throw new RuntimeException("Missing compiler output for the method compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test");
-        }
-
-        ArrayList<String> instrs = new ArrayList<String>();
-        String line = null;
-        boolean hasHexInstInOutput = false;
+        // 1. Check whether printed instructions are disassembled
+        boolean isDisassembled = false;
         while (iter.hasNext()) {
-            line = iter.next();
-            if (line.contains("*invokestatic onSpinWait")) {
+            String line = iter.next();
+            if (line.contains("[Disassembly]")) {
+                isDisassembled = true;
                 break;
             }
-            if (!hasHexInstInOutput) {
-                hasHexInstInOutput = line.contains("|");
-            }
-            if (line.contains("0x") && !line.contains(";")) {
-                addInstrs(line, instrs);
-            }
-        }
-
-        if (!iter.hasNext() || !iter.next().contains("- compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0") || !iter.hasNext()) {
-            throw new RuntimeException("Missing compiler output for Thread.onSpinWait intrinsic");
-        }
-
-        String strToSearch = null;
-        if (!hasHexInstInOutput) {
-            instrs.add(line.split(";")[0].trim());
-            strToSearch = spinWaitInst;
-        } else {
-            line = iter.next();
-            if (!line.contains("0x") || line.contains(";")) {
-                throw new RuntimeException("Expected hex instructions");
-            }
-
-            addInstrs(line, instrs);
-            strToSearch = getSpinWaitInstHex(spinWaitInst);
-        }
-
-        int foundInstCount = 0;
-
-        ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
-        while (instrReverseIter.hasPrevious()) {
-            if (instrReverseIter.previous().endsWith(strToSearch)) {
-                foundInstCount = 1;
+            if (line.contains("[MachCode]")) {
                 break;
             }
         }
 
-        while (instrReverseIter.hasPrevious()) {
-            if (!instrReverseIter.previous().endsWith(strToSearch)) {
-                break;
-            }
-            ++foundInstCount;
-        }
-
-        if (foundInstCount != spinWaitInstCount) {
-            throw new RuntimeException("Wrong instruction " + strToSearch + " count " + foundInstCount + "!\n  -- expecting " + spinWaitInstCount);
-        }
-    }
-
-    private static String skipTo(Iterator<String> iter, String substring) {
+        // 2. Look for the block comment
+        boolean foundHead = false;
         while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains(substring)) {
-                return nextLine;
+            String line = iter.next().trim();
+            if (line.contains(";; spin_wait {")) {
+                foundHead = true;
+                break;
             }
         }
-        return null;
+        if (!foundHead) {
+            throw new RuntimeException("Block comment not found");
+        }
+
+        // 3. Count spin wait instructions
+        final String expectedInst = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
+        int foundCount = 0;
+        while (iter.hasNext()) {
+            String line = iter.next().trim();
+            if (line.startsWith(";; }")) {
+                break;
+            }
+            if (!line.startsWith("0x")) {
+                continue;
+            }
+            int pos = line.indexOf(':');
+            if (pos == -1 || pos == line.length() - 1) {
+                continue;
+            }
+            line = line.substring(pos + 1).replaceAll("\\s", "");
+            if (line.startsWith(";")) {
+                continue;
+            }
+            // When code is disassembled, we have one instruction per line.
+            // Otherwise, there can be multiple hex instructions separated by '|'.
+            foundCount += (int)Arrays.stream(line.split("\\|"))
+                                     .takeWhile(i -> i.startsWith(expectedInst))
+                                     .count();
+        }
+
+        if (foundCount != expectedCount) {
+            throw new RuntimeException("Expected " + expectedCount + " " + spinWaitInst + " instructions. Found: " + foundCount);
+        }
     }
 
     static class Launcher {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,14 @@
 /* @test
    @bug 6481955
    @summary Path length less than MAX_PATH (260) works on Windows
+   @requires (os.family == "windows")
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 
 public class MaxPath {
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            return;
-        }
         int MAX_PATH = 260;
         String dir = new File(".").getAbsolutePath() + "\\";
         String padding = "1234567890123456789012345678901234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890";

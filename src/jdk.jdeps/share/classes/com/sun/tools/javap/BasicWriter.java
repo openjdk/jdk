@@ -59,13 +59,12 @@ public class BasicWriter {
     }
 
     protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
-        // TODO pass cffv to maskToAccessFlags
         try {
-            return AccessFlag.maskToAccessFlags(mask, location);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         } catch (IllegalArgumentException ex) {
             mask &= location.flagsMask(cffv);
             report("Access Flags: " + ex.getMessage());
-            return AccessFlag.maskToAccessFlags(mask, location);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         }
     }
 

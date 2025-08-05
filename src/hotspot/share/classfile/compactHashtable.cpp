@@ -155,7 +155,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries_written, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  LogMessage(cds, hashtables) msg;
+  LogMessage(aot, hashtables) msg;
   if (msg.is_info()) {
     double avg_cost = 0.0;
     if (_num_entries_written > 0) {

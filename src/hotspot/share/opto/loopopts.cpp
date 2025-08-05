@@ -30,12 +30,11 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -1676,6 +1675,10 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
+
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
@@ -1685,7 +1688,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
-      !n->is_Type()) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      (KillPathsReachableByDeadTypeNode || !n->is_Type())
+      ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
@@ -3391,7 +3396,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
     if ( not_peel.test(use->_idx) &&
-         (use->is_If() || use->is_CMove() || use->is_Bool()) &&
+         (use->is_If() || use->is_CMove() || use->is_Bool() || use->is_OpaqueInitializedAssertionPredicate()) &&
          use->in(1) == n)  {
       worklist.push(use);
     }
@@ -4271,13 +4276,13 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
       assert(in->Opcode() == Op_AddI, "wrong increment code");
       Node* xphi = nullptr;
-      Node* stride = loop_iv_stride(in, loop, xphi);
+      Node* stride = loop_iv_stride(in, xphi);
 
       if (stride == nullptr) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(xphi, nullptr, head, loop);
+      PhiNode* phi = loop_iv_phi(xphi, nullptr, head);
       if (phi == nullptr ||
           (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
           (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {
@@ -4333,6 +4338,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
     }
   }
+  C->print_method(PHASE_BEFORE_DUPLICATE_LOOP_BACKEDGE, 4, head);
 
   // Collect data nodes that need to be clones as well
   int dd = dom_depth(head);
@@ -4422,6 +4428,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   }
 
   C->set_major_progress();
+
+  C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, outer_head);
 
   return true;
 }

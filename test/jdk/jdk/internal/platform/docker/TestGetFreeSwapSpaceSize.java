@@ -27,6 +27,7 @@
  * @key cgroups
  * @bug 8242480
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @build GetFreeSwapSpaceSize
  * @run driver TestGetFreeSwapSpaceSize

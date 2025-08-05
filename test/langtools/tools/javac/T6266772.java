@@ -25,7 +25,7 @@
  * @test
  * @bug     6266772
  * @summary javac crashes, assertion failure in Lower.java
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  */
 
 public class T6266772 {

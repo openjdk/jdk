@@ -31,8 +31,6 @@
  */
 package build.tools.classlist;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -174,10 +172,6 @@ public class HelloClasslist {
         // an inconsistency in the classlist between builds (see JDK-8295951).
         // To avoid the problem, load the class explicitly.
         Class<?> striped64Class = Class.forName("java.util.concurrent.atomic.Striped64$Cell");
-
-        // Initialize FFM linkers
-        var signature = FunctionDescriptor.ofVoid();
-        Linker.nativeLinker().downcallHandle(signature);
     }
 
     public HelloClasslist() {}

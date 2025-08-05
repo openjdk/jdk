@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,21 +75,6 @@ public interface JShellConsole {
      * @see java.io.Console#readLine()
      */
     public String readLine(String prompt) throws IOError;
-
-    /**
-     * Reads a single line of text from the console.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached.
-     * @see java.io.Console#readLine()
-     * @since 24
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readLine() throws IOError;
 
     /**
      * Provides a prompt, then reads a password or passphrase from

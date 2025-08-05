@@ -25,17 +25,30 @@
 #ifndef SHARE_OOPS_METHODCOUNTERS_HPP
 #define SHARE_OOPS_METHODCOUNTERS_HPP
 
-#include "oops/metadata.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/metadata.hpp"
 #include "utilities/align.hpp"
 
-class MethodCounters : public MetaspaceObj {
+class MethodTrainingData;
+
+class MethodCounters : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
+
+ // Used by CDS. These classes need to access the private default constructor.
+ template <class T> friend class CppVtableTesterA;
+ template <class T> friend class CppVtableTesterB;
+ template <class T> friend class CppVtableCloner;
+
  private:
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequency-based optimizations
+
+  // Back pointer to the Method*
+  Method* _method;
+
+  Metadata*         _method_training_data;
   jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
@@ -51,20 +64,26 @@ class MethodCounters : public MetaspaceObj {
   u1                _highest_osr_comp_level;      // Same for OSR level
 
   MethodCounters(const methodHandle& mh);
+  MethodCounters();
+
  public:
+  virtual bool is_methodCounters() const { return true; }
+  Method* method() const { return _method; }
   static MethodCounters* allocate_no_exception(const methodHandle& mh);
   static MethodCounters* allocate_with_exception(const methodHandle& mh, TRAPS);
 
-  DEBUG_ONLY(bool on_stack() { return false; })
   void deallocate_contents(ClassLoaderData* loader_data) {}
 
-  void metaspace_pointers_do(MetaspaceClosure* it) { return; }
-
-  static int size() {
+  static int method_counters_size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
+  }
+  virtual int size() const {
+    return method_counters_size();
   }
 
   MetaspaceObj::Type type() const { return MethodCountersType; }
+  void metaspace_pointers_do(MetaspaceClosure* iter);
+
   void clear_counters();
 
 #if COMPILER2_OR_JVMCI
@@ -127,7 +146,33 @@ class MethodCounters : public MetaspaceObj {
     return byte_offset_of(MethodCounters, _backedge_mask);
   }
 
-  const char* internal_name() const { return "{method counters}"; }
+  virtual const char* internal_name() const { return "{method counters}"; }
+
+  Metadata* method_training_data_sentinel() {
+    return this;
+  }
+  MethodTrainingData* method_training_data() const {
+    return reinterpret_cast<MethodTrainingData*>(_method_training_data);
+  }
+  bool init_method_training_data(MethodTrainingData* td) {
+    MethodTrainingData* cur = method_training_data();
+    if (cur == td) {
+      return true;
+    }
+    if (cur == nullptr || cur == reinterpret_cast<MethodTrainingData*>(method_training_data_sentinel())) {
+      return Atomic::cmpxchg(reinterpret_cast<MethodTrainingData**>(&_method_training_data), cur, td) == cur;
+    }
+    return false;
+  }
+
+#if INCLUDE_CDS
+  void remove_unshareable_info();
+  void restore_unshareable_info(TRAPS);
+#endif
+
+  // Printing
+  void print_on      (outputStream* st) const;
   void print_value_on(outputStream* st) const;
+  void print_data_on(outputStream* st) const;
 };
 #endif // SHARE_OOPS_METHODCOUNTERS_HPP

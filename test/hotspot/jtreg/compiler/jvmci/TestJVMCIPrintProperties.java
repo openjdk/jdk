@@ -45,6 +45,7 @@ public class TestJVMCIPrintProperties {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             enableFlag, "-Djvmci.Compiler=null",
+            "-XX:-EagerJVMCI",
             "-XX:+JVMCIPrintProperties");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[JVMCI properties]"); // expected message

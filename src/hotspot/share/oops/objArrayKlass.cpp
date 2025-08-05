@@ -44,7 +44,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
+ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
@@ -52,6 +52,26 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
 
   return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
 }
+
+Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klass* element_klass) {
+  ResourceMark rm(current);
+  char* name_str = element_klass->name()->as_C_string();
+  int len = element_klass->name()->utf8_length();
+  char* new_str = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, len + 4);
+  int idx = 0;
+  new_str[idx++] = JVM_SIGNATURE_ARRAY;
+  if (element_klass->is_instance_klass()) { // it could be an array or simple type
+    new_str[idx++] = JVM_SIGNATURE_CLASS;
+  }
+  memcpy(&new_str[idx], name_str, len * sizeof(char));
+  idx += len;
+  if (element_klass->is_instance_klass()) {
+    new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
+  }
+  new_str[idx] = '\0';
+  return SymbolTable::new_symbol(new_str);
+}
+
 
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
                                                       int n, Klass* element_klass, TRAPS) {
@@ -79,28 +99,10 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   }
 
   // Create type name for klass.
-  Symbol* name = nullptr;
-  {
-    ResourceMark rm(THREAD);
-    char *name_str = element_klass->name()->as_C_string();
-    int len = element_klass->name()->utf8_length();
-    char *new_str = NEW_RESOURCE_ARRAY(char, len + 4);
-    int idx = 0;
-    new_str[idx++] = JVM_SIGNATURE_ARRAY;
-    if (element_klass->is_instance_klass()) { // it could be an array or simple type
-      new_str[idx++] = JVM_SIGNATURE_CLASS;
-    }
-    memcpy(&new_str[idx], name_str, len * sizeof(char));
-    idx += len;
-    if (element_klass->is_instance_klass()) {
-      new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
-    }
-    new_str[idx++] = '\0';
-    name = SymbolTable::new_symbol(new_str);
-  }
+  Symbol* name = create_element_klass_array_name(THREAD, element_klass);
 
   // Initialize instance variables
-  ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name, CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::allocate_klass(loader_data, n, element_klass, name, CHECK_NULL);
 
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
@@ -149,7 +151,7 @@ size_t ObjArrayKlass::oop_size(oop obj) const {
   return objArrayOop(obj)->object_size();
 }
 
-objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
+objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = objArrayOopDesc::object_size(length);
   return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
@@ -160,7 +162,7 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
   ArrayKlass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
-  objArrayOop array = allocate(length, CHECK_NULL);
+  objArrayOop array = allocate_instance(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
   if (rank > 1) {
     if (length != 0) {

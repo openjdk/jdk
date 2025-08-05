@@ -59,7 +59,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class DocumentBuilderImpl extends DocumentBuilder
         implements JAXPConstants
@@ -140,7 +140,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
     {
         domParser = new DOMParser();
 
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        fSecurityPropertyMgr = dbf.fSecurityPropertyMgr;
         domParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         fSecurityManager = dbf.fSecurityManager;

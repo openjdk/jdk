@@ -27,8 +27,8 @@
 
 #include "oops/oopHandle.hpp"
 
-#include "oops/access.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "oops/access.inline.hpp"
 
 inline oop OopHandle::resolve() const {
   if (_obj == nullptr) {
@@ -70,12 +70,13 @@ inline void OopHandle::release(OopStorage* storage) {
 }
 
 inline void OopHandle::replace(oop obj) {
-  assert(!is_empty(), "should not use replace");
+  assert(!is_empty(), "Must not use replace on empty handle");
   assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
   NativeAccess<>::oop_store(_obj, obj);
 }
 
 inline oop OopHandle::xchg(oop new_value) {
+  assert(!is_empty(), "Must not use xchg on empty handle");
   assert(oopDesc::is_oop_or_null(new_value), "Should be oop: " PTR_FORMAT, p2i(new_value));
   oop obj = NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
   assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
@@ -83,6 +84,7 @@ inline oop OopHandle::xchg(oop new_value) {
 }
 
 inline oop OopHandle::cmpxchg(oop old_value, oop new_value) {
+  assert(!is_empty(), "Must not use cmpxchg on empty handle");
   assert(oopDesc::is_oop_or_null(new_value), "Should be oop: " PTR_FORMAT, p2i(new_value));
   oop obj = NativeAccess<MO_SEQ_CST>::oop_atomic_cmpxchg(_obj, old_value, new_value);
   assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
