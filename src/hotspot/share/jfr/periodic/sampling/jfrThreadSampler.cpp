@@ -470,7 +470,7 @@ void JfrThreadSampler::set_period(bool is_java_period, int64_t period_millis) {
 
 void JfrThreadSampler::set_java_sample_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
-  if (_instance == nullptr && 0 == period_millis) {
+  if (_instance == nullptr || 0 == period_millis) {
     return;
   }
   instance().set_period(true, period_millis);
@@ -478,7 +478,7 @@ void JfrThreadSampler::set_java_sample_period(int64_t period_millis) {
 
 void JfrThreadSampler::set_native_sample_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
-  if (_instance == nullptr && 0 == period_millis) {
+  if (_instance == nullptr || 0 == period_millis) {
     return;
   }
   instance().set_period(false, period_millis);
