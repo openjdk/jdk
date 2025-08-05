@@ -132,13 +132,11 @@ forkedChildProcess(const char *file, char *const argv[])
         JDI_ASSERT(max_fd != (rlim_t)-1); // -1 represents error
         /* close(), that we subsequently call, takes only int values */
         JDI_ASSERT(max_fd <= INT_MAX);
-        /* Leave out standard input/output/error file descriptors. Also,
-         * leave out STDERR_FILENO +1 and +2 since closeDescriptors()
-         * already closed them, even when returning an error. */
-        rlim_t i = STDERR_FILENO + 3;
+        /* leave out standard input/output/error file descriptors */
+        rlim_t i = STDERR_FILENO + 1;
         ERROR_MESSAGE(("failed to close file descriptors of"
                        " child process optimally, falling back to closing"
-                       " %d file descriptors sequentially", (max_fd - i + 1)));
+                       " %d file descriptors sequentially", (max_fd - i)));
         for (; i < max_fd; i++) {
             (void)close(i);
         }
