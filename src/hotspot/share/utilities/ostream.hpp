@@ -167,7 +167,7 @@ class outputStream : public CHeapObjBase {
    void inc_cr() { inc(); cr(); }
 
    // Append strings returned by gen, separating each with separator.
-   // Stops when gen returns null or when buffer is out of space.
+   // Stops when gen returns null.
    template <typename Generator>
    void join(Generator gen, const char* separator) {
      bool first = true;
@@ -178,7 +178,6 @@ class outputStream : public CHeapObjBase {
        first = false;
        str = gen();
      }
-     return;
    }
 };
 
