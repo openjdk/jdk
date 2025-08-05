@@ -1016,7 +1016,7 @@ void ObjectMonitor::EnterInternalHelper<ObjectMonitor::ClearSuccOnSuspend, Objec
                                                                                                                 bool do_timed_parked) const {
   // Specific case for the re-enter path. This is due to a different nature of processing:
   // ClearSuccOnSuspend does not require ownership, but one has to go to _thread_in_vm state
-  // and check for the safepoint. 
+  // and check for the safepoint.
   OSThreadContendState osts(current->osthread());
   current->_ParkEvent->park();
   current->set_thread_state_fence(_thread_in_vm);
