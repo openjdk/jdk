@@ -843,9 +843,10 @@ public class Robot {
 
     /**
      * A convenience method that moves the mouse in multiple
-     * steps from its current location to the destination coordinates. Invokes
-     * {@link #mouseMove(int, int) mouseMove} with a default {@link #DEFAULT_STEP_LENGTH step-length}
-     * and {@link #DEFAULT_STEP_DELAY step-delay}.
+     * steps from its current location to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a default
+     * {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_STEP_DELAY step-delay}.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
@@ -864,9 +865,10 @@ public class Robot {
 
     /**
      * A convenience method that moves the mouse in multiple steps
-     * from source coordinates to the destination coordinates. Invokes
-     * {@link #mouseMove(int, int) mouseMove} with a default {@link #DEFAULT_STEP_LENGTH step-length}
-     * and {@link #DEFAULT_STEP_DELAY step-delay}.
+     * from source coordinates to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a default
+     * {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_STEP_DELAY step-delay}.
      *
      * @param   fromX   Source point x coordinate
      * @param   fromY   Source point y coordinate
