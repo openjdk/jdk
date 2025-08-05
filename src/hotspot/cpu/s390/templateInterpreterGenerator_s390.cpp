@@ -1239,6 +1239,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_sinh : /* run interpreted */ break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
