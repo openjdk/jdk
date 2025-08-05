@@ -29,7 +29,7 @@ import java.util.Optional;
 /**
  * Default application launcher icon.
  * <p>
- * Default icon is either loaded from the resources of {@link jdk.jpackage/} module or picked from the resource directory.
+ * Default icon is either loaded from the resources of {@link jdk.jpackage} module or picked from the resource directory.
  * <p>
  * Use {@link #INSTANCE} field to get an instance of this type.
  */
