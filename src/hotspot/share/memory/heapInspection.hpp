@@ -135,7 +135,7 @@ class KlassInfoTable: public StackObj {
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
   // Deletes the KlassInfoEntry in the list
-  void delete_entry(KlassInfoEntry* entry);
+  void delete_entry(KlassInfoEntry* entry, size_t* total_table_size);
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };
