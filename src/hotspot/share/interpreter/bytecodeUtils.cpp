@@ -343,7 +343,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
     }
 
     if (found && is_parameter) {
-      // Check MethodParameters for a name, if it carries a name
+      // check MethodParameters for a name, if it carries a name
       int actual_param_index = param_index - 1; // 0 based
       if (method->has_method_parameters() && actual_param_index < method->method_parameters_length()) {
         MethodParametersElement elem = method->method_parameters_start()[actual_param_index];
@@ -351,7 +351,6 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
           ConstantPool* cp = method->constants();
           char *var = cp->symbol_at(elem.name_cp_index)->as_C_string();
           os->print("%s", var);
-
           return;
         }
       }
@@ -1479,8 +1478,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   ExceptionMessageBuilder emb(method, bci);
 
   // Is an explicit slot given?
-  bool explicit_search = slot >= 0;
-  if (explicit_search) {
+  if (slot >= 0) {
     // Search from the given slot in bci in Method.
     // Omit the failed action.
     return emb.print_NPE_cause(ss, bci, slot, false);
@@ -1511,4 +1509,3 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   }
   return true;
 }
-

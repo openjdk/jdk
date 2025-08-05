@@ -35,9 +35,9 @@ class outputStream;
 class BytecodeUtils : public AllStatic {
  public:
   // NPE extended message. Return true if string is printed.
-  // Slot can be nonnegative to indicate an explicit search for the source of null
+  // Slot can be nonnegative to indicate an explicit search for the source of null.
   // If slot is negative (default), also search for the action that caused the NPE before
-  // deriving the actual slot and source of null by code parsing
+  // deriving the actual slot and source of null by code parsing.
   static bool get_NPE_message_at(outputStream* ss, Method* method, int bci, int slot = -1);
 };
 
