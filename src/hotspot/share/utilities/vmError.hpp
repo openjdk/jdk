@@ -225,6 +225,8 @@ public:
 
   static void set_handshake_timed_out_thread(Thread* thread);
   static void set_safepoint_timed_out_thread(Thread* thread);
+  static volatile Thread* get_handshake_timed_out_thread();
+  static volatile Thread* get_safepoint_timed_out_thread();
 };
 
 class VMErrorCallback {

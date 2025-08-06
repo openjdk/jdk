@@ -821,9 +821,9 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        if (_handshake_timed_out_thread == _thread) {
+        if (get_handshake_timed_out_thread() == _thread) {
           st->print(" (sent by handshake timeout handler)");
-        } else if (_safepoint_timed_out_thread == _thread) {
+        } else if (get_safepoint_timed_out_thread() == _thread) {
           st->print(" (sent by safepoint timeout handler)");
         } else {
           st->print(" (sent by kill)");
@@ -1339,11 +1339,19 @@ void VMError::report(outputStream* st, bool _verbose) {
 }
 
 void VMError::set_handshake_timed_out_thread(Thread* thread) {
-  _handshake_timed_out_thread = thread;
+  Atomic::release_store(&_handshake_timed_out_thread, thread);
 }
 
 void VMError::set_safepoint_timed_out_thread(Thread* thread) {
-  _safepoint_timed_out_thread = thread;
+  Atomic::release_store(&_safepoint_timed_out_thread, thread);
+}
+
+volatile Thread* VMError::get_handshake_timed_out_thread() {
+  return Atomic::load_acquire(&_handshake_timed_out_thread);
+}
+
+volatile Thread* VMError::get_safepoint_timed_out_thread() {
+  return Atomic::load_acquire(&_safepoint_timed_out_thread);
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting
