@@ -295,7 +295,7 @@ bool os::total_swap_space(size_t& value) {
   if (OSContainer::is_containerized()) {
     jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
     jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
-    if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {   
+    if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
       value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
     }
