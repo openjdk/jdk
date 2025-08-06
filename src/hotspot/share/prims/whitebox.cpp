@@ -102,6 +102,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -1501,12 +1502,12 @@ WB_END
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
-#if INCLUDE_G1GC || INCLUDE_SERIALGC
-  if (UseG1GC || UseSerialGC) {
-    // Needs to be cleared explicitly for G1 and Serial GC.
+#if INCLUDE_G1GC
+  if (UseG1GC) {
+    // Needs to be cleared explicitly for G1 GC.
     Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
   }
-#endif // INCLUDE_G1GC || INCLUDE_SERIALGC
+#endif // INCLUDE_G1GC
 WB_END
 
 WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
@@ -2728,6 +2729,14 @@ WB_ENTRY(jlong, WB_Rss(JNIEnv* env, jobject o))
   return os::rss();
 WB_END
 
+WB_ENTRY(void, WB_ControlledCrash(JNIEnv* env, jobject o, jint how))
+#ifdef ASSERT
+  VMError::controlled_crash(how);
+#else
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(), "Only available in debug builds");
+#endif
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -3019,9 +3028,9 @@ static JNINativeMethod methods[] = {
   {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
-  {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked}
+  {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},
+  {CC"controlledCrash",CC"(I)V",                      (void*)&WB_ControlledCrash},
 };
-
 
 #undef CC
 

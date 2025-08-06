@@ -142,7 +142,6 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
   do {
     JavaThreadState state = thread->thread_state();
     guarantee(state == _thread_in_vm, "Illegal threadstate encountered: %d", state);
-    JFR_ONLY(Jfr::check_and_process_sample_request(thread);)
     if (global_poll()) {
       // Any load in ::block() must not pass the global poll load.
       // Otherwise we might load an old safepoint counter (for example).
@@ -161,6 +160,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
     need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
   } while (need_rechecking);
 
+  JFR_ONLY(Jfr::check_and_process_sample_request(thread);)
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");
 }

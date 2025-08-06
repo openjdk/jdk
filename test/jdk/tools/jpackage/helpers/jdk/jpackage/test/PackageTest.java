@@ -336,6 +336,10 @@ public final class PackageTest extends RunnablePackageTest {
         return forTypes(List.of(type), action);
     }
 
+    public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
+        return forTypes(List.of(type), () -> action.accept(this));
+    }
+
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
         Set<PackageType> workset = new HashSet<>(currentTypes);
         workset.removeAll(types);
@@ -344,6 +348,10 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest notForTypes(PackageType type, Runnable action) {
         return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
+        return notForTypes(List.of(type), () -> action.accept(this));
     }
 
     public PackageTest configureHelloApp() {
