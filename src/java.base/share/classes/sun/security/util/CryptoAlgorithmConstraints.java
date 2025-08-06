@@ -44,9 +44,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final Debug debug = Debug.getInstance("jca");
 
+    // Disabled algorithm security property for JCE crypto services
+    public static final String PROPERTY_CRYPTO_DISABLED_ALGS =
+            "jdk.crypto.disabledAlgorithms";
+
     private static class CryptoHolder {
         static final CryptoAlgorithmConstraints CONSTRAINTS =
-                new CryptoAlgorithmConstraints("jdk.crypto.disabledAlgorithms");
+                new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_DISABLED_ALGS);
     }
 
     private static void debug(String msg) {
