@@ -128,6 +128,12 @@ final class DateTimePrintContext {
             return temporal;
         }
 
+        // The chronology and zone fields of Formatter are usually null,
+        // so the non-null processing code is placed in a separate method
+        return adjust(temporal, overrideChrono, overrideZone);
+    }
+
+    private static TemporalAccessor adjust(TemporalAccessor temporal, Chronology overrideChrono, ZoneId overrideZone) {
         // ensure minimal change (early return is an optimization)
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
@@ -150,10 +156,19 @@ final class DateTimePrintContext {
                 return chrono.zonedDateTime(Instant.from(temporal), overrideZone);
             }
         }
-        return adjust0(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
+
+        // Split uncommon code branches into a separate method
+        return adjust(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
     }
 
-    private static TemporalAccessor adjust0(TemporalAccessor temporal, ZoneId overrideZone, ZoneId temporalZone, Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
+    private static TemporalAccessor adjust(
+            TemporalAccessor temporal,
+            ZoneId overrideZone,
+            ZoneId temporalZone,
+            Chronology overrideChrono,
+            Chronology effectiveChrono,
+            Chronology temporalChrono
+    ) {
         if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
