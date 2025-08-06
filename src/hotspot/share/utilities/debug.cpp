@@ -63,8 +63,8 @@
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 // These functions needs to be exported on Windows only
 #define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)

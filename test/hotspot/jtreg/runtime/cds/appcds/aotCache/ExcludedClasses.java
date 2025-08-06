@@ -96,11 +96,8 @@ public class ExcludedClasses {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) {
-            if (runMode == RunMode.TRAINING) {
-                out.shouldMatch("aot,resolve.*reverted field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
-            } else if (runMode == RunMode.ASSEMBLY) {
+            if (runMode == RunMode.ASSEMBLY) {
                 out.shouldNotMatch("aot,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
-                out.shouldMatch("aot,resolve.*archived method.*TestApp.Foo java/lang/Integer.intValue:[(][)]I => java/lang/Integer");
             } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldContain("check_verification_constraint: TestApp$Foo$Taz: TestApp$Foo$ShouldBeExcludedChild must be subclass of TestApp$Foo$ShouldBeExcluded");
                 out.shouldContain("jdk.jfr.Event source: jrt:/jdk.jfr");

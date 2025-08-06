@@ -636,7 +636,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
-      _stub_id(-1),
+      _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -898,7 +898,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
-                 int stub_id,
+                 StubId stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -964,7 +964,8 @@ Compile::Compile(ciEnv* ci_env,
 
   // try to reuse an existing stub
   {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    BlobId blob_id = StubInfo::blob(_stub_id);
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
       RuntimeStub* rs = blob->as_runtime_stub();
       _stub_entry_point = rs->entry_point();
@@ -3302,6 +3303,25 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
+  case Op_CallLeafPure: {
+    // If the pure call is not supported, then lower to a CallLeaf.
+    if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
+      CallNode* call = n->as_Call();
+      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
+                                            call->_name, TypeRawPtr::BOTTOM);
+      new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
+      new_call->init_req(TypeFunc::I_O, C->top());
+      new_call->init_req(TypeFunc::Memory, C->top());
+      new_call->init_req(TypeFunc::ReturnAdr, C->top());
+      new_call->init_req(TypeFunc::FramePtr, C->top());
+      for (unsigned int i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
+        new_call->init_req(i, call->in(i));
+      }
+      n->subsume_by(new_call, this);
+    }
+    frc.inc_call_count();
+    break;
+  }
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
@@ -3600,7 +3620,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(t->make_narrowklass());
+          ciKlass* klass = t->is_klassptr()->exact_klass();
+          if (klass->is_in_encoding_range()) {
+            new_in2 = ConNode::make(t->make_narrowklass());
+          }
         }
       }
       if (new_in2 != nullptr) {
@@ -3637,7 +3660,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       } else if (t->isa_oopptr()) {
         n->subsume_by(ConNode::make(t->make_narrowoop()), this);
       } else if (t->isa_klassptr()) {
-        n->subsume_by(ConNode::make(t->make_narrowklass()), this);
+        ciKlass* klass = t->is_klassptr()->exact_klass();
+        if (klass->is_in_encoding_range()) {
+          n->subsume_by(ConNode::make(t->make_narrowklass()), this);
+        } else {
+          assert(false, "unencodable klass in ConP -> EncodeP");
+          C->record_failure("unencodable klass in ConP -> EncodeP");
+        }
       }
     }
     if (in1->outcnt() == 0) {
