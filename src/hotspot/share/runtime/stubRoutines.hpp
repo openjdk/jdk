@@ -33,6 +33,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -140,6 +141,10 @@ class UnsafeMemoryAccess : public CHeapObj<mtCode> {
   static bool    contains_pc(address pc);
   static address page_error_continue_pc(address pc);
   static void    create_table(int max_size);
+  // Append to entries arrray start, end and exit pcs of all table
+  // entries that identify a sub-interval of range (range_start,
+  // range_end). Append nullptr if the exit pc is not in the range.
+  static void collect_entries(address range_start, address range_end, GrowableArray<address>& entries);
 };
 
 class UnsafeMemoryAccessMark : public StackObj {
