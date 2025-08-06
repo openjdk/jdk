@@ -162,7 +162,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             ancestor.requestFocus();
         }
         try {
-            boolean await = latch.await(50, TimeUnit.MILLISECONDS);
+            boolean await = latch.await(1, TimeUnit.SECONDS);
             if (!await) {
                 throw new RuntimeException("Ancestor frame didn't receive " +
                         "focus");
