@@ -147,7 +147,7 @@ import java.util.stream.Collectors;
  * a compact pattern. This special pattern can appear explicitly for any specific
  * range, or considered as a default pattern for an empty string.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A compact pattern contains a positive and negative subpattern
  * separated by a subpattern boundary character {@code ';'},
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
@@ -1587,6 +1587,9 @@ public final class CompactNumberFormat extends NumberFormat {
      *   <li> Any other characters are found, that are not the expected symbols,
      *   and are not digits that occur within the numerical portion
      * </ul>
+     * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
      * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.

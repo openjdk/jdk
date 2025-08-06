@@ -296,7 +296,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * #setMaximumIntegerDigits(int)} can be used to manually adjust the maximum
  * integer digits.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A {@code DecimalFormat} pattern contains a positive and negative
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
@@ -2199,6 +2199,9 @@ public class DecimalFormat extends NumberFormat {
      *   <li> Any other characters are found, that are not the expected symbols,
      *   and are not digits that occur within the numerical portion
      * </ul>
+     * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
      * <p>
      * The subclass returned depends on the value of {@link #isParseBigDecimal}
      * as well as on the string being parsed.
