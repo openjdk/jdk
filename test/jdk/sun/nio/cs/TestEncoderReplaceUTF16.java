@@ -27,8 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import sun.nio.cs.ArrayEncoder;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
@@ -36,9 +34,7 @@ import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
@@ -149,43 +145,29 @@ class TestEncoderReplaceUTF16 {
         }
 
         // Try to find a single-`char` unmappable
-        char[] unmappable1 = {0};
-        for (char c = 0xFF; c < 0xFFFF; c++) {
-            unmappable1[0] = c;
+        for (int i = 0xFF; i <= 0xFFFF; i++) {
+            char c = (char) i;
+            // Skip the surrogate, as a single dangling surrogate `char` should
+            // trigger a "malformed" error, instead of "unmappable"
+            if (Character.isSurrogate(c)) {
+                continue;
+            }
             boolean unmappable = !encoder.canEncode(c);
             if (unmappable) {
-                return unmappable1;
+                return new char[]{c};
             }
         }
 
-        // Try to find a double-`char` unmappable
-        Predicate<char[]> isUnmappable2 = createUnmappableDoubleCharPredicate(encoder);
-        char[] unmappable2 = {0, 0};
-        for (int i = 0xFF; i < 0xFFFF; i++) {
-            unmappable2[0] = (char) i;
-            for (int j = 0xFF; j < 0xFFFF; j++) {
-                unmappable2[1] = (char) j;
-                boolean unmappable = isUnmappable2.test(unmappable2);
-                if (unmappable) {
-                    return unmappable2;
-                }
-            }
+        // Try to find a double-`char` (i.e., surrogate pair) unmappable
+        int[] nonBmpRange = {0x10000, 0x10FFFF};
+        for (int i = nonBmpRange[0]; i < nonBmpRange[1]; i++) {
+            char[] cs = Character.toChars(i);
+            if (!encoder.canEncode(new String(cs)))
+                return cs;
         }
 
         System.err.println("Could not find an unmappable character!");
         return null;
-    }
-
-    static Predicate<char[]> createUnmappableDoubleCharPredicate(CharsetEncoder encoder) {
-        assertEquals(encoder.unmappableCharacterAction(), CodingErrorAction.REPORT);
-        CharBuffer charBuffer = CharBuffer.allocate(2);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-        return unmappable -> {
-            charBuffer.clear().put(unmappable).flip();
-            byteBuffer.clear();
-            CoderResult coderResult = encoder.encode(charBuffer, byteBuffer, true);
-            return coderResult.isUnmappable();
-        };
     }
 
     private static byte[] utf16Bytes(char[] cs) {
