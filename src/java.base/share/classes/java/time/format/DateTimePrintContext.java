@@ -149,6 +149,12 @@ final class DateTimePrintContext {
                 Chronology chrono = Objects.requireNonNullElse(effectiveChrono, IsoChronology.INSTANCE);
                 return chrono.zonedDateTime(Instant.from(temporal), overrideZone);
             }
+        }
+        return adjust0(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
+    }
+
+    private static TemporalAccessor adjust0(TemporalAccessor temporal, ZoneId overrideZone, ZoneId temporalZone, Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
+        if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
                     temporal.get(OFFSET_SECONDS) != overrideZone.getRules().getOffset(Instant.EPOCH).getTotalSeconds()) {
