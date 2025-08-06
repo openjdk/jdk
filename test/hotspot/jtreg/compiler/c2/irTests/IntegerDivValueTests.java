@@ -28,13 +28,12 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8312213
+ * @bug 8364766
  * @summary Test value method of DivINode and DivLNode
  * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.gvn.IntegerDivValueTests
  */
-// TODO bug number
 public class IntegerDivValueTests {
     private static final RestrictableGenerator<Integer> INTS = Generators.G.ints();
     private static final RestrictableGenerator<Long> LONGS = Generators.G.longs();
