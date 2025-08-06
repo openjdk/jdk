@@ -2508,7 +2508,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * @param direction less or equal to zero to scroll up/back,
      *                  greater than zero for down/forward
      * @return the "unit" increment for scrolling in the specified direction;
-     *         which is a non-negative number
+     *         returns a non-negative value
      *
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
