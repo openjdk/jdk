@@ -132,12 +132,11 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                                 testedComponent.getPreferredSize().height + 20);
                         Component focusOwner = FocusManager.getCurrentManager()
                                 .getFocusOwner();
-                        if (focusOwner == f || f.requestFocusInWindow()) {
-                            //frame already had focus or component got focus.
+                        if (focusOwner == f ) {
+                            //frame already had focus.
                             latch.countDown();
                         }else{
-                            System.err.println("Component could not get " +
-                                    "focus!");
+                            f.requestFocusInWindow();
                         }
                     }
                 });
