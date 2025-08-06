@@ -413,10 +413,7 @@ class WindowsFileAttributes
     }
 
     boolean isDirectoryJunction() {
-        if (isSymbolicLink())
-            return false;
-        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
-                (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0);
+        return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
     }
 
     @Override
@@ -430,9 +427,6 @@ class WindowsFileAttributes
 
     @Override
     public boolean isDirectory() {
-        // ignore FILE_ATTRIBUTE_DIRECTORY attribute if file is a sym link
-        if (isSymbolicLink())
-            return false;
         return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
                 (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0);
     }

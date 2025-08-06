@@ -99,6 +99,8 @@ JNIEXPORT jboolean JNICALL
 Java_jdk_test_lib_util_FileUtils_createWinDirectoryJunction0
     (JNIEnv* env, jclass unused, jstring sjunction, jstring starget)
 {
+    BOOL error = FALSE;
+
     const jshort bpc = sizeof(wchar_t); // bytes per character
     HANDLE hJunction = INVALID_HANDLE_VALUE;
 
@@ -107,76 +109,74 @@ Java_jdk_test_lib_util_FileUtils_createWinDirectoryJunction0
     if (junction == NULL || target == NULL) {
         jclass npeClass = (*env)->FindClass(env, "java/lang/NullPointerException");
         (*env)->ThrowNew(env, npeClass, NULL);
-        goto err;
+        error = TRUE;
     }
 
-    USHORT wlen = (USHORT)wcslen(target);
-    USHORT blen = (USHORT)(wlen * sizeof(wchar_t));
-
-    void* lpInBuffer = calloc(MAX_REPARSE_BUFFER_SIZE, sizeof(char));
-    if (lpInBuffer == NULL) {
-        jclass oomeClass = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
-        (*env)->ThrowNew(env, oomeClass, NULL);
-        goto err;
+    USHORT wlen = (USHORT)0;
+    USHORT blen = (USHORT)0;
+    void* lpInBuffer = NULL;
+    if (!error) {
+        wlen = (USHORT)wcslen(target);
+        blen = (USHORT)(wlen * sizeof(wchar_t));
+        lpInBuffer = calloc(MAX_REPARSE_BUFFER_SIZE, sizeof(char));
+        if (lpInBuffer == NULL) {
+            jclass oomeClass = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+            (*env)->ThrowNew(env, oomeClass, NULL);
+            error = TRUE;
+        }
     }
 
-    if (CreateDirectoryW(junction, NULL) == 0) {
-        throwIOExceptionWithLastError(env);
-        goto err;
+    if (!error) {
+        if (CreateDirectoryW(junction, NULL) == 0) {
+            throwIOExceptionWithLastError(env);
+            error = TRUE;
+        }
     }
 
-    hJunction = CreateFileW(junction, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-        FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    if (hJunction == INVALID_HANDLE_VALUE) {
-        throwIOExceptionWithLastError(env);
-        goto err;
+    if (!error) {
+        hJunction = CreateFileW(junction, GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                                OPEN_EXISTING,
+                                FILE_FLAG_OPEN_REPARSE_POINT
+                                | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (hJunction == INVALID_HANDLE_VALUE) {
+            throwIOExceptionWithLastError(env);
+            error = TRUE;
+        }
     }
 
-    PREPARSE_DATA_BUFFER reparseBuffer = (PREPARSE_DATA_BUFFER)lpInBuffer;
-    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-    reparseBuffer->Reserved = 0;
-    WCHAR* prefix = L"\\??\\";
-    USHORT prefixLength = (USHORT)(bpc * wcslen(prefix));
-    reparseBuffer->MountPointReparseBuffer.SubstituteNameOffset = 0;
-    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
-        prefixLength + blen;
-    reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
-        prefixLength + blen + sizeof(WCHAR);
-    reparseBuffer->MountPointReparseBuffer.PrintNameLength = blen;
-    memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer,
-        prefix, prefixLength);
-    memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer[prefixLength/bpc],
-        target, blen);
-    memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer[prefixLength/bpc + blen/bpc + 1],
-        target, blen);
-    reparseBuffer->ReparseDataLength =
-        (USHORT)(sizeof(reparseBuffer->MountPointReparseBuffer) +
-        prefixLength + bpc*blen + bpc);
-    DWORD nInBufferSize = FIELD_OFFSET(REPARSE_DATA_BUFFER,
-        MountPointReparseBuffer) + reparseBuffer->ReparseDataLength;
-    BOOL result = DeviceIoControl(hJunction, FSCTL_SET_REPARSE_POINT,
-                                  lpInBuffer, nInBufferSize,
-                                  NULL, 0, NULL, NULL);
-
-    (*env)->ReleaseStringChars(env, sjunction, junction);
-    (*env)->ReleaseStringChars(env, starget, target);
-    free(lpInBuffer);
-    lpInBuffer = NULL;
-
-    if (result == 0) {
-        throwIOExceptionWithLastError(env);
-        goto err;
+    if (!error) {
+        PREPARSE_DATA_BUFFER reparseBuffer = (PREPARSE_DATA_BUFFER)lpInBuffer;
+        reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+        reparseBuffer->Reserved = 0;
+        WCHAR* prefix = L"\\??\\";
+        USHORT prefixLength = (USHORT)(bpc * wcslen(prefix));
+        reparseBuffer->MountPointReparseBuffer.SubstituteNameOffset = 0;
+        reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
+            prefixLength + blen;
+        reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
+            prefixLength + blen + sizeof(WCHAR);
+        reparseBuffer->MountPointReparseBuffer.PrintNameLength = blen;
+        memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer,
+               prefix, prefixLength);
+        memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer[prefixLength/bpc],
+               target, blen);
+        memcpy(&reparseBuffer->MountPointReparseBuffer.PathBuffer[prefixLength/bpc + blen/bpc + 1],
+               target, blen);
+        reparseBuffer->ReparseDataLength =
+            (USHORT)(sizeof(reparseBuffer->MountPointReparseBuffer) +
+                     prefixLength + bpc*blen + bpc);
+        DWORD nInBufferSize = FIELD_OFFSET(REPARSE_DATA_BUFFER,
+            MountPointReparseBuffer) + reparseBuffer->ReparseDataLength;
+        BOOL result = DeviceIoControl(hJunction, FSCTL_SET_REPARSE_POINT,
+                                      lpInBuffer, nInBufferSize,
+                                      NULL, 0, NULL, NULL);
+        if (result == 0) {
+            throwIOExceptionWithLastError(env);
+            error = TRUE;
+        }
     }
 
-    if (CloseHandle(hJunction) == 0) {
-        throwIOExceptionWithLastError(env);
-        goto err;
-    }
-
-    return JNI_TRUE;
-
-err:
     if (junction != NULL) {
         (*env)->ReleaseStringChars(env, sjunction, junction);
         if (target != NULL) {
@@ -190,7 +190,8 @@ err:
             }
         }
     }
-    return JNI_FALSE;
+
+    return error ? JNI_FALSE : JNI_TRUE;
 }
 
 #endif  /*  _WIN32 */
