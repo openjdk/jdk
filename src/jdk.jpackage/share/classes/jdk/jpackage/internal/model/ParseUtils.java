@@ -24,37 +24,39 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-public interface WinLauncherMixin {
+/**
+ * Collection of functions to create instances of types defined in this package from strings.
+ */
+public final class ParseUtils {
 
-    boolean isConsole();
+    private ParseUtils() {
+    }
 
-    /**
-     * Gets the start menu shortcut of this application launcher.
-     * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the start
-     * menu shortcut for this application launcher was made and an empty
-     * {@link Optional} instance if there was no request about the start menu
-     * shortcut for this application launcher.
-     *
-     * @return the start menu shortcut of this application launcher
-     */
-    Optional<LauncherShortcut> startMenuShortcut();
+    public static LauncherShortcut parseLauncherShortcutForMainLauncher(String str) {
+        return parse(str,
+                LauncherShortcutStartupDirectory.APP_DIR,
+                LauncherShortcutStartupDirectory.INSTALL_DIR
+        ).map(LauncherShortcut::new).orElseThrow(IllegalArgumentException::new);
+    }
 
-    /**
-     * Gets the desktop shortcut of this application launcher.
-     * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the desktop
-     * shortcut for this application launcher was made and an empty {@link Optional}
-     * instance if there was no request about the desktop shortcut for this
-     * application launcher.
-     *
-     * @return the start menu shortcut of this application launcher
-     */
-    Optional<LauncherShortcut> desktopShortcut();
+    public static LauncherShortcut parseLauncherShortcutForAddLauncher(String str) {
+        return parse(str, LauncherShortcutStartupDirectory.values()).map(LauncherShortcut::new).orElseGet(() -> {
+            if (Boolean.valueOf(str)) {
+                return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
+            } else {
+                return new LauncherShortcut();
+            }
+        });
+    }
 
-    record Stub(boolean isConsole, Optional<LauncherShortcut> startMenuShortcut,
-            Optional<LauncherShortcut> desktopShortcut) implements WinLauncherMixin {
+    private static Optional<LauncherShortcutStartupDirectory> parse(String str, LauncherShortcutStartupDirectory... recognizedValues) {
+        Objects.requireNonNull(str);
+        return Stream.of(recognizedValues).filter(v -> {
+            return str.equals(v.asStringValue());
+        }).findFirst();
     }
 }

@@ -29,16 +29,14 @@ import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
+import static jdk.jpackage.internal.FromParams.findLauncherShortcut;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxLauncher;
@@ -51,11 +49,10 @@ final class LinuxFromParams {
     private static LinuxApplication createLinuxApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
         final var launcherFromParams = new LauncherFromParams();
+
         final var app = createApplicationBuilder(params, toFunction(launcherParams -> {
             final var launcher = launcherFromParams.create(launcherParams);
-            final var shortcut = Stream.of(SHORTCUT_HINT, LINUX_SHORTCUT_HINT).map(param -> {
-                return param.findIn(launcherParams);
-            }).filter(Optional::isPresent).map(Optional::get).findFirst();
+            final var shortcut = findLauncherShortcut(LINUX_SHORTCUT_HINT, params, launcherParams);
             return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(shortcut));
         }), APPLICATION_LAYOUT).create();
         return LinuxApplication.create(app);
@@ -112,12 +109,8 @@ final class LinuxFromParams {
     static final BundlerParamInfo<LinuxPackage> DEB_PACKAGE = createPackageBundlerParam(
             LinuxFromParams::createLinuxDebPackage);
 
-    private static final BundlerParamInfo<Boolean> LINUX_SHORTCUT_HINT = new BundlerParamInfo<>(
-            Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
-            Boolean.class,
-            params -> false,
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s)
-    );
+    private static final BundlerParamInfo<String> LINUX_SHORTCUT_HINT = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId());
 
     private static final BundlerParamInfo<String> LINUX_CATEGORY = createStringBundlerParam(
             Arguments.CLIOptions.LINUX_CATEGORY.getId());
