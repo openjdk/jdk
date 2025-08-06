@@ -2004,7 +2004,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const int num_8bit_elems_in_vec_reg = MaxVectorSize;
   // Let's use T_INT as all hashCode calculations eventually deal with ints.
   const int ints_in_vec_reg = num_8bit_elems_in_vec_reg/sizeof(jint);
-  const int lmul = 4;
+  const int lmul = 2;
 
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
@@ -2041,14 +2041,14 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   andi(t1, cnt, MAX_VEC_MASK);
   beqz(t1, SCALAR_TAIL);
 
-  vsetvli(t0, x0, Assembler::e32, Assembler::m4);
+  vsetvli(t0, x0, Assembler::e32, Assembler::m2);
   vmv_v_x(v_sum, x0);
 
   la(t1, ExternalAddress(adr_pows31));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
   vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
 
-  vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
+  vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
 
   bind(VEC_LOOP);
   arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
