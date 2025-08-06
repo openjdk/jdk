@@ -49,15 +49,6 @@ static char *skipNonWhitespace(char *p) {
     return p;
 }
 
-#if defined(_AIX)
-  /* AIX does not understand '/proc/self' - it requires the real process ID */
-  #define FD_DIR aix_fd_dir
-#elif defined(_ALLBSD_SOURCE)
-  #define FD_DIR "/dev/fd"
-#else
-  #define FD_DIR "/proc/self/fd"
-#endif
-
 static int
 markCloseOnExec(int fd)
 {
@@ -73,10 +64,19 @@ markCloseOnExec(int fd)
     return 0;
 }
 
+#if defined(_AIX)
+  /* AIX does not understand '/proc/self' - it requires the real process ID */
+  #define FD_DIR aix_fd_dir
+#elif defined(_ALLBSD_SOURCE)
+  #define FD_DIR "/dev/fd"
+#else
+  #define FD_DIR "/proc/self/fd"
+#endif
+
 // Marks all file descriptors found in /proc/self/fd with the
 // FD_CLOEXEC flag to ensure they are automatically closed
 // upon execution of a new program via exec(). This function
-// returns 0 on failure and 1 on success.
+// returns -1 on failure and 0 on success.
 static int
 markDescriptorsCloseOnExec(void)
 {
@@ -92,9 +92,9 @@ markDescriptorsCloseOnExec(void)
 
     if ((dp = opendir(FD_DIR)) == NULL) {
         ERROR_MESSAGE(("failed to open dir %s while determining"
-                       " file descriptors to close for process %d",
+                       " file descriptors to mark or close for process %d",
                        FD_DIR, getpid()));
-        return 0; // failure
+        return -1; // failure
     }
 
     int dir_fd = dirfd(dp);
@@ -113,18 +113,20 @@ markDescriptorsCloseOnExec(void)
 
     (void)closedir(dp);
 
-    return 1; // success
+    return 0; // success
 }
 
-// Does necessary housekeeping of a forked child process
-// (like closing copied file descriptors) before
-// execing the child process. This function never returns.
+// Performs necessary housekeeping in the forked child process,
+// such as marking copied file descriptors (except standard input/output/error)
+// with FD_CLOEXEC to ensure they are closed during exec().
+// This function never returns.
 static void
 forkedChildProcess(const char *file, char *const argv[])
 {
-    /* Close all file descriptors that have been copied over
-     * from the parent process due to fork(). */
-    if (markDescriptorsCloseOnExec() != 1) { /* failed,  close the old way */
+    /* Mark all file descriptors (except standard input/output/error)
+     * copied from the parent process with FD_CLOEXEC, so they are
+     * closed automatically upon exec(). */
+    if (markDescriptorsCloseOnExec() < 0) { /* failed,  close the old way */
         /* Find max allowed file descriptors for a process
          * and assume all were opened for the parent process and
          * copied over to this child process. We close them all. */
