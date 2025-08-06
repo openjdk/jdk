@@ -1278,6 +1278,7 @@ public:
       if (is_virtual) {
         // mounted vthread, use carrier thread state
         oop carrier_thread = java_lang_VirtualThread::carrier_thread(_thread_h());
+        assert(carrier_thread != nullptr, "should only get here for a mounted vthread");
         _thread_status = java_lang_Thread::get_thread_status(carrier_thread);
       } else {
         _thread_status = java_lang_Thread::get_thread_status(_thread_h());
@@ -1477,7 +1478,17 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 
     carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(thread_h()));
     if (carrier_thread != nullptr) {
+      // Note: The java_thread associated with this carrier_thread may not be
+      // protected by the ThreadsListHandle above. There could have been an
+      // unmount and remount after the ThreadsListHandle above was created
+      // and before the JvmtiVTMSTransitionDisabler was created. However, as
+      // we have disabled transitions, if we are mounted on it, then it cannot
+      // terminate and so is safe to handshake with.
       java_thread = java_lang_Thread::thread(carrier_thread());
+    } else {
+      // We may have previously found a carrier but the virtual thread has unmounted
+      // after that, so clear that previous reference.
+      java_thread = nullptr;
     }
   } else {
     java_thread = java_lang_Thread::thread(thread_h());
@@ -1554,4 +1565,3 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 }
 
 #endif // INCLUDE_JVMTI
-
