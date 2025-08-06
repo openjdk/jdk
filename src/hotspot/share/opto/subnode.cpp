@@ -1898,16 +1898,12 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
-  const Type* input_type = phase->type(in(1));
-  if (input_type == Type::TOP) {
-    return Type::TOP;
-  }
   const Type* t = Value_cmpu_and_mask(phase);
   if (t != nullptr) {
     return t;
   }
 
-  return _test.cc2logical(input_type);
+  return _test.cc2logical( phase->type( in(1) ) );
 }
 
 #ifndef PRODUCT
