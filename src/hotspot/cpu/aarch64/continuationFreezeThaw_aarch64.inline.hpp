@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,9 +101,11 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
-    // We need to re-read fp out of the frame because it may be an oop and we might have
-    // had a safepoint in finalize_freeze, after constructing f.
-    fp = *(intptr_t**)(f.sp() - frame::sender_sp_offset);
+    // For a compiled frame we need to re-read fp out of the frame because it may be an
+    // oop and we might have had a safepoint in finalize_freeze, after constructing f.
+    // For stub/native frames the value is not used while freezed, and will be constructed
+    // again when thawing the frame (see ThawBase::new_stack_frame).
+    fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : nullptr;
 
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;

@@ -783,9 +783,22 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
-  intptr_t* from = _cont_stack_top - frame::metadata_words_at_bottom;
-  intptr_t* to   = chunk_top - frame::metadata_words_at_bottom;
-  copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
+
+  int adjust = frame::metadata_words_at_bottom;
+#if INCLUDE_ASAN && defined(AARCH64)
+  // Reading at offset frame::metadata_words_at_bottom from _cont_stack_top
+  // will accesss memory at the callee frame, which on preemption cases will
+  // be the VM native method being called. The Arm 64-bit ABI doesn't specify
+  // a location where the frame record (returnpc+fp) has to be stored within
+  // a stack frame, and GCC currently chooses to save it at the top of the
+  // frame (lowest address). ASan treats this memory access in the callee as
+  // an overflow access to one of the locals stored in that frame. For these
+  // preemption case we don't need to read these words anyways so we avoid it.
+  adjust -= _preempt ? frame::metadata_words_at_bottom : 0;
+#endif
+  intptr_t* from = _cont_stack_top - adjust;
+  intptr_t* to   = chunk_top - adjust;
+  copy_to_chunk(from, to, cont_size() + adjust);
   // Because we're not patched yet, the chunk is now in a bad state
 
   // patch return pc of the bottom-most frozen frame (now in the chunk)
