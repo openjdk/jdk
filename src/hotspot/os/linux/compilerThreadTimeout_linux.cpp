@@ -23,7 +23,6 @@
  */
 
 #include "compiler/compilerThread.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/osThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -40,7 +39,7 @@ void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
 void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* info, void* context) {
   switch (signo) {
     case TIMEOUT_SIGNAL: {
-      assert(!Atomic::load_acquire(&_timeout_armed), "compile task timed out");
+      assert(!_timeout_armed, "compile task timed out");
     }
     default: {
       assert(false, "unexpected signal %d", signo);
@@ -60,7 +59,7 @@ void CompilerThreadTimeoutLinux::arm() {
 
   // Start the timer.
   timer_settime(_timeout_timer, 0, &its, nullptr);
-  Atomic::release_store(&_timeout_armed, (bool) true);
+  _timeout_armed = true;
 }
 
 void CompilerThreadTimeoutLinux::disarm() {
@@ -68,7 +67,7 @@ void CompilerThreadTimeoutLinux::disarm() {
     return;
   }
 
-  Atomic::release_store(&_timeout_armed, (bool)false);
+  _timeout_armed = false;
 
   // Reset the timer by setting it to zero.
   const struct itimerspec its {
