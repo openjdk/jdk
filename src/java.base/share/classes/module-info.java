@@ -320,6 +320,7 @@ module java.base {
     exports sun.security.jca to
         java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.cryptoki,
         jdk.naming.dns;
     exports sun.security.pkcs to
