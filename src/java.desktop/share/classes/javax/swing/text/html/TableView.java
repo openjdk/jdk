@@ -273,7 +273,7 @@ import javax.swing.text.*;
             for (int i = 0; i < n; i++) {
                 View v = getView(i);
                 if (v instanceof RowView rv) {
-                    rows.addElement((RowView) v);
+                    rows.addElement(rv);
                     rv.clearFilledColumns();
                     rv.rowIndex = rows.size() - 1;
                     rv.viewIndex = i;

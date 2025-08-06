@@ -228,7 +228,7 @@ public abstract class TableView extends BoxView {
             for (int i = 0; i < n; i++) {
                 View v = getView(i);
                 if (v instanceof TableRow rv) {
-                    rows.addElement((TableRow) v);
+                    rows.addElement(rv);
                     rv.clearFilledColumns();
                     rv.setRow(i);
                 }

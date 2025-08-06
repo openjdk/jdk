@@ -142,7 +142,7 @@ public class ImageUtil {
                                                  transparency,
                                                  dataType);
         } else if (sampleModel.getNumBands() <= 4 &&
-                sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
+                   sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
 
             int[] bitMasks = sppsm.getBitMasks();
             int rmask = 0;

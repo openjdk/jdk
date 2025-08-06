@@ -442,7 +442,7 @@ public abstract class SunToolkit extends Toolkit
         if (sea != null && sea.isSequencedEvent(event)) {
             AWTEvent nested = sea.getNested(event);
             if (nested.getID() == WindowEvent.WINDOW_LOST_FOCUS &&
-                    nested instanceof TimedWindowEvent twe)
+                nested instanceof TimedWindowEvent twe)
             {
                 ((SunToolkit)Toolkit.getDefaultToolkit()).
                     setWindowDeactivationTime((Window)twe.getSource(), twe.getWhen());

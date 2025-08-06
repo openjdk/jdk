@@ -595,7 +595,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 msm.setSelectedPath(newPath);
 
             } else if (path[len-1] instanceof JPopupMenu &&
-                    path[len-2] instanceof JMenu menu) {
+                       path[len-2] instanceof JMenu menu) {
 
                 // a menu (not necessarily toplevel) is open and its popup
                 // shown. Select the appropriate menu item

@@ -1384,7 +1384,7 @@ public class Dialog extends Window {
         IdentityArrayList<Window> unblockedWindows = Window.getAllUnblockedWindows();
         for (Window w : unblockedWindows) {
             if (shouldBlock(w) && !blockersHierarchies.contains(w)) {
-                if ((w instanceof Dialog wd) && ((Dialog)w).isModal_NoClientCode()) {
+                if ((w instanceof Dialog wd) && wd.isModal_NoClientCode()) {
                     if (wd.shouldBlock(this) && (modalDialogs.indexOf(wd) > modalDialogs.indexOf(this))) {
                         continue;
                     }
@@ -1419,7 +1419,7 @@ public class Dialog extends Window {
         // by another dialogs
         for (int i = 0; i < blockedWindowsCount; i++) {
             Window w = save.get(i);
-            if ((w instanceof Dialog d) && ((Dialog)w).isModal_NoClientCode()) {
+            if ((w instanceof Dialog d) && d.isModal_NoClientCode()) {
                 d.modalShow();
             } else {
                 checkShouldBeBlocked(w);

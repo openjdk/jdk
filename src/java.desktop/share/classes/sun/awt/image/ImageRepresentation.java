@@ -267,7 +267,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         // since we modify the data in it.
         int[] newpixels = SunWritableRaster.stealData(dbi, 0);
         if (cmodel instanceof IndexColorModel &&
-                biRaster instanceof ByteComponentRaster bct &&
+            biRaster instanceof ByteComponentRaster bct &&
             biRaster.getNumDataElements() == 1)
         {
             byte[] data = bct.getDataStorage();

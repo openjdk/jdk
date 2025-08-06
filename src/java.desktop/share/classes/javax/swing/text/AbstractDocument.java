@@ -2792,7 +2792,7 @@ public abstract class AbstractDocument implements Document, Serializable {
                 int n = edits.size();
                 for (int i = 0; i < n; i++) {
                     Object o = edits.elementAt(i);
-                    if (o instanceof ElementChange ec) {
+                    if (o instanceof DocumentEvent.ElementChange ec) {
                         changeLookup.put(ec.getElement(), ec);
                     }
                 }
@@ -2800,7 +2800,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
             // if we have a hashtable... add the entry if it's
             // an ElementChange.
-            if ((changeLookup != null) && (anEdit instanceof ElementChange ec)) {
+            if ((changeLookup != null) && (anEdit instanceof DocumentEvent.ElementChange ec)) {
                 changeLookup.put(ec.getElement(), ec);
             }
             return super.addEdit(anEdit);
@@ -2960,7 +2960,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             int n = edits.size();
             for (int i = 0; i < n; i++) {
                 Object o = edits.elementAt(i);
-                if (o instanceof ElementChange c) {
+                if (o instanceof DocumentEvent.ElementChange c) {
                     if (elem.equals(c.getElement())) {
                         return c;
                     }
