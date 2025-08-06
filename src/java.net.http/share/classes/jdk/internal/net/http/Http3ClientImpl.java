@@ -408,10 +408,7 @@ public final class Http3ClientImpl implements AutoCloseable {
             }
         } finally {
             if (Log.http3()) {
-                String pendingInfo;
-                if (pendingConnection != null) {
-                    pendingInfo = describePendingExchange(" - originally created for", pendingConnection);
-                } else pendingInfo = "";
+                String pendingInfo = describePendingExchange(" - originally created for", pendingConnection);
 
                 if (conn != null) {
                     Log.logHttp3(("Connection creation completed for requests to %s: " +

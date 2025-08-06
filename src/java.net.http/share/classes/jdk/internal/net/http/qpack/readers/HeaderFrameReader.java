@@ -246,7 +246,7 @@ public class HeaderFrameReader {
                     state = this.state = State.SELECT_FIELD_READER;
                 }
             }
-            if (headerBlock != null && !headerBlock.hasRemaining()) {
+            if (!headerBlock.hasRemaining()) {
                 var head = headersData.poll();
                 assert head == headerBlock;
             }
