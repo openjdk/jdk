@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,8 +248,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
         for (ModelPerformer performer : instrument.getPerformers()) {
             if (performer.getOscillators() != null) {
                 for (ModelOscillator osc : performer.getOscillators()) {
-                    if (osc instanceof ModelByteBufferWavetable) {
-                        ModelByteBufferWavetable w = (ModelByteBufferWavetable)osc;
+                    if (osc instanceof ModelByteBufferWavetable w) {
                         ModelByteBuffer buff = w.getBuffer();
                         if (buff != null)
                             buffers.add(buff);
@@ -1000,8 +999,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                 Class<?> c = (item2.valueClass);
                 if (c.isInstance(v))
                     item2.value = v;
-                else if (v instanceof String) {
-                    String s = (String) v;
+                else if (v instanceof String s) {
                     if (c == Boolean.class) {
                         if (s.equalsIgnoreCase("true"))
                             item2.value = Boolean.TRUE;
@@ -1053,8 +1051,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                                 item2.value = Double.valueOf(s);
                         } catch (NumberFormatException e) {
                         }
-                } else if (v instanceof Number) {
-                    Number n = (Number) v;
+                } else if (v instanceof Number n) {
                     if (c == Byte.class)
                         item2.value = Byte.valueOf(n.byteValue());
                     if (c == Short.class)

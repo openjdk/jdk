@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1604,8 +1604,7 @@ public class BasicFileChooserUI extends FileChooserUI {
             Object[] values = null;
             if (c instanceof JList) {
                 values = ((JList)c).getSelectedValues();
-            } else if (c instanceof JTable) {
-                JTable table = (JTable)c;
+            } else if (c instanceof JTable table) {
                 int[] rows = table.getSelectedRows();
                 if (rows != null) {
                     values = new Object[rows.length];

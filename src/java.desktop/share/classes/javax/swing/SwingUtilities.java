@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,8 +355,7 @@ public class SwingUtilities implements SwingConstants
             newSource = source;
 
         MouseEvent newEvent;
-        if (sourceEvent instanceof MouseWheelEvent) {
-            MouseWheelEvent sourceWheelEvent = (MouseWheelEvent)sourceEvent;
+        if (sourceEvent instanceof MouseWheelEvent sourceWheelEvent) {
             newEvent = new MouseWheelEvent(newSource,
                                            sourceWheelEvent.getID(),
                                            sourceWheelEvent.getWhen(),
@@ -372,8 +371,7 @@ public class SwingUtilities implements SwingConstants
                                            sourceWheelEvent.getWheelRotation(),
                                            sourceWheelEvent.getPreciseWheelRotation());
         }
-        else if (sourceEvent instanceof MenuDragMouseEvent) {
-            MenuDragMouseEvent sourceMenuDragEvent = (MenuDragMouseEvent)sourceEvent;
+        else if (sourceEvent instanceof MenuDragMouseEvent sourceMenuDragEvent) {
             newEvent = new MenuDragMouseEvent(newSource,
                                               sourceMenuDragEvent.getID(),
                                               sourceMenuDragEvent.getWhen(),
@@ -1346,8 +1344,7 @@ public class SwingUtilities implements SwingConstants
     }
 
     private static void updateComponentTreeUI0(Component c) {
-        if (c instanceof JComponent) {
-            JComponent jc = (JComponent) c;
+        if (c instanceof JComponent jc) {
             jc.updateUI();
             JPopupMenu jpm =jc.getComponentPopupMenu();
             if(jpm != null) {
@@ -1515,8 +1512,7 @@ public class SwingUtilities implements SwingConstants
     public static Accessible getAccessibleAt(Component c, Point p) {
         if (c instanceof Container) {
             return c.getAccessibleContext().getAccessibleComponent().getAccessibleAt(p);
-        } else if (c instanceof Accessible) {
-            Accessible a = (Accessible) c;
+        } else if (c instanceof Accessible a) {
             if (a != null) {
                 AccessibleContext ac = a.getAccessibleContext();
                 if (ac != null) {

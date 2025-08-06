@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,9 +406,8 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * @return whether {@code event} should starts the editing timer
      */
     protected boolean shouldStartEditingTimer(EventObject event) {
-        if((event instanceof MouseEvent) &&
+        if((event instanceof MouseEvent me) &&
             SwingUtilities.isLeftMouseButton((MouseEvent)event)) {
-            MouseEvent        me = (MouseEvent)event;
 
             return (me.getClickCount() == 1 &&
                     inHitRegion(me.getX(), me.getY()));
@@ -436,9 +435,8 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * @return whether editing can be started for the given {@code event}
      */
     protected boolean canEditImmediately(EventObject event) {
-        if((event instanceof MouseEvent) &&
+        if((event instanceof MouseEvent me) &&
            SwingUtilities.isLeftMouseButton((MouseEvent)event)) {
-            MouseEvent       me = (MouseEvent)event;
 
             return ((me.getClickCount() > 2) &&
                     inHitRegion(me.getX(), me.getY()));

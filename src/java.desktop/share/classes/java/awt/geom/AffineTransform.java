@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3932,11 +3932,9 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @since 1.2
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof AffineTransform)) {
+        if (!(obj instanceof AffineTransform a)) {
             return false;
         }
-
-        AffineTransform a = (AffineTransform)obj;
 
         return equals(m00, a.m00) && equals(m01, a.m01) &&
                equals(m02, a.m02) && equals(m10, a.m10) &&

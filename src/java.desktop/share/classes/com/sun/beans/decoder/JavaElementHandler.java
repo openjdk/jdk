@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,7 @@ final class JavaElementHandler extends ElementHandler {
         if ((this.type == null) || isValid(owner)) {
             return owner;
         }
-        if (owner instanceof XMLDecoder) {
-            XMLDecoder decoder = (XMLDecoder) owner;
+        if (owner instanceof XMLDecoder decoder) {
             owner = decoder.getOwner();
             if (isValid(owner)) {
                 return owner;

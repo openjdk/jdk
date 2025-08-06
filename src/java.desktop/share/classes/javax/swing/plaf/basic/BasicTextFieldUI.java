@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,8 +224,7 @@ public class BasicTextFieldUI extends BasicTextUI {
 
                 // horizontal adjustments
                 Component c = getContainer();
-                if (c instanceof JTextField) {
-                    JTextField field = (JTextField) c;
+                if (c instanceof JTextField field) {
                     BoundedRangeModel vis = field.getHorizontalVisibility();
                     int max = Math.max(hspan, bounds.width);
                     int value = vis.getValue();
@@ -288,8 +287,7 @@ public class BasicTextFieldUI extends BasicTextUI {
          */
         void updateVisibilityModel() {
             Component c = getContainer();
-            if (c instanceof JTextField) {
-                JTextField field = (JTextField) c;
+            if (c instanceof JTextField field) {
                 BoundedRangeModel vis = field.getHorizontalVisibility();
                 int hspan = (int) getPreferredSpan(X_AXIS);
                 int extent = vis.getExtent();

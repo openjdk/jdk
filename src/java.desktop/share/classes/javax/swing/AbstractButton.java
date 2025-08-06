@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2670,8 +2670,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             View view = (View) AbstractButton.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     return doc.getLength();
                 }
             }
@@ -2873,8 +2872,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             View view = (View) AbstractButton.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     Element elem = doc.getCharacterElement(i);
                     if (elem != null) {
                         return elem.getAttributes();
@@ -2931,8 +2929,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             View view = (View) AbstractButton.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     return doc.getText(offset, length);
                 }
             }

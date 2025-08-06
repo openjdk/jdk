@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,8 +184,7 @@ public class TextComponentPrintable implements CountingPrintable {
      */
     private static boolean isFrameSetDocument(final Document document) {
         boolean ret = false;
-        if (document instanceof HTMLDocument) {
-            HTMLDocument htmlDocument = (HTMLDocument)document;
+        if (document instanceof HTMLDocument htmlDocument) {
             if (htmlDocument.getIterator(HTML.Tag.FRAME).isValid()) {
                 ret = true;
             }
@@ -367,11 +366,10 @@ public class TextComponentPrintable implements CountingPrintable {
                             : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
-        } else if (textComponent instanceof JTextArea) {
+        } else if (textComponent instanceof JTextArea textArea) {
             ret =
                 new JTextArea() {
                     {
-                        JTextArea textArea = (JTextArea) textComponent;
                         setLineWrap(textArea.getLineWrap());
                         setWrapStyleWord(textArea.getWrapStyleWord());
                         setTabSize(textArea.getTabSize());

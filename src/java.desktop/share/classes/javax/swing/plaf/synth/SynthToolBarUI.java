@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -540,8 +540,7 @@ public class SynthToolBarUI extends BasicToolBarUI
         }
 
         private boolean isGlue(Component c) {
-            if (c.isVisible() && c instanceof Box.Filler) {
-                Box.Filler f = (Box.Filler)c;
+            if (c.isVisible() && c instanceof Box.Filler f) {
                 Dimension min = f.getMinimumSize();
                 Dimension pref = f.getPreferredSize();
                 return min.width == 0 &&  min.height == 0 &&

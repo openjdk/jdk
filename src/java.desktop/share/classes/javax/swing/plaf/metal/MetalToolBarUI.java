@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public class MetalToolBarUI extends BasicToolBarUI
     }
 
     protected void setBorderToNonRollover(Component c) {
-        if (c instanceof JToggleButton && !(c instanceof JCheckBox)) {
+        if (c instanceof JToggleButton b && !(c instanceof JCheckBox)) {
             // 4735514, 4886944: The method createNonRolloverToggleBorder() is
             // private in BasicToolBarUI so we can't override it. We still need
             // to call super from this method so that it can save away the
@@ -238,7 +238,6 @@ public class MetalToolBarUI extends BasicToolBarUI
             // Before calling super we get a handle to the old border, because
             // super will install a non-UIResource border that we can't
             // distinguish from one provided by an application.
-            JToggleButton b = (JToggleButton)c;
             Border border = b.getBorder();
             super.setBorderToNonRollover(c);
             if (border instanceof UIResource) {

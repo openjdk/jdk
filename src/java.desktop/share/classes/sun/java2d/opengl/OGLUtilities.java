@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,11 +195,10 @@ class OGLUtilities {
                                            int componentWidth,
                                            int componentHeight)
     {
-        if (!(g instanceof SunGraphics2D)) {
+        if (!(g instanceof SunGraphics2D sg2d)) {
             return null;
         }
 
-        SunGraphics2D sg2d = (SunGraphics2D)g;
         SurfaceData sData = sg2d.surfaceData;
 
         // this is the upper-left origin of the region to be painted,
@@ -236,11 +235,10 @@ class OGLUtilities {
      * given Graphics object is invalid or the clip region is non-rectangular
      */
     public static Rectangle getOGLScissorBox(Graphics g) {
-        if (!(g instanceof SunGraphics2D)) {
+        if (!(g instanceof SunGraphics2D sg2d)) {
             return null;
         }
 
-        SunGraphics2D sg2d = (SunGraphics2D)g;
         SurfaceData sData = sg2d.surfaceData;
         Region r = sg2d.getCompClip();
         if (!r.isRectangular()) {

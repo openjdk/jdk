@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,8 +98,7 @@ final class EventDispatcher implements Runnable {
         int count = eventInfo.getListenerCount();
 
         // process an LineEvent
-        if (eventInfo.getEvent() instanceof LineEvent) {
-            LineEvent event = (LineEvent) eventInfo.getEvent();
+        if (eventInfo.getEvent() instanceof LineEvent event) {
             for (int i = 0; i < count; i++) {
                 try {
                     ((LineListener) eventInfo.getListener(i)).update(event);
@@ -111,8 +110,7 @@ final class EventDispatcher implements Runnable {
         }
 
         // process a MetaMessage
-        if (eventInfo.getEvent() instanceof MetaMessage) {
-            MetaMessage event = (MetaMessage)eventInfo.getEvent();
+        if (eventInfo.getEvent() instanceof MetaMessage event) {
             for (int i = 0; i < count; i++) {
                 try {
                     ((MetaEventListener) eventInfo.getListener(i)).meta(event);
@@ -124,8 +122,7 @@ final class EventDispatcher implements Runnable {
         }
 
         // process a Controller or Mode Event
-        if (eventInfo.getEvent() instanceof ShortMessage) {
-            ShortMessage event = (ShortMessage)eventInfo.getEvent();
+        if (eventInfo.getEvent() instanceof ShortMessage event) {
             int status = event.getStatus();
 
             // Controller and Mode events have status byte 0xBc, where

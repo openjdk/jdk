@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,10 +343,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             int[] indexes = null;
 
             for (int j = 0; j < items.length; j++) {
-                if (! (items[j] instanceof JMenuItem)) {
+                if (! (items[j] instanceof JMenuItem item)) {
                     continue;
                 }
-                JMenuItem item = (JMenuItem)items[j];
                 int mnemonic = item.getMnemonic();
                 if (item.isEnabled() &&
                     item.isVisible() && lower(keyChar) == lower(mnemonic)) {
@@ -470,8 +469,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                     System.arraycopy(path,0,newPath,0,path.length);
                     newPath[path.length] = ((JMenu)lastElement).getPopupMenu();
                     msm.setSelectedPath(newPath);
-                } else if(lastElement instanceof JMenuItem) {
-                    JMenuItem mi = (JMenuItem)lastElement;
+                } else if(lastElement instanceof JMenuItem mi) {
 
                     if (mi.getUI() instanceof BasicMenuItemUI) {
                         ((BasicMenuItemUI)mi.getUI()).doClick(msm);
@@ -508,11 +506,10 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 }
             } else {
                 // selecting child
-                if (len > 0 && path[len-1] instanceof JMenu &&
+                if (len > 0 && path[len-1] instanceof JMenu menu &&
                     !((JMenu)path[len-1]).isTopLevelMenu()) {
 
                     // we have a submenu, open it
-                    JMenu menu = (JMenu)path[len-1];
                     JPopupMenu popup = menu.getPopupMenu();
                     MenuElement[] subs = popup.getSubElements();
                     MenuElement item = findEnabledChild(subs, -1, true);
@@ -569,9 +566,8 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 return;
             }
             int len = path.length;
-            if (len == 1 && path[0] instanceof JPopupMenu) {
+            if (len == 1 && path[0] instanceof JPopupMenu popup) {
 
-                JPopupMenu popup = (JPopupMenu) path[0];
                 MenuElement[] newPath = new MenuElement[2];
                 newPath[0] = popup;
                 newPath[1] = findEnabledChild(popup.getSubElements(), -1, direction);
@@ -599,11 +595,10 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 msm.setSelectedPath(newPath);
 
             } else if (path[len-1] instanceof JPopupMenu &&
-                       path[len-2] instanceof JMenu) {
+                    path[len-2] instanceof JMenu menu) {
 
                 // a menu (not necessarily toplevel) is open and its popup
                 // shown. Select the appropriate menu item
-                JMenu menu = (JMenu)path[len-2];
                 JPopupMenu popup = menu.getPopupMenu();
                 MenuElement next =
                     findEnabledChild(popup.getSubElements(), -1, direction);
@@ -675,8 +670,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             JPopupMenu lastPopup = getLastPopup();
             if (lastElement == lastPopup) {
                 MenuElement previousElement = path[path.length - 2];
-                if (previousElement instanceof JMenu) {
-                    JMenu lastMenu = (JMenu) previousElement;
+                if (previousElement instanceof JMenu lastMenu) {
                     if (lastMenu.isEnabled() && lastPopup.getComponentCount() > 0) {
                         // unselect the last visible popup only
                         value = 1;
@@ -843,11 +837,10 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 cancelPopupMenu( );
                 return;
             }
-            if (!(ev instanceof MouseEvent)) {
+            if (!(ev instanceof MouseEvent me)) {
                 // We are interested in MouseEvents only
                 return;
             }
-            MouseEvent me = (MouseEvent) ev;
             Component src = me.getComponent();
             switch (me.getID()) {
             case MouseEvent.MOUSE_PRESSED:

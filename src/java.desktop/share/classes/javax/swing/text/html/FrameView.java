@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,12 +294,10 @@ class FrameView extends ComponentView implements HyperlinkListener {
             return;
         }
 
-        if (!(evt instanceof HTMLFrameHyperlinkEvent)) {
+        if (!(evt instanceof HTMLFrameHyperlinkEvent e)) {
             c.fireHyperlinkUpdate(evt);
             return;
         }
-
-        HTMLFrameHyperlinkEvent e = (HTMLFrameHyperlinkEvent)evt;
 
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             String target = e.getTarget();

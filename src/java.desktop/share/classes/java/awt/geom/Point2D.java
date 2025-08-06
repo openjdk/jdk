@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,8 +422,7 @@ public abstract class Point2D implements Cloneable {
      * @since 1.2
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Point2D) {
-            Point2D p2d = (Point2D) obj;
+        if (obj instanceof Point2D p2d) {
             return (getX() == p2d.getX()) && (getY() == p2d.getY());
         }
         return super.equals(obj);

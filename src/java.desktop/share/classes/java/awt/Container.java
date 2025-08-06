@@ -410,8 +410,7 @@ public class Container extends Component {
     @Deprecated
     public Insets insets() {
         ComponentPeer peer = this.peer;
-        if (peer instanceof ContainerPeer) {
-            ContainerPeer cpeer = (ContainerPeer)peer;
+        if (peer instanceof ContainerPeer cpeer) {
             return (Insets)cpeer.getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
@@ -1604,8 +1603,7 @@ public class Container extends Component {
     @Override
     public void invalidate() {
         LayoutManager layoutMgr = this.layoutMgr;
-        if (layoutMgr instanceof LayoutManager2) {
-            LayoutManager2 lm = (LayoutManager2) layoutMgr;
+        if (layoutMgr instanceof LayoutManager2 lm) {
             lm.invalidateLayout(this);
         }
         super.invalidate();
@@ -1911,9 +1909,8 @@ public class Container extends Component {
         Dimension dim = maxSize;
         if (dim == null || !(isMaximumSizeSet() || isValid())) {
             synchronized (getTreeLock()) {
-               if (layoutMgr instanceof LayoutManager2) {
-                    LayoutManager2 lm = (LayoutManager2) layoutMgr;
-                    maxSize = lm.maximumLayoutSize(this);
+               if (layoutMgr instanceof LayoutManager2 lm) {
+                   maxSize = lm.maximumLayoutSize(this);
                } else {
                     maxSize = super.getMaximumSize();
                }
@@ -1937,9 +1934,8 @@ public class Container extends Component {
      */
     public float getAlignmentX() {
         float xAlign;
-        if (layoutMgr instanceof LayoutManager2) {
+        if (layoutMgr instanceof LayoutManager2 lm) {
             synchronized (getTreeLock()) {
-                LayoutManager2 lm = (LayoutManager2) layoutMgr;
                 xAlign = lm.getLayoutAlignmentX(this);
             }
         } else {
@@ -1957,9 +1953,8 @@ public class Container extends Component {
      */
     public float getAlignmentY() {
         float yAlign;
-        if (layoutMgr instanceof LayoutManager2) {
+        if (layoutMgr instanceof LayoutManager2 lm) {
             synchronized (getTreeLock()) {
-                LayoutManager2 lm = (LayoutManager2) layoutMgr;
                 yAlign = lm.getLayoutAlignmentY(this);
             }
         } else {
@@ -2431,8 +2426,7 @@ public class Container extends Component {
 
                     // found a component that intersects the point, see if there
                     // is a deeper possibility.
-                    if (comp instanceof Container) {
-                        Container child = (Container) comp;
+                    if (comp instanceof Container child) {
                         Component deeper = child.getMouseEventTarget(
                                 x - child.x,
                                 y - child.y,
@@ -3939,8 +3933,7 @@ public class Container extends Component {
      */
     Accessible getAccessibleAt(Point p) {
         synchronized (getTreeLock()) {
-            if (this instanceof Accessible) {
-                Accessible a = (Accessible)this;
+            if (this instanceof Accessible a) {
                 AccessibleContext ac = a.getAccessibleContext();
                 if (ac != null) {
                     AccessibleComponent acmp;
@@ -4490,14 +4483,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
          * Dispatch SunDropTargetEvents regardless of eventMask value.
          * Do not update cursor on dispatching SunDropTargetEvents.
          */
-        if (e instanceof SunDropTargetEvent) {
+        if (e instanceof SunDropTargetEvent sdde) {
 
-            SunDropTargetEvent sdde = (SunDropTargetEvent) e;
             ret = processDropTargetEvent(sdde);
 
         } else {
-            if (e instanceof MouseEvent && (eventMask & MOUSE_MASK) != 0) {
-                MouseEvent me = (MouseEvent) e;
+            if (e instanceof MouseEvent me && (eventMask & MOUSE_MASK) != 0) {
                 ret = processMouseEvent(me);
             }
 

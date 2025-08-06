@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,7 @@ class NimbusIcon implements SynthIcon, UIResource {
             //icon
             int translatex = 0;
             int translatey = 0;
-            if (c instanceof JToolBar) {
-                JToolBar toolbar = (JToolBar)c;
+            if (c instanceof JToolBar toolbar) {
                 rotate = toolbar.getOrientation() == JToolBar.VERTICAL;
                 flip = !toolbar.getComponentOrientation().isLeftToRight();
                 Object o = NimbusLookAndFeel.resolveToolbarConstraint(toolbar);
@@ -98,8 +97,7 @@ class NimbusIcon implements SynthIcon, UIResource {
             } else if (c instanceof JMenu) {
                 flip = ! c.getComponentOrientation().isLeftToRight();
             }
-            if (g instanceof Graphics2D){
-                Graphics2D gfx = (Graphics2D)g;
+            if (g instanceof Graphics2D gfx){
                 gfx.translate(x, y);
                 gfx.translate(translatex, translatey);
                 if (rotate) {
@@ -187,8 +185,7 @@ class NimbusIcon implements SynthIcon, UIResource {
             return height;
         }
         JComponent c = context.getComponent();
-        if (c instanceof JToolBar){
-            JToolBar toolbar = (JToolBar)c;
+        if (c instanceof JToolBar toolbar){
             if (toolbar.getOrientation() == JToolBar.HORIZONTAL) {
                 //we only do the -1 hack for UIResource borders, assuming
                 //that the border is probably going to be our border

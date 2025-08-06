@@ -1354,8 +1354,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
             if (isSupportedValue(media, attributes) ||
                 (!fidelity && media != null)) {
-                if (media instanceof MediaSizeName) {
-                    MediaSizeName msn = (MediaSizeName)media;
+                if (media instanceof MediaSizeName msn) {
                     MediaSize msz = MediaSize.getMediaSizeForName(msn);
                     if (msz != null) {
                         float paperWid =  msz.getX(MediaSize.INCH) * 72.0f;

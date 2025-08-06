@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -742,10 +742,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     private class ModelListener implements ChangeListener, Serializable {
         public void stateChanged(ChangeEvent e)   {
             Object obj = e.getSource();
-            if (obj instanceof BoundedRangeModel) {
+            if (obj instanceof BoundedRangeModel model) {
                 int id = AdjustmentEvent.ADJUSTMENT_VALUE_CHANGED;
                 int type = AdjustmentEvent.TRACK;
-                BoundedRangeModel model = (BoundedRangeModel)obj;
                 int value = model.getValue();
                 boolean isAdjusting = model.getValueIsAdjusting();
                 fireAdjustmentValueChanged(id, type, value, isAdjusting);

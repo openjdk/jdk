@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,8 +541,7 @@ public class SwingUtilities2 {
         }
 
         // If we get here we're not printing
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D)g;
+        if (g instanceof Graphics2D g2) {
 
             boolean needsTextLayout = ((c != null) &&
                 (c.getClientProperty(TextAttribute.NUMERIC_SHAPING) != null));
@@ -890,12 +889,11 @@ public class SwingUtilities2 {
                             ? null
                             : c.getClientProperty(KEY_TEXT_ANTIALIASING);
 
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             g.drawChars(data, offset, length, (int) x, (int) y);
             return nextX;
         }
 
-        Graphics2D g2 = (Graphics2D) g;
         if (aaHint != null) {
 
             Object oldContrast = null;
@@ -1293,10 +1291,9 @@ public class SwingUtilities2 {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof KeyPair)) {
+            if (!(obj instanceof KeyPair that)) {
                 return false;
             }
-            KeyPair that = (KeyPair) obj;
             return this.key1.equals(that.key1) && this.key2.equals(that.key2);
         }
 
@@ -1433,10 +1430,9 @@ public class SwingUtilities2 {
             if (entry == this) {
                 return true;
             }
-            if (!(entry instanceof LSBCacheEntry)) {
+            if (!(entry instanceof LSBCacheEntry oEntry)) {
                 return false;
             }
-            LSBCacheEntry oEntry = (LSBCacheEntry) entry;
             return (font.equals(oEntry.font) &&
                     frc.equals(oEntry.frc));
         }
@@ -1659,8 +1655,7 @@ public class SwingUtilities2 {
     // At this point we need this method here. But we assume that there
     // will be a common method for this purpose in the future releases.
     public static Component compositeRequestFocus(Component component) {
-        if (component instanceof Container) {
-            Container container = (Container)component;
+        if (component instanceof Container container) {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * @param tag the reference to the highlight
      */
     public void removeHighlight(Object tag) {
-        if (tag instanceof LayeredHighlightInfo) {
-            LayeredHighlightInfo lhi = (LayeredHighlightInfo)tag;
+        if (tag instanceof LayeredHighlightInfo lhi) {
             if (lhi.width > 0 && lhi.height > 0) {
                 component.repaint(lhi.x, lhi.y, lhi.width, lhi.height);
             }
@@ -168,8 +167,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
                 int p1 = -1;
                 for (int i = 0; i < len; i++) {
                     HighlightInfo hi = highlights.elementAt(i);
-                    if (hi instanceof LayeredHighlightInfo) {
-                        LayeredHighlightInfo info = (LayeredHighlightInfo)hi;
+                    if (hi instanceof LayeredHighlightInfo info) {
                         minX = Math.min(minX, info.x);
                         minY = Math.min(minY, info.y);
                         maxX = Math.max(maxX, info.x + info.width);
@@ -234,8 +232,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
         }
 
         Document doc = component.getDocument();
-        if (tag instanceof LayeredHighlightInfo) {
-            LayeredHighlightInfo lhi = (LayeredHighlightInfo)tag;
+        if (tag instanceof LayeredHighlightInfo lhi) {
             if (lhi.width > 0 && lhi.height > 0) {
                 component.repaint(lhi.x, lhi.y, lhi.width, lhi.height);
             }
@@ -299,8 +296,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
                                        JTextComponent editor, View view) {
         for (int counter = highlights.size() - 1; counter >= 0; counter--) {
             HighlightInfo tag = highlights.elementAt(counter);
-            if (tag instanceof LayeredHighlightInfo) {
-                LayeredHighlightInfo lhi = (LayeredHighlightInfo)tag;
+            if (tag instanceof LayeredHighlightInfo lhi) {
                 int start = lhi.getStartOffset();
                 int end = lhi.getEndOffset();
                 if ((p0 < start && p1 > start) ||

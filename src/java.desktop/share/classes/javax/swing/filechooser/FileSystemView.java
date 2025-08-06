@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,8 +378,7 @@ public abstract class FileSystemView {
      * @since 1.4
      */
     public boolean isFileSystem(File f) {
-        if (f instanceof ShellFolder) {
-            ShellFolder sf = (ShellFolder)f;
+        if (f instanceof ShellFolder sf) {
             // Shortcuts to directories are treated as not being file system objects,
             // so that they are never returned by JFileChooser.
             return sf.isFileSystem() && !(sf.isLink() && sf.isDirectory());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,7 @@ public class DefaultMenuLayout extends BoxLayout implements UIResource {
     }
 
     public Dimension preferredLayoutSize(Container target) {
-        if (target instanceof JPopupMenu) {
-            JPopupMenu popupMenu = (JPopupMenu) target;
+        if (target instanceof JPopupMenu popupMenu) {
             sun.swing.MenuItemLayoutHelper.clearUsedClientProperties(popupMenu);
             if (popupMenu.getComponentCount() == 0) {
                 return new Dimension(0, 0);

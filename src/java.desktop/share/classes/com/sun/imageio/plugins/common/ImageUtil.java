@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,7 @@ public class ImageUtil {
                                                  transparency,
                                                  dataType);
         } else if (sampleModel.getNumBands() <= 4 &&
-                   sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                (SinglePixelPackedSampleModel)sampleModel;
+                sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
 
             int[] bitMasks = sppsm.getBitMasks();
             int rmask = 0;
@@ -844,9 +842,7 @@ public class ImageUtil {
                                                  premultiplied,
                                                  transparency,
                                                  dataType);
-        } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                (SinglePixelPackedSampleModel)sampleModel;
+        } else if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
 
             int[] bitMasks = sppsm.getBitMasks();
             int rmask = 0;
@@ -901,9 +897,7 @@ public class ImageUtil {
     public static int getElementSize(SampleModel sm) {
         int elementSize = DataBuffer.getDataTypeSize(sm.getDataType());
 
-        if (sm instanceof MultiPixelPackedSampleModel) {
-            MultiPixelPackedSampleModel mppsm =
-                (MultiPixelPackedSampleModel)sm;
+        if (sm instanceof MultiPixelPackedSampleModel mppsm) {
             return mppsm.getSampleSize(0) * mppsm.getNumBands();
         } else if (sm instanceof ComponentSampleModel) {
             return sm.getNumBands() * elementSize;
@@ -918,14 +912,11 @@ public class ImageUtil {
     public static long getTileSize(SampleModel sm) {
         int elementSize = DataBuffer.getDataTypeSize(sm.getDataType());
 
-        if (sm instanceof MultiPixelPackedSampleModel) {
-            MultiPixelPackedSampleModel mppsm =
-                (MultiPixelPackedSampleModel)sm;
+        if (sm instanceof MultiPixelPackedSampleModel mppsm) {
             return (mppsm.getScanlineStride() * mppsm.getHeight() +
                    (mppsm.getDataBitOffset() + elementSize -1) / elementSize) *
                    ((elementSize + 7) / 8);
-        } else if (sm instanceof ComponentSampleModel) {
-            ComponentSampleModel csm = (ComponentSampleModel)sm;
+        } else if (sm instanceof ComponentSampleModel csm) {
             int[] bandOffsets = csm.getBandOffsets();
             int maxBandOff = bandOffsets[0];
             for (int i=1; i<bandOffsets.length; i++)
@@ -946,9 +937,7 @@ public class ImageUtil {
             for (int i=1; i<bankIndices.length; i++)
                 maxBandOff = Math.max(maxBandOff, bankIndices[i]);
             return size * (maxBandOff + 1) * ((elementSize + 7) / 8);
-        } else if (sm instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                (SinglePixelPackedSampleModel)sm;
+        } else if (sm instanceof SinglePixelPackedSampleModel sppsm) {
             long size = sppsm.getScanlineStride() * (sppsm.getHeight() - 1) +
                         sppsm.getWidth();
             return size * ((elementSize + 7) / 8);
@@ -960,8 +949,7 @@ public class ImageUtil {
     public static long getBandSize(SampleModel sm) {
         int elementSize = DataBuffer.getDataTypeSize(sm.getDataType());
 
-        if (sm instanceof ComponentSampleModel) {
-            ComponentSampleModel csm = (ComponentSampleModel)sm;
+        if (sm instanceof ComponentSampleModel csm) {
             int pixelStride = csm.getPixelStride();
             int scanlineStride = csm.getScanlineStride();
             long size = Math.min(pixelStride, scanlineStride);
@@ -1008,22 +996,19 @@ public class ImageUtil {
             return "";
 
         String s = "";
-        if (obj instanceof byte[]) {
-            byte[] bArray = (byte[])obj;
+        if (obj instanceof byte[] bArray) {
             for (int i = 0; i < bArray.length; i++)
                 s += bArray[i] + " ";
             return s;
         }
 
-        if (obj instanceof int[]) {
-            int[] iArray = (int[])obj;
+        if (obj instanceof int[] iArray) {
             for (int i = 0; i < iArray.length; i++)
                 s += iArray[i] + " " ;
             return s;
         }
 
-        if (obj instanceof short[]) {
-            short[] sArray = (short[])obj;
+        if (obj instanceof short[] sArray) {
             for (int i = 0; i < sArray.length; i++)
                 s += sArray[i] + " " ;
             return s;
@@ -1081,10 +1066,9 @@ public class ImageUtil {
             sm = image.getSampleModel();
         }
 
-        if (sm instanceof ComponentSampleModel) {
+        if (sm instanceof ComponentSampleModel csm) {
             // Ensure image rows samples are stored contiguously
             // in a single bank.
-            ComponentSampleModel csm = (ComponentSampleModel)sm;
 
             if (csm.getPixelStride() != csm.getNumBands()) {
                 return false;

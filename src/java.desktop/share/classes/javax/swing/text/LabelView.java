@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,7 @@ public class LabelView extends GlyphView implements TabableView {
         AttributeSet attr = getAttributes();
         if (attr != null) {
             Document d = getDocument();
-            if (d instanceof StyledDocument) {
-                StyledDocument doc = (StyledDocument) d;
+            if (d instanceof StyledDocument doc) {
                 font = doc.getFont(attr);
                 fg = doc.getForeground(attr);
                 if (attr.isDefined(StyleConstants.Background)) {

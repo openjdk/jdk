@@ -235,8 +235,7 @@ class KeyboardManager {
 
              if (tmp == null) {
                // don't do anything
-             } else if ( tmp instanceof JComponent) {
-                 JComponent c = (JComponent)tmp;
+             } else if (tmp instanceof JComponent c) {
                  if ( c.isShowing() && c.isEnabled() ) { // only give it out if enabled and visible
                      fireBinding(c, ks, e, pressed);
                  }
@@ -365,10 +364,9 @@ class KeyboardManager {
         }
 
         public boolean equals(Object o) {
-            if ( !(o instanceof ComponentKeyStrokePair)) {
+            if ( !(o instanceof ComponentKeyStrokePair ckp)) {
                 return false;
             }
-            ComponentKeyStrokePair ckp = (ComponentKeyStrokePair)o;
             return ((component.equals(ckp.component)) && (keyStroke.equals(ckp.keyStroke)));
         }
 

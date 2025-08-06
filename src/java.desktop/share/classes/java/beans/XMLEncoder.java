@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,8 +614,7 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
                                                 "methodName") + " should not be null");
             }
 
-            if (isArgument && target instanceof Field && methodName.equals("get")) {
-                Field f = (Field) target;
+            if (isArgument && target instanceof Field f && methodName.equals("get")) {
                 if (Modifier.isStatic(f.getModifiers())) {
                     writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
                             " field=" + quote(f.getName()) + "/>");

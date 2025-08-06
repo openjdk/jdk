@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,8 +160,7 @@ public class ImagingLib {
                 // Right now the native code doesn't support offsets
                 return null;
             }
-            if (table instanceof ByteLookupTable) {
-                ByteLookupTable bt = (ByteLookupTable) table;
+            if (table instanceof ByteLookupTable bt) {
                 if (lookupByteRaster(src, dst, bt.getTable()) > 0) {
                     retRaster = dst;
                 }
@@ -225,8 +224,7 @@ public class ImagingLib {
                 // Right now the native code doesn't support offsets
                 return null;
             }
-            if (table instanceof ByteLookupTable) {
-                ByteLookupTable bt = (ByteLookupTable) table;
+            if (table instanceof ByteLookupTable bt) {
                 if (lookupByteBI(src, dst, bt.getTable()) > 0) {
                     retBI = dst;
                 }

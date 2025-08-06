@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,8 +283,7 @@ public class EventQueue {
     }
 
     private static int getPriority(AWTEvent theEvent) {
-        if (theEvent instanceof PeerEvent) {
-            PeerEvent peerEvent = (PeerEvent)theEvent;
+        if (theEvent instanceof PeerEvent peerEvent) {
             if ((peerEvent.getFlags() & PeerEvent.ULTIMATE_PRIORITY_EVENT) != 0) {
                 return ULTIMATE_PRIORITY;
             }
@@ -458,8 +457,7 @@ public class EventQueue {
 
     private void cacheEQItem(EventQueueItem entry) {
         int index = eventToCacheIndex(entry.event);
-        if (index != -1 && entry.event.getSource() instanceof Component) {
-            Component source = (Component)entry.event.getSource();
+        if (index != -1 && entry.event.getSource() instanceof Component source) {
             if (source.eventCache == null) {
                 source.eventCache = new EventQueueItem[CACHE_LENGTH];
             }
@@ -469,8 +467,7 @@ public class EventQueue {
 
     private void uncacheEQItem(EventQueueItem entry) {
         int index = eventToCacheIndex(entry.event);
-        if (index != -1 && entry.event.getSource() instanceof Component) {
-            Component source = (Component)entry.event.getSource();
+        if (index != -1 && entry.event.getSource() instanceof Component source) {
             if (source.eventCache == null) {
                 return;
             }
@@ -1206,20 +1203,16 @@ public class EventQueue {
             // In tiger, we will probably give timestamps to all events, so this
             // will no longer be an issue.
             long mostRecentEventTime2 = Long.MIN_VALUE;
-            if (e instanceof InputEvent) {
-                InputEvent ie = (InputEvent)e;
+            if (e instanceof InputEvent ie) {
                 mostRecentEventTime2 = ie.getWhen();
                 if (e instanceof KeyEvent) {
                     mostRecentKeyEventTime = ie.getWhen();
                 }
-            } else if (e instanceof InputMethodEvent) {
-                InputMethodEvent ime = (InputMethodEvent)e;
+            } else if (e instanceof InputMethodEvent ime) {
                 mostRecentEventTime2 = ime.getWhen();
-            } else if (e instanceof ActionEvent) {
-                ActionEvent ae = (ActionEvent)e;
+            } else if (e instanceof ActionEvent ae) {
                 mostRecentEventTime2 = ae.getWhen();
-            } else if (e instanceof InvocationEvent) {
-                InvocationEvent ie = (InvocationEvent)e;
+            } else if (e instanceof InvocationEvent ie) {
                 mostRecentEventTime2 = ie.getWhen();
             }
             mostRecentEventTime = Math.max(mostRecentEventTime, mostRecentEventTime2);

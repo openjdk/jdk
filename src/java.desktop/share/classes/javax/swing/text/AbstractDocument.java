@@ -943,8 +943,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      */
     static boolean isLeftToRight(Document doc, int p0, int p1) {
         if (Boolean.TRUE.equals(doc.getProperty(I18NProperty))) {
-            if (doc instanceof AbstractDocument) {
-                AbstractDocument adoc = (AbstractDocument) doc;
+            if (doc instanceof AbstractDocument adoc) {
                 Element bidiRoot = adoc.getBidiRootElement();
                 int index = bidiRoot.getElementIndex(p0);
                 Element bidiElem = bidiRoot.getElement(index);
@@ -2793,8 +2792,7 @@ public abstract class AbstractDocument implements Document, Serializable {
                 int n = edits.size();
                 for (int i = 0; i < n; i++) {
                     Object o = edits.elementAt(i);
-                    if (o instanceof DocumentEvent.ElementChange) {
-                        DocumentEvent.ElementChange ec = (DocumentEvent.ElementChange) o;
+                    if (o instanceof ElementChange ec) {
                         changeLookup.put(ec.getElement(), ec);
                     }
                 }
@@ -2802,8 +2800,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
             // if we have a hashtable... add the entry if it's
             // an ElementChange.
-            if ((changeLookup != null) && (anEdit instanceof DocumentEvent.ElementChange)) {
-                DocumentEvent.ElementChange ec = (DocumentEvent.ElementChange) anEdit;
+            if ((changeLookup != null) && (anEdit instanceof ElementChange ec)) {
                 changeLookup.put(ec.getElement(), ec);
             }
             return super.addEdit(anEdit);
@@ -2963,8 +2960,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             int n = edits.size();
             for (int i = 0; i < n; i++) {
                 Object o = edits.elementAt(i);
-                if (o instanceof DocumentEvent.ElementChange) {
-                    DocumentEvent.ElementChange c = (DocumentEvent.ElementChange) o;
+                if (o instanceof ElementChange c) {
                     if (elem.equals(c.getElement())) {
                         return c;
                     }

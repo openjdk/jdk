@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,13 +427,12 @@ public class ComponentColorModel extends ColorModel {
                 fromsRGB8LUT16 = ColorModel.getsRGB8ToLinearRGB16LUT();
             }
         } else if ((colorSpaceType == ColorSpace.TYPE_GRAY) &&
-                   (colorSpace instanceof ICC_ColorSpace) &&
+                   (colorSpace instanceof ICC_ColorSpace ics) &&
                    (colorSpace.getMinValue(0) == 0.0f) &&
                    (colorSpace.getMaxValue(0) == 1.0f)) {
             // Note that a normalized range of 0.0 - 1.0 for the gray
             // component is required, because usage of these LUTs makes
             // that assumption.
-            ICC_ColorSpace ics = (ICC_ColorSpace) colorSpace;
             is_ICCGray_stdScale = true;
             nonStdScale = false;
             fromsRGB8LUT16 = ColorModel.getsRGB8ToLinearRGB16LUT();
@@ -2921,11 +2920,10 @@ public class ComponentColorModel extends ColorModel {
      */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ComponentColorModel)) {
+        if (!(obj instanceof ComponentColorModel cm)) {
             return false;
         }
 
-        ComponentColorModel cm = (ComponentColorModel) obj;
         if (supportsAlpha != cm.hasAlpha() ||
             isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
             pixel_bits != cm.getPixelSize() ||

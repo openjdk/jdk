@@ -1391,8 +1391,7 @@ public class RepaintManager
                 switch (bufferStrategyType) {
                 case BUFFER_STRATEGY_NOT_SPECIFIED:
                     Toolkit tk = Toolkit.getDefaultToolkit();
-                    if (tk instanceof SunToolkit) {
-                        SunToolkit stk = (SunToolkit) tk;
+                    if (tk instanceof SunToolkit stk) {
                         if (stk.useBufferPerWindow()) {
                             paintManager = new BufferStrategyPaintManager();
                         }
@@ -1557,8 +1556,7 @@ public class RepaintManager
                         osg.translate(-x, -y);
                         osg.setClip(x,y,bw,bh);
                         if (volatileBufferType != Transparency.OPAQUE
-                                && osg instanceof Graphics2D) {
-                            final Graphics2D g2d = (Graphics2D) osg;
+                                && osg instanceof Graphics2D g2d) {
                             final Color oldBg = g2d.getBackground();
                             g2d.setBackground(c.getBackground());
                             g2d.clearRect(x, y, bw, bh);
@@ -1567,8 +1565,7 @@ public class RepaintManager
                         c.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
                         g.setClip(x, y, bw, bh);
                         if (volatileBufferType != Transparency.OPAQUE
-                                && g instanceof Graphics2D) {
-                            final Graphics2D g2d = (Graphics2D) g;
+                                && g instanceof Graphics2D g2d) {
                             final Composite oldComposite = g2d.getComposite();
                             g2d.setComposite(AlphaComposite.Src);
                             g2d.drawImage(image, x, y, c);

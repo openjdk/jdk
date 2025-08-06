@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,9 +509,8 @@ public abstract class BufferedRenderPipe
 
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
-            if (s instanceof Polygon) {
+            if (s instanceof Polygon p) {
                 if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-                    Polygon p = (Polygon)s;
                     drawPolygon(sg2d, p.xpoints, p.ypoints, p.npoints);
                     return;
                 }

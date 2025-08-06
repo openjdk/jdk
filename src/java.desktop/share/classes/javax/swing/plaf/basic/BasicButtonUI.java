@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -734,11 +734,10 @@ public class BasicButtonUI extends ButtonUI{
 
             // Get the button model from the source.
             ButtonModel model = activeBtn.getModel();
-            if (!(model instanceof DefaultButtonModel))
+            if (!(model instanceof DefaultButtonModel bm))
                 return false;
 
             // If the button model is DefaultButtonModel, and use it, otherwise return.
-            DefaultButtonModel bm = (DefaultButtonModel) model;
 
             // get the ButtonGroup of the button from the button model
             ButtonGroup group = bm.getGroup();
@@ -871,8 +870,7 @@ public class BasicButtonUI extends ButtonUI{
         // to next/previous component
         public void keyPressed(KeyEvent e) {
             AWTKeyStroke stroke = AWTKeyStroke.getAWTKeyStrokeForEvent(e);
-            if (stroke != null && e.getSource() instanceof JToggleButton) {
-                JToggleButton source = (JToggleButton) e.getSource();
+            if (stroke != null && e.getSource() instanceof JToggleButton source) {
                 boolean next = isFocusTraversalKey(source,
                         KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
                         stroke);

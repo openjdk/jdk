@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -798,8 +798,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      */
     static boolean matchNameAttribute(AttributeSet attr, HTML.Tag tag) {
         Object o = attr.getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag name = (HTML.Tag) o;
+        if (o instanceof HTML.Tag name) {
             if (name == tag) {
                 return true;
             }
@@ -1538,10 +1537,8 @@ public class HTMLDocument extends DefaultStyledDocument {
                 while (names.hasMoreElements()) {
                     Object name = names.nextElement();
                     if ((name instanceof HTML.Tag) &&
-                        (attr.getAttribute(name) instanceof AttributeSet)) {
+                        (attr.getAttribute(name) instanceof AttributeSet check)) {
 
-                        AttributeSet check = (AttributeSet)attr.
-                                             getAttribute(name);
                         if (check.isDefined(attribute) &&
                             value.equals(check.getAttribute(attribute))) {
                             return e;
@@ -4243,8 +4240,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                             else {
                                 Object name = attrs.getAttribute
                                               (StyleConstants.NameAttribute);
-                                if (name instanceof HTML.Tag) {
-                                    HTML.Tag tag = (HTML.Tag)name;
+                                if (name instanceof HTML.Tag tag) {
                                     if (tag == HTML.Tag.IMG ||
                                         tag == HTML.Tag.HR ||
                                         tag == HTML.Tag.COMMENT ||

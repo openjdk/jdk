@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,8 +722,7 @@ public class BasicSpinnerUI extends SpinnerUI
         private void select(JSpinner spinner) {
             JComponent editor = spinner.getEditor();
 
-            if (editor instanceof JSpinner.DateEditor) {
-                JSpinner.DateEditor dateEditor = (JSpinner.DateEditor)editor;
+            if (editor instanceof JSpinner.DateEditor dateEditor) {
                 JFormattedTextField ftf = dateEditor.getTextField();
                 Format format = dateEditor.getFormat();
                 Object value;
@@ -783,8 +782,7 @@ public class BasicSpinnerUI extends SpinnerUI
         private int getCalendarField(JSpinner spinner) {
             JComponent editor = spinner.getEditor();
 
-            if (editor instanceof JSpinner.DateEditor) {
-                JSpinner.DateEditor dateEditor = (JSpinner.DateEditor)editor;
+            if (editor instanceof JSpinner.DateEditor dateEditor) {
                 JFormattedTextField ftf = dateEditor.getTextField();
                 int start = ftf.getSelectionStart();
                 JFormattedTextField.AbstractFormatter formatter =
@@ -1018,8 +1016,7 @@ public class BasicSpinnerUI extends SpinnerUI
                 JSpinner spinner = (JSpinner)(e.getSource());
                 SpinnerUI spinnerUI = spinner.getUI();
 
-                if (spinnerUI instanceof BasicSpinnerUI) {
-                    BasicSpinnerUI ui = (BasicSpinnerUI)spinnerUI;
+                if (spinnerUI instanceof BasicSpinnerUI ui) {
 
                     if ("editor".equals(propertyName)) {
                         JComponent oldEditor = (JComponent)e.getOldValue();
@@ -1079,16 +1076,13 @@ public class BasicSpinnerUI extends SpinnerUI
                         }
                     }
                 }
-            } else if (e.getSource() instanceof JComponent) {
-                JComponent c = (JComponent)e.getSource();
+            } else if (e.getSource() instanceof JComponent c) {
                 if ((c.getParent() instanceof JPanel) &&
-                    (c.getParent().getParent() instanceof JSpinner) &&
+                    (c.getParent().getParent() instanceof JSpinner spinner) &&
                     "border".equals(propertyName)) {
 
-                    JSpinner spinner = (JSpinner)c.getParent().getParent();
                     SpinnerUI spinnerUI = spinner.getUI();
-                    if (spinnerUI instanceof BasicSpinnerUI) {
-                        BasicSpinnerUI ui = (BasicSpinnerUI)spinnerUI;
+                    if (spinnerUI instanceof BasicSpinnerUI ui) {
                         ui.maybeRemoveEditorBorder(c);
                     }
                 }
@@ -1113,13 +1107,11 @@ public class BasicSpinnerUI extends SpinnerUI
         }
 
         public void stateChanged(ChangeEvent e) {
-            if (e.getSource() instanceof JSpinner) {
-                JSpinner spinner = (JSpinner)e.getSource();
+            if (e.getSource() instanceof JSpinner spinner) {
                 SpinnerUI spinnerUI = spinner.getUI();
                 if (DefaultLookup.getBoolean(spinner, spinnerUI,
                     "Spinner.disableOnBoundaryValues", false) &&
-                    spinnerUI instanceof BasicSpinnerUI) {
-                    BasicSpinnerUI ui = (BasicSpinnerUI)spinnerUI;
+                    spinnerUI instanceof BasicSpinnerUI ui) {
                     ui.updateEnabledState();
                 }
             }

@@ -243,9 +243,8 @@ public final class MediaPrintableArea
      */
     public boolean equals(Object object) {
         boolean ret = false;
-        if (object instanceof MediaPrintableArea) {
-           MediaPrintableArea mm = (MediaPrintableArea)object;
-           if (x == mm.x &&  y == mm.y && w == mm.w && h == mm.h) {
+        if (object instanceof MediaPrintableArea mm) {
+            if (x == mm.x &&  y == mm.y && w == mm.w && h == mm.h) {
                ret = true;
            }
         }

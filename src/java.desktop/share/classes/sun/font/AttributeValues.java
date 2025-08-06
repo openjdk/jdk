@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,8 +634,7 @@ public final class AttributeValues implements Cloneable {
         case EPOSTURE: posture = ((Number)o).floatValue(); break;
         case ESIZE: size = ((Number)o).floatValue(); break;
         case ETRANSFORM: {
-            if (o instanceof TransformAttribute) {
-                TransformAttribute ta = (TransformAttribute)o;
+            if (o instanceof TransformAttribute ta) {
                 if (ta.isIdentity()) {
                     transform = null;
                 } else {
@@ -663,8 +662,7 @@ public final class AttributeValues implements Cloneable {
         case EBIDI_EMBEDDING: bidiEmbedding = (byte)((Integer)o).intValue(); break;
         case EJUSTIFICATION: justification = ((Number)o).floatValue(); break;
         case EINPUT_METHOD_HIGHLIGHT: {
-            if (o instanceof Annotation) {
-                Annotation at = (Annotation)o;
+            if (o instanceof Annotation at) {
                 imHighlight = (InputMethodHighlight)at.getValue();
             } else {
                 imHighlight = (InputMethodHighlight)o;

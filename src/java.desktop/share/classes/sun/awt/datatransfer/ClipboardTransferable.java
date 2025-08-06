@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,9 +154,8 @@ public class ClipboardTransferable implements Transferable {
         if (ret instanceof IOException) {
             // rethrow IOExceptions generated while fetching data
             throw new IOException("Exception fetching data: ", (IOException)ret);
-        } else if (ret instanceof DataFactory) {
+        } else if (ret instanceof DataFactory factory) {
             // Now we can render the data
-            DataFactory factory = (DataFactory)ret;
             ret = factory.getTransferData(flavor);
         }
         return ret;

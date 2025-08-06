@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,7 +702,7 @@ class GTKPainter extends SynthPainter {
          * the w/h values below too much, so that the full thickness of the
          * rendered line will be captured by our image caching code.
          */
-        if (c instanceof JToolBar.Separator) {
+        if (c instanceof JToolBar.Separator sep) {
             /*
              * GTK renders toolbar separators differently in that an
              * artificial padding is added to each end of the separator.
@@ -727,7 +727,6 @@ class GTKPainter extends SynthPainter {
              */
             detail = "toolbar";
             float pct = 0.2f;
-            JToolBar.Separator sep = (JToolBar.Separator)c;
             Dimension size = sep.getSeparatorSize();
             if (orientation == JSeparator.HORIZONTAL) {
                 x += (int)(w * pct);

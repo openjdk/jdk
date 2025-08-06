@@ -460,8 +460,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 }
             }
 
-            if (param instanceof JPEGImageWriteParam) {
-                JPEGImageWriteParam jparam = (JPEGImageWriteParam) param;
+            if (param instanceof JPEGImageWriteParam jparam) {
                 if (jparam.areTablesSet()) {
                     wantQTables = false;  // If the param has them, metadata shouldn't
                     wantHTables = false;
@@ -1760,8 +1759,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 if (idsDiffer) {
                     // update the ids in each SOS marker segment
                     for (MarkerSegment seg : markerSequence) {
-                        if (seg instanceof SOSMarkerSegment) {
-                            SOSMarkerSegment target = (SOSMarkerSegment) seg;
+                        if (seg instanceof SOSMarkerSegment target) {
                             for (int i = 0; i < target.componentSpecs.length; i++) {
                                 int oldSelector =
                                     target.componentSpecs[i].componentSelector;
@@ -2320,8 +2318,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     private int countScanBands() {
         List<Integer> ids = new ArrayList<>();
         for (MarkerSegment seg : markerSequence) {
-            if (seg instanceof SOSMarkerSegment) {
-                SOSMarkerSegment sos = (SOSMarkerSegment) seg;
+            if (seg instanceof SOSMarkerSegment sos) {
                 SOSMarkerSegment.ScanComponentSpec [] specs = sos.componentSpecs;
                 for (int i = 0; i < specs.length; i++) {
                     Integer id = specs[i].componentSelector;
@@ -2367,15 +2364,14 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         }
         // Iterate over each MarkerSegment
         for (MarkerSegment seg : markerSequence) {
-            if (seg instanceof JFIFMarkerSegment) {
+            if (seg instanceof JFIFMarkerSegment jfif) {
                 if (ignoreJFIF == false) {
-                    JFIFMarkerSegment jfif = (JFIFMarkerSegment) seg;
                     jfif.writeWithThumbs(ios, thumbnails, writer);
                     if (iccProfile != null) {
                         JFIFMarkerSegment.writeICC(iccProfile, ios);
                     }
                 } // Otherwise ignore it, as requested
-            } else if (seg instanceof AdobeMarkerSegment) {
+            } else if (seg instanceof AdobeMarkerSegment adobe) {
                 if (ignoreAdobe == false) {
                     if (newAdobeTransform != JPEG.ADOBE_IMPOSSIBLE) {
                         AdobeMarkerSegment newAdobe =
@@ -2384,7 +2380,6 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                         newAdobe.write(ios);
                     } else if (forceJFIF) {
                         // If adobe isn't JFIF compatible, ignore it
-                        AdobeMarkerSegment adobe = (AdobeMarkerSegment) seg;
                         if ((adobe.transform == JPEG.ADOBE_UNKNOWN)
                             || (adobe.transform == JPEG.ADOBE_YCC)) {
                             adobe.write(ios);

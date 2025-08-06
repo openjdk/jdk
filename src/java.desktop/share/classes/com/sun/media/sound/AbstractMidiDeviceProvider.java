@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,10 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
     @Override
     public final MidiDevice getDevice(final MidiDevice.Info info) {
         Objects.requireNonNull(info);
-        if (info instanceof Info) {
+        if (info instanceof Info thisInfo) {
             readDeviceInfos();
             MidiDevice[] devices = getDeviceCache();
             Info[] infos = getInfoCache();
-            Info thisInfo = (Info) info;
             int index = thisInfo.getIndex();
             if (index >= 0 && index < devices.length && infos[index] == info) {
                 if (devices[index] == null) {

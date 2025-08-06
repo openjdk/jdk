@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,9 +442,8 @@ public abstract class SunToolkit extends Toolkit
         if (sea != null && sea.isSequencedEvent(event)) {
             AWTEvent nested = sea.getNested(event);
             if (nested.getID() == WindowEvent.WINDOW_LOST_FOCUS &&
-                nested instanceof TimedWindowEvent)
+                    nested instanceof TimedWindowEvent twe)
             {
-                TimedWindowEvent twe = (TimedWindowEvent)nested;
                 ((SunToolkit)Toolkit.getDefaultToolkit()).
                     setWindowDeactivationTime((Window)twe.getSource(), twe.getWhen());
             }
@@ -780,11 +779,10 @@ public abstract class SunToolkit extends Toolkit
 
     @Override
     public int checkImage(Image img, int w, int h, ImageObserver o) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage tkimg)) {
             return ImageObserver.ALLBITS;
         }
 
-        ToolkitImage tkimg = (ToolkitImage)img;
         int repbits;
         if (w == 0 || h == 0) {
             repbits = ImageObserver.ALLBITS;
@@ -801,11 +799,10 @@ public abstract class SunToolkit extends Toolkit
         }
 
         // Must be a ToolkitImage
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage tkimg)) {
             return true;
         }
 
-        ToolkitImage tkimg = (ToolkitImage)img;
         if (tkimg.hasError()) {
             if (o != null) {
                 o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,

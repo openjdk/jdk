@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,9 +208,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             for (int i = 0; i < getNumDataElements(); i++) {
                 dataOffsets[i] += xOffset*pixelStride+yOffset*scanlineStride;
             }
-        } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        } else if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             this.packed = true;
             this.bitMasks = sppsm.getBitMasks();
             this.bitOffsets = sppsm.getBitOffsets();
@@ -609,8 +607,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int srcOffY = inRaster.getMinY();
         Object tdata = null;
 
-        if (inRaster instanceof ByteInterleavedRaster) {
-            ByteInterleavedRaster bct = (ByteInterleavedRaster) inRaster;
+        if (inRaster instanceof ByteInterleavedRaster bct) {
             byte[] bdata = bct.getDataStorage();
             // copy whole scanlines
             if (inOrder && bct.inOrder && pixelStride == bct.pixelStride) {

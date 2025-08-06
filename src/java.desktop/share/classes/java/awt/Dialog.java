@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1073,16 +1073,14 @@ public class Dialog extends Window {
 
     final void modalityPushed() {
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
-            SunToolkit stk = (SunToolkit)tk;
+        if (tk instanceof SunToolkit stk) {
             stk.notifyModalityPushed(this);
         }
     }
 
     final void modalityPopped() {
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
-            SunToolkit stk = (SunToolkit)tk;
+        if (tk instanceof SunToolkit stk) {
             stk.notifyModalityPopped(this);
         }
     }
@@ -1386,8 +1384,7 @@ public class Dialog extends Window {
         IdentityArrayList<Window> unblockedWindows = Window.getAllUnblockedWindows();
         for (Window w : unblockedWindows) {
             if (shouldBlock(w) && !blockersHierarchies.contains(w)) {
-                if ((w instanceof Dialog) && ((Dialog)w).isModal_NoClientCode()) {
-                    Dialog wd = (Dialog)w;
+                if ((w instanceof Dialog wd) && ((Dialog)w).isModal_NoClientCode()) {
                     if (wd.shouldBlock(this) && (modalDialogs.indexOf(wd) > modalDialogs.indexOf(this))) {
                         continue;
                     }
@@ -1422,8 +1419,7 @@ public class Dialog extends Window {
         // by another dialogs
         for (int i = 0; i < blockedWindowsCount; i++) {
             Window w = save.get(i);
-            if ((w instanceof Dialog) && ((Dialog)w).isModal_NoClientCode()) {
-                Dialog d = (Dialog)w;
+            if ((w instanceof Dialog d) && ((Dialog)w).isModal_NoClientCode()) {
                 d.modalShow();
             } else {
                 checkShouldBeBlocked(w);

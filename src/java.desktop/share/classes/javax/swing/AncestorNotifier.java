@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,8 +145,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
             if (addToFirst || a != ancestor) {
                 a.addComponentListener(this);
 
-                if (a instanceof JComponent) {
-                    JComponent jAncestor = (JComponent)a;
+                if (a instanceof JComponent jAncestor) {
 
                     jAncestor.addPropertyChangeListener(this);
                 }
@@ -165,8 +164,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
         Component a;
         for (a = ancestor; a != null; a = a.getParent()) {
             a.removeComponentListener(this);
-            if (a instanceof JComponent) {
-                JComponent jAncestor = (JComponent)a;
+            if (a instanceof JComponent jAncestor) {
                 jAncestor.removePropertyChangeListener(this);
             }
             if (a == firstInvisibleAncestor || a instanceof Window) {

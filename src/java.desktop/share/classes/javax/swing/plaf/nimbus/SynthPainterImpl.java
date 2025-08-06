@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ class SynthPainterImpl extends SynthPainter {
     private void paint(Painter<Object> p, SynthContext ctx, Graphics g, int x, int y,
                        int w, int h, AffineTransform transform) {
         if (p != null) {
-            if (g instanceof Graphics2D){
-                Graphics2D gfx = (Graphics2D)g;
+            if (g instanceof Graphics2D gfx){
                 if (transform!=null){
                     gfx.transform(transform);
                 }

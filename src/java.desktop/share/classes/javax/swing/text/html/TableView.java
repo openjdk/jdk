@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,16 +272,14 @@ import javax.swing.text.*;
             int n = getViewCount();
             for (int i = 0; i < n; i++) {
                 View v = getView(i);
-                if (v instanceof RowView) {
+                if (v instanceof RowView rv) {
                     rows.addElement((RowView) v);
-                    RowView rv = (RowView) v;
                     rv.clearFilledColumns();
                     rv.rowIndex = rows.size() - 1;
                     rv.viewIndex = i;
                 } else {
                     Object o = v.getElement().getAttributes().getAttribute(StyleConstants.NameAttribute);
-                    if (o instanceof HTML.Tag) {
-                        HTML.Tag kind = (HTML.Tag) o;
+                    if (o instanceof HTML.Tag kind) {
                         if (kind == HTML.Tag.CAPTION) {
                             captionIndex = i;
                         }
@@ -924,8 +922,7 @@ import javax.swing.text.*;
      */
     public View create(Element elem) {
         Object o = elem.getAttributes().getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag kind = (HTML.Tag) o;
+        if (o instanceof HTML.Tag kind) {
             if (kind == HTML.Tag.TR) {
                 return createTableRow(elem);
             } else if ((kind == HTML.Tag.TD) || (kind == HTML.Tag.TH)) {

@@ -250,8 +250,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
         ColorSpace srcColorSpace, destColorSpace;
         BufferedImage savdest = null;
 
-        if (src.getColorModel() instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel) src.getColorModel();
+        if (src.getColorModel() instanceof IndexColorModel icm) {
             src = icm.convertToIntDiscrete(src.getRaster(), true);
         }
         srcColorSpace = src.getColorModel().getColorSpace();

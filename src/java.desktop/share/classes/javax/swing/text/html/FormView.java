@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,11 +355,10 @@ public class FormView extends ComponentView implements ActionListener {
     }
 
     private void removeStaleListenerForModel(Object model) {
-        if (model instanceof DefaultButtonModel) {
+        if (model instanceof DefaultButtonModel buttonModel) {
             // case of JButton whose model is DefaultButtonModel
             // Need to remove stale ActionListener, ChangeListener and
             // ItemListener that are instance of AbstractButton$Handler.
-            DefaultButtonModel buttonModel = (DefaultButtonModel) model;
             String listenerClass = "javax.swing.AbstractButton$Handler";
             for (ActionListener listener : buttonModel.getActionListeners()) {
                 if (listenerClass.equals(listener.getClass().getName())) {
@@ -394,14 +393,13 @@ public class FormView extends ComponentView implements ActionListener {
                     listModel.removeListDataListener(listener);
                 }
             }
-        } else if (model instanceof AbstractDocument) {
+        } else if (model instanceof AbstractDocument docModel) {
             // case of JPasswordField, JTextField and JTextArea
             // All have 2 stale DocumentListeners.
             String listenerClass1 =
                     "javax.swing.plaf.basic.BasicTextUI$UpdateHandler";
             String listenerClass2 =
                     "javax.swing.text.DefaultCaret$Handler";
-            AbstractDocument docModel = (AbstractDocument) model;
             for (DocumentListener listener : docModel.getDocumentListeners()) {
                 if (listenerClass1.equals(listener.getClass().getName())
                         || listenerClass2.equals(listener.getClass().getName()))
@@ -942,12 +940,10 @@ public class FormView extends ComponentView implements ActionListener {
                     AttributeSet elemAttr = next.getAttributes();
                     Object m = elemAttr.getAttribute(StyleConstants.
                                                      ModelAttribute);
-                    if (m instanceof TextAreaDocument) {
-                        TextAreaDocument doc = (TextAreaDocument)m;
+                    if (m instanceof TextAreaDocument doc) {
                         doc.reset();
-                    } else if (m instanceof PlainDocument) {
+                    } else if (m instanceof PlainDocument doc) {
                         try {
-                            PlainDocument doc =  (PlainDocument)m;
                             doc.remove(0, doc.getLength());
                             if (HTMLDocument.matchNameAttribute
                                              (elemAttr, HTML.Tag.INPUT)) {
@@ -977,11 +973,9 @@ public class FormView extends ComponentView implements ActionListener {
                         if (option != null) {
                             model.setSelectedItem(option);
                         }
-                    } else if (m instanceof JToggleButton.ToggleButtonModel) {
+                    } else if (m instanceof JToggleButton.ToggleButtonModel model) {
                         boolean checked = ((String)elemAttr.getAttribute
                                            (HTML.Attribute.CHECKED) != null);
-                        JToggleButton.ToggleButtonModel model =
-                                        (JToggleButton.ToggleButtonModel)m;
                         model.setSelected(checked);
                     }
                 }

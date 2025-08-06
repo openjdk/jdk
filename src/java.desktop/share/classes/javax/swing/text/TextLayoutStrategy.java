@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,8 +247,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
 
         // check for direction change
         Document doc = v.getDocument();
-        if (doc instanceof AbstractDocument) {
-            AbstractDocument d = (AbstractDocument) doc;
+        if (doc instanceof AbstractDocument d) {
             Element bidiRoot = d.getBidiRootElement();
             if( bidiRoot.getElementCount() > 1 ) {
                 int bidiIndex = bidiRoot.getElementIndex( startOffset );
