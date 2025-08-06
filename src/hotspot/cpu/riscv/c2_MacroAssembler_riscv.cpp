@@ -2024,13 +2024,13 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const Register ary_end = tmp2;
   const Register consumed = tmp3;
 
-  const VectorRegister v_coeffs =  v4;
+  const VectorRegister v_sum    =  v0;
+  const VectorRegister v_zred   =  v4;
+
   const VectorRegister v_src    =  v8;
-  const VectorRegister v_sum    = v12;
+  const VectorRegister v_tmp    = v12;
   const VectorRegister v_powmax = v16;
-  const VectorRegister v_result = v20;
-  const VectorRegister v_tmp    = v24;
-  const VectorRegister v_zred   = v28;
+  const VectorRegister v_coeffs = v20;
 
   const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
                            + sizeof(jint);
@@ -2044,32 +2044,28 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   vsetvli(t0, x0, Assembler::e64, Assembler::m8);
   vmv_v_x(v0, x0);
-  vmv_v_x(v8, x0);
-  vmv_v_x(v16, x0);
-  vmv_v_x(v24, x0);
 
   la(t1, ExternalAddress(adr_pows31));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
   vsetvli(x0, x0, Assembler::e32, Assembler::m4);
   vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
   vmv_v_x(v_powmax, pow31_highest);
-  vmv_s_x(v_result, result);
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
 
   bind(VEC_LOOP);
-  vmul_vv(v_result, v_result, v_powmax);
   arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
   vmul_vv(v_src, v_src, v_coeffs);
   vmadd_vv(v_sum, v_powmax, v_src);
   shadd(ary, consumed, ary, t0, elsize_shift);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, MAX_VEC_MASK);
+  mulw(result, result, pow31_highest);
   bne(t1, x0, VEC_LOOP);
 
   vredsum_vs(v_sum, v_sum, v_zred);
-  vadd_vv(v_result, v_result, v_sum);
-  vmv_x_s(result, v_result);
+  vmv_x_s(t0, v_sum);
+  addw(result, result, t0);
   beqz(cnt, DONE);
 
   bind(SCALAR_TAIL);
