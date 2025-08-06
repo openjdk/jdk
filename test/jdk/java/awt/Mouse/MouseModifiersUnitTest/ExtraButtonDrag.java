@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 6315717
- * @summary Verifies that mouse drag events received for every button if the property is set to true
+ * @summary Verifies that the mouse drag events received for every button if the property is set to true
  * @run main ExtraButtonDrag
  */
 
@@ -50,7 +50,7 @@ public class ExtraButtonDrag {
     private static volatile boolean moved = false;
     private static volatile Point centerFrame;
     private static volatile Point outboundsFrame;
-    static String osName = System.getProperty("os.name");
+    private static final String OS_NAME = System.getProperty("os.name");
     private static MouseAdapter mAdapter = new MouseAdapter() {
         @Override
         public void mouseDragged(MouseEvent e) {
@@ -113,15 +113,15 @@ public class ExtraButtonDrag {
             // XToolkit: extra buttons should report MOVED events only
             // WToolkit: extra buttons should report DRAGGED events only
             if (i > 2) { // extra buttons only
-                if (osName.equals("Linux")) {
+                if (OS_NAME.equals("Linux")) {
                     if (!moved || dragged) {
-                        throw new RuntimeException("Test failed." + osName
+                        throw new RuntimeException("Test failed." + OS_NAME
                             + " Button = " + (i + 1) + " moved = " + moved
                             + " : dragged = " + dragged);
                     }
                 } else { // WToolkit
                     if (moved || !dragged) {
-                        throw new RuntimeException("Test failed." + osName
+                        throw new RuntimeException("Test failed." + OS_NAME
                             + " Button = " + (i + 1) + " moved = " + moved
                             + " : dragged = " + dragged);
                     }
