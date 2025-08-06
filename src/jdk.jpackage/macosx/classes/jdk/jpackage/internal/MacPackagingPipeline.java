@@ -331,7 +331,7 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
-        final var infoPlistFile = MacBundle.fromAppImageLayout(env.resolvedLayout()).infoPlistFile();
+        final var infoPlistFile = MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow().infoPlistFile();
 
         Log.verbose(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
 
@@ -467,7 +467,7 @@ final class MacPackagingPipeline {
 
     private static MacBundle runtimeBundle(AppImageBuildEnv<MacApplication, AppImageLayout> env) {
         if (env.app().isRuntime()) {
-            return new MacBundle(env.resolvedLayout().rootDirectory());
+            return MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow();
         } else {
             return new MacBundle(((MacApplicationLayout)env.resolvedLayout()).runtimeRootDirectory());
         }
