@@ -855,9 +855,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
 
         case "parseLenient":
             // Use only the lenient minus sign for now
-            if (currentContainer instanceof KeyContainer kc &&
-                kc.getKey().equals("number") &&
-                attributes.getValue("sample").equals("-")) {
+            if (currentContainer instanceof KeyContainer kc
+                && kc.getKey().equals("number")
+                && attributes.getValue("sample").equals("-")) {
                 pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/lenientMinusSigns");
             } else {
                 pushIgnoredContainer(qName);
