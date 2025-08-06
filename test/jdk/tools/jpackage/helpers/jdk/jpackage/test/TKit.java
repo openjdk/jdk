@@ -632,7 +632,7 @@ public final class TKit {
                             fileToWaitFor));
                     return;
                 }
-                assertUnexpected(String.format("Timeout expired", remainderTimeout));
+                assertUnexpected(String.format("Timeout %dms expired", remainderTimeout.toMillis()));
             }
 
             for (WatchEvent<?> event : key.pollEvents()) {
