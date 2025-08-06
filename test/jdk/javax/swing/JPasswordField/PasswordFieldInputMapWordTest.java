@@ -30,9 +30,8 @@
  * @run main PasswordFieldInputMapWordTest
  */
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.TreeSet;
+import java.util.Set;
 
 import javax.swing.InputMap;
 import javax.swing.JComponent;
@@ -78,7 +77,7 @@ public class PasswordFieldInputMapWordTest {
     /**
      * These are all the actions with "word" in their field name.
      */
-    static Collection<String> wordActions = new TreeSet<>(Arrays.asList(
+    static Collection<String> wordActions = Set.of(
             DefaultEditorKit.deleteNextWordAction,
             DefaultEditorKit.deletePrevWordAction,
             DefaultEditorKit.beginWordAction,
@@ -89,7 +88,7 @@ public class PasswordFieldInputMapWordTest {
             DefaultEditorKit.nextWordAction,
             DefaultEditorKit.selectionPreviousWordAction,
             DefaultEditorKit.selectionNextWordAction
-    ));
+    );
 
     private static void runTest() {
         JPasswordField field = new JPasswordField();
