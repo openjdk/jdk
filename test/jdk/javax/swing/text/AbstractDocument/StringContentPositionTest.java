@@ -51,7 +51,7 @@ public class StringContentPositionTest {
 
         for (int i = 0; i < SIZE; i++) {
             SC.insertString(0, TEXT);
-            positions[i] = SC.createPosition(5);
+            positions[i] = SC.createPosition(LEN);
         }
         for (int i = 0; i < SIZE; i++) {
            int expected = ((SIZE - i) * LEN);
