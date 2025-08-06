@@ -1162,13 +1162,13 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
   return find_callee_info_helper(vfst, bc, callinfo, THREAD);
 }
 
-Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
+Method* SharedRuntime::extract_attached_method(vframeStream& vfst, bool* trust_bytecode) {
   nmethod* caller = vfst.nm();
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     CompiledICLocker ic_locker(caller);
-    return caller->attached_method_before_pc(pc);
+    return caller->attached_method_before_pc(pc, trust_bytecode);
   }
   return nullptr;
 }
@@ -1194,15 +1194,14 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     return receiver;
   }
 
-  methodHandle attached_method(THREAD, extract_attached_method(vfst));
 
   #if INCLUDE_JVMCI
-    Bytecodes::Code code = caller->java_code_at(bci);
-    assert(callerFrame.is_compiled_frame(), "expected caller frame to be compiled");
+    bool trust_bytecode = true;
+    methodHandle attached_method(THREAD, extract_attached_method(vfst, &trust_bytecode));
     bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
 
-    if (!Bytecodes::is_invoke(code) && attached_method.not_null() && caller_is_jvmci) {
-      // invoke does not exist in bytecode
+    if (!trust_bytecode && attached_method.not_null() && caller_is_jvmci) {
+      // invoke does not correspond to bytecode
       RegisterMap reg_map2(current,
                           RegisterMap::UpdateMap::include,
                           RegisterMap::ProcessFrames::include,
@@ -1226,6 +1225,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
       LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
       return receiver;
     }
+  #else
+    methodHandle attached_method(THREAD, extract_attached_method(vfst));
   #endif // INCLUDE_JVMCI
 
 
