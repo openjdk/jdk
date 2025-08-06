@@ -75,7 +75,7 @@ public final class SegmentBulkOperations {
      */
     @ForceInline
     public static void fill(AbstractMemorySegmentImpl dst, byte value) {
-        dst.checkReadOnly(true);
+        dst.checkReadOnly(false);
         final long len = dst.length;
         /* The multiplication below is equivalent to (but faster than):
              long u = Byte.toUnsignedLong(value);
