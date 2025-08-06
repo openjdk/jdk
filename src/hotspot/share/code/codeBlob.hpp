@@ -28,9 +28,9 @@
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
-#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
