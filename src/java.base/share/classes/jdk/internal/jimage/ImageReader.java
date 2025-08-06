@@ -323,9 +323,11 @@ public final class ImageReader implements AutoCloseable {
                 assert isModulesSubdirectory(loc) : "Invalid modules directory: " + name;
                 return completeModuleDirectory(newDirectory(name), loc);
             }
-            // Now try the non-prefixed resource name.
+            // Now try the non-prefixed resource name, but be careful to avoid false
+            // positives for names like "/modules/modules/xxx" which could return a
+            // location of a directory entry.
             loc = findLocation(name.substring(MODULES_ROOT.length()));
-            return loc != null ? newResource(name, loc) : null;
+            return loc != null && isResource(loc) ? newResource(name, loc) : null;
         }
 
         /**
@@ -459,11 +461,25 @@ public final class ImageReader implements AutoCloseable {
 
         /** Helper to extract the integer offset buffer from a directory location. */
         private IntBuffer getOffsetBuffer(ImageLocation dir) {
-            assert isDirectory(dir) : "Not a directory: " + dir.getFullName();
+            assert !isResource(dir) : "Not a directory: " + dir.getFullName();
             byte[] offsets = getResource(dir);
             ByteBuffer buffer = ByteBuffer.wrap(offsets);
             buffer.order(getByteOrder());
             return buffer.asIntBuffer();
+        }
+
+        /**
+         * Efficiently determines if an image location is a resource.
+         *
+         * <p>A resource must have a valid module associated with it, so its
+         * module offset must be non-zero, and not equal to the offsets for
+         * "/modules/..." or "/packages/..." entries.
+         */
+        private boolean isResource(ImageLocation loc) {
+            int moduleOffset = loc.getModuleOffset();
+            return moduleOffset != 0
+                    && moduleOffset != modulesStringOffset
+                    && moduleOffset != packagesStringOffset;
         }
 
         /**
@@ -476,23 +492,6 @@ public final class ImageReader implements AutoCloseable {
          */
         private boolean isModulesSubdirectory(ImageLocation loc) {
             return loc.getModuleOffset() == modulesStringOffset;
-        }
-
-        /**
-         * Determines if an image location is a directory in the {@code /packages}
-         * namespace (if so, the location name is the node name).
-         *
-         * <p>In jimage, every {@code ImageLocation} under {@code /packages/} is a
-         * directory and has the same value for {@code getModule()}, and {@code
-         * getModuleOffset()}.
-         */
-        private boolean isPackagesSubdirectory(ImageLocation loc) {
-            return loc.getModuleOffset() == packagesStringOffset;
-        }
-
-        /** Determines if an image location represents a directory of some kind. */
-        private boolean isDirectory(ImageLocation loc) {
-            return isModulesSubdirectory(loc) || isPackagesSubdirectory(loc) || loc.getModuleOffset() == 0;
         }
 
         /**
