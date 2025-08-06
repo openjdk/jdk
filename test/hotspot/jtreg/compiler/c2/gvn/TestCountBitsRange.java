@@ -24,6 +24,7 @@
 package compiler.c2.gvn;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -38,12 +39,41 @@ public class TestCountBitsRange {
         TestFramework.run();
     }
 
-    static int i = RunInfo.getRandom().nextInt();
-    static long l = RunInfo.getRandom().nextLong();
+    @Run(test = {
+        "clzCompareInt", "clzDiv8Int",
+        "clzCompareLong", "clzDiv8Long",
+        "ctzCompareInt", "ctzDiv8Int",
+        "ctzCompareLong", "ctzDiv8Long",
+    })
+    public void runTest() {
+        int i = RunInfo.getRandom().nextInt();
+        long l = RunInfo.getRandom().nextLong();
+        assertResult(i, l);
+    }
+
+    @DontCompile
+    public void assertResult(int i, long l) {
+        Asserts.assertEQ(Integer.numberOfLeadingZeros(i) < 0 || Integer.numberOfLeadingZeros(i) > 32,
+                         clzCompareInt(i));
+        Asserts.assertEQ(Integer.numberOfLeadingZeros(i) / 8,
+                         clzDiv8Int(i));
+        Asserts.assertEQ(Long.numberOfLeadingZeros(l) < 0 || Long.numberOfLeadingZeros(l) > 64,
+                         clzCompareLong(l));
+        Asserts.assertEQ(Long.numberOfLeadingZeros(l) / 8,
+                         clzDiv8Long(l));
+        Asserts.assertEQ(Integer.numberOfTrailingZeros(i) < 0 || Integer.numberOfTrailingZeros(i) > 32,
+                         ctzCompareInt(i));
+        Asserts.assertEQ(Integer.numberOfTrailingZeros(i) / 8,
+                         ctzDiv8Int(i));
+        Asserts.assertEQ(Long.numberOfTrailingZeros(l) < 0 || Long.numberOfTrailingZeros(l) > 64,
+                         ctzCompareLong(l));
+        Asserts.assertEQ(Long.numberOfTrailingZeros(l) / 8,
+                         ctzDiv8Long(l));
+    }
 
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_I)
-    public boolean clzCompareInt() {
+    public boolean clzCompareInt(int i) {
         return Integer.numberOfLeadingZeros(i) < 0 || Integer.numberOfLeadingZeros(i) > 32;
     }
 
@@ -52,13 +82,13 @@ public class TestCountBitsRange {
                   IRNode.RSHIFT_I, "1",
                   IRNode.URSHIFT_I, "0",
                   IRNode.ADD_I, "0"})
-    public int clzDiv8Int() {
+    public int clzDiv8Int(int i) {
         return Integer.numberOfLeadingZeros(i) / 8;
     }
 
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_L)
-    public boolean clzCompareLong() {
+    public boolean clzCompareLong(long l) {
         return Long.numberOfLeadingZeros(l) < 0 || Long.numberOfLeadingZeros(l) > 64;
     }
 
@@ -67,13 +97,13 @@ public class TestCountBitsRange {
                   IRNode.RSHIFT_I, "1",
                   IRNode.URSHIFT_I, "0",
                   IRNode.ADD_I, "0"})
-    public int clzDiv8Long() {
+    public int clzDiv8Long(long l) {
         return Long.numberOfLeadingZeros(l) / 8;
     }
 
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_I)
-    public boolean ctzCompareInt() {
+    public boolean ctzCompareInt(int i) {
         return Integer.numberOfTrailingZeros(i) < 0 || Integer.numberOfTrailingZeros(i) > 32;
     }
 
@@ -82,13 +112,13 @@ public class TestCountBitsRange {
                   IRNode.RSHIFT_I, "1",
                   IRNode.URSHIFT_I, "0",
                   IRNode.ADD_I, "0"})
-    public int ctzDiv8Int() {
+    public int ctzDiv8Int(int i) {
         return Integer.numberOfTrailingZeros(i) / 8;
     }
 
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_L)
-    public boolean ctzCompareLong() {
+    public boolean ctzCompareLong(long l) {
         return Long.numberOfTrailingZeros(l) < 0 || Long.numberOfTrailingZeros(l) > 64;
     }
 
@@ -97,7 +127,7 @@ public class TestCountBitsRange {
                   IRNode.RSHIFT_I, "1",
                   IRNode.URSHIFT_I, "0",
                   IRNode.ADD_I, "0"})
-    public int ctzDiv8Long() {
+    public int ctzDiv8Long(long l) {
         return Long.numberOfTrailingZeros(l) / 8;
     }
 }
