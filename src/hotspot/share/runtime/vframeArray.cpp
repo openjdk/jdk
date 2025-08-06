@@ -178,6 +178,7 @@ bool vframeArrayElement::should_reexecute(bool is_top_frame, int exec_mode) cons
     switch (exec_mode) {
     case Deoptimization::Unpack_uncommon_trap:
     case Deoptimization::Unpack_reexecute:
+    case Deoptimization::Unpack_exception:
       return true;
     default:
       break;
@@ -217,7 +218,14 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   bool use_next_mdp = false; // true if we should use the mdp associated with the next bci
                              // rather than the one associated with bcp
   bool reexecute = should_reexecute(is_top_frame, exec_mode);
-  if (raw_bci() == SynchronizationEntryBCI) {
+  if (is_top_frame && exec_mode == Deoptimization::Unpack_exception) {
+    bcp = method()->bcp_from(bci());
+    // exception is pending
+    pc = Interpreter::rethrow_exception_entry();
+    // [phh] We're going to end up in some handler or other, so it doesn't
+    // matter what mdp we point to.  See exception_handler_for_exception()
+    // in interpreterRuntime.cpp.
+  } else if (raw_bci() == SynchronizationEntryBCI) {
     // We are deoptimizing while hanging in prologue code for synchronized method
     bcp = method()->bcp_from(0); // first byte code
     pc  = Interpreter::deopt_entry(vtos, 0); // step = 0 since we don't skip current bytecode
@@ -227,12 +235,9 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     bcp = method()->bcp_from(bci());
     switch (exec_mode) {
     case Deoptimization::Unpack_uncommon_trap:
+    case Deoptimization::Unpack_reexecute:
       // Do not special-case _athrow or _return_register_finalizer
       pc = Interpreter::deopt_entry(vtos, 0);
-      break;
-    case Deoptimization::Unpack_reexecute:
-      pc = Interpreter::deopt_entry(vtos, 0);
-      assert(pc == Interpreter::deopt_reexecute_entry(method(), bcp), "athrow or return with Unpack_reexecute?");
       break;
     default:
       // Yes, special-case _athrow and _return_register_finalizer
@@ -296,38 +301,14 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         // Deoptimization::fetch_unroll_info_helper
         popframe_preserved_args_size_in_words = in_words(thread->popframe_preserved_args_size_in_words());
       }
-    } else if (!realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr &&
-               state->is_earlyret_pending()) {
-      // Force early return from top frame after deoptimization
-      pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
-    } else {
-      if (realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
+    } else if (JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
+      if (!realloc_failure_exception) {
+        // Force early return from top frame after deoptimization
+        pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
+      } else {
         state->clr_earlyret_pending();
         state->set_earlyret_oop(nullptr);
         state->clr_earlyret_value();
-      }
-      // Possibly override the previous pc computation of the top (youngest) frame
-      switch (exec_mode) {
-      case Deoptimization::Unpack_deopt:
-        // use what we've got
-        break;
-      case Deoptimization::Unpack_exception:
-        // exception is pending
-        pc = SharedRuntime::raw_exception_handler_for_return_address(thread, pc);
-        // [phh] We're going to end up in some handler or other, so it doesn't
-        // matter what mdp we point to.  See exception_handler_for_exception()
-        // in interpreterRuntime.cpp.
-        break;
-      case Deoptimization::Unpack_uncommon_trap:
-      case Deoptimization::Unpack_reexecute:
-        // redo last byte code
-        assert(!use_next_mdp, "must be");
-        assert(reexecute, "must be");
-        // Was Interpreter::deopt_reexecute_entry()
-        assert(pc == Interpreter::deopt_entry(vtos, 0), "pc changed");
-        break;
-      default:
-        ShouldNotReachHere();
       }
     }
     assert(use_next_mdp == !reexecute, "!");

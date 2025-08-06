@@ -561,7 +561,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #endif // !PRODUCT
 
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
-    guarantee(expressions != nullptr && expressions->length() > 0, "must have exception to throw");
+    guarantee(expressions != nullptr && expressions->length() == 1, "should have only exception on stack");
+    guarantee(exec_mode != Unpack_exception, "rethrow_exception set with Unpack_exception");
     ScopeValue* topOfStack = expressions->top();
     exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
     guarantee(exceptionObject() != nullptr, "exception oop can not be null");
