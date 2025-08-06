@@ -238,7 +238,7 @@ public class BasicTextFieldUI extends BasicTextUI {
                         // horizontally align the interior
                         int slop = bounds.width - 1 - hspan;
 
-                        int align = ((JTextField)c).getHorizontalAlignment();
+                        int align = field.getHorizontalAlignment();
                         if(isLeftToRight(c)) {
                             if(align==LEADING) {
                                 align = LEFT;

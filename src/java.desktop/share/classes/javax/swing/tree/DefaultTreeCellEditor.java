@@ -407,7 +407,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      */
     protected boolean shouldStartEditingTimer(EventObject event) {
         if((event instanceof MouseEvent me) &&
-            SwingUtilities.isLeftMouseButton((MouseEvent)event)) {
+            SwingUtilities.isLeftMouseButton(me)) {
 
             return (me.getClickCount() == 1 &&
                     inHitRegion(me.getX(), me.getY()));
@@ -436,7 +436,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      */
     protected boolean canEditImmediately(EventObject event) {
         if((event instanceof MouseEvent me) &&
-           SwingUtilities.isLeftMouseButton((MouseEvent)event)) {
+           SwingUtilities.isLeftMouseButton(me)) {
 
             return ((me.getClickCount() > 2) &&
                     inHitRegion(me.getX(), me.getY()));

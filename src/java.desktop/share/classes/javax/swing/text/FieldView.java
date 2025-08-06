@@ -103,7 +103,7 @@ public class FieldView extends PlainView {
                     // horizontally align the interior
                     int slop = bounds.width - 1 - hspan;
 
-                    int align = ((JTextField)c).getHorizontalAlignment();
+                    int align = field.getHorizontalAlignment();
                     if(Utilities.isLeftToRight(c)) {
                         if(align==LEADING) {
                             align = LEFT;
