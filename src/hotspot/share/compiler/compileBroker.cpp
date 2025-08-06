@@ -218,7 +218,7 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
-  thread->timeout_arm();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
@@ -229,7 +229,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
-  thread->timeout_disarm();
+  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {

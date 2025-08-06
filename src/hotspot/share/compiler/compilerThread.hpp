@@ -25,14 +25,14 @@
 #ifndef SHARE_COMPILER_COMPILERTHREAD_HPP
 #define SHARE_COMPILER_COMPILERTHREAD_HPP
 
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef PRODUCT
 #ifdef LINUX
-#include <csignal>
+#include "compilerThreadTimeout_linux.hpp"
 #endif //LINUX
-#endif //!PRODUCT
 
 class AbstractCompiler;
 class ArenaStatCounter;
@@ -45,10 +45,25 @@ class CompileQueue;
 class CompilerCounters;
 class IdealGraphPrinter;
 
+class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
+ public:
+  CompilerThreadTimeoutGeneric() {};
+  void arm() { return; };
+  void disarm() { return; };
+  bool init_timeout() { return true; };
+};
+
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
   JVMCI_ONLY(friend class CompilerThreadCanCallJava;)
+
+#ifdef LINUX
+  typedef CompilerThreadTimeoutLinux Timeout;
+#else // LINUX
+  typedef CompilerThreadTimeoutGeneric Timeout;
+#endif // LINUX
+
  private:
   CompilerCounters* _counters;
 
@@ -64,6 +79,7 @@ class CompilerThread : public JavaThread {
 
   ArenaStatCounter*     _arena_stat;
 
+  Timeout*              _timeout;
  public:
 
   static CompilerThread* current() {
@@ -122,23 +138,11 @@ class CompilerThread : public JavaThread {
   void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
 #endif // !PRODUCT
 
-#ifdef LINUX
-#ifndef PRODUCT
- private:
-  static const int TIMEOUT_SIGNAL = SIGALRM;
-  timer_t               _timeout_timer;
-  volatile bool         _timeout_armed;
- public:
-  void compiler_signal_handler(int signo, siginfo_t* info, void* context);
-#endif // !PRODUCT
-  bool init_compilation_timeout() PRODUCT_RETURN_(return true;);
-  void timeout_arm() PRODUCT_RETURN;
-  void timeout_disarm() PRODUCT_RETURN;
-#else
-  bool init_compilation_timeout() { return true; };
-  void timeout_arm() {};
-  void timeout_disarm() {};
-#endif // LINUX
+  Timeout* timeout() const { return _timeout; };
+  bool init_compilation_timeout() {
+    _timeout = new Timeout();
+    return _timeout->init_timeout();
+  };
 
   // Get/set the thread's current task
   CompileTask* task()                      { return _task; }

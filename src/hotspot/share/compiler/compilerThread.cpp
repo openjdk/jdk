@@ -25,21 +25,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/osThread.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-#ifndef PRODUCT
-#ifdef LINUX
-#include "signals_posix.hpp"
-
-#include <csignal>
-#include <ctime>
-#include <pthread.h>
-#endif // LINUX
-#endif // !PRODUCT
 
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
@@ -54,6 +40,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = nullptr;
+  _timeout = nullptr;
 
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;
@@ -63,6 +50,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
+  delete _timeout;
   // arenastat should have been deleted at the end of the compilation
   assert(_arena_stat == nullptr, "Should be null");
 }
@@ -85,90 +73,3 @@ void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
 bool CompilerThread::is_hidden_from_external_view() const {
   return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }
-
-#ifndef PRODUCT
-#ifdef LINUX
-  void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
-    CompilerThread::current()->compiler_signal_handler(signo, info, context);
-  }
-  void CompilerThread::compiler_signal_handler(int signo, siginfo_t* info, void* context) {
-    switch (signo) {
-      case TIMEOUT_SIGNAL: {
-        assert(!Atomic::load_acquire(&_timeout_armed), "compile task timed out");
-      }
-      default: {
-        assert(false, "unexpected signal %d", signo);
-      }
-    }
-  }
-
-  bool CompilerThread::init_compilation_timeout() {
-    _timeout_armed = false;
-    if (CompileTaskTimeout == 0) {
-      return true;
-    }
-
-    JavaThread* thread = JavaThread::current();
-
-    // Create a POSIX timer sending SIGALRM to this thread only.
-    sigevent_t sev;
-    sev.sigev_value.sival_ptr = nullptr;
-    sev.sigev_signo = TIMEOUT_SIGNAL;
-    sev.sigev_notify = SIGEV_THREAD_ID;
-    #ifdef MUSL_LIBC
-    sev.sigev_notify_thread_id = thread->osthread()->thread_id();
-    #else
-    sev._sigev_un._tid = thread->osthread()->thread_id();
-    #endif // MUSL_LIBC
-    clockid_t clock;
-    int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
-    if (err != 0) {
-      return false;
-    }
-    err = timer_create(clock, &sev, &_timeout_timer);
-    if (err != 0) {
-      return false;
-    }
-
-    // Install the signal handler and check that we do not have a conflicting handler.
-    struct sigaction sigact, sigact_old;
-    err = PosixSignals::install_sigaction_signal_handler(&sigact,
-                                                         &sigact_old,
-                                                         TIMEOUT_SIGNAL,
-                                                         (sa_sigaction_t)::compiler_signal_handler);
-    if (err != 0 || (sigact_old.sa_sigaction != sigact.sa_sigaction &&
-        sigact_old.sa_handler != SIG_DFL && sigact_old.sa_handler != SIG_IGN)) {
-      return false;
-    }
-    return true;
-  }
-  void CompilerThread::timeout_arm() {
-    if (CompileTaskTimeout == 0) {
-      return;
-    }
-
-    const intx sec = (CompileTaskTimeout * NANOSECS_PER_MILLISEC) / NANOSECS_PER_SEC;
-    const intx nsec = (CompileTaskTimeout * NANOSECS_PER_MILLISEC) % NANOSECS_PER_SEC;
-    const struct timespec ts = {.tv_sec = sec, .tv_nsec = nsec};
-    const struct itimerspec its {.it_interval = ts, .it_value = ts};
-
-    // Start the timer.
-    timer_settime(_timeout_timer, 0, &its, nullptr);
-    Atomic::release_store(&_timeout_armed, (bool) true);
-  }
-  void CompilerThread::timeout_disarm() {
-    if (CompileTaskTimeout == 0) {
-      return;
-    }
-
-    Atomic::release_store(&_timeout_armed, (bool)false);
-
-    // Reset the timer by setting it to zero.
-    const struct itimerspec its {
-      .it_interval = {.tv_sec = 0, .tv_nsec=0},
-      .it_value = {.tv_sec = 0, .tv_nsec=0}
-    };
-    timer_settime(_timeout_timer, 0, &its, nullptr);
-  }
-#endif // LINUX
-#endif // /!PRODUCT
