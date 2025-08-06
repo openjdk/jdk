@@ -27,7 +27,7 @@
  * @summary Test JCE layer algorithm restriction
  * @run main/othervm TestDisabledAlgorithms Cipher.Rsa/ECB/PKCS1Padding true
  * @run main/othervm TestDisabledAlgorithms Cipher.rsA true
- * @run main/othervm TestDisabledAlgorithms what false
+ * @run main/othervm TestDisabledAlgorithms Cipher.what false
  * @run main/othervm TestDisabledAlgorithms Cipher.RSA/ECB/PKCS1Padding2 false
  */
 import java.util.List;

@@ -26,7 +26,7 @@
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
  * @run main/othervm TestDisabledAlgorithms Signature.sha512withRSA true
- * @run main/othervm TestDisabledAlgorithms what false
+ * @run main/othervm TestDisabledAlgorithms Signature.what false
  * @run main/othervm TestDisabledAlgorithms Signature.SHA512/224withRSA false
  */
 import java.util.List;

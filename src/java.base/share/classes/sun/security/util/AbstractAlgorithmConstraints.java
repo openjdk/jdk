@@ -46,7 +46,16 @@ public abstract class AbstractAlgorithmConstraints
 
     // Get algorithm constraints from the specified security property.
     static Set<String> getAlgorithms(String propertyName) {
-        String property = Security.getProperty(propertyName);
+        return getAlgorithms(propertyName, false);
+    }
+
+    // Get algorithm constraints from the specified security property or
+    // system property if allowSystemOverride == true.
+    static Set<String> getAlgorithms(String propertyName,
+            boolean allowSystemOverride) {
+        String property = allowSystemOverride ?
+                SecurityProperties.getOverridableProperty(propertyName) :
+                Security.getProperty(propertyName);
 
         String[] algorithmsInProperty = null;
         if (property != null && !property.isEmpty()) {

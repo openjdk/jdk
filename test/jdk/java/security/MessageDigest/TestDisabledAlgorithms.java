@@ -26,8 +26,8 @@
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
  * @run main/othervm TestDisabledAlgorithms MessageDigest.Sha-512 true
- * @run main/othervm TestDisabledAlgorithms what false
- * @run main/othervm TestDisabledAlgorithms MessagestDigest.SHA-512/224 false
+ * @run main/othervm TestDisabledAlgorithms MessageDigest.what false
+ * @run main/othervm TestDisabledAlgorithms MessageDigest.SHA-512/224 false
  */
 import java.util.List;
 import java.security.NoSuchAlgorithmException;

@@ -36,10 +36,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Algorithm constraints for disabled crypto algorithms property
- *
- * See the "jdk.crypto.disabledAlgorithms" specification in java.security
- * for the syntax of the disabled algorithm string.
+ * This class implements the algorithm constraints for the
+ * "jdk.crypto.disabledAlgorithms" security property. This security property
+ * can be overridden by the system property of the same name. See the
+ * java.security file for the syntax of the property value.
  */
 public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final Debug debug = Debug.getInstance("jca");
@@ -56,7 +56,8 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public static boolean permits(String service, String algo) {
-        return CryptoHolder.CONSTRAINTS.permits(null, service + "." + algo, null);
+        return CryptoHolder.CONSTRAINTS.permits(null, service + "." + algo,
+                null);
     }
 
     private final Set<String> disabledServices; // syntax is <service>.<algo>
@@ -73,37 +74,38 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     CryptoAlgorithmConstraints(String propertyName) {
         super(null);
-        String val = System.getProperty(propertyName);
-        // Override the security property with system property value if set
-        if (val != null) {
-            Security.setProperty(propertyName, val);
-        }
-        disabledServices = getAlgorithms(propertyName);
+        disabledServices = getAlgorithms(propertyName, true);
         debug("Before " + Arrays.deepToString(disabledServices.toArray()));
         for (String dk : disabledServices) {
             int idx = dk.indexOf(".");
             if (idx == -1) {
-                debug("Remove invalid entry: " + dk);
-                disabledServices.remove(dk);
-                continue;
+                // wrong syntax
+                throw new IllegalArgumentException("Invalid entry: " + dk);
             }
             String service = dk.substring(0, idx);
             String algo = dk.substring(idx + 1);
             if (service.length() == 0 || algo.length() == 0) {
-                debug("Remove invalid entry: " + dk);
-                disabledServices.remove(dk);
-                continue;
+                // missing service or algorithm
+                throw new IllegalArgumentException("Invalid entry: " + dk);
             }
-            KnownOIDs oid = KnownOIDs.findMatch(algo);
-            if (oid != null) {
-                debug("Add oid: " + oid.value());
-                disabledServices.add(service + "." + oid.value());
-                debug("Add oid stdName: " + oid.stdName());
-                disabledServices.add(service + "." + oid.stdName());
-                for (String a : oid.aliases()) {
-                    debug("Add oid alias: " + a);
-                    disabledServices.add(service + "." + a);
+            if (service.equalsIgnoreCase("Cipher") ||
+                    service.equalsIgnoreCase("KeyStore") ||
+                    service.equalsIgnoreCase("MessageDigest") ||
+                    service.equalsIgnoreCase("Signature")) {
+                KnownOIDs oid = KnownOIDs.findMatch(algo);
+                if (oid != null) {
+                    debug("Add oid: " + oid.value());
+                    disabledServices.add(service + "." + oid.value());
+                    debug("Add oid stdName: " + oid.stdName());
+                    disabledServices.add(service + "." + oid.stdName());
+                    for (String a : oid.aliases()) {
+                        debug("Add oid alias: " + a);
+                        disabledServices.add(service + "." + a);
+                    }
                 }
+            } else {
+                // unsupported service
+                throw new IllegalArgumentException("Invalid entry: " + dk);
             }
         }
         debug("After " + Arrays.deepToString(disabledServices.toArray()));

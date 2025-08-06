@@ -789,7 +789,7 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 #   DisabledService:
 #       Service.AlgorithmName
 #
-# Service:  (one of the following, more service may be added later)
+# Service:  (one of the following, more services may be added later)
 #     Cipher | KeyStore | MessageDigest | Signature
 #
 #   AlgorithmName:
@@ -801,7 +801,8 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # performed using a case-insensitive exact matching rule. For Cipher service,
 # its algorithm is the transformation string.
 #
-# Note: Entries with unsupported services will be ignored
+# Note: IllegalArgumentException will be thrown if the property value contains
+# entries with invalid syntax or unsupported services.
 #
 # Note: The restriction is applied in the various getInstance(...) methods
 # of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
