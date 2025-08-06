@@ -33,12 +33,11 @@ import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -146,6 +145,10 @@ import java.util.stream.Stream;
  * @since   1.0
  */
 public abstract class Process implements AutoCloseable {
+
+    // Logger for exceptions
+    private static final Supplier<System.Logger> LOGGER =
+            StableValue.supplier( () -> System.getLogger("java.lang.Process") );
 
     // Readers and Writers created for this process; so repeated calls return the same object
     // All updates must be done while synchronized on this Process.
@@ -628,60 +631,40 @@ public abstract class Process implements AutoCloseable {
      * they are discarded or ignored.
      * Streams should be {@code closed} when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
-     * IOExceptions that occur when closing streams are ignored.
+     * Any {@code IOException} that occurs when closing a stream is ignored.
      * <p>
      * The process may already have exited or be in the process of exiting;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
-     * IOExceptions that occur when destroying the process are ignored.
+     * Any {@code IOException} that occurs when destroying the process is ignored.
      * <p>
      * Example using try-with-resources writing text to a process, reading back the
      * response, and closing the streams and process:
      * {@snippet class=ProcessExamples region=example}
      *
      * @implSpec
-     * The outputWriter and outputStream to the process are closed.
-     * The inputReader and inputStream from the process are closed.
-     * The errorReader and errorStream from the process are closed.
+     * The {@code outputWriter} and {@code outputStream} to the process are closed.
+     * The {@code inputReader} and {@code inputStream} from the process are closed.
+     * The {@code errorReader} and {@code errorStream} from the process are closed.
      * The process is destroyed.
      * @since 26
      */
     public void close() {
-        List<Closeable> closeable = new ArrayList<>();
-        closeable.add(outputWriter != null ? outputWriter : getOutputStream());
-        closeable.add(inputReader != null ? inputReader : getInputStream());
-        closeable.add(errorReader != null ? errorReader : getErrorStream());
+        // Close each stream
+        quietClose(outputWriter != null ? outputWriter : getOutputStream());
+        quietClose(inputReader != null ? inputReader  : getInputStream());
+        quietClose(errorReader != null ? errorReader : getErrorStream());
 
-        // close each and capture any exceptions
-        List<IOException> exceptions = closeable.stream()
-                .map(Process::doClose)
-                .filter((Objects::nonNull))
-                .toList();
-
-        if (!exceptions.isEmpty()) {
-            // TBD: Log exceptions closing streams
-            IOException ex = new IOException("exception closing process streams");
-            exceptions.forEach((e) -> ex.addSuppressed(e));
-        }
-
-        // Wait briefly for process to exit, if not exited immediately, destroy
-        try {
-            boolean alive = waitFor(Duration.ofMillis(2000));
-            if (alive) {
-                destroy();      // no-op if is not alive
-            }
-        } catch (InterruptedException ie) {
-            // Wait was interrupted; terminate the process
-            destroy();
-        }
+        destroy();      // no-op if process is not alive
     }
 
-    private static IOException doClose(Closeable c) {
+    // Quietly close and log exception
+    private void quietClose(Closeable c) {
         try {
             c.close();
         } catch (IOException ioe) {
-            return ioe;
+            LOGGER.get().log(System.Logger.Level.DEBUG,
+                    "Exception closing process: pid: " + pid() , ioe);
         }
-        return null;
     }
 
 

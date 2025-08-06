@@ -23,11 +23,8 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.List;
 
 public class ProcessExamples {
     // @start region=example
@@ -44,13 +41,13 @@ public class ProcessExamples {
             writer.write(haiku);
             writer.close();
             // Read all lines and print each
-            List<String> lines = reader.readAllLines();
-            lines.forEach(System.err::println);
+            reader.readAllLines()
+                    .forEach(System.err::println);
             var status = p.waitFor();
             if (status != 0)
-                throw new RuntimeException("process status: " + status);
-        } catch (Throwable t) {
-            System.out.println("Process failed: " + t);
+                throw new RuntimeException("unexpected process status: " + status);
+        } catch (Exception e) {
+            System.out.println("Process failed: " + e);
         }
     }// @end region=example
 }

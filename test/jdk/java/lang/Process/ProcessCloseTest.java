@@ -36,6 +36,7 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -44,8 +45,8 @@ import java.util.stream.Stream;
  * @test
  * @bug 8336479
  * @summary Tests for Process.close
- * @library /test/lib
- * @run junit jdk.java.lang.Process.ProcessCloseTest
+ * @run junit/othervm -Djava.util.logging.config.file=${test.src}/ProcessLogging-FINE.properties
+ *       jdk.java.lang.Process.ProcessCloseTest
  */
 
 public class ProcessCloseTest {
@@ -90,17 +91,17 @@ public class ProcessCloseTest {
                         ExitStatus.NORMAL),
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.NORMAL),
+                        ExitStatus.RACY),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.WRITER_WRITE,
                                 ProcessCommand.WRITER_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.NORMAL),
+                        ExitStatus.RACY),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.NORMAL),
+                        ExitStatus.RACY),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
@@ -109,11 +110,11 @@ public class ProcessCloseTest {
                 Arguments.of(List.of("cat", "NoSuchFile.txt"),
                         List.of(ProcessCommand.STDERR_PRINT_ALL_LINES,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
-                        ExitStatus.FAIL),
+                        ExitStatus.RACY),
                 Arguments.of(javaArgs(ChildCommand.STDOUT_MARCO),
                         List.of(ProcessCommand.STDOUT_EXPECT_POLO,
                                 ProcessCommand.STDERR_EXPECT_EMPTY),
-                        ExitStatus.NORMAL),
+                        ExitStatus.RACY),
                 Arguments.of(javaArgs(ChildCommand.STDERR_MARCO),
                         List.of(ProcessCommand.STDERR_EXPECT_POLO,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
@@ -137,7 +138,7 @@ public class ProcessCloseTest {
                         ExitStatus.RACY), // Racy, not deterministic
                 Arguments.of(List.of("echo"),
                         List.of(ProcessCommand.PROCESS_EXPECT_EXIT_NORMAL),
-                        ExitStatus.NORMAL)
+                        ExitStatus.RACY)
         );
     }
 
@@ -161,7 +162,7 @@ public class ProcessCloseTest {
     void autoCloseable(List<String> args, List<ProcessCommand> commands, ExitStatus exitStatus) {
         ProcessBuilder pb = new ProcessBuilder(args);
         Process proc = null;
-        try (Process p = pb.start();) {
+        try (Process p = pb.start()) {
             proc = p;
             System.err.printf("Program: %s; pid: %d\n", args, p.pid());
             commands.forEach(c -> {
@@ -202,30 +203,32 @@ public class ProcessCloseTest {
     }
 
 
-    // ExitStatus named values and assertions
+        // ExitStatus named values and assertions
     enum ExitStatus {
-        NORMAL(0, 0),
-        FAIL(1, 1),
-        PIPE(141, 1),
-        KILLED(143, 0),
-        RACY(-1, -1),
+        NORMAL(0),
+        FAIL(1),
+        PIPE(1, 141),
+        KILLED(0, 143),
+        RACY(0, 1, 143),
         ;
-        private final int status;
-        private final int altStatus;        // Acceptable alternative, usually 0
+        private final int[] allowedStatus;
 
-        ExitStatus(int status, int altStatus) {
-            this.status = status;
-            this.altStatus = altStatus;
+        ExitStatus(int... status) {
+            this.allowedStatus = status;
         }
 
-        // Check a status matches this expected exit status
+        // Check a status matches one of the allowed exit status values
         void assertEquals(int actual) {
+            for (int status : allowedStatus) {
+                if (status == actual) {
+                    return;     // status is expected
+                }
+            }
             if (this == RACY) {
+                // Not an error but report the actual status
                 System.err.printf("Racy exit status: %d\n", actual);
-            } else if (actual != status && actual != altStatus) {
-                Assertions.fail("Expected either " + status +
-                        " or " + altStatus + ", actual: " + actual);
             } else {
+                Assertions.fail("Status: " + actual + ", expected one of: " + Arrays.toString(allowedStatus));
             }
         }
     }
@@ -316,7 +319,7 @@ public class ProcessCloseTest {
             StringBuilder sb = new StringBuilder();
             byte[] bytes = new byte[1];
             try {
-                int ch = 0;
+                int ch;
                 while ((ch = in.read()) != -1) {
                     if (ch == '\n') {
                         // end of line
@@ -356,7 +359,7 @@ public class ProcessCloseTest {
             processExpectExit(p, ExitStatus.NORMAL);
         }
 
-        // expect a error (1) status
+        // expect an error (1) status
         private static void processExpectExitFail(Process p) {
             processExpectExit(p, ExitStatus.FAIL);
         }
@@ -392,19 +395,17 @@ public class ProcessCloseTest {
         STDERR_MARCO(ChildCommand::stderrMarco),
         PROCESS_EXIT1(ChildCommand::processExit1),
         ;
-        private Runnable command;
+        private final Runnable command;
         ChildCommand(Runnable cmd) {
             this.command = cmd;
         }
 
         private static void sleep5() {
-            while (true) {
-                try {
-                    Thread.sleep(5_000);
-                    break;
-                } catch (InterruptedException ie) {
-                    // retry
-                }
+            try {
+                Thread.sleep(5_000);
+            } catch (InterruptedException ie) {
+                // Interrupted sleep, re-assert interrupt
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -452,13 +453,13 @@ public class ProcessCloseTest {
             writer.write(haiku);
             writer.close();
             // Read all lines and print each
-            List<String> lines = reader.readAllLines();
-            lines.forEach(System.err::println);
+            reader.readAllLines()
+                    .forEach(System.err::println);
             var status = p.waitFor();
             if (status != 0)
-                throw new RuntimeException("process status: " + status);
-        } catch (Throwable t) {
-            System.out.println("Process failed: " + t);
+                throw new RuntimeException("unexpected process status: " + status);
+        } catch (Exception e) {
+            System.err.println("Process failed: " + e);
         }
     }
 
