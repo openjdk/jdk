@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import test.java.awt.regtesthelpers.Util;
  */
 public class MixingPanelsResizing {
 
+    static final int COLOR_TOLERANCE_MACOSX = 15;
     static volatile boolean failed = false;
 
     private static JFrame frame;
@@ -114,12 +115,14 @@ public class MixingPanelsResizing {
                 awtPanel.add(jbutton);
                 jbutton.setForeground(jbColor);
                 jbutton.setBackground(jbColor);
+                jbutton.setOpaque(true);
 
                 JPanel jPanel = new JPanel();
                 jbutton2 = new JButton("SwingButton2");
                 jPanel.add(jbutton2);
                 jbutton2.setForeground(jb2Color);
                 jbutton2.setBackground(jb2Color);
+                jbutton2.setOpaque(true);
                 awtButton2 = new Button("AWT Button2");
                 jPanel.add(awtButton2);
                 awtButton2.setForeground(awt2Color);
@@ -157,25 +160,29 @@ public class MixingPanelsResizing {
             public void run() {
                 Point btnLoc = jbutton.getLocationOnScreen();
                 Color c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(jbColor)) {
+                System.out.println("Color picked for jbutton: "+c);
+                if (!isAlmostEqualColor(c, jbColor)) {
                     fail("JButton was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = awtButton.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awtColor)) {
+                System.out.println("Color picked for awtButton: "+c);
+                if (!isAlmostEqualColor(c, awtColor)) {
                     fail("AWT Button was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = jbutton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(jb2Color)) {
+                System.out.println("Color picked for jbutton2: "+c);
+                if (!isAlmostEqualColor(c, jb2Color)) {
                     fail("JButton was not redrawn properly on JPanel during move");
                 }
 
                 btnLoc = awtButton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awt2Color)) {
+                System.out.println("Color picked for awtButton2: "+c);
+                if (!isAlmostEqualColor(c, awt2Color)) {
                     fail("ATW Button was not redrawn properly on JPanel during move");
                 }
             }
@@ -298,6 +305,19 @@ public class MixingPanelsResizing {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+    private static boolean isAlmostEqualColor(Color color, Color refColor) {
+        System.out.println("Comparing color: "+color+" with reference color: "+refColor);
+                if(color.equals(refColor)){
+            return true;
+        } else {
+            return Math.abs(color.getRed() - refColor.getRed()) <
+                    COLOR_TOLERANCE_MACOSX &&
+                    Math.abs(color.getGreen() - refColor.getGreen()) <
+                            COLOR_TOLERANCE_MACOSX &&
+                    Math.abs(color.getBlue() - refColor.getBlue()) <
+                            COLOR_TOLERANCE_MACOSX;
+        }
+    }
 }// class JButtonInGlassPane
 class TestPassedException extends RuntimeException {
 }

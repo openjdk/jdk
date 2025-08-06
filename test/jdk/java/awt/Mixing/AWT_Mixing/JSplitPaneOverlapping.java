@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ public class JSplitPaneOverlapping extends OverlappingTestBase {
         p.setPreferredSize(new Dimension(500, 500));
         propagateAWTControls(p);
         sp1 = new JScrollPane(p);
+        currentAwtControl.setForeground(Color.white);
+        currentAwtControl.setBackground(Color.white);
 
         JButton button = new JButton("JButton");
         button.setBackground(Color.RED);
