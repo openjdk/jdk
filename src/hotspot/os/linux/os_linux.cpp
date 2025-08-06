@@ -292,10 +292,10 @@ bool os::Linux::free_memory(size_t& value) {
 }
 
 bool os::total_swap_space(size_t& value) {
-  if (OSContainer::is_containerized() && OSContainer::memory_and_swap_limit_in_bytes() > 0) {
-    if (OSContainer::memory_limit_in_bytes() > 0) {
-      jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
-      jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
+  if (OSContainer::is_containerized()) {
+    jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
+    jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
+    if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {   
       value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
     }
@@ -303,6 +303,7 @@ bool os::total_swap_space(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
+    assert(false, "sysinfo failed in total_swap_space()?");
     return false;
   }
   value = static_cast<size_t>(si.totalswap * si.mem_unit);
@@ -313,6 +314,7 @@ static bool host_free_swap_f(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
+    assert(false, "sysinfo failed in host_free_swap_f()?");
     return false;
   }
   value = static_cast<size_t>(si.freeswap * si.mem_unit);
@@ -323,11 +325,8 @@ bool os::free_swap_space(size_t& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
   size_t total_swap_space = 0;
-  bool total_swap_space_ok = os::total_swap_space(total_swap_space);
   size_t host_free_swap = 0;
-  bool host_free_swap_ok = host_free_swap_f(host_free_swap);
-  if (!total_swap_space_ok || !host_free_swap_ok) {
-    assert(false, "sysinfo failed ? ");
+  if (!os::total_swap_space(total_swap_space) || !host_free_swap_f(host_free_swap)) {
     return false;
   }
   size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
