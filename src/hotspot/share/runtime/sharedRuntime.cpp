@@ -1194,11 +1194,45 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     return receiver;
   }
 
+  methodHandle attached_method(THREAD, extract_attached_method(vfst));
+
+  #if INCLUDE_JVMCI
+    Bytecodes::Code code = caller->java_code_at(bci);
+    assert(callerFrame.is_compiled_frame(), "expected caller frame to be compiled");
+    bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
+
+    if (!Bytecodes::is_invoke(code) && attached_method.not_null() && caller_is_jvmci) {
+      // invoke does not exist in bytecode
+      RegisterMap reg_map2(current,
+                          RegisterMap::UpdateMap::include,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
+      frame stubFrame   = current->last_frame();
+      frame callerFrame = stubFrame.sender(&reg_map2);
+
+      Method* callee = attached_method();
+
+      if (attached_method->is_static()) {
+        bc = Bytecodes::_invokestatic;
+      } else {
+          receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
+        if (attached_method->method_holder()->is_interface()) {
+          bc = Bytecodes::_invokeinterface;
+        } else {
+          bc = Bytecodes::_invokevirtual;
+        }
+      }
+
+      LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+      return receiver;
+    }
+  #endif // INCLUDE_JVMCI
+
+
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
 
-  methodHandle attached_method(current, extract_attached_method(vfst));
   if (attached_method.not_null()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
