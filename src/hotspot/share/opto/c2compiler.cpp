@@ -92,16 +92,16 @@ bool C2Compiler::init_c2_runtime() {
 
   // If there was an error generating the blob then UseCompiler will
   // have been unset and we need to skip the remaining initialization
-  if (UseCompiler) {
-    Compile::pd_compiler2_init();
-
-    CompilerThread* thread = CompilerThread::current();
-
-    HandleMark handle_mark(thread);
-    return OptoRuntime::generate(thread->env());
-  } else {
+  if (!UseCompiler) {
     return false;
   }
+
+  Compile::pd_compiler2_init();
+
+  CompilerThread* thread = CompilerThread::current();
+
+  HandleMark handle_mark(thread);
+  return OptoRuntime::generate(thread->env());
 }
 
 void C2Compiler::initialize() {

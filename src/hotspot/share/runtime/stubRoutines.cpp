@@ -189,7 +189,7 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     if (Thread::current()->is_Compiler_thread()) {
       assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
       assert(DelayCompilerStubsGeneration, "sanity");
-      log_warning(stubs)("Ignoring failed allocation of blob %s under compiler thread", StubInfo::name(blob_id));
+      log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
       return nullptr;
     }
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
