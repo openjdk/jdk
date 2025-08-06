@@ -24,7 +24,7 @@
  */
 
 
-
+#include "gc/shared/objectCountEventSender.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -32,12 +32,11 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:

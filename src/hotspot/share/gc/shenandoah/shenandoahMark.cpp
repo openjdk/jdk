@@ -24,7 +24,7 @@
  */
 
 
-#include "gc/shared/objectCountEventSender.hpp"
+#include "gc/shared/objectCountEventSender.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"

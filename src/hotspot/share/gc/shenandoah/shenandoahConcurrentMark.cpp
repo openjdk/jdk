@@ -23,7 +23,7 @@
  *
  */
 
-
+#include "gc/shared/objectCountEventSender.inline.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -44,8 +45,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/threads.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 
 
 template <ShenandoahGenerationType GENERATION>

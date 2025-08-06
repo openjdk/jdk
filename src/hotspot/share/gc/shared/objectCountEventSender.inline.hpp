@@ -1,0 +1,46 @@
+#include "gc/shared/objectCountEventSender.hpp"
+
+inline void ObjectCountEventSender::enable_requestable_event() {
+  _should_send_requestable_event = true;
+}
+
+inline void ObjectCountEventSender::disable_requestable_event() {
+  _should_send_requestable_event = false;
+}
+
+template <class Event>
+bool ObjectCountEventSender::should_send_event() {
+#if INCLUDE_JFR
+  return _should_send_requestable_event || Event::is_enabled();
+#else
+  return false;
+#endif // INCLUDE_JFR
+}
+
+template <typename T>
+void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
+  T event(UNTIMED);
+  if (event.should_commit()) {
+    event.set_starttime(timestamp);
+    event.set_endtime(timestamp);
+    event.set_gcId(GCId::current());
+    event.set_objectClass(klass);
+    event.set_count(count);
+    event.set_totalSize(size);
+    event.commit();
+  }
+}
+
+template <class Event>
+void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
+  Klass* klass = entry->klass();
+  jlong count = entry->count();
+  julong total_size = entry->words() * BytesPerWord;
+
+  send_event_if_enabled<Event>(klass, count, total_size, timestamp);
+  // If sending ObjectCountAfterGCEvent, check if ObjectCount is enabled and send event data to ObjectCount
+  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent
+  if (std::is_same<Event, EventObjectCountAfterGC>::value && ObjectCountEventSender::should_send_event<EventObjectCount>()) {
+    send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
+  }
+}

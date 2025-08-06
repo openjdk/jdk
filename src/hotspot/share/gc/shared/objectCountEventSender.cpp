@@ -25,11 +25,3 @@
 #include "gc/shared/objectCountEventSender.hpp"
 
 bool ObjectCountEventSender::_should_send_requestable_event = false;
-
-void ObjectCountEventSender::enable_requestable_event() {
-  _should_send_requestable_event = true;
-}
-
-void ObjectCountEventSender::disable_requestable_event() {
-  _should_send_requestable_event = false;
-}
