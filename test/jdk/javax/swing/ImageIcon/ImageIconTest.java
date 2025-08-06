@@ -31,6 +31,7 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.net.URI;
 import java.net.URL;
 import java.util.Random;
 import java.awt.Image;
@@ -60,47 +61,73 @@ public class ImageIconTest {
                 boolean passed = false;
                 try {
                     switch (a) {
+
                        case FILE :
+
                            expected = false;
                            String s = (v == ArgVal.NULL) ? null : imgName;
                            new ImageIcon(s);
                            passed = true; // no exception expected for this case
                            break;
+
                        case URL :
+
                            if (v == ArgVal.NULL) {
+
                                new ImageIcon((URL)null);
+
                            } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
-                               new ImageIcon("file://" + imgName, "gif");
+                               new ImageIcon(new URI("file://" + imgName).toURL());
                                passed = true; // no exception expected for this case
+
                            }
                            break;
+
                        case BYTE_ARRAY :
+
                            if (v == ArgVal.NULL) {
+
                                byte[] bytes = null;
                                new ImageIcon(bytes);
+
                            } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
-                               new ImageIcon(new byte[0], "gif");
+
+                               new ImageIcon(invalidData);
+
                                passed = true; // no exception expected for this case
                            }
                            break;
+
                        case IMAGE :
+
                            if (v == ArgVal.NULL) {
+
                                new ImageIcon((Image)null);
+
                            } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
-                               new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(imgName), "gif");
+
+                               new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(imgName));
+
                                passed = true; // no exception expected for this case
                            }
                            break;
+
                         case SET_IMAGE :
+
                             ImageIcon ii = new ImageIcon();
+
                             if (v == ArgVal.NULL) {
-                                ii.setImage((Image)null);
+
+                                ii.setImage((Image) null);
+
                             } else if (v == ArgVal.INVALID_DATA) {
                                 expected = false;
+
                                 ii.setImage((Image)Toolkit.getDefaultToolkit().createImage(imgName));
+
                                 passed = true; // no exception expected for this case
                             }
                             break;
@@ -111,12 +138,10 @@ public class ImageIconTest {
                     }
                 }
                 if (expected && !passed) {
-                   System.err.println("Did not receive expected exception for : " + a);
-                   throw new RuntimeException("Test failed");
+                   throw new RuntimeException("Did not receive expected exception for : " + a);
                 }
                 if (!expected && !passed) {
-                   System.err.println("Received unexpected exception for : " + a);
-                   throw new RuntimeException("Test failed");
+                   throw new RuntimeException("Received unexpected exception for : " + a);
                 }
             }
         }
