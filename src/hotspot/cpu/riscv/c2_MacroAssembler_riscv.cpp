@@ -2025,12 +2025,11 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const Register consumed = tmp3;
 
   const VectorRegister v_sum    =  v0;
-  const VectorRegister v_zred   =  v4;
 
   const VectorRegister v_src    =  v8;
-  const VectorRegister v_tmp    = v12;
-  const VectorRegister v_powmax = v16;
-  const VectorRegister v_coeffs = v20;
+  const VectorRegister v_coeffs = v16;
+  const VectorRegister v_tmp    = v24;
+  const VectorRegister v_zred = v_tmp;
 
   const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
                            + sizeof(jint);
@@ -2049,20 +2048,20 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
   vsetvli(x0, x0, Assembler::e32, Assembler::m4);
   vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
-  vmv_v_x(v_powmax, pow31_highest);
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
 
   bind(VEC_LOOP);
   arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
   vmul_vv(v_src, v_src, v_coeffs);
-  vmadd_vv(v_sum, v_powmax, v_src);
+  vmadd_vx(v_sum, pow31_highest, v_src);
   shadd(ary, consumed, ary, t0, elsize_shift);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, MAX_VEC_MASK);
   mulw(result, result, pow31_highest);
   bne(t1, x0, VEC_LOOP);
 
+  vmv_s_x(v_zred, x0);
   vredsum_vs(v_sum, v_sum, v_zred);
   vmv_x_s(t0, v_sum);
   addw(result, result, t0);
