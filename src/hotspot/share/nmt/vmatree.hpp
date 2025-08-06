@@ -193,7 +193,7 @@ private:
   };
 
 public:
-  using VMARBTree = RBTreeCHeap<position, IntervalChange, PositionComparator, MemTag::mtNMT>;
+  using VMARBTree = RBTreeCHeap<position, IntervalChange, PositionComparator, mtNMT>;
   using TNode = RBNode<position, IntervalChange>;
 
 private:

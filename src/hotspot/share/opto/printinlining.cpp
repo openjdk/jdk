@@ -68,7 +68,7 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
 }
 
 InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
-  auto cursor = _children.cursor(bci);
+  RBTreeCHeap<int, IPInlineSite, Cmp, mtCompiler>::Cursor cursor = _children.cursor(bci);
 
   if (cursor.found()) { // We already saw a call at this site before
     IPInlineSite& child = cursor.node()->val();
@@ -82,7 +82,7 @@ InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
 
   assert(callee != nullptr, "an inline call is missing in the chain up to the root");
 
-  auto* node = _children.allocate_node(bci);
+  RBNode<int, IPInlineSite>* node = _children.allocate_node(bci);
   _children.insert_at_cursor(node, cursor);
   node->val().set_source(callee, bci);
 

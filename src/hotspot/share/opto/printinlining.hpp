@@ -77,7 +77,7 @@ private:
     ciMethod* _method;
     int _bci;
     GrowableArrayCHeap<IPInlineAttempt, mtCompiler> _attempts;
-    RBTreeCHeap<int, IPInlineSite, Cmp, MemTag::mtCompiler> _children;
+    RBTreeCHeap<int, IPInlineSite, Cmp, mtCompiler> _children;
 
   public:
     IPInlineSite(ciMethod* method, int bci) : _method(method), _bci(bci) {}
