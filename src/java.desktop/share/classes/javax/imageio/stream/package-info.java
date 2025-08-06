@@ -45,7 +45,7 @@
  * The {@code IIOByteBuffer} class provides an alternative way to perform reads
  * of sequences of bytes that reduces the amount of internal data copying.
  * <p>
- * An {@code ImageInputStream} or {@code ImageInputStream} may internally allocate
+ * An {@code ImageInputStream} or {@code ImageOutputStream} may internally allocate
  * system resources, such as a temporary cache file.
  * Clients are encouraged to use a try-with-resources statement to ensure the
  * {@link ImageInputStream#close()} or {@link ImageOutputStream#close()}

@@ -270,9 +270,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         flushBefore(maxStreamPos);
         super.close();
         disposerRecord.dispose();
-        //cache.close();
         cache = null;
-        //cacheFile.delete();
         cacheFile = null;
         stream.flush();
         stream = null;
