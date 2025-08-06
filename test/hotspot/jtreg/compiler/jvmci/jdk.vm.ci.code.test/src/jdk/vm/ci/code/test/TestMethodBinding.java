@@ -130,7 +130,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                 }
                 asm.emitJavaCall(pos, info, markId);
 
-                asm.recordCall(pos[0], pos[1], resolvedMethod, true, true, info);
+                asm.recordCall(pos[0], pos[1], resolvedMethod, true, true, false, info);
                 asm.emitCallEpilogue(cc);
                 if (returnClazz == float.class) {
                     asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
