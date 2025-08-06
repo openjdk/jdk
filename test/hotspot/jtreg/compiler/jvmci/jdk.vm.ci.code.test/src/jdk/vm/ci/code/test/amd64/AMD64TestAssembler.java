@@ -516,6 +516,42 @@ public class AMD64TestAssembler extends TestAssembler {
         code.emitByte(0xD0 | enc);
     }
 
+    private void nop(int count) {
+        while (count > 0) {
+            code.emitByte(0x66);
+            count--;
+        }
+    }
+
+    public void emitJavaCall(int[] pos, DebugInfo info, int markId) {
+        if (markId == config.MARKID_INVOKEVIRTUAL || markId == config.MARKID_INVOKEINTERFACE) {
+            emitLoadLong(AMD64.rax, 0);
+        }
+        int displacementPos = code.position() + 1;
+        if (displacementPos % 4 != 0) {
+            nop(4 - displacementPos % 4);
+        }
+        pos[0] = code.position();
+        code.emitByte(0xE8);
+        code.emitInt(0);
+        pos[1] = code.position();
+        if (config.continuationsEnabled) {
+            // Support for loom requires custom nops after call sites that might deopt
+            if (info != null) {
+                // Expected nop pattern taken from src/hotspot/cpu/x86/macroAssembler_x86.cpp in
+                // MacroAssembler::post_call_nop(). JVMCI will add a relocation during installation.
+                code.emitByte(0x0f);
+                code.emitByte(0x1f);
+                code.emitByte(0x84);
+                code.emitByte(0x00);
+                code.emitInt(0x00);
+                return;
+            }
+        }
+        nop(1);
+
+    }
+
     @Override
     public void emitCallEpilogue(CallingConvention cc) {
         growFrame(-cc.getStackSize());
