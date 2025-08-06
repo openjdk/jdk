@@ -66,6 +66,13 @@ public final class FileUtils {
     private static final int MAX_RETRY_DELETE_TIMES = IS_WINDOWS ? 15 : 0;
     private static volatile boolean nativeLibLoaded;
 
+    private static void loadNativeLib() {
+        if (!nativeLibLoaded) {
+            System.loadLibrary("FileUtils");
+            nativeLibLoaded = true;
+        }
+    }
+
     /**
      * Deletes a file, retrying if necessary.
      *
@@ -397,11 +404,8 @@ public final class FileUtils {
     @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
-            if (!nativeLibLoaded) {
-                System.loadLibrary("FileUtils");
-                nativeLibLoaded = true;
-            }
-            return getWinProcessHandleCount();
+            loadNativeLib();
+            return getWinProcessHandleCount0();
         } else {
             return ((UnixOperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean()).getOpenFileDescriptorCount();
         }
@@ -445,28 +449,22 @@ public final class FileUtils {
         Files.write(path, lines);
     }
 
-    // Create a link from "junction" to the real path of "target"
-    public static boolean createDirectoryJunction(String junction, String target)
+    // Create a directory junction with the specified target
+    public static boolean createWinDirectoryJunction(Path junction, Path target)
         throws IOException
     {
-        // Convert "target" to its real path
-        target = new File(target).getAbsolutePath().toString();
+        assert IS_WINDOWS;
 
-        // Create a directory junction or a symbolic link
-        if (IS_WINDOWS) {
-            if (!nativeLibLoaded) {
-                System.loadLibrary("FileUtils");
-                nativeLibLoaded = true;
-            }
-            return createWinDirectoryJunction(junction, target);
-        } else {
-            Files.createSymbolicLink(Path.of(junction), Path.of(target));
-            return Files.exists(Path.of(junction), LinkOption.NOFOLLOW_LINKS);
-        }
+        // Convert "target" to its real path
+        target = target.toRealPath();
+
+        // Create a directory junction
+        loadNativeLib();
+        return createWinDirectoryJunction0(junction.toString(), target.toString());
     }
 
-    private static native long getWinProcessHandleCount();
-    private static native boolean createWinDirectoryJunction(String junction,
+    private static native long getWinProcessHandleCount0();
+    private static native boolean createWinDirectoryJunction0(String junction,
         String target) throws IOException;
 
     // Possible command locations and arguments

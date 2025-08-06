@@ -68,7 +68,7 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER, * PREPARSE_DATA_BUFFER;
 
 JNIEXPORT jlong JNICALL
-Java_jdk_test_lib_util_FileUtils_getWinProcessHandleCount
+Java_jdk_test_lib_util_FileUtils_getWinProcessHandleCount0
     (JNIEnv* env)
 {
     DWORD handleCount;
@@ -96,7 +96,7 @@ void throwIOExceptionWithLastError(JNIEnv* env) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_test_lib_util_FileUtils_createWinDirectoryJunction
+Java_jdk_test_lib_util_FileUtils_createWinDirectoryJunction0
     (JNIEnv* env, jclass unused, jstring sjunction, jstring starget)
 {
     const jshort bpc = sizeof(wchar_t); // bytes per character

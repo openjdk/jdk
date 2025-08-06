@@ -140,8 +140,7 @@ public class Basic {
         // NTFS junctions are Windows-only
         if (Platform.isWindows()) {
             Path junction = dir.resolve("junction");
-            FileUtils.createDirectoryJunction(junction.toString(),
-                                              dir.toString());
+            FileUtils.createWinDirectoryJunction(junction, dir);
             checkAttributesOfJunction(junction);
         }
     }
