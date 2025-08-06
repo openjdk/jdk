@@ -124,13 +124,15 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      bool object_count = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
-      if (object_count) {
-        KlassInfoTable* _cit = ShenandoahHeap::heap()->get_cit();
-        ShenandoahObjectCountClosure _count;
+      // Use object counting closure if ObjectCountAfterGC event is enabled
+      bool object_count_enabled = ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>();
+      if (object_count_enabled) {
+        KlassInfoTable* const main_cit = ShenandoahHeap::heap()->get_cit();
+        KlassInfoTable local_cit(false);
+        ShenandoahObjectCountClosure _count(&local_cit);
         ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &_count);
         _root_scanner.roots_do(&init_mark, worker_id);
-        _count.merge_tables(_cit);
+        _count.merge_tables(main_cit);
       } else {
         ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
         _root_scanner.roots_do(&init_mark, worker_id);

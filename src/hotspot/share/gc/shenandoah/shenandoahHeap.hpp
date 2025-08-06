@@ -253,7 +253,8 @@ public:
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
-  KlassInfoTable* get_cit();
+  inline KlassInfoTable* get_cit();
+  inline void set_cit(KlassInfoTable* cit);
 
 // ---------- Periodic Tasks
 //

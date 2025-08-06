@@ -74,6 +74,7 @@ private:
 
 protected:
   template <class T, ShenandoahGenerationType GENERATION>
+  // Return true if object was not previously marked by another thread
   bool work(T *p);
 
 public:
@@ -115,6 +116,7 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     // If the object was not previously marked, then it is considered newly marked and we record it's instance in the KlassInfoTable
+    // Avoids double counting the same object
     bool newly_marked = work<T, GENERATION>(p);
     if (newly_marked) {
       _count->do_oop(p);
