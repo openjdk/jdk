@@ -131,6 +131,35 @@ address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
+// Used to retrieve mark regions that lie within a generated stub so
+// they can be saved along with the stub and used to reinit the table
+// when the stub is reloaded.
+
+void UnsafeMemoryAccess::collect_entries(address range_start, address range_end, GrowableArray<address>& entries)
+{
+  for (int i = 0; i < _table_length; i++) {
+    UnsafeMemoryAccess& e = _table[i];
+    assert((e._start_pc != nullptr &&
+            e._end_pc != nullptr &&
+            e._error_exit_pc != nullptr),
+           "search for entries found incomplete table entry");
+    if (e._start_pc >= range_start && e._end_pc <= range_end) {
+      assert(((e._error_exit_pc >= range_start &&
+               e._error_exit_pc <= range_end) ||
+              e._error_exit_pc == _common_exit_stub_pc),
+             "unexpected error exit pc");
+      entries.append(e._start_pc);
+      entries.append(e._end_pc);
+      // only return an exit pc when it is within the range of the stub
+      if (e._error_exit_pc != _common_exit_stub_pc) {
+        entries.append(e._error_exit_pc);
+      } else {
+        // an address outside the stub must be the common exit stub address
+        entries.append(nullptr);
+      }
+    }
+  }
+}
 
 static BufferBlob* initialize_stubs(BlobId blob_id,
                                     int code_size, int max_aligned_stubs,
