@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class SegmentBulkCopy {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "16", "24", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
