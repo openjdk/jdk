@@ -61,6 +61,7 @@ JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler)
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables() ? 1 : 0;
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions() ? 1 : 0;
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame() ? 1 : 0;
+  assert(_task != nullptr, "The task cannot be null");
   _target_method_is_old                 = _task != nullptr && _task->method()->is_old();
   if (task->is_blocking()) {
     task->set_blocking_jvmci_compile_state(this);
