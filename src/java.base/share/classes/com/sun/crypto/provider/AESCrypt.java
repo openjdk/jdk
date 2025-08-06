@@ -116,7 +116,8 @@ public final class AESCrypt extends SymmetricCipher {
     }
 
     void init(boolean decrypting, String algorithm, byte[] key)
-      throws InvalidKeyException {
+            throws InvalidKeyException {
+
         int nk;
 
         if (algorithm.equalsIgnoreCase("AES_128") ||
@@ -240,6 +241,27 @@ public final class AESCrypt extends SymmetricCipher {
         }
     }
 
+    private void genTablesI4() {
+            System.out.println("    private static final int[] TI" + 4 + " = {");
+            System.out.print("        ");
+            for (int i = 0; i < 256; i++) {
+                //Shifting is irrelevant as the value is preshifted for LUTs
+                byte a0 = ISBOX[(i&0xF0)>>4][i&0x0F];
+                byte a1 = ISBOX[(i&0xF0)>>4][i&0x0F];
+                byte a2 = ISBOX[(i&0xF0)>>4][i&0x0F];
+                byte a3 = ISBOX[(i&0xF0)>>4][i&0x0F];
+
+                if ((i+1) % 6 == 0) {
+                    System.out.printf("0x%02X%02X%02X%02X,", a0, a1, a2, a3);
+                    System.out.print("\n        ");
+                } else {
+                    System.out.printf("0x%02X%02X%02X%02X, ", a0, a1, a2, a3);
+                }
+            }
+            System.out.println("\n    };\n");
+        //}
+    }
+
     private void genTables() {
         for (int j = 0; j < 4; j++) {
             System.out.println("    private static final int[] T" + j + " = {");
@@ -263,10 +285,8 @@ public final class AESCrypt extends SymmetricCipher {
 
     private static byte invMix(byte s, byte mix) {
         switch(mix) {
-            /*
-            Utilize lookup tables for the inverse MixColumn in order to
-            help mitigate against timing attacks based on the MSB of the state
-             */
+            // Utilize lookup tables for the three transformations to
+            // help mitigate against timing attacks.
             case 0x09 -> s = (byte) (((TMI[s & 0xFF] & 0xFF000000) >> 24));
             case 0x0b -> s = (byte) (((TMI[s & 0xFF] & 0x00FF0000) >> 16));
             case 0x0d -> s = (byte) (((TMI[s & 0xFF] & 0x0000FF00) >> 8));
@@ -307,10 +327,10 @@ public final class AESCrypt extends SymmetricCipher {
         }
         for (int i = nk; i < len * (r + 1); i++) {
             tmp = w[i - 1];
-            if (i%nk == 0) {
+            if (i % nk == 0) {
                 rW = (tmp << 8) & 0xFFFFFF00 | (tmp >> 24) & 0x000000FF;
                 SubWord = subByte(rW, SBOX);
-                g = SubWord ^ RCON[(i/nk)-1];
+                g = SubWord ^ RCON[(i / nk) - 1];
                 tmp = g;
             } else if ((nk > 6) && ((i % nk) == len)) {
                 SubWord = subByte(tmp, SBOX);
@@ -318,6 +338,7 @@ public final class AESCrypt extends SymmetricCipher {
             }
             w[i] = w[i - nk] ^ tmp;
         }
+
         return w;
     }
 
@@ -331,6 +352,7 @@ public final class AESCrypt extends SymmetricCipher {
             invGenMix(wMat);
             System.arraycopy(wMat, 0, w, i * len, len);
         }
+
         return w;
     }
 
@@ -394,120 +416,137 @@ public final class AESCrypt extends SymmetricCipher {
         return tmp;
     }
 
-    private int[] addRoundKey(int[] state, int[] wi, int offset) {
-        for (int i = 0; i < state.length; i++) {
-            state[i] ^= wi[offset + i];
-        }
-
-        return state;
+    private void addRoundKey(int[] state, int[] wi, int offset) {
+        state[0] ^= wi[offset];
+        state[1] ^= wi[offset + 1];
+        state[2] ^= wi[offset + 2];
+        state[3] ^= wi[offset + 3];
     }
 
-    @IntrinsicCandidate
-    private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
+    private void initState(int[] ti, byte[] s, int so) {
         int len = WB;
-        int[] ti = new int[len];
-        int[] tmp = new int[len];
 
-        for (int i = 0; i < ti.length; i++) {
-            ti[i] = ((p[(i * len) + po] & 0xFF) << 24)
-                    | ((p[(i * len) + po + 1] & 0xFF) << 16)
-                    | ((p[(i * len) + po + 2] & 0xFF) << 8)
-                    | (p[(i * len) + po + 3] & 0xFF);
-        }
-
-        ti = addRoundKey(ti, expandedKey, 0);
-        for (int k = 0; k < (rounds - 1); k++) {
-            for (int i = 0; i < ti.length; i++) {
-                /*
-                Utilize lookup tables for the the three transformations to
-                help mitigate against timing attacks.
-                */
-                int a0i = (ti[i] >> 24) & 0xFF;
-                int a0 = (T0[a0i] & 0xFF000000) | (T0[a0i]&0x00FF0000)
-                        | (T0[a0i] & 0x0000FF00) | (T0[a0i]&0xFF);
-
-                int a1i = (ti[(i + 1) % len] >> 16) & 0xFF;
-                int a1 = (T1[a1i] & 0xFF000000) | (T1[a1i] & 0x00FF0000)
-                        | (T1[a1i] & 0x0000FF00) | (T1[a1i] & 0xFF);
-
-                int a2i = (ti[(i + 2) % len] >> 8) & 0xFF;
-                int a2 = (T2[a2i] & 0xFF000000) | (T2[a2i] & 0x00FF0000)
-                        | (T2[a2i] & 0x0000FF00) | (T2[a2i] & 0xFF);
-
-                int a3i = ti[(i + 3) % len] & 0xFF;
-                int a3 = (T3[a3i] & 0xFF000000) | (T3[a3i] & 0x00FF0000)
-                        | (T3[a3i] & 0x0000FF00) | (T3[a3i] & 0xFF);
-
-                // Add columns and round key
-                tmp[i] = a0 ^ a1 ^ a2 ^ a3 ^ expandedKey[((k + 1) * len) + i];
-            }
-            System.arraycopy(tmp, 0, ti, 0, len);
-        }
-        // Last round
-        ti = subBytes(ti);
-        ti = shiftRows(ti);
-        ti = addRoundKey(ti, expandedKey, rounds * ti.length);
-
-        for (int i = 0; i < ti.length; i++) {
-             c[(i * len) + co] = (byte) ((ti[i] >> 24)&0xFF);
-             c[(i * len) + 1 + co] = (byte) ((ti[i] >> 16)&0xFF);
-             c[(i * len) + 2 + co] = (byte) ((ti[i] >> 8)&0xFF);
-             c[(i * len) + 3 + co] = (byte) (ti[i] & 0xFF);
-        }
+        ti[0] = ((s[so] & 0xFF) << 24) | ((s[so + 1] & 0xFF) << 16)
+                | ((s[so + 2] & 0xFF) << 8) | (s[so + 3] & 0xFF);
+        ti[1] = ((s[so + 4] & 0xFF) << 24) | ((s[so + 5] & 0xFF) << 16)
+                | ((s[so + 6] & 0xFF) << 8) | (s[so + 7] & 0xFF);
+        ti[2] = ((s[so + 8] & 0xFF) << 24) | ((s[so + 9] & 0xFF) << 16)
+                | ((s[so + 10] & 0xFF) << 8) | (s[so + 11] & 0xFF);
+        ti[3] = ((s[so + 12] & 0xFF) << 24) | ((s[so + 13] & 0xFF) << 16)
+                | ((s[so + 14] & 0xFF) << 8) | (s[so + 15] & 0xFF);
     }
 
-    @IntrinsicCandidate
-    private void implDecryptBlock(byte[] c, int co, byte[] p, int po) {
+    private void finalState(byte[] s, int[] ti, int so) {
+        s[so] = (byte) ((ti[0] >> 24) & 0xFF);
+        s[so + 1] = (byte) ((ti[0] >> 16) & 0xFF);
+        s[so + 2] = (byte) ((ti[0] >> 8) & 0xFF);
+        s[so + 3] = (byte) (ti[0] & 0xFF);
+        s[so + 4] = (byte) ((ti[1] >> 24) & 0xFF);
+        s[so + 5] = (byte) ((ti[1] >> 16) & 0xFF);
+        s[so + 6] = (byte) ((ti[1] >> 8) & 0xFF);
+        s[so + 7] = (byte) (ti[1] & 0xFF);
+        s[so + 8] = (byte) ((ti[2] >> 24) & 0xFF);
+        s[so + 9] = (byte) ((ti[2] >> 16) & 0xFF);
+        s[so + 10] = (byte) ((ti[2] >> 8) & 0xFF);
+        s[so + 11] = (byte) (ti[2] & 0xFF);
+        s[so + 12] = (byte) ((ti[3] >> 24) & 0xFF);
+        s[so + 13] = (byte) ((ti[3] >> 16) & 0xFF);
+        s[so + 14] = (byte) ((ti[3] >> 8) & 0xFF);
+        s[so + 15] = (byte) (ti[3] & 0xFF);
+    }
+
+    private int round(int[] state, int idx, int k) {
         int len = WB;
-        int[] ti = new int[len];
-        int[] tmp = new int[len];
+        int ek = expandedKey[((k + 1) * len) + idx];
+        // Utilize lookup tables for the three transformations to
+        // help mitigate against timing attacks.
+        int a0 = T0[(state[idx] >> 24) & 0xFF];
+        int a1 = T1[(state[(idx + 1) % len] >> 16) & 0xFF];
+        int a2 = T2[(state[(idx + 2) % len] >> 8) & 0xFF];
+        int a3 = T3[state[(idx + 3) % len] & 0xFF];
+        // Add columns and round key
+        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
+    }
 
-        for (int i = 0; i < len; i++) {
-            ti[i] = ((c[(i * len) + co] & 0xFF) << 24)
-                    | ((c[(i * len) + co + 1]& 0xFF) << 16)
-                    | ((c[(i * len) + co + 2] & 0xFF) << 8)
-                    | (c[(i * len) + co +3] & 0xFF);
-        }
-        ti = addRoundKey(ti, invExpandedKey, rounds * ti.length);
+    private int invRound(int[] state, int idx, int k) {
+        int len = WB;
+        int iek = invExpandedKey[((rounds - (k + 1)) * len) + idx];
+        // Utilize lookup tables for the the three transformations to
+        // help mitigate against timing attacks.
+        int a0 = TI0[(state[idx] >> 24) & 0xFF];
+        int a1 = TI1[(state[(idx + 3) % len] >> 16) & 0xFF];
+        int a2 = TI2[(state[(idx + 2) % len] >> 8) & 0xFF];
+        int a3 = TI3[state[(idx + 1) % len] & 0xFF];
+        // Add columns and round key
+        return a0 ^ a1 ^ a2 ^ a3 ^ iek;
+    }
+
+    private int lastRound(int[] state, int idx) {
+        int len = WB;
+        int ek = expandedKey[(rounds * len) + idx];
+        // Utilize lookup tables for the the three transformations to
+        // help mitigate against timing attacks.
+        int a0 = T2[(state[idx] >> 24) & 0xFF] & 0xFF000000;
+        int a1 = T3[(state[(idx + 1) % len] >> 16) & 0xFF] & 0xFF0000;
+        int a2 = T0[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
+        int a3 = T1[state[(idx + 3) % len] & 0xFF] & 0xFF;
+        // Add columns and round key
+        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
+    }
+
+    private int invLastRound(int[] state, int idx) {
+        int len = WB;
+        int ek = invExpandedKey[idx];
+        // Utilize lookup tables for the the three transformations to
+        // help mitigate against timing attacks.
+        int a0 = TI4[(state[idx] >> 24) & 0xFF] & 0xFF000000;
+        int a1 = TI4[(state[(idx + 3) % len] >> 16) & 0xFF] & 0xFF0000;
+        int a2 = TI4[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
+        int a3 = TI4[state[(idx + 1) % len] & 0xFF] & 0xFF;
+        // Add columns and round key
+        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
+    }
+
+    private void implEncryptBlockJava(byte[] p, int po, byte[] c, int co) {
+        int[] ti = new int[WB];
+        int a0, a1, a2, a3;
+
+        initState(ti, p, po);
+        addRoundKey(ti, expandedKey, 0);
         for (int k = 0; k < (rounds - 1); k++) {
-            for (int i = 0; i < len; i++) {
-                /*
-                Utilize lookup tables for the the three transformations to
-                help mitigate against timing attacks.
-                */
-                int a0i = (ti[i] >> 24) & 0xFF;
-                int a0 = (TI0[a0i] & 0xFF000000) | (TI0[a0i] & 0x00FF0000)
-                        | (TI0[a0i] & 0x0000FF00) | (TI0[a0i] & 0xFF);
-
-                int a1i = (ti[(i + 3) % len] >> 16) & 0xFF;
-                int a1 = (TI1[a1i] & 0xFF000000) | (TI1[a1i] & 0x00FF0000)
-                        | (TI1[a1i] & 0x0000FF00) | (TI1[a1i] & 0xFF);
-
-                int a2i = (ti[(i + 2) % len] >> 8) & 0xFF;
-                int a2 = (TI2[a2i] & 0xFF000000) | (TI2[a2i] & 0x00FF0000)
-                        | (TI2[a2i] & 0x0000FF00) | (TI2[a2i] & 0xFF);
-
-                int a3i = ti[(i + 1) % len] & 0xFF;
-                int a3 = (TI3[a3i] & 0xFF000000) | (TI3[a3i] & 0x00FF0000)
-                        | (TI3[a3i] & 0x0000FF00) | (TI3[a3i] & 0xFF);
-
-                // Add columns and round key
-                tmp[i] = a0 ^ a1 ^ a2 ^ a3
-                        ^ invExpandedKey[((rounds - (k + 1)) * len) + i];
-            }
-            System.arraycopy(tmp, 0, ti, 0, len);
+            a0 = round(ti, 0, k);
+            a1 = round(ti, 1, k);
+            a2 = round(ti, 2, k);
+            a3 = round(ti, 3, k);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
-        // Last round
-        ti = invSubBytes(ti);
-        ti = invShiftRows(ti);
-        ti = addRoundKey(ti, invExpandedKey, 0);
+        a0 = lastRound(ti, 0);
+        a1 = lastRound(ti, 1);
+        a2 = lastRound(ti, 2);
+        a3 = lastRound(ti, 3);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        finalState(c, ti, co);
+    }
 
-        for (int i = 0; i < ti.length; i++) {
-            p[(i * len) + po] = (byte) ((ti[i] >> 24) & 0xFF);
-            p[(i * len) + 1 + po] = (byte) ((ti[i] >> 16) & 0xFF);
-            p[(i * len) + 2 + po] = (byte) ((ti[i] >> 8) & 0xFF);
-            p[(i * len) + 3 + po] = (byte) (ti[i] & 0xFF);
+    private void implDecryptBlockJava(byte[] c, int co, byte[] p, int po) {
+        int[] ti = new int[WB];
+        int a0, a1, a2, a3;
+
+        initState(ti, c, co);
+        addRoundKey(ti, invExpandedKey, rounds * ti.length);
+        for (int k = 0; k < (rounds - 1); k++) {
+            a0 = invRound(ti, 0, k);
+            a1 = invRound(ti, 1, k);
+            a2 = invRound(ti, 2, k);
+            a3 = invRound(ti, 3, k);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
+        a0 = invLastRound(ti, 0);
+        a1 = invLastRound(ti, 1);
+        a2 = invLastRound(ti, 2);
+        a3 = invLastRound(ti, 3);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        finalState(p, ti, po);
     }
 
     public void encryptBlock(byte[] plain, int pOff, byte[] cipher, int cOff) {
@@ -518,7 +557,19 @@ public final class AESCrypt extends SymmetricCipher {
         implDecryptBlock(cipher, cOff, plain, pOff);
     }
 
-    private static final int[] T0 = {
+    @IntrinsicCandidate
+    private void implEncryptBlock(byte[] plain, int pOff, byte[] cipher,
+            int cOff) {
+        implEncryptBlockJava(plain, pOff, cipher, cOff);
+    }
+
+    @IntrinsicCandidate
+    private void implDecryptBlock(byte[] cipher, int cOff, byte[] plain,
+            int pOff) {
+        implDecryptBlockJava(cipher, cOff, plain, pOff);
+    }
+
+    private static final int[] T0 = new int[] {
         0xC66363A5, 0xF87C7C84, 0xEE777799, 0xF67B7B8D, 0xFFF2F20D, 0xD66B6BBD,
         0xDE6F6FB1, 0x91C5C554, 0x60303050, 0x02010103, 0xCE6767A9, 0x562B2B7D,
         0xE7FEFE19, 0xB5D7D762, 0x4DABABE6, 0xEC76769A, 0x8FCACA45, 0x1F82829D,
@@ -564,7 +615,7 @@ public final class AESCrypt extends SymmetricCipher {
         0x7BB0B0CB, 0xA85454FC, 0x6DBBBBD6, 0x2C16163A,
     };
 
-    private static final int[] T1 = {
+    private static final int[] T1 = new int[] {
         0xA5C66363, 0x84F87C7C, 0x99EE7777, 0x8DF67B7B, 0x0DFFF2F2, 0xBDD66B6B,
         0xB1DE6F6F, 0x5491C5C5, 0x50603030, 0x03020101, 0xA9CE6767, 0x7D562B2B,
         0x19E7FEFE, 0x62B5D7D7, 0xE64DABAB, 0x9AEC7676, 0x458FCACA, 0x9D1F8282,
@@ -610,7 +661,7 @@ public final class AESCrypt extends SymmetricCipher {
         0xCB7BB0B0, 0xFCA85454, 0xD66DBBBB, 0x3A2C1616,
     };
 
-    private static final int[] T2 = {
+    private static final int[] T2 = new int[] {
         0x63A5C663, 0x7C84F87C, 0x7799EE77, 0x7B8DF67B, 0xF20DFFF2, 0x6BBDD66B,
         0x6FB1DE6F, 0xC55491C5, 0x30506030, 0x01030201, 0x67A9CE67, 0x2B7D562B,
         0xFE19E7FE, 0xD762B5D7, 0xABE64DAB, 0x769AEC76, 0xCA458FCA, 0x829D1F82,
@@ -656,7 +707,7 @@ public final class AESCrypt extends SymmetricCipher {
         0xB0CB7BB0, 0x54FCA854, 0xBBD66DBB, 0x163A2C16,
     };
 
-    private static final int[] T3 = {
+    private static final int[] T3 = new int[] {
         0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF, 0x6B6BBDD6,
         0x6F6FB1DE, 0xC5C55491, 0x30305060, 0x01010302, 0x6767A9CE, 0x2B2B7D56,
         0xFEFE19E7, 0xD7D762B5, 0xABABE64D, 0x76769AEC, 0xCACA458F, 0x82829D1F,
@@ -702,7 +753,7 @@ public final class AESCrypt extends SymmetricCipher {
         0xB0B0CB7B, 0x5454FCA8, 0xBBBBD66D, 0x16163A2C,
     };
 
-    private static final int[] TI0 = {
+    private static final int[] TI0 = new int[] {
         0x51F4A750, 0x7E416553, 0x1A17A4C3, 0x3A275E96, 0x3BAB6BCB, 0x1F9D45F1,
         0xACFA58AB, 0x4BE30393, 0x2030FA55, 0xAD766DF6, 0x88CC7691, 0xF5024C25,
         0x4FE5D7FC, 0xC52ACBD7, 0x26354480, 0xB562A38F, 0xDEB15A49, 0x25BA1B67,
@@ -748,7 +799,7 @@ public final class AESCrypt extends SymmetricCipher {
         0x7BCB8461, 0xD532B670, 0x486C5C74, 0xD0B85742,
     };
 
-    private static final int[] TI1 = {
+    private static final int[] TI1 = new int[] {
         0x5051F4A7, 0x537E4165, 0xC31A17A4, 0x963A275E, 0xCB3BAB6B, 0xF11F9D45,
         0xABACFA58, 0x934BE303, 0x552030FA, 0xF6AD766D, 0x9188CC76, 0x25F5024C,
         0xFC4FE5D7, 0xD7C52ACB, 0x80263544, 0x8FB562A3, 0x49DEB15A, 0x6725BA1B,
@@ -794,7 +845,7 @@ public final class AESCrypt extends SymmetricCipher {
         0x617BCB84, 0x70D532B6, 0x74486C5C, 0x42D0B857,
     };
 
-    private static final int[] TI2 = {
+    private static final int[] TI2 = new int[] {
         0xA75051F4, 0x65537E41, 0xA4C31A17, 0x5E963A27, 0x6BCB3BAB, 0x45F11F9D,
         0x58ABACFA, 0x03934BE3, 0xFA552030, 0x6DF6AD76, 0x769188CC, 0x4C25F502,
         0xD7FC4FE5, 0xCBD7C52A, 0x44802635, 0xA38FB562, 0x5A49DEB1, 0x1B6725BA,
@@ -840,7 +891,7 @@ public final class AESCrypt extends SymmetricCipher {
         0x84617BCB, 0xB670D532, 0x5C74486C, 0x5742D0B8,
     };
 
-    private static final int[] TI3 = {
+    private static final int[] TI3 = new int[] {
         0xF4A75051, 0x4165537E, 0x17A4C31A, 0x275E963A, 0xAB6BCB3B, 0x9D45F11F,
         0xFA58ABAC, 0xE303934B, 0x30FA5520, 0x766DF6AD, 0xCC769188, 0x024C25F5,
         0xE5D7FC4F, 0x2ACBD7C5, 0x35448026, 0x62A38FB5, 0xB15A49DE, 0xBA1B6725,
@@ -886,7 +937,53 @@ public final class AESCrypt extends SymmetricCipher {
         0xCB84617B, 0x32B670D5, 0x6C5C7448, 0xB85742D0,
     };
 
-    private static final int[] TMI = {
+    private static final int[] TI4 = new int[] {
+        0x52525252, 0x09090909, 0x6A6A6A6A, 0xD5D5D5D5, 0x30303030, 0x36363636,
+        0xA5A5A5A5, 0x38383838, 0xBFBFBFBF, 0x40404040, 0xA3A3A3A3, 0x9E9E9E9E,
+        0x81818181, 0xF3F3F3F3, 0xD7D7D7D7, 0xFBFBFBFB, 0x7C7C7C7C, 0xE3E3E3E3,
+        0x39393939, 0x82828282, 0x9B9B9B9B, 0x2F2F2F2F, 0xFFFFFFFF, 0x87878787,
+        0x34343434, 0x8E8E8E8E, 0x43434343, 0x44444444, 0xC4C4C4C4, 0xDEDEDEDE,
+        0xE9E9E9E9, 0xCBCBCBCB, 0x54545454, 0x7B7B7B7B, 0x94949494, 0x32323232,
+        0xA6A6A6A6, 0xC2C2C2C2, 0x23232323, 0x3D3D3D3D, 0xEEEEEEEE, 0x4C4C4C4C,
+        0x95959595, 0x0B0B0B0B, 0x42424242, 0xFAFAFAFA, 0xC3C3C3C3, 0x4E4E4E4E,
+        0x08080808, 0x2E2E2E2E, 0xA1A1A1A1, 0x66666666, 0x28282828, 0xD9D9D9D9,
+        0x24242424, 0xB2B2B2B2, 0x76767676, 0x5B5B5B5B, 0xA2A2A2A2, 0x49494949,
+        0x6D6D6D6D, 0x8B8B8B8B, 0xD1D1D1D1, 0x25252525, 0x72727272, 0xF8F8F8F8,
+        0xF6F6F6F6, 0x64646464, 0x86868686, 0x68686868, 0x98989898, 0x16161616,
+        0xD4D4D4D4, 0xA4A4A4A4, 0x5C5C5C5C, 0xCCCCCCCC, 0x5D5D5D5D, 0x65656565,
+        0xB6B6B6B6, 0x92929292, 0x6C6C6C6C, 0x70707070, 0x48484848, 0x50505050,
+        0xFDFDFDFD, 0xEDEDEDED, 0xB9B9B9B9, 0xDADADADA, 0x5E5E5E5E, 0x15151515,
+        0x46464646, 0x57575757, 0xA7A7A7A7, 0x8D8D8D8D, 0x9D9D9D9D, 0x84848484,
+        0x90909090, 0xD8D8D8D8, 0xABABABAB, 0x00000000, 0x8C8C8C8C, 0xBCBCBCBC,
+        0xD3D3D3D3, 0x0A0A0A0A, 0xF7F7F7F7, 0xE4E4E4E4, 0x58585858, 0x05050505,
+        0xB8B8B8B8, 0xB3B3B3B3, 0x45454545, 0x06060606, 0xD0D0D0D0, 0x2C2C2C2C,
+        0x1E1E1E1E, 0x8F8F8F8F, 0xCACACACA, 0x3F3F3F3F, 0x0F0F0F0F, 0x02020202,
+        0xC1C1C1C1, 0xAFAFAFAF, 0xBDBDBDBD, 0x03030303, 0x01010101, 0x13131313,
+        0x8A8A8A8A, 0x6B6B6B6B, 0x3A3A3A3A, 0x91919191, 0x11111111, 0x41414141,
+        0x4F4F4F4F, 0x67676767, 0xDCDCDCDC, 0xEAEAEAEA, 0x97979797, 0xF2F2F2F2,
+        0xCFCFCFCF, 0xCECECECE, 0xF0F0F0F0, 0xB4B4B4B4, 0xE6E6E6E6, 0x73737373,
+        0x96969696, 0xACACACAC, 0x74747474, 0x22222222, 0xE7E7E7E7, 0xADADADAD,
+        0x35353535, 0x85858585, 0xE2E2E2E2, 0xF9F9F9F9, 0x37373737, 0xE8E8E8E8,
+        0x1C1C1C1C, 0x75757575, 0xDFDFDFDF, 0x6E6E6E6E, 0x47474747, 0xF1F1F1F1,
+        0x1A1A1A1A, 0x71717171, 0x1D1D1D1D, 0x29292929, 0xC5C5C5C5, 0x89898989,
+        0x6F6F6F6F, 0xB7B7B7B7, 0x62626262, 0x0E0E0E0E, 0xAAAAAAAA, 0x18181818,
+        0xBEBEBEBE, 0x1B1B1B1B, 0xFCFCFCFC, 0x56565656, 0x3E3E3E3E, 0x4B4B4B4B,
+        0xC6C6C6C6, 0xD2D2D2D2, 0x79797979, 0x20202020, 0x9A9A9A9A, 0xDBDBDBDB,
+        0xC0C0C0C0, 0xFEFEFEFE, 0x78787878, 0xCDCDCDCD, 0x5A5A5A5A, 0xF4F4F4F4,
+        0x1F1F1F1F, 0xDDDDDDDD, 0xA8A8A8A8, 0x33333333, 0x88888888, 0x07070707,
+        0xC7C7C7C7, 0x31313131, 0xB1B1B1B1, 0x12121212, 0x10101010, 0x59595959,
+        0x27272727, 0x80808080, 0xECECECEC, 0x5F5F5F5F, 0x60606060, 0x51515151,
+        0x7F7F7F7F, 0xA9A9A9A9, 0x19191919, 0xB5B5B5B5, 0x4A4A4A4A, 0x0D0D0D0D,
+        0x2D2D2D2D, 0xE5E5E5E5, 0x7A7A7A7A, 0x9F9F9F9F, 0x93939393, 0xC9C9C9C9,
+        0x9C9C9C9C, 0xEFEFEFEF, 0xA0A0A0A0, 0xE0E0E0E0, 0x3B3B3B3B, 0x4D4D4D4D,
+        0xAEAEAEAE, 0x2A2A2A2A, 0xF5F5F5F5, 0xB0B0B0B0, 0xC8C8C8C8, 0xEBEBEBEB,
+        0xBBBBBBBB, 0x3C3C3C3C, 0x83838383, 0x53535353, 0x99999999, 0x61616161,
+        0x17171717, 0x2B2B2B2B, 0x04040404, 0x7E7E7E7E, 0xBABABABA, 0x77777777,
+        0xD6D6D6D6, 0x26262626, 0xE1E1E1E1, 0x69696969, 0x14141414, 0x63636363,
+        0x55555555, 0x21212121, 0x0C0C0C0C, 0x7D7D7D7D,
+    };
+
+    private static final int[] TMI = new int[] {
         0x00000000, 0x090B0D0E, 0x12161A1C, 0x1B1D1712, 0x242C3438, 0x2D273936,
         0x363A2E24, 0x3F31232A, 0x48586870, 0x4153657E, 0x5A4E726C, 0x53457F62,
         0x6C745C48, 0x657F5146, 0x7E624654, 0x77694B5A, 0x90B0D0E0, 0x99BBDDEE,
