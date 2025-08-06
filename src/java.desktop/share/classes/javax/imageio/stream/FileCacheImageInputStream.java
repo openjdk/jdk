@@ -252,7 +252,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
         StreamCloser.removeFromQueue(closeAction);
     }
 
-    private static class StreamDisposerRecord implements DisposerRecord {
+    static class StreamDisposerRecord implements DisposerRecord {
         private File cacheFile;
         private RandomAccessFile cache;
 

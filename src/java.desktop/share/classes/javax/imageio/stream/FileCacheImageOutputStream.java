@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import javax.imageio.stream.FileCacheImageInputStream.StreamDisposerRecord;
 import com.sun.imageio.stream.StreamCloser;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -50,7 +51,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
 
     private final Object disposerReferent = new Object();
 
-    private final FileCacheDisposerRecord disposerRecord;
+    private final StreamDisposerRecord disposerRecord;
     // Pos after last (rightmost) byte written
     private long maxStreamPos = 0L;
 
@@ -98,7 +99,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
 
         // If this instance becomes unreachable the disposer will clean up resources
         // used for caching. This can't flush any un-flushed cache.
-        this.disposerRecord = new FileCacheDisposerRecord(cacheFile, cache);
+        this.disposerRecord = new StreamDisposerRecord(cacheFile, cache);
         Disposer.addRecord(this.disposerReferent, this.disposerRecord);
         // If the VM is exiting and this instance is still reachable,
         // StreamCloser will call close() to flush the cache and clean up resources.
@@ -227,32 +228,6 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      */
     public boolean isCachedMemory() {
         return false;
-    }
-
-    private static class FileCacheDisposerRecord implements DisposerRecord {
-
-        private final File cacheFile;
-        private final RandomAccessFile cache;
-        private volatile boolean disposed;
-
-        public FileCacheDisposerRecord(File cacheFile, RandomAccessFile cache) {
-            this.cacheFile = cacheFile;
-            this.cache = cache;
-        }
-
-        @Override
-        public synchronized void dispose() {
-            if (disposed) {
-                return;
-            }
-            try {
-                cache.close();
-                cacheFile.delete();
-            } catch (IOException e) {
-            } finally {
-                 disposed = true;
-            }
-       }
     }
 
     /**

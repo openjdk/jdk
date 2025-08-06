@@ -57,13 +57,13 @@
  * A simple pattern would be
  * {@snippet lang='java':
  * try (FileOutputStream fos = new FileOutputStream("out.jpg");
- *     (ImageOutputStream ios = new FileCacheImageOutputStream(fos, null)) {
+ *      ImageOutputStream ios = new FileCacheImageOutputStream(fos, null)) {
  *     ImageIO.write(img, "jpg", ios);
  * } catch (IOException e) {
  * } // implicit finally block closes the streams in the reverse order to opening
  * }
  * <p>
- * Sub-classers of these Image I/O API stream types can to a limited extent protect
+ * Sub-classers of these Image I/O API stream types can, to a limited extent, protect
  * the application from the consequences of failures to close by adopting mechanisms
  * such as {@link java.lang.ref.Cleaner} to free internal resources when it
  * is no longer reachable. This is only necessary if there are any resources to release.
