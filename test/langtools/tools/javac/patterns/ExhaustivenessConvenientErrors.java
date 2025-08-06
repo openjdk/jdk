@@ -310,7 +310,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _))");
     }
 
-//    @Test TODO: this still produced sub-optimal results:
+    @Test
     public void testComplex4(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -347,7 +347,50 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Root(Base b1, Base b2, Base b3) {}
                }
                """,
-               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R2 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R2 _))");
+               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.Base _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.Base _))");
+               //ideally, the result would be as follow, but it is difficult to split Base on two distinct places:
+//               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R1 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R1 _))",
+//               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R2 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R2 _))");
+    }
+
+    @Test
+    public void testComplex5(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Triple p) {
+                       return switch (p) {
+                           case Triple(B _, _, _) -> 0;
+                           case Triple(_, A _, _) -> 0;
+                           case Triple(_, _, A _) -> 0;
+//                           case Triple(A p, C(Nested _, NestedBaseA _), _) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseB _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseC _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseB _)) -> 0;
+//                           case Path(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseC _)) -> 0;
+                       };
+                   }
+                   record Triple(Base c1, Base c2, Base c3) {}
+                   sealed interface Base permits A, B {}
+                   record A(boolean key) implements Base {
+                   }
+                   sealed interface B extends Base {}
+                   record C(Nested n, NestedBase b) implements B {}
+                   record Nested() {}
+                   sealed interface NestedBase {}
+                   record NestedBaseA() implements NestedBase {}
+                   record NestedBaseB() implements NestedBase {}
+                   record NestedBaseC() implements NestedBase {}
+               }
+               """,
+               "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseA _), test.Test.C _)",
+               //the following could be:
+               //test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _))
+               "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C _)");
     }
 
     @Test

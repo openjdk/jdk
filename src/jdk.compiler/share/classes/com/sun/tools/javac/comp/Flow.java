@@ -850,8 +850,8 @@ public class Flow {
                 }
             }
             try {
-                Pair<Boolean, Set<PatternDescription>> coveredResult = isCovered(selector.type, patternSet);
-                if (coveredResult.fst) {
+                CoverageResult coveredResult = isCovered(selector.type, patternSet);
+                if (coveredResult.covered()) {
                     return true;
                 }
                 if (missingExhaustivenessTimeout == 0) {
@@ -859,7 +859,7 @@ public class Flow {
                 }
 
                 PatternDescription defaultPattern = new BindingPattern(selector.type);
-                Set<PatternDescription> missingPatterns = expandMissingPatternDescriptions(selector.type, selector.type, defaultPattern, coveredResult.snd, Set.of(defaultPattern));
+                Set<PatternDescription> missingPatterns = expandMissingPatternDescriptions(selector.type, selector.type, defaultPattern, coveredResult.incompletePatterns(), Set.of(defaultPattern));
 
                 for (PatternDescription missing : missingPatterns) {
                     pendingNotExhaustiveDetails.add(missing.toString());
@@ -896,7 +896,7 @@ public class Flow {
 
                         Set<PatternDescription> replaced = replace(inMissingPatterns, toExpand, reducedPermittedPatterns);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replaced)).fst) {
+                        if (isCovered(selectorType, joinSets(basePatterns, replaced)).covered()) {
                             it.remove();
                             reduced = true;
                         }
@@ -957,16 +957,16 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).fst) {
+                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
                             it.remove();
                         }
                     }
 
-                    Pair<Boolean, Set<PatternDescription>> combinatorial = isCovered(targetType, combinatorialPatterns);
+                    CoverageResult coverageResult = isCovered(targetType, combinatorialPatterns);
 
-                    if (!combinatorial.fst) {
+                    if (!coverageResult.covered()) {
                         //nothing better can be done(?)
-                        combinatorialPatterns = combinatorial.snd;
+                        combinatorialPatterns = coverageResult.incompletePatterns();
                     }
 
                     //combine sealed subtypes into the supertype, if all is covered.
@@ -981,7 +981,7 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).fst) {
+                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
                             it.remove();
                         }
                     }
@@ -1104,16 +1104,14 @@ public class Flow {
         //false otherwise
         //TODO: there may be a better name for this method:
         private boolean isMoreImportant(PatternDescription pd1, PatternDescription pd2, Set<? extends PatternDescription> basePatterns, Set<? extends PatternDescription> missingPatterns) {
-            if (!(pd1 instanceof RecordPattern rp1)) {
-                throw new AssertionError();
-            }
-            if (!(pd2 instanceof RecordPattern rp2)) {
-                throw new AssertionError();
-            }
-            for (int c = 0; c < rp1.nested.length; c++) {
-                BindingPattern bp1 = (BindingPattern) rp1.nested[c];
+            if (pd1 instanceof RecordPattern rp1 && pd2 instanceof RecordPattern rp2) {
+                for (int c = 0; c < rp1.nested.length; c++) {
+                    if (isMoreImportant((BindingPattern) rp1.nested[c], (BindingPattern) rp2.nested[c], basePatterns, missingPatterns)) {
+                        return true;
+                    }
+                }
+            } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
                 Type t1 = bp1.type();
-                BindingPattern bp2 = (BindingPattern) rp2.nested[c];
                 Type t2 = bp2.type();
                 boolean t1IsImportantRecord = (t1.tsym.flags_field & RECORD) != 0 && hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
                 boolean t2IsImportantRecord = (t2.tsym.flags_field & RECORD) != 0 && hasMatchingRecordPattern(basePatterns, missingPatterns, bp2);
@@ -1160,7 +1158,7 @@ public class Flow {
             }
         }
 
-        private Pair<Boolean, Set<PatternDescription>> isCovered(Type selectorType, Set<PatternDescription> patterns) {
+        private CoverageResult isCovered(Type selectorType, Set<PatternDescription> patterns) {
             boolean backtrack = true; //XXX: this should be inverted, right?
             boolean repeat = true;
             Set<PatternDescription> updatedPatterns;
@@ -1171,7 +1169,7 @@ public class Flow {
                 updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                 repeat = !updatedPatterns.equals(patterns);
                 if (checkCovered(selectorType, patterns)) {
-                    return Pair.of(true, null);
+                    return new CoverageResult(true, null);
                 }
                 if (!repeat) {
                     //there may be situation like:
@@ -1191,10 +1189,12 @@ public class Flow {
                 patterns = updatedPatterns;
             } while (repeat);
             if (checkCovered(selectorType, patterns)) {
-                return Pair.of(true, null);
+                return new CoverageResult(true, null);
             }
-            return Pair.of(false, updatedPatterns);
+            return new CoverageResult(false, updatedPatterns);
         }
+
+        private record CoverageResult(boolean covered, Set<PatternDescription> incompletePatterns) {}
 
         private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
