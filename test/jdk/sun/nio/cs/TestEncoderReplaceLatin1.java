@@ -24,8 +24,6 @@
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import sun.nio.cs.ArrayEncoder;
-import sun.nio.cs.DoubleByte;
-import sun.nio.cs.SingleByte;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -36,12 +34,9 @@ import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sun.nio.cs.CharsetMapping.UNMAPPABLE_ENCODING;
 
 /*
  * @test
@@ -101,41 +96,16 @@ class TestEncoderReplaceLatin1 {
     }
 
     private static char[] findUnmappable(CharsetEncoder encoder) {
-
-        // Try to find a single-byte unmappable
-        Predicate<char[]> isUnmappable1 = createUnmappableSingleCharPredicate(encoder);
         char[] unmappable1 = {0};
-        for (int i = 0; i < 0xFF; i++) {
-            unmappable1[0] = (char) i;
-            boolean unmappable = isUnmappable1.test(unmappable1);
+        for (char c = 0; c < 0xFF; c++) {
+            unmappable1[0] = c;
+            boolean unmappable = !encoder.canEncode(c);
             if (unmappable) {
                 return unmappable1;
             }
         }
-
         System.err.println("Could not find an unmappable character!");
         return null;
-
-    }
-
-    static Predicate<char[]> createUnmappableSingleCharPredicate(CharsetEncoder encoder) {
-        return switch (encoder) {
-            case SingleByte.Encoder sbEncoder -> c -> sbEncoder.encode(c[0]) == UNMAPPABLE_ENCODING;
-            case DoubleByte.Encoder dbEncoder -> c -> dbEncoder.encodeChar(c[0]) == UNMAPPABLE_ENCODING;
-            default -> createUnmappableDoubleCharPredicate(encoder);
-        };
-    }
-
-    static Predicate<char[]> createUnmappableDoubleCharPredicate(CharsetEncoder encoder) {
-        assertEquals(encoder.unmappableCharacterAction(), CodingErrorAction.REPORT);
-        CharBuffer charBuffer = CharBuffer.allocate(2);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-        return unmappable -> {
-            charBuffer.clear().put(unmappable).flip();
-            byteBuffer.clear();
-            CoderResult coderResult = encoder.encode(charBuffer, byteBuffer, true);
-            return coderResult.isUnmappable();
-        };
     }
 
     /**
