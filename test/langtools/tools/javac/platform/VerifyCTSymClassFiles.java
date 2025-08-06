@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @bug 8331027
+ * @bug 8331027 8356645
  * @summary Verify classfile inside ct.sym
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util:+open
@@ -44,6 +45,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 public class VerifyCTSymClassFiles {
 
@@ -60,7 +62,13 @@ public class VerifyCTSymClassFiles {
             //no ct.sym, nothing to check:
             return ;
         }
-        try (FileSystem fs = FileSystems.newFileSystem(ctSym)) {
+        // Expected to always be a ZIP filesystem.
+        Map<String, ?> env = Map.of("accessMode", "readOnly");
+        try (FileSystem fs = FileSystems.newFileSystem(ctSym, env)) {
+            // Check that the file system is read only (not true if not a zip file system).
+            if (!fs.isReadOnly()) {
+                throw new AssertionError("Expected read-only file system");
+            }
             Files.walk(fs.getRootDirectories().iterator().next())
                  .filter(p -> Files.isRegularFile(p))
                  .forEach(p -> checkClassFile(p));
