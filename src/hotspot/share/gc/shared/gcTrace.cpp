@@ -27,8 +27,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "jfr/jfrEvents.hpp"

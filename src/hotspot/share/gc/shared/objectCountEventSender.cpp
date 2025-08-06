@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "gc/shared/objectCountEventSender.hpp"
 
 bool ObjectCountEventSender::_should_send_requestable_event = false;
