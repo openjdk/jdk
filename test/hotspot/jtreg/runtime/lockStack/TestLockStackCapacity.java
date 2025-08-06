@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:LockingMode=2 TestLockStackCapacity
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint TestLockStackCapacity
  */
 
 import jdk.test.lib.Asserts;
@@ -39,8 +39,6 @@ import jtreg.SkippedException;
 
 public class TestLockStackCapacity {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final int LockingMode = WB.getIntVMFlag("LockingMode").intValue();
-    static final int LM_LIGHTWEIGHT = 2;
 
     static class SynchronizedObject {
         static final SynchronizedObject OUTER = new SynchronizedObject();
@@ -95,12 +93,8 @@ public class TestLockStackCapacity {
     }
 
     public static void main(String... args) throws Exception {
-        if (LockingMode != LM_LIGHTWEIGHT) {
-            throw new SkippedException("Test only valid for LM_LIGHTWEIGHT");
-        }
-
         if (!WB.supportsRecursiveLightweightLocking()) {
-            throw new SkippedException("Test only valid if LM_LIGHTWEIGHT supports recursion");
+            throw new SkippedException("Test only valid if lightweight locking supports recursion");
         }
 
         SynchronizedObject.runTest();

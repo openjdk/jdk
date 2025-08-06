@@ -598,6 +598,7 @@ void CDSConfig::check_aotmode_create() {
   //
   // Since application is not executed in the assembly phase, there's no need to load
   // the agents anyway -- no one will notice that the agents are not loaded.
+  log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
   JvmtiAgentList::disable_agent_list();
 }
 
@@ -699,6 +700,13 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
       aot_log_info(aot)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
+    }
+  }
+
+  if (is_dumping_classic_static_archive() && AOTClassLinking) {
+    if (JvmtiAgentList::disable_agent_list()) {
+      FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
+      log_warning(cds)("Disabled all JVMTI agents with -Xshare:dump -XX:+AOTClassLinking");
     }
   }
 
@@ -816,9 +824,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
     // The base archive has aot-linked classes that may have AOT-resolved CP references
     // that point to the lambda form invokers in the base archive. Such pointers will
     // be invalid if lambda form invokers are regenerated in the dynamic archive.
-    return false;
-  } else if (CDSConfig::is_dumping_method_handles()) {
-    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
     return false;
   } else {
     return is_dumping_archive();

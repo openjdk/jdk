@@ -253,7 +253,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
-    call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -291,7 +291,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
-    call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -325,16 +325,6 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
-  if (breakAtEntry) {
-    // Verified Entry first instruction should be 5 bytes long for correct
-    // patching by patch_verified_entry().
-    //
-    // Breakpoint has one byte first instruction.
-    // Also first instruction will be one byte "push(rbp)" if stack banging
-    // code is not generated (see build_frame() above).
-    // For all these cases generate long instruction first.
-    fat_nop();
-  }
   if (breakAtEntry) int3();
   // build frame
 }
