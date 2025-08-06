@@ -680,7 +680,14 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-            if (merged->validate_control_flow() && merged->validate_mem_flow()) {
+
+            // merge(other, arg) can return a concatenation of size
+            // sc->num_arguments() * other->num_arguments(),
+            // which is a problem in the case of repeated stacked concats.
+            // Put a limit at 100 arguments to guard against excessive resource use.
+            bool n_args_is_bounded = merged->num_arguments() < 100;
+
+            if (n_args_is_bounded && merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
               Atomic::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {
