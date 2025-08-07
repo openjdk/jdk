@@ -801,8 +801,9 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # performed using a case-insensitive exact matching rule. For Cipher service,
 # its algorithm is the transformation string.
 #
-# Note: IllegalArgumentException will be thrown if the property value contains
-# entries with invalid syntax or unsupported services.
+# Note: If the property value contains entries with invalid syntax or
+# unsupported services at the time of checking, an ExceptionInInitializerError
+# with a cause of IllegalArgumentException will be thrown.
 #
 # Note: The restriction is applied in the various getInstance(...) methods
 # of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
