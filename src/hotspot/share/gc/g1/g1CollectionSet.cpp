@@ -498,6 +498,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) {
   uint num_initial_regions = 0;
   uint prev_num_optional_regions = _optional_groups.num_regions();
+  guarantee(prev_num_optional_regions == 0, "must be, why else?");
   uint num_optional_regions = prev_num_optional_regions;
   uint num_expensive_regions = 0;
   uint num_pinned_regions = 0;
@@ -606,7 +607,6 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   assert(_optional_groups.num_regions() > 0,
          "Should only be called when there are optional regions");
 
-  uint num_groups_selected = 0;
   double total_prediction_ms = 0.0;
   G1CSetCandidateGroupList selected;
   for (G1CSetCandidateGroup* group : _optional_groups) {
@@ -622,16 +622,15 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     time_remaining_ms -= predicted_time_ms;
 
     num_regions_selected += group->length();
-    num_groups_selected++;
 
     add_group_to_collection_set(group);
     selected.append(group);
   }
 
   log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
-                            num_regions_selected, num_groups_selected);
+                            num_regions_selected, selected.length());
   // Remove selected groups from candidate list.
-  if (num_groups_selected > 0) {
+  if (selected.length() > 0) {
     _optional_groups.remove(&selected);
     candidates()->remove(&selected);
   }
