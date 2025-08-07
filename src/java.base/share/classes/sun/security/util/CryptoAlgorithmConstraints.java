@@ -44,6 +44,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final Debug debug = Debug.getInstance("jca");
 
+    // for validating the service
+    private static final Set<String> SUPPORTED_SERVICES =
+            Set.of("Cipher", "KeyStore", "MessageDigest", "Signature");
+
     // Disabled algorithm security property for JCE crypto services
     public static final String PROPERTY_CRYPTO_DISABLED_ALGS =
             "jdk.crypto.disabledAlgorithms";
@@ -60,8 +64,8 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public static boolean permits(String service, String algo) {
-        return CryptoHolder.CONSTRAINTS.permits(null, service + "." + algo,
-                null);
+        String serviceDesc = service + "." + algo;
+        return CryptoHolder.CONSTRAINTS.cachedCheckAlgorithm(serviceDesc);
     }
 
     private final Set<String> disabledServices; // syntax is <service>.<algo>
@@ -92,10 +96,8 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // missing service or algorithm
                 throw new IllegalArgumentException("Invalid entry: " + dk);
             }
-            if (service.equalsIgnoreCase("Cipher") ||
-                    service.equalsIgnoreCase("KeyStore") ||
-                    service.equalsIgnoreCase("MessageDigest") ||
-                    service.equalsIgnoreCase("Signature")) {
+            if (SUPPORTED_SERVICES.stream().anyMatch(e->e.equalsIgnoreCase
+                    (service))) {
                 KnownOIDs oid = KnownOIDs.findMatch(algo);
                 if (oid != null) {
                     debug("Add oid: " + oid.value());
@@ -115,18 +117,10 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         debug("After " + Arrays.deepToString(disabledServices.toArray()));
     }
 
-    /*
-     * This checks if the specified service descriptor is in the
-     * disabledServices Set. If found, this method return false.
-     */
     @Override
     public final boolean permits(Set<CryptoPrimitive> notUsed1,
             String serviceDesc, AlgorithmParameters notUsed2) {
-        if (serviceDesc == null || serviceDesc.isEmpty()) {
-            throw new IllegalArgumentException("No algorithm name specified");
-        }
-
-        return cachedCheckAlgorithm(serviceDesc);
+        throw new UnsupportedOperationException("Unsupported permits() method");
     }
 
     @Override
