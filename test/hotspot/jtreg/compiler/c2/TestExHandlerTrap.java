@@ -62,6 +62,7 @@ import java.util.ArrayList;
  * @requires vm.debug
  *
  * @run main/othervm
+ *   -XX:+IgnoreUnrecognizedVMOptions
  *   -Xbatch
  *   -Xlog:deoptimization=trace
  *   -XX:CompileCommand=PrintCompilation,compiler.c2.TestExHandlerTrap::payload

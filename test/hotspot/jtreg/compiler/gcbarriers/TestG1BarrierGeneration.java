@@ -102,6 +102,7 @@ public class TestG1BarrierGeneration {
             for (int j = 0; j < 2; j++) {
                 scenarios[scenarioIndex] =
                     new Scenario(scenarioIndex,
+                                 "-XX:+IgnoreUnrecognizedVMOptions",
                                  "-XX:CompileCommand=inline,java.lang.ref.*::*",
                                  "-XX:" + (i == 0 ? "-" : "+") + "UseCompressedOops",
                                  "-XX:" + (j == 0 ? "-" : "+") + "ReduceInitialCardMarks");

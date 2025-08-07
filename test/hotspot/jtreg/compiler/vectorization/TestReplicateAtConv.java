@@ -26,7 +26,7 @@
  * @bug 8341834 8343747
  * @summary Replicate node at a VectorCast (ConvL2I) causes superword to fail
  * @run main/othervm -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp TestReplicateAtConv
- * @run main/othervm -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp -XX:MaxVectorSize=8 TestReplicateAtConv
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp -XX:MaxVectorSize=8 TestReplicateAtConv
  */
 
 public class TestReplicateAtConv {
