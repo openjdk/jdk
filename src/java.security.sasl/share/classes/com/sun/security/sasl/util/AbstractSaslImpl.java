@@ -56,10 +56,7 @@ public abstract class AbstractSaslImpl {
 
     // These are relevant only when privacy or integray have been negotiated
     protected int sendMaxBufSize = 0;     // specified by peer but can override
-
-    // optionally specified by self
-    protected int recvMaxBufSize = 65536;
-
+    protected int recvMaxBufSize = 65536; // optionally specified by self
     protected int rawSendSize;            // derived from sendMaxBufSize
 
     protected String myClassName;
