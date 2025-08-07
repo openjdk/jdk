@@ -423,14 +423,9 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDS() {
         boolean noJvmtiAdded = allFlags()
-                          .filter(s ->
-                                  (s.startsWith("-javaagent")
-                                  || s.startsWith("-agentpath")
-                                  || s.startsWith("-agentlib")
-                                  ))
-                          .findAny()
-                          .isEmpty();
-
+                .filter(s -> s.startsWith("-agentpath"))
+                .findAny()
+                .isEmpty();
 
         return "" + (noJvmtiAdded && WB.isCDSIncluded());
     }

@@ -28,12 +28,6 @@
 #############################################################################
 
 
-sun/management/jmxremote/bootstrap/SSLConfigFilePermissionTest.java         8362533 generic-all
-sun/management/jmxremote/bootstrap/RmiRegistrySslTest.java                  8362533 generic-all
-sun/management/jmxremote/bootstrap/PasswordFilePermissionTest.java          8362533 generic-all
-sun/management/jmxremote/bootstrap/LocalManagementTest.java                 8362533 generic-all
-
-
 sun/security/ssl/SSLEngineImpl/SSLEngineKeyLimit.java                       8362658 generic-all
 sun/security/ssl/SSLSessionImpl/MultiNSTClient.java                         8362658 generic-all
 sun/security/ssl/SSLSessionImpl/MultiNSTNoSessionCreation.java              8362658 generic-all
@@ -43,15 +37,9 @@ sun/security/ssl/SSLSessionImpl/ResumptionUpdateBoundValues.java            8362
 sun/security/ssl/SSLSocketImpl/SSLSocketKeyLimit.java                       8362658 generic-all
 
 
-java/foreign/largestub/TestLargeStub.java                                   0000000 generic-all
-
 # List of tests incompatible with jvmti stress agent or requiring more investigation
 
-# IR test framework doesn't work with jvmti?
-compiler/loopopts/superword/TestDependencyOffsets.java                      0000000 generic-all
-
-
-com/sun/jdi/EATests.java#id0                                                 0000000 generic-all
+com/sun/jdi/EATests.java#id0                                                0000000 generic-all
 com/sun/jdi/ThreadMemoryLeakTest.java                                       0000000 generic-all
 
 # weak referenced are not cleared

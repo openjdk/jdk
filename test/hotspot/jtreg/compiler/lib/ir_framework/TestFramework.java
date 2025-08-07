@@ -780,7 +780,7 @@ public class TestFramework {
     private void checkCompatibleFlags() {
         for (String flag : Utils.getTestJavaOpts()) {
             if (flag.contains("-agentpath")) {
-                throw new SkippedException("Can't run test with -javaagent");
+                throw new SkippedException("Can't run test with agent.");
             }
         }
     }
