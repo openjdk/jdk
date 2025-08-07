@@ -104,8 +104,8 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
-Thread* volatile VMError::_handshake_timed_out_thread = nullptr;
-Thread* volatile VMError::_safepoint_timed_out_thread = nullptr;
+Thread* VMError::_handshake_timed_out_thread = nullptr;
+Thread* VMError::_safepoint_timed_out_thread = nullptr;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -1339,19 +1339,21 @@ void VMError::report(outputStream* st, bool _verbose) {
 }
 
 void VMError::set_handshake_timed_out_thread(Thread* thread) {
-  Atomic::release_store(&_handshake_timed_out_thread, thread);
+  _handshake_timed_out_thread = thread;
+  OrderAccess::fence();
 }
 
 void VMError::set_safepoint_timed_out_thread(Thread* thread) {
-  Atomic::release_store(&_safepoint_timed_out_thread, thread);
+  _safepoint_timed_out_thread = thread;
+  OrderAccess::fence();
 }
 
 Thread* VMError::get_handshake_timed_out_thread() {
-  return Atomic::load_acquire(&_handshake_timed_out_thread);
+  return _handshake_timed_out_thread;
 }
 
 Thread* VMError::get_safepoint_timed_out_thread() {
-  return Atomic::load_acquire(&_safepoint_timed_out_thread);
+  return _safepoint_timed_out_thread;
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting
