@@ -1,11 +1,11 @@
 #include "gc/shared/objectCountEventSender.hpp"
 
 inline void ObjectCountEventSender::enable_requestable_event() {
-  _should_send_requestable_event = true;
+  ObjectCountEventSender::_should_send_requestable_event = true;
 }
 
 inline void ObjectCountEventSender::disable_requestable_event() {
-  _should_send_requestable_event = false;
+  ObjectCountEventSender::_should_send_requestable_event = false;
 }
 
 template <class Event>
