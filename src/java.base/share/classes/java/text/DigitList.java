@@ -153,7 +153,8 @@ final class DigitList implements Cloneable {
      */
     public void append(char digit) {
         if (count == digits.length) {
-            char[] data = new char[count + 100];
+            char[] data = new char[count > Integer.MAX_VALUE / 2 ?
+                    Integer.MAX_VALUE : count * 2];
             System.arraycopy(digits, 0, data, 0, count);
             digits = data;
         }
