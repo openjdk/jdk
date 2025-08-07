@@ -25,53 +25,26 @@
 // Precompiled headers are turned off if the user passes
 // --disable-precompiled-headers to configure.
 
-// These header files are included in at least 130 C++ files, as of
-// measurements made in November 2018. This list excludes files named
-// *.inline.hpp, since including them decreased build performance.
-
-#include "classfile/classLoaderData.hpp"
-#include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcCause.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
-#include "memory/resourceArea.hpp"
+#include "logging/logStream.hpp"
+#include "memory/allStatic.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
-#include "nmt/memTracker.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.hpp"
-#include "oops/oop.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/handles.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
-#include "runtime/timer.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
-#include "utilities/bitMap.hpp"
-#include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/ticks.hpp"
-
-#ifdef TARGET_COMPILER_visCPP
-// For Visual Studio, including the *.inline.hpp files actually
-// increased performance.
-#include "memory/allocation.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-#endif // TARGET_COMPILER_visCPP
+#include "utilities/powerOfTwo.hpp"
