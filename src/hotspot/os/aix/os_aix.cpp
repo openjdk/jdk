@@ -1051,8 +1051,8 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
-               filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
+                           filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
@@ -1077,7 +1077,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
       STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
       char* tmp_path = os::strdup(filename);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
-      os::snprintf(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
+      os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);
       os::free(tmp_path);
     }
@@ -1094,7 +1094,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   // There might be something more readable than uname results for AIX.
   struct utsname name;
   uname(&name);
-  snprintf(buf, buflen, "%s %s", name.release, name.version);
+  os::snprintf_checked(buf, buflen, "%s %s", name.release, name.version);
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {

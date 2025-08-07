@@ -839,7 +839,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   char buffer[64];
 #ifdef COMPILER1
   if (CommentedAssembly) {
-    snprintf(buffer, sizeof(buffer), "verify_oop at %d", offset());
+    os::snprintf_checked(buffer, sizeof(buffer), "verify_oop at %d", offset());
     block_comment(buffer);
   }
 #endif
