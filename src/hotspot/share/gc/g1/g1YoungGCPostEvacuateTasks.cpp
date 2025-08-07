@@ -887,7 +887,7 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
   }
 
-  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }
+  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->initial_region_length(); }
 
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;
