@@ -47,21 +47,12 @@ static int count_trailing_zeros_long(jlong l) {
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
-  // If the input is TOP, the result is also TOP.
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
     return Type::TOP;
   }
 
-  // If the input is BOTTOM, the result is the local BOTTOM.
-  if (t == Type::BOTTOM) {
-    return bottom_type();
-  }
-
   const TypeInt* ti = t->is_int();
-  if (ti->is_con()) {
-    return TypeInt::make(count_leading_zeros_int(ti->get_con()));
-  }
   return TypeInt::make(count_leading_zeros_int(~ti->_bits._zeros),
                        count_leading_zeros_int(ti->_bits._ones),
                        ti->_widen);
@@ -69,21 +60,12 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
-  // If the input is TOP, the result is also TOP.
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
     return Type::TOP;
   }
 
-  // If the input is BOTTOM, the result is the local BOTTOM.
-  if (t == Type::BOTTOM) {
-    return bottom_type();
-  }
-
   const TypeLong* tl = t->is_long();
-  if (tl->is_con()) {
-    return TypeInt::make(count_leading_zeros_long(tl->get_con()));
-  }
   return TypeInt::make(count_leading_zeros_long(~tl->_bits._zeros),
                        count_leading_zeros_long(tl->_bits._ones),
                        tl->_widen);
@@ -91,21 +73,12 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Value------------------------------------------
 const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
-  // If the input is TOP, the result is also TOP.
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
     return Type::TOP;
   }
 
-  // If the input is BOTTOM, the result is the local BOTTOM.
-  if (t == Type::BOTTOM) {
-    return bottom_type();
-  }
-
   const TypeInt* ti = t->is_int();
-  if (ti->is_con()) {
-    return TypeInt::make(count_trailing_zeros_int(ti->get_con()));
-  }
   return TypeInt::make(count_trailing_zeros_int(~ti->_bits._zeros),
                        count_trailing_zeros_int(ti->_bits._ones),
                        ti->_widen);
@@ -113,21 +86,12 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Value------------------------------------------
 const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
-  // If the input is TOP, the result is also TOP.
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
     return Type::TOP;
   }
 
-  // If the input is BOTTOM, the result is the local BOTTOM.
-  if (t == Type::BOTTOM) {
-    return bottom_type();
-  }
-
   const TypeLong* tl = t->is_long();
-  if (tl->is_con()) {
-    return TypeInt::make(count_trailing_zeros_long(tl->get_con()));
-  }
   return TypeInt::make(count_trailing_zeros_long(~tl->_bits._zeros),
                        count_trailing_zeros_long(tl->_bits._ones),
                        tl->_widen);
