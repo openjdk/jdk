@@ -372,8 +372,8 @@ childProcess(void *arg)
     jtregSimulateCrash(0, 6);
 #endif
     /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
-       would do it anyways, but a little paranoia is a good thing. */
+       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
+       would take care of them anyway, but a little paranoia is a good thing. */
     if ((closeSafely(p->in[1])   == -1) ||
         (closeSafely(p->out[0])  == -1) ||
         (closeSafely(p->err[0])  == -1) ||

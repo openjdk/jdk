@@ -4869,12 +4869,15 @@ int os::open(const char *path, int oflag, int mode) {
     return -1;
   }
 
-  // All file descriptors that are opened in the Java process and not
-  // specifically destined for a subprocess should have the close-on-exec
-  // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors
-  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
-  // turn might:
+  // All file descriptors that are opened in the JVM and not specifically destined
+  // for a subprocess should have the close-on-exec flag set. Doing so prevents
+  // leaking file descriptors to child processes. Note that there is an overlapping
+  // failsafe mechanism in UNIXProcess.c that sets all file descriptors to CLOEXEC
+  // in the child process before exec(); that failsafe exists mainly to handle
+  // descriptors that have been not been opened via os::open() (e.g., third-party
+  // native code).
+  // Leaking file descriptors can lead to errors that are hard to analyze,
+  // e.g.:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or
