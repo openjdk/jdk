@@ -761,8 +761,8 @@ private:
 public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
-  static bool invoke(bool maximum_heap_compaction);
-  static bool invoke_no_policy(bool maximum_heap_compaction);
+  static bool invoke(bool clear_all_soft_refs);
+  static bool invoke_no_policy(bool clear_all_soft_refs);
 
   template<typename Func>
   static void adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe);

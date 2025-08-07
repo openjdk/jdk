@@ -1152,19 +1152,19 @@ public class Flow {
                         Arrays.copyOf(basePattern.nested, basePattern.nested.length);
                 newNested[replaceComponent] = nested;
                 sink.accept(new RecordPattern(basePattern.recordType(),
-                                              basePattern.backtrackOnly(),
                                                 basePattern.fullComponentTypes(),
                                                 newNested));
             }
         }
 
         private CoverageResult isCovered(Type selectorType, Set<PatternDescription> patterns) {
-            boolean backtrack = true; //XXX: this should be inverted, right?
-            boolean repeat = true;
             Set<PatternDescription> updatedPatterns;
+            Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
+            boolean useHashes = true;
+            boolean repeat = true;
             do {
                 updatedPatterns = reduceBindingPatterns(selectorType, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns, backtrack);
+                updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
                 updatedPatterns = reduceRecordPatterns(updatedPatterns);
                 updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                 repeat = !updatedPatterns.equals(patterns);
@@ -1179,12 +1179,12 @@ public class Flow {
                     //but hashing in reduceNestedPatterns will not allow that
                     //disable the use of hashing, and use subtyping in
                     //reduceNestedPatterns to handle situations like this:
-                    repeat = backtrack;
-                    backtrack = false;
+                    repeat = useHashes && seenPatterns.add(updatedPatterns);
+                    useHashes = false;
                 } else {
                     //if a reduction happened, make sure hashing in reduceNestedPatterns
                     //is enabled, as the hashing speeds up the process significantly:
-                    backtrack = true;
+                    useHashes = true;
                 }
                 patterns = updatedPatterns;
             } while (repeat);
@@ -1394,7 +1394,7 @@ public class Flow {
          *            as pattern hashes cannot be used to speed up the matching process
          */
         private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
-                                                             boolean backtrack) {
+                                                             boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
@@ -1424,8 +1424,7 @@ public class Flow {
                              .stream()
                              //error recovery, ignore patterns with incorrect number of nested patterns:
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
-                             .filter(pd -> !backtrack || !pd.backtrackOnly())
-                             .collect(groupingBy(pd -> backtrack ? pd.hashCode(mismatchingCandidateFin) : 0));
+                             .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
                     for (var candidates : groupEquivalenceCandidates.values()) {
                         var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
@@ -1449,14 +1448,23 @@ public class Flow {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate) {
                                             if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                                if (backtrack ||
-                                                    //when not using hashes,
-                                                    //check if rpOne.nested[i] is
-                                                    //a subtype of rpOther.nested[i]:
-                                                    !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
-                                                    !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
-                                                    !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                if (useHashes) {
                                                     continue NEXT_PATTERN;
+                                                }
+                                                //when not using hashes,
+                                                //check if rpOne.nested[i] is
+                                                //a subtype of rpOther.nested[i]:
+                                                if (!(rpOther.nested[i] instanceof BindingPattern bpOther)) {
+                                                    continue NEXT_PATTERN;
+                                                }
+                                                if (rpOne.nested[i] instanceof BindingPattern bpOne) {
+                                                    if (!types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                        continue NEXT_PATTERN;
+                                                    }
+                                                } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
+                                                    if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
+                                                        continue NEXT_PATTERN;
+                                                    }
                                                 }
                                             }
                                         }
@@ -1466,16 +1474,15 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, backtrack);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
 
                             updatedPatterns = reduceRecordPatterns(updatedPatterns);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
                             if (!nestedPatterns.equals(updatedPatterns)) {
-                                for (RecordPattern rp : join) {
-                                    current.remove(rp);
-                                    current.add(new RecordPattern(rp.recordType(), true, rp.fullComponentTypes(), rp.nested()));
+                                if (useHashes) {
+                                    current.removeAll(join);
                                 }
 
                                 for (PatternDescription nested : updatedPatterns) {
@@ -1483,7 +1490,6 @@ public class Flow {
                                             Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                     newNested[mismatchingCandidateFin] = nested;
                                     current.add(new RecordPattern(rpOne.recordType(),
-                                                                    rpOne.backtrackOnly(),
                                                                     rpOne.fullComponentTypes(),
                                                                     newNested));
                                 }
@@ -3953,17 +3959,10 @@ public class Flow {
             return type.tsym + " _";
         }
     }
-    record RecordPattern(Type recordType, int _hashCode, boolean backtrackOnly, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
+    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
-            this(recordType, false, fullComponentTypes, nested);
-        }
-
-        public RecordPattern(Type recordType, boolean backtrackOnly, Type[] fullComponentTypes, PatternDescription[] nested) {
-            this(recordType, hashCode(-1, recordType, nested), backtrackOnly, fullComponentTypes, nested);
-            if ("PatternSwitchPerformance.Path(PatternSwitchPerformance.Player _, PatternSwitchPerformance.BasicCell(PatternSwitchPerformance.Underneath _, PatternSwitchPerformance.Block _), PatternSwitchPerformance.BasicCell(PatternSwitchPerformance.Underneath _, PatternSwitchPerformance.Enemy _))".equals(toString())) {
-                System.err.println("foobar");
-            }
+            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
         }
 
         @Override

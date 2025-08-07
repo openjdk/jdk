@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8364991
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2182,8 +2182,8 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
-    @Test
-    public void testX(Path base) throws Exception {
+    @Test //JDK-8364991
+    public void testDifferentReductionPaths(Path base) throws Exception {
         doTest(base,
                new String[0],
                """
@@ -2216,6 +2216,28 @@ public class Exhaustiveness extends TestRunner {
                    record R1() implements Base {}
                    record R2(Base b1, Base b2) implements Base {}
                    record Root(Base b1, Base b2, Base b3) {}
+               }
+               """);
+    }
+
+    @Test //JDK-8364991
+    public void testX(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root r) {
+                       return switch (r) {
+                           case Root(R2 _, R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0; //the above is functionally equivalent to: Root(R2(R2 _), R2(R2 _)) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b) implements Base {}
+                   record Root(R2 b2, R2 b3) {}
                }
                """);
     }
