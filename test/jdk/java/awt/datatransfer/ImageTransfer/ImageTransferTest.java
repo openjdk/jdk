@@ -34,7 +34,6 @@ import java.util.Vector;
  *          system clipboard
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author dmitriy.ermashov@oracle.com
- * @library /lib/client
  * @run main ImageTransferTest
  */
 

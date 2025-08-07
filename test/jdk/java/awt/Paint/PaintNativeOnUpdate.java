@@ -34,7 +34,6 @@ import java.awt.Robot;
  * @test
  * @key headful
  * @bug 7157680
- * @library /lib/client
  * @author Sergey Bylokhov
  * @run main/othervm -Dsun.java2d.uiScale=1 PaintNativeOnUpdate
  */

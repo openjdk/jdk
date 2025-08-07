@@ -32,7 +32,7 @@
  *          2. InputEvent.getModifiersExText() returns
  *             correct extended modifier keys description
  *
- * @library /lib/client/ ../../helpers/lwcomponents/
+ * @library ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton

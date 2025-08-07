@@ -32,7 +32,6 @@
  *
  * @requires (os.family == "mac")
  *
- * @library /lib/client/
  * @run main Corrupted2XImageTest
  */
 

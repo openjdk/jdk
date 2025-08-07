@@ -29,7 +29,6 @@
  * @summary Check that correct resolution variants are chosen for icons
  *          when multiresolution image is used for their construction.
  *
- * @library /lib/client/
  * @run main/othervm/timeout=240 -Dsun.java2d.uiScale=1 MultiresolutionIconTest
  * @run main/othervm/timeout=240 -Dsun.java2d.uiScale=2 MultiresolutionIconTest
  */

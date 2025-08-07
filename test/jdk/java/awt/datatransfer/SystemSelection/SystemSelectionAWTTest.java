@@ -36,7 +36,6 @@ import java.util.Properties;
  * @summary To check the functionality of newly added API getSystemSelection & make sure
  *          that it's mapped to primary clipboard
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
- * @library /lib/client
  * @run main SystemSelectionAWTTest
  */
 

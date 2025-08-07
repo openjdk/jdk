@@ -35,7 +35,7 @@ import java.awt.image.BufferedImage;
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../
+ * @library ../
  * @build java.desktop/java.awt.Helper
  * @build SystemTrayIconHelper
  * @run main MouseEventMaskTest

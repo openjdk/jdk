@@ -31,7 +31,7 @@ import java.awt.image.BufferedImage;
  * @summary Check for MouseEvents with all mouse buttons
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../../
+ * @library ../../
  * @build java.desktop/java.awt.Helper
  * @build SystemTrayIconHelper
  * @run main FunctionalityCheck

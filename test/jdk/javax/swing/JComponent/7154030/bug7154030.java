@@ -48,7 +48,6 @@ import java.io.File;
  * @summary Swing components fail to hide after calling hide()
  * @author Jonathan Lu
  * @library ../../regtesthelpers/
- * @library /lib/client/
  * @build Util
  * @run main bug7154030
  */

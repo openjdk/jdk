@@ -26,7 +26,6 @@
  * @key headful
  * @bug 4523758
  * @summary Directly check that torn-off combo works
- * @library /lib/client
  * @run main bug4523758
  */
 /*

@@ -29,7 +29,6 @@ import java.awt.event.KeyEvent;
   @key headful
   @summary verify LOCK buttons toogle
   @author Yuri.Nesterenko, Dmitriy.Ermashov
-  @library /lib/client
   @run main LockingKeyStateTest
 */
 

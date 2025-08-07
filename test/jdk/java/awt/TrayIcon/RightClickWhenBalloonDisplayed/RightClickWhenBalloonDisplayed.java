@@ -40,7 +40,7 @@ import java.awt.image.BufferedImage;
  * @summary Right clicking on TrayIcon shouldn't trigger ActionEvent when balloon is displayed.
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../
+ * @library ../
  * @build java.desktop/java.awt.Helper
  * @build SystemTrayIconHelper
  * @run main RightClickWhenBalloonDisplayed

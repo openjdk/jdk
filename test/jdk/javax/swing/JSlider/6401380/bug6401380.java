@@ -26,7 +26,6 @@
  * @key headful
  * @bug 6401380
  * @summary JSlider - mouse click ont the left side of the knob is ignored.
- * @library /lib/client
  * @author Alexander Potochkin
  * @run main bug6401380
  */

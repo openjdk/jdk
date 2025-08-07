@@ -26,7 +26,6 @@
  * @key headful
  * @requires (os.family == "linux")
  * @summary To make sure that System & Primary clipboards should behave independently
- * @library /lib/client
  * @run main IndependenceSwingTest
  */
 

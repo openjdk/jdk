@@ -30,7 +30,6 @@ import java.awt.*;
  * @summary Construct a Undecorated JFrame, try to change the properties
  *          using setVisible() method.
  * @author Aruna Samji
- * @library /lib/client
  * @run main TaskUndJFrameProperties
  */
 

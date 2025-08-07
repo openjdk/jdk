@@ -29,7 +29,6 @@ import java.awt.*;
  * @key headful
  * @bug 7090424
  * @author Sergey Bylokhov
- * @library /lib/client/
  * @run main ExposeOnEDT
  */
 public final class ExposeOnEDT {

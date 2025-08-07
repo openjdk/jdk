@@ -32,7 +32,6 @@ import java.awt.Toolkit;
  * @key headful
  * @bug 7124213
  * @author Sergey Bylokhov
- * @library /lib/client/
  * @run main ScrollPanePreferredSize
  */
 public final class ScrollPanePreferredSize {

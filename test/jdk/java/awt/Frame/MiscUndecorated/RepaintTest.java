@@ -28,7 +28,7 @@
  *          all the components on it are repainted correctly
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author yan
- * @library /lib/client /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.Platform
  * @run main RepaintTest
  */

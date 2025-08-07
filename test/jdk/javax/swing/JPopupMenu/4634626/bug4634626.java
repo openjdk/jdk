@@ -26,7 +26,6 @@
  * @key headful
  * @bug 4634626
  * @summary Implement context popup menus for components
- * @library /lib/client
  * @run main bug4634626
  */
 

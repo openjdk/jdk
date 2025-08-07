@@ -43,7 +43,6 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @key headful
  * @summary Make sure that modifier key mask is set when robot press
  *          some key with one or more modifiers.
- * @library /lib/client
  * @library /test/lib
  * @run main ModifierRobotKeyTest
  */
