@@ -30,12 +30,11 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -4339,6 +4338,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
     }
   }
+  C->print_method(PHASE_BEFORE_DUPLICATE_LOOP_BACKEDGE, 4, head);
 
   // Collect data nodes that need to be clones as well
   int dd = dom_depth(head);
@@ -4428,6 +4428,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   }
 
   C->set_major_progress();
+
+  C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, outer_head);
 
   return true;
 }

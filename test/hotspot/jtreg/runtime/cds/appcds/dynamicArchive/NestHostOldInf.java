@@ -82,7 +82,7 @@ public class NestHostOldInf extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldMatch(".class.load. OldInf source:.*oldclassapp.jar")
                       .shouldMatch(".class.load. ChildOldInf source:.*oldclassapp.jar")
-                      .shouldContain("ChildOldInf$InnerChild source: shared objects file (top)")
+                      .shouldMatch(".class.load. ChildOldInf[$]InnerChild source:.*oldclassapp.jar")
                       .shouldMatch(".class.load. ChildOldInf[$]InnerChild[$][$]Lambda.*/0x.*source:.ChildOldInf");
                 });
     }

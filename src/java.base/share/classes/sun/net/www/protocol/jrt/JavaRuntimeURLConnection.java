@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,116 +28,89 @@ package sun.net.www.protocol.jrt;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.ImageReader.Node;
 import jdk.internal.jimage.ImageReaderFactory;
 
-import jdk.internal.loader.Resource;
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
 
 /**
  * URLConnection implementation that can be used to connect to resources
- * contained in the runtime image.
+ * contained in the runtime image. See section "New URI scheme for naming stored
+ * modules, classes, and resources" in <a href="https://openjdk.org/jeps/220">
+ * JEP 220</a>.
  */
 public class JavaRuntimeURLConnection extends URLConnection {
 
-    // ImageReader to access resources in jimage
-    private static final ImageReader reader = ImageReaderFactory.getImageReader();
+    // ImageReader to access resources in jimage.
+    private static final ImageReader READER = ImageReaderFactory.getImageReader();
 
-    // the module and resource name in the URL
+    // The module and resource name in the URL (i.e. "jrt:/[$MODULE[/$PATH]]").
+    //
+    // The module name is not percent-decoded, and can be empty.
     private final String module;
-    private final String name;
+    // The resource name permits UTF-8 percent encoding of non-ASCII characters.
+    private final String path;
 
-    // the Resource when connected
-    private volatile Resource resource;
+    // The resource node (non-null when connected).
+    private Node resourceNode;
 
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
-        String path = url.getPath();
-        if (path.isEmpty() || path.charAt(0) != '/')
+        String urlPath = url.getPath();
+        if (urlPath.isEmpty() || urlPath.charAt(0) != '/') {
             throw new MalformedURLException(url + " missing path or /");
-        if (path.length() == 1) {
-            this.module = null;
-            this.name = null;
+        }
+        int pathSep = urlPath.indexOf('/', 1);
+        if (pathSep == -1) {
+            // No trailing resource path. This can never "connect" or return a
+            // resource (see JEP 220 for details).
+            this.module = urlPath.substring(1);
+            this.path = null;
         } else {
-            int pos = path.indexOf('/', 1);
-            if (pos == -1) {
-                this.module = path.substring(1);
-                this.name = null;
-            } else {
-                this.module = path.substring(1, pos);
-                this.name = ParseUtil.decode(path.substring(pos+1));
-            }
+            this.module = urlPath.substring(1, pathSep);
+            this.path = percentDecode(urlPath.substring(pathSep + 1));
         }
     }
 
     /**
-     * Finds a resource in a module, returning {@code null} if the resource
-     * is not found.
+     * Finds and caches the resource node associated with this URL and marks the
+     * connection as "connected".
      */
-    private static Resource findResource(String module, String name) {
-        if (reader != null) {
-            URL url = toJrtURL(module, name);
-            ImageLocation location = reader.findLocation(module, name);
-            if (location != null) {
-                return new Resource() {
-                    @Override
-                    public String getName() {
-                        return name;
-                    }
-                    @Override
-                    public URL getURL() {
-                        return url;
-                    }
-                    @Override
-                    public URL getCodeSourceURL() {
-                        return toJrtURL(module);
-                    }
-                    @Override
-                    public InputStream getInputStream() throws IOException {
-                        byte[] resource = reader.getResource(location);
-                        return new ByteArrayInputStream(resource);
-                    }
-                    @Override
-                    public int getContentLength() {
-                        long size = location.getUncompressedSize();
-                        return (size > Integer.MAX_VALUE) ? -1 : (int) size;
-                    }
-                };
+    private synchronized Node connectResourceNode() throws IOException {
+        if (resourceNode == null) {
+            if (module.isEmpty() || path == null) {
+                throw new IOException("cannot connect to jrt:/" + module);
             }
+            Node node = READER.findNode("/modules/" + module + "/" + path);
+            if (node == null || !node.isResource()) {
+                throw new IOException(module + "/" + path + " not found");
+            }
+            this.resourceNode = node;
+            super.connected = true;
         }
-        return null;
+        return resourceNode;
     }
 
     @Override
-    public synchronized void connect() throws IOException {
-        if (!connected) {
-            if (name == null) {
-                String s = (module == null) ? "" : module;
-                throw new IOException("cannot connect to jrt:/" + s);
-            }
-            resource = findResource(module, name);
-            if (resource == null)
-                throw new IOException(module + "/" + name + " not found");
-            connected = true;
-        }
+    public void connect() throws IOException {
+        connectResourceNode();
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        connect();
-        return resource.getInputStream();
+        return new ByteArrayInputStream(READER.getResource(connectResourceNode()));
     }
 
     @Override
     public long getContentLengthLong() {
         try {
-            connect();
-            return resource.getContentLength();
+            return connectResourceNode().size();
         } catch (IOException ioe) {
             return -1L;
         }
@@ -149,27 +122,13 @@ public class JavaRuntimeURLConnection extends URLConnection {
         return len > Integer.MAX_VALUE ? -1 : (int)len;
     }
 
-    /**
-     * Returns a jrt URL for the given module and resource name.
-     */
-    @SuppressWarnings("deprecation")
-    private static URL toJrtURL(String module, String name) {
+    // Perform percent decoding of the resource name/path from the URL.
+    private static String percentDecode(String path) throws MalformedURLException {
+        // Any additional special case decoding logic should go here.
         try {
-            return new URL("jrt:/" + module + "/" + name);
-        } catch (MalformedURLException e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
-     * Returns a jrt URL for the given module.
-     */
-    @SuppressWarnings("deprecation")
-    private static URL toJrtURL(String module) {
-        try {
-            return new URL("jrt:/" + module);
-        } catch (MalformedURLException e) {
-            throw new InternalError(e);
+            return ParseUtil.decode(path);
+        } catch (IllegalArgumentException e) {
+            throw new MalformedURLException(e.getMessage());
         }
     }
 }

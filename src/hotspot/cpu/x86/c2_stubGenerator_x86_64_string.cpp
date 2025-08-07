@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -205,7 +205,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   bool isU = isUL || isUU;  // At least one is UTF-16
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
-  StubGenStubId stub_id = (isLL ?  StubGenStubId::string_indexof_linear_ll_id : (isUL ? StubGenStubId::string_indexof_linear_ul_id : StubGenStubId::string_indexof_linear_uu_id));
+  StubId stub_id = (isLL ?  StubId::stubgen_string_indexof_linear_ll_id : (isUL ? StubId::stubgen_string_indexof_linear_ul_id : StubId::stubgen_string_indexof_linear_uu_id));
   StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
@@ -352,8 +352,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ movdq(save_r15, r15);
   __ movdq(save_rbx, rbx);
 #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
 
   // Move to Linux-style ABI
   __ movq(rdi, rcx);
@@ -368,7 +368,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   const Register needle_len   = rcx;
   const Register save_ndl_len = r12;
 
-  __ push(rbp);
+  __ push_ppx(rbp);
   __ subptr(rsp, STACK_SPACE);
 
   if (isReallyUL) {
@@ -459,10 +459,10 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // Restore stack, vzeroupper and return
   __ bind(L_return);
   __ addptr(rsp, STACK_SPACE);
-  __ pop(rbp);
+  __ pop_ppx(rbp);
 #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
 #endif
   __ movdq(r12, save_r12);
   __ movdq(r13, save_r13);

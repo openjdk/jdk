@@ -22,10 +22,10 @@
  *
  */
 
-#include "opto/printinlining.hpp"
-#include "opto/callnode.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/callnode.hpp"
+#include "opto/printinlining.hpp"
 
 bool InlinePrinter::is_enabled() const {
   return C->print_intrinsics() || C->print_inlining();

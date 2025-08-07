@@ -121,6 +121,7 @@
                                                                             \
   product(ccstr, AOTCacheOutput, nullptr,                                   \
           "Specifies the file name for writing the AOT cache")              \
+          constraint(AOTCacheOutputConstraintFunc, AtParse)                 \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
@@ -147,7 +148,7 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
-  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
           "Compile methods as soon as possible")                            \
                                                                             \
   /* AOT Code flags */                                                      \

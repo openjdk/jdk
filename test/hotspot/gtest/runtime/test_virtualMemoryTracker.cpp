@@ -248,6 +248,8 @@ public:
                 {addr + 3 * cs, 2 * cs} };
       check(vmt, rmr, r);
     }
+
+    rtree->tree().remove_all();
   }
 
   static void test_add_committed_region_overlapping() {
@@ -411,6 +413,8 @@ public:
                 {addr + 2 * cs, cs} };
       check(vmt, rmr, r);
     }
+
+    rtree->tree().remove_all();
   }
 
   static void test_add_committed_region() {
@@ -548,6 +552,8 @@ public:
       rtree->uncommit_region(addr, 3 * cs);
       check_empty(vmt, rmr);
     }
+
+    rtree->tree().remove_all();
   }
 };
 
