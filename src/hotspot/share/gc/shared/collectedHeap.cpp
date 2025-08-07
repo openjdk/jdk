@@ -625,10 +625,12 @@ void CollectedHeap::log_cpu_time() const {
 
   LogTarget(Info, cpu) cpuLog;
   if (cpuLog.is_enabled()) {
-    double vm_thread_cpu_time = CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
-    double gc_cpu_time = CPUTimeUsage::GC::total() / NANOSECS_PER_SEC;
-    double gc_threads_cpu_time = CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
-    double gc_vm_thread_cpu_time = CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+    double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
+    CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
+    double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
+    double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
+    double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
+
     if (gc_cpu_time < process_cpu_time) {
       cpuLog.print("=== CPU time Statistics =============================================================");
       cpuLog.print("                                                                            CPUs");
@@ -641,7 +643,7 @@ void CollectedHeap::log_cpu_time() const {
       cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, calc_usage(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / os::elapsedTime());
 
       if (UseStringDeduplication) {
-        double string_dedup_cpu_time = CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+        double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
         cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, calc_usage(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / os::elapsedTime());
       }
       cpuLog.print("=====================================================================================");

@@ -28,11 +28,20 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+
 namespace CPUTimeUsage {
+    struct GCStatistics {
+        jlong total;
+        jlong gc_threads;
+        jlong vm_thread;
+        jlong stringdedup;
+    };
+
     class GC : public AllStatic {
     public:
-        static jlong total();
+        static GCStatistics statisics();
 
+        static jlong total();
         static jlong gc_threads();
         static jlong vm_thread();
         static jlong stringdedup();

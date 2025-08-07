@@ -56,6 +56,18 @@ jlong CPUTimeUsage::GC::gc_threads() {
   return cl.cpu_time();
 }
 
+CPUTimeUsage::GCStatistics CPUTimeUsage::GC::statisics() {
+  jlong gc_threads_sample = gc_threads();
+  jlong vm_thread_sample = vm_thread();
+  jlong stringdedup_sample = stringdedup();
+  return {
+    gc_threads_sample + vm_thread_sample + stringdedup_sample,
+    gc_threads_sample,
+    vm_thread_sample,
+    stringdedup_sample
+  };
+}
+
 jlong CPUTimeUsage::GC::total() {
   return gc_threads() + vm_thread() + stringdedup();
 }
