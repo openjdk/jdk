@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     sigset_t current_mask;
     sigemptyset(&current_mask);
     if (sigprocmask(SIG_BLOCK /* ignored */, NULL, &current_mask) != 0) {
-        perror("sigprocmask");
+        printf("sigprocmask %d\n", errno);
         return -1;
     }
 
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         }
         struct sigaction act;
         if (sigaction(signals[n].sig, NULL, &act) != 0) {
-            perror("sigaction");
+            printf("sigaction %d\n", errno);
             printf("\n");
             continue;
         }
