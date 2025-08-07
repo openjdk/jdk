@@ -130,6 +130,8 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
 void G1CollectionSet::start_incremental_building() {
   assert(_regions_cur_length == 0, "Collection set must be empty before starting a new collection set.");
+  assert(groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
+  assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
   continue_incremental_building();
 }
