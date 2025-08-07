@@ -236,7 +236,7 @@ class BufferCleaner {
 
     private static final CleanerList cleanerList = new CleanerList();
     private static final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
-    private static Thread cleaningThread = null;
+    private static Thread cleaningThread;
 
     private static void startCleaningThreadIfNeeded() {
         synchronized (cleanerList) {
