@@ -32,6 +32,7 @@
 #include <pthread.h>
 
 #ifndef PRODUCT
+#ifdef ASSERT
 void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
   CompilerThread::current()->timeout()->compiler_signal_handler(signo, info, context);
 }
@@ -46,8 +47,11 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
     }
   }
 }
+#endif // ASSERT
+#endif // !PRODUCT
 
 void CompilerThreadTimeoutLinux::arm() {
+#ifdef ASSERT
   if (CompileTaskTimeout == 0) {
     return;
   }
@@ -60,9 +64,11 @@ void CompilerThreadTimeoutLinux::arm() {
   // Start the timer.
   timer_settime(_timeout_timer, 0, &its, nullptr);
   _timeout_armed = true;
+#endif // ASSERT
 }
 
 void CompilerThreadTimeoutLinux::disarm() {
+#ifdef ASSERT
   if (CompileTaskTimeout == 0) {
     return;
   }
@@ -75,9 +81,11 @@ void CompilerThreadTimeoutLinux::disarm() {
     .it_value = {.tv_sec = 0, .tv_nsec=0}
   };
   timer_settime(_timeout_timer, 0, &its, nullptr);
+#endif // ASSERT
 }
 
 bool CompilerThreadTimeoutLinux::init_timeout() {
+#ifdef ASSERT
   if (CompileTaskTimeout == 0) {
     return true;
   }
@@ -114,6 +122,6 @@ bool CompilerThreadTimeoutLinux::init_timeout() {
       sigact_old.sa_handler != SIG_DFL && sigact_old.sa_handler != SIG_IGN)) {
     return false;
   }
+#endif // ASSERT
   return true;
 }
-#endif // !PRODUCT
