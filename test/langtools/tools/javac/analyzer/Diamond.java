@@ -61,7 +61,7 @@ public class Diamond extends TestRunner {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
 
-//    @Test //JDK-8349132:
+    @Test //JDK-8349132:
     public void testMissingClassfileForConstructorParamType(Path base) throws Exception {
         Path current = base.resolve(".");
         Path lib = current.resolve("lib");
