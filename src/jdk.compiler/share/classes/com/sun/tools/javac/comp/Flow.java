@@ -850,7 +850,7 @@ public class Flow {
                 }
             }
             try {
-                CoverageResult coveredResult = isCovered(selector.type, patternSet);
+                CoverageResult coveredResult = computeCoverage(selector.type, patternSet);
                 if (coveredResult.covered()) {
                     return true;
                 }
@@ -896,7 +896,7 @@ public class Flow {
 
                         Set<PatternDescription> replaced = replace(inMissingPatterns, toExpand, reducedPermittedPatterns);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replaced)).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replaced)).covered()) {
                             it.remove();
                             reduced = true;
                         }
@@ -957,12 +957,12 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
                             it.remove();
                         }
                     }
 
-                    CoverageResult coverageResult = isCovered(targetType, combinatorialPatterns);
+                    CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns);
 
                     if (!coverageResult.covered()) {
                         //nothing better can be done(?)
@@ -981,7 +981,7 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (isCovered(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
                             it.remove();
                         }
                     }
@@ -1157,7 +1157,7 @@ public class Flow {
             }
         }
 
-        private CoverageResult isCovered(Type selectorType, Set<PatternDescription> patterns) {
+        private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns) {
             Set<PatternDescription> updatedPatterns;
             Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
             boolean useHashes = true;
