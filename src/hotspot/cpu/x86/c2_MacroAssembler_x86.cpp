@@ -406,7 +406,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 // is still locked by A().
 //
 // The only other source of unbalanced locking would be JNI.  The "Java Native Interface
-// Specification" states that an object locked by JNI's_MonitorEnter should not be
+// Specification" states that an object locked by JNI's MonitorEnter should not be
 // unlocked by "normal" java-level locking and vice-versa.  The specification doesn't
 // specify what will occur if a program engages in such mixed-mode locking, however.
 // Arguably given that the spec legislates the JNI case as undefined our implementation
