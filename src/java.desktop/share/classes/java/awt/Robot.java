@@ -870,10 +870,10 @@ public class Robot {
      * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a default
      * {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_STEP_DELAY step-delay}.
      *
-     * @param   fromX   Source point x coordinate
-     * @param   fromY   Source point y coordinate
-     * @param   toX     Destination point x coordinate
-     * @param   toY     Destination point y coordinate
+     * @param   srcX   Source point x coordinate
+     * @param   srcY   Source point y coordinate
+     * @param   dstX   Destination point x coordinate
+     * @param   dstY   Destination point y coordinate
      *
      * @throws  IllegalThreadStateException if called on the AWT event dispatching
      *          thread and {@code isAutoWaitForIdle} would return true
@@ -883,7 +883,7 @@ public class Robot {
      * @since   26
      */
     public void glide(int srcX, int srcY, int dstX, int dstY) {
-        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
+        glide(srcX, srcY, dstX, dstY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
     }
 
     /**
