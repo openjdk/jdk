@@ -59,9 +59,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * of these symbols, you can get the {@code DecimalFormatSymbols} object from
  * your {@code DecimalFormat} and modify it.
  *
- * <p>If the locale contains "rg" (region override)
- * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
- * the symbols are overridden for the designated region.
+ * <p> The "rg" (region override) and "nu" (numbering system) {@code Locale}
+ * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * are supported which may override the symbols. If both "nu" and "rg" are
+ * specified by the backing {@code Locale}, the symbols from the "nu" extension
+ * supersedes the implicit ones from the "rg" extension.
  *
  * @see          java.util.Locale
  * @see          DecimalFormat
