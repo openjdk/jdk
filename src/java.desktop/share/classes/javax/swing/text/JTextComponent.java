@@ -2943,7 +2943,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated as a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &gt;=0 and &lt;=length of the text
          * @return the letter, word, or sentence.
          *
          */
@@ -2957,7 +2957,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated as a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &gt;=0 and &lt;=length of the text
          * @return the letter, word, or sentence.
          */
         public String getAfterIndex(int part, int index) {
@@ -2970,7 +2970,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &gt;=0 and &lt;=length of the text
          * @return the letter, word, or sentence.
          */
         public String getBeforeIndex(int part, int index) {

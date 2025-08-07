@@ -62,11 +62,9 @@ public class TestAccessibleTextBoundaryValue {
     }
 
     private static void verifyResult(String expected, String actual) {
-        System.out.println("Expected result: " + expected);
-        System.out.println("Actual result: " + actual);
         if (!expected.equals(actual)) {
-            throw new RuntimeException("The actual result does not match " +
-                    "the expected result.");
+            throw new RuntimeException("Result doesn't match: '" + actual
+                                        + "' vs. '" + expected + "'");
         }
     }
 }
