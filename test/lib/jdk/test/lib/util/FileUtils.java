@@ -66,6 +66,7 @@ public final class FileUtils {
     private static final int MAX_RETRY_DELETE_TIMES = IS_WINDOWS ? 15 : 0;
     private static volatile boolean nativeLibLoaded;
 
+    @SuppressWarnings("restricted")
     private static void loadNativeLib() {
         if (!nativeLibLoaded) {
             System.loadLibrary("FileUtils");
@@ -401,7 +402,6 @@ public final class FileUtils {
     }
 
     // Return the current process handle count
-    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
             loadNativeLib();
