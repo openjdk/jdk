@@ -350,6 +350,7 @@ public class TestFramework {
         if (shouldInstallWhiteBox()) {
             installWhiteBox();
         }
+        checkCompatibleFlags();
         checkIRRuleCompilePhasesFormat();
         disableIRVerificationIfNotFeasible();
 
@@ -774,6 +775,14 @@ public class TestFramework {
 
     private boolean hasIRAnnotations() {
         return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class).length > 0);
+    }
+
+    private void checkCompatibleFlags() {
+        for (String flag : Utils.getTestJavaOpts()) {
+            if (flag.contains("-agentpath")) {
+                throw new SkippedException("Can't run test with -javaagent");
+            }
+        }
     }
 
     private List<String> anyNonWhitelistedJTregVMAndJavaOptsFlags() {
