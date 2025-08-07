@@ -3107,7 +3107,7 @@ instruct replicateB_imm8_gt128b(vReg dst, immI8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateI_imm8_gt128b(vReg dst, immI8_shift8 con) %{
+instruct replicateI_imm8_gt128b(vReg dst, immIDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16 &&
             (Matcher::vector_element_basic_type(n) == T_SHORT ||
              Matcher::vector_element_basic_type(n) == T_INT));
@@ -3130,7 +3130,7 @@ instruct replicateL_imm_128b(vReg dst, immL con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
+instruct replicateL_imm8_gt128b(vReg dst, immLDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
@@ -3154,8 +3154,8 @@ instruct replicateHF_imm_le128b(vReg dst, immH con) %{
 %}
 
 // Replicate a 16-bit half precision float which is within the limits
-// as specified for the operand - immH8_shift8
-instruct replicateHF_imm8_gt128b(vReg dst, immH8_shift8 con) %{
+// for the operand - immHDupV
+instruct replicateHF_imm8_gt128b(vReg dst, immHDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16);
   match(Set dst (Replicate con));
   format %{ "replicateHF_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
