@@ -237,7 +237,7 @@ public:
   G1CSetCandidateGroupList* groups() { return &_groups; }
   const G1CSetCandidateGroupList* groups() const { return &_groups; }
 
-  void prepare_groups_for_scan();
+  void prepare_for_scan();
 
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
