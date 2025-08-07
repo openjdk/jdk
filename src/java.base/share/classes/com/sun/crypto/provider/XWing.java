@@ -5,7 +5,6 @@ import sun.security.provider.NamedKEM;
 import sun.security.util.ArrayUtil;
 
 import javax.crypto.DecapsulateException;
-import javax.crypto.KEM;
 import javax.crypto.KeyAgreement;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Destroyable;
@@ -47,19 +46,16 @@ public final class XWing extends NamedKEM {
         }
 
         // ML-KEM:
-        var pkMKey = parsedPk.getMLKemPublicKey();
-        KEM.Encapsulated encapsulated;
-        try {
-            KEM kem = KEM.getInstance("ML-KEM", SunJCE.getInstance());
-            KEM.Encapsulator enc = kem.newEncapsulator(pkMKey, sr);
-            encapsulated = enc.encapsulate();
-        } catch (NoSuchAlgorithmException e) {
-            throw new AssertionError("SunJCE known to support ML-KEM", e);
-        } catch (InvalidKeyException e) {
-            throw new IllegalArgumentException("Invalid ML-KEM key part of X-Wing public key", e);
-        }
-        var ssM = encapsulated.key().getEncoded();
-        var ctM = encapsulated.encapsulation();
+		byte[] seed = new byte[32];
+		sr.nextBytes(seed);
+		ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult;
+		try {
+			mlKemEncapsulateResult = new ML_KEM("ML-KEM-768").encapsulate(new ML_KEM.ML_KEM_EncapsulationKey(parsedPk.m()), seed);
+		} finally {
+			Arrays.fill(seed, (byte) 0);
+		}
+		var ssM = mlKemEncapsulateResult.sharedSecret();
+		var ctM = mlKemEncapsulateResult.cipherText().encryptedBytes();
 
         // X25519:
         var pkX = parsedPk.x();
@@ -93,20 +89,8 @@ public final class XWing extends NamedKEM {
         }
 
         // ML-KEM:
-        var skM = parsedSk.getMLKemPrivateKey();
         var ctM = Arrays.copyOfRange(encap, 0, 1088);
-        byte[] ssM;
-        try {
-            KEM kem = KEM.getInstance("ML-KEM", SunJCE.getInstance());
-            KEM.Decapsulator dec = kem.newDecapsulator(skM);
-            ssM = dec.decapsulate(ctM).getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            throw new AssertionError("SunJCE known to support ML-KEM", e);
-        } catch (InvalidKeyException e) {
-            throw new IllegalArgumentException("Invalid ML-KEM key part of X-Wing public key", e);
-        } finally {
-            destroyQuietly(skM);
-        }
+		var ssM = new ML_KEM("ML-KEM-768").decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(parsedSk.m()), new ML_KEM.K_PKE_CipherText(ctM));
 
         // X25519:
         var skX = parsedSk.getX25519PrivateKey();
