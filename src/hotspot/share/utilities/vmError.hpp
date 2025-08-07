@@ -142,6 +142,10 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
+  // Handshake/safepoint timed out threads
+  static volatile intptr_t _handshake_timed_out_thread;
+  static volatile intptr_t _safepoint_timed_out_thread;
+
   WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
 public:
@@ -218,6 +222,9 @@ public:
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
   static bool was_assert_poison_crash(const void* sigInfo);
+
+  static void set_handshake_timed_out_thread(intptr_t thread_addr);
+  static void set_safepoint_timed_out_thread(intptr_t thread_addr);
 };
 
 class VMErrorCallback {

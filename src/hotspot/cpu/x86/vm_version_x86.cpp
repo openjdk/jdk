@@ -1069,6 +1069,7 @@ void VM_Version::get_processor_features() {
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
+    FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
   } else {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }

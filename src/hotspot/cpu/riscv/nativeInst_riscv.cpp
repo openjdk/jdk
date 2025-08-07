@@ -46,44 +46,11 @@ bool NativeInstruction::is_call_at(address addr) {
 }
 
 //-----------------------------------------------------------------------------
-// NativeFarCall
-//
-// Implements direct far calling loading an address from the stub section version of reloc call.
+// NativeCall
 
-class NativeFarCall: public NativeInstruction {
- public:
-  enum RISCV_specific_constants {
-    return_address_offset       =    3 * NativeInstruction::instruction_size, // auipc + ld + jalr
-  };
-
-  address instruction_address() const       { return addr_at(0); }
-  address next_instruction_address() const  { return addr_at(return_address_offset); }
-  address return_address() const            { return addr_at(return_address_offset); }
-  address destination() const;
-  address reloc_destination();
-
-  void set_destination(address dest);
-  void verify();
-  void print();
-
-  bool set_destination_mt_safe(address dest);
-  bool reloc_set_destination(address dest);
-
- private:
-  address stub_address();
-
-  static void set_stub_address_destination_at(address dest, address value);
-  static address stub_address_destination_at(address src);
- public:
-
-  static NativeFarCall* at(address addr);
-  static bool is_at(address addr);
-  static bool is_call_before(address return_address);
-};
-
-address NativeFarCall::destination() const {
+address NativeCall::destination() const {
   address addr = instruction_address();
-  assert(NativeFarCall::is_at(addr), "unexpected code at call site");
+  assert(NativeCall::is_at(addr), "unexpected code at call site");
 
   address destination = MacroAssembler::target_addr_for_insn(addr);
 
@@ -96,44 +63,36 @@ address NativeFarCall::destination() const {
   return stub_address_destination_at(destination);
 }
 
-address NativeFarCall::reloc_destination() {
+address NativeCall::reloc_destination() {
   address call_addr = instruction_address();
-  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
+  assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
   address stub_addr = nullptr;
   if (code->is_nmethod()) {
+    // TODO: Need to revisit this when porting the AOT features.
     stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
-  }
-
-  if (stub_addr != nullptr) {
-    stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
+    assert(stub_addr != nullptr, "Sanity");
   }
 
   return stub_addr;
 }
 
-void NativeFarCall::set_destination(address dest) {
-  address addr = instruction_address();
-  assert(NativeFarCall::is_at(addr), "unexpected code at call site");
-  Unimplemented();
+void NativeCall::verify() {
+  assert(NativeCall::is_at(instruction_address()), "unexpected code at call site");
 }
 
-void NativeFarCall::verify() {
-  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
+void NativeCall::print() {
+  assert(NativeCall::is_at(instruction_address()), "unexpected code at call site");
+  tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(instruction_address()));
 }
 
-void NativeFarCall::print() {
-  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
-  tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
-}
-
-bool NativeFarCall::set_destination_mt_safe(address dest) {
-  assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
+bool NativeCall::set_destination_mt_safe(address dest) {
+  assert(NativeCall::is_at(instruction_address()), "unexpected code at call site");
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
-         CompiledICLocker::is_safe(addr_at(0)),
+         CompiledICLocker::is_safe(instruction_address()),
          "concurrent code patching");
 
   address stub_addr = stub_address();
@@ -145,25 +104,25 @@ bool NativeFarCall::set_destination_mt_safe(address dest) {
   return false;
 }
 
-bool NativeFarCall::reloc_set_destination(address dest) {
-  address call_addr = addr_at(0);
-  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
+bool NativeCall::reloc_set_destination(address dest) {
+  address call_addr = instruction_address();
+  assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
-  address stub_addr = nullptr;
   if (code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
-  }
-  if (stub_addr != nullptr) {
-    MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
+    // TODO: Need to revisit this when porting the AOT features.
+    assert(dest != nullptr, "Sanity");
+    assert(dest == trampoline_stub_Relocation::get_trampoline_for(call_addr,
+                                                          code->as_nmethod()), "Sanity");
+    MacroAssembler::pd_patch_instruction_size(call_addr, dest);
   }
 
   return true;
 }
 
-void NativeFarCall::set_stub_address_destination_at(address dest, address value) {
+void NativeCall::set_stub_address_destination_at(address dest, address value) {
   assert_cond(dest != nullptr);
   assert_cond(value != nullptr);
 
@@ -171,31 +130,24 @@ void NativeFarCall::set_stub_address_destination_at(address dest, address value)
   OrderAccess::release();
 }
 
-address NativeFarCall::stub_address_destination_at(address src) {
+address NativeCall::stub_address_destination_at(address src) {
   assert_cond(src != nullptr);
   address dest = (address)get_data64_at(src);
   return dest;
 }
 
-address NativeFarCall::stub_address() {
-  address call_addr = addr_at(0);
+address NativeCall::stub_address() {
+  address call_addr = instruction_address();
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
-  address dest = MacroAssembler::pd_call_destination(call_addr);
+  address dest = MacroAssembler::target_addr_for_insn(call_addr);
   assert(code->contains(dest), "Sanity");
   return dest;
 }
 
-NativeFarCall* NativeFarCall::at(address addr) {
-  assert_cond(addr != nullptr);
-  assert(NativeFarCall::is_at(addr), "unexpected code at call site: %p", addr);
-  NativeFarCall* call = (NativeFarCall*)(addr);
-  return call;
-}
-
-bool NativeFarCall::is_at(address addr) {
+bool NativeCall::is_at(address addr) {
   assert_cond(addr != nullptr);
   const int instr_size = NativeInstruction::instruction_size;
   if (MacroAssembler::is_auipc_at(addr) &&
@@ -211,59 +163,8 @@ bool NativeFarCall::is_at(address addr) {
   return false;
 }
 
-bool NativeFarCall::is_call_before(address return_address) {
-  return NativeFarCall::is_at(return_address - return_address_offset);
-}
-
-//-----------------------------------------------------------------------------
-// NativeCall
-
-address NativeCall::instruction_address() const {
-  return NativeFarCall::at(addr_at(0))->instruction_address();
-}
-
-address NativeCall::next_instruction_address() const {
-  return NativeFarCall::at(addr_at(0))->next_instruction_address();
-}
-
-address NativeCall::return_address() const {
-  return NativeFarCall::at(addr_at(0))->return_address();
-}
-
-address NativeCall::destination() const {
-  return NativeFarCall::at(addr_at(0))->destination();
-}
-
-address NativeCall::reloc_destination() {
-  return NativeFarCall::at(addr_at(0))->reloc_destination();
-}
-
-void NativeCall::set_destination(address dest) {
-  NativeFarCall::at(addr_at(0))->set_destination(dest);
-}
-
-void NativeCall::verify() {
-  NativeFarCall::at(addr_at(0))->verify();;
-}
-
-void NativeCall::print() {
-  NativeFarCall::at(addr_at(0))->print();;
-}
-
-bool NativeCall::set_destination_mt_safe(address dest) {
-  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest);
-}
-
-bool NativeCall::reloc_set_destination(address dest) {
-  return NativeFarCall::at(addr_at(0))->reloc_set_destination(dest);
-}
-
-bool NativeCall::is_at(address addr) {
-  return NativeFarCall::is_at(addr);
-}
-
 bool NativeCall::is_call_before(address return_address) {
-  return NativeFarCall::is_call_before(return_address);
+  return NativeCall::is_at(return_address - NativeCall::instruction_size);
 }
 
 NativeCall* nativeCall_at(address addr) {
@@ -276,7 +177,7 @@ NativeCall* nativeCall_at(address addr) {
 NativeCall* nativeCall_before(address return_address) {
   assert_cond(return_address != nullptr);
   NativeCall* call = nullptr;
-  call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
+  call = (NativeCall*)(return_address - NativeCall::instruction_size);
   DEBUG_ONLY(call->verify());
   return call;
 }
