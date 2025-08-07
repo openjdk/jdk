@@ -220,7 +220,7 @@ final class ConfigFilesStasher {
             AdditionalLauncher.forEachAdditionalLauncher(cmd, (launcherName, propertyFilePath) -> {
                 try {
                     final var launcherAsService = new AdditionalLauncher.PropertyFile(propertyFilePath)
-                            .getPropertyBooleanValue("launcher-as-service").orElse(false);
+                            .findBooleanProperty("launcher-as-service").orElse(false);
                     if (launcherAsService) {
                         withServices[0] = true;
                     }

@@ -72,7 +72,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyActions = new Actions();
     }
 
-    public JPackageCommand(JPackageCommand cmd) {
+    private JPackageCommand(JPackageCommand cmd, boolean immutable) {
         args.addAll(cmd.args);
         withToolProvider = cmd.withToolProvider;
         saveConsoleOutput = cmd.saveConsoleOutput;
@@ -81,7 +81,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
-        immutable = cmd.immutable;
+        this.immutable = immutable;
         dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
@@ -90,12 +90,15 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         outputValidators = cmd.outputValidators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
+        unpackedPackageDirectory = cmd.unpackedPackageDirectory;
     }
 
     JPackageCommand createImmutableCopy() {
-        JPackageCommand reply = new JPackageCommand(this);
-        reply.immutable = true;
-        return reply;
+        return new JPackageCommand(this, true);
+    }
+
+    JPackageCommand createMutableCopy() {
+        return new JPackageCommand(this, false);
     }
 
     public JPackageCommand setArgumentValue(String argName, String newValue) {
@@ -316,13 +319,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
-        verifyMutable();
         prerequisiteActions.add(action);
         return this;
     }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
-        verifyMutable();
         verifyActions.add(action);
         return this;
     }
@@ -484,7 +485,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     Path unpackedPackageDirectory() {
         verifyIsOfType(PackageType.NATIVE);
-        return getArgumentValue(UNPACKED_PATH_ARGNAME, () -> null, Path::of);
+        return unpackedPackageDirectory;
     }
 
     /**
@@ -662,7 +663,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isPackageUnpacked() {
-        return hasArgument(UNPACKED_PATH_ARGNAME);
+        return unpackedPackageDirectory != null;
     }
 
     public static void useToolProviderByDefault(ToolProvider jpackageToolProvider) {
@@ -791,11 +792,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand executeVerifyActions() {
-        verifyActions.run();
-        return this;
-    }
-
     private Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
@@ -820,6 +816,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public Executor.Result execute(int expectedExitCode) {
+        verifyMutable();
         executePrerequisiteActions();
 
         if (hasArgument("--dest")) {
@@ -859,7 +856,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
-        final var copy = new JPackageCommand(this).adjustArgumentsBeforeExecution();
+        final var copy = createMutableCopy().adjustArgumentsBeforeExecution();
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
@@ -876,7 +873,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (result.exitCode() == 0) {
-            executeVerifyActions();
+            verifyActions.run();
         }
 
         return result;
@@ -884,7 +881,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public Executor.Result executeAndAssertHelloAppImageCreated() {
         Executor.Result result = executeAndAssertImageCreated();
-        HelloApp.executeLauncherAndVerifyOutput(this);
+        LauncherVerifier.executeMainLauncherAndVerifyOutput(this);
         return result;
     }
 
@@ -1046,6 +1043,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setReadOnlyPathAsserts(ReadOnlyPathAssert... asserts) {
+        verifyMutable();
         readOnlyPathAsserts = Set.of(asserts);
         return this;
     }
@@ -1059,18 +1057,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static enum AppLayoutAssert {
         APP_IMAGE_FILE(JPackageCommand::assertAppImageFile),
         PACKAGE_FILE(JPackageCommand::assertPackageFile),
-        MAIN_LAUNCHER(cmd -> {
+        NO_MAIN_LAUNCHER_IN_RUNTIME(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherPath(), false);
-            } else {
-                TKit.assertExecutableFileExists(cmd.appLauncherPath());
             }
         }),
-        MAIN_LAUNCHER_CFG_FILE(cmd -> {
+        NO_MAIN_LAUNCHER_CFG_FILE_IN_RUNTIME(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherCfgPath(null), false);
-            } else {
-                TKit.assertFileExists(cmd.appLauncherCfgPath(null));
+            }
+        }),
+        MAIN_LAUNCHER_FILES(cmd -> {
+            if (!cmd.isRuntime()) {
+                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_INSTALLED);
             }
         }),
         MAIN_JAR_FILE(cmd -> {
@@ -1097,7 +1096,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
-            var copy = new JPackageCommand(cmd);
+            var copy = cmd.createMutableCopy();
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
             copy.dmgInstallDir = cmd.appInstallationDirectory();
@@ -1111,6 +1110,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setAppLayoutAsserts(AppLayoutAssert ... asserts) {
+        verifyMutable();
         appLayoutAsserts = Set.of(asserts);
         return this;
     }
@@ -1157,12 +1157,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else {
             assertFileInAppImage(lookupPath);
 
+            final Path rootDir = isImagePackageType() ? outputBundle() :
+                pathToUnpackedPackageFile(appInstallationDirectory());
+
+            final AppImageFile aif = AppImageFile.load(rootDir);
+
             if (TKit.isOSX()) {
-                final Path rootDir = isImagePackageType() ? outputBundle() :
-                        pathToUnpackedPackageFile(appInstallationDirectory());
-
-                AppImageFile aif = AppImageFile.load(rootDir);
-
                 boolean expectedValue = MacHelper.appImageSigned(this);
                 boolean actualValue = aif.macSigned();
                 TKit.assertEquals(expectedValue, actualValue,
@@ -1173,6 +1173,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertEquals(expectedValue, actualValue,
                     "Check for unexpected value of <app-store> property in app image file");
             }
+
+            TKit.assertStringListEquals(
+                    addLauncherNames().stream().sorted().toList(),
+                    aif.addLaunchers().keySet().stream().sorted().toList(),
+                    "Check additional launcher names");
         }
     }
 
@@ -1254,16 +1259,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand setUnpackedPackageLocation(Path path) {
+        verifyMutable();
         verifyIsOfType(PackageType.NATIVE);
-        if (path != null) {
-            setArgumentValue(UNPACKED_PATH_ARGNAME, path);
-        } else {
-            removeArgumentWithValue(UNPACKED_PATH_ARGNAME);
-        }
+        unpackedPackageDirectory = path;
         return this;
     }
 
     JPackageCommand winMsiLogFile(Path v) {
+        verifyMutable();
         if (!TKit.isWindows()) {
             throw new UnsupportedOperationException();
         }
@@ -1286,6 +1289,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private JPackageCommand adjustArgumentsBeforeExecution() {
+        verifyMutable();
         if (!isWithToolProvider()) {
             // if jpackage is launched as a process then set the jlink.debug system property
             // to allow the jlink process to print exception stacktraces on any failure
@@ -1469,6 +1473,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Path winMsiLogFile;
+    private Path unpackedPackageDirectory;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
@@ -1495,8 +1500,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
         return null;
     }).get();
-
-    private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(

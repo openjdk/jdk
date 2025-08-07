@@ -89,17 +89,17 @@ public class AddLauncherTest {
 
         new AdditionalLauncher("Baz2")
                 .setDefaultArguments()
-                .addRawProperties(Map.entry("description", "Baz2 Description"))
+                .setProperty("description", "Baz2 Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("foo")
                 .setDefaultArguments("yep!")
-                .addRawProperties(Map.entry("description", "foo Description"))
+                .setProperty("description", "foo Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("Bar")
                 .setDefaultArguments("one", "two", "three")
-                .addRawProperties(Map.entry("description", "Bar Description"))
+                .setProperty("description", "Bar Description")
                 .setIcon(GOLDEN_ICON)
                 .applyTo(packageTest);
 
@@ -194,8 +194,8 @@ public class AddLauncherTest {
                 .toString();
 
         new AdditionalLauncher("ModularAppLauncher")
-        .addRawProperties(Map.entry("module", expectedMod))
-        .addRawProperties(Map.entry("main-jar", ""))
+        .setProperty("module", expectedMod)
+        .setProperty("main-jar", "")
         .applyTo(cmd);
 
         new AdditionalLauncher("NonModularAppLauncher")
@@ -204,8 +204,8 @@ public class AddLauncherTest {
         .setPersistenceHandler((path, properties) -> TKit.createTextFile(path,
                 properties.stream().map(entry -> String.join(" ", entry.getKey(),
                         entry.getValue()))))
-        .addRawProperties(Map.entry("main-class", nonModularAppDesc.className()))
-        .addRawProperties(Map.entry("main-jar", nonModularAppDesc.jarFileName()))
+        .setProperty("main-class", nonModularAppDesc.className())
+        .setProperty("main-jar", nonModularAppDesc.jarFileName())
         .applyTo(cmd);
 
         cmd.executeAndAssertHelloAppImageCreated();
