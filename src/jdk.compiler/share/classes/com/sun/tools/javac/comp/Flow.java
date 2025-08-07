@@ -822,6 +822,7 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
+            Set<Set<PatternDescription>> seenFallback = new HashSet<>();
             boolean useHashes = true;
             try {
                 boolean repeat = true;
@@ -843,7 +844,7 @@ public class Flow {
                         //but hashing in reduceNestedPatterns will not allow that
                         //disable the use of hashing, and use subtyping in
                         //reduceNestedPatterns to handle situations like this:
-                        repeat = useHashes;
+                        repeat = useHashes && seenFallback.add(updatedPatterns);
                         useHashes = false;
                     } else {
                         //if a reduction happened, make sure hashing in reduceNestedPatterns
@@ -1083,14 +1084,23 @@ public class Flow {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate) {
                                             if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                                if (useHashes ||
-                                                    //when not using hashes,
-                                                    //check if rpOne.nested[i] is
-                                                    //a subtype of rpOther.nested[i]:
-                                                    !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
-                                                    !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
-                                                    !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                if (useHashes) {
                                                     continue NEXT_PATTERN;
+                                                }
+                                                //when not using hashes,
+                                                //check if rpOne.nested[i] is
+                                                //a subtype of rpOther.nested[i]:
+                                                if (!(rpOther.nested[i] instanceof BindingPattern bpOther)) {
+                                                    continue NEXT_PATTERN;
+                                                }
+                                                if (rpOne.nested[i] instanceof BindingPattern bpOne) {
+                                                    if (!types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                        continue NEXT_PATTERN;
+                                                    }
+                                                } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
+                                                    if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
+                                                        continue NEXT_PATTERN;
+                                                    }
                                                 }
                                             }
                                         }
