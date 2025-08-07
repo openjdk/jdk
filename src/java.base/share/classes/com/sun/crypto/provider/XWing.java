@@ -4,26 +4,13 @@ import sun.security.ec.XECOperations;
 import sun.security.ec.XECParameters;
 import sun.security.jca.JCAUtil;
 import sun.security.provider.NamedKEM;
-import sun.security.util.ArrayUtil;
 
 import javax.crypto.DecapsulateException;
-import javax.crypto.KeyAgreement;
-import javax.security.auth.DestroyFailedException;
-import javax.security.auth.Destroyable;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.interfaces.XECPrivateKey;
-import java.security.interfaces.XECPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.NamedParameterSpec;
-import java.security.spec.XECPrivateKeySpec;
-import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 
 public final class XWing extends NamedKEM {
@@ -48,24 +35,24 @@ public final class XWing extends NamedKEM {
         }
 
         // ML-KEM:
-		byte[] seed = new byte[32];
-		sr.nextBytes(seed);
-		ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult;
-		try {
-			mlKemEncapsulateResult = new ML_KEM("ML-KEM-768").encapsulate(new ML_KEM.ML_KEM_EncapsulationKey(parsedPk.m()), seed);
-		} finally {
-			Arrays.fill(seed, (byte) 0);
-		}
-		var ssM = mlKemEncapsulateResult.sharedSecret();
-		var ctM = mlKemEncapsulateResult.cipherText().encryptedBytes();
+        byte[] seed = new byte[32];
+        sr.nextBytes(seed);
+        ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult;
+        try {
+            mlKemEncapsulateResult = new ML_KEM("ML-KEM-768").encapsulate(new ML_KEM.ML_KEM_EncapsulationKey(parsedPk.m()), seed);
+        } finally {
+            Arrays.fill(seed, (byte) 0);
+        }
+        var ssM = mlKemEncapsulateResult.sharedSecret();
+        var ctM = mlKemEncapsulateResult.cipherText().encryptedBytes();
 
         // X25519:
         var pkX = parsedPk.x();
         var ekX = new byte[32];
         sr.nextBytes(ekX);
-		var x25519 = new XECOperations(XECParameters.X25519);
-		var ctX = x25519.encodedPointMultiply(ekX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
-		var ssX = x25519.encodedPointMultiply(ekX, pkX);
+        var x25519 = new XECOperations(XECParameters.X25519);
+        var ctX = x25519.encodedPointMultiply(ekX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
+        var ssX = x25519.encodedPointMultiply(ekX, pkX);
 
         // Combine:
         var ss = combiner(ssM, ssX, ctX, pkX);
@@ -92,19 +79,19 @@ public final class XWing extends NamedKEM {
 
         // ML-KEM:
         var ctM = Arrays.copyOfRange(encap, 0, 1088);
-		var ssM = new ML_KEM("ML-KEM-768").decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(parsedSk.m()), new ML_KEM.K_PKE_CipherText(ctM));
+        var ssM = new ML_KEM("ML-KEM-768").decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(parsedSk.m()), new ML_KEM.K_PKE_CipherText(ctM));
 
         // X25519:
-		var skX = parsedSk.x();
-		var ctX = Arrays.copyOfRange(encap, 1088, 1120);
+        var skX = parsedSk.x();
+        var ctX = Arrays.copyOfRange(encap, 1088, 1120);
         byte[] ssX;
-		byte[] pkX;
+        byte[] pkX;
         try {
-			var x25519 = new XECOperations(XECParameters.X25519);
-			ssX = x25519.encodedPointMultiply(skX, ctX);
-			pkX = x25519.encodedPointMultiply(skX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
+            var x25519 = new XECOperations(XECParameters.X25519);
+            ssX = x25519.encodedPointMultiply(skX, ctX);
+            pkX = x25519.encodedPointMultiply(skX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
         } finally {
-			parsedSk.destroy();
+            parsedSk.destroy();
         }
 
         // Combine:

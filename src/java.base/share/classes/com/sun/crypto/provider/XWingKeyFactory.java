@@ -95,10 +95,10 @@ public class XWingKeyFactory extends NamedKeyFactory {
         default XWingPublicKey derivePublicKey() {
             byte[] pkM = new ML_KEM("ML-KEM-768").privKeyToPubKey(m());
 
-			// applying x25519 on secret key and base point yields the public key:
-			var x25519 = new XECOperations(XECParameters.X25519);
-			byte[] pkX = x25519.encodedPointMultiply(x(), BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
-			return XWingPublicKey.of(pkM, pkX);
+            // applying x25519 on secret key and base point yields the public key:
+            var x25519 = new XECOperations(XECParameters.X25519);
+            byte[] pkX = x25519.encodedPointMultiply(x(), BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
+            return XWingPublicKey.of(pkM, pkX);
         }
     }
 
