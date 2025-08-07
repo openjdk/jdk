@@ -253,8 +253,12 @@ public:
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
-  inline KlassInfoTable* get_cit();
+
+  // Create Shenandoah's KlassInfoTable
   inline void set_cit(KlassInfoTable* cit);
+
+  // Return Shenandoah's KlassInfoTable
+  inline KlassInfoTable* get_cit();
 
 // ---------- Periodic Tasks
 //

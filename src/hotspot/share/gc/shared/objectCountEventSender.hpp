@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 #define SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 
+#include "jfr/jfrEvents.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/heapInspection.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"

@@ -1,3 +1,6 @@
+#ifndef SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_INLINE_HPP
+#define SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_INLINE_HPP
+
 #include "gc/shared/objectCountEventSender.hpp"
 
 #if INCLUDE_SERVICES
@@ -48,3 +51,5 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& time
 }
 
 #endif // INCLUDE_SERVICES
+
+#endif // SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_INLINE_HPP

@@ -297,7 +297,7 @@ inline bool ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
   // Note: This is a very hot code path, so the code should be conditional on GENERATION template
   // parameter where possible, in order to generate the most efficient code.
 
-  bool marked = false;
+  bool strongly_marked = false;
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -306,7 +306,7 @@ inline bool ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
     if (in_generation<GENERATION>(heap, obj)) {
-      marked = mark_ref(q, mark_context, weak, obj);
+      strongly_marked = mark_ref(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
       if (GENERATION == YOUNG && heap->is_in_old(p)) {
         // Mark card as dirty because remembered set scanning still finds interesting pointer.
@@ -317,7 +317,7 @@ inline bool ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       }
     } else if (old_q != nullptr) {
       // Young mark, bootstrapping old_q or concurrent with old_q marking.
-      marked = mark_ref(old_q, mark_context, weak, obj);
+      strongly_marked = mark_ref(old_q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
@@ -327,7 +327,7 @@ inline bool ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       }
     }
   }
-  return marked;
+  return strongly_marked;
 }
 
 template<>
@@ -344,18 +344,18 @@ template<class T>
 inline bool ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q,
                                                       ShenandoahMarkingContext* const mark_context, bool weak) {
   oop o = RawAccess<>::oop_load(p);
-  bool marked = false;
+  bool strongly_marked = false;
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
 
     shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
 
-    marked = mark_ref(q, mark_context, weak, obj);
+    strongly_marked = mark_ref(q, mark_context, weak, obj);
 
     shenandoah_assert_marked(p, obj);
   }
-  return marked;
+  return strongly_marked;
 }
 
 inline bool ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
@@ -363,16 +363,18 @@ inline bool ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
                               bool weak, oop obj) {
   bool skip_live = false;
   bool marked;
+  bool strongly_marked = false;
   if (weak) {
     marked = mark_context->mark_weak(obj);
   } else {
     marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+    strongly_marked = marked;
   }
   if (marked) {
     bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
     assert(pushed, "overflow queue should always succeed pushing");
   }
-  return marked;
+  return strongly_marked;
 }
 
 ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {

@@ -1,12 +1,9 @@
 #include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "runtime/mutex.hpp"
 
-static Mutex* get_merge_mutex() {
-  static Mutex* _merge_mutex = nullptr;
-  if (_merge_mutex == nullptr) {
-    _merge_mutex = new Mutex(Mutex::safepoint, "ShenandoahObjectCountMerge");
-  }
-  return _merge_mutex;
+Mutex* ShenandoahObjectCountClosure::get_mutex() {
+  static Mutex mutex(Mutex::nosafepoint, "ShenandoahObjectCountMerge");
+  return &mutex;
 }
 
 void ShenandoahObjectCountClosure::merge_tables(KlassInfoTable* main_cit) {
@@ -14,7 +11,8 @@ void ShenandoahObjectCountClosure::merge_tables(KlassInfoTable* main_cit) {
     return;
   }
   
-  MutexLocker ml(get_merge_mutex());
+  Mutex* mutex = get_mutex();
+  MutexLocker x(mutex, Mutex::_no_safepoint_check_flag);
   bool success = main_cit->merge(_cit);
   assert(success, "Failed to merge thread-local table");
 }

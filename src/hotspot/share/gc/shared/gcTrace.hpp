@@ -103,7 +103,8 @@ class GCTracer {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
-  // Sends event data to the ObjectCountAfterGC event
+
+  // Sends event data to the ObjectCount and/or ObjectCountAfterGC event
   template <typename T>
   void report_object_count(T* heap) NOT_SERVICES_RETURN;
 
