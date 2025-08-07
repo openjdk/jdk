@@ -882,7 +882,7 @@ public class Robot {
      * @see     #glide(int, int, int, int, int, int)
      * @since   26
      */
-    public void glide(int fromX, int fromY, int toX, int toY) {
+    public void glide(int srcX, int srcY, int dstX, int dstY) {
         glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
     }
 
