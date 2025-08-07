@@ -21,24 +21,26 @@
  * questions.
  */
 
-#include <stddef.h>
-
 #include "jvmti.h"
 #include "jvmti_common.hpp"
 
 /*
- * The JVMTI stress agent is used for JVMTI stress testing.
+*
  * The jtreg tests might be executed with this agent to ensure that corresponding
  * JDK functionality is not broken.
  *
+ * IMPORTANT
+ * The tests that are incompatible with agent should be placed
+ * into ProblemList-jvmti-stress-agent.txt with 000000 bug.
+ *
  * Test supports 2 modes:
  *   - standard, where the agent doesn't require debugging capabilities
- *   - debug, where the agent  ssitionally test debug-related functionality
+ *   - debug, where the agent  additionally test debug-related functionality
  *   The debug mode is incompatible with debugger tests and debug jvmti tests.
  *   The standard mode should be compatible with all tests except probelmlisted.
  *
  *   The JVMTI agent starts jvmti agent tread that enable/disable different
- *   events and call differnt jvmti functions concurrently with test execution.
+ *   events and call different jvmti functions concurrently with test execution.
  *
  *   The main requirement is to don't change test behaviour.
  *
@@ -57,7 +59,7 @@ typedef struct {
 
   /* Monitor and flags to synchronize agent completion.*/
   jrawMonitorID finished_lock;
-  volatile jboolean agent_request_stop;
+  volatile jboolean request_agent_thread_stop;
   volatile jboolean is_agent_finished;
 
   /* Some settings configured in gdata_init(). */
@@ -87,7 +89,7 @@ typedef struct {
 
   /* Event statistics */
 
-  /* The counters are racy intentionally to avoid synchronization */
+  /* The counters are racy intentionally to avoid synchronization. */
   jlong cbBreakpoint;
   jlong cbClassFileLoadHook;
   jlong cbClassLoad;
@@ -126,7 +128,7 @@ typedef struct {
   jlong inspectedMethods;
   jlong inspectedVariables;
 
-  /* File for debug output */
+  /* File for debug output, agent shouldn't write into stdout. */
   FILE* log_file;
 } GlobalData;
 
@@ -140,7 +142,7 @@ gdata_init(jboolean is_debugger_enabled, jboolean is_verbose) {
   data.is_debugger_enabled = is_debugger_enabled;
   data.is_verbose = is_verbose;
 
-  data.agent_request_stop = JNI_FALSE;
+  data.request_agent_thread_stop = JNI_FALSE;
   data.is_agent_finished = JNI_FALSE;
 
   /* Set jvmti stress properties */
@@ -231,42 +233,45 @@ get_method_id(JNIEnv *jni, jclass clazz, const char *name, const char *sig) {
 
 void
 create_agent_thread(jvmtiEnv *jvmti, JNIEnv *jni, const char *name, jvmtiStartFunction func) {
-  jclass clazz = nullptr;
-  jmethodID thread_ctor = nullptr;
-  jthread thread = nullptr;
-  jstring name_utf = nullptr;
-  jvmtiError err = JVMTI_ERROR_NONE;
 
   check_jni_exception(jni, "JNIException before creating Agent Thread.");
-  clazz = find_class(jni, "java/lang/Thread");
-  thread_ctor = get_method_id(jni, clazz, "<init>",
+  jclass clazz = find_class(jni, "java/lang/Thread");
+  jmethodID thread_ctor = get_method_id(jni, clazz, "<init>",
                                     "(Ljava/lang/String;)V");
 
-  name_utf = jni->NewStringUTF(name);
+  jstring name_utf = jni->NewStringUTF(name);
   check_jni_exception(jni, "Error creating utf name of thread.");
 
-  thread = jni->NewObject(clazz, thread_ctor, name_utf);
+  jthread thread = jni->NewObject(clazz, thread_ctor, name_utf);
   check_jni_exception(jni, "Error during instantiation of Thread object.");
-  err = jvmti->RunAgentThread(
+  jvmtiError err = jvmti->RunAgentThread(
                      thread, func, nullptr, JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_status(jni, err, "RunAgentThread");
 }
 
+/*
+ * The method blocks execution until agent thread finishes.
+ * Should be executed during VMDeath to don't run JVMTI functionality
+ * during dead phase.
+ */
 void
-stop_agent_thread(jvmtiEnv *jvmti, JNIEnv *jni) {
+request_agent_thread_stop_and_wait(jvmtiEnv *jvmti, JNIEnv *jni) {
   RawMonitorLocker rml(jvmti, jni, gdata->finished_lock);
-  gdata->agent_request_stop = JNI_TRUE;
+  gdata->request_agent_thread_stop = JNI_TRUE;
   while (!gdata->is_agent_finished) {
     rml.wait(1000);
   }
   debug("Native agent stopped");
 }
 
+/*
+ * The method is called by agent thread to ensure that thread correctly exits.
+ */
 static jboolean
-should_stop(jvmtiEnv *jvmti, JNIEnv *jni ) {
+should_stop(jvmtiEnv *jvmti, JNIEnv *jni) {
   jboolean should_stop = JNI_FALSE;
   RawMonitorLocker rml(jvmti, jni, gdata->finished_lock);
-  should_stop = gdata->agent_request_stop;
+  should_stop = gdata->request_agent_thread_stop;
   if (should_stop == JNI_TRUE) {
     gdata->is_agent_finished = JNI_TRUE;
     rml.notify_all();
@@ -276,18 +281,18 @@ should_stop(jvmtiEnv *jvmti, JNIEnv *jni ) {
 
 /*
  * Agent stress functions. The agent is stopped in VMDeath only and should be
- * always ready to JVMTI_ERROR_THREAD_NOT_ALIVE phase.
+ * always ready to get JVMTI_ERROR_THREAD_NOT_ALIVE error.
  */
 
 /* Read stack, frames, method, variables, etc. */
 static void
 stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
+  jvmtiError err = JVMTI_ERROR_NONE;
+  debug("In stack_trace: %p", thread);
+
   jvmtiFrameInfo frames[5];
   jint count = 0;
-  jvmtiError err = JVMTI_ERROR_NONE;
-
-  debug("In stack_trace: %p", thread);
-  err =jvmti->GetStackTrace(thread, 0, 5, frames, &count);
+  err = jvmti->GetStackTrace(thread, 0, 5, frames, &count);
   if (err == JVMTI_ERROR_THREAD_NOT_ALIVE || err == JVMTI_ERROR_WRONG_PHASE) {
     return;
   }
@@ -298,13 +303,13 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   for (int frame_index = 0; frame_index < count; frame_index++) {
     char *method_name = nullptr;
     jint method_modifiers = 0;
-    err =jvmti->GetMethodName(frames[frame_index].method, &method_name, nullptr, nullptr);
+    err = jvmti->GetMethodName(frames[frame_index].method, &method_name, nullptr, nullptr);
     if (err == JVMTI_ERROR_WRONG_PHASE) {
       return;
     }
     check_jvmti_status(jni, err, "GetMethodName");
 
-    err =jvmti->GetMethodModifiers(frames[frame_index].method, &method_modifiers);
+    err = jvmti->GetMethodModifiers(frames[frame_index].method, &method_modifiers);
     if (err == JVMTI_ERROR_WRONG_PHASE) {
       return;
     }
@@ -315,7 +320,7 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
     jvmtiLocalVariableEntry* table = nullptr;
     jint entry_count = 0;
-    err =jvmti->GetLocalVariableTable(frames[frame_index].method, &entry_count, &table);
+    err = jvmti->GetLocalVariableTable(frames[frame_index].method, &entry_count, &table);
     if (err == JVMTI_ERROR_NATIVE_METHOD || err == JVMTI_ERROR_ABSENT_INFORMATION
             || err == JVMTI_ERROR_WRONG_PHASE) {
       continue;
@@ -326,8 +331,8 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
     gdata->inspectedVariables += entry_count;
 
     debug("Variables: ");
-    for (int cnt = 0; cnt < (int) entry_count; cnt++) {
-      debug(" %s  %d", table[cnt].name, (int) table[cnt].slot);
+    for (int cnt = 0; cnt < entry_count; cnt++) {
+      debug(" %s  %d", table[cnt].name, table[cnt].slot);
       deallocate(jvmti, jni, table[cnt].name);
       deallocate(jvmti, jni, table[cnt].signature);
       deallocate(jvmti, jni, table[cnt].generic_signature);
@@ -344,7 +349,7 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
     jthread *threads = nullptr;
     jvmtiError err = JVMTI_ERROR_NONE;
     debug("Inspect:  Starting cycle...");
-    err =jvmti->GetAllThreads(&threads_count, &threads);
+    err = jvmti->GetAllThreads(&threads_count, &threads);
     if (err == JVMTI_ERROR_WRONG_PHASE) {
       return;
     }
@@ -359,16 +364,16 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
       check_jvmti_status(jni, err, "GetThreadInfo");
       // Skip agent thread itself and JFR threads to avoid potential deadlocks
       if (strstr(info.name, JVMTI_AGENT_NAME) == nullptr
-        && strstr(info.name, "JFR") == nullptr) {
+          && strstr(info.name, "JFR") == nullptr) {
         // The non-intrusive actions are allowed to ensure that results of target
         // thread are not affected.
         jthread thread = threads[t];
         stack_trace(jvmti, jni, thread);
 
-        // Suspend/resume are solo capabilities
+        // Suspend/resume are solo capabilities and are treated like debugging
         if (gdata->is_debugger_enabled) {
           debug("Inspect: Trying to suspend thread %s", info.name);
-          err =jvmti->SuspendThread(thread);
+          err = jvmti->SuspendThread(thread);
           if (err == JVMTI_ERROR_WRONG_PHASE) {
             return;
           }
@@ -382,7 +387,7 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
           stack_trace(jvmti, jni, thread);
 
           debug("Inspect: Trying to resume thread %s", info.name);
-          err =jvmti->ResumeThread(thread);
+          err = jvmti->ResumeThread(thread);
           if (err == JVMTI_ERROR_WRONG_PHASE) {
             return;
           }
@@ -406,7 +411,6 @@ heap_iteration_callback(jlong class_tag, jlong size, jlong* tag_ptr, jint length
   *count += 1;
   return JVMTI_VISIT_OBJECTS;
 }
-
 
 static jint
 get_heap_info(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass) {
@@ -456,7 +460,6 @@ is_event_excluded(int event) {
 static void
 enable_events(jvmtiEnv *jvmti, jboolean update_frequent_events) {
  debug("Enabling events\n");
-  jvmtiError err = JVMTI_ERROR_NONE;
   for(int event = JVMTI_MIN_EVENT_TYPE_VAL; event < JVMTI_MAX_EVENT_TYPE_VAL; event++) {
     if (is_event_excluded(event)) {
       debug("Event %d excluded.", event);
@@ -466,7 +469,8 @@ enable_events(jvmtiEnv *jvmti, jboolean update_frequent_events) {
       debug("Event %d is not enabled as frequent/slow.", event);
       continue;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, static_cast<jvmtiEvent>(event), nullptr);
+    jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+        static_cast<jvmtiEvent>(event), nullptr);
     if (err == JVMTI_ERROR_WRONG_PHASE) {
       return;
     }
@@ -534,7 +538,6 @@ stress_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
       check_jvmti_status(jni, err, "SetHeapSamplingInterval");
     }
 
-
     if (gdata->is_tracing_enabled) {
       all_threads_stack_trace(jvmti, jni);
     }
@@ -562,7 +565,7 @@ stress_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
 
 /*
  *  Events section.
- *  Most of the events just increase counter and print debug infoe.
+ *  Most of the events just increase counter and print debug info.
  *  The VMInit/VMDeath are also start and stop jvmti stress agent.
  */
 
@@ -582,7 +585,7 @@ static void JNICALL
 cbVMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   register_event(&gdata->cbVMDeath);
   debug("Event cbVMDeath\n");
-  stop_agent_thread(jvmti, jni);
+  request_agent_thread_stop_and_wait(jvmti, jni);
   destroy_raw_monitor(jvmti, jni, gdata->finished_lock);
 }
 
@@ -601,7 +604,6 @@ cbThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 static void JNICALL
 cbVirtualThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   register_event(&gdata->cbThreadStart);
-  debug(" cbThreadStart\n");
   debug("Event cbThreadStart\n");
 }
 
@@ -981,7 +983,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Agent_OnUnload(JavaVM *vm) {
-  if (!gdata->agent_request_stop) {
+  if (!gdata->request_agent_thread_stop) {
     printf("Agent_OnUnload happened before requested stop.\n");
   }
   gdata_close();
