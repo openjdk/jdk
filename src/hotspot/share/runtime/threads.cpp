@@ -1366,10 +1366,24 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   char buf[32];
   st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
-  st->print_cr("Full thread dump %s (%s %s):",
+  st->print_cr("Full thread dump %s (%s %s)",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
                VM_Version::vm_info_string());
+  JDK_Version::current().to_string(buf, sizeof(buf));
+  const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
+                             JDK_Version::runtime_name() : "";
+  const char* runtime_version = JDK_Version::runtime_version() != nullptr ?
+                                JDK_Version::runtime_version() : "";
+  const char* vendor_version = JDK_Version::runtime_vendor_version() != nullptr ?
+                               JDK_Version::runtime_vendor_version() : "";
+  const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
+                                VM_Version::printable_jdk_debug_level() : "";
+
+  st->print_cr("                 JDK version: %s%s%s (%s) (%sbuild %s)", runtime_name,
+                (*vendor_version != '\0') ? " " : "", vendor_version,
+                buf, jdk_debug_level, runtime_version);
+
   st->cr();
 
 #if INCLUDE_SERVICES

@@ -27,8 +27,8 @@
 
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/vmEnums.hpp"
 
 class Method;
@@ -135,7 +135,8 @@ class methodHandle;
   do_name(log_name,"log")       do_name(log10_name,"log10")     do_name(pow_name,"pow")                                 \
   do_name(exp_name,"exp")       do_name(min_name,"min")         do_name(max_name,"max")                                 \
   do_name(floor_name, "floor")  do_name(ceil_name, "ceil")      do_name(rint_name, "rint")                              \
-  do_name(round_name, "round")  do_name(tanh_name,"tanh")       do_name(cbrt_name,"cbrt")                                                               \
+  do_name(round_name, "round")  do_name(sinh_name,"sinh")       do_name(tanh_name,"tanh")                               \
+  do_name(cbrt_name,"cbrt")                                                                                             \
                                                                                                                         \
   do_name(addExact_name,"addExact")                                                                                     \
   do_name(decrementExact_name,"decrementExact")                                                                         \
@@ -161,6 +162,7 @@ class methodHandle;
   do_intrinsic(_dcos,                     java_lang_Math,         cos_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dtan,                     java_lang_Math,         tan_name,   double_double_signature,           F_S)   \
   do_intrinsic(_datan2,                   java_lang_Math,         atan2_name, double2_double_signature,          F_S)   \
+  do_intrinsic(_dsinh,                    java_lang_Math,         sinh_name,  double_double_signature,           F_S)   \
   do_intrinsic(_dtanh,                    java_lang_Math,         tanh_name,  double_double_signature,           F_S)   \
   do_intrinsic(_dcbrt,                    java_lang_Math,         cbrt_name,  double_double_signature,           F_S)   \
   do_intrinsic(_dsqrt,                    java_lang_Math,         sqrt_name,  double_double_signature,           F_S)   \
@@ -314,8 +316,6 @@ class methodHandle;
   do_intrinsic(_Class_cast,               java_lang_Class,        Class_cast_name, object_object_signature,      F_R)   \
    do_name(     Class_cast_name,                                 "cast")                                                \
                                                                                                                         \
-  do_intrinsic(_getClassAccessFlags,      reflect_Reflection,     getClassAccessFlags_name, class_int_signature, F_SN)  \
-   do_name(     getClassAccessFlags_name,                        "getClassAccessFlags")                                 \
   do_intrinsic(_getLength,                java_lang_reflect_Array, getLength_name, object_int_signature,         F_SN)  \
    do_name(     getLength_name,                                   "getLength")                                          \
                                                                                                                         \
