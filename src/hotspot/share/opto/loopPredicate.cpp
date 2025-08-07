@@ -35,6 +35,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+
 #include <fenv.h>
 #include <math.h>
 
@@ -1053,7 +1054,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 #ifdef ASSERT
     const bool exact_trip_count = cl->has_exact_trip_count();
     const uint trip_count = cl->trip_count();
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
            "should have computed trip count on Loop Predication entry");
 #endif
@@ -1170,7 +1171,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
       // Do nothing for iteration-splitted loops
       return false;
     }
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     if (cl->trip_count() == 1) {
       // Not worth to hoist checks out of a loop that is only run for one iteration since the checks are only going to
       // be executed once anyway.

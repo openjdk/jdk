@@ -21,13 +21,17 @@
  * questions.
  */
 
+#include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
+#include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 
-JvmtiAgent* JvmtiAgentList::_list = nullptr;
+JvmtiAgent* JvmtiAgentList::_head = nullptr;
 
 // Selection as a function of the filter.
 JvmtiAgent* JvmtiAgentList::Iterator::select(JvmtiAgent* agent) const {
@@ -57,69 +61,59 @@ JvmtiAgent* JvmtiAgentList::Iterator::select(JvmtiAgent* agent) const {
   return nullptr;
 }
 
-static inline JvmtiAgent* head(JvmtiAgent** list) {
-  assert(list != nullptr, "invariant");
-  return Atomic::load_acquire(list);
-}
-
-
-// The storage list is a single cas-linked-list, to allow for concurrent iterations.
-// Especially during initial loading of agents, there exist an order requirement to iterate oldest -> newest.
-// Our concurrent storage linked-list is newest -> oldest.
-// The correct order is preserved by the iterator, by storing a filtered set of entries in a stack.
-JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) :
-  _stack(new GrowableArrayCHeap<JvmtiAgent*, mtServiceability>(16)), _filter(filter) {
-  JvmtiAgent* next = head(list);
-  while (next != nullptr) {
-    next = select(next);
-    if (next != nullptr) {
-      _stack->push(next);
-      next = next->next();
-    }
-  }
+JvmtiAgentList::Iterator::Iterator(JvmtiAgent* head, Filter filter) : _filter(filter), _next(select(head)) {
 }
 
 bool JvmtiAgentList::Iterator::has_next() const {
-  assert(_stack != nullptr, "invariant");
-  return _stack->is_nonempty();
-}
-
-const JvmtiAgent* JvmtiAgentList::Iterator::next() const {
-  assert(has_next(), "invariant");
-  return _stack->pop();
+  return _next != nullptr;
 }
 
 JvmtiAgent* JvmtiAgentList::Iterator::next() {
-  return const_cast<JvmtiAgent*>(const_cast<const Iterator*>(this)->next());
+  assert(_next != nullptr, "must be");
+  JvmtiAgent* result = _next;
+  _next = select(_next->next());
+  return result;
+
 }
 
 JvmtiAgentList::Iterator JvmtiAgentList::agents() {
-  return Iterator(&_list, Iterator::NOT_XRUN);
+  return Iterator(head(), Iterator::NOT_XRUN);
 }
 
 JvmtiAgentList::Iterator JvmtiAgentList::java_agents() {
-  return Iterator(&_list, Iterator::JAVA);
+  return Iterator(head(), Iterator::JAVA);
 }
 
 JvmtiAgentList::Iterator JvmtiAgentList::native_agents() {
-  return Iterator(&_list, Iterator::NATIVE);
+  return Iterator(head(), Iterator::NATIVE);
 }
 
 JvmtiAgentList::Iterator JvmtiAgentList::xrun_agents() {
-  return Iterator(&_list, Iterator::XRUN);
+  return Iterator(head(), Iterator::XRUN);
 }
 
 JvmtiAgentList::Iterator JvmtiAgentList::all() {
-  return Iterator(&_list, Iterator::ALL);
+  return Iterator(head(), Iterator::ALL);
 }
 
 void JvmtiAgentList::add(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
-  JvmtiAgent* next;
-  do {
-    next = head(&_list);
-    agent->set_next(next);
-  } while (Atomic::cmpxchg(&_list, next, agent) != next);
+
+  // address of the pointer to add new agent (&_head when the list is empty or &agent->_next of the last agent in the list)
+  JvmtiAgent** tail_ptr = &_head;
+  while (true) {
+    JvmtiAgent* next = Atomic::load(tail_ptr);
+    if (next == nullptr) {
+      // *tail_ptr == nullptr here
+      if (Atomic::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
+        // another thread added an agent, reload next from tail_ptr
+        continue;
+      }
+      // successfully set, exit
+      break;
+    }
+    tail_ptr = &next->_next;
+  }
 }
 
 void JvmtiAgentList::add(const char* name, const char* options, bool absolute_path) {
@@ -139,6 +133,10 @@ static void assert_initialized(JvmtiAgentList::Iterator& it) {
   }
 }
 #endif
+
+JvmtiAgent* JvmtiAgentList::head() {
+  return Atomic::load_acquire(&_head);
+}
 
 // In case an agent did not enable the VMInit callback, or if it is an -Xrun agent,
 // it gets an initializiation timestamp here.
@@ -273,4 +271,15 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
     }
   }
   return nullptr;
+}
+
+bool JvmtiAgentList::disable_agent_list() {
+#if INCLUDE_CDS
+  assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
+  if (_head != nullptr) {
+    _head = nullptr; // Pretend that no agents have been added.
+    return true;
+  }
+#endif
+  return false;
 }

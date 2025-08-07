@@ -50,13 +50,6 @@
 
 // C2 compiled method's prolog code.
 void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The push to verify stack depth is ok at 5 bytes,
-  // the frame allocation can be either 3 or 6 bytes. So if we don't do
-  // stack bang then we must use the 6 byte frame allocation even if
-  // we have no frame. :-(
   assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
 
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -87,8 +80,7 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       subptr(rsp, framesize);
     }
   } else {
-    // Create frame (force generation of a 4 byte immediate value)
-    subptr_imm32(rsp, framesize);
+    subptr(rsp, framesize);
 
     // Save RBP register now.
     framesize -= wordSize;
@@ -787,6 +779,119 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+static void reconstruct_frame_pointer_helper(MacroAssembler* masm, Register dst) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  masm->movptr(dst, rsp);
+  if (framesize > 2 * wordSize) {
+    masm->addptr(dst, framesize - 2 * wordSize);
+  }
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rbp.
+    reconstruct_frame_pointer_helper(this, rtmp);
+    Label L_success;
+    cmpq(rbp, rtmp);
+    jccb(Assembler::equal, L_success);
+    STOP("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    reconstruct_frame_pointer_helper(this, rbp);
+  }
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register val) {
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: %d, hi: %d", idx, lo, hi);
+  if (t == TypeInt::INT) {
+    return;
+  }
+
+  BLOCK_COMMENT("CastII {");
+  Label fail;
+  Label succeed;
+  if (hi == max_jint) {
+    cmpl(val, lo);
+    jccb(Assembler::greaterEqual, succeed);
+  } else {
+    if (lo != min_jint) {
+      cmpl(val, lo);
+      jccb(Assembler::less, fail);
+    }
+    cmpl(val, hi);
+    jccb(Assembler::lessEqual, succeed);
+  }
+
+  bind(fail);
+  movl(c_rarg0, idx);
+  movl(c_rarg1, val);
+  movl(c_rarg2, lo);
+  movl(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_int_in_range)));
+  hlt();
+  bind(succeed);
+  BLOCK_COMMENT("} // CastII");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp) {
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, lo, hi);
+  if (t == TypeLong::LONG) {
+    return;
+  }
+
+  BLOCK_COMMENT("CastLL {");
+  Label fail;
+  Label succeed;
+
+  auto cmp_val = [&](jlong bound) {
+    if (is_simm32(bound)) {
+      cmpq(val, checked_cast<int>(bound));
+    } else {
+      mov64(tmp, bound);
+      cmpq(val, tmp);
+    }
+  };
+
+  if (hi == max_jlong) {
+    cmp_val(lo);
+    jccb(Assembler::greaterEqual, succeed);
+  } else {
+    if (lo != min_jlong) {
+      cmp_val(lo);
+      jccb(Assembler::less, fail);
+    }
+    cmp_val(hi);
+    jccb(Assembler::lessEqual, succeed);
+  }
+
+  bind(fail);
+  movl(c_rarg0, idx);
+  movq(c_rarg1, val);
+  mov64(c_rarg2, lo);
+  mov64(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_long_in_range)));
+  hlt();
+  bind(succeed);
+  BLOCK_COMMENT("} // CastLL");
+}
+
 //-------------------------------------------------------------------------------------------
 // Generic instructions support for use in .ad files C2 code generation
 
@@ -1122,6 +1227,21 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
     vmaxpd(dst, atmp, btmp, vlen_enc);
     evcmppd(ktmp, k0, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
     evmovdquq(dst, ktmp, atmp, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                                   XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  assert(opc == Op_MinV || opc == Op_MinReductionV ||
+         opc == Op_MaxV || opc == Op_MaxReductionV, "sanity");
+
+  int imm8 = (opc == Op_MinV || opc == Op_MinReductionV) ? AVX10_MINMAX_MIN_COMPARE_SIGN
+                                                         : AVX10_MINMAX_MAX_COMPARE_SIGN;
+  if (elem_bt == T_FLOAT) {
+    evminmaxps(dst, mask, src1, src2, true, imm8, vlen_enc);
+  } else {
+    assert(elem_bt == T_DOUBLE, "");
+    evminmaxpd(dst, mask, src1, src2, true, imm8, vlen_enc);
   }
 }
 
@@ -1478,23 +1598,18 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
   }
 }
 
-void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
-                                                XMMRegister dst, Register base,
-                                                Register idx_base,
-                                                Register offset, Register mask,
-                                                Register mask_idx, Register rtmp,
-                                                int vlen_enc) {
+void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
+                                         Register base, Register idx_base,
+                                         Register mask, Register mask_idx,
+                                         Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
-      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      // dst[i] = mask[i] ? src[idx_base[i]] : 0
       Label skip_load;
       btq(mask, mask_idx);
       jccb(Assembler::carryClear, skip_load);
       movl(rtmp, Address(idx_base, i * 4));
-      if (offset != noreg) {
-        addl(rtmp, offset);
-      }
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
       bind(skip_load);
       incq(mask_idx);
@@ -1502,14 +1617,11 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
   } else {
     assert(elem_bt == T_BYTE, "");
     for (int i = 0; i < 8; i++) {
-      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      // dst[i] = mask[i] ? src[idx_base[i]] : 0
       Label skip_load;
       btq(mask, mask_idx);
       jccb(Assembler::carryClear, skip_load);
       movl(rtmp, Address(idx_base, i * 4));
-      if (offset != noreg) {
-        addl(rtmp, offset);
-      }
       pinsrb(dst, Address(base, rtmp), i);
       bind(skip_load);
       incq(mask_idx);
@@ -1517,28 +1629,21 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
   }
 }
 
-void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
-                                         Register base, Register idx_base,
-                                         Register offset, Register rtmp,
-                                         int vlen_enc) {
+void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
+                                  Register base, Register idx_base,
+                                  Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
-      // dst[i] = src[offset + idx_base[i]]
+      // dst[i] = src[idx_base[i]]
       movl(rtmp, Address(idx_base, i * 4));
-      if (offset != noreg) {
-        addl(rtmp, offset);
-      }
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
     }
   } else {
     assert(elem_bt == T_BYTE, "");
     for (int i = 0; i < 8; i++) {
-      // dst[i] = src[offset + idx_base[i]]
+      // dst[i] = src[idx_base[i]]
       movl(rtmp, Address(idx_base, i * 4));
-      if (offset != noreg) {
-        addl(rtmp, offset);
-      }
       pinsrb(dst, Address(base, rtmp), i);
     }
   }
@@ -1567,11 +1672,10 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
  */
 void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
                                         Register base, Register idx_base,
-                                        Register offset, Register mask,
-                                        XMMRegister xtmp1, XMMRegister xtmp2,
-                                        XMMRegister temp_dst, Register rtmp,
-                                        Register mask_idx, Register length,
-                                        int vector_len, int vlen_enc) {
+                                        Register mask, XMMRegister xtmp1,
+                                        XMMRegister xtmp2, XMMRegister temp_dst,
+                                        Register rtmp, Register mask_idx,
+                                        Register length, int vector_len, int vlen_enc) {
   Label GATHER8_LOOP;
   assert(is_subword_type(elem_ty), "");
   movl(length, vector_len);
@@ -1585,9 +1689,9 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
   bind(GATHER8_LOOP);
     // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
     if (mask == noreg) {
-      vgather8b_offset(elem_ty, temp_dst, base, idx_base, offset, rtmp, vlen_enc);
+      vgather8b(elem_ty, temp_dst, base, idx_base, rtmp, vlen_enc);
     } else {
-      vgather8b_masked_offset(elem_ty, temp_dst, base, idx_base, offset, mask, mask_idx, rtmp, vlen_enc);
+      vgather8b_masked(elem_ty, temp_dst, base, idx_base, mask, mask_idx, rtmp, vlen_enc);
     }
     // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
     vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
@@ -2432,12 +2536,21 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
     } else { // i = [0,1]
       vpermilps(wtmp, wsrc, permconst[i], vlen_enc);
     }
-    vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
+    } else {
+      vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+    }
     wsrc = wdst;
     vlen_enc = Assembler::AVX_128bit;
   }
   if (is_dst_valid) {
-    vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
+    } else {
+      vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    }
   }
 }
 
@@ -2463,12 +2576,23 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
       assert(i == 0, "%d", i);
       vpermilpd(wtmp, wsrc, 1, vlen_enc);
     }
-    vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
+    } else {
+      vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+    }
+
     wsrc = wdst;
     vlen_enc = Assembler::AVX_128bit;
   }
+
   if (is_dst_valid) {
-    vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
+    } else {
+      vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    }
   }
 }
 
@@ -4542,6 +4666,7 @@ static void convertF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register,
   __ subptr(rsp, 8);
   __ movdbl(Address(rsp), src);
   __ call(RuntimeAddress(target));
+  // APX REX2 encoding for pop(dst) increases the stub size by 1 byte.
   __ pop(dst);
   __ jmp(stub.continuation());
 #undef __
@@ -4574,7 +4699,9 @@ void C2_MacroAssembler::convertF2I(BasicType dst_bt, BasicType src_bt, Register 
     }
   }
 
-  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, 23, convertF2I_slowpath);
+  // Using the APX extended general purpose registers increases the instruction encoding size by 1 byte.
+  int max_size = 23 + (UseAPX ? 1 : 0);
+  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, max_size, convertF2I_slowpath);
   jcc(Assembler::equal, stub->entry());
   bind(stub->continuation());
 }
@@ -5618,7 +5745,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // in a permute table row contains either a valid permute index or a -1 (default)
   // value, this can potentially be used as a blending mask after
   // compressing/expanding the source vector lanes.
-  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
+  vblendvps(dst, dst, xtmp, permv, vec_enc, true, permv);
 }
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,

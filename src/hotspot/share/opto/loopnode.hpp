@@ -133,6 +133,10 @@ public:
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
+#ifndef PRODUCT
+  uint _stress_peeling_attempts = 0;
+#endif
+
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
       _profile_trip_cnt(COUNT_UNKNOWN) {
@@ -214,6 +218,18 @@ public:
   jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
+
+  virtual void set_trip_count(julong tc) = 0;
+  virtual julong trip_count() const = 0;
+
+  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
+  void set_exact_trip_count(julong tc) {
+    set_trip_count(tc);
+    _loop_flags |= HasExactTripCount;
+  }
+  void set_nonexact_trip_count() {
+    _loop_flags &= ~HasExactTripCount;
+  }
 };
 
 
@@ -294,23 +310,17 @@ public:
 
   int main_idx() const { return _main_idx; }
 
+  void set_trip_count(julong tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
+    _trip_count = checked_cast<uint>(tc);
+  }
+  julong trip_count() const      { return _trip_count; }
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
-  uint trip_count()            { return _trip_count; }
-
-  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
-  void set_exact_trip_count(uint tc) {
-    _trip_count = tc;
-    _loop_flags |= HasExactTripCount;
-  }
-  void set_nonexact_trip_count() {
-    _loop_flags &= ~HasExactTripCount;
-  }
   void set_notpassed_slp() {
     _loop_flags &= ~PassedSlpAnalysis;
   }
@@ -373,9 +383,15 @@ public:
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
+private:
+  virtual uint size_of() const { return sizeof(*this); }
+
+  // Known trip count calculated by compute_exact_trip_count()
+  julong _trip_count;
+
 public:
   LongCountedLoopNode(Node *entry, Node *backedge)
-    : BaseCountedLoopNode(entry, backedge) {
+    : BaseCountedLoopNode(entry, backedge), _trip_count(max_julong) {
     init_class_id(Class_LongCountedLoop);
   }
 
@@ -384,6 +400,12 @@ public:
   virtual BasicType bt() const {
     return T_LONG;
   }
+
+  void set_trip_count(julong tc) {
+    assert(tc < max_julong, "Cannot set trip count to max_julong");
+    _trip_count = tc;
+  }
+  julong trip_count() const      { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
@@ -566,7 +588,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+  void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
+  void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -582,6 +605,10 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+  CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
+  CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
@@ -730,7 +757,7 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   bool do_one_iteration_loop( PhaseIdealLoop *phase );
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
@@ -766,7 +793,7 @@ public:
   uint est_loop_unroll_sz(uint factor) const;
 
   // Compute loop trip count if possible
-  void compute_trip_count(PhaseIdealLoop* phase);
+  void compute_trip_count(PhaseIdealLoop* phase, BasicType bt);
 
   // Compute loop trip count from profile data
   float compute_profile_trip_cnt_helper(Node* n);
@@ -1273,8 +1300,8 @@ public:
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
   Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_iv_stride(Node* incr, Node*& xphi);
+  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
@@ -1286,7 +1313,7 @@ public:
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 
@@ -1816,6 +1843,8 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
 
   ConINode* intcon(jint i);
 

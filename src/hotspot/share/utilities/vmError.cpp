@@ -57,9 +57,9 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -109,12 +109,13 @@ const intptr_t    VMError::segfault_address = pd_segfault_address;
 static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-  "PATH", "USERNAME",
+  "JDK_AOT_VM_OPTIONS",
+  "JAVA_OPTS", "PATH", "USERNAME",
 
   "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
-  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
+  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY", "WAYLAND_DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
   "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
   "TERM", "TMPDIR", "TZ",
@@ -266,7 +267,7 @@ char* VMError::error_string(char* buf, int buflen) {
   if (signame) {
     jio_snprintf(buf, buflen,
                  "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=%zu",
-                 signame, _id, _pc,
+                 signame, _id, p2i(_pc),
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != nullptr && _lineno > 0) {
     // skip directory names
@@ -530,7 +531,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -1200,9 +1202,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     if (Universe::heap() != nullptr) {
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
-      MetaspaceUtils::print_on(st);
       st->cr();
     }
 
@@ -1219,6 +1220,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing metaspace information", _verbose && Universe::is_fully_initialized())
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
 
   STEP_IF("printing code cache information", _verbose && Universe::is_fully_initialized())
@@ -1380,6 +1382,7 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedOops::print_mode(st);
     st->cr();
   }
+#endif
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
@@ -1388,40 +1391,35 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedKlassPointers::print_mode(st);
     st->cr();
   }
-#endif
 
-  // Take heap lock over both heap and GC printing so that information is
-  // consistent.
-  {
+  // Take heap lock over heap, GC and metaspace printing so that information
+  // is consistent.
+  if (Universe::is_fully_initialized()) {
     MutexLocker ml(Heap_lock);
 
     // STEP("printing heap information")
 
-    if (Universe::is_fully_initialized()) {
-      GCLogPrecious::print_on_error(st);
+    GCLogPrecious::print_on_error(st);
 
+    {
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
-      MetaspaceUtils::print_on(st);
       st->cr();
     }
 
     // STEP("printing GC information")
 
-    if (Universe::is_fully_initialized()) {
-      Universe::heap()->print_gc_on(st);
-      st->cr();
+    Universe::heap()->print_gc_on(st);
+    st->cr();
 
-      st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-      st->cr();
-    }
-  }
+    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+    st->cr();
 
-  // STEP("printing metaspace information")
+    // STEP("printing metaspace information")
 
-  if (Universe::is_fully_initialized()) {
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
   }
 
@@ -1859,7 +1857,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log.set_fd(-1);
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(true);)
+  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);

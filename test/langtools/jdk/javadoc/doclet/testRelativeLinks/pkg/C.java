@@ -33,7 +33,7 @@ package pkg;
 public class C {
 
     /**
-     * Here is a relative link in a field:\u0130
+     * Here is a relative link in a field:
      * <a href="relative-field-link.html">relative field link</a>.
      */
     public C field = null;

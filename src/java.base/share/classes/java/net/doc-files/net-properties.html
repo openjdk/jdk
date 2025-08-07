@@ -25,7 +25,7 @@
 -->
 <HTML lang="EN">
 <HEAD>
-	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
 	<TITLE>Networking Properties</TITLE>
 </HEAD>
 <BODY LANG="en-US" DIR="LTR">
@@ -169,6 +169,17 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 	globally through their user interface). Note that this property is
 	checked only once at startup.</P>
 </UL>
+<a id="FileHandler"></a>
+<H2>File URL stream protocol handler properties</H2>
+<P>The following properties are used to configure the handler for URLs with the {@code file://} scheme:</P>
+<UL>
+	<LI><P><B>{@systemProperty jdk.net.file.ftpfallback}</B> (default: &lt;false&gt;)<BR>
+		The {@code file://} handler by default rejects any non-local file URL (as defined by RFC 8089)
+		as invalid. Setting this property to <B>true</B> enables a legacy feature where
+		the handler instead opens an FTP connection for such non-local URLs.</P>
+		<P>Any modern code should use explicit {@code ftp://} URLs instead and not rely on
+			enabling this legacy FTP fallback feature.</P>
+</UL>
 <a id="MiscHTTP"></a>
 <H2>Misc HTTP URL stream protocol handler properties</H2>
 <UL>
@@ -192,9 +203,9 @@ to determine the proxy that should be used for connecting to a given URI.</P>
         <B>{@systemProperty http.keepAlive.time.proxy}</B> </P>
 	<P>These properties modify the behavior of the HTTP keepalive cache in the case
         where the server (or proxy) has not specified a keepalive time. If the
-        property is set in this case, then idle connections will be closed after the 
+        property is set in this case, then idle connections will be closed after the
         specified number of seconds. If the property is set, and the server does
-        specify a keepalive time in a "Keep-Alive" response header, then the time specified 
+        specify a keepalive time in a "Keep-Alive" response header, then the time specified
         by the server is used. If the property is not set and also the server
         does not specify a keepalive time, then connections are kept alive for an
         implementation defined time, assuming {@code http.keepAlive} is {@code true}.</P>
@@ -238,7 +249,7 @@ to determine the proxy that should be used for connecting to a given URI.</P>
         {@code SHA-1}. If it is still required to use one of these algorithms, then they can be
         re-enabled by setting this property to a comma separated list of the algorithm names.</P>
 	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>
-	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos 
+	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos
         or the Negotiate authentication scheme using Kerberos are employed over HTTPS with
         {@code HttpsURLConnection}. There are three possible settings:</P>
         <OL>
@@ -247,8 +258,8 @@ to determine the proxy that should be used for connecting to a given URI.</P>
           <LI><P>"always". CBTs are sent for all Kerberos authentication attempts over HTTPS.</P>
           <LI><P>"domain:&lt;comma separated domain list&gt;" Each domain in the list specifies destination
           host or hosts for which a CBT is sent. Domains can be single hosts like foo, or foo.com,
-          or literal IP addresses as specified in RFC 2732, or wildcards like *.foo.com which matches 
-          all hosts under foo.com and its sub-domains. CBTs are not sent to any destinations 
+          or literal IP addresses as specified in RFC 2732, or wildcards like *.foo.com which matches
+          all hosts under foo.com and its sub-domains. CBTs are not sent to any destinations
           that don't match one of the list entries</P>
 	</OL>
 	<P>The channel binding tokens generated are of the type "tls-server-end-point" as defined in
@@ -306,32 +317,32 @@ with a {@code null} address parameter will bind to an <i>automatically assigned<
 For Unix domain sockets, this means a unique path in some predefined system temporary directory.
 There are a number of system (and networking) properties that affect this behavior.
 <p>
-Unix domain socket addresses are limited in length to approximately 100 
+Unix domain socket addresses are limited in length to approximately 100
 bytes (depending on the platform), it is important to ensure that the temporary directory's name
 together with the filename used for the socket (currently a name similar to
 {@code socket_1679697142}) does not exceed this limit. The following properties
 can be used to control the selection of this directory:
 <ul>
-	<li><p><b>{@systemProperty jdk.net.unixdomain.tmpdir}</b> This can be set as 
-	a networking property in {@code conf/net.properties} If set, this specifies the 
+	<li><p><b>{@systemProperty jdk.net.unixdomain.tmpdir}</b> This can be set as
+	a networking property in {@code conf/net.properties} If set, this specifies the
 	directory to use for automatically bound server socket addresses. On some platforms,
 	(eg some Unix systems) this will have a predefined default value. On others,
 	(eg Windows) there is no default value. Either way, it is always possible
 	to override the networking property with a system property of the same name
 	set on the command line. If neither of the networking nor system property
-	are set, then some systems (eg Windows)  may check a commonly used environment 
+	are set, then some systems (eg Windows)  may check a commonly used environment
 	variable as temporary directory.
 	<li><p><b>{@systemProperty java.io.tmpdir}</b> If the previous step fails to locate
 	a directory to use, then the directory identified by the system property
 	{@code java.io.tmpdir} is used.
 </ul>
-More information about the platform specific behavior can be seen in the 
+More information about the platform specific behavior can be seen in the
 {@code conf/net.properties} configuration file.
 <p>
 <i>Implicit</i> binding of a {@link java.nio.channels.SocketChannel SocketChannel}
 <p>
 If a client socket is connected to a remote destination without calling {@code bind} first,
-then the socket is <i>implicitly</i> bound. In this case, <i>Unix domain</i> sockets 
+then the socket is <i>implicitly</i> bound. In this case, <i>Unix domain</i> sockets
 are <i>unnamed</i> (ie. their path is empty). This behavior is not affected by any
 system or networking properties.
 <p>

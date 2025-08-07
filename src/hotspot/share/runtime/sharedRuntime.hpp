@@ -25,12 +25,14 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "classfile/compactHashtable.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
 class AdapterHandlerEntry;
@@ -43,44 +45,34 @@ class vframeStream;
 // Java exceptions), locking/unlocking mechanisms, statistical
 // information, etc.
 
-// define SharedStubId enum tags: wrong_method_id, etc
-
-#define SHARED_STUB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
-enum class SharedStubId :int {
-  NO_STUBID = -1,
-  SHARED_STUBS_DO(SHARED_STUB_ID_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-#undef SHARED_STUB_ID_ENUM_DECLARE
-
 class SharedRuntime: AllStatic {
  private:
   // Declare shared stub fields
 #define SHARED_STUB_FIELD_DECLARE(name, type) \
-  static type        BLOB_FIELD_NAME(name);
+  static type*       BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
 #undef SHARED_STUB_FIELD_DECLARE
 
 #ifdef ASSERT
-  static bool is_resolve_id(SharedStubId id) {
-    return (id == SharedStubId::wrong_method_id ||
-            id == SharedStubId::wrong_method_abstract_id ||
-            id == SharedStubId::ic_miss_id ||
-            id == SharedStubId::resolve_opt_virtual_call_id ||
-            id == SharedStubId::resolve_virtual_call_id ||
-            id == SharedStubId::resolve_static_call_id);
+  static bool is_resolve_id(StubId id) {
+    return (id == StubId::shared_wrong_method_id ||
+            id == StubId::shared_wrong_method_abstract_id ||
+            id == StubId::shared_ic_miss_id ||
+            id == StubId::shared_resolve_opt_virtual_call_id ||
+            id == StubId::shared_resolve_virtual_call_id ||
+            id == StubId::shared_resolve_static_call_id);
   }
-  static bool is_polling_page_id(SharedStubId id) {
-    return (id == SharedStubId::polling_page_vectors_safepoint_handler_id ||
-            id == SharedStubId::polling_page_safepoint_handler_id ||
-            id == SharedStubId::polling_page_return_handler_id);
+  static bool is_polling_page_id(StubId id) {
+    return (id == StubId::shared_polling_page_vectors_safepoint_handler_id ||
+            id == StubId::shared_polling_page_safepoint_handler_id ||
+            id == StubId::shared_polling_page_return_handler_id);
   }
-  static bool is_throw_id(SharedStubId id) {
-    return (id == SharedStubId::throw_AbstractMethodError_id ||
-            id == SharedStubId::throw_IncompatibleClassChangeError_id ||
-            id == SharedStubId::throw_NullPointerException_at_call_id ||
-            id == SharedStubId::throw_StackOverflowError_id ||
-            id == SharedStubId::throw_delayed_StackOverflowError_id);
+  static bool is_throw_id(StubId id) {
+    return (id == StubId::shared_throw_AbstractMethodError_id ||
+            id == StubId::shared_throw_IncompatibleClassChangeError_id ||
+            id == StubId::shared_throw_NullPointerException_at_call_id ||
+            id == StubId::shared_throw_StackOverflowError_id ||
+            id == StubId::shared_throw_delayed_StackOverflowError_id);
   }
 #endif
 
@@ -90,18 +82,15 @@ class SharedRuntime: AllStatic {
   // counterpart the continuation do_enter method.
   static nmethod*            _cont_doYield_stub;
 
-  // Stub names indexed by SharedStubId
-  static const char *_stub_names[];
-
 #ifndef PRODUCT
   // Counters
   static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
 #endif // !PRODUCT
 
  private:
-  static SafepointBlob* generate_handler_blob(SharedStubId id, address call_ptr);
-  static RuntimeStub*   generate_resolve_blob(SharedStubId id, address destination);
-  static RuntimeStub*   generate_throw_exception(SharedStubId id, address runtime_entry);
+  static SafepointBlob* generate_handler_blob(StubId id, address call_ptr);
+  static RuntimeStub*   generate_resolve_blob(StubId id, address destination);
+  static RuntimeStub*   generate_throw_exception(StubId id, address runtime_entry);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -114,10 +103,11 @@ class SharedRuntime: AllStatic {
   // For c2: call to runtime to return a buffer lease.
   static RuntimeStub* generate_jfr_return_lease();
 #endif
+  static void init_adapter_library();
 
-  static const char *stub_name(SharedStubId id) {
-    assert(id > SharedStubId::NO_STUBID && id < SharedStubId::NUM_STUBIDS, "stub id out of range");
-    return _stub_names[(int)id];
+  static const char *stub_name(StubId id) {
+    assert(StubInfo::is_shared(id), "not a shared stub %s", StubInfo::name(id));
+    return StubInfo::name(id);
   }
 
   // max bytes for each dtrace string parameter
@@ -182,7 +172,7 @@ class SharedRuntime: AllStatic {
   static double dabs(double f);
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__)
   static double dsqrt(double f);
 #endif
 
@@ -285,15 +275,36 @@ class SharedRuntime: AllStatic {
   }
 
   // Implicit exceptions
-  static address throw_AbstractMethodError_entry()          { return _throw_AbstractMethodError_blob->entry_point(); }
-  static address throw_IncompatibleClassChangeError_entry() { return _throw_IncompatibleClassChangeError_blob->entry_point(); }
-  static address throw_NullPointerException_at_call_entry() { return _throw_NullPointerException_at_call_blob->entry_point(); }
-  static address throw_StackOverflowError_entry()           { return _throw_StackOverflowError_blob->entry_point(); }
-  static address throw_delayed_StackOverflowError_entry()   { return _throw_delayed_StackOverflowError_blob->entry_point(); }
+  static address throw_AbstractMethodError_entry()          {
+    assert(_throw_AbstractMethodError_blob != nullptr, "");
+    return _throw_AbstractMethodError_blob->entry_point();
+  }
+  static address throw_IncompatibleClassChangeError_entry() {
+    assert(_throw_IncompatibleClassChangeError_blob != nullptr, "");
+    return  _throw_IncompatibleClassChangeError_blob->entry_point();
+  }
+  static address throw_NullPointerException_at_call_entry() {
+    assert(_throw_NullPointerException_at_call_blob != nullptr, "");
+    return  _throw_NullPointerException_at_call_blob->entry_point();
+  }
+  static address throw_StackOverflowError_entry()           {
+    assert(_throw_StackOverflowError_blob != nullptr, "");
+    return _throw_StackOverflowError_blob->entry_point();
+  }
+  static address throw_delayed_StackOverflowError_entry()   {
+    assert(_throw_delayed_StackOverflowError_blob != nullptr, "");
+    return _throw_delayed_StackOverflowError_blob->entry_point();
+  }
 
 #if INCLUDE_JFR
-  static address jfr_write_checkpoint() { return _jfr_write_checkpoint_blob->entry_point(); }
-  static address jfr_return_lease()     { return _jfr_return_lease_blob->entry_point(); }
+  static address jfr_write_checkpoint() {
+    assert(_jfr_write_checkpoint_blob != nullptr, "");
+    return _jfr_write_checkpoint_blob->entry_point();
+  }
+  static address jfr_return_lease()     {
+    assert(_jfr_return_lease_blob != nullptr, "");
+    return _jfr_return_lease_blob->entry_point();
+  }
 #endif
 
   // Counters
@@ -464,12 +475,12 @@ class SharedRuntime: AllStatic {
   // pointer as needed. This means the i2c adapter code doesn't need any special
   // handshaking path with compiled code to keep the stack walking correct.
 
-  static AdapterHandlerEntry* generate_i2c2i_adapters(MacroAssembler *_masm,
-                                                      int total_args_passed,
-                                                      int max_arg,
-                                                      const BasicType *sig_bt,
-                                                      const VMRegPair *regs,
-                                                      AdapterFingerPrint* fingerprint);
+  static void generate_i2c2i_adapters(MacroAssembler *_masm,
+                               int total_args_passed,
+                               int max_arg,
+                               const BasicType *sig_bt,
+                               const VMRegPair *regs,
+                               AdapterHandlerEntry* handler);
 
   static void gen_i2c_adapter(MacroAssembler *_masm,
                               int total_args_passed,
@@ -666,8 +677,11 @@ class SharedRuntime: AllStatic {
 // used by the adapters.  The code generation happens here because it's very
 // similar to what the adapters have to do.
 
-class AdapterHandlerEntry : public CHeapObj<mtCode> {
+class AdapterHandlerEntry : public MetaspaceObj {
   friend class AdapterHandlerLibrary;
+
+ public:
+  static const int ENTRIES_COUNT = 4;
 
  private:
   AdapterFingerPrint* _fingerprint;
@@ -675,6 +689,9 @@ class AdapterHandlerEntry : public CHeapObj<mtCode> {
   address _c2i_entry;
   address _c2i_unverified_entry;
   address _c2i_no_clinit_check_entry;
+  bool    _linked;
+
+  static const char *_entry_names[];
 
 #ifdef ASSERT
   // Captures code and signature used to generate this adapter when
@@ -683,27 +700,59 @@ class AdapterHandlerEntry : public CHeapObj<mtCode> {
   int            _saved_code_length;
 #endif
 
-  AdapterHandlerEntry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry,
-                      address c2i_unverified_entry,
-                      address c2i_no_clinit_check_entry) :
+  AdapterHandlerEntry(AdapterFingerPrint* fingerprint) :
     _fingerprint(fingerprint),
-    _i2c_entry(i2c_entry),
-    _c2i_entry(c2i_entry),
-    _c2i_unverified_entry(c2i_unverified_entry),
-    _c2i_no_clinit_check_entry(c2i_no_clinit_check_entry)
+    _i2c_entry(nullptr),
+    _c2i_entry(nullptr),
+    _c2i_unverified_entry(nullptr),
+    _c2i_no_clinit_check_entry(nullptr),
+    _linked(false)
 #ifdef ASSERT
-    , _saved_code_length(0)
+    , _saved_code(nullptr),
+    _saved_code_length(0)
 #endif
   { }
 
   ~AdapterHandlerEntry();
 
+  // Allocate on CHeap instead of metaspace (see JDK-8331086).
+  // Dummy argument is used to avoid C++ warning about using
+  // deleted opearator MetaspaceObj::delete().
+  void* operator new(size_t size, size_t dummy) throw() {
+    assert(size == BytesPerWord * heap_word_size(sizeof(AdapterHandlerEntry)), "should match");
+    void* p = AllocateHeap(size, mtCode);
+    memset(p, 0, size);
+    return p;
+  }
+
  public:
+  static AdapterHandlerEntry* allocate(AdapterFingerPrint* fingerprint) {
+    return new(0) AdapterHandlerEntry(fingerprint);
+  }
+
+  static void deallocate(AdapterHandlerEntry *handler) {
+    handler->~AdapterHandlerEntry();
+  }
+
+  void set_entry_points(address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry, bool linked = true) {
+    _i2c_entry = i2c_entry;
+    _c2i_entry = c2i_entry;
+    _c2i_unverified_entry = c2i_unverified_entry;
+    _c2i_no_clinit_check_entry = c2i_no_clinit_check_entry;
+    _linked = linked;
+  }
+
   address get_i2c_entry()                  const { return _i2c_entry; }
   address get_c2i_entry()                  const { return _c2i_entry; }
   address get_c2i_unverified_entry()       const { return _c2i_unverified_entry; }
   address get_c2i_no_clinit_check_entry()  const { return _c2i_no_clinit_check_entry; }
 
+  static const char* entry_name(int i) {
+    assert(i >=0 && i < ENTRIES_COUNT, "entry id out of range");
+    return _entry_names[i];
+  }
+
+  bool is_linked() const { return _linked; }
   address base_address();
   void relocate(address new_base);
 
@@ -717,7 +766,18 @@ class AdapterHandlerEntry : public CHeapObj<mtCode> {
 
   //virtual void print_on(outputStream* st) const;  DO NOT USE
   void print_adapter_on(outputStream* st) const;
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size() const {return (int)heap_word_size(sizeof(AdapterHandlerEntry)); }
+  MetaspaceObj::Type type() const { return AdapterHandlerEntryType; }
+
+  void remove_unshareable_info() NOT_CDS_RETURN;
+  void link() NOT_CDS_RETURN;
 };
+
+#if INCLUDE_CDS
+class ArchivedAdapterTable;
+#endif // INCLUDE_CDS
 
 class AdapterHandlerLibrary: public AllStatic {
   friend class SharedRuntime;
@@ -729,31 +789,54 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _obj_arg_handler;
   static AdapterHandlerEntry* _obj_int_arg_handler;
   static AdapterHandlerEntry* _obj_obj_arg_handler;
+#if INCLUDE_CDS
+  static ArchivedAdapterTable _aot_adapter_handler_table;
+#endif // INCLUDE_CDS
 
   static BufferBlob* buffer_blob();
   static void initialize();
+  static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
+  static AdapterBlob* lookup_aot_cache(AdapterHandlerEntry* handler);
   static AdapterHandlerEntry* create_adapter(AdapterBlob*& new_adapter,
                                              int total_args_passed,
                                              BasicType* sig_bt,
-                                             bool allocate_code_blob);
-  static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
+                                             bool is_transient = false);
+  static void create_abstract_method_handler();
+  static void lookup_simple_adapters() NOT_CDS_RETURN;
+#ifndef PRODUCT
+  static void print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob);
+#endif // PRODUCT
  public:
 
-  static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
-                                        address i2c_entry,
-                                        address c2i_entry,
-                                        address c2i_unverified_entry,
-                                        address c2i_no_clinit_check_entry = nullptr);
+  static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
+  static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt);
+  static bool generate_adapter_code(AdapterBlob*& adapter_blob,
+                                    AdapterHandlerEntry* handler,
+                                    int total_args_passed,
+                                    BasicType* sig_bt,
+                                    bool is_transient);
+
+#ifdef ASSERT
+  static void verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached);
+#endif // ASSERT
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
   static bool contains(const CodeBlob* b);
+  static const char* name(AdapterFingerPrint* fingerprint);
+  static uint32_t id(AdapterFingerPrint* fingerprint);
 #ifndef PRODUCT
   static void print_statistics();
 #endif // PRODUCT
 
+  static bool is_abstract_method_adapter(AdapterHandlerEntry* adapter);
+
+  static AdapterBlob* link_aot_adapter_handler(AdapterHandlerEntry* handler) NOT_CDS_RETURN_(nullptr);
+  static void dump_aot_adapter_table() NOT_CDS_RETURN;
+  static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
+  static void link_aot_adapters() NOT_CDS_RETURN;
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP

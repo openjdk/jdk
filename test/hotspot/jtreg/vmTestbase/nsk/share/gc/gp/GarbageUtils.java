@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,6 +245,12 @@ public final class GarbageUtils {
              }
          }
 
+        private static Throwable ultimateCause(Throwable t) {
+            while (t.getCause() != null) {
+                t = t.getCause();
+            }
+            return t;
+        }
 
          public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
             try {
@@ -253,6 +259,9 @@ public final class GarbageUtils {
             } catch (OutOfMemoryError e) {
                return numberOfOOMEs++;
             } catch (Throwable t) {
+                if (ultimateCause(t) instanceof OutOfMemoryError) {
+                    return numberOfOOMEs++;
+                }
                throw new RuntimeException(t);
             }
          }

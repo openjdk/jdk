@@ -1324,7 +1324,7 @@ public class JavacTrees extends DocTrees {
             switch (kind) {
                 case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
                 case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.warning(DiagnosticFlag.MANDATORY, pos, Warnings.ProcMessager(msg.toString()));
                 default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {

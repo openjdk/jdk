@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 #include "gc/g1/g1CardTable.hpp"
 #endif // INCLUDE_G1GC
 
+#define JVMCI_NOT_ENABLED_ERROR_MESSAGE "JVMCI is not enabled. Must specify '-XX:+EnableJVMCI' or '--add-modules=jdk.internal.vm.ci' to the java launcher."
+
 class JVMCIEnv;
 class JVMCICompiler;
 class JVMCICompileState;
@@ -46,9 +48,21 @@ class MetadataHandles;
 class JVMCINMethodData : public ResourceObj {
   friend class JVMCIVMStructs;
 
-  // Is HotSpotNmethod.name non-null? If so, the value is
-  // embedded in the end of this object.
-  bool _has_name;
+  union JVMCINMethodProperties {
+    uint8_t value;
+    struct {
+      // Is HotSpotNmethod.name non-null? If so, the value is
+      // embedded in the end of this object.
+      uint8_t _has_name      : 1,
+      // HotSpotNmethod.isDefault (e.g., compilation scheduled by CompileBroker)
+              _is_default    : 1,
+      // HotSpotNmethod.profileDeopt
+              _profile_deopt : 1,
+                             : 5;
+    } bits;
+  };
+
+  JVMCINMethodProperties _properties;
 
   // Index for the HotSpotNmethod mirror in the nmethod's oops table.
   // This is -1 if there is no mirror in the oops table.
@@ -74,6 +88,8 @@ class JVMCINMethodData : public ResourceObj {
   void initialize(int nmethod_mirror_index,
                    int nmethod_entry_patch_offset,
                    const char* nmethod_mirror_name,
+                   bool is_default,
+                   bool profile_deopt,
                    FailedSpeculation** failed_speculations);
 
   void* operator new(size_t size, const char* nmethod_mirror_name) {
@@ -86,11 +102,15 @@ public:
   static JVMCINMethodData* create(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
+                                  bool is_default,
+                                  bool profile_deopt,
                                   FailedSpeculation** failed_speculations) {
     JVMCINMethodData* result = new (nmethod_mirror_name) JVMCINMethodData();
     result->initialize(nmethod_mirror_index,
                        nmethod_entry_patch_offset,
                        nmethod_mirror_name,
+                       is_default,
+                       profile_deopt,
                        failed_speculations);
     return result;
   }
@@ -115,20 +135,32 @@ public:
   void add_failed_speculation(nmethod* nm, jlong speculation);
 
   // Gets the JVMCI name of the nmethod (which may be null).
-  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
+  const char* name() { return has_name() ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
 
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
-  void invalidate_nmethod_mirror(nmethod* nm);
+  void invalidate_nmethod_mirror(nmethod* nm, nmethod::InvalidationReason invalidation_reason);
 
   // Gets the mirror from nm's oops table.
-  oop get_nmethod_mirror(nmethod* nm, bool phantom_ref);
+  oop get_nmethod_mirror(nmethod* nm);
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
 
   int nmethod_entry_patch_offset() {
     return _nmethod_entry_patch_offset;
+  }
+
+  bool has_name() {
+    return _properties.bits._has_name;
+  }
+
+  bool is_default() {
+    return _properties.bits._is_default;
+  }
+
+  bool profile_deopt() {
+    return _properties.bits._profile_deopt;
   }
 };
 
@@ -372,8 +404,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Explicitly initialize HotSpotJVMCIRuntime itself
   void initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS);
-
-  void call_getCompiler(TRAPS);
 
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then

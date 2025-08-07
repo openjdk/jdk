@@ -36,8 +36,12 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+import jdk.internal.access.SharedSecrets;
 
 import sun.security.jca.JCAUtil;
+import sun.security.x509.AlgorithmId;
 
 /**
  * A utility class to get key length, validate keys, etc.
@@ -457,5 +461,90 @@ public final class KeyUtil {
         return alg.equalsIgnoreCase("TlsPremasterSecret")
                 || alg.equalsIgnoreCase("Generic");
     }
+
+    // destroy secret keys in a best-effort way
+    public static void destroySecretKeys(SecretKey... keys) {
+        for (SecretKey k : keys) {
+            if (k != null) {
+                if (k instanceof SecretKeySpec sk) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(sk);
+                } else {
+                    try {
+                        k.destroy();
+                    } catch (DestroyFailedException e) {
+                        // swallow
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * With a given DER encoded bytes, read through and return the AlgorithmID
+     * stored if it can be found.  If none is found or there is an IOException,
+     * null is returned.
+     *
+     * @param encoded DER encoded bytes
+     * @return AlgorithmID stored in the DER encoded bytes or null.
+     */
+    public static String getAlgorithm(byte[] encoded) throws IOException {
+        try {
+            return getAlgorithmId(encoded).getName();
+        } catch (IOException e) {
+            throw new IOException("No recognized algorithm detected in " +
+                "encoding", e);
+        }
+    }
+
+    /**
+     * With a given DER encoded bytes, read through and return the AlgorithmID
+     * stored if it can be found.
+     *
+     * @param encoded DER encoded bytes
+     * @return AlgorithmID stored in the DER encoded bytes
+     * @throws IOException if there was a DER or other parsing error
+     */
+    public static AlgorithmId getAlgorithmId(byte[] encoded) throws IOException {
+        DerInputStream is = new DerInputStream(encoded);
+        DerValue value = is.getDerValue();
+        if (value.tag != DerValue.tag_Sequence) {
+            throw new IOException("Unknown DER Format:  Value 1 not a Sequence");
+        }
+
+        is = value.data;
+        value = is.getDerValue();
+        // This route is for:  RSAPublic, Encrypted RSAPrivate, EC Public,
+        // Encrypted EC Private,
+        if (value.tag == DerValue.tag_Sequence) {
+            return AlgorithmId.parse(value);
+        } else if (value.tag == DerValue.tag_Integer) {
+            // RSAPrivate, ECPrivate
+            // current value is version, which can be ignored
+            value = is.getDerValue();
+            if (value.tag == DerValue.tag_OctetString) {
+                value = is.getDerValue();
+                if (value.tag == DerValue.tag_Sequence) {
+                    return AlgorithmId.parse(value);
+                } else {
+                    // OpenSSL/X9.62 (0xA0)
+                    ObjectIdentifier oid = value.data.getOID();
+                    AlgorithmId algo = new AlgorithmId(oid, (AlgorithmParameters) null);
+                    if (CurveDB.lookup(algo.getName()) != null) {
+                        return new AlgorithmId(AlgorithmId.EC_oid);
+                    }
+
+                }
+
+            } else if (value.tag == DerValue.tag_Sequence) {
+                // Public Key
+                return AlgorithmId.parse(value);
+            }
+
+        }
+        throw new IOException("No algorithm detected");
+    }
+
+
 }
 

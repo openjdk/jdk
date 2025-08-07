@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
@@ -119,7 +120,7 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
   // Load Effective Address
@@ -128,16 +129,21 @@ class MacroAssembler: public Assembler {
     a.lea(this, r);
   }
 
+  // Whether materializing the given address for a LDR/STR requires an
+  // additional lea instruction.
+  static bool legitimize_address_requires_lea(const Address &a, int size) {
+    return a.getMode() == Address::base_plus_offset &&
+           !Address::offset_ok_for_immed(a.offset(), exact_log2(size));
+  }
+
   /* Sometimes we get misaligned loads and stores, usually from Unsafe
      accesses, and these can exceed the offset range. */
   Address legitimize_address(const Address &a, int size, Register scratch) {
-    if (a.getMode() == Address::base_plus_offset) {
-      if (! Address::offset_ok_for_immed(a.offset(), exact_log2(size))) {
-        block_comment("legitimize_address {");
-        lea(scratch, a);
-        block_comment("} legitimize_address");
-        return Address(scratch);
-      }
+    if (legitimize_address_requires_lea(a, size)) {
+      block_comment("legitimize_address {");
+      lea(scratch, a);
+      block_comment("} legitimize_address");
+      return Address(scratch);
     }
     return a;
   }
@@ -320,6 +326,27 @@ class MacroAssembler: public Assembler {
 
   inline void ror(Register Rd, Register Rn, unsigned imm) {
     extr(Rd, Rn, Rn, imm);
+  }
+
+  inline void rolw(Register Rd, Register Rn, unsigned imm) {
+    extrw(Rd, Rn, Rn, (32 - imm));
+  }
+
+  inline void rol(Register Rd, Register Rn, unsigned imm) {
+    extr(Rd, Rn, Rn, (64 - imm));
+  }
+
+  using Assembler::rax1;
+  using Assembler::eor3;
+
+  inline void rax1(Register Rd, Register Rn, Register Rm) {
+    eor(Rd, Rn, Rm, ROR, 63); // Rd = Rn ^ rol(Rm, 1)
+  }
+
+  inline void eor3(Register Rd, Register Rn, Register Rm, Register Rk) {
+    assert(Rd != Rn, "Use tmp register");
+    eor(Rd, Rm, Rk);
+    eor(Rd, Rd, Rn);
   }
 
   inline void sxtbw(Register Rd, Register Rn) {
@@ -934,6 +961,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
+  void decode_klass_not_null_for_aot(Register dst, Register src);
+  void encode_klass_not_null_for_aot(Register dst, Register src);
   void encode_klass_not_null(Register r);
   void decode_klass_not_null(Register r);
   void encode_klass_not_null(Register dst, Register src);
@@ -1315,6 +1344,10 @@ public:
 
   // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
+    if (AOTCodeCache::is_on_for_dump()) {
+      // To calculate far_codestub_branch_size correctly.
+      return true;
+    }
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
@@ -1471,16 +1504,6 @@ public:
   //
 
   public:
-
-  void ldr_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
-      ldr(dest, const_addr);
-    } else {
-      uint64_t offset;
-      adrp(dest, InternalAddress(const_addr.target()), offset);
-      ldr(dest, Address(dest, offset));
-    }
-  }
 
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);

@@ -239,6 +239,9 @@ public class JDIBase {
 
             if (EventFilters.filtered(event)) {
                 // We filter out spurious ThreadStartEvents
+                ThreadStartEvent tse = (ThreadStartEvent) event;
+                log2("ThreadStartEvent is received while waiting for a breakpoint" +
+                     " event, thread: : " + tse.thread().name());
                 continue;
             }
 

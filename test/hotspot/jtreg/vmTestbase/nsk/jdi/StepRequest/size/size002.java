@@ -281,7 +281,7 @@ public class size002 extends JDIBase {
             switch (i) {
 
               case 0:
-                     thread1 = debuggee.threadByNameOrThrow(threadName1);
+                     thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName1);
 
                      log2("......setting up StepRequest with size StepRequest.STEP_LINE");
                      eventRequest1 = setting24StepRequest(thread1, StepRequest.STEP_LINE,

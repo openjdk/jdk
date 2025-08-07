@@ -48,147 +48,61 @@ address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 // Implementation of StubRoutines - for a description of how to
 // declare new blobs, stubs and entries , see stubDefinitions.hpp.
 
-// define arrays to hold stub and blob names
-
-// use a template to generate the initializer for the blob names array
-
-#define DEFINE_BLOB_NAME(blob_name)             \
-  # blob_name,
-
-const char* StubRoutines::_blob_names[StubGenBlobId::NUM_BLOBIDS] = {
-  STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
-};
-
-#undef DEFINE_BLOB_NAME
-
-#define DEFINE_STUB_NAME(blob_name, stub_name)          \
-  # stub_name ,                                         \
-
-// use a template to generate the initializer for the stub names array
-const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS] = {
-  STUBGEN_STUBS_DO(DEFINE_STUB_NAME)
-};
-
-#undef DEFINE_STUB_NAME
-
 // Define fields used to store blobs
 
-#define DEFINE_BLOB_FIELD(blob_name) \
+#define DEFINE_STUBGEN_BLOB_FIELD(blob_name)                            \
   BufferBlob* StubRoutines:: STUBGEN_BLOB_FIELD_NAME(blob_name) = nullptr;
 
-STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
+STUBGEN_BLOBS_DO(DEFINE_STUBGEN_BLOB_FIELD)
 
-#undef DEFINE_BLOB_FIELD
+#undef DEFINE_STUBGEN_BLOB_FIELD
 
-// Define fields used to store stub entries
+// Define fields used to store stubgen stub entries
 
-#define DEFINE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+#define DEFINE_STUBGEN_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
   address StubRoutines:: STUB_FIELD_NAME(field_name) = nullptr;
 
-#define DEFINE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+#define DEFINE_STUBGEN_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
 
-#define DEFINE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+#define DEFINE_STUBGEN_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
   address StubRoutines:: STUB_FIELD_NAME(field_name)[count] = { nullptr };
 
-STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT, DEFINE_ENTRY_FIELD_ARRAY)
+STUBGEN_ENTRIES_DO(DEFINE_STUBGEN_ENTRY_FIELD, DEFINE_STUBGEN_ENTRY_FIELD_INIT, DEFINE_STUBGEN_ENTRY_FIELD_ARRAY)
 
-#undef DEFINE_ENTRY_FIELD_ARRAY
-#undef DEFINE_ENTRY_FIELD_INIT
-#undef DEFINE_ENTRY_FIELD
+#undef DEFINE_STUBGEN_ENTRY_FIELD_ARRAY
+#undef DEFINE_STUBGEN_ENTRY_FIELD_INIT
+#undef DEFINE_STUBGEN_ENTRY_FIELD
 
 jint    StubRoutines::_verify_oop_count                         = 0;
 
 
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
-const char* StubRoutines::get_blob_name(StubGenBlobId id) {
-  assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");
-  return _blob_names[id];
+const char* StubRoutines::get_blob_name(BlobId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen blob %s", StubInfo::name(id));
+  return StubInfo::name(id);
 }
 
-const char* StubRoutines::get_stub_name(StubGenStubId id) {
-  assert(0 <= id && id < StubGenStubId::NUM_STUBIDS, "invalid stub id");
-  return _stub_names[id];
+const char* StubRoutines::get_stub_name(StubId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen stub %s", StubInfo::name(id));
+  return StubInfo::name(id);
 }
 
 #ifdef ASSERT
+// translate a stub id to an associated blob id while checking that it
+// is a stubgen stub
 
-// array holding start and end indices for stub ids associated with a
-// given blob. Given a blob with id (StubGenBlobId) blob_id for any
-// stub with id (StubGenStubId) stub_id declared within the blob:
-// _blob_offsets[blob_id] <= stub_id < _blob_offsets[blob_id+1]
-
-static int _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
-
-// macro used to compute blob limits
-#define BLOB_COUNT(blob_name)                                           \
-  counter += StubGenStubId_ ## blob_name :: NUM_STUBIDS_ ## blob_name;  \
-  _blob_limits[++index] = counter;                                      \
-
-// macro that checks stubs are associated with the correct blobs
-#define STUB_VERIFY(blob_name, stub_name)                               \
-  localStubId = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _id); \
-  globalStubId = (int) (StubGenStubId:: stub_name ## _id);              \
-  blobId = (int) (StubGenBlobId:: blob_name ## _id);                    \
-  assert((globalStubId >= _blob_limits[blobId] &&                       \
-          globalStubId < _blob_limits[blobId+1]),                       \
-         "stub " # stub_name " uses incorrect blob name " # blob_name); \
-  assert(globalStubId == _blob_limits[blobId] + localStubId,            \
-         "stub " # stub_name " id found at wrong offset!");             \
-
-bool verifyStubIds() {
-  // first compute the blob limits
-  int counter = 0;
-  int index = 0;
-  // populate offsets table with cumulative total of local enum counts
-  STUBGEN_BLOBS_DO(BLOB_COUNT);
-
-  // ensure 1) global stub ids lie in the range of the associated blob
-  // and 2) each blob's base + local stub id == global stub id
-  int globalStubId, blobId, localStubId;
-  STUBGEN_STUBS_DO(STUB_VERIFY);
-  return true;
-}
-
-#undef BLOB_COUNT
-#undef STUB_VERIFY
-
-// ensure we verify the blob ids when this compile unit is first entered
-bool _verified_stub_ids = verifyStubIds();
-
-
-// macro used by stub to blob translation
-
-#define BLOB_CHECK_OFFSET(blob_name)                                \
-  if (id < _blob_limits[((int)blobId) + 1]) { return blobId; }      \
-  blobId = StubGenBlobId:: blob_name ## _id;                        \
-
-// translate a global stub id to an associated blob id based on the
-// computed blob limits
-
-StubGenBlobId StubRoutines::stub_to_blob(StubGenStubId stubId) {
-  int id = (int)stubId;
-  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range!");
-  // start with no blob to catch stub id == -1
-  StubGenBlobId blobId = StubGenBlobId::NO_BLOBID;
-  STUBGEN_BLOBS_DO(BLOB_CHECK_OFFSET);
-  // if we reach here we should have the last blob id
-  assert(blobId == StubGenBlobId::NUM_BLOBIDS - 1, "unexpected blob id");
-  return blobId;
+BlobId StubRoutines::stub_to_blob(StubId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen stub %s", StubInfo::name(id));
+  return StubInfo::blob(id);
 }
 
 #endif // ASSERT
 
 // Initialization
-//
-// Note: to break cycle with universe initialization, stubs are generated in two phases.
-// The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
-// The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id); // only interface to generators
 
 void UnsafeMemoryAccess::create_table(int max_size) {
   UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
@@ -196,6 +110,7 @@ void UnsafeMemoryAccess::create_table(int max_size) {
 }
 
 bool UnsafeMemoryAccess::contains_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
@@ -206,6 +121,7 @@ bool UnsafeMemoryAccess::contains_pc(address pc) {
 }
 
 address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
@@ -215,13 +131,51 @@ address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
+// Used to retrieve mark regions that lie within a generated stub so
+// they can be saved along with the stub and used to reinit the table
+// when the stub is reloaded.
 
-static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
+void UnsafeMemoryAccess::collect_entries(address range_start, address range_end, GrowableArray<address>& entries)
+{
+  for (int i = 0; i < _table_length; i++) {
+    UnsafeMemoryAccess& e = _table[i];
+    assert((e._start_pc != nullptr &&
+            e._end_pc != nullptr &&
+            e._error_exit_pc != nullptr),
+           "search for entries found incomplete table entry");
+    if (e._start_pc >= range_start && e._end_pc <= range_end) {
+      assert(((e._error_exit_pc >= range_start &&
+               e._error_exit_pc <= range_end) ||
+              e._error_exit_pc == _common_exit_stub_pc),
+             "unexpected error exit pc");
+      entries.append(e._start_pc);
+      entries.append(e._end_pc);
+      // only return an exit pc when it is within the range of the stub
+      if (e._error_exit_pc != _common_exit_stub_pc) {
+        entries.append(e._error_exit_pc);
+      } else {
+        // an address outside the stub must be the common exit stub address
+        entries.append(nullptr);
+      }
+    }
+  }
+}
+
+static BufferBlob* initialize_stubs(BlobId blob_id,
                                     int code_size, int max_aligned_stubs,
                                     const char* timer_msg,
                                     const char* buffer_name,
                                     const char* assert_msg) {
+  assert(StubInfo::is_stubgen(blob_id), "not a stubgen blob %s", StubInfo::name(blob_id));
   ResourceMark rm;
+  if (code_size == 0) {
+    LogTarget(Info, stubs) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("%s\t not generated", buffer_name);
+    }
+    return nullptr;
+  }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
@@ -233,7 +187,9 @@ static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
   StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+  assert(code_size == 0 || buffer.insts_remaining() > 200,
+         "increase %s, code_size: %d, used: %d, free: %d",
+         assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
@@ -242,17 +198,18 @@ static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+
   return stubs_code;
 }
 
 #define DEFINE_BLOB_INIT_METHOD(blob_name)                              \
   void StubRoutines::initialize_ ## blob_name ## _stubs() {             \
     if (STUBGEN_BLOB_FIELD_NAME(blob_name) == nullptr) {                \
-      StubGenBlobId blob_id = StubGenBlobId:: STUB_ID_NAME(blob_name);  \
+      BlobId blob_id = BlobId:: JOIN3(stubgen, blob_name, id);          \
       int size = _ ## blob_name ## _code_size;                          \
       int max_aligned_size = 10;                                        \
       const char* timer_msg = "StubRoutines generation " # blob_name " stubs"; \
-      const char* name = "StubRoutines (" # blob_name "stubs)";         \
+      const char* name = "StubRoutines (" # blob_name " stubs)";        \
       const char* assert_msg = "_" # blob_name "_code_size";            \
       STUBGEN_BLOB_FIELD_NAME(blob_name) =                              \
         initialize_stubs(blob_id, size, max_aligned_size, timer_msg,    \
@@ -267,9 +224,9 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
 
 
 #define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
-void blob_name ## _stubs_init()  {                      \
-  StubRoutines::initialize_ ## blob_name ## _stubs();   \
-}
+  void blob_name ## _stubs_init()  {                    \
+    StubRoutines::initialize_ ## blob_name ## _stubs(); \
+  }
 
 STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 
@@ -279,7 +236,7 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
  * we generate the underlying driver method but this wrapper is needed
  * to perform special handling depending on where the compiler init
  * gets called from. it ought to be possible to remove this at some
- * point and have adeterminate ordered init.
+ * point and have a determinate ordered init.
  */
 
 void compiler_stubs_init(bool in_compiler_thread) {
@@ -296,7 +253,6 @@ void compiler_stubs_init(bool in_compiler_thread) {
     StubRoutines::initialize_compiler_stubs();
   }
 }
-
 
 //
 // Default versions of arraycopy functions

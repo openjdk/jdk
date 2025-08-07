@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  */
 /*
  * @test
- * @bug 8194743
+ * @bug 8194743 8345438 8356551 8349754
  * @summary Test valid placements of super()/this() in constructors
- * @enablePreview
  */
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -454,7 +453,7 @@ public class SuperInitGood {
         }
     }
 
-    // Lambdas within constructors
+    // Lambdas within constructors (JDK-8345438)
     public static class Test22 {
         public Test22() {
             Runnable r = () -> System.out.println();
@@ -487,6 +486,29 @@ public class SuperInitGood {
             };
             r.run();
             super();
+        }
+    }
+
+    // Receiver parameter syntax (JDK-8356551)
+    public static class Test23 {
+        public Test23() {
+            class Local {
+                Local(Test23 Test23.this) {
+                }
+            }
+            super();
+            new Local();
+        }
+    }
+
+    // Test for JDK-8349754
+    public static class Test24 {
+        private int i;
+        class Sub extends Test24 {
+            Sub() {
+                i = 3;      // here "i" refers to "Test23.this.i", not "this.i" - so it's OK
+                super();
+            }
         }
     }
 
@@ -535,5 +557,7 @@ public class SuperInitGood {
         new Test21((int)123);
         new Test21((float)123);
         new Test22('x');
+        new Test23();
+        new Test24();
     }
 }

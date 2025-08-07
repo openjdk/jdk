@@ -573,11 +573,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
-    # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t-"
   fi
+
+  # Set character encoding in source
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    CHARSET_CFLAGS="-finput-charset=utf-8"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # The -utf-8 option sets both source and execution character sets
+    CHARSET_CFLAGS="-utf-8 -validate-charset"
+  fi
+  TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $CHARSET_CFLAGS"
+  TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK $CHARSET_CFLAGS"
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -724,13 +732,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CFLAGS_CPU_JVM="-mno-multiple -mno-string"
       if test "x$FLAGS_CPU" = xppc64; then
         # -mminimal-toc fixes `relocation truncated to fit' error for gcc 4.1.
-        # Use ppc64 instructions, but schedule for power5
-        $1_CFLAGS_CPU="-mcpu=powerpc64 -mtune=power5"
+        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power8"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc"
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power10"
+        # Use Power8 for target cpu, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        # Use Power10 for tuning target, this is supported by gcc >= 10
+        POWER_TUNE_VERSION="-mtune=power10"
+        FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${POWER_TUNE_VERSION}],
+          IF_FALSE: [
+              POWER_TUNE_VERSION="-mtune=power8"
+          ]
+        )
+        $1_CFLAGS_CPU="-mcpu=power8 ${POWER_TUNE_VERSION}"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then

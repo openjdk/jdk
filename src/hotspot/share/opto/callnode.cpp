@@ -22,8 +22,9 @@
  *
  */
 
-#include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "code/vmreg.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -43,7 +44,6 @@
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "code/vmreg.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -266,8 +266,8 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) :
   assert(method != nullptr, "must be valid call site");
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
-  debug_only(_bci = -99);  // random garbage value
-  debug_only(_map = (SafePointNode*)-1);
+  DEBUG_ONLY(_bci = -99);  // random garbage value
+  DEBUG_ONLY(_map = (SafePointNode*)-1);
   _caller = caller;
   _depth  = 1 + (caller == nullptr ? 0 : caller->depth());
   _locoff = TypeFunc::Parms;
@@ -281,7 +281,7 @@ JVMState::JVMState(int stack_size) :
   _method(nullptr) {
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
-  debug_only(_map = (SafePointNode*)-1);
+  DEBUG_ONLY(_map = (SafePointNode*)-1);
   _caller = nullptr;
   _depth  = 1;
   _locoff = TypeFunc::Parms;
@@ -323,14 +323,14 @@ bool JVMState::same_calls_as(const JVMState* that) const {
 
 //------------------------------debug_start------------------------------------
 uint JVMState::debug_start()  const {
-  debug_only(JVMState* jvmroot = of_depth(1));
+  DEBUG_ONLY(JVMState* jvmroot = of_depth(1));
   assert(jvmroot->locoff() <= this->locoff(), "youngest JVMState must be last");
   return of_depth(1)->locoff();
 }
 
 //-------------------------------debug_end-------------------------------------
 uint JVMState::debug_end() const {
-  debug_only(JVMState* jvmroot = of_depth(1));
+  DEBUG_ONLY(JVMState* jvmroot = of_depth(1));
   assert(jvmroot->endoff() <= this->endoff(), "youngest JVMState must be last");
   return endoff();
 }
@@ -918,7 +918,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
   projs->fallthrough_proj      = nullptr;
   projs->fallthrough_catchproj = nullptr;
   projs->fallthrough_ioproj    = nullptr;
@@ -1303,6 +1303,57 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 
 
 //=============================================================================
+bool CallLeafPureNode::is_unused() const {
+  return proj_out_or_null(TypeFunc::Parms) == nullptr;
+}
+
+bool CallLeafPureNode::is_dead() const {
+  return proj_out_or_null(TypeFunc::Control) == nullptr;
+}
+
+/* We make a tuple of the global input state + TOP for the output values.
+ * We use this to delete a pure function that is not used: by replacing the call with
+ * such a tuple, we let output Proj's idealization pick the corresponding input of the
+ * pure call, so jumping over it, and effectively, removing the call from the graph.
+ * This avoids doing the graph surgery manually, but leaves that to IGVN
+ * that is specialized for doing that right. We need also tuple components for output
+ * values of the function to respect the return arity, and in case there is a projection
+ * that would pick an output (which shouldn't happen at the moment).
+ */
+TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
+  // Transparently propagate input state but parameters
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr));
+
+  // And add TOPs for the return values
+  for (uint i = TypeFunc::Parms; i < tf()->range()->cnt(); i++) {
+    tuple->set_req(i, C->top());
+  }
+
+  return tuple;
+}
+
+Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (is_dead()) {
+    return nullptr;
+  }
+
+  // We need to wait until IGVN because during parsing, usages might still be missing
+  // and we would remove the call immediately.
+  if (can_reshape && is_unused()) {
+    // The result is not used. We remove the call by replacing it with a tuple, that
+    // is later disintegrated by the projections.
+    return make_tuple_of_input_state_and_top_return_values(phase->C);
+  }
+
+  return CallRuntimeNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1451,21 +1502,15 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  if (GenerateSynchronizationCode) {
-    ins_req(nextmon,   lock->box_node());
-    ins_req(nextmon+1, lock->obj_node());
-  } else {
-    Node* top = Compile::current()->top();
-    ins_req(nextmon, top);
-    ins_req(nextmon, top);
-  }
+  ins_req(nextmon,   lock->box_node());
+  ins_req(nextmon+1, lock->obj_node());
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }
 
 void SafePointNode::pop_monitor() {
   // Delete last monitor from debug info
-  debug_only(int num_before_pop = jvms()->nof_monitors());
+  DEBUG_ONLY(int num_before_pop = jvms()->nof_monitors());
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   int scloff = jvms()->scloff();

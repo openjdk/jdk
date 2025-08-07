@@ -55,6 +55,7 @@ template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class NMTVMATreeTest;
   friend class NMTTreapTest;
+  friend class VMTWithVMATreeTest;
 public:
   class TreapNode {
     friend Treap;
@@ -212,12 +213,13 @@ private:
       seen_count++;
       if (last_seen == nullptr) {
         last_seen = node;
-        return;
+        return true;
       }
       if (COMPARATOR::cmp(last_seen->key(), node->key()) > 0) {
         failed = false;
       }
       last_seen = node;
+      return true;
     });
     assert(seen_count == _node_count, "the number of visited nodes do not match with the number of stored nodes");
     assert(!failed, "keys was not monotonically strongly increasing when visiting in order");
@@ -382,7 +384,9 @@ public:
         head = head->left();
       }
       head = to_visit.pop();
-      f(head);
+      if (!f(head)) {
+        return;
+      }
       head = head->right();
     }
   }
@@ -409,7 +413,9 @@ public:
       const int cmp_from = COMPARATOR::cmp(head->key(), from);
       const int cmp_to = COMPARATOR::cmp(head->key(), to);
       if (cmp_from >= 0 && cmp_to < 0) {
-        f(head);
+        if (!f(head)) {
+          return;
+        }
       }
       if (cmp_to < 0) {
         head = head->right();

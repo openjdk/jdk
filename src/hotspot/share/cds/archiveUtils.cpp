@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
@@ -168,7 +169,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(aot, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
     }
 
     return true;
@@ -207,7 +208,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
+      aot_log_error(aot)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
       MetaspaceShared::unrecoverable_writing_error();
     }
   }
@@ -233,7 +234,7 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    log_error(cds)("Failed to expand shared space to %zu bytes",
+    aot_log_error(aot)("Failed to expand shared space to %zu bytes",
                     need_committed_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
@@ -244,7 +245,7 @@ void DumpRegion::commit_to(char* newtop) {
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
+  log_debug(aot)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
@@ -270,16 +271,17 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  char* base = used() > 0 ? ArchiveBuilder::current()->to_requested(_base) : nullptr;
+  log_debug(aot)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(ArchiveBuilder::current()->to_requested(_base)));
+                 p2i(base));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
-  log_error(cds)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
+  aot_log_error(aot)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
                  _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
   if (strcmp(_name, failing_region) == 0) {
-    log_error(cds)(" required = %d", int(needed_bytes));
+    aot_log_error(aot)(" required = %d", int(needed_bytes));
   }
 }
 
@@ -295,7 +297,10 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 }
 
 void DumpRegion::pack(DumpRegion* next) {
-  assert(!is_packed(), "sanity");
+  if (!is_packed()) {
+    _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
+    _is_packed = true;
+  }
   _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
   if (next != nullptr) {

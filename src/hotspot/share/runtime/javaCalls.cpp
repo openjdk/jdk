@@ -91,7 +91,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   _anchor.copy(_thread->frame_anchor());
   _thread->frame_anchor()->clear();
 
-  debug_only(_thread->inc_java_call_counter());
+  DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
@@ -109,7 +109,7 @@ JavaCallWrapper::~JavaCallWrapper() {
 
   _thread->frame_anchor()->zap();
 
-  debug_only(_thread->dec_java_call_counter());
+  DEBUG_ONLY(_thread->dec_java_call_counter());
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);

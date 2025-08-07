@@ -109,19 +109,19 @@ class FrameMap : public CompilationResourceObj {
 
   static Register cpu_rnr2reg (int rnr) {
     assert(_init_done, "tables not initialized");
-    debug_only(cpu_range_check(rnr);)
+    DEBUG_ONLY(cpu_range_check(rnr);)
     return _cpu_rnr2reg[rnr];
   }
 
   static int cpu_reg2rnr (Register reg) {
     assert(_init_done, "tables not initialized");
-    debug_only(cpu_range_check(reg->encoding());)
+    DEBUG_ONLY(cpu_range_check(reg->encoding());)
     return _cpu_reg2rnr[reg->encoding()];
   }
 
   static void map_register(int rnr, Register reg) {
-    debug_only(cpu_range_check(rnr);)
-    debug_only(cpu_range_check(reg->encoding());)
+    DEBUG_ONLY(cpu_range_check(rnr);)
+    DEBUG_ONLY(cpu_range_check(reg->encoding());)
     _cpu_rnr2reg[rnr] = reg;
     _cpu_reg2rnr[reg->encoding()] = rnr;
   }

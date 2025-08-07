@@ -129,6 +129,9 @@ void VM_Version::setup_cpu_available_features() {
     snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
+
+  int features_offset = strnlen(buf, sizeof(buf));
+
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
@@ -191,7 +194,9 @@ void VM_Version::setup_cpu_available_features() {
     }
   }
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = _cpu_info_string + features_offset;
 }
 
 void VM_Version::os_aux_features() {

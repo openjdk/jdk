@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,14 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
+import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
+import jdk.jfr.internal.util.TimespanRate;
 import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.settings.Throttler;
+import jdk.jfr.internal.tracing.Modification;
+
 /**
  * Implementation of event type.
  *
@@ -43,6 +48,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJVM;
     private final boolean isJDK;
     private final boolean isMethodSampling;
+    private final boolean isCPUTimeMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -54,6 +60,7 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
+    private TimespanRate cpuRate;
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -66,19 +73,21 @@ public final class PlatformEventType extends Type {
     private boolean registered = true;
     private boolean committable = enabled && registered;
     private boolean hasLevel = false;
+    private Throttler throttler;
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
         super(name, Type.SUPER_TYPE_EVENT, id);
         this.dynamicSettings = dynamicSettings;
         this.isJVM = Type.isDefinedByJVM(id);
-        this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
+        this.isMethodSampling = determineMethodSampling();
+        this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
         this.isJDK = isJDK;
-        this.stackTraceOffset = stackTraceOffset(name, isJDK);
+        this.stackTraceOffset = determineStackTraceOffset();
     }
 
-    private static boolean isExceptionEvent(String name) {
-        switch (name) {
+    private boolean isExceptionEvent() {
+        switch (getName()) {
             case Type.EVENT_NAME_PREFIX + "JavaErrorThrow" :
             case Type.EVENT_NAME_PREFIX + "JavaExceptionThrow" :
                 return true;
@@ -86,28 +95,47 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private static boolean isUsingConfiguration(String name) {
-        switch (name) {
-            case Type.EVENT_NAME_PREFIX + "SocketRead"  :
-            case Type.EVENT_NAME_PREFIX + "SocketWrite" :
-            case Type.EVENT_NAME_PREFIX + "FileRead"    :
-            case Type.EVENT_NAME_PREFIX + "FileWrite"   :
-            case Type.EVENT_NAME_PREFIX + "FileForce"   :
+    private int determineStackTraceOffset() {
+        if (isJDK) {
+            // Order matters
+            if (isExceptionEvent()) {
+                return 4;
+            }
+            if (getModification() == Modification.TRACING) {
+                return 5;
+            }
+            return switch (getName()) {
+                case Type.EVENT_NAME_PREFIX + "SocketRead",
+                     Type.EVENT_NAME_PREFIX + "SocketWrite",
+                     Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
+                case Type.EVENT_NAME_PREFIX + "FileRead",
+                     Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                default -> 3;
+            };
+        }
+        return 3;
+    }
+
+    private boolean determineMethodSampling() {
+        if (!isJVM) {
+            return false;
+        }
+        switch (getName()) {
+            case Type.EVENT_NAME_PREFIX + "ExecutionSample":
+            case Type.EVENT_NAME_PREFIX + "NativeMethodSample":
                 return true;
         }
         return false;
     }
 
-    private static int stackTraceOffset(String name, boolean isJDK) {
-        if (isJDK) {
-            if (isExceptionEvent(name)) {
-                return 4;
-            }
-            if (isUsingConfiguration(name)) {
-                return 3;
-            }
+    public Modification getModification() {
+        switch (getName()) {
+            case Type.EVENT_NAME_PREFIX + "MethodTrace":
+                return Modification.TRACING;
+            case Type.EVENT_NAME_PREFIX + "MethodTiming":
+                return Modification.TIMING;
         }
-        return 3;
+        return Modification.NONE;
     }
 
     public void add(SettingDescriptor settingDescriptor) {
@@ -157,9 +185,24 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public void setThrottle(long eventSampleSize, long period_ms) {
+    public void setThrottle(long eventSampleSize, long periodInMillis) {
         if (isJVM) {
-            JVM.setThrottle(getId(), eventSampleSize, period_ms);
+            JVM.setThrottle(getId(), eventSampleSize, periodInMillis);
+        } else {
+            throttler.configure(eventSampleSize, periodInMillis);
+        }
+    }
+
+    public void setCPUThrottle(TimespanRate rate) {
+        if (isCPUTimeMethodSampling) {
+            this.cpuRate = rate;
+            if (isEnabled()) {
+                if (rate.isRate()) {
+                    JVM.setCPURate(rate.rate());
+                } else {
+                    JVM.setCPUPeriod(rate.periodNanos());
+                }
+            }
         }
     }
 
@@ -223,6 +266,13 @@ public final class PlatformEventType extends Type {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
+            } else if (isCPUTimeMethodSampling) {
+                TimespanRate r = enabled ? cpuRate : TimespanRate.OFF;
+                if (r.isRate()) {
+                    JVM.setCPURate(r.rate());
+                } else {
+                    JVM.setCPUPeriod(r.periodNanos());
+                }
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
@@ -360,6 +410,10 @@ public final class PlatformEventType extends Type {
         return isMethodSampling;
     }
 
+    public boolean isCPUTimeMethodSampling() {
+        return isCPUTimeMethodSampling;
+    }
+
     public void setStackFilterId(long id) {
         startFilterId = id;
     }
@@ -370,5 +424,13 @@ public final class PlatformEventType extends Type {
 
     public long getStackFilterId() {
         return startFilterId;
+    }
+
+    public Throttler getThrottler() {
+        return throttler;
+    }
+
+    public void setThrottler(Throttler throttler) {
+       this.throttler = throttler;
     }
 }

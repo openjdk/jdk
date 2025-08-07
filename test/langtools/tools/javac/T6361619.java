@@ -50,7 +50,8 @@ public class T6361619 extends AbstractProcessor {
 
         final PrintWriter out = new PrintWriter(System.err, true);
 
-        Iterable<String> flags = Arrays.asList("-processorpath", testClassDir,
+        Iterable<String> flags = Arrays.asList("--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                                               "-processorpath", testClassDir,
                                                "-processor", self,
                                                "-d", ".");
         DiagnosticListener<JavaFileObject> dl = new DiagnosticListener<JavaFileObject>() {
@@ -69,7 +70,9 @@ public class T6361619 extends AbstractProcessor {
             task.setTaskListener(tl);
 
             // should complete, without exceptions
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
         }
     }
 

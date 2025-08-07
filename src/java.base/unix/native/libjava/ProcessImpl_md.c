@@ -317,12 +317,23 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
         (*env)->ReleaseByteArrayElements(env, arr, (jbyte*) parr, JNI_ABORT);
 }
 
-#define IOE_FORMAT "error=%d, %s"
+#define IOE_FORMAT "%s, error: %d (%s) %s"
+
+#define SPAWN_HELPER_INTERNAL_ERROR_MSG "\n" \
+  "Possible reasons:\n" \
+  "  - Spawn helper ran into JDK version mismatch\n" \
+  "  - Spawn helper ran into unexpected internal error\n" \
+  "  - Spawn helper was terminated by another process\n" \
+  "Possible solutions:\n" \
+  "  - Restart JVM, especially after in-place JDK updates\n" \
+  "  - Check system logs for JDK-related errors\n" \
+  "  - Re-install JDK to fix permission/versioning problems\n" \
+  "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=FORK\n"
 
 static void
-throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
+throwIOExceptionImpl(JNIEnv *env, int errnum, const char *externalDetail, const char *internalDetail)
 {
-    const char *detail = defaultDetail;
+    const char *errorDetail;
     char *errmsg;
     size_t fmtsize;
     char tmpbuf[1024];
@@ -330,16 +341,22 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
 
     if (errnum != 0) {
         int ret = getErrorString(errnum, tmpbuf, sizeof(tmpbuf));
-        if (ret != EINVAL)
-            detail = tmpbuf;
+        if (ret != EINVAL) {
+            errorDetail = tmpbuf;
+        } else {
+            errorDetail = "unknown";
+        }
+    } else {
+        errorDetail = "none";
     }
+
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
-    fmtsize = sizeof(IOE_FORMAT) + strlen(detail) + 3 * sizeof(errnum);
+    fmtsize = sizeof(IOE_FORMAT) + strlen(externalDetail) + 3 * sizeof(errnum) + strlen(errorDetail) +  strlen(internalDetail) + 1;
     errmsg = NEW(char, fmtsize);
     if (errmsg == NULL)
         return;
 
-    snprintf(errmsg, fmtsize, IOE_FORMAT, errnum, detail);
+    snprintf(errmsg, fmtsize, IOE_FORMAT, externalDetail, errnum, errorDetail, internalDetail);
     s = JNU_NewStringPlatform(env, errmsg);
     if (s != NULL) {
         jobject x = JNU_NewObjectByName(env, "java/io/IOException",
@@ -351,13 +368,37 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
 }
 
 /**
+ * Throws IOException that signifies an internal error, e.g. spawn helper failure.
+ */
+static void
+throwInternalIOException(JNIEnv *env, int errnum, const char *externalDetail, int mode)
+{
+  switch (mode) {
+    case MODE_POSIX_SPAWN:
+      throwIOExceptionImpl(env, errnum, externalDetail, SPAWN_HELPER_INTERNAL_ERROR_MSG);
+      break;
+    default:
+      throwIOExceptionImpl(env, errnum, externalDetail, "");
+  }
+}
+
+/**
+ * Throws IOException that signifies a normal error.
+ */
+static void
+throwIOException(JNIEnv *env, int errnum, const char *externalDetail)
+{
+  throwIOExceptionImpl(env, errnum, externalDetail, "");
+}
+
+/**
  * Throws an IOException with a message composed from the result of waitpid status.
  */
-static void throwExitCause(JNIEnv *env, int pid, int status) {
+static void throwExitCause(JNIEnv *env, int pid, int status, int mode) {
     char ebuf[128];
     if (WIFEXITED(status)) {
         snprintf(ebuf, sizeof ebuf,
-            "Failed to exec spawn helper: pid: %d, exit value: %d",
+            "Failed to exec spawn helper: pid: %d, exit code: %d",
             pid, WEXITSTATUS(status));
     } else if (WIFSIGNALED(status)) {
         snprintf(ebuf, sizeof ebuf,
@@ -368,7 +409,7 @@ static void throwExitCause(JNIEnv *env, int pid, int status) {
             "Failed to exec spawn helper: pid: %d, status: 0x%08x",
             pid, status);
     }
-    throwIOException(env, 0, ebuf);
+    throwInternalIOException(env, 0, ebuf, mode);
 }
 
 #ifdef DEBUG_PROCESS
@@ -691,7 +732,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
         (fds[2] == -1 && pipe(err) < 0) ||
         (pipe(childenv) < 0) ||
         (pipe(fail) < 0)) {
-        throwIOException(env, errno, "Bad file descriptor");
+        throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }
     c->fds[0] = fds[0];
@@ -725,13 +766,13 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     if (resultPid < 0) {
         switch (c->mode) {
           case MODE_VFORK:
-            throwIOException(env, errno, "vfork failed");
+            throwInternalIOException(env, errno, "vfork failed", c->mode);
             break;
           case MODE_FORK:
-            throwIOException(env, errno, "fork failed");
+            throwInternalIOException(env, errno, "fork failed", c->mode);
             break;
           case MODE_POSIX_SPAWN:
-            throwIOException(env, errno, "posix_spawn failed");
+            throwInternalIOException(env, errno, "posix_spawn failed", c->mode);
             break;
         }
         goto Catch;
@@ -745,20 +786,21 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
             {
                 int tmpStatus = 0;
                 int p = waitpid(resultPid, &tmpStatus, 0);
-                throwExitCause(env, p, tmpStatus);
+                throwExitCause(env, p, tmpStatus, c->mode);
                 goto Catch;
             }
         case sizeof(errnum):
             if (errnum != CHILD_IS_ALIVE) {
                 /* This can happen if the spawn helper encounters an error
                  * before or during the handshake with the parent. */
-                throwIOException(env, 0, "Bad code from spawn helper "
-                                         "(Failed to exec spawn helper)");
+                throwInternalIOException(env, 0,
+                                         "Bad code from spawn helper (Failed to exec spawn helper)",
+                                         c->mode);
                 goto Catch;
             }
             break;
         default:
-            throwIOException(env, errno, "Read failed");
+          throwInternalIOException(env, errno, "Read failed", c->mode);
             goto Catch;
         }
     }
@@ -770,7 +812,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
         throwIOException(env, errnum, "Exec failed");
         goto Catch;
     default:
-        throwIOException(env, errno, "Read failed");
+        throwInternalIOException(env, errno, "Read failed", c->mode);
         goto Catch;
     }
 
