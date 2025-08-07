@@ -25,6 +25,9 @@
 // Precompiled headers are turned off if the user passes
 // --disable-precompiled-headers to configure.
 
+// These header files are included in at least 130 C++ files, as of
+// measurements made in August 2025.
+
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
