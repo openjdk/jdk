@@ -34,20 +34,23 @@
 
 class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
 #ifndef PRODUCT
+#ifdef ASSERT
  public:
   static const int TIMEOUT_SIGNAL = SIGALRM;
   void compiler_signal_handler(int signo, siginfo_t* info, void* context);
  private:
   timer_t          _timeout_timer;
   volatile bool    _timeout_armed;
+#endif // ASSERT
 #endif // !PRODUCT
  public:
-  CompilerThreadTimeoutLinux() NOT_PRODUCT(: _timeout_timer(nullptr)COMMA
-                                             _timeout_armed(false)) {};
+  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(:
+    _timeout_timer(nullptr)COMMA
+    _timeout_armed(false))) {};
 
-  bool init_timeout() PRODUCT_RETURN_(return true;);
-  void arm()          PRODUCT_RETURN;
-  void disarm()       PRODUCT_RETURN;
+  bool init_timeout();
+  void arm();
+  void disarm();
 };
 
 #endif //LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
