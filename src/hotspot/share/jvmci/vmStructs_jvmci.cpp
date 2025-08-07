@@ -141,12 +141,14 @@
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dsinh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+  static_field(CompilerToVM::Data,             crc_table_addr,                         address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
@@ -417,8 +419,6 @@
   static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
   static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
-  static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
-  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
   static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
   static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
   static_field(StubRoutines,                _multiplyToLen,                                   address)                               \

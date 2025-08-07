@@ -738,6 +738,8 @@ void JavaThread::run() {
   assert(JavaThread::current() == this, "sanity check");
   assert(!Thread::current()->owns_locks(), "sanity check");
 
+  JFR_ONLY(Jfr::on_thread_start(this);)
+
   DTRACE_THREAD_PROBE(start, this);
 
   // This operation might block. We call that after all safepoint checks for a new thread has
@@ -1146,7 +1148,6 @@ void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
   oop vt_oop = vthread();
   if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-    java_lang_Thread::set_interrupted(threadObj(), true);
     this->interrupt();
   }
 }
@@ -2098,7 +2099,7 @@ bool JavaThread::sleep(jlong millis) {
 
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
-// if the thread was interrupted.
+// if the thread was interrupted or async exception was installed.
 bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
   assert(nanos >= 0, "nanos are in range");
@@ -2118,6 +2119,9 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   jlong nanos_remaining = nanos;
 
   for (;;) {
+    if (has_async_exception_condition()) {
+      return false;
+    }
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;
