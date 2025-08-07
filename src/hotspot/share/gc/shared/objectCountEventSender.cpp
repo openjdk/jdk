@@ -24,4 +24,8 @@
 
 #include "gc/shared/objectCountEventSender.hpp"
 
+#if INCLUDE_SERVICES
+
 bool ObjectCountEventSender::_should_send_requestable_event = false;
+
+#endif // INCLUDE_SERVICES

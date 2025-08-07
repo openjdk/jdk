@@ -1,5 +1,7 @@
 #include "gc/shared/objectCountEventSender.hpp"
 
+#if INCLUDE_SERVICES
+
 inline void ObjectCountEventSender::enable_requestable_event() {
   ObjectCountEventSender::_should_send_requestable_event = true;
 }
@@ -44,3 +46,5 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& time
     send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
   }
 }
+
+#endif // INCLUDE_SERVICES
