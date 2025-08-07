@@ -235,7 +235,7 @@ public:
                            uint survivor_cset_region_length);
 
   uint region_length() const       { return young_region_length() +
-                                              initial_old_region_length(); }
+                                            initial_old_region_length(); }
   uint young_region_length() const { return eden_region_length() +
                                             survivor_region_length(); }
 
