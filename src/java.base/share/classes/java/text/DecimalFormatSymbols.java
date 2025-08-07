@@ -90,7 +90,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see java.util.Locale.Category#FORMAT
      */
     public DecimalFormatSymbols() {
-        initialize( Locale.getDefault(Locale.Category.FORMAT) );
+        initialize(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -113,8 +113,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param locale the desired locale
      * @throws    NullPointerException if {@code locale} is null
      */
-    public DecimalFormatSymbols( Locale locale ) {
-        initialize( locale );
+    public DecimalFormatSymbols(Locale locale) {
+        initialize(locale);
     }
 
     /**
