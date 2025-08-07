@@ -551,9 +551,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
       } else {
-        oop jlm = module_to->module();
-        assert(jlm != nullptr, "Null jlm in module_to ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_to->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
@@ -578,9 +578,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
-        oop jlm = module_from->module();
-        assert(jlm != nullptr, "Null jlm in module_from ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_from->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);

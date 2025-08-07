@@ -2672,6 +2672,7 @@ public final class Math {
      * @return  The hyperbolic sine of {@code x}.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static double sinh(double x) {
         return StrictMath.sinh(x);
     }

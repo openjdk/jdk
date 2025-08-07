@@ -32,7 +32,8 @@ import java.util.List;
  * A message within the message file.
  * A message is a series of lines containing a "name=value" property,
  * optionally preceded by a comment describing the use of placeholders
- * such as {0}, {1}, etc within the property value.
+ * such as {0}, {1}, etc within the property value, a lint category,
+ * and/or a list of diagnostic flags.
  */
 public final class Message {
     final MessageLine firstLine;
@@ -49,7 +50,7 @@ public final class Message {
     public MessageInfo getMessageInfo() {
         if (messageInfo == null) {
             MessageLine l = firstLine.prev;
-            if (l != null && l.isLint()) {
+            while (l != null && (l.isLint() || l.isDiagnosticFlags())) {
                 l = l.prev;
             }
             if (l != null && l.isInfo())
@@ -74,7 +75,7 @@ public final class Message {
             while (l.text.isEmpty())
                 l = l.next;
         } else {
-            if (l.prev != null && (l.prev.isInfo() || l.prev.isLint()))
+            while (l.prev != null && (l.prev.isInfo() || l.prev.isLint() || l.prev.isDiagnosticFlags()))
                 l = l.prev;
         }
 

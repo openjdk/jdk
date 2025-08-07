@@ -132,14 +132,14 @@ InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik,
 }
 
 // Redefining / retransforming?
-const Klass* JfrClassTransformer::find_existing_klass(const InstanceKlass* ik, JavaThread* thread) {
+const InstanceKlass* JfrClassTransformer::find_existing_klass(const InstanceKlass* ik, JavaThread* thread) {
   assert(ik != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   JvmtiThreadState* const state = thread->jvmti_thread_state();
   return state != nullptr ? klass_being_redefined(ik, state) : nullptr;
 }
 
-const Klass* JfrClassTransformer::klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state) {
+const InstanceKlass* JfrClassTransformer::klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state) {
   assert(ik != nullptr, "invariant");
   assert(state != nullptr, "invariant");
   const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
@@ -149,9 +149,10 @@ const Klass* JfrClassTransformer::klass_being_redefined(const InstanceKlass* ik,
   for (int i = 0; i < redef_klasses->length(); ++i) {
     const Klass* const existing_klass = redef_klasses->at(i);
     assert(existing_klass != nullptr, "invariant");
+    assert(existing_klass->is_instance_klass(), "invariant");
     if (ik->name() == existing_klass->name() && ik->class_loader_data() == existing_klass->class_loader_data()) {
       // 'ik' is a scratch klass. Return the klass being redefined.
-      return existing_klass;
+      return InstanceKlass::cast(existing_klass);
     }
   }
   return nullptr;
