@@ -39,8 +39,8 @@ import sun.security.x509.AlgorithmId;
 
 public class XECParameters {
 
-    static final XECParameters X25519;
-    static final XECParameters X448;
+    public static final XECParameters X25519;
+    public static final XECParameters X448;
 
     private static final ParametersMap<XECParameters> namedParams =
         new ParametersMap<>();

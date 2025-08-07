@@ -1,5 +1,7 @@
 package com.sun.crypto.provider;
 
+import sun.security.ec.XECOperations;
+import sun.security.ec.XECParameters;
 import sun.security.jca.JCAUtil;
 import sun.security.provider.NamedKEM;
 import sun.security.util.ArrayUtil;
@@ -59,11 +61,11 @@ public final class XWing extends NamedKEM {
 
         // X25519:
         var pkX = parsedPk.x();
-        var pkXKey = parsedPk.getX25519PublicKey();
-        byte[] ekX = new byte[32];
+        var ekX = new byte[32];
         sr.nextBytes(ekX);
-        var ctX = X25519.dh(X25519.privateKey(ekX), X25519.basePoint());
-        var ssX = X25519.dh(X25519.privateKey(ekX), pkXKey);
+		var x25519 = new XECOperations(XECParameters.X25519);
+		var ctX = x25519.encodedPointMultiply(ekX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
+		var ssX = x25519.encodedPointMultiply(ekX, pkX);
 
         // Combine:
         var ss = combiner(ssM, ssX, ctX, pkX);
@@ -93,15 +95,16 @@ public final class XWing extends NamedKEM {
 		var ssM = new ML_KEM("ML-KEM-768").decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(parsedSk.m()), new ML_KEM.K_PKE_CipherText(ctM));
 
         // X25519:
-        var skX = parsedSk.getX25519PrivateKey();
-        var ctX = Arrays.copyOfRange(encap, 1088, 1120);
-        var pkX = parsedSk.derivePublicKey().x();
+		var skX = parsedSk.x();
+		var ctX = Arrays.copyOfRange(encap, 1088, 1120);
         byte[] ssX;
+		byte[] pkX;
         try {
-            ssX = X25519.dh(skX, X25519.publicKey(ctX));
+			var x25519 = new XECOperations(XECParameters.X25519);
+			ssX = x25519.encodedPointMultiply(skX, ctX);
+			pkX = x25519.encodedPointMultiply(skX, BigInteger.valueOf(XECParameters.X25519.getBasePoint()));
         } finally {
-            destroyQuietly(skX);
-            destroyQuietly(parsedSk);
+			parsedSk.destroy();
         }
 
         // Combine:
@@ -159,86 +162,6 @@ public final class XWing extends NamedKEM {
         } catch (NoSuchAlgorithmException e) {
             throw new UnsupportedOperationException("JVM does not support SHA3-256", e);
         }
-    }
-
-
-    private static void destroyQuietly(Destroyable destroyable) {
-        if (destroyable != null) {
-            try {
-                destroyable.destroy();
-            } catch (DestroyFailedException e) {
-                // Ignore
-            }
-        }
-    }
-
-    /**
-     * Utility class for X25519 operations.
-     */
-    static class X25519 {
-
-        private X25519() {}
-
-        public static XECPublicKey basePoint() {
-            record Holder() {
-                static final XECPublicKey INSTANCE = publicKey(BigInteger.valueOf(9L)); // base point 9 (see RFC 7748)
-            }
-            return Holder.INSTANCE;
-        }
-
-        public static XECPublicKey publicKey(byte[] littleEndianU) {
-            if (littleEndianU == null || littleEndianU.length != 32) {
-                throw new IllegalArgumentException("Public key must be 32 bytes long");
-            }
-            byte[] bigEndianU = littleEndianU.clone();
-            ArrayUtil.reverse(bigEndianU);
-            return publicKey(new BigInteger(1, bigEndianU));
-        }
-
-        public static XECPublicKey publicKey(BigInteger u) {
-            try {
-                return (XECPublicKey) keyFactory().generatePublic(new XECPublicKeySpec(NamedParameterSpec.X25519, u));
-            } catch (InvalidKeySpecException e) {
-                throw new AssertionError("Key spec created in-place", e);
-            }
-        }
-
-        public static XECPrivateKey privateKey(byte[] sk) {
-            try {
-                return (XECPrivateKey) keyFactory().generatePrivate(new XECPrivateKeySpec(NamedParameterSpec.X25519, sk));
-            } catch (InvalidKeySpecException e) {
-                throw new IllegalArgumentException("Internal implementation passed unsuitable key", e);
-            }
-        }
-
-        public static byte[] dh(PrivateKey privateKey, PublicKey publicKey) {
-            try {
-                var keyAgreement = KeyAgreement.getInstance("X25519");
-                keyAgreement.init(privateKey);
-                keyAgreement.doPhase(publicKey, true);
-                return keyAgreement.generateSecret();
-            } catch (NoSuchAlgorithmException e) {
-                throw new UnsupportedOperationException("JVM does not support X25519", e);
-            } catch (InvalidKeyException e) {
-                throw new IllegalArgumentException("Internal implementation passed unsuitable key", e);
-            }
-        }
-
-        private static KeyFactory keyFactory() {
-            record Holder() {
-                static final KeyFactory INSTANCE = createKeyFactory();
-            }
-            return Holder.INSTANCE;
-        }
-
-        private static KeyFactory createKeyFactory() {
-            try {
-                return KeyFactory.getInstance("X25519");
-            } catch (NoSuchAlgorithmException e) {
-                throw new UnsupportedOperationException("JVM does not support X25519", e);
-            }
-        }
-
     }
 
 }
