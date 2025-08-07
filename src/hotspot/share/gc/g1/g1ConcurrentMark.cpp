@@ -2981,7 +2981,7 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
 #define G1PPRL_LEN_H_FORMAT           "  %14s"
 #define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
-#define G1PPRL_GID_LIVENESS_FORMAT    "  %#.3g"
+#define G1PPRL_GID_LIVENESS_FORMAT    "  %9.2f"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
