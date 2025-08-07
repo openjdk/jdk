@@ -47,7 +47,7 @@
 #define JVMTI_AGENT_NAME "JvmtiStressAgent"
 
 /* Global settings and some statistics counters */
-struct GlobalData {
+typedef struct {
 
   /* Verbose logging support */
   jboolean is_verbose;
@@ -128,92 +128,59 @@ struct GlobalData {
 
   /* File for debug output */
   FILE* log_file;
-
-  GlobalData(jvmtiEnv* jvmti, jboolean is_debugger_enabled, jboolean is_verbose)
-          : is_verbose(is_verbose)
-          , is_debugger_enabled(is_debugger_enabled)
-          , cbBreakpoint(0)
-          , cbClassFileLoadHook(0)
-          , cbClassLoad(0)
-          , cbClassPrepare(0)
-          , cbCompiledMethodLoad(0)
-          , cbCompiledMethodUnload(0)
-          , cbDataDumpRequest(0)
-          , cbDynamicCodeGenerated(0)
-          , cbException(0)
-          , cbExceptionCatch(0)
-          , cbFieldAccess(0)
-          , cbFieldModification(0)
-          , cbFramePop(0)
-          , cbGarbageCollectionFinish(0)
-          , cbGarbageCollectionStart(0)
-          , cbMethodEntry(0)
-          , cbMethodExit(0)
-          , cbMonitorContendedEnter(0)
-          , cbMonitorContendedEntered(0)
-          , cbMonitorWait(0)
-          , cbMonitorWaited(0)
-          , cbNativeMethodBind(0)
-          , cbObjectFree(0)
-          , cbResourceExhausted(0)
-          , cbSampledObjectAlloc(0)
-          , cbSingleStep(0)
-          , cbThreadEnd(0)
-          , cbThreadStart(0)
-          , cbVirtualThreadEnd(0)
-          , cbVirtualThreadStart(0)
-          , cbVMDeath(0)
-          , cbVMInit(0)
-          , cbVMObjectAlloc(0)
-          , inspectedMethods(0)
-          , inspectedVariables(0) {
-
-
-    this->finished_lock = create_raw_monitor(jvmti, "Finished lock");
-    this->agent_request_stop = JNI_FALSE;
-    this->is_agent_finished = JNI_FALSE;
-
-    /* Set jvmti stress properties */
-    this->heap_sampling_interval = 1000;
-    this->events_interval = 1000;
-    this->frequent_events_interval = 10;
-
-    this->is_tracing_enabled = JNI_TRUE;
-    this->are_events_enabled = JNI_TRUE;
-    this->are_frequent_events_enabled = JNI_TRUE;
-    // disabled so far
-    this->is_heap_iterate_enabled = JNI_FALSE;
-    this->is_heap_sampling_enabled = JNI_FALSE;
-
-
-    if (this->is_debugger_enabled) {
-      this->events_excluded_size = 0;
-      this->events_excluded = nullptr;
-    } else {
-      this->events_excluded_size = 4;
-      this->events_excluded = new jint[] {
-        JVMTI_EVENT_BREAKPOINT,
-        JVMTI_EVENT_FIELD_ACCESS,
-        JVMTI_EVENT_FIELD_MODIFICATION,
-        JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
-      };
-    }
-    if (this->is_verbose) {
-      this->log_file = fopen("JvmtiStressAgent.out", "w");
-    }
-
-  }
-
-  ~GlobalData() {
-    delete(this->events_excluded);
-    if (this->is_verbose) {
-      fclose(this->log_file);
-    }
-  }
-};
+} GlobalData;
 
 GlobalData *gdata;
 
+static GlobalData*
+gdata_init(jboolean is_debugger_enabled, jboolean is_verbose) {
+  static GlobalData data;
+  (void) memset(&data, 0, sizeof (GlobalData));
+
+  data.is_debugger_enabled = is_debugger_enabled;
+  data.is_verbose = is_verbose;
+
+  data.agent_request_stop = JNI_FALSE;
+  data.is_agent_finished = JNI_FALSE;
+
+  /* Set jvmti stress properties */
+  data.heap_sampling_interval = 1000;
+  data.frequent_events_interval = 10;
+
+  data.is_tracing_enabled = JNI_TRUE;
+  data.are_events_enabled = JNI_TRUE;
+  data.are_frequent_events_enabled = JNI_TRUE;
+  // disabled so far
+  data.is_heap_iterate_enabled = JNI_FALSE;
+  data.is_heap_sampling_enabled = JNI_FALSE;
+
+
+  if (data.is_debugger_enabled) {
+    data.events_excluded_size = 0;
+    data.events_excluded = nullptr;
+  } else {
+    data.events_excluded_size = 4;
+    data.events_excluded = new jint[] {
+      JVMTI_EVENT_BREAKPOINT,
+      JVMTI_EVENT_FIELD_ACCESS,
+      JVMTI_EVENT_FIELD_MODIFICATION,
+      JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
+    };
+  }
+  if (data.is_verbose) {
+    data.log_file = fopen("JvmtiStressAgent.out", "w");
+  }
+
+  return &data;
+}
+
+void
+gdata_close() {
+  free(gdata->events_excluded);
+  if (gdata->is_verbose) {
+    fclose(gdata->log_file);
+  }
+}
 
 // Internal buffer length for all messages
 #define MESSAGE_LIMIT 16384
@@ -1001,8 +968,9 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     }
     free(opts);
   }
-  gdata = new GlobalData(jvmti, is_debugger_enabled, is_verbose);
+  gdata = gdata_init(is_debugger_enabled, is_verbose);
   get_capabilities(jvmti);
+  gdata->finished_lock = create_raw_monitor(jvmti, "Finished lock");
   set_callbacks(jvmti, JNI_TRUE);
   // Enable all events until start jvmti stress agent.
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
@@ -1016,5 +984,5 @@ Agent_OnUnload(JavaVM *vm) {
   if (!gdata->agent_request_stop) {
     printf("Agent_OnUnload happened before requested stop.\n");
   }
-  delete gdata;
+  gdata_close();
 }
