@@ -24,37 +24,32 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Optional;
+import java.util.Objects;
 
-public interface WinLauncherMixin {
-
-    boolean isConsole();
-
-    /**
-     * Gets the start menu shortcut of this application launcher.
-     * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the start
-     * menu shortcut for this application launcher was made and an empty
-     * {@link Optional} instance if there was no request about the start menu
-     * shortcut for this application launcher.
-     *
-     * @return the start menu shortcut of this application launcher
-     */
-    Optional<LauncherShortcut> startMenuShortcut();
+/**
+ * The directory in which to run an application launcher when it is started from
+ * a shortcut.
+ */
+public enum LauncherShortcutStartupDirectory {
 
     /**
-     * Gets the desktop shortcut of this application launcher.
+     * Platform-specific default value.
      * <p>
-     * Returns a non-empty {@link Optional} instance if a request about the desktop
-     * shortcut for this application launcher was made and an empty {@link Optional}
-     * instance if there was no request about the desktop shortcut for this
-     * application launcher.
-     *
-     * @return the start menu shortcut of this application launcher
+     * On Windows, it indicates that the startup directory should be the package's
+     * installation directory.
+     * <p>
+     * On Linux, it indicates that a shortcut doesn't have the startup directory
+     * configured explicitly.
      */
-    Optional<LauncherShortcut> desktopShortcut();
+    DEFAULT("true");
 
-    record Stub(boolean isConsole, Optional<LauncherShortcut> startMenuShortcut,
-            Optional<LauncherShortcut> desktopShortcut) implements WinLauncherMixin {
+    LauncherShortcutStartupDirectory(String stringValue) {
+        this.stringValue = Objects.requireNonNull(stringValue);
     }
+
+    public String asStringValue() {
+        return stringValue;
+    }
+
+    private final String stringValue;
 }
