@@ -42,7 +42,8 @@ public final class PrecompiledHeaders {
     private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+.hpp)\\s*\\\\?");
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
-    private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
+    private static final String PRECOMPILED_HPP_NAME = "precompiled.hpp";
+    private static final String PRECOMPILED_HPP_PATH = "src/hotspot/share/precompiled/" + PRECOMPILED_HPP_NAME;
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
     private static final String HOTSPOT_SOURCE_PREFIX = "/jdk/src/hotspot/share/";
 
@@ -77,6 +78,8 @@ public final class PrecompiledHeaders {
             occurrences = files
                     .filter(file -> file.getFileName().toString().endsWith(".d"))
                     .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
+                    .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
+                    .filter(Predicate.not(file -> file.getFileName().toString().contains(PRECOMPILED_HPP_NAME)))
                     .flatMap(file -> {
                         try {
                             return Files.lines(file);
@@ -93,6 +96,7 @@ public final class PrecompiledHeaders {
                     // Avoid compiler specific headers
                     .filter(Predicate.not(dependency -> dependency.endsWith("_gcc.hpp")))
                     .filter(Predicate.not(dependency -> dependency.endsWith("_visCPP.hpp")))
+                    .filter(Predicate.not(dependency -> dependency.endsWith("/" + PRECOMPILED_HPP_NAME)))
                     .map(dependency -> dependency.replace(HOTSPOT_SOURCE_PREFIX, ""))
                     .collect(Collectors.toMap(Function.identity(), s -> 1, Integer::sum));
         }
@@ -114,7 +118,7 @@ public final class PrecompiledHeaders {
             }
         }
 
-        Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
+        Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP_PATH);
         try (Stream<String> lines = Files.lines(precompiledHpp)) {
             String precompiledHppHeader = lines
                     .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
