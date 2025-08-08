@@ -40,13 +40,10 @@ class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
   void compiler_signal_handler(int signo, siginfo_t* info, void* context);
  private:
   timer_t          _timeout_timer;
-  volatile bool    _timeout_armed;
 #endif // ASSERT
 #endif // !PRODUCT
  public:
-  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(:
-    _timeout_timer(nullptr)COMMA
-    _timeout_armed(false))) {};
+  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(: _timeout_timer(nullptr))) {};
 
   bool init_timeout();
   void arm();
