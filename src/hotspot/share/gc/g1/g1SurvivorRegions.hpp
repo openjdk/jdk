@@ -32,11 +32,11 @@ template <typename T>
 class GrowableArray;
 class G1HeapRegion;
 
+// Set of current survivor regions.
 class G1SurvivorRegions {
-private:
-  GrowableArray<G1HeapRegion*>* _regions;
-  volatile size_t             _used_bytes;
-  G1RegionsOnNodes            _regions_on_node;
+  GrowableArray<G1HeapRegion*> _regions;
+  volatile size_t _used_bytes;
+  G1RegionsOnNodes _regions_on_node;
 
 public:
   G1SurvivorRegions();
@@ -50,7 +50,7 @@ public:
   uint length() const;
   uint regions_on_node(uint node_index) const;
 
-  const GrowableArray<G1HeapRegion*>* regions() const {
+  const GrowableArray<G1HeapRegion*>& regions() const {
     return _regions;
   }
 
