@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_GRAPHKIT_HPP
 #define SHARE_OPTO_GRAPHKIT_HPP
 
+#include "runtime.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -772,6 +773,20 @@ class GraphKit : public Phase {
                           Node* parm2 = nullptr, Node* parm3 = nullptr,
                           Node* parm4 = nullptr, Node* parm5 = nullptr,
                           Node* parm6 = nullptr, Node* parm7 = nullptr);
+
+#ifndef PRODUCT
+  // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, NN... in) {
+    int flags = RC_LEAF;
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+
+    Node* str_node = _gvn.transform(new ConPNode(TypeRawPtr::make(((address) str))));
+    Node* call = make_runtime_call(flags, OptoRuntime::debug_print_Type(in...), call_addr, "debug_print", TypeRawPtr::BOTTOM, str_node, in...);
+
+    return call;
+  }
+#endif // PRODUCT
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);
