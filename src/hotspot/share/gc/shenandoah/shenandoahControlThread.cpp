@@ -58,10 +58,9 @@ void ShenandoahControlThread::run_service() {
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
 
-  // KlassInfoTable is a StackObj that shouldn't be heap-allocated.
-  // Use a static instance in the control thread to persist through GC cycles.
-  static KlassInfoTable temp_cit(false);
-  heap->set_cit(&temp_cit);
+  // Create the KlassInfoTable for Shenandoah.
+  KlassInfoTable cit(false);
+  heap->set_cit(&cit);
 
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
@@ -254,6 +253,8 @@ void ShenandoahControlThread::run_service() {
     }
     os::naked_short_sleep(sleep);
   }
+
+  heap->set_cit(nullptr);
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {

@@ -5,6 +5,7 @@
 #include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/mutex.hpp"
 
 class ShenandoahObjectCountClosure {
 private:

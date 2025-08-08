@@ -254,7 +254,8 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
-  // Create Shenandoah's KlassInfoTable
+  // Create Shenandoah's KlassInfoTable.
+  // Used for JFR object count event support.
   inline void set_cit(KlassInfoTable* cit);
 
   // Return Shenandoah's KlassInfoTable
