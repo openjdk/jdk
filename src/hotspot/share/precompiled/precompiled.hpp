@@ -335,7 +335,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "oops/weakHandle.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "opto/c2_globals.hpp"
 #include "prims/jvmtiExport.hpp"
