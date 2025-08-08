@@ -267,13 +267,13 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         return version == Version.HTTP_3 && http3Discovery() == HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
     }
 
-    Http3DiscoveryMode http3Discovery() {
-        var h3Discovery = getOption(H3_DISCOVERY);
-        if (h3Discovery.isPresent()) return h3Discovery.get();
-        var version = this.version.orElse(null);
-        return version == null
-                ? HttpOption.Http3DiscoveryMode.ALT_SVC
-                : HttpOption.Http3DiscoveryMode.ANY;
+    final Http3DiscoveryMode http3Discovery() {
+        // see if discovery mode is set on the request
+        final var h3Discovery = getOption(H3_DISCOVERY);
+        // if no explicit discovery mode is set, then default to "ANY"
+        // irrespective of whether the HTTP/3 version may have been
+        // set on the HttpClient or the HttpRequest
+        return h3Discovery.orElse(Http3DiscoveryMode.ANY);
     }
 
     /**

@@ -529,7 +529,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 try {
                     key = connectionKey(request);
 
-                    var recovery = reconnections.lookupFor(key, request);
+                    var recovery = reconnections.lookupFor(key, request, client);
                     if (debug.on()) debug.log("lookup found %s for %s", recovery, request);
                     if (recovery instanceof PendingConnection pending) {
                         // Recovery already initiated. Add waiter to the list!

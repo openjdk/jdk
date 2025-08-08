@@ -108,7 +108,7 @@ class Http3PendingConnections {
     // Lookup a ConnectionRecovery for the given request with the
     // given key.
     // Should be called while holding Http3ClientImpl.lock
-    ConnectionRecovery lookupFor(String key, HttpRequestImpl request) {
+    ConnectionRecovery lookupFor(String key, HttpRequestImpl request, HttpClientImpl client) {
 
         var discovery = request.http3Discovery();
 
@@ -146,7 +146,20 @@ class Http3PendingConnections {
 
         // if ANY return advertised if found, otherwise unadvertised
         if (advertised instanceof PendingConnection) return advertised;
-        if (unadvertised instanceof PendingConnection) return unadvertised;
+        if (unadvertised instanceof PendingConnection) {
+            if (client.client3().isEmpty()) {
+                return unadvertised;
+            }
+            // if ANY and we have an alt service that's eligible for the request
+            // and is not same origin as the request's URI authority, then don't
+            // return unadvertised and instead return advertised (which may be null)
+            final AltService altSvc = client.client3().get().lookupAltSvc(request).orElse(null);
+            if (altSvc != null && !altSvc.originHasSameAuthority()) {
+                return advertised;
+            } else {
+                return unadvertised;
+            }
+        }
         if (advertised != null) return advertised;
         return unadvertised;
     }
