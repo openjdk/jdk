@@ -81,3 +81,14 @@ JRT_LEAF(void, ShenandoahRuntime::clone_barrier(oopDesc* src))
   shenandoah_assert_correct(nullptr, s);
   ShenandoahBarrierSet::barrier_set()->clone_barrier(s);
 JRT_END
+
+JRT_LEAF(narrowOop, ShenandoahRuntime::cmpxchg_oop_narrow(narrowOop* addr, narrowOop expected, narrowOop new_val))
+  oop expected_oop = CompressedOops::decode(expected);
+  oop new_val_oop = CompressedOops::decode(new_val);
+  oop ret = ShenandoahBarrierSet::barrier_set()->oop_cmpxchg<narrowOop>(DECORATORS_NONE, addr, expected_oop, new_val_oop);
+  return CompressedOops::encode(ret);
+JRT_END
+
+JRT_LEAF(oopDesc*, ShenandoahRuntime::cmpxchg_oop(oopDesc** addr, oopDesc* expected, oopDesc* new_val))
+  return ShenandoahBarrierSet::barrier_set()->oop_cmpxchg<oop>(DECORATORS_NONE, reinterpret_cast<oop*>(addr), oop(expected), oop(new_val));
+JRT_END

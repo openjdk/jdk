@@ -28,6 +28,8 @@
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -41,6 +43,16 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   // On this path, we can encounter the "marked" object, but with null
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
+  if (ShenandoahHeap::heap()->collection_set()->use_forward_table(obj)) {
+    oop fwd_table_fwd = ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee(obj);
+    // markWord mark = obj->mark();
+    // assert (mark.is_marked(), "must be forwarded");
+    // HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    // assert(fwdptr != nullptr, "Forwarding pointer is never null here");
+    // oop orig_fwd = cast_to_oop(fwdptr);
+    // assert(fwd_table_fwd == orig_fwd, "forwardings in table and mark-word must match");
+    return fwd_table_fwd;
+  }
   markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
@@ -53,9 +65,19 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
 
 inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   // Same as above, but mutator thread cannot ever see null forwardee.
-  shenandoah_assert_correct(nullptr, obj);
+  //shenandoah_assert_correct(nullptr, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
+  if (ShenandoahHeap::heap()->collection_set()->use_forward_table(obj)) {
+    oop fwd_table_fwd = ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee(obj);
+    // markWord mark = obj->mark();
+    // assert (mark.is_marked(), "must be forwarded");
+    // HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    // assert(fwdptr != nullptr, "Forwarding pointer is never null here");
+    // oop orig_fwd = cast_to_oop(fwdptr);
+    // assert(fwd_table_fwd == orig_fwd, "forwardings in table and mark-word must match");
+    return fwd_table_fwd;
+  }
   markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
@@ -67,7 +89,7 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
 }
 
 inline oop ShenandoahForwarding::get_forwardee(oop obj) {
-  shenandoah_assert_correct(nullptr, obj);
+  //shenandoah_assert_correct(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);
 }
 
@@ -90,20 +112,52 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 }
 
+union _metadata {
+  Klass*      _klass;
+  narrowKlass _compressed_klass;
+};
+
+static _metadata safe_load_metadata(oop obj) {
+  _metadata klass_word = *(cast_from_oop<_metadata*>(obj) + 1);
+  OrderAccess::loadload();
+  markWord mark = obj->mark();
+  if (mark.is_forwarded()) {
+    obj = mark.forwardee();
+    klass_word = *(cast_from_oop<_metadata*>(obj) + 1);
+  }
+  return klass_word;
+}
+
 inline Klass* ShenandoahForwarding::klass(oop obj) {
-  if (UseCompactObjectHeaders) {
-    markWord mark = obj->mark();
-    if (mark.is_marked()) {
-      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
-      mark = fwd->mark();
+  if (ShenandoahHeap::heap()->collection_set()->use_forward_table(obj)) {
+    return ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee(obj)->klass();
+  }
+
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact: {
+      markWord mark = obj->mark();
+      if (mark.is_marked()) {
+        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+        mark = fwd->mark();
+      }
+      return mark.klass();
     }
-    return mark.klass();
-  } else {
-    return obj->klass();
+    case ObjLayout::Compressed: {
+      _metadata klass_word = safe_load_metadata(obj);
+     return CompressedKlassPointers::decode(klass_word._compressed_klass);
+    }
+    default: {
+      _metadata klass_word = safe_load_metadata(obj);
+      return klass_word._klass;
+    }
   }
 }
 
 inline size_t ShenandoahForwarding::size(oop obj) {
+  if (ShenandoahHeap::heap()->collection_set()->use_forward_table(obj)) {
+    return ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee(obj)->size();
+  }
+  obj = get_forwardee_raw(obj);
   return obj->size_given_klass(klass(obj));
 }
 

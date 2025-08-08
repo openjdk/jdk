@@ -116,6 +116,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
+      // log_info(gc)("load Klass* from obj: " PTR_FORMAT, p2i(obj));
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
@@ -260,8 +261,8 @@ private:
             klass == nullptr || Metaspace::contains(klass),
             "Mirrored instance class should point to Metaspace");
 
-      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
+      const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
+      check(ShenandoahAsserts::_safe_oop_fwd, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
             "Mirrored array class should point to Metaspace");
     }

@@ -1140,15 +1140,39 @@ class ShenandoahConcurrentEvacuateRegionObjectClosure : public ObjectClosure {
 private:
   ShenandoahHeap* const _heap;
   Thread* const _thread;
+  ShenandoahMarkingContext* const _context;
+  HeapWord* _tams;
+  size_t _num_forwardings;
 public:
   ShenandoahConcurrentEvacuateRegionObjectClosure(ShenandoahHeap* heap) :
-    _heap(heap), _thread(Thread::current()) {}
+    _heap(heap), _thread(Thread::current()), _context(heap->marking_context()), _num_forwardings(0) {}
 
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
+    _num_forwardings++;
     if (!p->is_forwarded()) {
       _heap->evacuate_object(p, _thread);
     }
+    // Mark objects beyond TAMS here, so that we can find their headers
+    // quickly when we're building the forwarding table.
+    bool upgraded = false;
+    if (cast_from_oop<HeapWord*>(p) >= _tams) {
+      _context->mark_strong_ignore_tams(p, upgraded);
+    }
+    assert(_context->is_marked(p), "must be marked");
+  }
+
+  void start_region(ShenandoahHeapRegion* region) {
+    _tams = _context->top_at_mark_start(region);
+    _num_forwardings = 0;
+  }
+
+  void end_region(ShenandoahHeapRegion* region) {
+    _context->capture_top_at_mark_start(region);
+  }
+
+  size_t num_forwardings() const {
+    return _num_forwardings;
   }
 };
 
@@ -1186,7 +1210,21 @@ private:
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != nullptr) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+      log_develop_debug(gc)("GC Thread " PTR_FORMAT " evacuating region: %lu", p2i(Thread::current()), r->index());
+      cl.start_region(r);
       _sh->marked_object_iterate(r, &cl);
+      cl.end_region(r);
+      if (!_sh->cancelled_gc()) {
+        r->build_forwarding_table(cl.num_forwardings());
+        OrderAccess::fence();
+        _sh->collection_set()->switch_to_forward_table(r);
+        {
+          ShenandoahEvacOOMScopeLeaver oom_evac_scope;
+          ShenandoahSuspendibleThreadSetLeaver stsl(_concurrent);
+          _sh->rendezvous_threads("Switch to Forward Table");
+        }
+        r->zap_to_fwd_table();
+      }
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
