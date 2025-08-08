@@ -204,13 +204,20 @@ public final class SegmentBulkOperations {
         final MemorySessionImpl dstSession = dst.sessionImpl();
 
         final int limit = (int) (len & (NATIVE_THRESHOLD_COPY - Long.BYTES));
-        for (int offset = 0; offset < limit; offset += Long.BYTES) {
+        int offset = 0;
+        for (; offset < limit; offset += Long.BYTES) {
             final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
             SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
         }
-        // It is safe to copy the tail in a single `long` op because we know `len` is at least 8
-        final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Long.BYTES);
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Long.BYTES, v);
+
+        // After the loop, the VM is not able to elide redundant stores so unfortunately,
+        // we have to do this if statement.
+        if ((int) len - offset > 0) {
+            // It is safe to copy the tail in a single `long` op because we know `len` is at least 8
+            final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Long.BYTES);
+            SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Long.BYTES, v);
+        }
+
     }
 
     private static final @Stable int[] POWERS_OF_31 = new int[]{
