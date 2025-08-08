@@ -40,7 +40,7 @@ void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
 void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* info, void* context) {
   switch (signo) {
     case TIMEOUT_SIGNAL: {
-      assert(!_timeout_armed, "compile task timed out");
+      assert(false, "compile task timed out");
     }
     default: {
       assert(false, "unexpected signal %d", signo);
@@ -63,7 +63,6 @@ void CompilerThreadTimeoutLinux::arm() {
 
   // Start the timer.
   timer_settime(_timeout_timer, 0, &its, nullptr);
-  _timeout_armed = true;
 #endif // ASSERT
 }
 
@@ -72,8 +71,6 @@ void CompilerThreadTimeoutLinux::disarm() {
   if (CompileTaskTimeout == 0) {
     return;
   }
-
-  _timeout_armed = false;
 
   // Reset the timer by setting it to zero.
   const struct itimerspec its {
