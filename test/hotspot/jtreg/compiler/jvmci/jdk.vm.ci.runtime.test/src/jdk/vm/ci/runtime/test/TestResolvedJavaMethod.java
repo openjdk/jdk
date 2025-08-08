@@ -27,10 +27,12 @@
  * @library ../../../../../
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
@@ -77,10 +79,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import jdk.vm.ci.meta.AnnotationValue;
 import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.internal.vm.test.MemberAdded;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
@@ -593,8 +597,15 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             Assert.assertEquals("jdk/internal/vm/test/AnnotationTestInput$Missing", e.getMessage());
         }
         TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"));
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
         TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"));
+        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
+        List<AnnotationValue> avList = TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("addedMember"));
+        try {
+            avList.getFirst().get("addedElement", Integer.class);
+            throw new AssertionError("expected " + IllegalArgumentException.class.getName());
+        } catch (IllegalArgumentException e) {
+            Assert.assertEquals("jdk.internal.vm.test.MemberAdded missing element addedElement", e.getMessage());
+        }
 
         for (Method m : methods.keySet()) {
             TestResolvedJavaType.getAnnotationValueTest(m);
