@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@ import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.XMLSignContext;
 import javax.xml.crypto.dsig.XMLSignature;
 import java.security.Key;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+
 import org.w3c.dom.Node;
 
 /**
@@ -45,6 +49,17 @@ import org.w3c.dom.Node;
  * <code>DOMSignContext</code> is used with different signature structures
  * (for example, you should not use the same <code>DOMSignContext</code>
  * instance to sign two different {@link XMLSignature} objects).
+ *
+ * @implNote
+ * The JDK implementation supports the following property that can be set
+ * using the {@link #setProperty setProperty} method.
+ * <ul>
+ *   <li><code>jdk.xmldsig.SecureRandom</code>: value must be a
+ *       {@link SecureRandom}. If specified, this object will be
+ *       used to initialize the underlying {@code Signature} during signing
+ *       using the {@link Signature#initSign(PrivateKey, SecureRandom)}
+ *       method.
+ * </ul>
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
