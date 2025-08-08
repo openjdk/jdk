@@ -1303,7 +1303,7 @@ public class TestResolvedJavaType extends TypeUniverse {
      *
      * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
      */
-    public static void getAnnotationValueTest(AnnotatedElement annotatedElement) {
+    public static List<AnnotationValue> getAnnotationValueTest(AnnotatedElement annotatedElement) {
         Annotated annotated = toAnnotated(annotatedElement);
         ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
@@ -1318,11 +1318,12 @@ public class TestResolvedJavaType extends TypeUniverse {
         values = annotated.getAnnotationValues(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
         assertTrue(values.toString(), values.isEmpty());
 
-        testGetAnnotationValue(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
+        return testGetAnnotationValue(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
     }
 
-    private static void testGetAnnotationValue(AnnotatedElement annotatedElement, Annotated annotated, List<Annotation> annotations) throws AssertionError {
+    private static List<AnnotationValue> testGetAnnotationValue(AnnotatedElement annotatedElement, Annotated annotated, List<Annotation> annotations) throws AssertionError {
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
+        List<AnnotationValue> res = new ArrayList<>(annotations.size());
         for (Annotation a : annotations) {
             var annotationType = metaAccess.lookupJavaType(a.annotationType());
             AnnotationValue av = annotated.getAnnotationValue(annotationType);
@@ -1334,9 +1335,11 @@ public class TestResolvedJavaType extends TypeUniverse {
 
             List<AnnotationValue> annotationValues = annotated.getAnnotationValues(annotationType, suppressWarningsType, suppressWarningsType);
             assertEquals(1, annotationValues.size());
+
+            res.add(av);
         }
         if (annotations.size() < 2) {
-            return;
+            return res;
         }
         for (int i = 0; i < annotations.size(); i++) {
             ResolvedJavaType[] types = annotations.//
@@ -1351,6 +1354,7 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertAnnotationsEquals(a, av);
             }
         }
+        return res;
     }
 
     private static Annotated toAnnotated(AnnotatedElement element) {
