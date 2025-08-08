@@ -80,7 +80,7 @@ public class AnnotationParser {
     }
 
     /**
-     * Like {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
+     * Like {@link #parseAnnotations(byte[], jdk.internal.reflect.ConstantPool, Class)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
      * This method is used to parse select meta annotations in the construction
@@ -115,8 +115,7 @@ public class AnnotationParser {
                 Class<?> container,
                 boolean eagerResolution,
                 Class<? extends Annotation>[] selectAnnotationClasses) {
-        Map<Class<? extends Annotation>, Annotation> result =
-            new LinkedHashMap<Class<? extends Annotation>, Annotation>();
+        Map<Class<? extends Annotation>, Annotation> result = new LinkedHashMap<>();
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {

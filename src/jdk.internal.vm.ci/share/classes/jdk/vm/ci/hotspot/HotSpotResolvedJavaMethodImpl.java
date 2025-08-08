@@ -39,14 +39,12 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
@@ -776,26 +774,26 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType type) {
+    public AnnotationValue getAnnotationValue(ResolvedJavaType type) {
         if (!hasAnnotations()) {
             checkIsAnnotation(type);
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationData0(type));
+        return getFirstAnnotationOrNull(getAnnotationValues0(type));
     }
 
     @Override
-    public List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
+    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         if (!hasAnnotations()) {
             return List.of();
         }
-        return getAnnotationData0(types);
+        return getAnnotationValues0(types);
     }
 
-    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder(getDeclaringClass()));
+    private List<AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 
     @Override
