@@ -159,6 +159,10 @@ private:
   // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
 
+protected:
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   ShenandoahHeapLock* lock() {
     return &_lock;
@@ -204,10 +208,7 @@ public:
 
   void print_heap_on(outputStream* st)         const override;
   void print_gc_on(outputStream *st)           const override;
-  void print_tracing_info()                    const override;
   void print_heap_regions_on(outputStream* st) const;
-
-  void stop() override;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;

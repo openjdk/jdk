@@ -594,7 +594,7 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
   collector_state()->set_in_concurrent_start_gc(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clearing_bitmap(false);
+  collector_state()->set_clear_bitmap_in_progress(false);
 
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -1318,7 +1318,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clearing_bitmap(true);
+  collector_state()->set_clear_bitmap_in_progress(true);
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;

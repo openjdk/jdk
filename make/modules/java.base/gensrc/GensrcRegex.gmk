@@ -50,5 +50,22 @@ TARGETS += $(GENSRC_INDICCONJUNCTBREAK)
 
 ################################################################################
 
+GENSRC_CASEFOLDING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/CaseFolding.java
+
+CASEFOLDINGTEMP := $(MODULE_SRC)/share/classes/jdk/internal/util/regex/CaseFolding.java.template
+CASEFOLDINGTXT := $(MODULE_SRC)/share/data/unicodedata/CaseFolding.txt
+
+$(GENSRC_CASEFOLDING): $(BUILD_TOOLS_JDK) $(CASEFOLDINGTEMP) $(CASEFOLDINGTXT)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_GENERATECASEFOLDING) \
+	    $(CASEFOLDINGTEMP) \
+	    $(CASEFOLDINGTXT) \
+	    $(GENSRC_CASEFOLDING)
+
+TARGETS += $(GENSRC_CASEFOLDING)
+
+################################################################################
+
 endif # include guard
 include MakeIncludeEnd.gmk

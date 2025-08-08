@@ -817,9 +817,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
     // that point to the lambda form invokers in the base archive. Such pointers will
     // be invalid if lambda form invokers are regenerated in the dynamic archive.
     return false;
-  } else if (CDSConfig::is_dumping_method_handles()) {
-    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
-    return false;
   } else {
     return is_dumping_archive();
   }

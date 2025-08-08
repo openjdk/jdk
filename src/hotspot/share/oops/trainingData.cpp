@@ -35,6 +35,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
@@ -433,9 +434,9 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
   assert(klass != nullptr, "");
-  Handle hm(JavaThread::current(), klass->java_mirror());
-  jobject hmj = JNIHandles::make_global(hm);
-  _holder_mirror = hmj;
+  // The OopHandle constructor will allocate a handle. We don't need to ever release it so we don't preserve
+  // the handle object.
+  OopHandle handle(Universe::vm_global(), klass->java_mirror());
   _holder = klass;
   assert(holder() == klass, "");
 }
@@ -759,7 +760,6 @@ void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
 
 void KlassTrainingData::remove_unshareable_info() {
   TrainingData::remove_unshareable_info();
-  _holder_mirror = nullptr;
   _comp_deps.remove_unshareable_info();
 }
 

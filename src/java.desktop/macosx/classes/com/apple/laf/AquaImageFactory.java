@@ -50,7 +50,7 @@ import sun.awt.image.MultiResolutionCachedImage;
 import sun.lwawt.macosx.CImage;
 import sun.swing.ImageIconUIResource;
 
-public class AquaImageFactory {
+public final class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
 
@@ -193,7 +193,7 @@ public class AquaImageFactory {
         }, 20, 20);
     }
 
-    static class NamedImageSingleton extends RecyclableSingleton<Image> {
+    static final class NamedImageSingleton extends RecyclableSingleton<Image> {
         final String namedImage;
 
         NamedImageSingleton(final String namedImage) {
@@ -206,7 +206,7 @@ public class AquaImageFactory {
         }
     }
 
-    static class IconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    static final class IconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
         final NamedImageSingleton holder;
 
         public IconUIResourceSingleton(final NamedImageSingleton holder) {
@@ -220,7 +220,7 @@ public class AquaImageFactory {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
+    static final class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
         private Icon disabledIcon;
         public InvertableImageIcon(final Image image) {
@@ -296,7 +296,7 @@ public class AquaImageFactory {
         return icon;
     }
 
-    public static class NineSliceMetrics {
+    public static final class NineSliceMetrics {
         public final int wCut, eCut, nCut, sCut;
         public final int minW, minH;
         public final boolean showMiddle, stretchH, stretchV;
@@ -320,7 +320,7 @@ public class AquaImageFactory {
      * A "paintable" which holds nine images, which represent a sliced up initial
      * image that can be stretched from its middles.
      */
-    public static class SlicedImageControl {
+    public static final class SlicedImageControl {
         final BufferedImage NW, N, NE;
         final BufferedImage W, C, E;
         final BufferedImage SW, S, SE;
@@ -466,6 +466,7 @@ public class AquaImageFactory {
             this.color = color;
         }
 
+        @Override
         public int getRGB() {
             return color.getRGB();
         }

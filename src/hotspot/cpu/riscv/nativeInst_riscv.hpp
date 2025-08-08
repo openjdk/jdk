@@ -134,14 +134,14 @@ class NativeCall: private NativeInstruction {
   address next_instruction_address() const;
   address return_address() const;
   address destination() const;
-  address reloc_destination(address orig_address);
+  address reloc_destination();
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
   void set_destination(address dest);
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool set_destination_mt_safe(address dest);
   bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);

@@ -118,6 +118,9 @@ private:
   void gc_prologue();
   void gc_epilogue(bool full);
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
@@ -209,7 +212,6 @@ public:
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

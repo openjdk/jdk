@@ -971,12 +971,9 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   ReferenceProcessor* rp = ref_processor_stw();
   assert(rp->discovery_enabled(), "should have been enabled");
 
-  uint no_of_gc_workers = workers()->active_workers();
-  rp->set_active_mt_degree(no_of_gc_workers);
-
   G1STWRefProcProxyTask task(rp->max_num_queues(), *_g1h, *per_thread_states, *task_queues());
   ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
-  ReferenceProcessorStats stats = rp->process_discovered_references(task, pt);
+  ReferenceProcessorStats stats = rp->process_discovered_references(task, _g1h->workers(), pt);
 
   gc_tracer_stw()->report_gc_reference_stats(stats);
 
@@ -1062,7 +1059,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->gc_epilogue(false);
 
-  _g1h->expand_heap_after_young_collection();
+  _g1h->resize_heap_after_young_collection(_allocation_word_size);
 }
 
 bool G1YoungCollector::evacuation_failed() const {
@@ -1077,9 +1074,11 @@ bool G1YoungCollector::evacuation_alloc_failed() const {
   return _evac_failure_regions.has_regions_alloc_failed();
 }
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
+                                   size_t allocation_word_size) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
+  _allocation_word_size(allocation_word_size),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {

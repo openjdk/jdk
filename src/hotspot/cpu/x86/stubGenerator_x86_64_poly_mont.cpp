@@ -559,7 +559,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
 
 address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::intpoly_montgomeryMult_P256_id;
+  StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
@@ -681,7 +681,7 @@ address StubGenerator::generate_intpoly_assign() {
   // Special Cases 5, 10, 14, 16, 19
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::intpoly_assign_id;
+  StubId stub_id = StubId::stubgen_intpoly_assign_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
