@@ -21,27 +21,29 @@
  * questions.
  */
 
-package jdk.jfr.api.consumer.recordingstream;
+package jdk.jfr.jmx.streaming;
 
 import jdk.jfr.*;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.management.jfr.RemoteRecordingStream;
 
+import javax.management.MBeanServerConnection;
+import java.lang.management.ManagementFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
  * @test
- * @summary Tests that a RecordingStream is closed if the underlying Recording
- *          is stopped.
+ * @summary Tests that a RemoteRecordingStream is closed if the underlying Remote Recording is stopped.
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestStoppedRecording
+ * @library /test/lib /test/jdk
+ * @build jdk.jfr.api.consumer.recordingstream.EventProducer
+ * @run main/othervm jdk.jfr.jmx.streaming.TestStoppedRecording
  */
 public class TestStoppedRecording {
 
-    private static class SendEventListener implements  FlightRecorderListener{
+    private static class SendEventListener implements FlightRecorderListener {
         @Override
         public void recordingStateChanged(Recording recording) {
             if(recording.getState() == RecordingState.RUNNING){
@@ -58,6 +60,8 @@ public class TestStoppedRecording {
         FlightRecorder.getFlightRecorder().getRecordings().getFirst().stop();
     };
 
+    private static final MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
+
     public static void main(String... args) throws Exception {
         FlightRecorder.addListener(new SendEventListener());
         sync();
@@ -65,7 +69,7 @@ public class TestStoppedRecording {
     }
 
     private static void sync() throws Exception {
-        try (RecordingStream rs = new RecordingStream()) {
+        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
             rs.onEvent(STOP_RECORDING);
             rs.start();
         }
@@ -73,7 +77,7 @@ public class TestStoppedRecording {
 
     private static void async() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        try (RecordingStream rs = new RecordingStream()) {
+        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
             rs.onEvent(STOP_RECORDING);
             rs.onClose(() -> {
                 latch.countDown();
