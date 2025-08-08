@@ -324,6 +324,9 @@ public class AnnotationTestInput {
         Single[] value();
     }
 
+    /**
+     * The class file for this class should be removed by a `@clean` jtreg command.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Missing {}
 

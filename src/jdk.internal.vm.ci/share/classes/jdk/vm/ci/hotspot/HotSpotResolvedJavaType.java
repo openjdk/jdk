@@ -24,7 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import java.util.List;
 
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -83,7 +83,7 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
         }
     }
 
-    static AnnotationData getFirstAnnotationOrNull(List<AnnotationData> list) {
+    static AnnotationValue getFirstAnnotationOrNull(List<AnnotationValue> list) {
         return list.isEmpty() ? null : list.get(0);
     }
 }

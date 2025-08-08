@@ -25,17 +25,24 @@ package jdk.vm.ci.meta;
 import java.util.List;
 
 /**
- * Represents an array of enum constants within {@link AnnotationData}.
+ * Represents an array of enum constants within an {@link AnnotationValue}.
  */
 public final class EnumArrayData {
+    /**
+     * The type of the enum.
+     */
     public final ResolvedJavaType enumType;
+
+    /**
+     * The names of the enum constants.
+     */
     public final List<String> names;
 
     /**
      * Creates an array of enum constants.
      *
-     * @param type the {@linkplain Enum enum type}
-     * @param name the names of the enum constants
+     * @param enumType the {@linkplain Enum enum type}
+     * @param names the names of the enum constants
      */
     public EnumArrayData(ResolvedJavaType enumType, List<String> names) {
         this.enumType = enumType;

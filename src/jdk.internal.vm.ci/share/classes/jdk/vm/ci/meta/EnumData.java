@@ -23,16 +23,23 @@
 package jdk.vm.ci.meta;
 
 /**
- * Represents an enum constant within {@link AnnotationData}.
+ * Represents an enum constant within an {@link AnnotationValue}.
  */
 public final class EnumData {
+    /**
+     * The type of the enum.
+     */
     public final ResolvedJavaType enumType;
+
+    /**
+     * The name of the enum constants.
+     */
     public final String name;
 
     /**
      * Creates an enum constant.
      *
-     * @param type the {@linkplain Enum enum type}
+     * @param enumType the {@linkplain Enum enum type}
      * @param name the {@linkplain Enum#name() name} of the enum
      */
     public EnumData(ResolvedJavaType enumType, String name) {
