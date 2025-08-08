@@ -481,7 +481,7 @@ final class ClassValueTest {
     // ClassValue cache invalidated and not reinstated when another
     // unrelated entry is removed
     @Test
-    public void cacheRefreshTest() throws Throwable {
+    public void testCacheRefresh() throws Throwable {
         // Setup
         var lookup = MethodHandles.privateLookupIn(ClassValue.class, MethodHandles.lookup());
         var classValueEntryClass = Class.forName("java.lang.ClassValue$Entry");
