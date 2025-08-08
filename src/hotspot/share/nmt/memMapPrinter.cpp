@@ -70,7 +70,7 @@ static const char* get_shortname_for_mem_tag(MemTag mem_tag) {
 #define DO(t, shortname, text) if (t == mem_tag) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
-  return NMTUtil::tag_to_enum_name(mem_tag);
+  return MemTagFactory::name_of(mem_tag);
 }
 
 /// NMT virtual memory
@@ -129,7 +129,7 @@ public:
 
   // Given a vma [from, to), find all regions that intersect with this vma and
   // return their collective flags.
-  MemTagBitmap lookup(const void* from, const void* to) const {
+  void lookup(const void* from, const void* to, MemTagBitmap& bm) const {
     assert(from <= to, "Sanity");
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
@@ -138,7 +138,6 @@ public:
       // the range is to the right of the given section, we need to re-start the search
       _last = 0;
     }
-    MemTagBitmap bm;
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_tag(_mem_tags[i]);
@@ -147,7 +146,6 @@ public:
         break;
       }
     }
-    return bm;
   }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
@@ -247,9 +245,10 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
-    const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
+    MemTagBitmap flags;
+    _nmt_info.lookup(vma_from, vma_to, flags);
     if (flags.has_any()) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
+      for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
         const MemTag mem_tag = (MemTag)i;
         if (flags.has_tag(mem_tag)) {
           if (num_printed > 0) {

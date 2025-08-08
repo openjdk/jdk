@@ -60,7 +60,7 @@ class BitMap {
     unknown_range, small_range, large_range
   } RangeSizeHint;
 
- private:
+ protected:
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
@@ -641,13 +641,11 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   // NMT memory tag
   const MemTag _mem_tag;
 
-  // Don't allow copy or assignment, to prevent the
-  // allocated memory from leaking out to other instances.
-  NONCOPYABLE(CHeapBitMap);
-
  public:
   explicit CHeapBitMap(MemTag mem_tag) : GrowableBitMap(), _mem_tag(mem_tag) {}
   CHeapBitMap(idx_t size_in_bits, MemTag mem_tag, bool clear = true);
+  CHeapBitMap(const CHeapBitMap& bm);
+  CHeapBitMap& operator=(const CHeapBitMap& bm) = delete;
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

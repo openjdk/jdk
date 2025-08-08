@@ -47,7 +47,7 @@ void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
     // We are the owner of the reserved memory, and any failure to unreserve
     // are fatal, so so we don't need to hold a lock while unreserving memory.
 
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     // The current NMT implementation does not support unreserving a memory
     // region that was built up from smaller memory reservations. Workaround
