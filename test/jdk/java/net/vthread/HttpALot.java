@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,7 +67,8 @@ public class HttpALot {
         InetAddress lb = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(lb, 0), 1024);
         ThreadFactory factory = Thread.ofVirtual().factory();
-        server.setExecutor(Executors.newThreadPerTaskExecutor(factory));
+        final ExecutorService serverExecutor = Executors.newThreadPerTaskExecutor(factory);
+        server.setExecutor(serverExecutor);
         server.createContext("/hello", e -> {
             try {
                 byte[] response = HELLO.getBytes("UTF-8");
@@ -93,7 +95,7 @@ public class HttpALot {
 
         // go
         server.start();
-        try {
+        try (serverExecutor) {
             factory = Thread.ofVirtual().name("fetcher-", 0).factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
                 for (int i = 1; i <= requests; i++) {
