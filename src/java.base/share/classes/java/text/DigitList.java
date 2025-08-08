@@ -42,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import jdk.internal.math.FloatingDecimal;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Digit List. Private to DecimalFormat.
@@ -153,8 +154,7 @@ final class DigitList implements Cloneable {
      */
     public void append(char digit) {
         if (count == digits.length) {
-            char[] data = new char[count > Integer.MAX_VALUE / 2 ?
-                    Integer.MAX_VALUE : count * 2];
+            char[] data = new char[ArraysSupport.newLength(count, 1, count)];
             System.arraycopy(digits, 0, data, 0, count);
             digits = data;
         }
