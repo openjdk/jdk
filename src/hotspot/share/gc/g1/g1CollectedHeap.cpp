@@ -772,7 +772,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   // set between the last GC or pause and now. We need to clear the
   // incremental collection set and then start rebuilding it afresh
   // after this full GC.
-  abandon_collection_set(collection_set());
+  abandon_collection_set();
 
   _hrm.remove_all_free_regions();
 }
@@ -2791,12 +2791,12 @@ public:
   }
 };
 
-void G1CollectedHeap::abandon_collection_set(G1CollectionSet* collection_set) {
+void G1CollectedHeap::abandon_collection_set() {
   G1AbandonCollectionSetClosure cl;
   collection_set_iterate_all(&cl);
 
-  collection_set->clear();
-  collection_set->stop_incremental_building();
+  collection_set()->clear();
+  collection_set()->stop_incremental_building();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
