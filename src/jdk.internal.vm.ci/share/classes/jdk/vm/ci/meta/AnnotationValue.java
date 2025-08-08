@@ -52,7 +52,8 @@ public final class AnnotationValue {
                     Long.class,
                     Double.class,
                     String.class,
-                    ErrorData.class,
+                    MissingType.class,
+                    ElementTypeMismatch.class,
                     EnumArrayData.class,
                     EnumData.class,
                     AnnotationValue.class);
@@ -63,8 +64,8 @@ public final class AnnotationValue {
      * @param type the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
      *            must be one of the {@code AnnotationValue} types described {@linkplain #get here}
-     *            or it must be a {@link ErrorData} object whose {@code toString()} value describes
-     *            the error raised while parsing the element. There is no distinction between a
+     *            or it must be a {@link MissingType} or {@link ElementTypeMismatch} object for
+     *            an error seen while parsing the element. There is no distinction between a
      *            value explicitly present in the annotation and an element's default value.
      * @throws IllegalArgumentException if the value of an entry in {@code elements} is not of an
      *             accepted type
@@ -129,26 +130,26 @@ public final class AnnotationValue {
      * <tr><td>Enum</td>       <td>EnumData</td></tr>
      * <tr><td>Enum[]</td>     <td>EnumArrayData</td></tr>
      * <tr><td>Annotation</td> <td>AnnotationValue</td></tr>
-     * <tr><td>[]</td><td>T[] where T is one of the above types except for EnumData or EnumArrayData</td></tr>
+     * <tr><td>[]</td><td>List&lt;T&gt; where T is one of the above types except for EnumData or EnumArrayData</td></tr>
      * </tbody>
      * </table>
      *
      * @param <V> the type of the element as per the {@code AnnotationValue} column in the above
      *            table or {@link Object}
-     * @param elementType the class for the type of the element
+     * @param elementType the class for the type of the element or {@code Object.class}
      * @return the annotation element denoted by {@code name}
-     * @throws ClassCastException if the element is not of type {@code V}
-     * @throws IllegalArgumentException if this annotation has no element named {@code name} or if
-     *             there was an error parsing or creating the element value
+     * @throws ClassCastException if the element is not of type {@code elementType}
+     * @throws IllegalArgumentException if this annotation has no element named {@code name}
+     *            if {@code elementType != Object.class} and the element is of type
+     *            {@link MissingType} or {@link ElementTypeMismatch}
      */
     // @formatter:on
     public <V> V get(String name, Class<V> elementType) {
         Object val = elements.get(name);
         if (val == null) {
-            throw new IllegalArgumentException("no element named " + name);
+            throw new IllegalArgumentException(type.toJavaName() + " missing element " + name);
         }
-        Class<?> valClass = val.getClass();
-        if (valClass == ErrorData.class) {
+        if (elementType != Object.class && (val instanceof MissingType || val instanceof ElementTypeMismatch)) {
             throw new IllegalArgumentException(val.toString());
         }
         return elementType.cast(val);
