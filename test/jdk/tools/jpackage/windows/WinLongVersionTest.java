@@ -126,12 +126,12 @@ public class WinLongVersionTest {
         Action ended 12:08:38: FindRelatedProducts. Return value 1.
         ...
         Action start 12:08:38: JpFindRelatedProducts.
-        Java [12:08:38.180 libwixhelper.cpp:120 (FindRelatedProductsEx)] TRACE: Entering FindRelatedProductsEx
-        Java [12:08:38.185 libwixhelper.cpp:85 (`anonymous-namespace'::findInstalledPackages)] TRACE: Found {D88EEA02-56CC-34AD-8216-C2CC244FA898} product
+        Java [12:08:38.180 libmsica.cpp:120 (FindRelatedProductsEx)] TRACE: Entering FindRelatedProductsEx
+        Java [12:08:38.185 libmsica.cpp:85 (`anonymous-namespace'::findInstalledPackages)] TRACE: Found {D88EEA02-56CC-34AD-8216-C2CC244FA898} product
         Java [12:08:38.187 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'JP_UPGRADABLE_FOUND'
         Java [12:08:38.187 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'MIGRATE'
         Java [12:08:38.189 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'JP_DOWNGRADABLE_FOUND'
-        Java [12:08:38.190 libwixhelper.cpp:0 (FindRelatedProductsEx)] TRACE: Exiting FindRelatedProductsEx (entered at libwixhelper.cpp:120)
+        Java [12:08:38.190 libmsica.cpp:0 (FindRelatedProductsEx)] TRACE: Exiting FindRelatedProductsEx (entered at libmsica.cpp:120)
         Action ended 12:08:38: JpFindRelatedProducts. Return value 1.
         */
         PackageTest test2 = init.get().addInstallVerifier(cmd -> {
