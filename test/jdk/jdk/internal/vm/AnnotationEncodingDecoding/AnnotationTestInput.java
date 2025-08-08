@@ -27,6 +27,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
 
 public class AnnotationTestInput {
 
@@ -367,6 +368,13 @@ public class AnnotationTestInput {
     public void missingMember() {}
 
     /**
+     * Method with an annotation that has a member
+     * added in a newer version of the annotation.
+     */
+    @MemberAdded(value = "evolving")
+    public void addedMember() {}
+
+    /**
      * Method with an annotation that has a member named "any"
      * whose type is changed from int to String in a newer version
      * of the annotation.
@@ -374,5 +382,14 @@ public class AnnotationTestInput {
     @MemberTypeChanged(value = "evolving", retained = -34, any = 56)
     public void changeTypeOfMember() {}
 
+    /**
+     * Tries to get the {@code added} element from the {@link MemberAdded}
+     * annotation on {@link #addedMember()}
+     *
+     * @param missingMember the Method object for {@link #addedMember()}
+     */
+    public static MemberAdded getAddedElement(Method method) {
+        return method.getAnnotation(MemberAdded.class);
+    }
 }
 
