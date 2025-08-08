@@ -110,7 +110,7 @@ public final class SegmentBulkOperations {
         src.checkAccess(srcOffset, len, true);
         dst.checkAccess(dstOffset, len, false);
 
-        if (len < NATIVE_THRESHOLD_COPY && !src.overlaps(dst)) {
+        if (len < NATIVE_THRESHOLD_COPY && src.overlaps(dst) == 0) {
             // 0 < len < FILL_NATIVE_LIMIT : 0...0X...XXXX
             //
             // Strictly, we could check for !src.asSlice(srcOffset, len).overlaps(dst.asSlice(dstOffset, len) but
