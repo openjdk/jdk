@@ -40,10 +40,10 @@ public class TestCountBitsRange {
     }
 
     @Run(test = {
-        "clzCompareInt", "clzDiv8Int",
-        "clzCompareLong", "clzDiv8Long",
-        "ctzCompareInt", "ctzDiv8Int",
-        "ctzCompareLong", "ctzDiv8Long",
+        "clzConstInt", "clzCompareInt", "clzDiv8Int",
+        "clzConstLong", "clzCompareLong", "clzDiv8Long",
+        "ctzConstInt", "ctzCompareInt", "ctzDiv8Int",
+        "ctzConstLong", "ctzCompareLong", "ctzDiv8Long",
     })
     public void runTest() {
         int i = RunInfo.getRandom().nextInt();
