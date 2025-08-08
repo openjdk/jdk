@@ -533,8 +533,9 @@ static void clear_method_tracer_klasses() {
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
-  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
-    return;
+  if (!used(klass) && klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+    SET_TRANSIENT(klass);
+    assert(used(klass), "invariant");
   }
   if (JfrKlassUnloading::on_unload(klass)) {
     if (JfrTraceId::has_sticky_bit(klass)) {
