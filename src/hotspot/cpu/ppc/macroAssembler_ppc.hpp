@@ -697,8 +697,6 @@ class MacroAssembler: public Assembler {
 
   void push_cont_fastpath();
   void pop_cont_fastpath();
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
   void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Label& slow);
