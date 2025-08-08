@@ -1176,7 +1176,7 @@ void ShenandoahConcurrentGC::op_update_thread_roots() {
 void ShenandoahConcurrentGC::op_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   bool is_generational = heap->mode()->is_generational();
-  ShenandoahGenerationalHeap* const gen_heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahGenerationalHeap* const gen_heap = is_generational? ShenandoahGenerationalHeap::heap(): nullptr;
 
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
   assert(!heap->_update_refs_iterator.has_next(), "Should have finished update references");
