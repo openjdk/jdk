@@ -69,11 +69,7 @@ class CookieStoreTest {
         final List<URI> uris = cookieStore.getURIs();
         assertNotNull(uris, "CookieStore.getURIs() returned null");
         assertEquals(expectEmpty, uris.isEmpty(), "CookieStore.getURIs() returned: " + uris);
-
-        // the returned list is expected to be immutable, so the attempt to add or remove
-        // an element must fail
-        assertThrows(UnsupportedOperationException.class, () -> uris.add(COOKIE_TEST_URI));
-        assertThrows(UnsupportedOperationException.class, () -> uris.remove(COOKIE_TEST_URI));
+        assertImmutableList(uris, COOKIE_TEST_URI);
     }
 
     /*
@@ -85,12 +81,7 @@ class CookieStoreTest {
         final List<HttpCookie> cookies = cookieStore.getCookies();
         assertNotNull(cookies, "CookieStore.getCookies() returned null");
         assertEquals(expectEmpty, cookies.isEmpty(), "CookieStore.getCookies() returned: " + cookies);
-
-        final HttpCookie cookie = new HttpCookie("hello", "world");
-        // the returned list is expected to be immutable, so the attempt to add or remove
-        // an element must fail
-        assertThrows(UnsupportedOperationException.class, () -> cookies.add(cookie));
-        assertThrows(UnsupportedOperationException.class, () -> cookies.remove(cookie));
+        assertImmutableList(cookies, new HttpCookie("hello", "world"));
     }
 
     /*
@@ -102,11 +93,17 @@ class CookieStoreTest {
         final List<HttpCookie> cookies = cookieStore.get(COOKIE_TEST_URI);
         assertNotNull(cookies, "CookieStore.get(URI) returned null");
         assertEquals(expectEmpty, cookies.isEmpty(), "CookieStore.get(URI) returned: " + cookies);
+        assertImmutableList(cookies, new HttpCookie("hello", "world"));
+    }
 
-        final HttpCookie cookie = new HttpCookie("hello", "world");
-        // the returned list is expected to be immutable, so the attempt to add or remove
+    /*
+     * Verifies that the attempt to add or remove the element to/from the list will fail
+     * due to the list being immutable.
+     */
+    private static <T> void assertImmutableList(final List<T> list, T elementToAddOrRemove) {
+        // the list is expected to be immutable, so the attempt to add or remove
         // an element must fail
-        assertThrows(UnsupportedOperationException.class, () -> cookies.add(cookie));
-        assertThrows(UnsupportedOperationException.class, () -> cookies.remove(cookie));
+        assertThrows(UnsupportedOperationException.class, () -> list.add(elementToAddOrRemove));
+        assertThrows(UnsupportedOperationException.class, () -> list.remove(elementToAddOrRemove));
     }
 }
