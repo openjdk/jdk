@@ -36,7 +36,7 @@ public enum LauncherShortcutStartupDirectory {
      * Platform-specific default value.
      * <p>
      * On Windows, it indicates that the startup directory should be the package's
-     * installation directory. I.e. same as {@link #INSTALL_DIR}.
+     * installation directory.
      * <p>
      * On Linux, it indicates that a shortcut doesn't have the startup directory
      * configured explicitly.
