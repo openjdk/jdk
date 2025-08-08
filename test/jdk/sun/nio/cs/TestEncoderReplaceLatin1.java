@@ -34,6 +34,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,21 +215,15 @@ class TestEncoderReplaceLatin1 {
     }
 
     static String prettyPrintChars(char[] cs) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < cs.length; i++) {
-            char c = cs[i];
-            sb.append("%sU+%04X".formatted(i > 0 ? ", " : "", (int) c));
-        }
-        return sb.append(']').toString();
+        return IntStream.range(0, cs.length)
+                .mapToObj(i -> String.format("U+%04X", (int) cs[i]))
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 
     static String prettyPrintBytes(byte[] bs) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < bs.length; i++) {
-            byte b = bs[i];
-            sb.append("%s0x%02X".formatted(i > 0 ? ", " : "", b & 0xFF));
-        }
-        return sb.append(']').toString();
+        return IntStream.range(0, bs.length)
+                .mapToObj(i -> String.format("0x%02X", bs[i] & 0xFF))
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 
 }
