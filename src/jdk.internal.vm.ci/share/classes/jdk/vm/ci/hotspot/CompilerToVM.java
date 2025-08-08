@@ -1447,43 +1447,43 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code type} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
+            return getEncodedClassAnnotationValues(type, type.getKlassPointer(),
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+                                                  Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
+            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                                                       Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and
      * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
+            return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex,
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
-                    Object filterTypes, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+                                                  Object filterTypes, int filterLength, long filterKlassPointers);
 
     /**
      * Helper for passing {@Klass*} values to native code.
