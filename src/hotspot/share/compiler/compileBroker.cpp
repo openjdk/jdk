@@ -1745,8 +1745,8 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   if (free_task) {
     assert(task->is_complete(), "Compilation should have completed");
-    assert(task->next() == nullptr, "Completed task should not be in the queue");
-    assert(task->prev() == nullptr, "Completed task should not be in the queue");
+    assert(task->next() == nullptr && task->prev() == nullptr,
+           "Completed task should not be in the queue");
 
     // By convention, the waiter is responsible for deleting a
     // blocking CompileTask. Since there is only one waiter ever

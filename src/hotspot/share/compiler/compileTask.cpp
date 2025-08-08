@@ -74,6 +74,7 @@ CompileTask::CompileTask(int compile_id,
   _arena_bytes = 0;
 
   _next = nullptr;
+  _prev = nullptr;
 
   Atomic::add(&_active_tasks, 1, memory_order_relaxed);
 }
@@ -91,7 +92,8 @@ CompileTask::~CompileTask() {
   }
 
 #ifdef ASSERT
-  // Zap the deleted task space to catch lifecycle errors
+  // Zap the deleted task memory to catch lifecycle errors.
+  // Do this before notifying potential waiters: they cannot wait on this task.
   memset(this, freeBlockPad, sizeof(CompileTask));
 #endif
 
