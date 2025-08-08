@@ -27,11 +27,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,72 +39,68 @@ import java.util.stream.Stream;
 
 public final class PrecompiledHeaders {
 
+    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\\\?");
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
-    private static final String HOTSPOT_PATH = "src/hotspot";
+    private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
+    private static final String HOTSPOT_SOURCE_PREFIX = "/jdk/src/hotspot/share/";
 
     private PrecompiledHeaders() {
         throw new UnsupportedOperationException("Instances not allowed");
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length == 0 || args.length > 2) {
-            System.err.println("Usage: min_inclusion_count [jdk_root=.]");
+        if (args.length < 2 || args.length > 3) {
+            System.err.println("Usage: min_inclusion_count build_root [jdk_root=.]");
             System.exit(1);
         }
 
         int minInclusionCount = Integer.parseInt(args[0]);
-        Path jdkRoot = Path.of(args.length == 2 ? args[1] : ".").toAbsolutePath();
+        Path buildRoot = Path.of(args[1]).toAbsolutePath();
+        if (!Files.isDirectory(buildRoot)) {
+            throw new IllegalArgumentException("build_root is not a directory: " + buildRoot);
+        }
+        Path jdkRoot = Path.of(args.length == 3 ? args[2] : ".").toAbsolutePath();
         if (!Files.isDirectory(jdkRoot)) {
             throw new IllegalArgumentException("jdk_root is not a directory: " + jdkRoot);
         }
-        Path hotspotPath = jdkRoot.resolve(HOTSPOT_PATH);
-        if (!Files.isDirectory(hotspotPath)) {
-            throw new IllegalArgumentException("Invalid hotspot directory: " + hotspotPath);
+
+        Path objsPath = buildRoot.resolve(OBJS_PATH);
+        if (!Files.isDirectory(objsPath)) {
+            throw new IllegalArgumentException("Could not find 'objs' directory: " + objsPath);
         }
 
         // Count inclusion times for each header
-        Map<String, Integer> occurrences = new HashMap<>();
-        try (Stream<Path> paths = Files.walk(hotspotPath)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(path -> {
-                        String name = path.getFileName().toString();
-                        return name.endsWith(".cpp") || name.endsWith(".hpp");
-                    })
-                    .flatMap(path -> {
+        Map<String, Integer> occurrences;
+        try (Stream<Path> files = Files.list(objsPath)) {
+            occurrences = files.filter(file -> file.getFileName().toString().endsWith(".d"))
+                    .flatMap(file -> {
                         try {
-                            return Files.lines(path);
+                            return Files.lines(file);
                         } catch (IOException exception) {
                             throw new UncheckedIOException(exception);
                         }
                     })
-                    .map(INCLUDE_PATTERN::matcher)
+                    // The first line contains the object name
+                    .skip(1)
+                    .map(DEPENDENCY_LINE_PATTERN::matcher)
                     .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
-                    .forEach(include -> occurrences.compute(include,
-                            (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
-        }
-
-        List<String> inlineIncludes = occurrences.keySet().stream()
-                .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
-                .toList();
-
-        // Each .inline.hpp pulls in the non-inline version too, so we can increase its counter
-        for (String inlineInclude : inlineIncludes) {
-            int inlineCount = occurrences.get(inlineInclude);
-            String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
-            int noInlineCount = Objects.requireNonNullElse(
-                    occurrences.get(noInlineInclude), 0);
-            occurrences.put(noInlineInclude, inlineCount + noInlineCount);
+                    .filter(dependency -> dependency.startsWith(HOTSPOT_SOURCE_PREFIX))
+                    .map(dependency -> dependency.replace(HOTSPOT_SOURCE_PREFIX, ""))
+                    .collect(Collectors.toMap(Function.identity(), s -> 1, Integer::sum));
         }
 
         // Keep only the headers which are included at least 'minInclusionCount' times
         Set<String> headers = occurrences.entrySet().stream()
-                .filter(entry -> entry.getValue() > minInclusionCount)
+                .filter(entry -> entry.getValue() >= minInclusionCount)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
+        List<String> inlineIncludes = occurrences.keySet().stream()
+                .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
+                .toList();
         // If both inline and non-inline headers are to be included, prefer the inline header
         for (String inlineInclude : inlineIncludes) {
             if (headers.contains(inlineInclude)) {
