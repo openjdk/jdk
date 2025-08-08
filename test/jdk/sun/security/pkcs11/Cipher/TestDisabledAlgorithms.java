@@ -26,10 +26,10 @@
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
  * @library /test/lib ..
- * @run main/othervm TestDisabledAlgorithms Cipher.RSA/ECB/PKCS1Padding true
- * @run main/othervm TestDisabledAlgorithms Cipher.rsA true
+ * @run main/othervm TestDisabledAlgorithms CiPhEr.RSA/ECB/PKCS1Padding true
+ * @run main/othervm TestDisabledAlgorithms cIpHeR.rsA true
  * @run main/othervm TestDisabledAlgorithms Cipher.what false
- * @run main/othervm TestDisabledAlgorithms Cipher.RSA/ECB/PKCS1Padding2 false
+ * @run main/othervm TestDisabledAlgorithms CiPhER.RSA/ECB/PKCS1Padding2 false
  */
 import java.util.List;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +37,8 @@ import java.security.Provider;
 import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms extends PKCS11Test {
 
@@ -48,19 +50,16 @@ public class TestDisabledAlgorithms extends PKCS11Test {
 
     private static final String PROP_NAME = "jdk.crypto.disabledAlgorithms";
 
-    private static void test(String alg, Provider p, boolean shouldThrow) {
+    private static void test(String alg, Provider p, boolean shouldThrow)
+            throws Exception {
         System.out.println("Testing " + p.getName() + ": " + alg +
                 ", shouldThrow=" + shouldThrow);
-        try {
+        if (shouldThrow) {
+            Utils.runAndCheckException(() -> Cipher.getInstance(alg, p),
+                    NoSuchAlgorithmException.class);
+        } else {
             Cipher c = Cipher.getInstance(alg, p);
-            System.out.println("Got cipher obj w/ algo " + c.getAlgorithm());
-            if (shouldThrow) {
-                throw new RuntimeException("Expected ex not thrown");
-            }
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            if (!shouldThrow) {
-                throw new RuntimeException("Unexpected ex", e);
-            }
+            System.out.println("Got cipher w/ algo " + c.getAlgorithm());
         }
     }
 

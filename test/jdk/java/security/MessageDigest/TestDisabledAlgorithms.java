@@ -25,42 +25,46 @@
  * @test
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
- * @run main/othervm TestDisabledAlgorithms MessageDigest.Sha-512 true
- * @run main/othervm TestDisabledAlgorithms MessageDigest.what false
- * @run main/othervm TestDisabledAlgorithms MessageDigest.SHA-512/224 false
+ * @library /test/lib
+ * @run main/othervm TestDisabledAlgorithms MESSAGEdigest.Sha-512 true
+ * @run main/othervm TestDisabledAlgorithms messageDIGest.what false
+ * @run main/othervm TestDisabledAlgorithms meSSagedIgest.sHA-512/224 false
  */
 import java.util.List;
 import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {
 
     private static final String PROP_NAME = "jdk.crypto.disabledAlgorithms";
 
     private static void test(List<String> algos, Provider p,
-            boolean shouldThrow) {
+            boolean shouldThrow) throws Exception {
 
         for (String a : algos) {
             System.out.println("Testing " + (p != null ? p.getName() : "") +
                     ": " + a + ", shouldThrow=" + shouldThrow);
-            try {
+            if (shouldThrow) {
+                if (p == null) {
+                    Utils.runAndCheckException(() -> MessageDigest.getInstance(a),
+                            NoSuchAlgorithmException.class);
+                } else {
+                    Utils.runAndCheckException(() -> MessageDigest.getInstance(a, p),
+                            NoSuchAlgorithmException.class);
+                }
+            } else {
                 MessageDigest m;
                 if (p == null) {
                     m = MessageDigest.getInstance(a);
                 } else {
                     m = MessageDigest.getInstance(a, p);
                 }
-                System.out.println("Got MessageDigest obj w/ algo " +
+                System.out.println("Got MessageDigest w/ algo " +
                         m.getAlgorithm());
-                if (shouldThrow) {
-                    throw new RuntimeException("Expected ex not thrown");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                if (!shouldThrow) {
-                    throw new RuntimeException("Unexpected ex", e);
-                }
             }
         }
     }
@@ -73,7 +77,8 @@ public class TestDisabledAlgorithms {
 
         boolean shouldThrow = Boolean.valueOf(args[1]);
 
-        List<String> algos = List.of("sHA-512", "shA-512", "2.16.840.1.101.3.4.2.3");
+        List<String> algos = List.of("sHA-512", "shA-512",
+                "2.16.840.1.101.3.4.2.3");
         // test w/o provider
         test(algos, null, shouldThrow);
 

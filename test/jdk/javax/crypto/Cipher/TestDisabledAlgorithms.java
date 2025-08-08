@@ -25,10 +25,11 @@
  * @test
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
- * @run main/othervm TestDisabledAlgorithms Cipher.Rsa/ECB/PKCS1Padding true
- * @run main/othervm TestDisabledAlgorithms Cipher.rsA true
- * @run main/othervm TestDisabledAlgorithms Cipher.what false
- * @run main/othervm TestDisabledAlgorithms Cipher.RSA/ECB/PKCS1Padding2 false
+ * @library /test/lib
+ * @run main/othervm TestDisabledAlgorithms CIPHEr.Rsa/ECB/PKCS1Padding true
+ * @run main/othervm TestDisabledAlgorithms cipheR.rsA true
+ * @run main/othervm TestDisabledAlgorithms CIPher.what false
+ * @run main/othervm TestDisabledAlgorithms cipHER.RSA/ECB/PKCS1Padding2 false
  */
 import java.util.List;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +38,8 @@ import java.security.Security;
 import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {
 
@@ -45,27 +48,27 @@ public class TestDisabledAlgorithms {
     private static final String TARGET = "Cipher.RSA/ECB/PKCS1Padding";
 
     private static void test(List<String> algos, Provider p,
-            boolean shouldThrow) {
+            boolean shouldThrow) throws Exception {
 
         for (String a : algos) {
             System.out.println("Testing " + (p != null ? p.getName() : "") +
                     ": " + a + ", shouldThrow=" + shouldThrow);
-            try {
+            if (shouldThrow) {
+                if (p == null) {
+                    Utils.runAndCheckException(() -> Cipher.getInstance(a),
+                            NoSuchAlgorithmException.class);
+                } else {
+                    Utils.runAndCheckException(() -> Cipher.getInstance(a, p),
+                            NoSuchAlgorithmException.class);
+                }
+            } else {
                 Cipher c;
                 if (p == null) {
                     c = Cipher.getInstance(a);
                 } else {
                     c = Cipher.getInstance(a, p);
                 }
-                System.out.println("Got cipher obj w/ algo " +
-                        c.getAlgorithm());
-                if (shouldThrow) {
-                    throw new RuntimeException("Expected ex not thrown");
-                }
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                if (!shouldThrow) {
-                    throw new RuntimeException("Unexpected ex", e);
-                }
+                System.out.println("Got cipher w/ algo " + c.getAlgorithm());
             }
         }
     }

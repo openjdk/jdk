@@ -26,6 +26,7 @@
  * @bug 8244336
  * @summary Check that invalid property values for
  *         "jdk.crypto.disabledAlgorithms" are rejected
+ * @library /test/lib
  * @run main/othervm InvalidCryptoDisabledAlgos "*"
  * @run main/othervm InvalidCryptoDisabledAlgos "."
  * @run main/othervm InvalidCryptoDisabledAlgos ".AES"
@@ -36,9 +37,10 @@
  * @run main/othervm InvalidCryptoDisabledAlgos "KeyStore.MY,Cipher."
  * @run main/othervm InvalidCryptoDisabledAlgos "KeyStore.MY,A.B"
  */
-
 import java.security.MessageDigest;
 import java.security.Security;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class InvalidCryptoDisabledAlgos {
 
@@ -46,17 +48,9 @@ public class InvalidCryptoDisabledAlgos {
         System.out.println("Invalid Property Value = " + args[0]);
         Security.setProperty("jdk.crypto.disabledAlgorithms", args[0]);
         // Trigger the check to parse and validate property value
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
-            throw new RuntimeException("Should Fail!");
-        } catch (ExceptionInInitializerError e) {
-            Throwable t = e.getException();
-            if (t instanceof IllegalArgumentException) {
-                System.out.println("Expected Ex thrown for " + t.getMessage());
-            } else {
-                // pass it up
-                throw e;
-            }
-        }
+        Utils.runAndCheckException(() -> MessageDigest.getInstance("SHA-512"),
+                t -> Asserts.assertTrue(
+                        t instanceof ExceptionInInitializerError &&
+                        t.getCause() instanceof IllegalArgumentException));
     }
 }

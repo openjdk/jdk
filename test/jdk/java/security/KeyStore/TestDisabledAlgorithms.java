@@ -25,12 +25,13 @@
  * @test
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
- * @run main/othervm TestDisabledAlgorithms KeyStore.JKs true
- * @run main/othervm TestDisabledAlgorithms KeyStore.what false
- * @run main/othervm TestDisabledAlgorithms KeyStore.jceKS false
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="KeyStore.JKs" TestDisabledAlgorithms KeyStore.JceKs true
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="KeyStore.what" TestDisabledAlgorithms KeyStore.JKS false
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="KeyStore.jceKS" TestDisabledAlgorithms KeyStore.JKS false
+ * @library /test/lib
+ * @run main/othervm TestDisabledAlgorithms KEYSTORE.JKs true
+ * @run main/othervm TestDisabledAlgorithms keySTORE.what false
+ * @run main/othervm TestDisabledAlgorithms kEYstoRe.jceKS false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystore.jkS" TestDisabledAlgorithms keySTORE.jceKs true
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="KEYstORE.what" TestDisabledAlgorithms KeYStore.JKs false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystOre.jceKS" TestDisabledAlgorithms KEysTORE.JKS false
  */
 import java.io.File;
 import java.util.List;
@@ -38,6 +39,8 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {
 
@@ -45,8 +48,8 @@ public class TestDisabledAlgorithms {
 
     // reuse existing JKS test keystore
     private final static String DIR = System.getProperty("test.src", ".");
-    private static final char[] PASSWORD = "passphrase".toCharArray();
-    private static final String KEYSTORE = DIR + "/keystore.jks";
+    private static final char[] PASSWD = "passphrase".toCharArray();
+    private static final String JKS_FN = "keystore.jks";
 
     private static void test(List<String> algos, Provider p,
             boolean shouldThrow) throws Exception {
@@ -54,54 +57,40 @@ public class TestDisabledAlgorithms {
         for (String a : algos) {
             System.out.println("Testing " + (p != null ? p.getName() : "") +
                     ": " + a + ", shouldThrow=" + shouldThrow);
-            KeyStore k;
-            if (p == null) {
-                try {
-                    k = KeyStore.getInstance(a);
-                    if (shouldThrow) {
-                        throw new RuntimeException("Expected ex not thrown");
-                    }
-                } catch (KeyStoreException e) {
-                    if (!shouldThrow) {
-                        throw new RuntimeException("Unexpected ex", e);
-                    }
-                }
-                try {
-                    k = KeyStore.getInstance(new File(KEYSTORE), PASSWORD);
-                    System.out.println("Got KeyStore obj w/ algo " + k.getType());
-                    if (shouldThrow) {
-                        throw new RuntimeException("Expected ex not thrown");
-                    }
-                } catch (KeyStoreException e) {
-                    if (!shouldThrow) {
-                        throw new RuntimeException("Unexpected ex", e);
-                    }
-                }
-                try {
-                    k = KeyStore.getInstance(new File(KEYSTORE),
-                            ()-> {
-                                return new KeyStore.PasswordProtection(PASSWORD);
-                            });
-                    System.out.println("Got KeyStore obj w/ algo " + k.getType());
-                    if (shouldThrow) {
-                        throw new RuntimeException("Expected ex not thrown");
-                    }
-                } catch (KeyStoreException e) {
-                    if (!shouldThrow) {
-                        throw new RuntimeException("Unexpected ex", e);
-                    }
+            if (shouldThrow) {
+                if (p == null) {
+                    Utils.runAndCheckException(() -> KeyStore.getInstance(a),
+                            KeyStoreException.class);
+                    Utils.runAndCheckException(
+                            () -> KeyStore.getInstance(new File(DIR, JKS_FN),
+                                PASSWD),
+                            KeyStoreException.class);
+                    Utils.runAndCheckException(
+                            () -> KeyStore.getInstance(new File(DIR, JKS_FN),
+                                () -> {
+                                    return new KeyStore.PasswordProtection(PASSWD);
+                                }),
+                            KeyStoreException.class);
+                } else {
+                    // with a provider argument
+                    Utils.runAndCheckException(() -> KeyStore.getInstance(a, p),
+                            KeyStoreException.class);
                 }
             } else {
-                try {
-                    k = KeyStore.getInstance(a, p);
-                    System.out.println("Got KeyStore obj w/ algo " + k.getType());
-                    if (shouldThrow) {
-                        throw new RuntimeException("Expected ex not thrown");
-                    }
-                } catch (KeyStoreException e) {
-                    if (!shouldThrow) {
-                        throw new RuntimeException("Unexpected ex", e);
-                    }
+                if (p == null) {
+                    KeyStore k = KeyStore.getInstance(a);
+                    System.out.println("Got KeyStore w/ algo " + k.getType());
+                    k = KeyStore.getInstance(new File(DIR, JKS_FN), PASSWD);
+                    System.out.println("Got KeyStore w/ algo " + k.getType());
+                    k = KeyStore.getInstance(new File(DIR, JKS_FN),
+                        () -> {
+                            return new KeyStore.PasswordProtection(PASSWD);
+                        });
+                    System.out.println("Got KeyStore w/ algo " + k.getType());
+                } else {
+                    // with a provider argument
+                    KeyStore k = KeyStore.getInstance(a, p);
+                    System.out.println("Got KeyStore w/ algo " + k.getType());
                 }
             }
         }

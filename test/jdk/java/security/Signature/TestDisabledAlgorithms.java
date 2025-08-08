@@ -25,42 +25,45 @@
  * @test
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
- * @run main/othervm TestDisabledAlgorithms Signature.sha512withRSA true
- * @run main/othervm TestDisabledAlgorithms Signature.what false
- * @run main/othervm TestDisabledAlgorithms Signature.SHA512/224withRSA false
+ * @library /test/lib
+ * @run main/othervm TestDisabledAlgorithms SIGNATURe.sha512withRSA true
+ * @run main/othervm TestDisabledAlgorithms signaturE.what false
+ * @run main/othervm TestDisabledAlgorithms SiGnAtUrE.SHa512/224withRSA false
  */
 import java.util.List;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.Provider;
 import java.security.Security;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {
 
     private static final String PROP_NAME = "jdk.crypto.disabledAlgorithms";
 
     private static void test(List<String> algos, Provider p,
-            boolean shouldThrow) {
+            boolean shouldThrow) throws Exception {
 
         for (String a : algos) {
             System.out.println("Testing " + (p != null ? p.getName() : "") +
                     ": " + a + ", shouldThrow=" + shouldThrow);
-            try {
+            if (shouldThrow) {
+                if (p == null) {
+                    Utils.runAndCheckException(() -> Signature.getInstance(a),
+                            NoSuchAlgorithmException.class);
+                } else {
+                    Utils.runAndCheckException(() -> Signature.getInstance(a, p),
+                            NoSuchAlgorithmException.class);
+                }
+            } else {
                 Signature s;
                 if (p == null) {
                     s = Signature.getInstance(a);
                 } else {
                     s = Signature.getInstance(a, p);
                 }
-                System.out.println("Got Signature obj w/ algo " +
-                        s.getAlgorithm());
-                if (shouldThrow) {
-                    throw new RuntimeException("Expected ex not thrown");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                if (!shouldThrow) {
-                    throw new RuntimeException("Unexpected ex", e);
-                }
+                System.out.println("Got Signature w/ algo " + s.getAlgorithm());
             }
         }
     }

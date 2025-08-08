@@ -96,7 +96,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // missing service or algorithm
                 throw new IllegalArgumentException("Invalid entry: " + dk);
             }
-            if (SUPPORTED_SERVICES.stream().anyMatch(e->e.equalsIgnoreCase
+            if (SUPPORTED_SERVICES.stream().anyMatch(e -> e.equalsIgnoreCase
                     (service))) {
                 KnownOIDs oid = KnownOIDs.findMatch(algo);
                 if (oid != null) {
