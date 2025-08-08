@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,20 @@
  * questions.
  */
 
-/**
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
+
+/*
  * @test
  * @bug 8284161
  * @summary Stress test the HTTP protocol handler and HTTP server
@@ -36,21 +49,9 @@
  *     -Dsun.net.client.defaultConnectTimeout=5000
  *     HttpALot
  */
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-import com.sun.net.httpserver.HttpServer;
-import jdk.test.lib.net.URIBuilder;
-
 public class HttpALot {
+
+    private static final String HELLO = "Hello";
 
     public static void main(String[] args) throws Exception {
         int requests = 25_000;
@@ -67,10 +68,17 @@ public class HttpALot {
         ThreadFactory factory = Thread.ofVirtual().factory();
         server.setExecutor(Executors.newThreadPerTaskExecutor(factory));
         server.createContext("/hello", e -> {
-            byte[] response = "Hello".getBytes("UTF-8");
-            e.sendResponseHeaders(200, response.length);
-            try (OutputStream out = e.getResponseBody()) {
-                out.write(response);
+            try {
+                byte[] response = HELLO.getBytes("UTF-8");
+                e.sendResponseHeaders(200, response.length);
+                try (OutputStream out = e.getResponseBody()) {
+                    out.write(response);
+                }
+            } catch (Throwable t) {
+                System.err.println("failed to handle request " + e.getRequestURI()
+                        + " due to: " + t);
+                t.printStackTrace();
+                throw t; // let it propagate
             }
             requestsHandled.incrementAndGet();
         });
@@ -89,7 +97,11 @@ public class HttpALot {
             factory = Thread.ofVirtual().name("fetcher-", 0).factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
                 for (int i = 1; i <= requests; i++) {
-                    executor.submit(() -> fetch(url)).get();
+                    final String actual = executor.submit(() -> fetch(url)).get();
+                    if (!HELLO.equals(actual)) {
+                        throw new RuntimeException("unexpected response: \"" + actual
+                                + "\" for request " + i);
+                    }
                 }
             }
         } finally {
