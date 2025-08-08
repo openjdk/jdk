@@ -2446,12 +2446,12 @@ void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();
 
   assert(policy()->collector_state()->in_full_gc() ||
-         young_regions_cardset()->occupied() == policy()->num_young_rem_set_cards_at_start(),
+         young_regions_cardset()->occupied() == _num_young_rem_set_cards_at_start,
          "Should not add cards to young gen remembered set during young GC, but "
          "changed from %zu at start to %zu now.",
-         policy()->num_young_rem_set_cards_at_start(), young_regions_cardset()->occupied());
-  // Clear current young only collection set. As cards will be refined, they will
-  // be added to the remembered set.
+         _num_young_rem_set_cards_at_start, young_regions_cardset()->occupied());
+  // Clear current young cset group. As cards will be refined, they will be added
+  // to it.
   // It is fine to clear it this late - evacuation does not add any remembered sets
   // by itself, but only mark cards.
   young_regions_cset_group()->clear();
@@ -2706,6 +2706,7 @@ void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemory
 
 void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats) {
   _young_gen_card_set_stats = stats;
+  DEBUG_ONLY(_num_young_rem_set_cards_at_start = young_regions_cardset()->occupied();)
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {

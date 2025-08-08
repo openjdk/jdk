@@ -129,14 +129,6 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-#ifdef ASSERT
-  void record_young_rem_set_cards_at_start(size_t num_cards) {
-    _num_young_rem_set_cards_at_start = num_cards;
-  }
-
-  size_t num_young_rem_set_cards_at_start() const { return _num_young_rem_set_cards_at_start; }
-#endif
-
   double cur_pause_start_sec() const {
     return _cur_pause_start_sec;
   }
