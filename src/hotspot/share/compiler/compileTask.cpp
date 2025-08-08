@@ -93,7 +93,7 @@ CompileTask::~CompileTask() {
 
 #ifdef ASSERT
   // Zap the deleted task memory to catch lifecycle errors.
-  // Do this before notifying potential waiters: they cannot wait on this task.
+  // Do this before notifying any waiters: nothing can wait on this task.
   memset(this, freeBlockPad, sizeof(CompileTask));
 #endif
 
