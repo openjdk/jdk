@@ -229,7 +229,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     size_t pip_unpadded = (region->end() - region->top()) * HeapWordSize;
     assert((region->top() == region->end())
            || (pip_unpadded == (size_t) ((region->end() - region->top()) * HeapWordSize)), "Invariant");
-    assert(pip_unpadded < ShenandoahHeap::min_fill_size(), "Sanity");
+    assert(pip_unpadded < ShenandoahHeap::min_fill_size() * HeapWordSize, "Sanity");
     size_t pip_pad_bytes = (region->top() - region->get_top_before_promote()) * HeapWordSize;
     assert((pip_unpadded == 0) || (pip_pad_bytes == 0), "Only one of pip_unpadded and pip_pad_bytes is non-zero");
 
