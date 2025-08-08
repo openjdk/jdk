@@ -2002,6 +2002,13 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseClassMetaspaceForAllClasses, false, DIAGNOSTIC,          \
           "Use the class metaspace for all classes including "              \
           "abstract and interface classes.")                                \
+                                                                            \
+  product(bool, UseHistory, trueInDebug, DIAGNOSTIC,                        \
+          "Enable diagnostic history.")                                     \
+                                                                            \
+  product(int, HistoryInterval, 10000, DIAGNOSTIC,                          \
+          "Interval, in ms, at which history will be measured")             \
+          range(1000, 60000)                                                \
 
 // end of RUNTIME_FLAGS
 

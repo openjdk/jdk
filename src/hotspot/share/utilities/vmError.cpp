@@ -61,6 +61,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/ub.hpp"
+#include "services/shorthist.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1305,6 +1306,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     NativeHeapTrimmer::print_state(st);
     st->cr();
 
+  STEP_IF("ShortHistory", _verbose)
+    ShortHistory::print(st);
+    st->cr();
+
   STEP_IF("printing system", _verbose)
     st->print_cr("---------------  S Y S T E M  ---------------");
     st->cr();
@@ -1512,6 +1517,9 @@ void VMError::print_vm_info(outputStream* st) {
   NativeHeapTrimmer::print_state(st);
   st->cr();
 
+  // STEP("ShortHistory")
+  ShortHistory::print(st);
+  st->cr();
 
   // STEP("printing system")
   st->print_cr("---------------  S Y S T E M  ---------------");
