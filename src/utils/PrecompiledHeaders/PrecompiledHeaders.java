@@ -122,7 +122,7 @@ public final class PrecompiledHeaders {
                 .map(header -> String.format("#include \"%s\"", header))
                 .collect(Collectors.joining(System.lineSeparator()));
         Files.write(precompiledHpp,
-                (System.lineSeparator() + headerLines + System.lineSeparator()).getBytes(),
+                (System.lineSeparator() + headerLines).getBytes(),
                 StandardOpenOption.APPEND);
     }
 
