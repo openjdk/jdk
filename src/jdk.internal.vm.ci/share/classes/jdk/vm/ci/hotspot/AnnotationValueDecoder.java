@@ -26,14 +26,14 @@ import java.util.Map;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
-import jdk.vm.ci.meta.ElementTypeMismatch;
-import jdk.vm.ci.meta.AnnotationValue;
-import jdk.vm.ci.meta.EnumArrayData;
-import jdk.vm.ci.meta.EnumData;
+import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.EnumArrayData;
+import jdk.vm.ci.meta.annotation.EnumData;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.MissingType;
+import jdk.vm.ci.meta.annotation.MissingType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**

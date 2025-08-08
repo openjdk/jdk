@@ -44,7 +44,7 @@ import java.util.List;
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
-import jdk.vm.ci.meta.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;

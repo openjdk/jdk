@@ -35,6 +35,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
@@ -79,7 +80,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.vm.ci.meta.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import org.junit.Assert;
 import org.junit.Test;
 

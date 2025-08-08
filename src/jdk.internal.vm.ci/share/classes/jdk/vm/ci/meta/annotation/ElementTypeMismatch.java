@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
 
 /**
  * Represents a deferred {@link java.lang.annotation.AnnotationTypeMismatchException} within an {@link AnnotationValue}.

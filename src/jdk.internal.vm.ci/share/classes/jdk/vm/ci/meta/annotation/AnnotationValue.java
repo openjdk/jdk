@@ -20,7 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 import java.lang.annotation.Annotation;
 import java.util.List;

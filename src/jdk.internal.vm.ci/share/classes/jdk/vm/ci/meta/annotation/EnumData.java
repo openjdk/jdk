@@ -20,7 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Represents an enum constant within an {@link AnnotationValue}.
