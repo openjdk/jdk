@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class RuntimeException extends Exception {
     @java.io.Serial
     static final long serialVersionUID = -7034897190745766939L;
 
-    /** Constructs a new {@code RuntimeException} with {@code null} as its
+    /** Constructs a new runtime exception with {@code null} as its
      * detail message.  The cause is not initialized, and may subsequently be
      * initialized by a call to {@link #initCause}.
      */
@@ -52,7 +52,7 @@ public class RuntimeException extends Exception {
         super();
     }
 
-    /** Constructs a new {@code RuntimeException} with the specified detail message.
+    /** Constructs a new runtime exception with the specified detail message.
      * The cause is not initialized, and may subsequently be initialized by a
      * call to {@link #initCause}.
      *
@@ -64,7 +64,7 @@ public class RuntimeException extends Exception {
     }
 
     /**
-     * Constructs a new {@code RuntimeException} with the specified detail message and
+     * Constructs a new runtime exception with the specified detail message and
      * cause.  <p>Note that the detail message associated with
      * {@code cause} is <i>not</i> automatically incorporated in
      * this runtime exception's detail message.
@@ -81,7 +81,7 @@ public class RuntimeException extends Exception {
         super(message, cause);
     }
 
-    /** Constructs a new {@code RuntimeException} with the specified cause and a
+    /** Constructs a new runtime exception with the specified cause and a
      * detail message of {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of
      * {@code cause}).  This constructor is useful for runtime exceptions
@@ -98,7 +98,7 @@ public class RuntimeException extends Exception {
     }
 
     /**
-     * Constructs a new {@code RuntimeException} with the specified detail
+     * Constructs a new runtime exception with the specified detail
      * message, cause, suppression enabled or disabled, and writable
      * stack trace enabled or disabled.
      *

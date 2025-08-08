@@ -37,9 +37,9 @@ package java.lang;
  */
 public class UnsupportedOperationException extends RuntimeException {
     /**
-     * Constructs a new {@code UnsupportedOperationException} with {@code null} as its
-     * detail message. The cause is not initialized, and may subsequently be
-     * initialized by a call to {@link #initCause(Throwable)}.
+     * Constructs a new {@code UnsupportedOperationException} with {@code null}
+     * as its detail message. The cause is not initialized, and may subsequently
+     * be initialized by a call to {@link #initCause(Throwable)}.
      */
     public UnsupportedOperationException() {
     }
@@ -56,8 +56,8 @@ public class UnsupportedOperationException extends RuntimeException {
     }
 
     /**
-     * Constructs a new {@code UnsupportedOperationException} with the specified detail message and
-     * cause.
+     * Constructs a new {@code UnsupportedOperationException} with the specified
+     * detail message and cause.
      *
      * <p>Note that the detail message associated with {@code cause} is
      * <i>not</i> automatically incorporated in this exception's detail
@@ -76,8 +76,9 @@ public class UnsupportedOperationException extends RuntimeException {
     }
 
     /**
-     * Constructs a new {@code UnsupportedOperationException} with the specified cause and a detail
-     * message of {@code (cause==null ? null : cause.toString())} (which
+     * Constructs a new {@code UnsupportedOperationException} with the specified
+     * cause and a detail message of
+     * {@code (cause==null ? null : cause.toString())} (which
      * typically contains the class and detail message of {@code cause}).
      * This constructor is useful for exceptions that are little more than
      * wrappers for other throwables (for example, {@link
