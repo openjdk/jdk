@@ -56,8 +56,8 @@ public final class AnnotationValue {
                     String.class,
                     MissingType.class,
                     ElementTypeMismatch.class,
-                    EnumArrayData.class,
-                    EnumData.class,
+                    EnumArrayElement.class,
+                    EnumElement.class,
                     AnnotationValue.class);
 
     /**
@@ -66,7 +66,7 @@ public final class AnnotationValue {
      * @param type the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
      *            must be one of the {@code AnnotationValue} types described {@linkplain #get here}
-     *            or it must be a {@link MissingType} or {@link ElementTypeMismatch} object for
+     *            or it must be a {@link ErrorElement} object for
      *            an error seen while parsing the element. There is no distinction between a
      *            value explicitly present in the annotation and an element's default value.
      * @throws IllegalArgumentException if the value of an entry in {@code elements} is not of an
@@ -88,7 +88,7 @@ public final class AnnotationValue {
         boolean illegalEnumType = false;
         if (valueClass.isArray()) {
             valueClass = valueClass.getComponentType();
-            if (valueClass == EnumData.class || valueClass == EnumArrayData.class) {
+            if (valueClass == EnumElement.class || valueClass == EnumArrayElement.class) {
                 illegalEnumType = true;
             }
         }
@@ -129,10 +129,10 @@ public final class AnnotationValue {
      * <tr><td>double</td>     <td>Double</td></tr>
      * <tr><td>String</td>     <td>String</td></tr>
      * <tr><td>Class</td>      <td>ResolvedJavaType</td></tr>
-     * <tr><td>Enum</td>       <td>EnumData</td></tr>
-     * <tr><td>Enum[]</td>     <td>EnumArrayData</td></tr>
+     * <tr><td>Enum</td>       <td>EnumElement</td></tr>
+     * <tr><td>Enum[]</td>     <td>EnumArrayElement</td></tr>
      * <tr><td>Annotation</td> <td>AnnotationValue</td></tr>
-     * <tr><td>[]</td><td>List&lt;T&gt; where T is one of the above types except for EnumData or EnumArrayData</td></tr>
+     * <tr><td>[]</td><td>List&lt;T&gt; where T is one of the above types except for EnumElement or EnumArrayElement</td></tr>
      * </tbody>
      * </table>
      *
@@ -143,7 +143,7 @@ public final class AnnotationValue {
      * @throws ClassCastException if the element is not of type {@code elementType}
      * @throws IllegalArgumentException if this annotation has no element named {@code name}
      *            if {@code elementType != Object.class} and the element is of type
-     *            {@link MissingType} or {@link ElementTypeMismatch}
+     *            {@link ErrorElement}
      */
     // @formatter:on
     public <V> V get(String name, Class<V> elementType) {
@@ -151,8 +151,8 @@ public final class AnnotationValue {
         if (val == null) {
             throw new IllegalArgumentException(type.toJavaName() + " missing element " + name);
         }
-        if (elementType != Object.class && (val instanceof MissingType || val instanceof ElementTypeMismatch)) {
-            throw new IllegalArgumentException(val.toString());
+        if (elementType != Object.class && val instanceof ErrorElement ee) {
+            throw ee.generateException();
         }
         return elementType.cast(val);
     }

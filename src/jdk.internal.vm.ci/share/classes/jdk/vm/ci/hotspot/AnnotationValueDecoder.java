@@ -28,8 +28,8 @@ import java.util.List;
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
 import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.EnumArrayData;
-import jdk.vm.ci.meta.annotation.EnumData;
+import jdk.vm.ci.meta.annotation.EnumArrayElement;
+import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -41,7 +41,7 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
  * and employs {@link AnnotationValue} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumData, EnumArrayData, MissingType, ElementTypeMismatch> {
+final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
 
     private final HotSpotResolvedJavaType accessingClass;
 
@@ -61,13 +61,13 @@ final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType
     }
 
     @Override
-    public EnumData newEnumValue(ResolvedJavaType enumType, String name) {
-        return new EnumData(enumType, name);
+    public EnumElement newEnum(ResolvedJavaType enumType, String name) {
+        return new EnumElement(enumType, name);
     }
 
     @Override
-    public EnumArrayData newEnumValueArray(ResolvedJavaType enumType, List<String> names) {
-        return new EnumArrayData(enumType, names);
+    public EnumArrayElement newEnumArray(ResolvedJavaType enumType, List<String> names) {
+        return new EnumArrayElement(enumType, names);
     }
 
     @Override
