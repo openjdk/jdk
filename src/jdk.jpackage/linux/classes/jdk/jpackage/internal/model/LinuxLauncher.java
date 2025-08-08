@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.HashMap;
 import java.util.Map;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -36,9 +37,11 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return shortcut().map(v -> {
-            return Map.of("shortcut", Boolean.toString(v));
-        }).orElseGet(Map::of);
+        Map<String, String> map = new HashMap<>();
+        shortcut().ifPresent(shortcut -> {
+            shortcut.store(SHORTCUT_ID, map::put);
+        });
+        return map;
     }
 
     /**
@@ -52,4 +55,6 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
     public static LinuxLauncher create(Launcher launcher, LinuxLauncherMixin mixin) {
         return CompositeProxy.create(LinuxLauncher.class, launcher, mixin);
     }
+
+    public static final String SHORTCUT_ID = "linux-shortcut";
 }
