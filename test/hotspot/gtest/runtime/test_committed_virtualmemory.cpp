@@ -67,7 +67,7 @@ public:
           EXPECT_TRUE(cmr.size() <= stack_size);
           found_stack_top = true;
         }
-        if(i_addr < stack_top && i_addr >= cmr.base()) {
+        if (i_addr < stack_top && i_addr >= cmr.base()) {
           found_i_addr = true;
         }
         i++;
