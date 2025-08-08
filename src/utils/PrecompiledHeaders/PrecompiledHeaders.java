@@ -82,13 +82,12 @@ public final class PrecompiledHeaders {
                     .filter(Predicate.not(file -> file.getFileName().toString().contains(PRECOMPILED_HPP_NAME)))
                     .flatMap(file -> {
                         try {
-                            return Files.lines(file);
+                            // The first line contains the object name
+                            return Files.lines(file).skip(1);
                         } catch (IOException exception) {
                             throw new UncheckedIOException(exception);
                         }
                     })
-                    // The first line contains the object name
-                    .skip(1)
                     .map(DEPENDENCY_LINE_PATTERN::matcher)
                     .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
