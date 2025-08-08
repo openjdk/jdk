@@ -793,8 +793,10 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   // a stack frame, and GCC currently chooses to save it at the top of the
   // frame (lowest address). ASan treats this memory access in the callee as
   // an overflow access to one of the locals stored in that frame. For these
-  // preemption case we don't need to read these words anyways so we avoid it.
-  adjust -= _preempt ? frame::metadata_words_at_bottom : 0;
+  // preemption cases we don't need to read these words anyways so we avoid it.
+  if (_preempt) {
+    adjust = 0;
+  }
 #endif
   intptr_t* from = _cont_stack_top - adjust;
   intptr_t* to   = chunk_top - adjust;

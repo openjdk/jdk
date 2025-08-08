@@ -103,7 +103,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
   } else {
     // For a compiled frame we need to re-read fp out of the frame because it may be an
     // oop and we might have had a safepoint in finalize_freeze, after constructing f.
-    // For stub/native frames the value is not used while freezed, and will be constructed
+    // For stub/native frames the value is not used while frozen, and will be constructed
     // again when thawing the frame (see ThawBase::new_stack_frame).
     fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : nullptr;
 
