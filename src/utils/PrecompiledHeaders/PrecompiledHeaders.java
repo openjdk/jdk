@@ -74,7 +74,8 @@ public final class PrecompiledHeaders {
         // Count inclusion times for each header
         Map<String, Integer> occurrences;
         try (Stream<Path> files = Files.list(objsPath)) {
-            occurrences = files.filter(file -> file.getFileName().toString().endsWith(".d"))
+            occurrences = files
+                    .filter(file -> file.getFileName().toString().endsWith(".d"))
                     .flatMap(file -> {
                         try {
                             return Files.lines(file);
