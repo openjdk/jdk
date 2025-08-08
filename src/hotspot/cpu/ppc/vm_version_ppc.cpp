@@ -80,7 +80,9 @@ void VM_Version::initialize() {
             "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  config_dscr();
+  if (VM_Version::has_mfdscr()) {
+    config_dscr();
+  }
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
@@ -170,7 +172,8 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64 sha aes%s%s",
+               "ppc64 sha aes%s%s%s",
+               (has_mfdscr()  ? " mfdscr"  : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
@@ -488,6 +491,7 @@ void VM_Version::determine_features() {
   uint32_t *code = (uint32_t *)a->pc();
   // Keep R3_ARG1 unmodified, it contains &field (see below).
   // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
+  a->mfdscr(R0);
   a->darn(R7);
   a->brw(R5, R6);
   a->blr();
@@ -524,6 +528,7 @@ void VM_Version::determine_features() {
 
   // determine which instructions are legal.
   int feature_cntr = 0;
+  if (code[feature_cntr++]) features |= mfdscr_m;
   if (code[feature_cntr++]) features |= darn_m;
   if (code[feature_cntr++]) features |= brw_m;
 

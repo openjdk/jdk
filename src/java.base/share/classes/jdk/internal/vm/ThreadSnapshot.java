@@ -52,12 +52,14 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
+     * Return null if a ThreadSnapshot is not created, for example if the
+     * thread has terminated.
      * @throws UnsupportedOperationException if not supported by VM
      */
     static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = create(thread);
         if (snapshot == null) {
-            throw new UnsupportedOperationException();
+            return null; // thread terminated
         }
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;
