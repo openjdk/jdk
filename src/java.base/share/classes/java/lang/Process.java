@@ -158,6 +158,7 @@ public abstract class Process implements AutoCloseable {
     private Charset inputCharset;
     private BufferedReader errorReader;
     private Charset errorCharset;
+    private volatile boolean closed;     // true if close() has been called
 
     /**
      * Default constructor for Process.
@@ -624,6 +625,7 @@ public abstract class Process implements AutoCloseable {
     /**
      * Close all writer and reader streams and terminate the process.
      * The streams are closed immediately and the process is terminated without waiting.
+     * This method is idempotent, if the stream is already closed invoking this method has no effect.
      * <p>
      * Before calling {@code close} the caller should read the streams for any
      * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
@@ -649,12 +651,18 @@ public abstract class Process implements AutoCloseable {
      * @since 26
      */
     public void close() {
-        // Close each stream
-        quietClose(outputWriter != null ? outputWriter : getOutputStream());
-        quietClose(inputReader != null ? inputReader  : getInputStream());
-        quietClose(errorReader != null ? errorReader : getErrorStream());
+        synchronized(this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            // Close each stream
+            quietClose(outputWriter != null ? outputWriter : getOutputStream());
+            quietClose(inputReader != null ? inputReader : getInputStream());
+            quietClose(errorReader != null ? errorReader : getErrorStream());
 
-        destroy();      // no-op if process is not alive
+            destroy();      // no-op if process is not alive
+        }
     }
 
     // Quietly close and log exception
