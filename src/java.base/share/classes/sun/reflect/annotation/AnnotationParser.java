@@ -291,8 +291,7 @@ public class AnnotationParser {
         }
 
         Map<String, Class<?>> memberTypes = type.memberTypes();
-        Map<String, Object> memberValues =
-            new LinkedHashMap<String, Object>(type.memberDefaults());
+        Map<String, Object> memberValues = new LinkedHashMap<>(type.memberDefaults());
         for (var e : type.memberDefaults().entrySet()) {
             Object value = e.getValue();
             memberValues.put(e.getKey(), eagerResolution ? ResolvableValue.resolved(value) : value);

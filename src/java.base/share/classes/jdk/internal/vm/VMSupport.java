@@ -25,7 +25,6 @@
 package jdk.internal.vm;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.reflect.ConstantPool;
@@ -39,7 +38,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.annotation.IncompleteAnnotationException;
+import java.lang.annotation.AnnotationTypeMismatchException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -48,8 +47,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.List;
 
+import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
 import sun.reflect.annotation.EnumValue;
 import sun.reflect.annotation.EnumValueArray;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
@@ -263,8 +264,6 @@ public class VMSupport {
             Object value = e.getValue();
             if (value == null) {
                 // IncompleteAnnotationException
-                dos.writeByte('x');
-                dos.writeUTF(new IncompleteAnnotationException(type, e.getKey()).toString());
                 continue;
             }
             Class<?> valueType = value.getClass();
@@ -419,13 +418,16 @@ public class VMSupport {
                         encodeAnnotation(dos, annotation);
                     }
                 } else {
-                    dos.writeByte('x');
-                    dos.writeUTF(value.toString());
+                    throw new InternalError("Unsupported annotation element component type " + componentType);
                 }
-
-            } else {
+            } else if (value instanceof TypeNotPresentExceptionProxy proxy) {
                 dos.writeByte('x');
-                dos.writeUTF(value.toString());
+                dos.writeUTF(proxy.typeName());
+            } else if (value instanceof AnnotationTypeMismatchExceptionProxy proxy) {
+                dos.writeByte('y');
+                dos.writeUTF(proxy.foundType());
+            } else {
+                throw new InternalError("Unsupported annotation element type " + valueType);
             }
         }
     }
@@ -438,9 +440,10 @@ public class VMSupport {
      * @param <A> type of the object representing a decoded annotation
      * @param <E> type of the object representing a decoded enum constant
      * @param <EA> type of the object representing a decoded array of enum constants
-     * @param <X> type of the object representing a decoded error
+     * @param <MT> type of the object representing a missing type
+     * @param <ETM> type of the object representing a decoded element type mismatch
      */
-    public interface AnnotationDecoder<T, A, E, EA, X> {
+    public interface AnnotationDecoder<T, A, E, EA, MT, ETM> {
         /**
          * Resolves a name in {@link Class#getName()} format to an object of type {@code T}.
          */
@@ -466,16 +469,25 @@ public class VMSupport {
          * Creates an object representing a decoded enum constant.
          *
          * @param enumType the enum type
-         * @param name the name of the enum constant
+         * @param names the name of the enum constant
          */
         EA newEnumValueArray(T enumType, List<String> names);
 
         /**
-         * Creates an object representing a decoded error value.
+         * Creates an object representing a missing type.
          *
-         * @param description of the error
+         * @param typeName see {@link TypeNotPresentException#typeName()}
          */
-        X newErrorValue(String description);
+        MT newMissingType(String typeName);
+
+        /**
+         * Creates an object representing element of an annotation whose type
+         * has changed after the annotation was compiled.
+         *
+         * @param foundType see {@link AnnotationTypeMismatchException#foundType()}
+         */
+        ETM newElementTypeMismatch(String foundType);
+
     }
 
     /**
@@ -484,11 +496,12 @@ public class VMSupport {
      * @param <T> type to which a type name is resolved
      * @param <A> type of the object representing a decoded annotation
      * @param <E> type of the object representing a decoded enum constant
-     * @param <X> type of the object representing a decoded error
+     * @param <MT> type of the object representing a missing type
+     * @param <ETM> type of the object representing a decoded element type mismatch
      * @return an immutable list of {@code A} objects
      */
     @SuppressWarnings("unchecked")
-    public static <T, A, E, EA, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, EA, X> decoder) {
+    public static <T, A, E, EA, MT, ETM> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
             DataInputStream dis = new DataInputStream(bais);
@@ -499,7 +512,7 @@ public class VMSupport {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static <T, A, E, EA, X> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
+    private static <T, A, E, EA, MT, ETM> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
         String typeName = dis.readUTF();
         T type = decoder.resolveType(typeName);
         int n = readLength(dis);
@@ -521,7 +534,8 @@ public class VMSupport {
                 case 'e' -> decoder.newEnumValue(decoder.resolveType(dis.readUTF()), dis.readUTF());
                 case '@' -> decodeAnnotation(dis, decoder);
                 case '[' -> decodeArray(dis, decoder);
-                case 'x' -> decoder.newErrorValue(dis.readUTF());
+                case 'x' -> decoder.newMissingType(dis.readUTF());
+                case 'y' -> decoder.newElementTypeMismatch(dis.readUTF());
                 default -> throw new InternalError("Unsupported tag: " + tag);
             });
         }
@@ -532,7 +546,7 @@ public class VMSupport {
         Object read() throws IOException;
     }
 
-    private static <T, A, E, EA, X> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
+    private static <T, A, E, EA, MT, ETM> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
         byte componentTag = dis.readByte();
         return switch (componentTag) {
             case 'B' -> readArray(dis, dis::readByte);
@@ -558,16 +572,8 @@ public class VMSupport {
      * Reads an enum encoded at the current read position of {@code dis} and
      * returns it as an object of type {@code E}.
      */
-    private static <T, A, E, EA, X> E readEnum(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder, T enumType) throws IOException {
-        return decoder.newEnumValue(enumType, dis.readUTF());
-    }
-
-    /**
-     * Reads an enum encoded at the current read position of {@code dis} and
-     * returns it as an object of type {@code E}.
-     */
     @SuppressWarnings("unchecked")
-    private static <T, A, E, EA, X> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder, T enumType) throws IOException {
+    private static <T, A, E, EA, MT, ETM> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder, T enumType) throws IOException {
         List<String> names = (List<String>) readArray(dis, dis::readUTF);
         return decoder.newEnumValueArray(enumType, names);
     }
@@ -576,7 +582,7 @@ public class VMSupport {
      * Reads a class encoded at the current read position of {@code dis} and
      * returns it as an object of type {@code T}.
      */
-    private static <T, A, E, EA, X> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
+    private static <T, A, E, EA, MT, ETM> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
         return decoder.resolveType(dis.readUTF());
     }
 
