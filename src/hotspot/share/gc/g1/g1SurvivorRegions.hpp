@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/growableArray.hpp"
 
 template <typename T>
 class GrowableArray;
