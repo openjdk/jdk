@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
 
 public final class PrecompiledHeaders {
 
-    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\\\?");
+    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+.hpp)\\s*\\\\?");
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
@@ -76,6 +77,7 @@ public final class PrecompiledHeaders {
         try (Stream<Path> files = Files.list(objsPath)) {
             occurrences = files
                     .filter(file -> file.getFileName().toString().endsWith(".d"))
+                    .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
                     .flatMap(file -> {
                         try {
                             return Files.lines(file);
@@ -89,6 +91,9 @@ public final class PrecompiledHeaders {
                     .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
                     .filter(dependency -> dependency.startsWith(HOTSPOT_SOURCE_PREFIX))
+                    // Avoid compiler specific headers
+                    .filter(Predicate.not(dependency -> dependency.endsWith("_gcc.hpp")))
+                    .filter(Predicate.not(dependency -> dependency.endsWith("_visCPP.hpp")))
                     .map(dependency -> dependency.replace(HOTSPOT_SOURCE_PREFIX, ""))
                     .collect(Collectors.toMap(Function.identity(), s -> 1, Integer::sum));
         }
@@ -123,7 +128,7 @@ public final class PrecompiledHeaders {
                 .map(header -> String.format("#include \"%s\"", header))
                 .collect(Collectors.joining(System.lineSeparator()));
         Files.write(precompiledHpp,
-                (System.lineSeparator() + headerLines).getBytes(),
+                (System.lineSeparator() + headerLines + System.lineSeparator()).getBytes(),
                 StandardOpenOption.APPEND);
     }
 
