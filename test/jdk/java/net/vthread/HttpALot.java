@@ -97,18 +97,20 @@ public class HttpALot {
         // go
         server.start();
         try (serverExecutor) {
-            factory = Thread.ofVirtual().name("fetcher-", 0).factory();
-            try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-                for (int i = 1; i <= requests; i++) {
-                    final String actual = executor.submit(() -> fetch(url)).get();
-                    if (!HELLO.equals(actual)) {
-                        throw new RuntimeException("unexpected response: \"" + actual
-                                + "\" for request " + i);
+            try {
+                factory = Thread.ofVirtual().name("fetcher-", 0).factory();
+                try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+                    for (int i = 1; i <= requests; i++) {
+                        final String actual = executor.submit(() -> fetch(url)).get();
+                        if (!HELLO.equals(actual)) {
+                            throw new RuntimeException("unexpected response: \"" + actual
+                                    + "\" for request " + i);
+                        }
                     }
                 }
+            } finally {
+                server.stop(1);
             }
-        } finally {
-            server.stop(1);
         }
 
         if (requestsHandled.get() < requests) {
