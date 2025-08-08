@@ -519,8 +519,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
     sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
-
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
+
+    DEBUG_ONLY(_g1h->policy()->record_young_rem_set_cards_at_start(_g1h->young_regions_cardset()->occupied()));
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
   }

@@ -2445,6 +2445,17 @@ void G1CollectedHeap::update_perf_counter_cpu_time() {
 void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();
 
+  assert(policy()->collector_state()->in_full_gc() ||
+         young_regions_cardset()->occupied() == policy()->num_young_rem_set_cards_at_start(),
+         "Should not add cards to young gen remembered set during young GC, but "
+         "changed from %zu at start to %zu now.",
+         policy()->num_young_rem_set_cards_at_start(), young_regions_cardset()->occupied());
+  // Clear current young only collection set. As cards will be refined, they will
+  // be added to the remembered set.
+  // It is fine to clear it this late - evacuation does not add any remembered sets
+  // by itself, but only mark cards.
+  young_regions_cset_group()->clear();
+
   clear_region_attr();
 
   guarantee(_eden.length() == 0, "eden should have been cleared");
