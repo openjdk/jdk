@@ -574,7 +574,6 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
-  _collection_set->abandon_all_candidates();
   _pending_cards_at_gc_start = 0;
 }
 
