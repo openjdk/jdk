@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,24 @@
 package jdk.vm.ci.meta;
 
 /**
- * Represents an error constant within an {@link AnnotationValue}.
+ * Represents a deferred {@link java.lang.annotation.AnnotationTypeMismatchException} within an {@link AnnotationValue}.
  * <p>
- * Similar to {@link sun.reflect.annotation.ExceptionProxy}.
+ * Similar to {@code AnnotationTypeMismatchExceptionProxy}.
  */
-public final class ErrorData {
-    private final String description;
+public final class ElementTypeMismatch {
+    private final String foundType;
 
     /**
-     * Creates an error constant.
-     *
-     * @param description description of the error
+     * @param foundType see {@link java.lang.annotation.AnnotationTypeMismatchException#foundType()}
      */
-    public ErrorData(String description) {
-        this.description = description;
+    public ElementTypeMismatch(String foundType) {
+        this.foundType = foundType;
     }
 
     @Override
     public String toString() {
-        return description;
+        // Same value as AnnotationTypeMismatchExceptionProxy.toString()
+        return "/* Warning type mismatch! \"" + foundType + "\" */";
     }
 
     @Override
@@ -49,15 +48,21 @@ public final class ErrorData {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ErrorData) {
-            ErrorData that = (ErrorData) obj;
-            return this.description.equals(that.description);
+        if (obj instanceof ElementTypeMismatch that) {
+            return this.foundType.equals(that.foundType);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return description.hashCode();
+        return foundType.hashCode();
+    }
+
+    /**
+     * @see java.lang.annotation.AnnotationTypeMismatchException#foundType()
+     */
+    public String getFoundType() {
+        return foundType;
     }
 }

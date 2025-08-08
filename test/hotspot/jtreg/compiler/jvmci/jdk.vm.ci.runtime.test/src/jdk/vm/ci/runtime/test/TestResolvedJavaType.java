@@ -28,9 +28,11 @@
  * @library /testlibrary/asm
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -81,6 +83,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.vm.ci.meta.ElementTypeMismatch;
+import jdk.vm.ci.meta.MissingType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -102,6 +106,9 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.AnnotationSupport;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import sun.reflect.annotation.ExceptionProxy;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
+import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
 
 /**
  * Tests for {@link ResolvedJavaType}.
@@ -1318,10 +1325,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         values = annotated.getAnnotationValues(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
         assertTrue(values.toString(), values.isEmpty());
 
-        return testGetAnnotationValue(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
+        return testGetAnnotationValue(annotated, List.of(annotatedElement.getAnnotations()));
     }
 
-    private static List<AnnotationValue> testGetAnnotationValue(AnnotatedElement annotatedElement, Annotated annotated, List<Annotation> annotations) throws AssertionError {
+    private static List<AnnotationValue> testGetAnnotationValue(Annotated annotated, List<Annotation> annotations) throws AssertionError {
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         List<AnnotationValue> res = new ArrayList<>(annotations.size());
         for (Annotation a : annotations) {
@@ -1377,19 +1384,43 @@ public class TestResolvedJavaType extends TypeUniverse {
         for (Map.Entry<String, Object> e : values.entrySet()) {
             String name = e.getKey();
             Object aElement = e.getValue();
-            Object avElement;
-            try {
-                avElement = av.get(name, Object.class);
-            } catch (IllegalArgumentException ex) {
-                assertEquals(aElement.toString(), ex.getMessage());
-                continue;
-            }
+            Object avElement = av.get(name, Object.class);
             try {
                 assertAnnotationElementsEqual(aElement, avElement);
             } catch (ClassCastException ex) {
                 throw new AssertionError(a.getClass().getName() + "." + name + " has wrong type: " + avElement.getClass().getName(), ex);
             }
+
+            if (!(aElement instanceof ExceptionProxy)) {
+                Class<?> elementType = toAnnotationValueElementType(aElement.getClass());
+                av.get(name, elementType);
+            }
         }
+    }
+
+    /**
+     * Gets the type of an element in {@link AnnotationValue} for {@code type}.
+     *
+     * @param type the type of an annotation element as returned by
+     *             {@code AnnotationInvocationHandler}
+     */
+    public static Class<?> toAnnotationValueElementType(Class<?> type) {
+        if (type == Class.class) {
+            return ResolvedJavaType.class;
+        }
+        if (Enum.class.isAssignableFrom(type)) {
+            return EnumData.class;
+        }
+        if (Enum[].class.isAssignableFrom(type)) {
+            return EnumArrayData.class;
+        }
+        if (Annotation.class.isAssignableFrom(type)) {
+            return AnnotationValue.class;
+        }
+        if (type.isArray()) {
+            return List.class;
+        }
+        return type;
     }
 
     private static void assertAnnotationElementsEqual(Object aElement, Object avElement) {
@@ -1402,6 +1433,14 @@ public class TestResolvedJavaType extends TypeUniverse {
             assertClassObjectsEquals(aElement, avElement);
         } else if (aElement instanceof Annotation) {
             assertAnnotationObjectsEquals(aElement, avElement);
+        } else if (aElement instanceof TypeNotPresentExceptionProxy proxy) {
+            assertTrue(avElement.toString(), avElement instanceof MissingType);
+            MissingType mt = (MissingType) avElement;
+            assertEquals(proxy.typeName(), mt.getTypeName());
+        } else if (aElement instanceof AnnotationTypeMismatchExceptionProxy proxy) {
+            assertTrue(avElement.toString(), avElement instanceof ElementTypeMismatch);
+            ElementTypeMismatch etm = (ElementTypeMismatch) avElement;
+            assertEquals(proxy.foundType(), etm.getFoundType());
         } else if (valueType.isArray()) {
             int length = Array.getLength(aElement);
             if (valueType.getComponentType().isEnum()) {

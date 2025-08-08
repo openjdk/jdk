@@ -26,21 +26,22 @@ import java.util.Map;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
+import jdk.vm.ci.meta.ElementTypeMismatch;
 import jdk.vm.ci.meta.AnnotationValue;
 import jdk.vm.ci.meta.EnumArrayData;
 import jdk.vm.ci.meta.EnumData;
-import jdk.vm.ci.meta.ErrorData;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.MissingType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
- * and employs {@link AnnotationValue} and {@link EnumData} to represent decoded annotations and enum
+ * and employs {@link AnnotationValue} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumData, EnumArrayData, ErrorData> {
+final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumData, EnumArrayData, MissingType, ElementTypeMismatch> {
 
     private final HotSpotResolvedJavaType accessingClass;
 
@@ -70,7 +71,12 @@ final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType
     }
 
     @Override
-    public ErrorData newErrorValue(String description) {
-        return new ErrorData(description);
+    public MissingType newMissingType(String typeName) {
+        return new MissingType(typeName);
+    }
+
+    @Override
+    public ElementTypeMismatch newElementTypeMismatch(String foundType) {
+        return new ElementTypeMismatch(foundType);
     }
 }
