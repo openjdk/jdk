@@ -78,7 +78,6 @@ public final class PrecompiledHeaders {
             occurrences = files
                     .filter(file -> file.getFileName().toString().endsWith(".d"))
                     .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
-                    .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
                     .filter(Predicate.not(file -> file.getFileName().toString().contains(PRECOMPILED_HPP_NAME)))
                     .flatMap(file -> {
                         try {
