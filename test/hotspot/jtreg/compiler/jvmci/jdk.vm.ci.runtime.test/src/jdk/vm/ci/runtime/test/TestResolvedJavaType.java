@@ -85,6 +85,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
+import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.annotation.MissingType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -94,8 +95,7 @@ import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.annotation.Annotated;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.EnumArrayData;
-import jdk.vm.ci.meta.annotation.EnumData;
+import jdk.vm.ci.meta.annotation.EnumArrayElement;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -1410,10 +1410,10 @@ public class TestResolvedJavaType extends TypeUniverse {
             return ResolvedJavaType.class;
         }
         if (Enum.class.isAssignableFrom(type)) {
-            return EnumData.class;
+            return EnumElement.class;
         }
         if (Enum[].class.isAssignableFrom(type)) {
-            return EnumArrayData.class;
+            return EnumArrayElement.class;
         }
         if (Annotation.class.isAssignableFrom(type)) {
             return AnnotationValue.class;
@@ -1427,7 +1427,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static void assertAnnotationElementsEqual(Object aElement, Object avElement) {
         Class<?> valueType = aElement.getClass();
         if (valueType.isEnum()) {
-            String avEnumName = ((EnumData) avElement).name;
+            String avEnumName = ((EnumElement) avElement).name;
             String aEnumName = ((Enum<?>) aElement).name();
             assertEquals(avEnumName, aEnumName);
         } else if (aElement instanceof Class) {
@@ -1445,7 +1445,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         } else if (valueType.isArray()) {
             int length = Array.getLength(aElement);
             if (valueType.getComponentType().isEnum()) {
-                EnumArrayData array = (EnumArrayData) avElement;
+                EnumArrayElement array = (EnumArrayElement) avElement;
                 assertEquals(length, array.names.size());
                 for (int i = 0; i < length; i++) {
                     String avEnumName = array.names.get(i);
