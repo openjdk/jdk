@@ -36,6 +36,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -83,18 +84,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.vm.ci.meta.ElementTypeMismatch;
-import jdk.vm.ci.meta.MissingType;
+import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
+import jdk.vm.ci.meta.annotation.MissingType;
 import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.Annotated;
-import jdk.vm.ci.meta.AnnotationValue;
-import jdk.vm.ci.meta.EnumArrayData;
-import jdk.vm.ci.meta.EnumData;
+import jdk.vm.ci.meta.annotation.Annotated;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.EnumArrayData;
+import jdk.vm.ci.meta.annotation.EnumData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;

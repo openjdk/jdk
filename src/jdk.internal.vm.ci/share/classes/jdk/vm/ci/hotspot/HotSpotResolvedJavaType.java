@@ -24,7 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import java.util.List;
 
-import jdk.vm.ci.meta.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 

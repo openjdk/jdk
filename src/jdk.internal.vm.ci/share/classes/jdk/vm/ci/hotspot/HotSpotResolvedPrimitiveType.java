@@ -30,7 +30,7 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
