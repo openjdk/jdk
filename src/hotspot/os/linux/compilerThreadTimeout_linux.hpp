@@ -39,11 +39,11 @@ class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
   static const int TIMEOUT_SIGNAL = SIGALRM;
   void compiler_signal_handler(int signo, siginfo_t* info, void* context);
  private:
-  timer_t          _timeout_timer;
+  timer_t          _timer;
 #endif // ASSERT
 #endif // !PRODUCT
  public:
-  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(: _timeout_timer(nullptr))) {};
+  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(: _timer(nullptr))) {};
 
   bool init_timeout();
   void arm();

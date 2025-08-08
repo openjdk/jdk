@@ -62,7 +62,7 @@ void CompilerThreadTimeoutLinux::arm() {
   const struct itimerspec its {.it_interval = ts, .it_value = ts};
 
   // Start the timer.
-  timer_settime(_timeout_timer, 0, &its, nullptr);
+  timer_settime(_timer, 0, &its, nullptr);
 #endif // ASSERT
 }
 
@@ -77,7 +77,7 @@ void CompilerThreadTimeoutLinux::disarm() {
     .it_interval = {.tv_sec = 0, .tv_nsec=0},
     .it_value = {.tv_sec = 0, .tv_nsec=0}
   };
-  timer_settime(_timeout_timer, 0, &its, nullptr);
+  timer_settime(_timer, 0, &its, nullptr);
 #endif // ASSERT
 }
 
@@ -104,7 +104,7 @@ bool CompilerThreadTimeoutLinux::init_timeout() {
   if (err != 0) {
     return false;
   }
-  err = timer_create(clock, &sev, &_timeout_timer);
+  err = timer_create(clock, &sev, &_timer);
   if (err != 0) {
     return false;
   }
