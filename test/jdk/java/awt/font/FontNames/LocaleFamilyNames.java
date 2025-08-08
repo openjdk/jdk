@@ -26,7 +26,7 @@
  * @bug 4935798 6521210 6901159
  * @summary Tests that all family names that are reported in all locales
  * correspond to some font returned from getAllFonts().
- * @run main/othervm/timeout=1200 LocaleFamilyNames
+ * @run main/othervm/timeout=360 LocaleFamilyNames
  */
 import java.awt.*;
 import java.util.*;
