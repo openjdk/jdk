@@ -610,12 +610,12 @@ public interface JavaLangAccess {
 
     /**
      * Invokes a supplier to produce a non-null result if this virtual thread is unmounted.
-     * @param supplier1 invoked if this virtual thread is unmounted and alive. The virtual
-     *     thread is suspended while this supplier executes
-     * @param supplier2 invoked if this virtual thread is not alive
+     * @param supplyIfAlive invoked if this virtual thread is unmounted and alive. The
+     *      virtual thread is suspended while the supplier executes
+     * @param supplyIfNotAlive invoked if this virtual thread is not alive
      * @return the result; {@code null} if mounted, suspended or in transition
      */
-    <T> T supplyIfUnmounted(Thread thread, Supplier<T> supplier1, Supplier<T> supplier2);
+    <T> T supplyIfUnmounted(Thread thread, Supplier<T> supplyIfAlive, Supplier<T> supplyIfNotAlive);
 
     /**
      * Creates a new StackWalker

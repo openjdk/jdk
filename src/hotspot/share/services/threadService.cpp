@@ -1278,16 +1278,14 @@ public:
 
     bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
 
-    // For a mounted virtual thread then we must check that we are in a handshake with the
-    // current carrier and that the continuation is mounted.
+    // For a mounted virtual thread then we must check that we are in a handshake with
+    // the JavaThread that has the virtual thread's continuation mounted.
     if (is_virtual && _java_thread != nullptr) {
-      if (_java_thread->vthread() != _thread_h()) {
-        return;  // the virtual thread is not mounted on this JavaThread
-      }
       const ContinuationEntry* ce = _java_thread->vthread_continuation();
       if (ce == nullptr || ce->cont_oop(_java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
         return; // continuation not mounted
       }
+      assert(_java_thread->vthread() == _thread_h(), "Wrong Thread identity");
     }
 
     // thread status, and carrier if mounted
@@ -1299,7 +1297,7 @@ public:
       } else {
         // use virtual thread state when unmounted
         int vt_state = java_lang_VirtualThread::state(_thread_h());
-        assert((vt_state & java_lang_VirtualThread::SUSPENDED) != 0, "unmounted virtual thread should be suspended");
+        assert((vt_state & java_lang_VirtualThread::SUSPENDED) != 0, "Unmounted virtual thread should be suspended");
         _thread_status = java_lang_VirtualThread::map_state_to_thread_status(vt_state);
       }
     } else {
@@ -1475,15 +1473,12 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, jboolean suspend
     return nullptr; // thread terminated so not of interest
   }
 
-  if (is_virtual) {
-    if (suspended_by_caller == JNI_TRUE) {
-      assert(java_thread == nullptr, "Should be unmounted");
-      assert((java_lang_VirtualThread::state(thread_h()) & java_lang_VirtualThread::SUSPENDED) != 0, "Should be suspended");
-    } else {
-      if (java_thread == nullptr) {
-        return nullptr;  // unmounted but not suspended, caller must retry
-      }
-    }
+  // unmounted virtual thread needs to be suspended by caller
+  if (is_virtual && !has_javathread) {
+   if (suspended_by_caller == JNI_FALSE) {
+     return nullptr;  // called needs to suspend and retry
+   }
+   assert((java_lang_VirtualThread::state(thread_h()) & java_lang_VirtualThread::SUSPENDED) != 0, "Not suspended");
   }
 
   // Handshake with target

@@ -1177,19 +1177,19 @@ final class VirtualThread extends BaseVirtualThread {
 
     /**
      * Invokes a supplier to produce a non-null result if this virtual thread is unmounted.
-     * @param supplier1 invoked if this virtual thread is unmounted and alive. The virtual
-     *     thread is suspended while this supplier executes
-     * @param supplier2 invoked if this virtual thread is not alive
+     * @param supplyIfAlive invoked if this virtual thread is unmounted and alive. The
+     *      virtual thread is suspended while the supplier executes
+     * @param supplyIfNotAlive invoked if this virtual thread is not alive
      * @return the result; {@code null} if mounted, suspended or in transition
      */
-    <T> T supplyIfUnmounted(Supplier<T> supplier1, Supplier<T> supplier2) {
+    <T> T supplyIfUnmounted(Supplier<T> supplyIfAlive, Supplier<T> supplyIfNotAlive) {
         int initialState = state() & ~SUSPENDED;
         switch (initialState) {
             case NEW, STARTED, TERMINATED -> {
-                return supplier2.get();  // terminated or not started
+                return supplyIfNotAlive.get();  // has not yet executed or terminated
             }
             case RUNNING, PINNED, TIMED_PINNED -> {
-                return null; // mounted
+                return null;   // mounted
             }
             case PARKED, TIMED_PARKED, BLOCKED, WAIT, TIMED_WAIT -> {
                 // unmounted, not runnable
@@ -1198,7 +1198,7 @@ final class VirtualThread extends BaseVirtualThread {
                 // unmounted, runnable
             }
             case PARKING, TIMED_PARKING, BLOCKING, YIELDING, WAITING, TIMED_WAITING -> {
-                return null; // in transition
+                return null;  // in transition
             }
             default -> throw new InternalError("" + initialState);
         }
@@ -1210,7 +1210,7 @@ final class VirtualThread extends BaseVirtualThread {
         }
 
         try {
-            return supplier1.get();
+            return supplyIfAlive.get();
         } finally {
             assert state == suspendedState;
             setState(initialState);

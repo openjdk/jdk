@@ -2310,9 +2310,9 @@ public final class System {
                 return VirtualThread.defaultScheduler();
             }
 
-            public <T> T supplyIfUnmounted(Thread thread, Supplier<T> supplier1, Supplier<T> supplier2) {
+            public <T> T supplyIfUnmounted(Thread thread, Supplier<T> supplyIfAlive, Supplier<T> supplyIfNotAlive) {
                 if (thread instanceof VirtualThread vthread) {
-                    return vthread.supplyIfUnmounted(supplier1, supplier2);
+                    return vthread.supplyIfUnmounted(supplyIfAlive, supplyIfNotAlive);
                 } else {
                     throw new IllegalArgumentException();
                 }
