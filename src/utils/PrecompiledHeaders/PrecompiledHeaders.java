@@ -82,7 +82,7 @@ public final class PrecompiledHeaders {
                     .flatMap(file -> {
                         try {
                             // The first line contains the object name
-                            return Files.lines(file).skip(1);
+                            return Files.lines(file).skip(1).distinct();
                         } catch (IOException exception) {
                             throw new UncheckedIOException(exception);
                         }
