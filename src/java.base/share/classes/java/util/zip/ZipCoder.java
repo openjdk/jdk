@@ -253,7 +253,7 @@ class ZipCoder {
         @Override
         String toString(byte[] ba, int off, int length) {
             try {
-                return JLA.newStringUTF8(ba, off, length);
+                return JLA.newStringUTF8NoReplacement(ba, off, length);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
@@ -262,7 +262,7 @@ class ZipCoder {
         @Override
         byte[] getBytes(String s) {
             try {
-                return JLA.getBytesUTF8(s);
+                return JLA.getBytesUTF8NoReplacement(s);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
@@ -279,9 +279,9 @@ class ZipCoder {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
                 // shared and that decoder is not thread safe.
-                // We use the JLA.newStringUTF8 variant to throw
+                // We use the JLA.newStringUTF8NoReplacement variant to throw
                 // exceptions eagerly when opening ZipFiles
-                return hash(JLA.newStringUTF8(a, off, len));
+                return hash(JLA.newStringUTF8NoReplacement(a, off, len));
             }
             int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
             if (a[end - 1] != '/') {
@@ -297,7 +297,7 @@ class ZipCoder {
         @Override
         byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.uncheckedGetBytes(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.uncheckedGetBytesNoReplacement(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return EXACT_MATCH;

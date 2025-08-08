@@ -3043,7 +3043,7 @@ public final class Files {
         byte[] ba = readAllBytes(path);
         if (path.getClass().getModule() != Object.class.getModule())
             ba = ba.clone();
-        return JLA.uncheckedNewString(ba, cs);
+        return JLA.uncheckedNewStringNoReplacement(ba, cs);
     }
 
     /**
@@ -3362,7 +3362,7 @@ public final class Files {
         Objects.requireNonNull(csq);
         Objects.requireNonNull(cs);
 
-        byte[] bytes = JLA.uncheckedGetBytes(String.valueOf(csq), cs);
+        byte[] bytes = JLA.uncheckedGetBytesNoReplacement(String.valueOf(csq), cs);
         if (path.getClass().getModule() != Object.class.getModule())
             bytes = bytes.clone();
         write(path, bytes, options);

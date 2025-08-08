@@ -330,7 +330,7 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String uncheckedNewString(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringNoReplacement(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
      * {@return the sequence of bytes obtained by encoding the given string in
@@ -345,7 +345,7 @@ public interface JavaLangAccess {
      * @throws NullPointerException If {@code s} or {@code cs} is null
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    byte[] uncheckedGetBytes(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * {@return a new string by decoding from the given UTF-8 bytes array}
@@ -356,9 +356,9 @@ public interface JavaLangAccess {
      * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
      *         {@code length} is negative, or {@code offset} is greater than
      *         {@code bytes.length - length}
-     * @throws CharacterCodingException for malformed input or unmappable characters
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    String newStringUTF8(byte[] bytes, int offset, int length) throws CharacterCodingException;
+    String newStringUTF8NoReplacement(byte[] bytes, int offset, int length) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -390,7 +390,7 @@ public interface JavaLangAccess {
      * @throws NullPointerException If {@code s} is null
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    byte[] getBytesUTF8(String s) throws CharacterCodingException;
+    byte[] getBytesUTF8NoReplacement(String s) throws CharacterCodingException;
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by

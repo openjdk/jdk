@@ -2128,8 +2128,8 @@ public final class System {
                 return StringCoding.countNonZeroAscii(s);
             }
 
-            public String uncheckedNewString(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newString(bytes, cs);
+            public String uncheckedNewStringNoReplacement(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringNoReplacement(bytes, cs);
             }
 
             public char uncheckedGetUTF16Char(byte[] bytes, int index) {
@@ -2140,16 +2140,16 @@ public final class System {
                 StringUTF16.putChar(bytes, index, ch);
             }
 
-            public byte[] uncheckedGetBytes(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytes(s, cs);
+            public byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesNoReplacement(s, cs);
             }
 
-            public String newStringUTF8(byte[] bytes, int off, int len) throws CharacterCodingException {
-                return String.newStringUTF8(bytes, off, len, true);
+            public String newStringUTF8NoReplacement(byte[] bytes, int off, int len) throws CharacterCodingException {
+                return String.newStringUTF8NoReplacement(bytes, off, len, true);
             }
 
-            public byte[] getBytesUTF8(String s) throws CharacterCodingException {
-                return String.getBytesUTF8(s);
+            public byte[] getBytesUTF8NoReplacement(String s) throws CharacterCodingException {
+                return String.getBytesUTF8NoReplacement(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
