@@ -46,10 +46,7 @@
 package jdk.vm.ci.runtime.test;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
-import static java.lang.reflect.Modifier.isProtected;
-import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static jdk.vm.ci.meta.MetaUtil.internalNameToJava;
 import static jdk.vm.ci.meta.MetaUtil.toInternalName;
@@ -75,8 +72,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -710,40 +705,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    static class Declarations {
-
-        final Method implementation;
-        final Set<Method> declarations;
-
-        Declarations(Method impl) {
-            this.implementation = impl;
-            declarations = new HashSet<>();
-        }
-    }
-
-    /**
-     * See <a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.5">Method
-     * overriding</a>.
-     */
-    static boolean isOverriderOf(Method impl, Method m) {
-        if (!isPrivate(m.getModifiers()) && !isFinal(m.getModifiers())) {
-            if (m.getName().equals(impl.getName())) {
-                if (m.getReturnType() == impl.getReturnType()) {
-                    if (Arrays.equals(m.getParameterTypes(), impl.getParameterTypes())) {
-                        if (isPublic(m.getModifiers()) || isProtected(m.getModifiers())) {
-                            // m is public or protected
-                            return isPublic(impl.getModifiers()) || isProtected(impl.getModifiers());
-                        } else {
-                            // m is package-private
-                            return impl.getDeclaringClass().getPackage() == m.getDeclaringClass().getPackage();
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     static final Map<Class<?>, VTable> vtables = new HashMap<>();
 
     static class VTable {
@@ -1245,7 +1206,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void getAnnotationValueTest() throws Exception {
+    public void getAnnotationValueTest() {
         getAnnotationValueTest(AnnotationTestInput.AnnotatedClass.class);
         getAnnotationValueTest(int.class);
         getAnnotationValueTest(void.class);
@@ -1342,7 +1303,7 @@ public class TestResolvedJavaType extends TypeUniverse {
      *
      * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
      */
-    public static void getAnnotationValueTest(AnnotatedElement annotatedElement) throws Exception {
+    public static void getAnnotationValueTest(AnnotatedElement annotatedElement) {
         Annotated annotated = toAnnotated(annotatedElement);
         ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
@@ -1470,13 +1431,5 @@ public class TestResolvedJavaType extends TypeUniverse {
         Annotation aAnnotation = (Annotation) aElement;
         AnnotationValue avAnnotation = (AnnotationValue) avElement;
         assertAnnotationsEquals(aAnnotation, avAnnotation);
-    }
-
-    private static void assertArraysEqual(Object aElement, Object avElement, int length, BiConsumer<Object, Object> assertEqualty) {
-        Object[] aArray = (Object[]) aElement;
-        Object[] avArray = (Object[]) avElement;
-        for (int i = 0; i < length; i++) {
-            assertEqualty.accept(aArray[i], avArray[i]);
-        }
     }
 }
