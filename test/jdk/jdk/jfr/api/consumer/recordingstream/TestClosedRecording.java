@@ -23,48 +23,39 @@
 
 package jdk.jfr.api.consumer.recordingstream;
 
-import jdk.jfr.Event;
-import jdk.jfr.FlightRecorder;
-import jdk.jfr.FlightRecorderListener;
-import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
+import jdk.jfr.*;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
  * @test
  * @summary Tests that a RecordingStream is closed if the underlying Recording
- *          is stopped.
+ * is closed.
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestStoppedRecording
+ * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestClosedRecording
  */
-public class TestStoppedRecording {
+public class TestClosedRecording {
 
     private static class SendEventListener implements FlightRecorderListener {
         @Override
         public void recordingStateChanged(Recording recording) {
-            if (recording.getState() == RecordingState.RUNNING) {
-                StopEvent e = new StopEvent();
+            if(recording.getState() == RecordingState.RUNNING){
+                CloseEvent e = new CloseEvent();
                 e.commit();
             }
         }
     }
 
-    private static final class StopEvent extends Event {
+    private static final class CloseEvent extends Event {
     }
 
-    private static final Consumer<RecordedEvent> STOP_RECORDING = e -> {
-        List<Recording> recordings = FlightRecorder.getFlightRecorder().getRecordings().stream().filter(r -> r.getState() == RecordingState.RUNNING).toList();
-        if (recordings.size() != 1) {
-            throw new IllegalStateException("Expected one recording to be running");
-        }
-        Recording r = recordings.getFirst();
-        r.stop();
+    private static final Consumer<RecordedEvent> CLOSE_RECORDING = e -> {
+        FlightRecorder.getFlightRecorder().getRecordings().getFirst().close();
     };
 
     public static void main(String... args) throws Exception {
@@ -75,17 +66,20 @@ public class TestStoppedRecording {
 
     private static void sync() throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
-            rs.onEvent(STOP_RECORDING);
+            rs.onEvent(CLOSE_RECORDING);
             rs.start();
         }
     }
 
     private static void async() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.onEvent(STOP_RECORDING);
+            rs.onEvent(CLOSE_RECORDING);
+            rs.onClose(() -> {
+                latch.countDown();
+            });
             rs.startAsync();
-            rs.awaitTermination();
-            rs.stop();
+            latch.await();
         }
     }
 }

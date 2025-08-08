@@ -27,11 +27,8 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,11 +37,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import javax.management.AttributeChangeNotification;
+import javax.management.InstanceNotFoundException;
 import javax.management.JMX;
+import javax.management.ListenerNotFoundException;
 import javax.management.MBeanServerConnection;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
@@ -54,11 +57,9 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
 import jdk.jfr.internal.management.StreamBarrier;
-import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
 /**
@@ -150,14 +151,18 @@ public final class RemoteRecordingStream implements EventStream {
     final EventStream stream;
     final DiskRepository repository;
     final Instant creationTime;
-    final Object lock = new Object();
+    private final ReentrantLock lock = new ReentrantLock();
     volatile Instant startTime;
     volatile Instant endTime;
     volatile boolean closed;
+    volatile boolean stopped;
     // always guarded by lock
     private boolean started;
     private Duration maxAge;
     private long maxSize;
+    private final MBeanServerConnection connection;
+    private RemoteStoppedListener remoteStoppedListener;
+    private RemoteClosedListener remoteClosedListener;
 
     /**
      * Creates an event stream that operates against a {@link MBeanServerConnection}
@@ -211,6 +216,7 @@ public final class RemoteRecordingStream implements EventStream {
         }
         checkFileAccess(path);
         creationTime = Instant.now();
+        this.connection = connection;
         mbean = createProxy(connection);
         recordingId = createRecording();
         stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean));
@@ -327,7 +333,7 @@ public final class RemoteRecordingStream implements EventStream {
             ManagementSupport.logDebug(e.getMessage());
             close();
         }
-    };
+    }
 
     /**
      * Disables event with the specified name.
@@ -396,10 +402,13 @@ public final class RemoteRecordingStream implements EventStream {
      *                                  state
      */
     public void setMaxAge(Duration maxAge) {
-        synchronized (lock) {
+        try {
+            lock.lock();
             repository.setMaxAge(maxAge);
             this.maxAge = maxAge;
             updateOnCompleteHandler();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -426,10 +435,13 @@ public final class RemoteRecordingStream implements EventStream {
         if (maxSize < 0) {
             throw new IllegalArgumentException("Max size of recording can't be negative");
         }
-        synchronized (lock) {
+        try {
+            lock.lock();
             repository.setMaxSize(maxSize);
             this.maxSize = maxSize;
             updateOnCompleteHandler();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -460,23 +472,46 @@ public final class RemoteRecordingStream implements EventStream {
 
     @Override
     public void close() {
-        synchronized (lock) { // ensure one closer
+        try {
+            lock.lock();
             if (closed) {
                 return;
             }
+            closeInternal();
+            try {
+                if (remoteClosedListener != null) {
+                    connection.removeNotificationListener(OBJECT_NAME, remoteClosedListener);
+                }
+                mbean.closeRecording(recordingId);
+            } catch (InstanceNotFoundException | ListenerNotFoundException | IOException e) {
+                ManagementSupport.logDebug(e.getMessage());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void closeInternal() {
+        final boolean isHeldByCurrentThread = lock.isHeldByCurrentThread();
+        try {
+            if (!isHeldByCurrentThread) {
+                lock.lock();
+            }
+            if (closed) {
+                return;
+            }
+            ManagementSupport.setOnChunkCompleteHandler(stream, null);
+            stream.close();
+            try {
+                repository.close();
+            } catch (IOException e) {
+                ManagementSupport.logDebug(e.getMessage());
+            }
             closed = true;
-        }
-        ManagementSupport.setOnChunkCompleteHandler(stream, null);
-        stream.close();
-        try {
-            mbean.closeRecording(recordingId);
-        } catch (IOException e) {
-            ManagementSupport.logDebug(e.getMessage());
-        }
-        try {
-            repository.close();
-        } catch (IOException e) {
-            ManagementSupport.logDebug(e.getMessage());
+        } finally {
+            if (!isHeldByCurrentThread) {
+                lock.unlock();
+            }
         }
     }
 
@@ -512,6 +547,10 @@ public final class RemoteRecordingStream implements EventStream {
         ensureStartable();
         try {
             try {
+                this.remoteStoppedListener = new RemoteStoppedListener(recordingId, this);
+                this.remoteClosedListener = new RemoteClosedListener(recordingId, this);
+                connection.addNotificationListener(OBJECT_NAME, remoteStoppedListener, null, null);
+                connection.addNotificationListener(OBJECT_NAME, remoteClosedListener, null, null);
                 mbean.startRecording(recordingId);
             } catch (IllegalStateException ise) {
                 throw ise;
@@ -530,6 +569,10 @@ public final class RemoteRecordingStream implements EventStream {
         ensureStartable();
         stream.startAsync();
         try {
+            this.remoteStoppedListener = new RemoteStoppedListener(recordingId, this);
+            this.remoteClosedListener = new RemoteClosedListener(recordingId, this);
+            connection.addNotificationListener(OBJECT_NAME, remoteStoppedListener, null, null);
+            connection.addNotificationListener(OBJECT_NAME, remoteClosedListener, null, null);
             mbean.startRecording(recordingId);
             startDownload();
         } catch (Exception e) {
@@ -575,7 +618,8 @@ public final class RemoteRecordingStream implements EventStream {
      * @since 20
      */
     public boolean stop() {
-        synchronized (lock) {
+        try {
+            lock.lock();
             if (closed) {
                 throw new IllegalStateException("Event stream is closed");
             }
@@ -583,16 +627,13 @@ public final class RemoteRecordingStream implements EventStream {
                 throw new IllegalStateException("Event stream must be started before it can stopped");
             }
             try {
-                boolean stopped = false;
-                try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
-                    try (StreamBarrier rb = repository.activateStreamBarrier()) {
-                        stopped = mbean.stopRecording(recordingId);
-                        ManagementSupport.setCloseOnComplete(stream, false);
-                        long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();
-                        pb.setStreamEnd(stopTime);
-                        rb.setStreamEnd(stopTime);
-                    }
+                if (remoteStoppedListener != null) {
+                    connection.removeNotificationListener(OBJECT_NAME, remoteStoppedListener);
                 }
+                stopped = mbean.stopRecording(this.recordingId);
+                RecordingInfo recordingInfo = mbean.getRecordings().stream().filter(r -> r.getId() == this.recordingId).findFirst().get();
+                long stopTime = recordingInfo.getStopTime();
+                stopInternal(stopTime);
                 try {
                     stream.awaitTermination();
                 } catch (InterruptedException e) {
@@ -603,11 +644,39 @@ public final class RemoteRecordingStream implements EventStream {
                 ManagementSupport.logDebug(e.getMessage());
                 return false;
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean stopInternal(long stopTime) {
+        final boolean isHeldByCurrentThread = lock.isHeldByCurrentThread();
+        try {
+            if (!isHeldByCurrentThread) {
+                lock.lock();
+            }
+            boolean stopped = false;
+            try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
+                try (StreamBarrier rb = repository.activateStreamBarrier()) {
+                    ManagementSupport.setCloseOnComplete(stream, false);
+                    pb.setStreamEnd(stopTime);
+                    rb.setStreamEnd(stopTime);
+                }
+            }
+            return stopped;
+        } catch (Exception e) {
+            ManagementSupport.logDebug(e.getMessage());
+            return false;
+        } finally {
+            if (!isHeldByCurrentThread) {
+                lock.unlock();
+            }
         }
     }
 
     private void ensureStartable() {
-        synchronized (lock) {
+        try {
+            lock.lock();
             if (closed) {
                 throw new IllegalStateException("Event stream is closed");
             }
@@ -615,6 +684,8 @@ public final class RemoteRecordingStream implements EventStream {
                 throw new IllegalStateException("Event stream can only be started once");
             }
             started = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -642,7 +713,8 @@ public final class RemoteRecordingStream implements EventStream {
         long id = -1;
         try {
             FileDump fileDump;
-            synchronized (lock) { // ensure running state while preparing dump
+            try {
+                lock.lock(); // ensure running state while preparing dump
                 if (closed) {
                     throw new IOException("Recording stream has been closed, no content to write");
                 }
@@ -656,6 +728,8 @@ public final class RemoteRecordingStream implements EventStream {
                     RecordingInfo ri = getRecordingInfo(mbean.getRecordings(), id);
                     fileDump = repository.newDump(ri.getStopTime());
                 }
+            } finally {
+                lock.unlock();
             }
             // Write outside lock
             fileDump.write(destination);
@@ -716,5 +790,82 @@ public final class RemoteRecordingStream implements EventStream {
 
     boolean isClosed() {
         return closed;
+    }
+
+    static final class RemoteStoppedListener implements NotificationListener {
+
+        private final long recordingId;
+        private final RemoteRecordingStream stream;
+
+        public RemoteStoppedListener(long recordingId, RemoteRecordingStream stream) {
+            this.recordingId = recordingId;
+            this.stream = stream;
+        }
+
+        @Override
+        public void handleNotification(Notification notification, Object handback) {
+            if (notification instanceof AttributeChangeNotification acn) {
+                CompositeData[] newVal = (CompositeData[]) acn.getNewValue();
+                CompositeData[] oldVal = (CompositeData[]) acn.getOldValue();
+                CompositeData newRecording = getRecording(newVal, recordingId);
+                CompositeData oldRecording = getRecording(oldVal, recordingId);
+                if (oldRecording == null || newRecording == null) {
+                    return;
+                }
+                String newState = (String) newRecording.get("state");
+                if (newState.equals(oldRecording.get("state"))) {
+                    return;
+                }
+                if (newState.equals(RecordingState.STOPPED.name())) {
+                    stream.stopInternal((long) newRecording.get("stopTime"));
+                }
+            }
+        }
+    }
+
+    static class RemoteClosedListener implements NotificationListener {
+
+        private final long recordingId;
+        private final RemoteRecordingStream remoteRecordingStream;
+
+        public RemoteClosedListener(long recordingId, RemoteRecordingStream remoteRecordingStream) {
+            this.recordingId = recordingId;
+            this.remoteRecordingStream = remoteRecordingStream;
+        }
+
+        @Override
+        public void handleNotification(Notification notification, Object handback) {
+            if (notification instanceof AttributeChangeNotification acn) {
+                CompositeData[] newVal = (CompositeData[]) acn.getNewValue();
+                CompositeData[] oldVal = (CompositeData[]) acn.getOldValue();
+                CompositeData newRecording = getRecording(newVal, recordingId);
+                CompositeData oldRecording = getRecording(oldVal, recordingId);
+                if (oldRecording == null) {
+                    return;
+                }
+                if (newRecording == null) {
+                    if (!oldRecording.get("state").equals(RecordingState.CLOSED.name())) {
+                        remoteRecordingStream.closeInternal();
+                    }
+                } else {
+                    String newState = (String) newRecording.get("state");
+                    if (newState.equals(oldRecording.get("state"))) {
+                        return;
+                    }
+                    if (newState.equals(RecordingState.CLOSED.name())) {
+                        remoteRecordingStream.closeInternal();
+                    }
+                }
+            }
+        }
+    }
+
+    private static CompositeData getRecording(CompositeData[] recordings, long id) {
+        for (CompositeData r : recordings) {
+            if (r.get("id").equals(id)) {
+                return r;
+            }
+        }
+        return null;
     }
 }
