@@ -25,7 +25,6 @@
  * @test
  * @bug 8003720
  * @summary Method in interpreter stack frame can be deallocated
- * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file Victim.java
  * @run main/othervm -Xverify:all -Xint Test8003720
