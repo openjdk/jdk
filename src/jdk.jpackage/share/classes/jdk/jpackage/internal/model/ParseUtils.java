@@ -37,10 +37,7 @@ public final class ParseUtils {
     }
 
     public static LauncherShortcut parseLauncherShortcutForMainLauncher(String str) {
-        return parse(str,
-                LauncherShortcutStartupDirectory.APP_DIR,
-                LauncherShortcutStartupDirectory.INSTALL_DIR
-        ).map(LauncherShortcut::new).orElseThrow(IllegalArgumentException::new);
+        return parse(str, LauncherShortcutStartupDirectory.APP_DIR).map(LauncherShortcut::new).orElseThrow(IllegalArgumentException::new);
     }
 
     public static LauncherShortcut parseLauncherShortcutForAddLauncher(String str) {

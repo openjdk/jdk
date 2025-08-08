@@ -45,7 +45,6 @@ public enum LauncherShortcut {
     public enum StartupDirectory {
         DEFAULT("true"),
         APP_DIR("app-dir"),
-        INSTALL_DIR("install-dir"),
         ;
 
         StartupDirectory(String stringValue) {

@@ -48,12 +48,7 @@ public enum LauncherShortcutStartupDirectory {
      * directory that is referenced with {@link ApplicationLayout#appDirectory()}
      * method.
      */
-    APP_DIR("app-dir"),
-
-    /**
-     * The installation directory of the package.
-     */
-    INSTALL_DIR("install-dir");
+    APP_DIR("app-dir");
 
     LauncherShortcutStartupDirectory(String stringValue) {
         this.stringValue = Objects.requireNonNull(stringValue);

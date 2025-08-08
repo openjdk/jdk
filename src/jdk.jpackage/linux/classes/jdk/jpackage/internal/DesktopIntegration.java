@@ -248,9 +248,6 @@ final class DesktopIntegration extends ShellCustomAction {
                         case APP_DIR -> {
                             return installedLayout.appDirectory();
                         }
-                        case INSTALL_DIR -> {
-                            return installedLayout.launchersDirectory();
-                        }
                         default -> {
                             throw new AssertionError();
                         }

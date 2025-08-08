@@ -214,7 +214,7 @@ public final class WinShortcutVerifier {
 
         final Function<StartupDirectory, Path> workDir = startupDirectory -> {
             switch (startupDirectory) {
-                case DEFAULT, INSTALL_DIR -> {
+                case DEFAULT -> {
                     return installDir;
                 }
                 case APP_DIR -> {
