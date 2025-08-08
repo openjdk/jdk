@@ -34,15 +34,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationValue;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;
@@ -1118,25 +1115,25 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
+    public AnnotationValue getAnnotationValue(ResolvedJavaType annotationType) {
         if (!mayHaveAnnotations(true)) {
             checkIsAnnotation(annotationType);
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
+        return getFirstAnnotationOrNull(getAnnotationValues0(annotationType));
     }
 
     @Override
-    public List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
+    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
         if (!mayHaveAnnotations(true)) {
             checkAreAnnotations(types);
             return List.of();
         }
-        return getAnnotationData0(types);
+        return getAnnotationValues0(types);
     }
 
-    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder(this));
+    private List<AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationValueDecoder(this));
     }
 }

@@ -23,9 +23,9 @@
 package jdk.vm.ci.meta;
 
 /**
- * Represents an error constant within {@link AnnotationData}.
- *
- * Similar to {@code sun.reflect.annotation.ExceptionProxy}.
+ * Represents an error constant within an {@link AnnotationValue}.
+ * <p>
+ * Similar to {@link sun.reflect.annotation.ExceptionProxy}.
  */
 public final class ErrorData {
     private final String description;

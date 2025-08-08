@@ -46,8 +46,8 @@ public interface Annotated {
      * @throws IllegalArgumentException if any type in {@code types} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
-        throw new UnsupportedOperationException();
+    default List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
+        throw new UnsupportedOperationException(this.getClass().getName());
     }
 
     /**
@@ -63,7 +63,7 @@ public interface Annotated {
      * @throws IllegalArgumentException if {@code type} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default AnnotationData getAnnotationData(ResolvedJavaType type) {
-        throw new UnsupportedOperationException();
+    default AnnotationValue getAnnotationValue(ResolvedJavaType type) {
+        throw new UnsupportedOperationException(this.getClass().getName());
     }
 }

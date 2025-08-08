@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationValue;
 import jdk.vm.ci.meta.EnumArrayData;
 import jdk.vm.ci.meta.EnumData;
 import jdk.vm.ci.meta.ErrorData;
@@ -37,14 +37,14 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
- * and employs {@link AnnotationData} and {@link EnumData} to represent decoded annotations and enum
+ * and employs {@link AnnotationValue} and {@link EnumData} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationDataDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationData, EnumData, EnumArrayData, ErrorData> {
+final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumData, EnumArrayData, ErrorData> {
 
     private final HotSpotResolvedJavaType accessingClass;
 
-    AnnotationDataDecoder(HotSpotResolvedJavaType accessingClass) {
+    AnnotationValueDecoder(HotSpotResolvedJavaType accessingClass) {
         this.accessingClass = accessingClass;
     }
 
@@ -55,8 +55,8 @@ final class AnnotationDataDecoder implements AnnotationDecoder<ResolvedJavaType,
     }
 
     @Override
-    public AnnotationData newAnnotation(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
-        return new AnnotationData(type, elements);
+    public AnnotationValue newAnnotation(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
+        return new AnnotationValue(type, elements);
     }
 
     @Override

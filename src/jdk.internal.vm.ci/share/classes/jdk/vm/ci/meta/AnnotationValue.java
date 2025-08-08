@@ -23,7 +23,6 @@
 package jdk.vm.ci.meta;
 
 import java.lang.annotation.Annotation;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,14 +30,14 @@ import java.util.Set;
 
 /**
  * Represents an annotation where element values are represented with the types described
- * {@linkplain #get here}.
- *
+ * {@linkplain #get here}. This is the JVMCI analog of an {@link Annotation} object.
+ * <p>
  * In contrast to the standard annotation API based on {@link Annotation}, use of
- * {@link AnnotationData} allows annotations to be queried without the JVMCI runtime having to
+ * {@link AnnotationValue} allows annotations to be queried without the JVMCI runtime having to
  * support dynamic loading of arbitrary {@link Annotation} classes. Such support is impossible in a
- * closed world, ahead-of-time compiled environment such as libgraal.
+ * closed world, ahead-of-time compiled environment such as Native Image.
  */
-public final class AnnotationData {
+public final class AnnotationValue {
 
     private final ResolvedJavaType type;
     private final Map<String, Object> elements;
@@ -56,14 +55,14 @@ public final class AnnotationData {
                     ErrorData.class,
                     EnumArrayData.class,
                     EnumData.class,
-                    AnnotationData.class);
+                    AnnotationValue.class);
 
     /**
      * Creates an annotation.
      *
      * @param type the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
-     *            must be one of the {@code AnnotationData} types described {@linkplain #get here}
+     *            must be one of the {@code AnnotationValue} types described {@linkplain #get here}
      *            or it must be a {@link ErrorData} object whose {@code toString()} value describes
      *            the error raised while parsing the element. There is no distinction between a
      *            value explicitly present in the annotation and an element's default value.
@@ -72,7 +71,7 @@ public final class AnnotationData {
      * @throws NullPointerException if any of the above parameters is null or any entry in
      *             {@code elements} is null
      */
-    public AnnotationData(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
+    public AnnotationValue(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
         this.type = Objects.requireNonNull(type);
         for (Map.Entry<String, Object> e : elements) {
             checkEntry(e);
@@ -99,7 +98,10 @@ public final class AnnotationData {
     }
 
     /**
-     * @return the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
+     * Gets the annotation interface of this annotation, represented as
+     * a {@link ResolvedJavaType}.
+     *
+     * @see Annotation#annotationType()
      */
     public ResolvedJavaType getAnnotationType() {
         return type;
@@ -112,7 +114,7 @@ public final class AnnotationData {
      * interface and the type of value returned by this method:
      * <table>
      * <thead>
-     * <tr><th>Annotation</th> <th>AnnotationData</th></tr>
+     * <tr><th>Annotation</th> <th>AnnotationValue</th></tr>
      * </thead><tbody>
      * <tr><td>boolean</td>    <td>Boolean</td></tr>
      * <tr><td>byte</td>       <td>Byte</td></tr>
@@ -126,12 +128,12 @@ public final class AnnotationData {
      * <tr><td>Class</td>      <td>ResolvedJavaType</td></tr>
      * <tr><td>Enum</td>       <td>EnumData</td></tr>
      * <tr><td>Enum[]</td>     <td>EnumArrayData</td></tr>
-     * <tr><td>Annotation</td> <td>AnnotationData</td></tr>
+     * <tr><td>Annotation</td> <td>AnnotationValue</td></tr>
      * <tr><td>[]</td><td>T[] where T is one of the above types except for EnumData or EnumArrayData</td></tr>
      * </tbody>
      * </table>
      *
-     * @param <V> the type of the element as per the {@code AnnotationData} column in the above
+     * @param <V> the type of the element as per the {@code AnnotationValue} column in the above
      *            table or {@link Object}
      * @param elementType the class for the type of the element
      * @return the annotation element denoted by {@code name}
@@ -145,7 +147,7 @@ public final class AnnotationData {
         if (val == null) {
             throw new IllegalArgumentException("no element named " + name);
         }
-        Class<? extends Object> valClass = val.getClass();
+        Class<?> valClass = val.getClass();
         if (valClass == ErrorData.class) {
             throw new IllegalArgumentException(val.toString());
         }
@@ -162,8 +164,7 @@ public final class AnnotationData {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof AnnotationData) {
-            AnnotationData that = (AnnotationData) obj;
+        if (obj instanceof AnnotationValue that) {
             return this.type.equals(that.type) && this.elements.equals(that.elements);
 
         }

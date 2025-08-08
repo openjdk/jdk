@@ -194,10 +194,10 @@ public class TestResolvedJavaField extends FieldUniverse {
     }
 
     @Test
-    public void getAnnotationDataTest() throws Exception {
-        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
+    public void getAnnotationValueTest() throws Exception {
+        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
         for (Field f : fields.keySet()) {
-            TestResolvedJavaType.getAnnotationDataTest(f);
+            TestResolvedJavaType.getAnnotationValueTest(f);
         }
     }
 
