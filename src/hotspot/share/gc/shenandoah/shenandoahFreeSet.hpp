@@ -110,6 +110,9 @@ private:
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
 
+  // Measured in bytes.
+  size_t _allocated_since_gc_start[UIntNumPartitions];
+
   // Some notes:
   //  _retired_regions[p] is _total_region_counts[p] - _region_counts[p]
   //  _empty_region_counts[p] <= _region_counts[p] <= _total_region_counts[p]
@@ -459,6 +462,8 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+  size_t _total_humongous_waste;
+
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
@@ -525,13 +530,25 @@ private:
   size_t _old_affiliated_regions;
   size_t _global_affiliated_regions;
 
+  size_t _young_unaffiliated_regions;
+  size_t _global_unaffiliated_regions;
+
+  size_t _total_young_regions;
+  size_t _total_global_regions;
+
+  size_t _mutator_bytes_allocated_since_gc_start;
+
   inline void recompute_total_affiliated() {
-    _young_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
-                                 _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Collector) -
-                                 (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
-                                  _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector)));
+    shenandoah_assert_heaplocked();
+    _young_unaffiliated_regions = (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
+                                   _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector));
+    _young_affiliated_regions = ((_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
+                                 _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Collector)) -
+                                 _young_unaffiliated_regions);
     _old_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector) - 
-                                 _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+                               _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+    _global_unaffiliated_regions =
+      _young_unaffiliated_regions + _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
     _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
 #undef KELVIN_AFFILIATED
 #ifdef KELVIN_AFFILIATED
@@ -563,6 +580,8 @@ private:
   //
   // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
+
+  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
   // region is entirely empty.
@@ -619,13 +638,14 @@ private:
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
   // Set max_capacity for young and old generations
   void establish_generation_sizes(size_t young_region_count, size_t old_region_count,
                                   size_t affiliated_young_regions, size_t affiliated_old_regions,
                                   size_t young_used_bytes, size_t old_used_bytes);
 
   void reestablish_generation_sizes(size_t young_region_count, size_t old_region_count);
-
+#endif
   size_t get_usable_free_words(size_t free_bytes) const;
 
   // log status, assuming lock has already been acquired by the caller.
@@ -641,6 +661,14 @@ public:
   inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
                                                                 idx_t low_idx, idx_t high_idx, size_t num_regions) {
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
+  }
+
+  void reset_bytes_allocated_since_gc_start();
+
+  void increase_bytes_allocated(size_t bytes);
+
+  inline size_t get_bytes_allocated_since_gc_start() const {
+    return _mutator_bytes_allocated_since_gc_start;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.
@@ -664,6 +692,18 @@ public:
     return _total_global_used;
   }
 
+  size_t global_unaffiliated_regions() {
+    return _global_unaffiliated_regions;
+  }
+
+  size_t young_unaffiliated_regions() {
+    return _young_unaffiliated_regions;
+  }
+
+  size_t old_unaffiliated_regions() {
+    return _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
   size_t young_affiliated_regions() {
     return _young_affiliated_regions;
   }
@@ -674,6 +714,18 @@ public:
 
   size_t global_affiliated_regions() {
     return _global_affiliated_regions;
+  }
+
+  size_t total_young_regions() {
+    return _total_young_regions;
+  }
+
+  size_t total_old_regions() {
+    return _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
+  size_t total_global_regions() {
+    return _total_global_regions;
   }
 
   void clear();
@@ -741,7 +793,8 @@ public:
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
-  inline size_t humongous_waste_in_mutator()  const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
+  inline size_t humongous_waste_in_mutator() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
   inline size_t humongous_waste_in_old() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::OldCollector); }
 
   void decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion* r, size_t waste);

@@ -70,7 +70,9 @@ protected:
   // Usage
 
   volatile size_t _used;
+#ifdef KELVIN_OUT_WITH_THE_OLD
   volatile size_t _bytes_allocated_since_gc_start;
+#endif
   size_t _max_capacity;
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
@@ -128,7 +130,8 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  size_t max_capacity() const override      { return _max_capacity; }
+  size_t max_capacity() const override;
+
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
@@ -148,6 +151,7 @@ private:
       break;
     }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
     size_t original_result = Atomic::load(&_used);
 #undef KELVIN_SCAFFOLDING
 #ifdef KELVIN_SCAFFOLDING
@@ -167,8 +171,7 @@ private:
       problem_count = 0;
     }
 #endif
-
-
+#endif
     return result;
   }
 
@@ -186,7 +189,17 @@ private:
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
 
-  size_t bytes_allocated_since_gc_start() const override;
+  size_t bytes_allocated_since_gc_start() const {
+    size_t result;
+    if (_type == ShenandoahGenerationType::YOUNG) {
+      return _free_set->get_bytes_allocated_since_gc_start();
+    } else if (ShenandoahHeap::heap()->mode()->is_generational() && (_type == ShenandoahGenerationType::NON_GEN)) {
+      return _free_set->get_bytes_allocated_since_gc_start();
+    } else {
+      return 0;
+    }
+  }
+#ifdef KELVIN_OUT_WITH_THE_OLD
   void reset_bytes_allocated_since_gc_start();
   void increase_allocated(size_t bytes);
 
@@ -205,7 +218,8 @@ private:
     log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), affiliated_region_count, byte_count);
 #endif
   }
-
+#endif
+  
   void log_status(const char* msg) const;
 
   // Used directly by FullGC
@@ -265,6 +279,7 @@ private:
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
   // Return the updated value of affiliated_region_count
   size_t increment_affiliated_region_count();
 
@@ -290,6 +305,44 @@ private:
 
   void increase_humongous_waste(size_t bytes);
   void decrease_humongous_waste(size_t bytes);
+#else
+  size_t get_affiliated_region_count() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->old_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->young_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->global_affiliated_regions();
+      break;
+    }
+    return result;
+  }
+
+  size_t get_total_region_count() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->total_old_regions();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->total_young_regions();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->total_global_regions();
+      break;
+    }
+    return result;
+  }
+#endif
+  
   size_t get_humongous_waste() const {
     size_t result;
     switch (_type) {
@@ -302,16 +355,17 @@ private:
     case ShenandoahGenerationType::GLOBAL:
     case ShenandoahGenerationType::NON_GEN:
     default:
-      result = _free_set->humongous_waste_in_mutator() + _free_set->humongous_waste_in_old();
+      result = _free_set->total_humongous_waste();
       break;
     }
+#ifdef KELVIN_OUT_WITH_THE_OLD
 #ifdef KELVIN_SCAFFOLDING
     if (result != _humongous_waste) {
       log_info(gc)("Generation %s expects consistency between humongous waste in free set (%zu) and in generation (%zu)",
                    shenandoah_generation_name(_type), result, _humongous_waste);
     }
 #endif
-
+#endif
     return result;
   }
 

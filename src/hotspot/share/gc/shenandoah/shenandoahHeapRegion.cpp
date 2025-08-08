@@ -918,7 +918,9 @@ void ShenandoahHeapRegion::decrement_humongous_waste() {
 #ifdef KELVIN_HUMONGOUS_HEAP_REGION
     log_info(gc)("Decrementing humongous waste by %zu in ShenHeapRegion", waste_bytes);
 #endif
+#ifdef KELVIN_OUT_WITH_THE_OLD
     heap->decrease_humongous_waste(generation, waste_bytes);
+#endif
     heap->free_set()->decrease_humongous_waste_for_regular_bypass(this, waste_bytes);
   }
 }

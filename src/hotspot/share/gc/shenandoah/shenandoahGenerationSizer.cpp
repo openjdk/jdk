@@ -115,6 +115,7 @@ void ShenandoahGenerationSizer::heap_size_changed(size_t heap_size) {
   recalculate_min_max_young_length(heap_size / ShenandoahHeapRegion::region_size_bytes());
 }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
 bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions) const {
   const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
 
@@ -141,7 +142,7 @@ bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, Shen
                      regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
   return true;
 }
-
+#endif
 
 size_t ShenandoahGenerationSizer::max_size_for(ShenandoahGeneration* generation) const {
   switch (generation->type()) {
@@ -171,7 +172,7 @@ size_t ShenandoahGenerationSizer::min_size_for(ShenandoahGeneration* generation)
   }
 }
 
-
+#ifdef KELVIN_OUT_WITH_THE_OLD
 // Returns true iff transfer is successful
 bool ShenandoahGenerationSizer::transfer_to_old(size_t regions) const {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
@@ -193,11 +194,11 @@ void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
                      regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
 }
 
-
 bool ShenandoahGenerationSizer::transfer_to_young(size_t regions) const {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   return transfer_regions(heap->old_generation(), heap->young_generation(), regions);
 }
+#endif
 
 size_t ShenandoahGenerationSizer::min_young_size() const {
   return min_young_regions() * ShenandoahHeapRegion::region_size_bytes();

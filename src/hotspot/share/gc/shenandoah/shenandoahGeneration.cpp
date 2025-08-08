@@ -148,6 +148,7 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
   return Atomic::load(&_bytes_allocated_since_gc_start);
 }
@@ -159,8 +160,10 @@ void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
 void ShenandoahGeneration::increase_allocated(size_t bytes) {
   Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
+#endif
 
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
+  shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;
 }
 
@@ -440,7 +443,9 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   size_t excess_old = old_available - old_consumed;
   size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
   size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
-  assert(old_available >= unaffiliated_old, "Unaffiliated old is a subset of old available");
+  assert(old_available >= unaffiliated_old,
+         "Unaffiliated old (%zu is %zu * %zu) is a subset of old available (%zu)",
+         unaffiliated_old, unaffiliated_old_regions, region_size_bytes, old_available);
 
   // Make sure old_evac_committed is unaffiliated
   if (old_evacuated_committed > 0) {
@@ -471,7 +476,13 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
   }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
   if (regions_to_xfer > 0) {
+    // kelvin is here: how does this affect freeset when transfer_to_young is deprecated?
+    // we are adjusting evacuation budget after choosing the collection set.
+
+    // momentarily, we will rebuild the free se.
+
     bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     assert(excess_old >= regions_to_xfer * region_size_bytes,
            "Cannot transfer (%zu, %zu) more than excess old (%zu)",
@@ -480,6 +491,15 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
+#else
+  // kelvin conjecture: we do not need to transfer regions.  we just need to adjust excess_old.  that will
+  // cause regions to transfer after we rebuild the freeset.
+  if (regions_to_xfer > 0) {
+    excess_old -= regions_to_xfer * region_size_bytes;
+    log_debug(gc, ergo)("Before start of evacuation, total_promotion reserve is young_advance_promoted_reserve: %zu "
+                        "plus excess: old: %zu", young_advance_promoted_reserve_used, excess_old);
+  }
+#endif
 
   // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
   // promotions than fit in reserved memory, they will be deferred until a future GC pass.
@@ -628,8 +648,10 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
             // This region was already not in the Collector or Mutator set, so no need to remove it.
             assert(free_set->membership(i) == ShenandoahFreeSetPartitionId::NotFree, "sanity");
           }
+#ifdef KELVIN_OUT_WITH_THE_OLD
           // Even when we do not fill the remnant, we count the remnant as used
           young_gen->increase_used(remnant_bytes);
+#endif
         }
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
@@ -812,6 +834,12 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
     size_t first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+
+    if (heap->mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      gen_heap->compute_old_generation_balance(young_cset_regions, old_cset_regions);
+    }
+
     // Free set construction uses reserve quantities, because they are known to be valid here
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
   }
@@ -863,7 +891,10 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
-  _used(0), _bytes_allocated_since_gc_start(0),
+  _used(0),
+#ifdef KELVIN_OUT_WITH_THE_OLD
+  _bytes_allocated_since_gc_start(0),
+#endif
   _max_capacity(max_capacity),
   _free_set(nullptr),
   _heuristics(nullptr)
@@ -916,6 +947,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
 size_t ShenandoahGeneration::increment_affiliated_region_count() {
   shenandoah_assert_heaplocked_or_safepoint();
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
@@ -1024,6 +1056,7 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
 #endif
   }
 }
+#endif
 
 size_t ShenandoahGeneration::used_regions() const {
   size_t result;
@@ -1040,6 +1073,7 @@ size_t ShenandoahGeneration::used_regions() const {
       result = _free_set->global_affiliated_regions();
       break;
   }
+#ifdef KELVIN_OUT_WITH_THE_OLD
   size_t original_result = Atomic::load(&_affiliated_region_count);
 #ifdef KELVIN_SCAFFOLDING
   static int problem_count = 0;
@@ -1058,22 +1092,71 @@ size_t ShenandoahGeneration::used_regions() const {
     }
   }
 #endif
+#endif
   return result;
+}
+
+size_t ShenandoahGeneration::max_capacity() const {
+  size_t total_regions;
+  switch (_type) {
+  case ShenandoahGenerationType::OLD:
+    total_regions = _free_set->total_old_regions();
+    break;
+  case ShenandoahGenerationType::YOUNG:
+    total_regions = _free_set->total_young_regions();
+    break;
+  case ShenandoahGenerationType::GLOBAL:
+  case ShenandoahGenerationType::NON_GEN:
+  default:
+    total_regions = _free_set->total_global_regions();
+    break;
+  }
+#define KELVIN_AVAILABLE
+#ifdef KELVIN_AVAILABLE
+  log_info(gc)("max_capacity(_type: %d) returns %zu (%zu * %zu)", _type, total_regions * ShenandoahHeapRegion::region_size_bytes(),
+               total_regions, ShenandoahHeapRegion::region_size_bytes());
+#endif
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {
-  size_t result = max_capacity() / ShenandoahHeapRegion::region_size_bytes();
-  auto const used_regions = this->used_regions();
-  if (used_regions > result) {
-    result = 0;
-  } else {
-    result -= used_regions;
+  size_t free_regions;
+  switch (_type) {
+  case ShenandoahGenerationType::OLD:
+    free_regions = _free_set->old_unaffiliated_regions();
+    break;
+  case ShenandoahGenerationType::YOUNG:
+    free_regions = _free_set->young_unaffiliated_regions();
+    break;
+  case ShenandoahGenerationType::GLOBAL:
+  case ShenandoahGenerationType::NON_GEN:
+  default:
+    free_regions = _free_set->global_unaffiliated_regions();
+    break;
   }
-  return result;
+#define KELVIN_UNAFFILIATED
+#ifdef KELVIN_UNAFFILIATED
+  log_info(gc)("free_unaffiliated_regions(_type == %d) returns %zu", _type, free_regions);
+#endif
+  return free_regions;
 }
 
 size_t ShenandoahGeneration::used_regions_size() const {
-  return used_regions() * ShenandoahHeapRegion::region_size_bytes();
+  size_t used_regions;
+  switch (_type) {
+  case ShenandoahGenerationType::OLD:
+    used_regions = _free_set->old_affiliated_regions();
+    break;
+  case ShenandoahGenerationType::YOUNG:
+    used_regions = _free_set->young_affiliated_regions();
+    break;
+  case ShenandoahGenerationType::GLOBAL:
+  case ShenandoahGenerationType::NON_GEN:
+  default:
+    used_regions = _free_set->global_affiliated_regions();
+    break;
+  }
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGeneration::available() const {
@@ -1091,9 +1174,13 @@ size_t ShenandoahGeneration::soft_available() const {
 
 size_t ShenandoahGeneration::available(size_t capacity) const {
   size_t in_use = used();
+#ifdef KELVIN_AVAILABLE
+  log_info(gc)("ShenGen::available(%zu), with in_use: %zu", capacity, in_use);
+#endif
   return in_use > capacity ? 0 : capacity - in_use;
 }
 
+#ifdef KELVIN_OUT_WITH_THE_OLD
 size_t ShenandoahGeneration::increase_capacity(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
 
@@ -1140,6 +1227,7 @@ size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
          "Cannot use more than capacity");
   return _max_capacity;
 }
+#endif
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent();

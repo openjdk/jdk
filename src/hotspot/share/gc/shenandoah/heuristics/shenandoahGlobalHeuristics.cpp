@@ -136,10 +136,11 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
       cset->add_region(r);
     }
   }
-
+#ifdef KELVIN_OUT_WITH_THE_OLD
   if (regions_transferred_to_old > 0) {
     heap->generation_sizer()->force_transfer_to_old(regions_transferred_to_old);
     heap->young_generation()->set_evacuation_reserve(young_evac_reserve - regions_transferred_to_old * region_size_bytes);
     heap->old_generation()->set_evacuation_reserve(old_evac_reserve + regions_transferred_to_old * region_size_bytes);
   }
+#endif
 }

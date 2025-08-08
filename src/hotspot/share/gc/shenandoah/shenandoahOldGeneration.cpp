@@ -511,12 +511,20 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
         ShenandoahPhaseTimings::final_rebuild_freeset :
         ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t cset_young_regions, cset_old_regions;
+    size_t young_trash_regions, old_trash_regions;
     size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(cset_young_regions, cset_old_regions, first_old, last_old, num_old);
-    // This is just old-gen completion.  No future budgeting required here.  The only reason to rebuild the freeset here
-    // is in case there was any immediate old garbage identified.
-    heap->free_set()->finish_rebuild(cset_young_regions, cset_old_regions, num_old);
+    heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
+    // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
+    // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
+    // the OldCollector reserve in order to make room for these mixed evacuations.
+    assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
+    assert(young_trash_regions == 0, "sanity");
+    ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
+
+    heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
 
@@ -717,11 +725,12 @@ void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, boo
   // do this in batch, in a background GC thread than to try to carefully dirty only cards
   // that hold interesting pointers right now.
   _card_scan->mark_range_as_dirty(obj, words);
-
+#ifdef KELVIN_OUT_WITH_THE_OLD
   if (promotion) {
     // This evacuation was a promotion, track this as allocation against old gen
     increase_allocated(words * HeapWordSize);
   }
+#endif
 }
 
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
