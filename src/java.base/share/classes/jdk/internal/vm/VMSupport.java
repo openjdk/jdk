@@ -458,20 +458,20 @@ public class VMSupport {
         A newAnnotation(T type, Map.Entry<String, Object>[] elements);
 
         /**
-         * Creates an object representing a decoded enum constant.
+         * Creates an object representing a decoded enum.
          *
          * @param enumType the enum type
          * @param name the name of the enum constant
          */
-        E newEnumValue(T enumType, String name);
+        E newEnum(T enumType, String name);
 
         /**
-         * Creates an object representing a decoded enum constant.
+         * Creates an object representing a decoded enum array.
          *
          * @param enumType the enum type
-         * @param names the name of the enum constant
+         * @param names the names of the enum constants
          */
-        EA newEnumValueArray(T enumType, List<String> names);
+        EA newEnumArray(T enumType, List<String> names);
 
         /**
          * Creates an object representing a missing type.
@@ -531,7 +531,7 @@ public class VMSupport {
                 case 'Z' -> dis.readBoolean();
                 case 's' -> dis.readUTF();
                 case 'c' -> decoder.resolveType(dis.readUTF());
-                case 'e' -> decoder.newEnumValue(decoder.resolveType(dis.readUTF()), dis.readUTF());
+                case 'e' -> decoder.newEnum(decoder.resolveType(dis.readUTF()), dis.readUTF());
                 case '@' -> decodeAnnotation(dis, decoder);
                 case '[' -> decodeArray(dis, decoder);
                 case 'x' -> decoder.newMissingType(dis.readUTF());
@@ -575,7 +575,7 @@ public class VMSupport {
     @SuppressWarnings("unchecked")
     private static <T, A, E, EA, MT, ETM> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder, T enumType) throws IOException {
         List<String> names = (List<String>) readArray(dis, dis::readUTF);
-        return decoder.newEnumValueArray(enumType, names);
+        return decoder.newEnumArray(enumType, names);
     }
 
     /**

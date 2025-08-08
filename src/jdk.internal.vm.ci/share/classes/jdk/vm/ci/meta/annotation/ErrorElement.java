@@ -22,48 +22,19 @@
  */
 package jdk.vm.ci.meta.annotation;
 
+import jdk.vm.ci.meta.ResolvedJavaType;
+
 /**
- * Represents a deferred {@link TypeNotPresentException} for an element
- * within an {@link AnnotationValue}.
+ * Represents an element within an {@link AnnotationValue} that had a parsing error.
  * <p>
- * Similar to {@code TypeNotPresentExceptionProxy}.
+ * Similar to {@code ExceptionProxy}.
  */
-public final class MissingType extends ErrorElement {
-    private final String typeName;
-
+public abstract class ErrorElement {
     /**
-     * @param typeName see {@link TypeNotPresentException#typeName()}
+     * Returns an {@link IllegalArgumentException} whose message describes the
+     * parsing error represented by this object.
      */
-    public MissingType(String typeName) {
-        this.typeName = typeName;
-    }
-
-    @Override
-    public String toString() {
-        // Same value as TypeNotPresentExceptionProxy.toString()
-        return typeName + ".class /* Warning: type not present! */";
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof MissingType that) {
-            return this.typeName.equals(that.typeName);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return typeName.hashCode();
-    }
-
-    /**
-     * @see TypeNotPresentException#typeName()
-     */
-    public String getTypeName() {
-        return typeName;
+    protected IllegalArgumentException generateException() {
+        return new IllegalArgumentException(toString());
     }
 }

@@ -22,8 +22,11 @@
  */
 package jdk.vm.ci.meta.annotation;
 
+import java.lang.annotation.AnnotationTypeMismatchException;
+
 /**
- * Represents a deferred {@link java.lang.annotation.AnnotationTypeMismatchException} within an {@link AnnotationValue}.
+ * Represents a deferred {@link AnnotationTypeMismatchException} for an element
+ * within an {@link AnnotationValue}.
  * <p>
  * Similar to {@code AnnotationTypeMismatchExceptionProxy}.
  */
@@ -31,7 +34,7 @@ public final class ElementTypeMismatch {
     private final String foundType;
 
     /**
-     * @param foundType see {@link java.lang.annotation.AnnotationTypeMismatchException#foundType()}
+     * @param foundType see {@link AnnotationTypeMismatchException#foundType()}
      */
     public ElementTypeMismatch(String foundType) {
         this.foundType = foundType;
@@ -60,7 +63,7 @@ public final class ElementTypeMismatch {
     }
 
     /**
-     * @see java.lang.annotation.AnnotationTypeMismatchException#foundType()
+     * @see AnnotationTypeMismatchException#foundType()
      */
     public String getFoundType() {
         return foundType;

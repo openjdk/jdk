@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @compile AnnotationTestInput.java MemberDeleted.java MemberTypeChanged.java
+ * @compile AnnotationTestInput.java MemberAdded.java MemberDeleted.java MemberTypeChanged.java
  * @modules java.base/jdk.internal.vm
  *          java.base/sun.reflect.annotation
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
@@ -33,21 +33,20 @@
  */
 package jdk.internal.vm.test;
 
+import jdk.internal.vm.VMSupport;
+import jdk.internal.vm.VMSupport.AnnotationDecoder;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import sun.reflect.annotation.AnnotationSupport;
+import sun.reflect.annotation.ExceptionProxy;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import sun.reflect.annotation.AnnotationSupport;
-import sun.reflect.annotation.ExceptionProxy;
-
-import jdk.internal.vm.VMSupport;
-import jdk.internal.vm.VMSupport.AnnotationDecoder;
 
 public class TestAnnotationEncodingDecoding {
 
@@ -253,7 +252,7 @@ public class TestAnnotationEncodingDecoding {
         }
     }
 
-    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, EnumArrayConst, ErrorConst> {
+    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, EnumArrayConst, ErrorConst, ErrorConst> {
         @Override
         public Class<?> resolveType(String name) {
             try {
@@ -269,18 +268,24 @@ public class TestAnnotationEncodingDecoding {
         }
 
         @Override
-        public EnumConst newEnumValue(Class<?> enumType, String name) {
+        public EnumConst newEnum(Class<?> enumType, String name) {
             return new EnumConst(enumType, name);
         }
 
         @Override
-        public EnumArrayConst newEnumValueArray(Class<?> enumType, List<String> names) {
+        public EnumArrayConst newEnumArray(Class<?> enumType, List<String> names) {
             return new EnumArrayConst(enumType, names);
         }
 
         @Override
-        public ErrorConst newErrorValue(String description) {
+        public ErrorConst newMissingType(String typeName) {
+            String description = new TypeNotPresentExceptionProxy(typeName, null).toString();
             return new ErrorConst(description);
+        }
+
+        @Override
+        public ErrorConst newElementTypeMismatch(String foundType) {
+            return new ErrorConst("/* Warning type mismatch! \"" + foundType + "\" */");
         }
     }
 }
