@@ -90,6 +90,11 @@ CompileTask::~CompileTask() {
     _failure_reason_on_C_heap = false;
   }
 
+#ifdef ASSERT
+  // Zap the deleted task space to catch lifecycle errors
+  memset(this, freeBlockPad, sizeof(CompileTask));
+#endif
+
   if (Atomic::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
     MonitorLocker wait_ml(CompileTaskWait_lock);
     wait_ml.notify_all();
