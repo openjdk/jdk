@@ -2059,12 +2059,12 @@ class Assembler : public AbstractAssembler {
  protected:
   inline void tdi_unchecked(int tobits, Register a, int si16);
   inline void twi_unchecked(int tobits, Register a, int si16);
+ public:
   inline void tdi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void twi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void td(           int tobits, Register a, Register b); // asserts UseSIGTRAP
   inline void tw(           int tobits, Register a, Register b); // asserts UseSIGTRAP
 
- public:
   static bool is_tdi(int x, int tobits, int ra, int si16) {
      return (TDI_OPCODE == (x & TDI_OPCODE_MASK))
          && (tobits == inv_to_field(x))
