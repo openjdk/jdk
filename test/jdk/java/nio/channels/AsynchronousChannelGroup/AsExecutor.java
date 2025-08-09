@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4607272
+ * @bug 4607272 8364761
  * @summary tests tasks can be submitted to a channel group's thread pool.
  * @run main AsExecutor
  */
@@ -51,6 +51,19 @@ public class AsExecutor {
             testSimpleTask(group1);
             testSimpleTask(group2);
             testSimpleTask(group3);
+
+            // check null tasks with all groups
+            Executor[] executors = new Executor[] {
+                (Executor)group1, (Executor)group2, (Executor)group3
+            };
+            for (Executor executor : executors) {
+                try {
+                    executor.execute(null);
+                    throw new RuntimeException("No NullPointerException");
+                } catch (NullPointerException npe) {
+                    System.out.println("Expected NullPointerException " + npe);
+                }
+            }
         } finally {
             group1.shutdown();
             group2.shutdown();
