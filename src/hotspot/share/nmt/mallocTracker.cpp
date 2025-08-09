@@ -25,27 +25,24 @@
  *
  */
 
-#include "jvm_io.h"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/arena.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+DeferredStatic<MallocMemorySnapshot> MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -91,13 +88,12 @@ size_t MallocMemorySnapshot::total_arena() const {
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
-  int chunk_idx = NMTUtil::tag_to_index(mtChunk);
-  _malloc[chunk_idx].record_free(arena_size);
+  by_tag(mtChunk)->record_free(arena_size);
   _all_mallocs.deallocate(arena_size);
 }
 
 void MallocMemorySummary::initialize() {
-  // Uses placement new operator to initialize static area.
+  _snapshot.initialize();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
@@ -159,7 +155,6 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
     MallocMemorySummary::initialize();
   }
-
   if (level == NMT_detail) {
     return MallocSiteTable::initialize();
   }
