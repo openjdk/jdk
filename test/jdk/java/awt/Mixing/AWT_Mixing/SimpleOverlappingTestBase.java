@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,21 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.regex.*;
-import javax.swing.*;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.SpringLayout;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -141,20 +152,25 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
            tests fail starting after failing mixing tests but always pass alone.
          */
         JFrame ancestor = (JFrame)(testedComponent.getTopLevelAncestor());
-        if( ancestor != null ) {
-            Point ancestorLoc = ancestor.getLocationOnScreen();
-            ancestorLoc.translate(isOel7orLater() ? 5 :
-                                             ancestor.getWidth() / 2 - 15, 2);
-            robot.mouseMove(ancestorLoc.x, ancestorLoc.y);
-            Util.waitForIdle(robot);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.delay(50);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
+        final CountDownLatch latch = new CountDownLatch(1);
+        if (ancestor != null) {
+            ancestor.addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) {
+                    latch.countDown();
+                }
+            });
+            ancestor.requestFocus();
         }
-
-        clickAndBlink(robot, lLoc);
-        Util.waitForIdle(robot);
+        try {
+            boolean await = latch.await(1, TimeUnit.SECONDS);
+            if (!await) {
+                throw new RuntimeException("Ancestor frame didn't receive " +
+                        "focus");
+            }
+            clickAndBlink(robot, lLoc);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         return wasLWClicked;
     }
