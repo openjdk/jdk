@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8274148 8301580
+ * @bug 8274148 8301580 8359497
  * @summary Check snippet highlighting
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -112,6 +112,12 @@ public class SnippetHighlightTest extends KullaTesting {
                          "Highlight[start=6, end=7, attributes=[DECLARATION]]",
                          "Highlight[start=13, end=17, attributes=[KEYWORD]]",
                          "Highlight[start=32, end=38, attributes=[KEYWORD]]");
+    }
+
+    public void testNoCrashOnLexicalErrors() { //JDK-8359497
+        assertHighlights("""
+                         "
+                         """);
     }
 
     private void assertHighlights(String code, String... expected) {
