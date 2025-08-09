@@ -27,11 +27,10 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -342,15 +341,13 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType type) {
+    public AnnotationValue getAnnotationValue(ResolvedJavaType type) {
         checkIsAnnotation(type);
         return null;
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
+    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         return List.of();
     }

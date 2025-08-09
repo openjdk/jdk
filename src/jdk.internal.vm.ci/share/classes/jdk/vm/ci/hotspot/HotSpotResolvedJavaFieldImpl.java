@@ -32,11 +32,10 @@ import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport;
-import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -235,27 +234,25 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
+    public AnnotationValue getAnnotationValue(ResolvedJavaType annotationType) {
         if (!hasAnnotations()) {
             checkIsAnnotation(annotationType);
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
+        return getFirstAnnotationOrNull(getAnnotationValues0(annotationType));
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
+    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         if (!hasAnnotations()) {
             return List.of();
         }
-        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+        return getAnnotationValues0(types);
     }
 
-    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
-        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+    private List<AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 }

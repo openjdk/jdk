@@ -420,7 +420,7 @@ public final class TypeAnnotationParser {
         try {
             TypeAnnotationTargetInfo ti = parseTargetInfo(buf);
             LocationInfo locationInfo = LocationInfo.parseLocationInfo(buf);
-            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, false);
+            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, true, false);
             if (ti == null) // Inside a method for example
                 return null;
             return new TypeAnnotation(ti, locationInfo, a, baseDecl);

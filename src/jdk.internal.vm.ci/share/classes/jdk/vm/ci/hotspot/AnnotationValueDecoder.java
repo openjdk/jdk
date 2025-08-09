@@ -23,51 +23,60 @@
 package jdk.vm.ci.hotspot;
 
 import java.util.Map;
+import java.util.List;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
-import jdk.vm.ci.meta.AnnotationData;
-import jdk.vm.ci.meta.EnumData;
-import jdk.vm.ci.meta.ErrorData;
+import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.EnumArrayElement;
+import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.annotation.MissingType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
- * and employs {@link AnnotationData} and {@link EnumData} to represent decoded annotations and enum
+ * and employs {@link AnnotationValue} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, ErrorData> {
+final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
 
-    static final AnnotationDataDecoder INSTANCE = new AnnotationDataDecoder();
+    private final HotSpotResolvedJavaType accessingClass;
+
+    AnnotationValueDecoder(HotSpotResolvedJavaType accessingClass) {
+        this.accessingClass = accessingClass;
+    }
 
     @Override
-    public JavaType resolveType(String name) {
+    public ResolvedJavaType resolveType(String name) {
         String internalName = MetaUtil.toInternalName(name);
-        return UnresolvedJavaType.create(internalName);
+        return UnresolvedJavaType.create(internalName).resolve(accessingClass);
     }
 
     @Override
-    public AnnotationData newAnnotation(JavaType type, Map.Entry<String, Object>[] elements) {
-        return new AnnotationData(type, elements);
+    public AnnotationValue newAnnotation(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
+        return new AnnotationValue(type, elements);
     }
 
     @Override
-    public EnumData newEnumValue(JavaType enumType, String name) {
-        return new EnumData(enumType, name);
+    public EnumElement newEnum(ResolvedJavaType enumType, String name) {
+        return new EnumElement(enumType, name);
     }
 
     @Override
-    public ErrorData newErrorValue(String description) {
-        return new ErrorData(description);
+    public EnumArrayElement newEnumArray(ResolvedJavaType enumType, List<String> names) {
+        return new EnumArrayElement(enumType, names);
     }
 
-    static ResolvedJavaType[] asArray(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        ResolvedJavaType[] filter = new ResolvedJavaType[2 + types.length];
-        filter[0] = type1;
-        filter[1] = type2;
-        System.arraycopy(types, 0, filter, 2, types.length);
-        return filter;
+    @Override
+    public MissingType newMissingType(String typeName) {
+        return new MissingType(typeName);
+    }
+
+    @Override
+    public ElementTypeMismatch newElementTypeMismatch(String foundType) {
+        return new ElementTypeMismatch(foundType);
     }
 }

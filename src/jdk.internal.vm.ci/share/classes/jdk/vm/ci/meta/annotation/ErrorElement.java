@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,44 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
- * Represents an error constant within {@link AnnotationData}.
- *
- * Similar to {@code sun.reflect.annotation.ExceptionProxy}.
+ * Represents an element within an {@link AnnotationValue} that had a parsing error.
+ * <p>
+ * Similar to {@code ExceptionProxy}.
  */
-public final class ErrorData {
-    private final String description;
-
+public abstract class ErrorElement {
     /**
-     * Creates an error constant.
-     *
-     * @param description description of the error
+     * Returns an {@link IllegalArgumentException} whose message describes the
+     * parsing error represented by this object.
      */
-    public ErrorData(String description) {
-        this.description = description;
-    }
-
-    @Override
-    public String toString() {
-        return description;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof ErrorData) {
-            ErrorData that = (ErrorData) obj;
-            return this.description.equals(that.description);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return description.hashCode();
+    protected IllegalArgumentException generateException() {
+        return new IllegalArgumentException(toString());
     }
 }
