@@ -43,6 +43,8 @@ import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.management.EventSource;
+import jdk.jfr.internal.consumer.LocalRecordingEventSource;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.management.StreamBarrier;
@@ -82,6 +84,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     private final EventDirectoryStream directoryStream;
     private long maxSize;
     private Duration maxAge;
+    private final EventSource eventSource;
 
     /**
      * Creates an event stream for the current JVM (Java Virtual Machine).
@@ -100,9 +103,10 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         this.recording.setName("Recording Stream: " + creationTime);
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+            this.eventSource = new LocalRecordingEventSource(pr);
             this.directoryStream = new EventDirectoryStream(
                 null,
-                pr,
+                eventSource,
                 configurations(),
                 false
             );
@@ -392,9 +396,9 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         boolean stopped = false;
         try {
             try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
-                stopped = recording.stop();
+                stopped = eventSource.stop();
                 directoryStream.setCloseOnComplete(false);
-                sb.setStreamEnd(recording.getStopTime().toEpochMilli());
+                sb.setStreamEnd(eventSource.getStopTime());
             }
             directoryStream.awaitTermination();
         } catch (InterruptedException | IOException e) {

@@ -43,6 +43,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.management.EventSource;
 
 /*
  * Purpose of this class is to simplify the implementation of
@@ -60,10 +61,12 @@ public abstract class AbstractEventStream implements EventStream {
     private volatile boolean waitForChunks = true;
     private Dispatcher dispatcher;
     private boolean daemon = false;
+    protected final EventSource eventSource;
 
 
-    AbstractEventStream(List<Configuration> configurations) throws IOException {
+    AbstractEventStream(List<Configuration> configurations, EventSource eventSource) throws IOException {
         this.configurations = configurations;
+        this.eventSource = eventSource;
     }
 
     @Override
@@ -207,8 +210,6 @@ public abstract class AbstractEventStream implements EventStream {
 
     protected abstract void process() throws IOException;
 
-    protected abstract boolean isRecordingStream();
-
     protected final void closeParser() {
         parserState.close();
     }
@@ -250,7 +251,7 @@ public abstract class AbstractEventStream implements EventStream {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Event stream can only be started once");
             }
-            if (isRecordingStream() && streamConfiguration.startTime == null) {
+            if (eventSource.requiresStartTime() && streamConfiguration.startTime == null) {
                 streamConfiguration.setStartNanos(startNanos);
             }
             streamConfiguration.setStarted(true);

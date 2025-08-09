@@ -27,11 +27,8 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
@@ -54,11 +50,11 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.internal.management.EventSource;
+import jdk.management.jfr.internal.RemoteRecordingEventSource;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
 import jdk.jfr.internal.management.StreamBarrier;
-import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
 /**
@@ -158,6 +154,7 @@ public final class RemoteRecordingStream implements EventStream {
     private boolean started;
     private Duration maxAge;
     private long maxSize;
+    private final EventSource eventSource;
 
     /**
      * Creates an event stream that operates against a {@link MBeanServerConnection}
@@ -213,7 +210,8 @@ public final class RemoteRecordingStream implements EventStream {
         creationTime = Instant.now();
         mbean = createProxy(connection);
         recordingId = createRecording();
-        stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean));
+        eventSource = new RemoteRecordingEventSource(mbean, recordingId);
+        stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean), eventSource);
         stream.setStartTime(Instant.MIN);
         repository = new DiskRepository(path, delete);
         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
@@ -327,7 +325,7 @@ public final class RemoteRecordingStream implements EventStream {
             ManagementSupport.logDebug(e.getMessage());
             close();
         }
-    };
+    }
 
     /**
      * Disables event with the specified name.
@@ -469,7 +467,9 @@ public final class RemoteRecordingStream implements EventStream {
         ManagementSupport.setOnChunkCompleteHandler(stream, null);
         stream.close();
         try {
-            mbean.closeRecording(recordingId);
+            if(eventSource.getState() != RecordingState.CLOSED) {
+                mbean.closeRecording(recordingId);
+            }
         } catch (IOException e) {
             ManagementSupport.logDebug(e.getMessage());
         }
@@ -586,9 +586,9 @@ public final class RemoteRecordingStream implements EventStream {
                 boolean stopped = false;
                 try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
                     try (StreamBarrier rb = repository.activateStreamBarrier()) {
-                        stopped = mbean.stopRecording(recordingId);
+                        stopped = eventSource.stop();
                         ManagementSupport.setCloseOnComplete(stream, false);
-                        long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();
+                        long stopTime = eventSource.getStopTime();
                         pb.setStreamEnd(stopTime);
                         rb.setStreamEnd(stopTime);
                     }

@@ -163,10 +163,10 @@ public final class ManagementSupport {
     // with configuration objects
     public static EventStream newEventDirectoryStream(
             Path directory,
-            List<Configuration> confs) throws IOException {
+            List<Configuration> confs, EventSource eventSource) throws IOException {
         return new EventDirectoryStream(
             directory,
-            null,
+            eventSource,
             confs,
             false
         );

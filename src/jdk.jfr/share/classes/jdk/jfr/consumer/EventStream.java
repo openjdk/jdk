@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.EventFileStream;
+import jdk.jfr.internal.consumer.FileEventSource;
 
 /**
  * Represents a stream of events.
@@ -112,7 +113,7 @@ public interface EventStream extends AutoCloseable {
     public static EventStream openRepository() throws IOException {
         return new EventDirectoryStream(
             null,
-            null,
+            new FileEventSource(),
             Collections.emptyList(),
             false
         );
@@ -137,7 +138,7 @@ public interface EventStream extends AutoCloseable {
         Objects.requireNonNull(directory, "directory");
         return new EventDirectoryStream(
             directory,
-            null,
+            new FileEventSource(),
             Collections.emptyList(),
             true
         );
