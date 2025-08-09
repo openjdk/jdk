@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,13 +121,11 @@ final class ColorPanel extends JPanel implements ActionListener {
         for (int i = 0; i < count; i++) {
             String text = this.model.getLabel(this, i);
             Object object = this.spinners[i].getLabel();
-            if (object instanceof JRadioButton) {
-                JRadioButton button = (JRadioButton) object;
+            if (object instanceof JRadioButton button) {
                 button.setText(text);
                 button.getAccessibleContext().setAccessibleDescription(text);
             }
-            else if (object instanceof JLabel) {
-                JLabel label = (JLabel) object;
+            else if (object instanceof JLabel label) {
                 label.setText(text);
             }
             this.spinners[i].setRange(this.model.getMinimum(i), this.model.getMaximum(i));
@@ -145,8 +143,7 @@ final class ColorPanel extends JPanel implements ActionListener {
     void colorChanged() {
         this.color = new Color(getColor(0), isColorTransparencySelectionEnabled());
         Object parent = getParent();
-        if (parent instanceof ColorChooserPanel) {
-            ColorChooserPanel chooser = (ColorChooserPanel) parent;
+        if (parent instanceof ColorChooserPanel chooser) {
             chooser.setSelectedColor(this.color);
             chooser.repaint();
         }

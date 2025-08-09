@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,8 +851,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
 
         public void actionPerformed(ActionEvent e) {
             JTextComponent target = getFocusedComponent();
-            if (target instanceof JTextField) {
-                JTextField field = (JTextField) target;
+            if (target instanceof JTextField field) {
                 field.postActionEvent();
             }
         }

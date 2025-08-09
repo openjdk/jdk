@@ -1982,8 +1982,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         public final void insertUpdate(DocumentEvent e) {
             Document doc = e.getDocument();
             Object o = doc.getProperty("i18n");
-            if (o instanceof Boolean) {
-                Boolean i18nFlag = (Boolean) o;
+            if (o instanceof Boolean i18nFlag) {
                 if (i18nFlag.booleanValue() != i18nView) {
                     // i18n flag changed, rebuild the view
                     i18nView = i18nFlag.booleanValue();
@@ -2606,8 +2605,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             if (importFlavor != null) {
                 try {
                     boolean useRead = false;
-                    if (comp instanceof JEditorPane) {
-                        JEditorPane ep = (JEditorPane)comp;
+                    if (comp instanceof JEditorPane ep) {
                         if (!ep.getContentType().startsWith("text/plain") &&
                                 importFlavor.getMimeType().startsWith(ep.getContentType())) {
                             useRead = true;
@@ -2696,8 +2694,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
                     plainData = c.getSelectedText();
 
-                    if (c instanceof JEditorPane) {
-                        JEditorPane ep = (JEditorPane)c;
+                    if (c instanceof JEditorPane ep) {
 
                         mimeType = ep.getContentType();
 

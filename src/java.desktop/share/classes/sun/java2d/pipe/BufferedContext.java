@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,8 +386,7 @@ public abstract class BufferedContext {
 
     private void setComposite(Composite comp, int flags) {
         // assert rq.lock.isHeldByCurrentThread();
-        if (comp instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite)comp;
+        if (comp instanceof AlphaComposite ac) {
             rq.ensureCapacity(16);
             buf.putInt(SET_ALPHA_COMPOSITE);
             buf.putInt(ac.getRule());

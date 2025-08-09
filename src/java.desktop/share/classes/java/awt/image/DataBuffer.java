@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,15 +497,13 @@ public abstract class DataBuffer {
             return (int[])obj;
         } else if (obj == null) {
             return null;
-        } else if (obj instanceof short[]) {
-            short[] sdata = (short[])obj;
+        } else if (obj instanceof short[] sdata) {
             int[] idata = new int[sdata.length];
             for (int i = 0; i < sdata.length; i++) {
                 idata[i] = (int)sdata[i] & 0xffff;
             }
             return idata;
-        } else if (obj instanceof byte[]) {
-            byte[] bdata = (byte[])obj;
+        } else if (obj instanceof byte[] bdata) {
             int[] idata = new int[bdata.length];
             for (int i = 0; i < bdata.length; i++) {
                 idata[i] = 0xff & (int)bdata[i];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         } else if (SunToolkit.isInstanceOf(aComponent, "javax.swing.JComboBox")) {
             JComboBox<?> box = (JComboBox)aComponent;
             return box.getUI().isFocusTraversable(box);
-        } else if (aComponent instanceof JComponent) {
+        } else if (aComponent instanceof JComponent jComponent) {
             if (SunToolkit.isInstanceOf(aComponent,
                                                  "javax.swing.JToggleButton")) {
                 ButtonModel model = ((JToggleButton)aComponent).getModel();
@@ -265,7 +265,6 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
                 }
             }
 
-            JComponent jComponent = (JComponent)aComponent;
             InputMap inputMap = jComponent.getInputMap(JComponent.WHEN_FOCUSED,
                                                        false);
             while (inputMap != null && inputMap.size() == 0) {

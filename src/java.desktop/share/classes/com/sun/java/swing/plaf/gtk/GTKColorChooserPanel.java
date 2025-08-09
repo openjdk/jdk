@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
      */
     // PENDING: remove this when a variant of this is added to awt.
     static void compositeRequestFocus(Component component, boolean direction) {
-        if (component instanceof Container) {
-            Container container = (Container)component;
+        if (component instanceof Container container) {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.
                                               getFocusTraversalPolicy();

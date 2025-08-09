@@ -1025,11 +1025,10 @@ public abstract class MenuComponent implements java.io.Serializable {
      */
     int getAccessibleIndexInParent() {
         MenuContainer localParent = parent;
-        if (!(localParent instanceof MenuComponent)) {
+        if (!(localParent instanceof MenuComponent localParentMenu)) {
             // MenuComponents only have accessible index when inside MenuComponents
             return -1;
         }
-        MenuComponent localParentMenu = (MenuComponent)localParent;
         return localParentMenu.getAccessibleChildIndex(this);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -894,8 +894,7 @@ public class TIFFImageMetadata extends IIOMetadata {
                 } else if(colorSpaceType != null) {
                     if(colorSpaceType.equals("GRAY")) {
                         boolean isTransparency = false;
-                        if(root instanceof IIOMetadataNode) {
-                            IIOMetadataNode iioRoot = (IIOMetadataNode)root;
+                        if(root instanceof IIOMetadataNode iioRoot) {
                             NodeList siNodeList =
                                 iioRoot.getElementsByTagName("SubimageInterpretation");
                             if(siNodeList.getLength() == 1) {

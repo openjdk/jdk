@@ -790,11 +790,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     protected void configureEnclosingScrollPane() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             Container gp = port.getParent();
-            if (gp instanceof JScrollPane) {
-                JScrollPane scrollPane = (JScrollPane)gp;
+            if (gp instanceof JScrollPane scrollPane) {
                 // Make certain we are the viewPort's view and not, for
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
@@ -824,11 +822,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     private void configureEnclosingScrollPaneUI() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             Container gp = port.getParent();
-            if (gp instanceof JScrollPane) {
-                JScrollPane scrollPane = (JScrollPane)gp;
+            if (gp instanceof JScrollPane scrollPane) {
                 // Make certain we are the viewPort's view and not, for
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
@@ -891,11 +887,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     protected void unconfigureEnclosingScrollPane() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             Container gp = port.getParent();
-            if (gp instanceof JScrollPane) {
-                JScrollPane scrollPane = (JScrollPane)gp;
+            if (gp instanceof JScrollPane scrollPane) {
                 // Make certain we are the viewPort's view and not, for
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
@@ -5887,8 +5881,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         boolean isSelected = isCellSelected(row, column);
         Component comp = editor.getTableCellEditorComponent(this, value, isSelected,
                                                   row, column);
-        if (comp instanceof JComponent) {
-            JComponent jComp = (JComponent)comp;
+        if (comp instanceof JComponent jComp) {
             if (jComp.getNextFocusableComponent() == null) {
                 jComp.setNextFocusableComponent(this);
             }

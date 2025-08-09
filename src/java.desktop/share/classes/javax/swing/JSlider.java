@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,8 +775,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         while (elements.hasMoreElements()) {
             Component component = (Component) elements.nextElement();
 
-            if (component instanceof JLabel) {
-                JLabel label = (JLabel) component;
+            if (component instanceof JLabel label) {
 
                 if (SwingUtilities.doesIconReferenceImage(label.getIcon(), img) ||
                         SwingUtilities.doesIconReferenceImage(label.getDisabledIcon(), img)) {

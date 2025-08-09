@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -873,9 +873,8 @@ public class DrawImage implements DrawImagePipe
         }
 
         if (sg.renderHint != SunHints.INTVAL_RENDER_QUALITY) {
-            if (cm instanceof IndexColorModel) {
+            if (cm instanceof IndexColorModel icm) {
                 Raster raster = bImg.getRaster();
-                IndexColorModel icm = (IndexColorModel) cm;
                 // Just need to make sure that we have a transparent pixel
                 if (needTrans && cm.getTransparency() == Transparency.OPAQUE) {
                     // Fix 4221407
@@ -1044,10 +1043,9 @@ public class DrawImage implements DrawImagePipe
                              int x, int y,
                              Color bgColor,
                              ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage sunimg)) {
             return copyImage(sg, img, x, y, bgColor);
         } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
             if (!imageReady(sunimg, observer)) {
                 return false;
             }
@@ -1060,10 +1058,9 @@ public class DrawImage implements DrawImagePipe
                              int dx, int dy, int sx, int sy, int w, int h,
                              Color bgColor,
                              ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage sunimg)) {
             return copyImage(sg, img, dx, dy, sx, sy, w, h, bgColor);
         } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
             if (!imageReady(sunimg, observer)) {
                 return false;
             }
@@ -1080,10 +1077,9 @@ public class DrawImage implements DrawImagePipe
                                 int width, int height,
                                 Color bgColor,
                                 ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage sunimg)) {
             return scaleImage(sg, img, x, y, width, height, bgColor);
         } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
             if (!imageReady(sunimg, observer)) {
                 return false;
             }
@@ -1098,11 +1094,10 @@ public class DrawImage implements DrawImagePipe
                               int sx1, int sy1, int sx2, int sy2,
                               Color bgColor,
                               ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage sunimg)) {
             return scaleImage(sg, img, dx1, dy1, dx2, dy2,
                               sx1, sy1, sx2, sy2, bgColor);
         } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
             if (!imageReady(sunimg, observer)) {
                 return false;
             }
@@ -1115,11 +1110,10 @@ public class DrawImage implements DrawImagePipe
     public boolean transformImage(SunGraphics2D sg, Image img,
                                   AffineTransform atfm,
                                   ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage sunimg)) {
             transformImage(sg, img, 0, 0, atfm, sg.interpolationType);
             return true;
         } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
             if (!imageReady(sunimg, observer)) {
                 return false;
             }
@@ -1132,8 +1126,7 @@ public class DrawImage implements DrawImagePipe
                                BufferedImageOp op, int x, int y)
     {
         if (op != null) {
-            if (op instanceof AffineTransformOp) {
-                AffineTransformOp atop = (AffineTransformOp) op;
+            if (op instanceof AffineTransformOp atop) {
                 transformImage(sg, img, x, y,
                                atop.getTransform(),
                                atop.getInterpolationType());

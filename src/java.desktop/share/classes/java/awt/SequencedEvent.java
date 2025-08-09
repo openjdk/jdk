@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,9 +158,7 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
 
             if (getFirst() != this) {
                 if (EventQueue.isDispatchThread()) {
-                    if (Thread.currentThread() instanceof EventDispatchThread) {
-                        EventDispatchThread edt = (EventDispatchThread)
-                                Thread.currentThread();
+                    if (Thread.currentThread() instanceof EventDispatchThread edt) {
                         edt.pumpEventsForFilter(() -> !SequencedEvent.this.isFirstOrDisposed(),
                                 new SequencedEventsFilter(this));
                     } else {

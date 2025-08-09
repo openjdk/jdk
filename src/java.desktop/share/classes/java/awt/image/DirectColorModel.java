@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1117,8 +1117,7 @@ public class DirectColorModel extends PackedColorModel {
         }
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               if (obj instanceof byte[]) {
-                   byte[] bdata = (byte[])obj;
+               if (obj instanceof byte[] bdata) {
                    bdata[0] = (byte)(pixel&0xff);
                    return bdata;
                } else {
@@ -1126,8 +1125,7 @@ public class DirectColorModel extends PackedColorModel {
                    return bdata;
                }
             case DataBuffer.TYPE_USHORT:
-               if (obj instanceof short[]) {
-                   short[] sdata = (short[])obj;
+               if (obj instanceof short[] sdata) {
                    sdata[0] = (short)(pixel&0xffff);
                    return sdata;
                } else {
@@ -1135,8 +1133,7 @@ public class DirectColorModel extends PackedColorModel {
                    return sdata;
                }
             case DataBuffer.TYPE_INT:
-               if (obj instanceof int[]) {
-                   int[] idata = (int[])obj;
+               if (obj instanceof int[] idata) {
                    idata[0] = pixel;
                    return idata;
                } else {

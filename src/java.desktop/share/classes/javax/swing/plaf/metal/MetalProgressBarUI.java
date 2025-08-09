@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
     public void paintDeterminate(Graphics g, JComponent c) {
         super.paintDeterminate(g,c);
 
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             return;
         }
 
@@ -93,7 +93,6 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
             endX = b.left + barRectWidth - 1;
             endY = b.top + barRectHeight - 1;
 
-            Graphics2D g2 = (Graphics2D)g;
             g2.setStroke(new BasicStroke(1.f));
 
             if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
@@ -153,7 +152,7 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
     public void paintIndeterminate(Graphics g, JComponent c) {
         super.paintIndeterminate(g, c);
 
-        if (!progressBar.isBorderPainted() || (!(g instanceof Graphics2D))) {
+        if (!progressBar.isBorderPainted() || (!(g instanceof Graphics2D g2))) {
             return;
         }
 
@@ -174,7 +173,6 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
         endX = b.left + barRectWidth - 1;
         endY = b.top + barRectHeight - 1;
 
-        Graphics2D g2 = (Graphics2D)g;
         g2.setStroke(new BasicStroke(1.f));
 
         if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {

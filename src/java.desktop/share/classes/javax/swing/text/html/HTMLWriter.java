@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,8 +358,7 @@ public class HTMLWriter extends AbstractWriter {
      */
     protected boolean isBlockTag(AttributeSet attr) {
         Object o = attr.getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag name = (HTML.Tag) o;
+        if (o instanceof HTML.Tag name) {
             return name.isBlock();
         }
         return false;
@@ -705,8 +704,7 @@ public class HTMLWriter extends AbstractWriter {
      */
     protected boolean matchNameAttribute(AttributeSet attr, HTML.Tag tag) {
         Object o = attr.getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag name = (HTML.Tag) o;
+        if (o instanceof HTML.Tag name) {
             if (name == tag) {
                 return true;
             }
@@ -731,8 +729,7 @@ public class HTMLWriter extends AbstractWriter {
         Enumeration<?> names = attr.getAttributeNames();
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
-            if (name instanceof HTML.Tag) {
-                HTML.Tag tag = (HTML.Tag)name;
+            if (name instanceof HTML.Tag tag) {
                 if (tag == HTML.Tag.FORM || tags.contains(tag)) {
                     continue;
                 }

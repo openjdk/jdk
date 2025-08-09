@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,8 +288,7 @@ class GTKEngine {
         if (c instanceof JScrollBar) {
             return (((JScrollBar)c).getOrientation() == JScrollBar.HORIZONTAL) ?
                 widgets[0] : widgets[1];
-        } else if (c instanceof JSeparator) {
-            JSeparator separator = (JSeparator)c;
+        } else if (c instanceof JSeparator separator) {
 
             /* We should return correct WidgetType if the separator is inserted
              * in Menu/PopupMenu/ToolBar. BugID: 6465603

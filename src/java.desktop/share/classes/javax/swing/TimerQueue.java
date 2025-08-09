@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,8 +261,7 @@ class TimerQueue implements Runnable
             if (other == this) { // compare zero ONLY if same object
                 return 0;
             }
-            if (other instanceof DelayedTimer) {
-                DelayedTimer x = (DelayedTimer)other;
+            if (other instanceof DelayedTimer x) {
                 long diff = time - x.time;
                 if (diff < 0) {
                     return -1;

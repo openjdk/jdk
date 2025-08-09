@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1330,11 +1330,9 @@ public final class PageAttributes implements Cloneable {
      *          above criteria.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof PageAttributes)) {
+        if (!(obj instanceof PageAttributes rhs)) {
             return false;
         }
-
-        PageAttributes rhs = (PageAttributes)obj;
 
         return (color == rhs.color &&
                 media == rhs.media &&

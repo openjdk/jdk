@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,8 +905,7 @@ public class PlainView extends View implements TabExpander {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof FPMethodItem) {
-                FPMethodItem that = (FPMethodItem) obj;
+            if (obj instanceof FPMethodItem that) {
                 return this.className.equals(that.className)
                         && this.methodName.equals(that.methodName);
             }

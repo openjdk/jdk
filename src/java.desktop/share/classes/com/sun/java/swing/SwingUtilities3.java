@@ -339,8 +339,7 @@ public class SwingUtilities3 {
         int width = w;
         int height = h;
 
-        if (g instanceof Graphics2D) {
-            Graphics2D g2d = (Graphics2D) g;
+        if (g instanceof Graphics2D g2d) {
             at = g2d.getTransform();
             oldStroke = g2d.getStroke();
             scaleFactor = Math.min(at.getScaleX(), at.getScaleY());
@@ -372,8 +371,7 @@ public class SwingUtilities3 {
 
         // Step 3: Restore previous stroke & transform
         g.translate(-xtranslation, -ytranslation);
-        if (g instanceof Graphics2D) {
-            Graphics2D g2d = (Graphics2D) g;
+        if (g instanceof Graphics2D g2d) {
             g2d.setStroke(oldStroke);
             if (resetTransform) {
                 g2d.setTransform(at);

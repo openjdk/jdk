@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,9 +113,8 @@ class GlyphPainter2 extends GlyphView.GlyphPainter {
      * running on the JDK).
      */
     public void paint(GlyphView v, Graphics g, Shape a, int p0, int p1) {
-        if (g instanceof Graphics2D) {
+        if (g instanceof Graphics2D g2d) {
             Rectangle2D alloc = a.getBounds2D();
-            Graphics2D g2d = (Graphics2D)g;
             float y = (float) alloc.getY() + layout.getAscent() + layout.getLeading();
             float x = (float) alloc.getX();
             if( p0 > v.getStartOffset() || p1 < v.getEndOffset() ) {

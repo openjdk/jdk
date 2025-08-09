@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,9 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
     }
 
     public boolean canDecodeInput(Object source) throws IOException {
-        if (!(source instanceof ImageInputStream)) {
+        if (!(source instanceof ImageInputStream stream)) {
             return false;
         }
-
-        ImageInputStream stream = (ImageInputStream)source;
 
         stream.mark();
         try {

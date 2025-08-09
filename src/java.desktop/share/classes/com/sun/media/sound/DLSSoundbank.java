@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,10 +110,9 @@ public final class DLSSoundbank implements Soundbank {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof DLSID)) {
+            if (!(obj instanceof DLSID t)) {
                 return false;
             }
-            DLSID t = (DLSID) obj;
             return i1 == t.i1 && s1 == t.s1 && s2 == t.s2
                 && x1 == t.x1 && x2 == t.x2 && x3 == t.x3 && x4 == t.x4
                 && x5 == t.x5 && x6 == t.x6 && x7 == t.x7 && x8 == t.x8;

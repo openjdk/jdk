@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,7 @@ final class Signature {
         if (this == object) {
             return true;
         }
-        if (object instanceof Signature) {
-            Signature signature = (Signature) object;
+        if (object instanceof Signature signature) {
             return isEqual(signature.type, this.type)
                 && isEqual(signature.name, this.name)
                 && isEqual(signature.args, this.args);

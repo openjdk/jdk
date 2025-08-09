@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -833,9 +833,7 @@ public class InternationalFormatter extends DefaultFormatter {
         AttributedCharacterIterator iterator = getIterator();
 
         if (iterator != null &&
-                        (f instanceof AttributedCharacterIterator.Attribute)) {
-            AttributedCharacterIterator.Attribute field =
-                                   (AttributedCharacterIterator.Attribute)f;
+                        (f instanceof AttributedCharacterIterator.Attribute field)) {
 
             iterator.first();
             while (iterator.current() != CharacterIterator.DONE) {
@@ -873,9 +871,7 @@ public class InternationalFormatter extends DefaultFormatter {
         int count = 0;
 
         if (iterator != null &&
-                    (f instanceof AttributedCharacterIterator.Attribute)) {
-            AttributedCharacterIterator.Attribute field =
-                                   (AttributedCharacterIterator.Attribute)f;
+                    (f instanceof AttributedCharacterIterator.Attribute field)) {
 
             iterator.first();
             while (iterator.getIndex() < start) {

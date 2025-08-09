@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         }
 
         private void repaintHeader(Object source) {
-            if (source instanceof JTableHeader) {
-                JTableHeader th = (JTableHeader)source;
+            if (source instanceof JTableHeader th) {
                 BasicTableHeaderUI ui =
                    (BasicTableHeaderUI)BasicLookAndFeel.
                                         getUIOfType(th.getUI(),
@@ -868,8 +867,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
 
         @Override
         public boolean accept(Object sender) {
-            if (sender instanceof JTableHeader) {
-                JTableHeader th = (JTableHeader)sender;
+            if (sender instanceof JTableHeader th) {
                 TableColumnModel cm = th.getColumnModel();
                 if (cm.getColumnCount() <= 0) {
                     return false;

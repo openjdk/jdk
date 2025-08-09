@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,8 +393,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
             g.setColor(bg);
             g.fillRect(alloc.x, alloc.y, alloc.width, alloc.height);
         }
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
+        if (c instanceof JTextComponent tc) {
             Highlighter h = tc.getHighlighter();
             if (h instanceof LayeredHighlighter) {
                 ((LayeredHighlighter)h).paintLayeredHighlights
@@ -405,8 +404,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
         if (Utilities.isComposedTextElement(getElement())) {
             Utilities.paintComposedText(g, a.getBounds(), this);
             paintedText = true;
-        } else if(c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
+        } else if(c instanceof JTextComponent tc) {
             Color selFG = tc.getSelectedTextColor();
 
             if (// there's a highlighter (bug 4532590), and

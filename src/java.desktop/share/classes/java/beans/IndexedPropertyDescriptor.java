@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,13 +441,11 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
         Method tr = null;
         Method tw = null;
 
-        if (x instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor ix = (IndexedPropertyDescriptor) x;
+        if (x instanceof IndexedPropertyDescriptor ix) {
             tr = ix.getIndexedReadMethod();
             tw = ix.getIndexedWriteMethod();
         }
-        if (y instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor iy = (IndexedPropertyDescriptor) y;
+        if (y instanceof IndexedPropertyDescriptor iy) {
             Method yr = iy.getIndexedReadMethod();
             if (isAssignable(tr, yr)) {
                 tr = yr;

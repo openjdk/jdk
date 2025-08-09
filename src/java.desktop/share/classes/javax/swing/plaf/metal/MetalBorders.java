@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,14 +126,13 @@ public class MetalBorders {
         public ButtonBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
-            if (!(c instanceof AbstractButton)) {
+            if (!(c instanceof AbstractButton button)) {
                 return;
             }
             if (MetalLookAndFeel.usingOcean()) {
                 paintOceanBorder(c, g, x, y, w, h);
                 return;
             }
-            AbstractButton button = (AbstractButton)c;
             ButtonModel model = button.getModel();
 
             if ( model.isEnabled() ) {
@@ -663,10 +662,9 @@ public class MetalBorders {
         public MenuItemBorder() {}
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
-            if (!(c instanceof JMenuItem)) {
+            if (!(c instanceof JMenuItem b)) {
                 return;
             }
-            JMenuItem b = (JMenuItem) c;
             ButtonModel model = b.getModel();
 
             g.translate( x, y );
@@ -993,10 +991,9 @@ public class MetalBorders {
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
 
-            if (!(c instanceof JScrollPane)) {
+            if (!(c instanceof JScrollPane scroll)) {
                 return;
             }
-            JScrollPane scroll = (JScrollPane)c;
             JComponent colHeader = scroll.getColumnHeader();
             int colHeaderHeight = 0;
             if (colHeader != null)

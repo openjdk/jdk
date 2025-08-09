@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,7 @@ class DHTMarkerSegment extends MarkerSegment {
                 }
                 tableClass = getAttributeValue(node, attrs, "class", 0, 1, true);
                 tableID = getAttributeValue(node, attrs, "htableId", 0, 3, true);
-                if (node instanceof IIOMetadataNode) {
-                    IIOMetadataNode ourNode = (IIOMetadataNode) node;
+                if (node instanceof IIOMetadataNode ourNode) {
                     JPEGHuffmanTable table =
                         (JPEGHuffmanTable) ourNode.getUserObject();
                     if (table == null) {

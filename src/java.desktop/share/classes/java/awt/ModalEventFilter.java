@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,7 @@ abstract class ModalEventFilter implements EventFilter {
             if (o instanceof sun.awt.ModalExclude) {
                 // Exclude this object from modality and
                 // continue to pump it's events.
-            } else if (o instanceof Component) {
-                Component c = (Component)o;
+            } else if (o instanceof Component c) {
                 while ((c != null) && !(c instanceof Window)) {
                     c = c.getParent_NoClientCode();
                 }

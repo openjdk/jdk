@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,10 @@ final class MidiOutDevice extends AbstractMidiDevice {
             final int status = message.getStatus();
             if (length <= 3 && status != 0xF0 && status != 0xF7) {
                 int packedMsg;
-                if (message instanceof ShortMessage) {
+                if (message instanceof ShortMessage msg) {
                     if (message instanceof FastShortMessage) {
                         packedMsg = ((FastShortMessage) message).getPackedMsg();
                     } else {
-                        ShortMessage msg = (ShortMessage) message;
                         packedMsg = (status & 0xFF)
                             | ((msg.getData1() & 0xFF) << 8)
                             | ((msg.getData2() & 0xFF) << 16);

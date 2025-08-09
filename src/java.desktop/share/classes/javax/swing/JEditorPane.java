@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,9 +583,8 @@ public class JEditorPane extends JTextComponent {
      */
     public void read(InputStream in, Object desc) throws IOException {
 
-        if (desc instanceof HTMLDocument &&
+        if (desc instanceof HTMLDocument hdoc &&
             kit instanceof HTMLEditorKit) {
-            HTMLDocument hdoc = (HTMLDocument) desc;
             setDocument(hdoc);
             read(in, hdoc);
         } else {
@@ -778,8 +777,7 @@ public class JEditorPane extends JTextComponent {
      */
     protected InputStream getStream(URL page) throws IOException {
         final URLConnection conn = page.openConnection();
-        if (conn instanceof HttpURLConnection) {
-            HttpURLConnection hconn = (HttpURLConnection) conn;
+        if (conn instanceof HttpURLConnection hconn) {
             hconn.setInstanceFollowRedirects(false);
             Object postData = getPostData();
             if (postData != null) {
@@ -877,8 +875,7 @@ public class JEditorPane extends JTextComponent {
     @SuppressWarnings("deprecation")
     public void scrollToReference(String reference) {
         Document d = getDocument();
-        if (d instanceof HTMLDocument) {
-            HTMLDocument doc = (HTMLDocument) d;
+        if (d instanceof HTMLDocument doc) {
             HTMLDocument.Iterator iter = doc.getIterator(HTML.Tag.A);
             for (; iter.isValid(); iter.next()) {
                 AttributeSet a = iter.getAttributes();
@@ -1387,8 +1384,7 @@ public class JEditorPane extends JTextComponent {
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             TextUI ui = getUI();
             int prefWidth = d.width;
             int prefHeight = d.height;
@@ -1509,8 +1505,7 @@ public class JEditorPane extends JTextComponent {
     @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportWidth() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             TextUI ui = getUI();
             int w = port.getWidth();
             Dimension min = ui.getMinimumSize(this);
@@ -1533,8 +1528,7 @@ public class JEditorPane extends JTextComponent {
     @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportHeight() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
-        if (parent instanceof JViewport) {
-            JViewport port = (JViewport) parent;
+        if (parent instanceof JViewport port) {
             TextUI ui = getUI();
             int h = port.getHeight();
             Dimension min = ui.getMinimumSize(this);
@@ -2229,8 +2223,7 @@ public class JEditorPane extends JTextComponent {
              */
             public int getFlowSpan(int index) {
                 Component c = getContainer();
-                if (c instanceof JTextArea) {
-                    JTextArea area = (JTextArea) c;
+                if (c instanceof JTextArea area) {
                     if (! area.getLineWrap()) {
                         // no limit if unwrapped
                         return Integer.MAX_VALUE;
@@ -2245,8 +2238,7 @@ public class JEditorPane extends JTextComponent {
                 SizeRequirements req
                     = super.calculateMinorAxisRequirements(axis, r);
                 Component c = getContainer();
-                if (c instanceof JTextArea) {
-                    JTextArea area = (JTextArea) c;
+                if (c instanceof JTextArea area) {
                     if (! area.getLineWrap()) {
                         // min is pref if unwrapped
                         req.minimum = req.preferred;

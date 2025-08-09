@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,11 +437,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     public Font2DHandle getNewComposite(String family, int style,
                                         Font2DHandle handle) {
 
-        if (!(handle.font2D instanceof CompositeFont)) {
+        if (!(handle.font2D instanceof CompositeFont oldComp)) {
             return handle;
         }
 
-        CompositeFont oldComp = (CompositeFont)handle.font2D;
         PhysicalFont oldFont = oldComp.getSlotFont(0);
 
         if (family == null) {
@@ -643,10 +642,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                  * more complete (larger) one.
                  */
                 if (oldFont.getRank() == rank) {
-                    if (oldFont instanceof TrueTypeFont &&
-                        newFont instanceof TrueTypeFont) {
-                        TrueTypeFont oldTTFont = (TrueTypeFont)oldFont;
-                        TrueTypeFont newTTFont = (TrueTypeFont)newFont;
+                    if (oldFont instanceof TrueTypeFont oldTTFont &&
+                        newFont instanceof TrueTypeFont newTTFont) {
                         if (oldTTFont.fileSize >= newTTFont.fileSize) {
                             return oldFont;
                         }
@@ -2382,8 +2379,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         localeFullNamesToFont = new HashMap<>();
         Font2D[] fonts = getRegisteredFonts();
         for (int i=0; i<fonts.length; i++) {
-            if (fonts[i] instanceof TrueTypeFont) {
-                TrueTypeFont ttf = (TrueTypeFont)fonts[i];
+            if (fonts[i] instanceof TrueTypeFont ttf) {
                 String[] fullNames = ttf.getAllFullNames();
                 for (int n=0; n<fullNames.length; n++) {
                     localeFullNamesToFont.put(fullNames[n], ttf);

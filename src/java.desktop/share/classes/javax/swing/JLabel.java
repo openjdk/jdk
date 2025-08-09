@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1252,8 +1252,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             View view = (View) JLabel.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     return doc.getLength();
                 }
             }
@@ -1455,8 +1454,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             View view = (View) JLabel.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     Element elem = doc.getCharacterElement(i);
                     if (elem != null) {
                         return elem.getAttributes();
@@ -1513,8 +1511,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             View view = (View) JLabel.this.getClientProperty("html");
             if (view != null) {
                 Document d = view.getDocument();
-                if (d instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)d;
+                if (d instanceof StyledDocument doc) {
                     return doc.getText(offset, length);
                 }
             }

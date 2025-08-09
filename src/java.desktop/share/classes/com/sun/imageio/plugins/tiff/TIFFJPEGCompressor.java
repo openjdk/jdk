@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,7 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
     public void setMetadata(IIOMetadata metadata) {
         super.setMetadata(metadata);
 
-        if (metadata instanceof TIFFImageMetadata) {
-            TIFFImageMetadata tim = (TIFFImageMetadata)metadata;
+        if (metadata instanceof TIFFImageMetadata tim) {
             TIFFIFD rootIFD = tim.getRootIFD();
             BaselineTIFFTagSet base = BaselineTIFFTagSet.getInstance();
 

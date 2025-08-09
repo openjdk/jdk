@@ -1628,8 +1628,7 @@ public class CSS implements Serializable {
         }
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
-            if (key instanceof HTML.Tag) {
-                HTML.Tag tag = (HTML.Tag)key;
+            if (key instanceof HTML.Tag tag) {
                 Object o = htmlAttrSet.getAttribute(tag);
                 if (o instanceof AttributeSet as) {
                     translateAttributes(tag, as, cssAttrSet);
@@ -1647,8 +1646,7 @@ public class CSS implements Serializable {
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
 
-            if (name instanceof HTML.Attribute) {
-                HTML.Attribute key = (HTML.Attribute)name;
+            if (name instanceof HTML.Attribute key) {
 
                 /*
                  * HTML.Attribute.ALIGN needs special processing.
@@ -1772,8 +1770,7 @@ public class CSS implements Serializable {
      */
     private HTML.Tag getHTMLTag(AttributeSet htmlAttrSet) {
         Object o = htmlAttrSet.getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag tag = (HTML.Tag) o;
+        if (o instanceof HTML.Tag tag) {
             return tag;
         }
         return null;

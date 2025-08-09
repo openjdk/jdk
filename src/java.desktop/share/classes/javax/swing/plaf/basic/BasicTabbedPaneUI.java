@@ -4444,8 +4444,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            if (isParamsSet() && g instanceof Graphics2D) {
-                Graphics2D g2 = (Graphics2D) g;
+            if (isParamsSet() && g instanceof Graphics2D g2) {
                 g2.clipRect(0, 0, getWidth(), getHeight());
                 g2.setColor(getBgColor());
                 g2.translate(cropx, cropy);

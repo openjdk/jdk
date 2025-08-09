@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,9 +283,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
             SunToolkit.postEvent(targetAppContext, se);
             if (EventQueue.isDispatchThread()) {
-                if (Thread.currentThread() instanceof EventDispatchThread) {
-                    EventDispatchThread edt = (EventDispatchThread)
-                            Thread.currentThread();
+                if (Thread.currentThread() instanceof EventDispatchThread edt) {
                     edt.pumpEvents(SentEvent.ID, new Conditional() {
                         public boolean evaluate() {
                             return !se.dispatched && !targetAppContext.isDisposed();
@@ -342,10 +340,9 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * the focus window events are reposted to the end of the event queue. See 6981400.
      */
     private boolean repostIfFollowsKeyEvents(WindowEvent e) {
-        if (!(e instanceof TimedWindowEvent)) {
+        if (!(e instanceof TimedWindowEvent we)) {
             return false;
         }
-        TimedWindowEvent we = (TimedWindowEvent)e;
         long time = we.getWhen();
         synchronized (this) {
             KeyEvent ke = enqueuedKeyEvents.isEmpty() ? null : enqueuedKeyEvents.getFirst();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,8 +367,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                  * model types but it might be non compatible with win98
                  * and friends.
                  */
-                if (colorModel instanceof DirectColorModel) {
-                    DirectColorModel dcm = (DirectColorModel)colorModel;
+                if (colorModel instanceof DirectColorModel dcm) {
                     rmask = dcm.getRedMask();
                     gmask = dcm.getGreenMask();
                     bmask = dcm.getBlueMask();
@@ -637,21 +636,16 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                 int pos = 0;
                 int startX = srcRect.x - src.getSampleModelTranslateX();
                 int startY = srcRect.y - src.getSampleModelTranslateY();
-                if (sm instanceof ComponentSampleModel) {
-                    ComponentSampleModel csm = (ComponentSampleModel)sm;
+                if (sm instanceof ComponentSampleModel csm) {
                     pos = csm.getOffset(startX, startY, 0);
                     for(int nb=1; nb < csm.getNumBands(); nb++) {
                         if (pos > csm.getOffset(startX, startY, nb)) {
                             pos = csm.getOffset(startX, startY, nb);
                         }
                     }
-                } else if (sm instanceof MultiPixelPackedSampleModel) {
-                    MultiPixelPackedSampleModel mppsm =
-                        (MultiPixelPackedSampleModel)sm;
+                } else if (sm instanceof MultiPixelPackedSampleModel mppsm) {
                     pos = mppsm.getOffset(startX, startY);
-                } else if (sm instanceof SinglePixelPackedSampleModel) {
-                    SinglePixelPackedSampleModel sppsm =
-                        (SinglePixelPackedSampleModel)sm;
+                } else if (sm instanceof SinglePixelPackedSampleModel sppsm) {
                     pos = sppsm.getOffset(startX, startY);
                 }
 

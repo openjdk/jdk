@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1099,8 +1099,7 @@ public class AWTEventMulticaster implements
      * are counted.  Method modified to fix bug 4513402.  -bchristi
      */
     private static int getListenerCount(EventListener l, Class<?> listenerType) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
+        if (l instanceof AWTEventMulticaster mc) {
             return getListenerCount(mc.a, listenerType) +
              getListenerCount(mc.b, listenerType);
         }
@@ -1118,8 +1117,7 @@ public class AWTEventMulticaster implements
      * type.  -bchristi
      */
     private static int populateListenerArray(EventListener[] a, EventListener l, int index) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
+        if (l instanceof AWTEventMulticaster mc) {
             int lhs = populateListenerArray(a, mc.a, index);
             return populateListenerArray(a, mc.b, lhs);
         }

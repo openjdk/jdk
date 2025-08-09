@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,8 +473,7 @@ public final class SunGraphics2D
      */
     Shape intersectRectShape(Rectangle2D r, Shape s,
                              boolean keep1, boolean keep2) {
-        if (s instanceof Rectangle2D) {
-            Rectangle2D r2 = (Rectangle2D) s;
+        if (s instanceof Rectangle2D r2) {
             Rectangle2D outrect;
             if (!keep1) {
                 outrect = r;
@@ -944,8 +943,7 @@ public final class SunGraphics2D
         }
         int newCompState;
         CompositeType newCompType;
-        if (comp instanceof AlphaComposite) {
-            AlphaComposite alphacomp = (AlphaComposite) comp;
+        if (comp instanceof AlphaComposite alphacomp) {
             newCompType = CompositeType.forAlphaComposite(alphacomp);
             if (newCompType == CompositeType.SrcOverNoEa) {
                 if (paintState == PAINT_OPAQUECOLOR ||
@@ -1193,11 +1191,10 @@ public final class SunGraphics2D
             throw new IllegalArgumentException
                 (hintValue+" is not compatible with "+hintKey);
         }
-        if (hintKey instanceof SunHints.Key) {
+        if (hintKey instanceof SunHints.Key sunKey) {
             boolean stateChanged;
             boolean textStateChanged = false;
             boolean recognized = true;
-            SunHints.Key sunKey = (SunHints.Key) hintKey;
             int newHint;
             if (sunKey == SunHints.KEY_TEXT_ANTIALIAS_LCD_CONTRAST) {
                 newHint = ((Integer)hintValue).intValue();
@@ -1968,8 +1965,7 @@ public final class SunGraphics2D
             r.translate(tx, ty);
             return r;
         }
-        if (s instanceof Rectangle2D) {
-            Rectangle2D rect = (Rectangle2D) s;
+        if (s instanceof Rectangle2D rect) {
             return new Rectangle2D.Double(rect.getX() + tx,
                                           rect.getY() + ty,
                                           rect.getWidth(),
@@ -1989,10 +1985,9 @@ public final class SunGraphics2D
             return null;
         }
 
-        if (clip instanceof Rectangle2D &&
+        if (clip instanceof Rectangle2D rect &&
             (tx.getType() & NON_RECTILINEAR_TRANSFORM_MASK) == 0)
         {
-            Rectangle2D rect = (Rectangle2D) clip;
             double[] matrix = new double[4];
             matrix[0] = rect.getX();
             matrix[1] = rect.getY();
@@ -2666,8 +2661,7 @@ public final class SunGraphics2D
         }
 
         // BufferedImage case: use a simple drawImage call
-        if (img instanceof BufferedImage) {
-            BufferedImage bufImg = (BufferedImage)img;
+        if (img instanceof BufferedImage bufImg) {
             drawImage(bufImg,xform,null);
             return;
         }
@@ -3128,13 +3122,12 @@ public final class SunGraphics2D
                     invalidateTransform();
                 }
                 return result;
-            } else if (img instanceof MultiResolutionImage) {
+            } else if (img instanceof MultiResolutionImage mrImage) {
                 // get scaled destination image size
 
                 int width = img.getWidth(observer);
                 int height = img.getHeight(observer);
 
-                MultiResolutionImage mrImage = (MultiResolutionImage) img;
                 Image resolutionVariant = getResolutionVariant(mrImage, width, height,
                                                                dx1, dy1, dx2, dy2,
                                                                sx1, sy1, sx2, sy2,

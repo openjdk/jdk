@@ -459,8 +459,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
         mOptions = "";
         Attribute attr = attributes.get(Media.class);
-        if (attr instanceof CustomMediaTray) {
-            CustomMediaTray customTray = (CustomMediaTray)attr;
+        if (attr instanceof CustomMediaTray customTray) {
             String choice = customTray.getChoiceName();
             if (choice != null) {
                 mOptions += " InputSlot="+ choice;
@@ -487,8 +486,7 @@ public class PSPrinterJob extends RasterPrinterJob {
 
         OutputStream output = null;
 
-        if (getPrintService() instanceof PSStreamPrintService) {
-            StreamPrintService sps = (StreamPrintService)getPrintService();
+        if (getPrintService() instanceof PSStreamPrintService sps) {
             mDestType = RasterPrinterJob.STREAM;
             if (sps.isDisposed()) {
                 throw new PrinterException("service is disposed");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,7 @@ public class BasicRootPaneUI extends RootPaneUI implements
                         .getCurrentKeyboardFocusManager()
                          .getFocusOwner();
 
-                if(c instanceof JComponent) {
-                    JComponent src = (JComponent) c;
+                if(c instanceof JComponent src) {
                     JPopupMenu jpm = src.getComponentPopupMenu();
                     if(jpm != null) {
                         Point pt = src.getPopupLocation(null);
@@ -276,8 +275,7 @@ public class BasicRootPaneUI extends RootPaneUI implements
                 Component c = KeyboardFocusManager
                        .getCurrentKeyboardFocusManager()
                         .getFocusOwner();
-                if(c instanceof JComponent) {
-                    JComponent src = (JComponent) c;
+                if(c instanceof JComponent src) {
                     return src.getComponentPopupMenu() != null;
                 }
 

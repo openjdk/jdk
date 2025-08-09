@@ -372,8 +372,7 @@ public class PopupFactory {
 
             boolean focusPopup = false;
             if(contents != null && contents.isFocusable()) {
-                if(contents instanceof JPopupMenu) {
-                    JPopupMenu jpm = (JPopupMenu) contents;
+                if(contents instanceof JPopupMenu jpm) {
                     Component[] popComps = jpm.getComponents();
                     for (Component popComp : popComps) {
                         if (!(popComp instanceof MenuElement) &&
