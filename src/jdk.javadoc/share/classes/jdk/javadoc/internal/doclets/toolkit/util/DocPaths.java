@@ -103,6 +103,9 @@ public class DocPaths {
     /** The name of the template of the default javascript file. */
     public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
 
+    /** The name of the table of contents toggle javascript file. */
+    public static final DocPath TOC_JS = DocPath.create("toc.js");
+
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
@@ -111,6 +114,9 @@ public class DocPaths {
 
     /** The name of the link icon file. */
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
+
+    /** The name of the table of contents toggle icon file. */
+    public static final DocPath TOGGLE_SVG = DocPath.create("toggle.svg");
 
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");

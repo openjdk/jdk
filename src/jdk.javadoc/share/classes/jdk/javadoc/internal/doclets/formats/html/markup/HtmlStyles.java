@@ -164,6 +164,11 @@ public enum HtmlStyles implements HtmlStyle {
      */
     tocList,
 
+    /**
+     * The class used for lexical order toggle in the table of contents.
+     */
+    tocSortToggle,
+
     //</editor-fold>
 
     //<editor-fold desc="header (title block)">

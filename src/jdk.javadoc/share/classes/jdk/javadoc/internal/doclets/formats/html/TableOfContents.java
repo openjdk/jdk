@@ -112,6 +112,15 @@ public class TableOfContents {
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyles.resetFilter)
                             .put(HtmlAttr.TABINDEX, "-1")
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
+
+            header.add(Entity.NO_BREAK_SPACE)
+                    .add(HtmlTree.BUTTON(HtmlStyles.tocSortToggle)
+                            .put(HtmlAttr.ID, HtmlIds.TOC_ORDER_TOGGLE)
+                            .add(HtmlTree.IMG(writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.TOGGLE_SVG),
+                                    writer.resources.getText("doclet.sort_table_of_contents")
+                            ))
+                    );
+
         }
         content.add(header);
         content.add(listBuilder);
