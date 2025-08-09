@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "memory/padded.inline.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -200,6 +201,7 @@ public:
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -245,7 +247,7 @@ public:
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
            partition_membership_name(ssize_t(which_partition)));
 #endif
-    return _available[int(which_partition)];
+    return available_in(which_partition);
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
@@ -253,6 +255,7 @@ public:
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _capacity[int(which_partition)] = value;
     _available[int(which_partition)] = value - _used[int(which_partition)];
+    Atomic::store(_capacity + int(which_partition), value);
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
@@ -260,6 +263,7 @@ public:
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[int(which_partition)] = value;
     _available[int(which_partition)] = _capacity[int(which_partition)] - value;
+    Atomic::store(_used + int(which_partition), value);
   }
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
@@ -287,6 +291,28 @@ public:
   void assert_bounds() NOT_DEBUG_RETURN;
 };
 
+#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_AFFINITY ((Thread*)-1)
+#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF     ((Thread*)-2)
+// When mutator threads allocate from directly allocatable regions, ideally the allocation should be evenly
+// distributed to all the directly allocatable regions, random is the best portable option for this, but with random
+// distribution it may worsen memory locality, e.g. two consecutive allocation from same thread are randomly
+// distributed to different allocatable regions. ShenandoahDirectlyAllocatableRegionAffinity solves/mitigates
+// the memory locality issue.
+// The idea and code is borrowed from ZGC's CPU affinity, but with random number instead of CPU id.
+class ShenandoahDirectlyAllocatableRegionAffinity : public AllStatic {
+  struct Affinity {
+    Thread* _thread;
+  };
+
+  static PaddedEnd<Affinity>* _affinity;
+  static THREAD_LOCAL Thread* _self;
+  static THREAD_LOCAL uint    _index;
+  static uint index_slow();
+public:
+  static void initialize();
+  static uint index();
+};
+
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
 // and available() methods represent this public notion of memory that is under control of the mutator.  Separately,
 // ShenandoahFreeSet also represents memory available to garbage collection activities for compaction purposes.
@@ -311,10 +337,15 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
+struct ShenandoahDirectAllocationRegion {
+  ShenandoahHeapRegion* volatile _address = nullptr;
+};
+
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+  PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -410,6 +441,24 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
+  template<bool IS_TLAB>
+  HeapWord* cas_allocate_single_for_mutator(
+    uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region);
+
+  template<bool IS_TLAB>
+  HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
+
+  bool try_allocate_directly_allocatable_regions(uint start_index,
+                                                 bool replace_all_eligible_regions,
+                                                 ShenandoahAllocRequest &req,
+                                                 HeapWord* &obj,
+                                                 bool &in_new_region);
+  template<bool IS_MUTATOR, bool IS_OLD>
+  uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
+
+  template<typename Iter>
+  uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionBreakableIterClosure* cl);
+
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
 
@@ -483,6 +532,21 @@ public:
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
+
+  void release_all_directly_allocatable_regions();
+
+  void release_directly_allocatable_region(ShenandoahHeapRegion *region);
+
+  template<bool IS_TLAB>
+  HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
+
+  inline void retire_region_from_partition(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
+
+  inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.

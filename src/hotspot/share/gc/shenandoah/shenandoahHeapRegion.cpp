@@ -89,6 +89,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
   _recycling.unset();
+  _direct_alloc_reserved.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -360,25 +361,29 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
-  _tlab_allocs = 0;
-  _gclab_allocs = 0;
-  _plab_allocs = 0;
+  Atomic::store(&_tlab_allocs, size_t(0));
+  Atomic::store(&_gclab_allocs, size_t(0));
+  Atomic::store(&_plab_allocs, size_t(0));
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  return used() - (Atomic::load(&_tlab_allocs) + Atomic::load(&_gclab_allocs) + Atomic::load(&_plab_allocs)) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
-  return _tlab_allocs * HeapWordSize;
+  return Atomic::load(&_tlab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_gclab_allocs() const {
-  return _gclab_allocs * HeapWordSize;
+  return Atomic::load(&_gclab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_plab_allocs() const {
-  return _plab_allocs * HeapWordSize;
+  return Atomic::load(&_plab_allocs) * HeapWordSize;
+}
+
+bool ShenandoahHeapRegion::has_allocs() const {
+  return top() > bottom();
 }
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
@@ -851,6 +856,8 @@ size_t ShenandoahHeapRegion::pin_count() const {
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
+  assert(new_affiliation != OLD_GENERATION || !reserved_for_direct_allocation(), "Reserved region can't move to old");
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahAffiliation region_affiliation = heap->region_affiliation(this);

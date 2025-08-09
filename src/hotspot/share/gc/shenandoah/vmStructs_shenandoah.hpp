@@ -42,7 +42,7 @@
   volatile_nonstatic_field(ShenandoahHeapRegion, _state,           ShenandoahHeapRegion::RegionState) \
   nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                      \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                   \
-  nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                         \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _top,             HeapWord*)                         \
   nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                   \
 
 #define VM_INT_CONSTANTS_SHENANDOAH(declare_constant, declare_constant_with_value) \
