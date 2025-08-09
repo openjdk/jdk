@@ -41,16 +41,16 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
 
 TARGETS += $(COMPILE_PROPERTIES)
 
-################################################################################
-#
-# Compile properties files into enum-like classes using the propertiesparser tool
-#
-
 # To avoid reevaluating the compilation setup for the tools each time this file
 # is included, the following trick is used to be able to declare a dependency on
 # the built tools.
 BUILD_TOOLS_LANGTOOLS := $(call SetupJavaCompilationCompileTarget, \
     BUILD_TOOLS_LANGTOOLS, $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes)
+
+################################################################################
+#
+# Compile properties files into enum-like classes using the propertiesparser tool
+#
 
 TOOL_PARSEPROPERTIES_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
     propertiesparser.PropertiesParser
@@ -74,5 +74,30 @@ $(eval $(call SetupExecute, PARSEPROPERTIES, \
 ))
 
 TARGETS += $(PARSEPROPERTIES)
+
+################################################################################
+
+################################################################################
+#
+# Generate FlagsEnum from Flags constants:
+#
+
+TOOL_FLAGSGENERATOR_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+    flagsgenerator.FlagsGenerator
+
+FLAGS_SRC := \
+    $(MODULE_SRC)/share/classes/com/sun/tools/javac/code/Flags.java
+
+FLAGS_OUT := \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/com/sun/tools/javac/code/FlagsEnum.java
+
+$(eval $(call SetupExecute, FLAGSGENERATOR, \
+    WARN := Generating FlagsEnum, \
+    DEPS := $(FLAGS_SRC) $(BUILD_TOOLS_LANGTOOLS), \
+    OUTPUT_FILE := $(FLAGS_OUT), \
+    COMMAND := $(TOOL_FLAGSGENERATOR_CMD) $(FLAGS_SRC) $(FLAGS_OUT), \
+))
+
+TARGETS += $(FLAGSGENERATOR)
 
 ################################################################################
