@@ -1162,13 +1162,13 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
   return find_callee_info_helper(vfst, bc, callinfo, THREAD);
 }
 
-Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
+Method* SharedRuntime::extract_attached_method(vframeStream& vfst, bool* trust_bytecode) {
   nmethod* caller = vfst.nm();
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     CompiledICLocker ic_locker(caller);
-    return caller->attached_method_before_pc(pc);
+    return caller->attached_method_before_pc(pc, trust_bytecode);
   }
   return nullptr;
 }
@@ -1194,11 +1194,46 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     return receiver;
   }
 
+
+  #if INCLUDE_JVMCI
+    bool trust_bytecode = true;
+    methodHandle attached_method(THREAD, extract_attached_method(vfst, &trust_bytecode));
+    bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
+
+    if (!trust_bytecode && attached_method.not_null() && caller_is_jvmci) {
+      // invoke does not correspond to bytecode
+      RegisterMap reg_map2(current,
+                          RegisterMap::UpdateMap::include,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
+      frame stubFrame   = current->last_frame();
+      frame callerFrame = stubFrame.sender(&reg_map2);
+
+      Method* callee = attached_method();
+
+      if (attached_method->is_static()) {
+        bc = Bytecodes::_invokestatic;
+      } else {
+          receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
+        if (attached_method->method_holder()->is_interface()) {
+          bc = Bytecodes::_invokeinterface;
+        } else {
+          bc = Bytecodes::_invokevirtual;
+        }
+      }
+
+      LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+      return receiver;
+    }
+  #else
+    methodHandle attached_method(THREAD, extract_attached_method(vfst));
+  #endif // INCLUDE_JVMCI
+
+
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
 
-  methodHandle attached_method(current, extract_attached_method(vfst));
   if (attached_method.not_null()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();

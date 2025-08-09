@@ -1224,10 +1224,16 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
   jlong target = stream->read_u8("target");
   methodHandle method;
   bool direct_call = false;
+  bool bind = false;
+  bool trust_bytecode = true;
   if (tag == SITE_CALL) {
     method = methodHandle(thread, (Method*) target);
     assert(Method::is_valid_method(method()), "invalid method");
     direct_call = stream->read_bool("direct");
+    if (direct_call){
+      bind = stream->read_bool("bind");
+      trust_bytecode = stream->read_bool("trustBytecode");
+    }
     if (method.is_null()) {
       JVMCI_THROW(NullPointerException);
     }
@@ -1259,7 +1265,8 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     jlong foreign_call_destination = target;
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, JVMCI_CHECK);
   } else {
-    CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, JVMCI_CHECK);
+    int method_index = bind ? _oop_recorder->find_index(method()) : 0;
+    CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, method_index, trust_bytecode, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
       MacroAssembler masm(&buffer);
