@@ -1401,6 +1401,11 @@ public:
 
 #endif // COMPILER2
 
+  void vectorized_mismatch(Register obja, Register objb, Register length,
+                           Register log2_array_indxscale, Register result,
+                           Register tmp1, Register tmp2,
+                           VectorRegister vrm, VectorRegister vra, VectorRegister vrb);
+
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
