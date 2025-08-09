@@ -51,8 +51,22 @@ public:
     return Atomic::load_acquire(guard_addr());
   }
 
-  void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
+  void set_value(int value, int bit_mask) {
+    if (bit_mask == ~0) {
+      Atomic::release_store(guard_addr(), value);
+      return;
+    }
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
+    int old_value = Atomic::load(guard_addr());
+    while (true) {
+      // Only bits in the mask are changed
+      int new_value = value | (old_value & ~bit_mask);
+      if (new_value == old_value) break;
+      int v = Atomic::cmpxchg(guard_addr(), old_value, new_value, memory_order_release);
+      if (v == old_value) break;
+      old_value = v;
+    }
   }
 
   void verify() const;
@@ -115,7 +129,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
@@ -123,7 +137,7 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
   // Symmetric "LDR; DMB ISHLD" is in the nmethod barrier.
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(value);
+  barrier->set_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {
