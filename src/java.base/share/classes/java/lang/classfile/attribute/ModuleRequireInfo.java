@@ -97,6 +97,8 @@ public sealed interface ModuleRequireInfo
      * @param requires the required module
      * @param requiresFlags the require-specific flags
      * @param requiresVersion the required version, may be {@code null}
+     * @throws IllegalArgumentException if {@code requiresFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleRequireInfo of(ModuleEntry requires, int requiresFlags, Utf8Entry requiresVersion) {
         return new UnboundAttribute.UnboundModuleRequiresInfo(requires, requiresFlags, Optional.ofNullable(requiresVersion));
@@ -121,6 +123,8 @@ public sealed interface ModuleRequireInfo
      * @param requires the required module
      * @param requiresFlags the require-specific flags
      * @param requiresVersion the required version, may be {@code null}
+     * @throws IllegalArgumentException if {@code requiresFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleRequireInfo of(ModuleDesc requires, int requiresFlags, String requiresVersion) {
         return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(requires.name())), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
