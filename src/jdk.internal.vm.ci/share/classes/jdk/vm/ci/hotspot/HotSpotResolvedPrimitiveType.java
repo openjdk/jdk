@@ -348,9 +348,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
+    public List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         return List.of();
     }
