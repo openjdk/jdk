@@ -1630,6 +1630,42 @@ public:
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
 
+private:
+  // Class to keep track of wins in split_through_phi.
+  class SplitWins {
+  private:
+    int _total_wins;
+    int _loop_entry_wins;
+    int _loop_back_wins;
+
+  public:
+    SplitWins() :
+      _total_wins(0),
+      _loop_entry_wins(0),
+      _loop_back_wins(0) {};
+
+    void reset() {_total_wins = 0; _loop_entry_wins = 0; _loop_back_wins = 0;}
+    void add_win(Node* region, int ctrl_index) {
+      if (region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+        _loop_entry_wins++;
+      } else if (region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+        _loop_back_wins++;
+      }
+      _total_wins++;
+    }
+    // Is this split profitable with respect to the policy?
+    // In general this means that the split has to have more wins than specified
+    // in the policy. In loops, we want to avoid wins on the entry edge since
+    // that messes up the loop structure more often than not and prevents RCE
+    // and vectorization down the line. If the policy is less than 0, every
+    // split if profitable.
+    bool profitable(int policy) const {
+      return policy < 0 || (_loop_entry_wins == 0 && _total_wins > policy) || _loop_back_wins > policy;
+    }
+  };
+
+public:
+
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
   bool intrinsify_fill(IdealLoopTree* lpt);
