@@ -27,8 +27,8 @@
 
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/perfDataTypes.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/task.hpp"
 #include "runtime/vmOperation.hpp"
 
