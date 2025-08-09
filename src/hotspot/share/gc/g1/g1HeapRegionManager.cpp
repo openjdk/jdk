@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -730,41 +731,75 @@ bool G1HeapRegionClaimer::claim_region(uint region_index) {
   return old_val == Unclaimed;
 }
 
-class G1RebuildFreeListTask : public WorkerTask {
+// Rebuilds the master free list from scratch.
+//
+// Since random inseration of elements into the free list is slow (O(n)), it
+// builds ordered, sorted sub-lists that can be directly concatenated together.
+//
+// For that it slices the entire heap region array into fixed chunks, where a
+// given worker X gets the X'th slice assigned to it (and nothing else), it
+// creates a sub-list of already Free or to-be-Free'd regions for. As regions
+// are iterated in address order, these sub-lists are ordered as well.
+//
+// The passed G1HeapRegionBoolClosure closure is to identify to-be-freed regions
+// as other subtasks may turn them into Free regions in parallel.
+//
+// As this subtask recreates the free list, other parallel tasks must not use
+// it at the same time.
+//
+// At the end, the sublists will be concatenated in order as well.
+class G1RebuildFreeListTask : public G1AbstractSubTask {
   G1HeapRegionManager* _hrm;
-  G1FreeRegionList*    _worker_freelists;
-  uint                 _worker_chunk_size;
-  uint                 _num_workers;
+  G1FreeRegionList* _worker_freelists;
+  G1HeapRegionBoolClosure* _will_be_free;
+  uint _worker_chunk_size;
+  uint _num_workers;
+
+  G1FreeRegionList* worker_freelist(uint worker) {
+    assert(worker < _num_workers, "must be");
+    return &_worker_freelists[worker];
+  }
 
 public:
-  G1RebuildFreeListTask(G1HeapRegionManager* hrm, uint num_workers) :
-      WorkerTask("G1 Rebuild Free List Task"),
-      _hrm(hrm),
-      _worker_freelists(NEW_C_HEAP_ARRAY(G1FreeRegionList, num_workers, mtGC)),
-      _worker_chunk_size((_hrm->max_num_regions() + num_workers - 1) / num_workers),
-      _num_workers(num_workers) {
-    for (uint worker = 0; worker < _num_workers; worker++) {
-      ::new (&_worker_freelists[worker]) G1FreeRegionList("Appendable Worker Free List");
-    }
+  G1RebuildFreeListTask(G1HeapRegionManager* hrm, G1HeapRegionBoolClosure* will_be_free) :
+    G1AbstractSubTask(G1GCPhaseTimes::RebuildFreeList),
+    _hrm(hrm),
+    _worker_freelists(nullptr),
+    _will_be_free(will_be_free),
+    _worker_chunk_size(0),
+    _num_workers(0) {
+    // Drop the existing master free list on the floor.
+    hrm->_free_list.abandon();
   }
 
   ~G1RebuildFreeListTask() {
     for (uint worker = 0; worker < _num_workers; worker++) {
-      _worker_freelists[worker].~G1FreeRegionList();
+      _hrm->_free_list.append_ordered(worker_freelist(worker));
+      worker_freelist(worker)->~G1FreeRegionList();
     }
     FREE_C_HEAP_ARRAY(G1FreeRegionList, _worker_freelists);
   }
 
-  G1FreeRegionList* worker_freelist(uint worker) {
-    return &_worker_freelists[worker];
+  double worker_cost() const override {
+    const uint ThreadingFactor = 32;
+    return _hrm->max_num_regions() / ThreadingFactor;
+  }
+
+  void set_max_workers(uint max_workers) override {
+    assert(_num_workers == 0, "must not be initialized");
+
+    _num_workers = max_workers;
+    _worker_chunk_size = (_hrm->max_num_regions() + max_workers - 1) / max_workers;
+
+    _worker_freelists = NEW_C_HEAP_ARRAY(G1FreeRegionList, max_workers, mtGC);
+    for (uint worker = 0; worker < max_workers; worker++) {
+      ::new (&_worker_freelists[worker]) G1FreeRegionList("Rebuild Free List");
+    }
   }
 
   // Each worker creates a free list for a chunk of the heap. The chunks won't
   // be overlapping so we don't need to do any claiming.
-  void work(uint worker_id) {
-    Ticks start_time = Ticks::now();
-    EventGCPhaseParallel event;
-
+  void do_work(uint worker_id) override {
     uint start = worker_id * _worker_chunk_size;
     uint end = MIN2(start + _worker_chunk_size, _hrm->max_num_regions());
 
@@ -776,33 +811,15 @@ public:
     G1FreeRegionList* free_list = worker_freelist(worker_id);
     for (uint i = start; i < end; i++) {
       G1HeapRegion* region = _hrm->at_or_null(i);
-      if (region != nullptr && region->is_free()) {
+      if (region != nullptr && (region->is_free() || _will_be_free->do_heap_region(region))) {
         // Need to clear old links to allow to be added to new freelist.
         region->unlink_from_list();
         free_list->add_to_tail(region);
       }
     }
-
-    event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::RebuildFreeList));
-    G1CollectedHeap::heap()->phase_times()->record_time_secs(G1GCPhaseTimes::RebuildFreeList, worker_id, (Ticks::now() - start_time).seconds());
   }
 };
 
-void G1HeapRegionManager::rebuild_free_list(WorkerThreads* workers) {
-  // Abandon current free list to allow a rebuild.
-  _free_list.abandon();
-
-  uint const num_workers = clamp(max_num_regions(), 1u, workers->active_workers());
-  G1RebuildFreeListTask task(this, num_workers);
-
-  log_debug(gc, ergo)("Running %s using %u workers for rebuilding free list of regions",
-                      task.name(), num_workers);
-  workers->run_task(&task, num_workers);
-
-  // Link the partial free lists together.
-  Ticks serial_time = Ticks::now();
-  for (uint worker = 0; worker < num_workers; worker++) {
-    _free_list.append_ordered(task.worker_freelist(worker));
-  }
-  G1CollectedHeap::heap()->phase_times()->record_serial_rebuild_freelist_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
+G1AbstractSubTask* G1HeapRegionManager::rebuild_free_list_task(G1HeapRegionBoolClosure* will_be_free_cl) {
+  return new G1RebuildFreeListTask(this, will_be_free_cl);
 }
