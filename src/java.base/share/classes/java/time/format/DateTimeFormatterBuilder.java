@@ -956,7 +956,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the zone offset, such as '+01:00', to the formatter.
      * <p>
      * This appends an instruction to format/parse the offset ID to the builder.
-     * This is equivalent to calling {@code appendOffset("+HH:mm:ss", "Z")}.
+     * This is equivalent to calling {@code appendOffset("+HH:MM:ss", "Z")}.
      * See {@link #appendOffset(String, String)} for details on formatting
      * and parsing.
      *
