@@ -1440,16 +1440,6 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     workers->run_task(&cl, num_workers);
   }
 
-  {
-    size_t young_rs_length = g1h->young_regions_cardset()->occupied();
-    // We only use young_rs_length statistics to estimate young regions length.
-    g1h->policy()->record_card_rs_length(young_rs_length);
-
-    // Clear current young only collection set. Survivor regions will be added
-    // to the set during evacuation.
-    g1h->young_regions_cset_group()->clear();
-  }
-
   print_merge_heap_roots_stats();
 
   if (initial_evacuation) {
