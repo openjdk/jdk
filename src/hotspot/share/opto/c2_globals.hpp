@@ -666,6 +666,9 @@
   product(bool, PrintIntrinsics, false, DIAGNOSTIC,                         \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
+  develop(bool, VerifyIntrinsicChecks, false,                               \
+          "Verify in intrinsic that Java level checks work as expected")    \
+                                                                            \
   develop(bool, StressReflectiveCode, false,                                \
           "Use inexact types at allocations, etc., to test reflection")     \
                                                                             \
