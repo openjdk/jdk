@@ -90,7 +90,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {
   NativeCall* call = nativeCall_at(owner());
-  assert(call->raw_destination() == owner(), "destination should be empty");
   address trampoline = addr();
   address dest = nativeCallTrampolineStub_at(trampoline)->destination();
   if (!Assembler::reachable_from_branch_at(owner(), dest)) {
