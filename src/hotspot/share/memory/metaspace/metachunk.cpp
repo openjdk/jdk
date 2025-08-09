@@ -27,6 +27,7 @@
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
+#include "memory/metaspace/metaspaceZapper.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -181,6 +182,12 @@ MetaWord* Metachunk::allocate(size_t request_word_size) {
 // Zap this structure.
 void Metachunk::zap_header(uint8_t c) {
   memset(this, c, sizeof(Metachunk));
+}
+
+// Zaps the chunk itself
+void Metachunk::zap() {
+  // Only committed portion, obviously
+  Zapper::zap_memory(base(), committed_words(), Zapper::zap_pattern_chunk);
 }
 
 // Verifies linking with neighbors in virtual space.

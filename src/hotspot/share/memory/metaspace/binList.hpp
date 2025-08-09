@@ -30,6 +30,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/metaspaceZapper.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -76,6 +77,8 @@ class BinListImpl {
   struct Block {
     Block* const _next;
     Block(Block* next) : _next(next) {}
+    MetaWord* base() { return (MetaWord*) this; }
+    const MetaWord* base() const { return (MetaWord*) this; }
   };
 
 #define BLOCK_FORMAT              "Block @" PTR_FORMAT ": size: %zu, next: " PTR_FORMAT
@@ -92,6 +95,9 @@ public:
 
   // Maximal (incl) word size a block can have to be manageable by this structure.
   const static size_t MaxWordSize = num_lists;
+
+  // for tests
+  static constexpr size_t header_wordsize = sizeof(Block) / BytesPerWord;
 
 private:
 
@@ -123,15 +129,15 @@ private:
   }
 
 #ifdef ASSERT
-  static const uintptr_t canary = 0xFFEEFFEE;
-  static void write_canary(MetaWord* p, size_t word_size) {
+  static void zap_block(Block* b, size_t word_size) {
     if (word_size > 1) { // 1-word-sized blocks have no space for a canary
-      ((uintptr_t*)p)[word_size - 1] = canary;
+      Zapper::zap_payload(b, word_size, Zapper::zap_pattern_block);
     }
   }
-  static bool check_canary(const Block* b, size_t word_size) {
-    return word_size == 1 || // 1-word-sized blocks have no space for a canary
-           ((const uintptr_t*)b)[word_size - 1] == canary;
+  static bool check_block_zap(const Block* b, size_t word_size) {
+    return word_size <= header_wordsize || // 1-word-sized blocks have no space for a canary
+           ( Zapper::is_zapped_location(b->base() + header_wordsize) &&
+             Zapper::is_zapped_location(b->base() + word_size - header_wordsize) );
   }
 #endif
 
@@ -149,12 +155,12 @@ public:
     MetaWord* const p = mb.base();
     assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size");
-    DEBUG_ONLY(write_canary(p, word_size);)
     const int index = index_for_word_size(word_size);
     Block* old_head = _blocks[index];
     Block* new_head = new (p) Block(old_head);
     _blocks[index] = new_head;
     _counter.add(word_size);
+    DEBUG_ONLY(zap_block(new_head, word_size);)
   }
 
   // Given a word_size, searches and returns a block of at least that size.
@@ -169,7 +175,7 @@ public:
       Block* b = _blocks[index];
       const size_t real_word_size = word_size_for_index(index);
       assert(b != nullptr, "Sanity");
-      assert(check_canary(b, real_word_size),
+      assert(check_block_zap(b, real_word_size),
              "bad block in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b, real_word_size));
       _blocks[index] = b->_next;
       _counter.sub(real_word_size);
@@ -194,7 +200,7 @@ public:
       int pos = 0;
       Block* b_last = nullptr; // catch simple circularities
       for (Block* b = _blocks[i]; b != nullptr; b = b->_next, pos++) {
-        assert(check_canary(b, s), "");
+        assert(check_block_zap(b, s), "");
         assert(b != b_last, "Circle");
         local_counter.add(s);
         b_last = b;
