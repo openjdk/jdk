@@ -1962,7 +1962,8 @@ public:
 };
 
 void G1ConcurrentMark::verify_no_collection_set_oops() {
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
+         "should be at a safepoint or initializing");
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
   }

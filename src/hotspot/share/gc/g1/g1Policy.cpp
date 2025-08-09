@@ -97,10 +97,6 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-
-  // We immediately start allocating regions placing them in the collection set.
-  // Initialize the collection set info.
-  _collection_set->start_incremental_building();
 }
 
 void G1Policy::record_young_gc_pause_start() {
