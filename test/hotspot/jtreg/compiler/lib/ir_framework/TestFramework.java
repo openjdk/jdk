@@ -36,6 +36,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -349,6 +350,7 @@ public class TestFramework {
         if (shouldInstallWhiteBox()) {
             installWhiteBox();
         }
+        checkCompatibleFlags();
         checkIRRuleCompilePhasesFormat();
         disableIRVerificationIfNotFeasible();
 
@@ -775,12 +777,23 @@ public class TestFramework {
         return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class).length > 0);
     }
 
+    private void checkCompatibleFlags() {
+        for (String flag : Utils.getTestJavaOpts()) {
+            if (flag.contains("-agentpath")) {
+                throw new SkippedException("Can't run test with agent.");
+            }
+        }
+    }
+
     private List<String> anyNonWhitelistedJTregVMAndJavaOptsFlags() {
         List<String> flags = Arrays.stream(Utils.getTestJavaOpts())
                                    .map(s -> s.replaceFirst("-XX:[+|-]?|-(?=[^D|^e])", ""))
                                    .collect(Collectors.toList());
         List<String> nonWhiteListedFlags = new ArrayList();
         for (String flag : flags) {
+            if (flag.contains("agentpath")) {
+                throw new SkippedException("Can't run test with -javaagent");
+            }
             // Property flags (prefix -D), -ea and -esa are whitelisted.
             if (!flag.startsWith("-D") && !flag.startsWith("-e") && JTREG_WHITELIST_FLAGS.stream().noneMatch(flag::contains)) {
                 // Found VM flag that is not whitelisted

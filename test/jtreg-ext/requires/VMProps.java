@@ -422,7 +422,12 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
-        return "" + WB.isCDSIncluded();
+        boolean noJvmtiAdded = allFlags()
+                .filter(s -> s.startsWith("-agentpath"))
+                .findAny()
+                .isEmpty();
+
+        return "" + (noJvmtiAdded && WB.isCDSIncluded());
     }
 
     /**
