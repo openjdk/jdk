@@ -38,6 +38,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.IndexColorModel;
+import java.io.File;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -59,13 +60,21 @@ public class GifComparison {
      * if ImageIO and ToolkitImage produce different BufferedImage renderings.
      *
      * @param srcURL the URL of the image to inspect
+     * @param frameDir an optional directory to write frames to as PNG images.
+     *                 The frames should render identically whether we use
+     *                 the ImageIO model or the ToolkitImage model. If they're
+     *                 identical, then we only output one image, such as
+     *                 "frame_0.png". If they're different then we'll
+     *                 output two images: "frame_0_iio.png" and
+     *                 "frame_0_awt.png".
      *
      * @return the last frame encoded as a TYPE_INT_ARGB image.
      *         <p>
      *         Unit tests may further inspect this image to make sure certain
      *         conditions are met.
      */
-    public static BufferedImage run(URL srcURL) throws Throwable {
+    public static BufferedImage run(URL srcURL, File frameDir)
+            throws Throwable {
         System.out.println("Comparing ImageIO vs ToolkitImage rendering of " +
                 srcURL);
         ImageIOModel ioModel = new ImageIOModel(srcURL);
@@ -73,41 +82,67 @@ public class GifComparison {
 
         BufferedImage lastImage = null;
 
-        int a = ioModel.frames.size() - 1;
-        BufferedImage ioImg = ioModel.getFrame(a);
-        BufferedImage awtImage = awtModel.getFrame(a);
+        // if frameDir exists: test & export all frames.
+        // Otherwise: only test the last frame
+        int startIndex = frameDir == null ? ioModel.frames.size() - 1 : 0;
 
-        lastImage = awtImage;
+        for (int a = startIndex; a < ioModel.frames.size(); a++) {
+            BufferedImage ioImg = ioModel.getFrame(a);
+            BufferedImage awtImage = awtModel.getFrame(a);
 
-        if (!(ioImg.getWidth() == awtImage.getWidth() &&
-                ioImg.getHeight() == awtImage.getHeight()))
-            throw new Error("These images are not the same size: " +
-                    ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
-                    awtImage.getWidth() + "x" + awtImage.getHeight());
+            lastImage = awtImage;
 
-        for (int y = 0; y < ioImg.getHeight(); y++) {
-            for (int x = 0; x < ioImg.getWidth(); x++) {
-                int argb1 = ioImg.getRGB(x, y);
-                int argb2 = awtImage.getRGB(x, y);
+            try {
+                if (!(ioImg.getWidth() == awtImage.getWidth() &&
+                        ioImg.getHeight() == awtImage.getHeight()))
+                    throw new Error("These images are not the same size: " +
+                            ioImg.getWidth() + "x" + ioImg.getHeight() +
+                            " vs " +
+                            awtImage.getWidth() + "x" + awtImage.getHeight());
 
-                int alpha1 = (argb1 & 0xff000000) >> 24;
-                int alpha2 = (argb2 & 0xff000000) >> 24;
-                if (alpha1 == 0 && alpha2 == 0) {
-                    continue;
-                } else if (alpha1 == 0 || alpha2 == 0) {
-                    throw new Error("pixels at (" + x + ", " + y +
-                            ") have different opacities: " +
-                            Integer.toUnsignedString(argb1, 16) + " vs " +
-                            Integer.toUnsignedString(argb2, 16));
+                for (int y = 0; y < ioImg.getHeight(); y++) {
+                    for (int x = 0; x < ioImg.getWidth(); x++) {
+                        int argb1 = ioImg.getRGB(x, y);
+                        int argb2 = awtImage.getRGB(x, y);
+
+                        int alpha1 = (argb1 & 0xff000000) >> 24;
+                        int alpha2 = (argb2 & 0xff000000) >> 24;
+                        if (alpha1 == 0 && alpha2 == 0) {
+                            continue;
+                        } else if (alpha1 == 0 || alpha2 == 0) {
+                            throw new Error("pixels at (" + x + ", " + y +
+                                    ") have different opacities: " +
+                                    Integer.toUnsignedString(argb1, 16) +
+                                    " vs " +
+                                    Integer.toUnsignedString(argb2, 16));
+                        }
+                        int rgb1 = argb1 & 0xffffff;
+                        int rgb2 = argb2 & 0xffffff;
+                        if (rgb1 != rgb2) {
+                            throw new Error("pixels at (" + x + ", " + y +
+                                    ") have different opaque RGB values: " +
+                                    Integer.toUnsignedString(rgb1, 16) +
+                                    " vs " +
+                                    Integer.toUnsignedString(rgb2, 16));
+                        }
+                    }
                 }
-                int rgb1 = argb1 & 0xffffff;
-                int rgb2 = argb2 & 0xffffff;
-                if (rgb1 != rgb2) {
-                    throw new Error("pixels at (" + x + ", " + y +
-                            ") have different opaque RGB values: " +
-                            Integer.toUnsignedString(rgb1, 16) + " vs " +
-                            Integer.toUnsignedString(rgb2, 16));
+
+                if (frameDir != null) {
+                    // the two models are identical, so simply write one image:
+                    File pngFile = new File(frameDir, "frame_" + a + ".png");
+                    ImageIO.write(ioImg, "png", pngFile);
+                    System.out.println("\tWrote " + pngFile);
                 }
+            } catch (Throwable t) {
+                if (frameDir != null) {
+                    File f1 = new File(frameDir, "frame_" + + a + "_iio.png");
+                    File f2 = new File(frameDir, "frame_" + + a + "_awt.png");
+                    ImageIO.write(ioImg, "png", f1);
+                    ImageIO.write(awtImage, "png", f2);
+                    System.out.println("\tWrote " + f1 + " vs " + f2);
+                }
+                throw t;
             }
         }
         System.out.println("Passed");
