@@ -36,7 +36,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"

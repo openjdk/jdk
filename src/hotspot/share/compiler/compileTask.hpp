@@ -29,6 +29,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "oops/unloadableMethodHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -84,8 +85,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
  private:
   static int           _active_tasks;
   int                  _compile_id;
-  Method*              _method;
-  jobject              _method_holder;
+  UnloadableMethodHandle _method_handle;
   int                  _osr_bci;
   bool                 _is_complete;
   bool                 _is_success;
@@ -119,8 +119,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   ~CompileTask();
   static void wait_for_no_active_tasks();
 
+  inline Method* method() const;
+
   int          compile_id() const                { return _compile_id; }
-  Method*      method() const                    { return _method; }
   int          osr_bci() const                   { return _osr_bci; }
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }

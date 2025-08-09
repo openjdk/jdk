@@ -27,7 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
