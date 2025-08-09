@@ -85,7 +85,7 @@ inline IntrusiveRBNode* IntrusiveRBNode::rotate_right() {
 
 inline const IntrusiveRBNode* IntrusiveRBNode::prev() const {
   const IntrusiveRBNode* node = this;
-  if (_left != nullptr) { // right subtree exists
+  if (_left != nullptr) { // left subtree exists
     node = _left;
     while (node->_right != nullptr) {
       node = node->_right;
@@ -599,7 +599,21 @@ template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
   const NodeType* node = leftmost();
   while (node != nullptr) {
-    f(node);
+    if (!f(node)) {
+      return;
+    }
+    node = node->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) {
+  NodeType* node = leftmost();
+  while (node != nullptr) {
+    if (!f(node)) {
+      return;
+    }
     node = node->next();
   }
 }
@@ -618,7 +632,30 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   const NodeType* end = next(cursor_end).node();
 
   while (start != end) {
-    f(start);
+    if (!f(start)) {
+      return;
+    }
+    start = start->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) {
+  assert_key_leq(from, to);
+  if (_root == nullptr) {
+    return;
+  }
+
+  Cursor cursor_start = cursor(from);
+  Cursor cursor_end = cursor(to);
+  NodeType* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
+  NodeType* end = next(cursor_end).node();
+
+  while (start != end) {
+    if (!f(start)) {
+      return;
+    }
     start = start->next();
   }
 }

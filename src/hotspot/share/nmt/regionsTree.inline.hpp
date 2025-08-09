@@ -52,8 +52,8 @@ void RegionsTree::visit_reserved_regions(F func) {
   NodeHelper begin_node, prev;
   size_t rgn_size = 0;
 
-  visit_in_order([&](Node* node) {
-    NodeHelper curr(node);
+  visit_in_order([&](const Node* node) {
+    NodeHelper curr(const_cast<Node*>(node));
     if (prev.is_valid()) {
       rgn_size += curr.distance_from(prev);
     } else {
