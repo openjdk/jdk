@@ -42,8 +42,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
-  const int aligned_mask = BytesPerWord -1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
   assert(hdr == rax, "hdr must be rax, for the cmpxchg instruction");
   assert_different_registers(hdr, obj, disp_hdr, tmp);
   int null_check_offset = -1;
@@ -55,93 +53,20 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
-  } else  if (LockingMode == LM_LEGACY) {
-    Label done;
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(hdr, obj, rscratch1);
-      testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-      jcc(Assembler::notZero, slow_case);
-    }
-
-    // Load object header
-    movptr(hdr, Address(obj, hdr_offset));
-    // and mark it as unlocked
-    orptr(hdr, markWord::unlocked_value);
-    // save unlocked object header into the displaced header location on the stack
-    movptr(Address(disp_hdr, 0), hdr);
-    // test if object header is still the same (i.e. unlocked), and if so, store the
-    // displaced header address in the object header - if it is not the same, get the
-    // object header instead
-    MacroAssembler::lock(); // must be immediately before cmpxchg!
-    cmpxchgptr(disp_hdr, Address(obj, hdr_offset));
-    // if the object header was the same, we're done
-    jcc(Assembler::equal, done);
-    // if the object header was not the same, it is now in the hdr register
-    // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
-    //
-    // 1) (hdr & aligned_mask) == 0
-    // 2) rsp <= hdr
-    // 3) hdr <= rsp + page_size
-    //
-    // these 3 tests can be done by evaluating the following expression:
-    //
-    // (hdr - rsp) & (aligned_mask - page_size)
-    //
-    // assuming both the stack pointer and page_size have their least
-    // significant 2 bits cleared and page_size is a power of 2
-    subptr(hdr, rsp);
-    andptr(hdr, aligned_mask - (int)os::vm_page_size());
-    // for recursive locking, the result is zero => save it in the displaced header
-    // location (null in the displaced hdr location indicates recursive locking)
-    movptr(Address(disp_hdr, 0), hdr);
-    // otherwise we don't care about the result and handle locking via runtime call
-    jcc(Assembler::notZero, slow_case);
-    // done
-    bind(done);
-    inc_held_monitor_count();
-  }
+  lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
 
   return null_check_offset;
 }
 
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
-  const int aligned_mask = BytesPerWord -1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
   assert(disp_hdr == rax, "disp_hdr must be rax, for the cmpxchg instruction");
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
-  Label done;
-
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // load displaced header
-    movptr(hdr, Address(disp_hdr, 0));
-    // if the loaded hdr is null we had recursive locking
-    testptr(hdr, hdr);
-    // if we had recursive locking, we are done
-    jcc(Assembler::zero, done);
-  }
 
   // load object
   movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-    // test if object header is pointing to the displaced header, and if so, restore
-    // the displaced header in the object - if the object header is not pointing to
-    // the displaced header, get the object header instead
-    MacroAssembler::lock(); // must be immediately before cmpxchg!
-    cmpxchgptr(hdr, Address(obj, hdr_offset));
-    // if the object header was not pointing to the displaced header,
-    // we do unlocking via runtime call
-    jcc(Assembler::notEqual, slow_case);
-    // done
-    bind(done);
-    dec_held_monitor_count();
-  }
+  lightweight_unlock(obj, disp_hdr, hdr, slow_case);
 }
 
 
