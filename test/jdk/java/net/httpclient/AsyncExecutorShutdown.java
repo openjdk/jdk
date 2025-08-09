@@ -40,12 +40,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ClosedChannelException;
@@ -62,15 +62,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import javax.net.ssl.SSLContext;
+
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
@@ -82,6 +77,9 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -94,15 +92,21 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
+    ExecutorService readerService;
     SSLContext sslContext;
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http2TestServer;       // HTTP/2 ( h2c   )
+    HttpTestServer https2TestServer;      // HTTP/2 ( h2    )
+    HttpTestServer h2h3TestServer;        // HTTP/2 ( h2+h3 )
+    HttpTestServer h3TestServer;          // HTTP/2 ( h3    )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String h2h3URI;
+    String h3URI;
+    String h2h3Head;
 
     static final String MESSAGE = "AsyncExecutorShutdown message body";
     static final int ITERATIONS = 3;
@@ -110,10 +114,12 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
-                { httpURI,    },
-                { httpsURI,   },
-                { http2URI,   },
-                { https2URI,  },
+                { h2h3URI,   HTTP_3,   h2h3TestServer.h3DiscoveryConfig() },
+                { h3URI,     HTTP_3,   h3TestServer.h3DiscoveryConfig() },
+                { httpURI,   HTTP_1_1, null },
+                { httpsURI,  HTTP_1_1, null },
+                { http2URI,  HTTP_2,   null },
+                { https2URI, HTTP_2,   null },
         };
     }
 
@@ -127,8 +133,9 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
         return t;
     }
 
-    static String readBody(InputStream in) {
-        try {
+    static String readBody(InputStream body) {
+        out.printf("[%s] reading body%n", Thread.currentThread());
+        try (var in = body) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException io) {
             throw new UncheckedIOException(io);
@@ -159,26 +166,37 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testConcurrent(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
+    void testConcurrent(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
+        out.printf("%n---- starting (%s, %s, %s) ----%n%n", uriString, version, config);
         ExecutorService executorService = Executors.newCachedThreadPool();
-        ExecutorService readerService = Executors.newCachedThreadPool();
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
                 .executor(executorService)
+                .version(version == HTTP_1_1 ? HTTP_2 : version)
                 .sslContext(sslContext)
                 .build();
         TRACKER.track(client);
         assert client.executor().isPresent();
 
+        Throwable failed = null;
         int step = RANDOM.nextInt(ITERATIONS);
+        int head = Math.min(1, step);
+        List<CompletableFuture<String>> bodies = new ArrayList<>();
         try {
-            List<CompletableFuture<String>> bodies = new ArrayList<>();
             for (int i = 0; i < ITERATIONS; i++) {
+                if (i == head && version == HTTP_3 && config != HTTP_3_URI_ONLY) {
+                    // let's the first request go through whatever version,
+                    // but ensure that the second will find an AltService
+                    // record
+                    out.printf("%d: sending head request%n", i);
+                    headRequest(client);
+                    out.printf("%d: head request sent%n", i);
+                }
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                         .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<InputStream>> responseCF;
@@ -189,11 +207,15 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                             .thenApply((response) -> {
                                 out.println(si + ":  Got response: " + response);
                                 assertEquals(response.statusCode(), 200);
+                                if (si >= head) assertEquals(response.version(), version);
                                 return response;
                             });
                     bodyCF = responseCF.thenApplyAsync(HttpResponse::body, readerService)
                             .thenApply(AsyncExecutorShutdown::readBody)
-                            .thenApply((s) -> { assertEquals(s, MESSAGE); return s;});
+                            .thenApply((s) -> {
+                                assertEquals(s, MESSAGE);
+                                return s;
+                            });
                 } catch (RejectedExecutionException x) {
                     out.println(i + ": Got expected exception: " + x);
                     continue;
@@ -205,7 +227,8 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                 }
                 if (i == step) {
                     out.printf("%d: shutting down executor now%n", i, sleep);
-                    executorService.shutdownNow();
+                    var list = executorService.shutdownNow();
+                    out.printf("%d: executor shut down: %s%n", i, list);
                 }
                 var cf = bodyCF.exceptionally((t) -> {
                     Throwable cause = getCause(t);
@@ -219,39 +242,72 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                     checkCause(String.valueOf(si), cause);
                     return null;
                 });
+                out.printf("%d: adding body to bodies list%n", i);
                 bodies.add(cf);
             }
-            CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
+        } catch (Throwable t) {
+            failed = t;
         } finally {
             client = null;
-            executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
-            readerService.shutdown();
-            readerService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+            System.gc();
+            try {
+                out.println("Awaiting executorService termination");
+                executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+                out.println("Done");
+            } catch (Throwable t) {
+                if (failed != null) {
+                    failed.addSuppressed(t);
+                } else failed = t;
+            }
+            var error = TRACKER.checkShutdown(2000);
+            if (error != null) {
+                out.println("Client hasn't shutdown properly: " + error);
+                if (failed != null) failed.addSuppressed(error);
+                else failed = error;
+            }
         }
+        if (failed instanceof Exception fe) {
+            throw fe;
+        } else if (failed instanceof Error e) {
+            throw e;
+        }
+        out.println("Awaiting all bodies...");
+        CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
     }
 
     @Test(dataProvider = "positive")
-    void testSequential(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
+    void testSequential(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
+        out.printf("%n---- starting (%s, %s, %s) ----%n%n", uriString, version, config);
         ExecutorService executorService = Executors.newCachedThreadPool();
-        ExecutorService readerService = Executors.newCachedThreadPool();
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
+                .version(version == HTTP_1_1 ? HTTP_2 : version)
                 .executor(executorService)
                 .sslContext(sslContext)
                 .build();
         TRACKER.track(client);
         assert client.executor().isPresent();
 
+        Throwable failed = null;
         int step = RANDOM.nextInt(ITERATIONS);
+        int head = Math.min(1, step);
         out.printf("will shutdown executor in step %d%n", step);
         try {
             for (int i = 0; i < ITERATIONS; i++) {
+                if (i == head && version == HTTP_3 && config != HTTP_3_URI_ONLY) {
+                    // let's the first request go through whatever version,
+                    // but ensure that the second will find an AltService
+                    // record
+                    out.printf("%d: sending head request%n", i);
+                    headRequest(client);
+                    out.printf("%d: head request sent%n", i);
+                }
                 URI uri = URI.create(uriString + "/sequential/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
-                            .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
-                            .build();
+                        .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                        .setOption(H3_DISCOVERY, config)
+                        .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 final int si = i;
                 CompletableFuture<HttpResponse<InputStream>> responseCF;
@@ -261,6 +317,7 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                             .thenApply((response) -> {
                                 out.println(si + ":  Got response: " + response);
                                 assertEquals(response.statusCode(), 200);
+                                if (si > 0) assertEquals(response.version(), version);
                                 return response;
                             });
                     bodyCF = responseCF.thenApplyAsync(HttpResponse::body, readerService)
@@ -278,9 +335,10 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                 }
                 if (i == step) {
                     out.printf("%d: shutting down executor now%n", i, sleep);
-                    executorService.shutdownNow();
+                    var list = executorService.shutdownNow();
+                    out.printf("%d: executor shut down: %s%n", i, list);
                 }
-                bodyCF.handle((r,t) -> {
+                bodyCF.handle((r, t) -> {
                     if (t != null) {
                         try {
                             Throwable cause = getCause(t);
@@ -301,15 +359,55 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
                     }
                 }).thenCompose((c) -> c).get();
             }
-       } finally {
+        } catch (Throwable t) {
+            t.printStackTrace();
+            failed = t;
+        } finally {
             client = null;
-            executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
-            readerService.shutdown();
-            readerService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+            System.gc();
+            try {
+                out.println("Awaiting executorService termination");
+                executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+                out.println("Done");
+            } catch (Throwable t) {
+                t.printStackTrace();
+                if (failed != null) {
+                    failed.addSuppressed(t);
+                } else failed = t;
+            }
+            var error = TRACKER.checkShutdown(2000);
+            if (error != null) {
+                out.println("Client hasn't shutdown properly: " + error);
+                if (failed != null) failed.addSuppressed(error);
+                else failed = error;
+            }
+        }
+        if (failed instanceof Exception fe) {
+            throw fe;
+        } else if (failed instanceof Error e) {
+            throw e;
         }
     }
 
     // -- Infrastructure
+
+    void headRequest(HttpClient client) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(h2h3Head))
+                .version(HTTP_2)
+                .HEAD()
+                .build();
+        var resp = client.send(request, BodyHandlers.discarding());
+        assertEquals(resp.statusCode(), 200);
+    }
+
+    static void shutdown(ExecutorService executorService) {
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+        }
+    }
 
     @BeforeTest
     public void setup() throws Exception {
@@ -317,6 +415,7 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
+        readerService = Executors.newCachedThreadPool();
 
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new ServerRequestHandler(), "/http1/exec/");
@@ -332,10 +431,21 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
         https2TestServer.addHandler(new ServerRequestHandler(), "/https2/exec/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/exec/retry";
 
+        h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        h2h3TestServer.addHandler(new ServerRequestHandler(), "/h2h3/exec/");
+        h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
+        h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
+        h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        h3TestServer.addHandler(new ServerRequestHandler(), "/h3-only/exec/");
+        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        h2h3TestServer.start();
+        h3TestServer.start();
     }
 
     @AfterTest
@@ -343,10 +453,13 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
         Thread.sleep(100);
         AssertionError fail = TRACKER.checkShutdown(5000);
         try {
+            shutdown(readerService);
             httpTestServer.stop();
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            h2h3TestServer.stop();
+            h3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }

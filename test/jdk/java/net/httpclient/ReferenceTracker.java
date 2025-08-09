@@ -133,6 +133,15 @@ public class ReferenceTracker {
         "outstanding operations or unreleased resources", true);
     }
 
+    public AssertionError checkClosed(long graceDelayMs) {
+        Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
+        return check(graceDelayMs,
+                hasOperations.or(hasSubscribers)
+                        .or(Tracker::isSelectorAlive),
+                "outstanding operations or unreleased resources", true);
+    }
+
     // This method is copied from ThreadInfo::toString, but removes the
     // limit on the stack trace depth (8 frames max) that ThreadInfo::toString
     // forcefully implement. We want to print all frames for better diagnosis.
@@ -369,6 +378,7 @@ public class ReferenceTracker {
             warning.append("\n\tPending HTTP Requests: " + tracker.getOutstandingHttpRequests());
             warning.append("\n\tPending HTTP/1.1 operations: " + tracker.getOutstandingHttpOperations());
             warning.append("\n\tPending HTTP/2 streams: " + tracker.getOutstandingHttp2Streams());
+            warning.append("\n\tPending HTTP/3 streams: " + tracker.getOutstandingHttp3Streams());
             warning.append("\n\tPending WebSocket operations: " + tracker.getOutstandingWebSocketOperations());
             warning.append("\n\tPending TCP connections: " + tracker.getOutstandingTcpConnections());
             warning.append("\n\tPending Subscribers: " + tracker.getOutstandingSubscribers());
@@ -402,6 +412,25 @@ public class ReferenceTracker {
                         .or(hasPendingConnections)
                         .or(hasPendingSubscribers),
                 "outstanding unclosed resources", true);
+        return failed;
+    }
+
+    // This is a slightly more permissive check than the default checks,
+    // it only verifies that all CFs returned by send/sendAsync have been
+    // completed, and that all opened channels have been closed, and that
+    // the selector manager thread has exited.
+    // It doesn't check that all refcounts have reached 0.
+    // This is typically useful to only check that resources have been released.
+    public AssertionError checkShutdown(Tracker tracker, long graceDelayMs, boolean dumpThreads) {
+        Predicate<Tracker> isAlive = Tracker::isSelectorAlive;
+        Predicate<Tracker> hasPendingRequests = (t) -> t.getOutstandingHttpRequests() > 0;
+        Predicate<Tracker> hasPendingConnections = (t) -> t.getOutstandingTcpConnections() > 0;
+        Predicate<Tracker> hasPendingSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
+        AssertionError failed = check(tracker, graceDelayMs,
+                isAlive.or(hasPendingRequests)
+                        .or(hasPendingConnections)
+                        .or(hasPendingSubscribers),
+                "outstanding unclosed resources", dumpThreads);
         return failed;
     }
 }

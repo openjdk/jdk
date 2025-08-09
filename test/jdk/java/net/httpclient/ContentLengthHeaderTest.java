@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @bug 8283544
- * @run testng/othervm ContentLengthHeaderTest
+ * @run testng/othervm
+ *          -Djdk.internal.httpclient.debug=true
+ *          ContentLengthHeaderTest
  */
 
 
@@ -51,6 +53,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
 import jdk.test.lib.net.URIBuilder;
@@ -58,6 +61,8 @@ import jdk.test.lib.net.URIBuilder;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -69,24 +74,29 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
 
     static HttpTestServer testContentLengthServerH1;
     static HttpTestServer testContentLengthServerH2;
+    static HttpTestServer testContentLengthServerH3;
     static PrintStream testLog = System.err;
     static SSLContext sslContext;
 
     HttpClient hc;
     URI testContentLengthURIH1;
     URI testContentLengthURIH2;
+    URI testContentLengthURIH3;
 
     @BeforeTest
-    public void setup() throws IOException, URISyntaxException {
+    public void setup() throws IOException, URISyntaxException, InterruptedException {
         sslContext = new SimpleSSLContext().get();
         testContentLengthServerH1 = HttpTestServer.create(HTTP_1_1);
         testContentLengthServerH2 = HttpTestServer.create(HTTP_2, sslContext);
+        testContentLengthServerH3 = HttpTestServer.create(HTTP_3, sslContext);
 
         // Create handlers for tests that check for the presence of a Content-length header
         testContentLengthServerH1.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH2.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
+        testContentLengthServerH3.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH1.addHandler(new ContentLengthHandler(), BODY_PATH);
         testContentLengthServerH2.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH3.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
         testContentLengthURIH1 = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
@@ -97,6 +107,11 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
                 .loopback()
                 .port(testContentLengthServerH2.getAddress().getPort())
                 .build();
+        testContentLengthURIH3 = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(testContentLengthServerH3.getAddress().getPort())
+                .build();
 
         testContentLengthServerH1.start();
         testLog.println("HTTP/1.1 Server up at address: " + testContentLengthServerH1.getAddress());
@@ -106,25 +121,45 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         testLog.println("HTTP/2 Server up at address: " + testContentLengthServerH2.getAddress());
         testLog.println("Request URI for Client: " + testContentLengthURIH2);
 
-        hc = HttpClient.newBuilder()
+        testContentLengthServerH3.start();
+        testLog.println("HTTP/3 Server up at address: "
+                + testContentLengthServerH3.getAddress());
+        testLog.println("HTTP/3 Quic Endpoint up at address: "
+                + testContentLengthServerH3.getH3AltService().get().getAddress());
+        testLog.println("Request URI for Client: " + testContentLengthURIH3);
+
+        hc = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
+        var firstReq = HttpRequest.newBuilder(URI.create(testContentLengthURIH3 + NO_BODY_PATH))
+                .setOption(H3_DISCOVERY, testContentLengthServerH3.h3DiscoveryConfig())
+                .HEAD()
+                .version(HTTP_2)
+                .build();
+        // populate alt-service registry
+        var resp = hc.send(firstReq, BodyHandlers.ofString());
+        assertEquals(resp.statusCode(), 200);
+        testLog.println("**** setup done ****");
     }
 
     @AfterTest
     public void teardown() {
+        testLog.println("**** tearing down ****");
         if (testContentLengthServerH1 != null)
             testContentLengthServerH1.stop();
         if (testContentLengthServerH2 != null)
             testContentLengthServerH2.stop();
+        if (testContentLengthServerH3 != null)
+            testContentLengthServerH3.stop();
     }
 
     @DataProvider(name = "bodies")
     Object[][] bodies() {
         return new Object[][]{
                 {HTTP_1_1, URI.create(testContentLengthURIH1 + BODY_PATH)},
-                {HTTP_2, URI.create(testContentLengthURIH2 + BODY_PATH)}
+                {HTTP_2, URI.create(testContentLengthURIH2 + BODY_PATH)},
+                {HTTP_3, URI.create(testContentLengthURIH3 + BODY_PATH)}
         };
     }
 
@@ -132,7 +167,8 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
     Object[][] nobodies() {
         return new Object[][]{
                 {HTTP_1_1, URI.create(testContentLengthURIH1 + NO_BODY_PATH)},
-                {HTTP_2, URI.create(testContentLengthURIH2 + NO_BODY_PATH)}
+                {HTTP_2, URI.create(testContentLengthURIH2 + NO_BODY_PATH)},
+                {HTTP_3, URI.create(testContentLengthURIH3 + NO_BODY_PATH)}
         };
     }
 
