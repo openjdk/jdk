@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -715,6 +715,17 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         this.minusSign = findNonFormatChar(minusSignText, '-');
     }
 
+    /**
+     * {@return the lenient minus signs} Multiple lenient minus signs
+     * are concatenated to form the returned string. Each codepoint
+     * in the string is a valid minus sign pattern. If there are no
+     * lenient minus signs defined in this locale, {@code minusSignText}
+     * is returned.
+     */
+    String getLenientMinusSigns() {
+        return lenientMinusSigns;
+    }
+
     //------------------------------------------------------------
     // END     Package Private methods ... to be made public later
     //------------------------------------------------------------
@@ -815,18 +826,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private void initialize( Locale locale ) {
         this.locale = locale;
 
-        // check for region override
-        Locale override = locale.getUnicodeLocaleType("nu") == null ?
-            CalendarDataUtility.findRegionOverride(locale) :
-            locale;
-
-        // get resource bundle data
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
-        // Avoid potential recursions
-        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
-            adapter = LocaleProviderAdapter.getResourceBundleBased();
-        }
-        Object[] data = adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
+        Object[] data = loadNumberData(locale);
         String[] numberElements = (String[]) data[0];
 
         decimalSeparator = numberElements[0].charAt(0);
@@ -851,9 +851,28 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         monetaryGroupingSeparator = numberElements.length < 13 || numberElements[12].isEmpty() ?
             groupingSeparator : numberElements[12].charAt(0);
 
+        // Lenient minus signs
+        lenientMinusSigns = numberElements.length < 14 ? minusSignText : numberElements[13];
+
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
+    }
+
+    private Object[] loadNumberData(Locale locale) {
+        // check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null ?
+            CalendarDataUtility.findRegionOverride(locale) :
+            locale;
+
+        // get resource bundle data
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
+        // Avoid potential recursions
+        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+            adapter = LocaleProviderAdapter.getResourceBundleBased();
+        }
+
+        return adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
     }
 
     /**
@@ -991,6 +1010,14 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             } catch (IllegalArgumentException e) {
             }
             currencyInitialized = true;
+        }
+
+        if (loadNumberData(locale) instanceof Object[] d &&
+            d[0] instanceof String[] numberElements &&
+            numberElements.length >= 14) {
+            lenientMinusSigns = numberElements[13];
+        } else {
+            lenientMinusSigns = minusSignText;
         }
     }
 
@@ -1170,6 +1197,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
+
+    // Lenient minus. No need to be set by applications
+    private transient String lenientMinusSigns;
 
     /**
      * Cached hash code.
