@@ -97,13 +97,17 @@ class CookieStoreTest {
     }
 
     /*
-     * Verifies that the attempt to add or remove the element to/from the list will fail
+     * Verifies that the attempt to modify the contents of the list will fail
      * due to the list being immutable.
      */
     private static <T> void assertImmutableList(final List<T> list, T elementToAddOrRemove) {
-        // the list is expected to be immutable, so the attempt to add or remove
-        // an element must fail
+        // the list is expected to be immutable, so each of these operations must fail
         assertThrows(UnsupportedOperationException.class, () -> list.add(elementToAddOrRemove));
         assertThrows(UnsupportedOperationException.class, () -> list.remove(elementToAddOrRemove));
+        assertThrows(UnsupportedOperationException.class, list::clear);
+        // even try the replace operation when the list isn't empty
+        if (!list.isEmpty()) {
+            assertThrows(UnsupportedOperationException.class, () -> list.set(0, elementToAddOrRemove));
+        }
     }
 }
