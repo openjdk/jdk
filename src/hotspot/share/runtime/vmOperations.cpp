@@ -152,7 +152,7 @@ void VM_DeoptimizeAll::doit() {
             if (fst.current()->can_be_deoptimized()) {
               if (fcount++ == fnum) {
                 fcount = 0;
-                Deoptimization::deoptimize(thread, *fst.current());
+                Deoptimization::deoptimize(thread, *fst.current(), fst.register_map());
               }
             }
           }
