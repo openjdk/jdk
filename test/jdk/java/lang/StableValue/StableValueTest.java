@@ -24,12 +24,12 @@
 /* @test
  * @summary Basic tests for StableValue implementations
  * @enablePreview
+ * @modules java.base/jdk.internal.lang.stable
  * @run junit StableValueTest
  */
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -37,9 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.IntFunction;
