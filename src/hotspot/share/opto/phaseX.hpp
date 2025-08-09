@@ -285,6 +285,11 @@ public:
     assert(t != nullptr, "must set before get");
     return t;
   }
+
+  // Type of n at control c: by default same type of n except for loop conditional propagation
+  virtual const Type* type(const Node* n, Node* c) const {
+    return type(n);
+  }
   // Get a previously recorded type for the node n,
   // or else return null if there is none.
   const Type* type_or_null(const Node* n) const {
@@ -628,7 +633,7 @@ class PhaseCCP : public PhaseIterGVN {
   void push_phis(Unique_Node_List& worklist, const Node* use) const;
   static void push_catch(Unique_Node_List& worklist, const Node* use);
   void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
-  static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  static void push_counted_loop_phi(Unique_Node_List& worklist, const Node* parent, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
