@@ -189,6 +189,19 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
 
   Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, index);
   if (pack_in != nullptr) {
+    Node* in_p0 = pack_in->at(0);
+    BasicType def_bt = _vloop_analyzer.types().velt_basic_type(in_p0);
+    BasicType use_bt = _vloop_analyzer.types().velt_basic_type(p0);
+
+    // If the use and def types are different, emit a cast node
+    if (use_bt != def_bt && !p0->is_Convert() && SuperWord::is_supported_subword_cast(def_bt, use_bt, pack->size())) {
+      VTransformNode* in = get_vtnode(pack_in->at(0));
+      VTransformNode* cast = new (_vtransform.arena()) VTransformCastVectorNode(_vtransform, pack->size(), def_bt, use_bt);
+      cast->set_req(1, in);
+
+      return cast;
+    }
+
     // Input is a matching pack -> vtnode already exists.
     assert(index != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
     return get_vtnode(pack_in->at(0));

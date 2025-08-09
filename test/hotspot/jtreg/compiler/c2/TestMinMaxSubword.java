@@ -57,11 +57,11 @@ public class TestMinMaxSubword {
         }
     }
 
-    // Ensure vector max/min instructions are not generated for integer subword types
-    // as Java APIs for Math.min/max do not support integer subword types and superword
-    // should not generate vectorized Min/Max nodes for them.
+    // Ensure that casts to/from subword types are emitted, as java APIs for Math.min/max do not support integer subword
+    // types and superword should generate int versions and then cast between them.
+
     @Test
-    @IR(failOn = {IRNode.MIN_VI, IRNode.MIN_VF, IRNode.MIN_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     public static void testMinShort() {
         for (int i = 0; i < LENGTH; i++) {
            sb[i] = (short) Math.min(sa[i], val);
@@ -77,7 +77,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MAX_VI, IRNode.MAX_VF, IRNode.MAX_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     public static void testMaxShort() {
         for (int i = 0; i < LENGTH; i++) {
             sb[i] = (short) Math.max(sa[i], val);
@@ -92,7 +92,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MIN_VI, IRNode.MIN_VF, IRNode.MIN_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     public static void testMinByte() {
         for (int i = 0; i < LENGTH; i++) {
            bb[i] = (byte) Math.min(ba[i], val);
@@ -108,7 +108,7 @@ public class TestMinMaxSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.MAX_VI, IRNode.MAX_VF, IRNode.MAX_VD})
+    @IR(applyIfCPUFeature = { "avx", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     public static void testMaxByte() {
         for (int i = 0; i < LENGTH; i++) {
             bb[i] = (byte) Math.max(ba[i], val);
