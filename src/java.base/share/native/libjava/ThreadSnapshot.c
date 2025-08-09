@@ -30,7 +30,7 @@
 
 
 JNIEXPORT jobject JNICALL
-Java_jdk_internal_vm_ThreadSnapshot_create(JNIEnv *env, jclass cls, jobject thread)
+Java_jdk_internal_vm_ThreadSnapshot_create(JNIEnv *env, jclass cls, jobject thread, jboolean suspendedByCaller)
 {
-  return JVM_CreateThreadSnapshot(env, thread);
+  return JVM_CreateThreadSnapshot(env, thread, suspendedByCaller);
 }
