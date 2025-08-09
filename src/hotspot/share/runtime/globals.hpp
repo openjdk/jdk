@@ -1353,7 +1353,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(int, BciProfileWidth, 2,                                          \
           "Number of return bci's to record in ret profile")                \
-          range(0, AARCH64_ONLY(1000) NOT_AARCH64(5000))                    \
+          range(0, 1000)                                                    \
                                                                             \
   product(intx, PerMethodRecompilationCutoff, 400,                          \
           "After recompiling N times, stay in the interpreter (-1=>'Inf')") \
