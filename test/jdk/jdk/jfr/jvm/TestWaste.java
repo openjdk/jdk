@@ -61,7 +61,7 @@ public class TestWaste {
         try (Recording r = new Recording(c)) {
             // Old objects that are cleared out should not create waste
             r.enable("jdk.OldObjectSample")
-             .with("cutoff", "infinity")
+             .with("cutoff", "2 s")
              .withStackTrace();
             // No stack trace waste from allocation sample
             r.enable("jdk.ObjectAllocationSample")
