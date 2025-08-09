@@ -734,6 +734,7 @@ public class GIFImageWriter extends ImageWriter {
         if (writeTrailer) {
             writeTrailer();
         }
+        stream.flush();
     }
 
     /**
