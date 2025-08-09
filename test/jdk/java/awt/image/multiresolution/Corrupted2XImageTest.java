@@ -32,8 +32,6 @@
  *
  * @requires (os.family == "mac")
  *
- * @library /lib/client/
- * @build ExtendedRobot
  * @run main Corrupted2XImageTest
  */
 
@@ -103,7 +101,7 @@ public class Corrupted2XImageTest extends Frame {
 
     private void doTest() throws Exception {
 
-        ExtendedRobot r = new ExtendedRobot();
+        Robot r = new Robot();
         System.out.println("format: " + format);
         r.waitForIdle(1000);
         EventQueue.invokeAndWait(this::UI);

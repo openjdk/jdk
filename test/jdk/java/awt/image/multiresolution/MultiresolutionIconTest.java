@@ -29,8 +29,6 @@
  * @summary Check that correct resolution variants are chosen for icons
  *          when multiresolution image is used for their construction.
  *
- * @library /lib/client/
- * @build ExtendedRobot
  * @run main/othervm/timeout=240 -Dsun.java2d.uiScale=1 MultiresolutionIconTest
  * @run main/othervm/timeout=240 -Dsun.java2d.uiScale=2 MultiresolutionIconTest
  */
@@ -57,7 +55,7 @@ public class MultiresolutionIconTest extends JFrame {
     private JLabel lbl;
     private JTabbedPane tabbedPane;
 
-    private final ExtendedRobot r;
+    private final Robot r;
 
     private static BufferedImage generateImage(int sz, Color c) {
 
@@ -71,7 +69,7 @@ public class MultiresolutionIconTest extends JFrame {
     public MultiresolutionIconTest(UIManager.LookAndFeelInfo lf) throws Exception {
 
         UIManager.setLookAndFeel(lf.getClassName());
-        r = new ExtendedRobot();
+        r = new Robot();
         SwingUtilities.invokeAndWait(this::UI);
     }
 

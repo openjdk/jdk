@@ -31,8 +31,8 @@ import java.awt.image.BufferedImage;
  * @bug 7153700
  * @summary Check for mouseMoved event for java.awt.TrayIcon
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library /lib/client ../
- * @build ExtendedRobot SystemTrayIconHelper
+ * @library ../
+ * @build SystemTrayIconHelper
  * @run main MouseMovedTest
  */
 
@@ -59,7 +59,7 @@ public class MouseMovedTest {
         });
         SystemTray.getSystemTray().add(icon);
 
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
         if (System.getProperty("os.name").toLowerCase().startsWith("win"))
             robot.glide(size.width / 2, size.height-15, size.width, size.height-15, 1, 3);

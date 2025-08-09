@@ -23,6 +23,7 @@
 
 
 import java.awt.Graphics;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
@@ -36,8 +37,6 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @bug 8009919
  * @author Sergey Bylokhov
- * @library /lib/client/
- * @build ExtendedRobot
  * @run main JButtonPaintNPE
  */
 public final class JButtonPaintNPE {
@@ -71,7 +70,7 @@ public final class JButtonPaintNPE {
 
     private static void sleep() {
         try {
-             ExtendedRobot robot = new ExtendedRobot();
+             Robot robot = new Robot();
              robot.waitForIdle(1000);
          }catch(Exception ex) {
              ex.printStackTrace();

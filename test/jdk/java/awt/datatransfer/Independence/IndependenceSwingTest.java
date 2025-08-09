@@ -26,8 +26,6 @@
  * @key headful
  * @requires (os.family == "linux")
  * @summary To make sure that System & Primary clipboards should behave independently
- * @library /lib/client
- * @build ExtendedRobot
  * @run main IndependenceSwingTest
  */
 
@@ -44,7 +42,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -61,7 +58,7 @@ public class IndependenceSwingTest {
     private static volatile Point ttf1Center;
     private static volatile Point glideStartLocation;
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         try {
             robot = new ExtendedRobot();
             SwingUtilities.invokeAndWait(IndependenceSwingTest::createAndShowUI);
@@ -109,7 +106,7 @@ public class IndependenceSwingTest {
             primaryClip = Toolkit.getDefaultToolkit().getSystemSelection();
             if (primaryClip == null) {
                 throw new RuntimeException("Method getSystemSelection() is returning null"
-                                           + " on Linux platform");
+                        + " on Linux platform");
             }
         } catch (HeadlessException e) {
             System.out.println("Headless exception thrown " + e);
@@ -144,7 +141,7 @@ public class IndependenceSwingTest {
     }
 
     // Method to compare the Contents return by system & primary clipboard
-    private static void compareText (boolean mustEqual) {
+    private static void compareText(boolean mustEqual) {
         if ((tf2.getText()).equals(tf3.getText())) {
             if (mustEqual)
                 System.out.println("Selected text & clipboard contents are same\n");
@@ -171,7 +168,7 @@ public class IndependenceSwingTest {
             glideStartLocation.x -= 10;
         });
 
-        robot.glide(glideStartLocation, ttf1Center);
+        robot.glide(glideStartLocation.x, glideStartLocation.y, ttf1Center.x, ttf1Center.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle(20);

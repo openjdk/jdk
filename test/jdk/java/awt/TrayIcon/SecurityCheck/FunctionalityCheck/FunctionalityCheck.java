@@ -31,16 +31,16 @@ import java.awt.image.BufferedImage;
  * @summary Check for MouseEvents with all mouse buttons
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../../
+ * @library ../../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main FunctionalityCheck
  */
 
 public class FunctionalityCheck {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     boolean actionPerformed = false;
     Object actionLock = new Object();
@@ -79,7 +79,7 @@ public class FunctionalityCheck {
     }
 
     FunctionalityCheck() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 

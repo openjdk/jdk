@@ -31,6 +31,7 @@ import java.awt.Frame;
 import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.PopupMenu;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -47,13 +48,11 @@ import java.awt.image.BufferedImage;
  * @library
  *          /java/awt/patchlib
  *          /java/awt/TrayIcon
- *          /lib/client
  *          /test/lib
  * @build
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main TrayIconPopupTest
  */
@@ -61,7 +60,7 @@ import java.awt.image.BufferedImage;
 public class TrayIconPopupTest {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     volatile boolean actionPerformed = false;
     final Object actionLock = new Object();
@@ -94,7 +93,7 @@ public class TrayIconPopupTest {
     }
 
     TrayIconPopupTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
         robot.waitForIdle(1000);
         EventQueue.invokeAndWait( () ->  window.setLocation(100, 100));

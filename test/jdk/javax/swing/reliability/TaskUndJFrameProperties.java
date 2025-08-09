@@ -30,18 +30,16 @@ import java.awt.*;
  * @summary Construct a Undecorated JFrame, try to change the properties
  *          using setVisible() method.
  * @author Aruna Samji
- * @library /lib/client
- * @build ExtendedRobot
  * @run main TaskUndJFrameProperties
  */
 
 public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
 
     public static void main (String[] args) throws Exception {
-        new TaskUndJFrameProperties(GUIUndFrame.class, new ExtendedRobot()).task();
+        new TaskUndJFrameProperties(GUIUndFrame.class, new Robot()).task();
     }
 
-    TaskUndJFrameProperties(Class guiClass, ExtendedRobot robot) throws Exception {
+    TaskUndJFrameProperties(Class guiClass, Robot robot) throws Exception {
         super(guiClass, robot);
     }
 
@@ -66,7 +64,7 @@ public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
         Point button2Center = gui.jbutton2.getLocationOnScreen();
         button2Center.translate(gui.jbutton2.getWidth()/2, gui.jbutton2.getHeight()/2);
 
-        robot.glide(button1Origin, button1Center);
+        robot.glide(button1Origin.x, button1Origin.y, button1Center.x, button1Center.y);
         robot.waitForIdle(1000);
         robot.click();
         //After Hide
@@ -81,7 +79,7 @@ public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
         //click on the jbutton2 in jframe2
         SwingUtilities.invokeAndWait(gui.jframe2::toFront);
         robot.waitForIdle(1000);
-        robot.glide(button2Origin, button2Center);
+        robot.glide(button2Origin.x, button2Origin.y, button2Center.x, button2Center.y);
         robot.waitForIdle(1000);
         robot.click();
         //After Show

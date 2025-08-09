@@ -26,8 +26,6 @@
  * @key headful
  * @bug 4523758
  * @summary Directly check that torn-off combo works
- * @library /lib/client
- * @build ExtendedRobot
  * @run main bug4523758
  */
 /*
@@ -91,7 +89,7 @@ public class bug4523758 {
     }
 
     private void doTest() throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.waitForIdle(1000);
 
         final Point cl = combo.getLocationOnScreen();

@@ -30,9 +30,8 @@ import java.awt.Dialog;
  * @summary Check whether a modeless Dialog created with a
  *          visible Frame constructor follows normal Z Order.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame

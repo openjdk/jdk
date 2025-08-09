@@ -36,8 +36,6 @@ import java.util.Properties;
  * @summary To check the functionality of newly added API getSystemSelection & make sure
  *          that it's mapped to primary clipboard
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
- * @library /lib/client
- * @build ExtendedRobot
  * @run main SystemSelectionAWTTest
  */
 
@@ -109,7 +107,7 @@ public class SystemSelectionAWTTest {
     }
 
     public void doTest() throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
 
         frame.setLocation(100, 100);
         robot.waitForIdle(2000);

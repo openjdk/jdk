@@ -35,6 +35,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -47,9 +48,7 @@ import java.io.File;
  * @summary Swing components fail to hide after calling hide()
  * @author Jonathan Lu
  * @library ../../regtesthelpers/
- * @library /lib/client/
  * @build Util
- * @build ExtendedRobot
  * @run main bug7154030
  */
 
@@ -67,7 +66,7 @@ public class bug7154030 {
 
             BufferedImage imageHide = null;
 
-            ExtendedRobot robot = new ExtendedRobot();
+            Robot robot = new Robot();
 
             SwingUtilities.invokeAndWait(new Runnable() {
 

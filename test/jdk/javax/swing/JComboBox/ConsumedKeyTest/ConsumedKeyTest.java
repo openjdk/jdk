@@ -31,8 +31,6 @@ import java.awt.event.KeyEvent;
   @bug 8031485 8058193 8067986
   @summary Combo box consuming escape and enter key events
   @author Petr Pchelko
-  @library /lib/client/
-  @build ExtendedRobot
   @run main ConsumedKeyTest
 */
 public class ConsumedKeyTest {

@@ -27,8 +27,6 @@
  * @summary To check proper WINDOW_EVENTS are triggered when JFrame gains or losses the focus
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author yan
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ActiveSwingWindowTest
  */
 
@@ -45,7 +43,7 @@ public class ActiveSwingWindowTest {
     private JButton button, button2;
     private JTextField textField, textField2;
     private int eventType, eventType1;
-    private ExtendedRobot robot;
+    private Robot robot;
     private Object lock1 = new Object();
     private Object lock2 = new Object();
     private Object lock3 = new Object();
@@ -151,7 +149,7 @@ public class ActiveSwingWindowTest {
 
     public void doTest() {
         try {
-            robot = new ExtendedRobot();
+            robot = new Robot();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Cannot create robot");

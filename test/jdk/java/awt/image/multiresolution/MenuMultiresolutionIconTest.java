@@ -29,8 +29,6 @@
  * @summary Check that correct resolution variants are chosen for menu icons
  *          when multiresolution image is used for their construction.
  *
- * @library /lib/client/
- * @build ExtendedRobot
  * @run main/othervm -Dsun.java2d.uiScale=1 MenuMultiresolutionIconTest
  * @run main/othervm -Dsun.java2d.uiScale=2 MenuMultiresolutionIconTest
  */
@@ -47,7 +45,7 @@ public class MenuMultiresolutionIconTest extends JPanel {
     private final static int SZ = 50;
     private final static String SCALE = "sun.java2d.uiScale";
     private final static Color C1X = Color.RED, C2X = Color.BLUE;
-    private final ExtendedRobot r;
+    private final Robot r;
 
     private static BufferedImage generateImage(int scale, Color c) {
 
@@ -72,7 +70,7 @@ public class MenuMultiresolutionIconTest extends JPanel {
 
     public MenuMultiresolutionIconTest() throws Exception {
 
-        r = new ExtendedRobot();
+        r = new Robot();
         SwingUtilities.invokeAndWait(this::createUI);
     }
 

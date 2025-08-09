@@ -29,13 +29,11 @@ import java.awt.*;
  * @key headful
  * @bug 7090424
  * @author Sergey Bylokhov
- * @library /lib/client/
- * @build ExtendedRobot
  * @run main ExposeOnEDT
  */
 public final class ExposeOnEDT {
 
-    private static ExtendedRobot robot = null;
+    private static Robot robot = null;
     private static final Button buttonStub = new Button() {
         @Override
         public void paint(final Graphics g) {
@@ -279,7 +277,7 @@ public final class ExposeOnEDT {
     private static void sleep() {
         if(robot == null) {
             try {
-                robot = new ExtendedRobot();
+                robot = new Robot();
             }catch(Exception ex) {
                 ex.printStackTrace();
                 throw new RuntimeException("Unexpected failure");

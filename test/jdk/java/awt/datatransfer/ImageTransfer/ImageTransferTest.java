@@ -34,8 +34,6 @@ import java.util.Vector;
  *          system clipboard
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author dmitriy.ermashov@oracle.com
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ImageTransferTest
  */
 
@@ -156,7 +154,7 @@ public class ImageTransferTest  {
 
 
     public void doTest() throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.waitForIdle(2000);
         TransferableObject imagedata = new TransferableObject(image1);
 
