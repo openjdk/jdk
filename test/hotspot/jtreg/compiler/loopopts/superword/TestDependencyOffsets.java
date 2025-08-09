@@ -751,11 +751,13 @@ public class TestDependencyOffsets {
                 // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
                 // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
                 // power of two.
+                // If we have two array references, then we can speculate that they do not alias, and
+                // still produce full vectorization.
                 int infinity = 256; // No vector size is ever larger than this.
                 int maxVectorWidth = infinity; // no constraint by default
                 int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                 int floorPow2Offset = 1 << log2;
-                if (0 < byteOffset && byteOffset < maxVectorWidth) {
+                if (isSingleArray && 0 < byteOffset && byteOffset < maxVectorWidth) {
                     maxVectorWidth = Math.min(maxVectorWidth, floorPow2Offset * type.size);
                     builder.append("    // Vectors must have at most " + floorPow2Offset +
                                    " elements: maxVectorWidth = " + maxVectorWidth +
