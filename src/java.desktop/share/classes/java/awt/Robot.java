@@ -949,35 +949,6 @@ public class Robot {
     }
 
     /**
-     * A convenience method that drags the mouse with mouse button 1 pressed
-     * from source point to destination point.
-     *
-     * @implSpec The method moves the mouse pointer to source point ({@code fromX}, {@code fromY}),
-     * presses mouse button 1, calls glide to drag pointer to
-     * destination point ({@code toX}, {@code toY}), then releases mouse button 1.
-     *
-     * @param   srcX      Source point x coordinate
-     * @param   srcY      Source point y coordinate
-     * @param   destX     Destination point x coordinate
-     * @param   destY     Destination point y coordinate
-     *
-     * @throws  IllegalThreadStateException if called on the AWT event dispatching
-     *          thread and {@code isAutoWaitForIdle} would return true
-     * @see     #mouseMove(int, int)
-     * @see     #mousePress(int)
-     * @see     #glide(int, int, int, int)
-     * @since   26
-     */
-    public void dragAndDrop(int srcX, int srcY, int destX, int destY) {
-        mouseMove(srcX, srcY);
-        mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        waitForIdle();
-        glide(destX, destY);
-        mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        waitForIdle();
-    }
-
-    /**
      * A convenience method that simulates typing a key by calling {@code keyPress}
      * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of 20 milliseconds
      * after {@code keyPress} and {@code keyRelease} calls.
