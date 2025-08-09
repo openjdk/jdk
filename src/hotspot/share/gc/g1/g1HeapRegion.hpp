@@ -496,10 +496,10 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  uint  young_index_in_cset() const { return _young_index_in_cset; }
+  uint young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
   void set_young_index_in_cset(uint index) {
-    assert(index != UINT_MAX, "just checking");
+    assert(index != InvalidCSetIndex, "just checking");
     assert(index != 0, "just checking");
     assert(is_young(), "pre-condition");
     _young_index_in_cset = index;
