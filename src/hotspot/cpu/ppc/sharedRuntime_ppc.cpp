@@ -2446,14 +2446,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for locking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
-      __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
-    } else {
-      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      __ compiler_fast_lock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    }
+    // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+    Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
+    __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
     __ beq(CR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2620,7 +2615,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ stw(R0, thread_(thread_state));
 
     // Check preemption for Object.wait()
-    if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    if (method->is_object_wait0()) {
       Label not_preempted;
       __ ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
       __ cmpdi(CR0, R0, 0);
@@ -2672,11 +2667,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    } else {
-      __ compiler_fast_unlock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    }
+    __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     __ beq(CR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.
@@ -2717,7 +2708,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   // Last java frame won't be set if we're resuming after preemption
-  bool maybe_preempted = LockingMode != LM_LEGACY && method->is_object_wait0();
+  bool maybe_preempted = method->is_object_wait0();
   __ reset_last_Java_frame(!maybe_preempted /* check_last_java_sp */);
 
   // Unbox oop result, e.g. JNIHandles::resolve value.
