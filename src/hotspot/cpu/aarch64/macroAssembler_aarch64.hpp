@@ -1333,10 +1333,14 @@ public:
   // - relocInfo::opt_virtual_call_type
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
+  // Trampolines may be emitted immediately or deferred until stub finalization,
+  // enabling reuse across call sites to reduce code size.
+  // Runtime call trampolines are shared based on the entry value.
+  // Static call trampolines are shared by callee if it's not nullptr.
   //
   // Return: the call PC or null if CodeCache is full.
   // Clobbers: rscratch1
-  address trampoline_call(Address entry);
+  address trampoline_call(Address entry, ciMethod* callee = nullptr);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
