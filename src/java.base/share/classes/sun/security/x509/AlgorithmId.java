@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,6 +308,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public boolean equals(AlgorithmId other) {
         return algid.equals(other.algid) &&
             Arrays.equals(encodedParams, other.encodedParams);
+    }
+
+    /**
+     * Returns true if this AlgorithmID only has the specified ObjectIdentifier
+     * and a NULL params. Note the encoded params might be ASN.1 NULL or absent.
+     */
+    public boolean equalsOID(ObjectIdentifier oid) {
+        return algid.equals(oid) && encodedParams == null;
     }
 
     /**
@@ -672,4 +680,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA);
     public static final ObjectIdentifier SHA3_512withRSA_oid =
             ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA);
+
+    public static final ObjectIdentifier SHAKE128_256_oid =
+            ObjectIdentifier.of(KnownOIDs.SHAKE128_256);
+    public static final ObjectIdentifier SHAKE256_512_oid =
+            ObjectIdentifier.of(KnownOIDs.SHAKE256_512);
 }
