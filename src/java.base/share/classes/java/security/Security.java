@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,10 @@ public final class Security {
                                 "from a non-regular properties file " +
                                 "(e.g. HTTP served file)");
                     }
+                    // Inside loadFromPath, we have performed symlinks
+                    // resolution on currentPath under the rationale that
+                    // the original file writer is the one who decided
+                    // where the relative includes should resolve.
                     path = currentPath.resolveSibling(path);
                 }
                 loadFromPath(path, LoadingMode.APPEND);
@@ -265,13 +269,14 @@ public final class Security {
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
             boolean isRegularFile = Files.isRegularFile(path);
-            if (isRegularFile) {
-                path = path.toRealPath();
-            } else if (Files.isDirectory(path)) {
+            if (!isRegularFile && Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
-            } else {
-                path = path.toAbsolutePath();
             }
+            // JDK-8352728: we prefer java.io.File::getCanonicalFile over
+            // java.nio.file.Path::toRealPath because the former is more
+            // fault-tolerant, since the canonical form of a pathname is
+            // specified to exist even for nonexistent/inaccessible files.
+            path = path.toFile().getCanonicalFile().toPath();
             if (activePaths.contains(path)) {
                 throw new InternalError("Cyclic include of '" + path + "'");
             }
