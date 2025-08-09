@@ -537,6 +537,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleIsFinite:
   case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
 
+  case vmIntrinsics::_RelaxedMath_float_add:
+  case vmIntrinsics::_RelaxedMath_float_mul:
+  case vmIntrinsics::_RelaxedMath_double_add:
+  case vmIntrinsics::_RelaxedMath_double_mul:   return inline_relaxed_math(intrinsic_id());
+
   case vmIntrinsics::_numberOfLeadingZeros_i:
   case vmIntrinsics::_numberOfLeadingZeros_l:
   case vmIntrinsics::_numberOfTrailingZeros_i:
@@ -1821,7 +1826,8 @@ bool LibraryCallKit::inline_math_pow() {
     if (d->getd() == 2.0) {
       // Special case: pow(x, 2.0) => x * x
       Node* base = argument(0);
-      set_result(_gvn.transform(new MulDNode(base, base)));
+      RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make_default();
+      set_result(_gvn.transform(new MulDNode(base, base, mode)));
       return true;
     } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
@@ -5058,6 +5064,67 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_doubleIsFinite:
     result = new IsFiniteDNode(arg);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+  set_result(_gvn.transform(result));
+  return true;
+}
+
+bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
+  Node* n1;
+  Node* n2;
+  Node* mode_n;
+
+  switch (id) {
+  case vmIntrinsics::_RelaxedMath_float_add:
+  case vmIntrinsics::_RelaxedMath_float_mul:
+    n1     = argument(0);
+    n2     = argument(1);
+    mode_n = argument(2);
+    break;
+  case vmIntrinsics::_RelaxedMath_double_add:
+  case vmIntrinsics::_RelaxedMath_double_mul:
+    // Double arguments take 2 stack slots each (see pop_pair).
+    n1     = argument(0);
+    n2     = argument(2);
+    mode_n = argument(4);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+
+  // Extract the RelaxedMathOptimizationMode (Default = 0).
+  // Note: it must be a constant already now, so no final field loads
+  // allowed. We could make this smarter but it might require us to
+  // add additional nodes, so that we can capture the mode to constant
+  // fold later during IGVN.
+  const TypeInt* mode_t = gvn().type(mode_n)->is_int();
+  jint mode_con = 0;
+  if (mode_t->is_con()) {
+    jint con = mode_t->get_con();
+    if (0 <= con && con <= 3) {
+      mode_con = con;
+    }
+  }
+  RelaxedMathOptimizationMode mode(mode_con);
+
+  Node* result = nullptr;
+  switch (id) {
+  case vmIntrinsics::_RelaxedMath_float_add:
+    result = new AddFNode(n1, n2, mode);
+    break;
+  case vmIntrinsics::_RelaxedMath_float_mul:
+    result = new MulFNode(n1, n2, mode);
+    break;
+  case vmIntrinsics::_RelaxedMath_double_add:
+    result = new AddDNode(n1, n2, mode);
+    break;
+  case vmIntrinsics::_RelaxedMath_double_mul:
+    result = new MulDNode(n1, n2, mode);
     break;
   default:
     fatal_unexpected_iid(id);
