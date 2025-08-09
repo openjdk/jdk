@@ -123,6 +123,7 @@ import java.util.regex.Pattern;
 
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.Stable;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -1935,7 +1936,7 @@ public final class DateTimeFormatterBuilder {
                     padNext(pad); // pad and continue parsing
                 }
                 // main rules
-                TemporalField field = FIELD_MAP.get(cur);
+                TemporalField field = FIELD_MAP[cur];
                 if (field != null) {
                     parseField(cur, count, field);
                 } else if (cur == 'z') {
@@ -2184,34 +2185,35 @@ public final class DateTimeFormatterBuilder {
     }
 
     /** Map of letters to fields. */
-    private static final Map<Character, TemporalField> FIELD_MAP = new HashMap<>();
+    @Stable
+    private static final TemporalField[] FIELD_MAP = new TemporalField[128];
     static {
         // SDF = SimpleDateFormat
-        FIELD_MAP.put('G', ChronoField.ERA);                       // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP.put('y', ChronoField.YEAR_OF_ERA);               // SDF, LDML
-        FIELD_MAP.put('u', ChronoField.YEAR);                      // LDML (different in SDF)
-        FIELD_MAP.put('Q', IsoFields.QUARTER_OF_YEAR);             // LDML (removed quarter from 310)
-        FIELD_MAP.put('q', IsoFields.QUARTER_OF_YEAR);             // LDML (stand-alone)
-        FIELD_MAP.put('M', ChronoField.MONTH_OF_YEAR);             // SDF, LDML
-        FIELD_MAP.put('L', ChronoField.MONTH_OF_YEAR);             // SDF, LDML (stand-alone)
-        FIELD_MAP.put('D', ChronoField.DAY_OF_YEAR);               // SDF, LDML
-        FIELD_MAP.put('d', ChronoField.DAY_OF_MONTH);              // SDF, LDML
-        FIELD_MAP.put('F', ChronoField.ALIGNED_WEEK_OF_MONTH);     // SDF, LDML
-        FIELD_MAP.put('E', ChronoField.DAY_OF_WEEK);               // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP.put('c', ChronoField.DAY_OF_WEEK);               // LDML (stand-alone)
-        FIELD_MAP.put('e', ChronoField.DAY_OF_WEEK);               // LDML (needs localized week number)
-        FIELD_MAP.put('a', ChronoField.AMPM_OF_DAY);               // SDF, LDML
-        FIELD_MAP.put('H', ChronoField.HOUR_OF_DAY);               // SDF, LDML
-        FIELD_MAP.put('k', ChronoField.CLOCK_HOUR_OF_DAY);         // SDF, LDML
-        FIELD_MAP.put('K', ChronoField.HOUR_OF_AMPM);              // SDF, LDML
-        FIELD_MAP.put('h', ChronoField.CLOCK_HOUR_OF_AMPM);        // SDF, LDML
-        FIELD_MAP.put('m', ChronoField.MINUTE_OF_HOUR);            // SDF, LDML
-        FIELD_MAP.put('s', ChronoField.SECOND_OF_MINUTE);          // SDF, LDML
-        FIELD_MAP.put('S', ChronoField.NANO_OF_SECOND);            // LDML (SDF uses milli-of-second number)
-        FIELD_MAP.put('A', ChronoField.MILLI_OF_DAY);              // LDML
-        FIELD_MAP.put('n', ChronoField.NANO_OF_SECOND);            // 310 (proposed for LDML)
-        FIELD_MAP.put('N', ChronoField.NANO_OF_DAY);               // 310 (proposed for LDML)
-        FIELD_MAP.put('g', JulianFields.MODIFIED_JULIAN_DAY);
+        FIELD_MAP['G'] = ChronoField.ERA;                       // SDF, LDML (different to both for 1/2 chars)
+        FIELD_MAP['y'] = ChronoField.YEAR_OF_ERA;               // SDF, LDML
+        FIELD_MAP['u'] = ChronoField.YEAR;                      // LDML (different in SDF)
+        FIELD_MAP['Q'] = IsoFields.QUARTER_OF_YEAR;             // LDML (removed quarter from 310)
+        FIELD_MAP['q'] = IsoFields.QUARTER_OF_YEAR;             // LDML (stand-alone)
+        FIELD_MAP['M'] = ChronoField.MONTH_OF_YEAR;             // SDF, LDML
+        FIELD_MAP['L'] = ChronoField.MONTH_OF_YEAR;             // SDF, LDML (stand-alone)
+        FIELD_MAP['D'] = ChronoField.DAY_OF_YEAR;               // SDF, LDML
+        FIELD_MAP['d'] = ChronoField.DAY_OF_MONTH;              // SDF, LDML
+        FIELD_MAP['F'] = ChronoField.ALIGNED_WEEK_OF_MONTH;     // SDF, LDML
+        FIELD_MAP['E'] = ChronoField.DAY_OF_WEEK;               // SDF, LDML (different to both for 1/2 chars)
+        FIELD_MAP['c'] = ChronoField.DAY_OF_WEEK;               // LDML (stand-alone)
+        FIELD_MAP['e'] = ChronoField.DAY_OF_WEEK;               // LDML (needs localized week number)
+        FIELD_MAP['a'] = ChronoField.AMPM_OF_DAY;               // SDF, LDML
+        FIELD_MAP['H'] = ChronoField.HOUR_OF_DAY;               // SDF, LDML
+        FIELD_MAP['k'] = ChronoField.CLOCK_HOUR_OF_DAY;         // SDF, LDML
+        FIELD_MAP['K'] = ChronoField.HOUR_OF_AMPM;              // SDF, LDML
+        FIELD_MAP['h'] = ChronoField.CLOCK_HOUR_OF_AMPM;        // SDF, LDML
+        FIELD_MAP['m'] = ChronoField.MINUTE_OF_HOUR;            // SDF, LDML
+        FIELD_MAP['s'] = ChronoField.SECOND_OF_MINUTE;          // SDF, LDML
+        FIELD_MAP['S'] = ChronoField.NANO_OF_SECOND;            // LDML (SDF uses milli-of-second number)
+        FIELD_MAP['A'] = ChronoField.MILLI_OF_DAY;              // LDML
+        FIELD_MAP['n'] = ChronoField.NANO_OF_SECOND;            // 310 (proposed for LDML)
+        FIELD_MAP['N'] = ChronoField.NANO_OF_DAY;               // 310 (proposed for LDML)
+        FIELD_MAP['g'] = JulianFields.MODIFIED_JULIAN_DAY;
         // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
         // 310 - Z - matches SimpleDateFormat and LDML
         // 310 - V - time-zone id, matches LDML
