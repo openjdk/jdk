@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,20 @@
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
-import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class MouseDraggedOriginatedByScrollBarTest {
 
     private static final String INSTRUCTIONS = """
             1) Click and drag the scrollbar of the list.
-            2) Keep dragging till the mouse pointer goes out the scrollbar.
-            3) The test failed if you see messages about events. The test passed if you don't.""";
+            2) Keep dragging until the mouse pointer passes
+            the bounds of the scrollbar.
+            3) The test fails if you see messages about drag
+            events for anything other than list0.
+            The test passes if you don't.
+    """;
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
