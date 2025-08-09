@@ -503,14 +503,19 @@ JVM_END
 
 // java.lang.NullPointerException ///////////////////////////////////////////
 
-JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
+JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable, jint stack_offset, jint search_slot))
   if (!ShowCodeDetailsInExceptionMessages) return nullptr;
 
   oop exc = JNIHandles::resolve_non_null(throwable);
+  // If we are performing an explicit search instructed by alternative internal NPE constructor
+  BytecodeUtils::NullSlot slot = search_slot >= 0 ? static_cast<BytecodeUtils::NullSlot>(search_slot)
+                                                  : BytecodeUtils::NullSlot::SEARCH;
 
   Method* method;
   int bci;
-  if (!java_lang_Throwable::get_top_method_and_bci(exc, &method, &bci)) {
+  int depth = slot != BytecodeUtils::NullSlot::SEARCH ? stack_offset : 0; // 1-based depth
+  // The explicit search alternative internal NPE constructor is called from a @Hidden method, allow them
+  if (!java_lang_Throwable::get_method_and_bci(exc, &method, &bci, depth + 1, slot != BytecodeUtils::NullSlot::SEARCH)) {
     return nullptr;
   }
   if (method->is_native()) {
@@ -518,7 +523,7 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
   }
 
   stringStream ss;
-  bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
+  bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci, slot);
   if (ok) {
     oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_NULL);
     return (jstring) JNIHandles::make_local(THREAD, result);
