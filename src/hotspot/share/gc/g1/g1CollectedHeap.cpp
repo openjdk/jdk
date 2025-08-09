@@ -848,12 +848,9 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                          size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
 
-  const bool do_clear_all_soft_refs = clear_all_soft_refs ||
-      soft_ref_policy()->should_clear_all_soft_refs();
-
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause(), true);
-  G1FullCollector collector(this, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
+  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -985,9 +982,6 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   if (result != nullptr) {
     return result;
   }
-
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-         "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
