@@ -27,11 +27,6 @@
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 
-void SerialArguments::initialize() {
-  GCArguments::initialize();
-  FullGCForwarding::initialize_flags(MaxHeapSize);
-}
-
 CollectedHeap* SerialArguments::create_heap() {
   return new SerialHeap();
 }
