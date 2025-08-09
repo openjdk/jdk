@@ -576,6 +576,9 @@ public final class ErrorTest {
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
 
+        invalidShortcut(testCases::add, "--win-menu");
+        invalidShortcut(testCases::add, "--win-shortcut");
+
         return toTestArgs(testCases.stream());
     }
 
@@ -642,6 +645,8 @@ public final class ErrorTest {
                         .error("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
+        invalidShortcut(testCases::add, "--linux-shortcut");
+
         return toTestArgs(testCases.stream());
     }
 
@@ -695,6 +700,13 @@ public final class ErrorTest {
 
     private static void duplicateForMacSign(TestSpec.Builder builder, Consumer<TestSpec> accumulator) {
         duplicateAddArgs(builder, accumulator, "--mac-sign");
+    }
+
+    private static void invalidShortcut(Consumer<TestSpec> accumulator, String shortcutOption) {
+        Objects.requireNonNull(shortcutOption);
+        Stream.of("true", "false", "").map(value -> {
+            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.invalid-option-value", value, shortcutOption).create();
+        }).forEach(accumulator);
     }
 
     private record UnsupportedPlatformOption(String name, Optional<String> value) {

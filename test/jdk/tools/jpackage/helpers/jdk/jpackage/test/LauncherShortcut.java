@@ -44,6 +44,7 @@ public enum LauncherShortcut {
 
     public enum StartupDirectory {
         DEFAULT("true"),
+        APP_DIR("app-dir"),
         ;
 
         StartupDirectory(String stringValue) {
@@ -147,7 +148,14 @@ public enum LauncherShortcut {
 
     private Optional<StartupDirectory> findMainLauncherShortcut(JPackageCommand cmd) {
         if (cmd.hasArgument(optionName())) {
-            return Optional.of(StartupDirectory.DEFAULT);
+            var value = Optional.ofNullable(cmd.getArgumentValue(optionName())).filter(optionValue -> {
+                return !optionValue.startsWith("-");
+            });
+            if (value.isPresent()) {
+                return value.flatMap(StartupDirectory::parse);
+            } else {
+                return Optional.of(StartupDirectory.DEFAULT);
+            }
         } else {
             return Optional.empty();
         }
