@@ -420,6 +420,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 JvmtiThreadState*
 JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
+  assert(thread->thread_state() == _thread_in_vm, "thread should be in vm");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
     if (allow_suspend && thread->is_suspended()) {
@@ -1831,7 +1832,11 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   HandleMark hm(thread);
   methodHandle mh(thread, method);
 
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = nullptr;
+  JavaThread* current = thread; // for JRT_BLOCK
+  JRT_BLOCK
+  state = get_jvmti_thread_state(thread);
+  JRT_BLOCK_END
 
   if (state == nullptr || !state->is_interp_only_mode()) {
     // for any thread that actually wants method exit, interp_only_mode is set
@@ -1867,7 +1872,6 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
-  JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
