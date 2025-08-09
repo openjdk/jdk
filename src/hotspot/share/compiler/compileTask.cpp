@@ -74,6 +74,7 @@ CompileTask::CompileTask(int compile_id,
   _arena_bytes = 0;
 
   _next = nullptr;
+  _prev = nullptr;
 
   Atomic::add(&_active_tasks, 1, memory_order_relaxed);
 }
@@ -89,6 +90,12 @@ CompileTask::~CompileTask() {
     _failure_reason = nullptr;
     _failure_reason_on_C_heap = false;
   }
+
+#ifdef ASSERT
+  // Zap the deleted task memory to catch lifecycle errors.
+  // Do this before notifying any waiters: nothing can wait on this task.
+  memset(this, freeBlockPad, sizeof(CompileTask));
+#endif
 
   if (Atomic::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
     MonitorLocker wait_ml(CompileTaskWait_lock);
