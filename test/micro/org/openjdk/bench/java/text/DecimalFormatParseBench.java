@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.java.text;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.concurrent.TimeUnit;
@@ -52,19 +53,43 @@ public class DecimalFormatParseBench {
 
     public String[] valuesLong;
     public String[] valuesDouble;
+    public BigDecimal[] bigDecimals;
+    public double[] doubles;
+    public long[] longs;
 
     @Setup
     public void setup() {
         valuesLong = new String[]{
                 "123", "149", "180", "170000000000000000", "0", "-149", "-15000", "99999123", "1494", "1495", "1030", "25996", "-25996"
         };
+        longs = new long[valuesLong.length];
+        for (int i = 0; i < valuesLong.length; i++) {
+            longs[i] = Long.parseLong(valuesLong[i]);
+        }
 
         valuesDouble = new String[]{
                 "1.23", "1.49", "1.80", "17000000000000000.1", "0.01", "-1.49", "-1.50", "9999.9123", "1.494", "1.495", "1.03", "25.996", "-25.996"
         };
+
+        doubles = new double[valuesDouble.length];
+        for (int i = 0; i < valuesDouble.length; i++) {
+            doubles[i] = Double.parseDouble(valuesDouble[i]);
+        }
+
+        bigDecimals = new BigDecimal[valuesDouble.length];
+        for (int i = 0; i < valuesDouble.length; i++) {
+            bigDecimals[i] = new BigDecimal(valuesDouble[i]);
+        }
     }
 
     private DecimalFormat dnf = new DecimalFormat();
+    private DecimalFormat dnfDecimal = creaeDecimalFormat();
+
+    private static DecimalFormat creaeDecimalFormat() {
+        DecimalFormat dnf = new DecimalFormat();
+        dnf.setParseBigDecimal(true);
+        return dnf;
+    }
 
     @Benchmark
     @OperationsPerInvocation(13)
@@ -81,6 +106,40 @@ public class DecimalFormatParseBench {
             blackhole.consume(this.dnf.parse(value));
         }
     }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testParseDecimals(final Blackhole blackhole) throws ParseException {
+        for (String value : valuesDouble) {
+            blackhole.consume(this.dnfDecimal.parse(value));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testFormatDecimals(final Blackhole blackhole) throws ParseException {
+        for (var value : bigDecimals) {
+            blackhole.consume(this.dnf.format(value));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testFormatDoubles(final Blackhole blackhole) throws ParseException {
+        for (var value : doubles) {
+            blackhole.consume(this.dnf.format(value));
+        }
+    }
+
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testFormatLongs(final Blackhole blackhole) throws ParseException {
+        for (var value : doubles) {
+            blackhole.consume(this.dnf.format(value));
+        }
+    }
+
     public static void main(String... args) throws Exception {
         Options opts = new OptionsBuilder().include(DefFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
         new Runner(opts).run();
