@@ -131,6 +131,11 @@ public:
     _gc_overhead_counter(0),
     _is_heap_almost_full(false) {}
 
+  // The alignment used for spaces in young gen and old gen
+  static size_t default_space_alignment() {
+    return 64 * K * HeapWordSize;
+  }
+
   Name kind() const override {
     return CollectedHeap::Parallel;
   }

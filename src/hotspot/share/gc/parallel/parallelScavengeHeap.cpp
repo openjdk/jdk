@@ -64,7 +64,31 @@ GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
+  // If using largepage, SpaceAlignment is the desired largepage size.
+  size_t desired_page_size = (SpaceAlignment == default_space_alignment())
+                           ? os::vm_page_size()
+                           : SpaceAlignment;
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, desired_page_size);
+  // Check if SpaceAlignment needs adjustment
+  if (UseLargePages) {
+    if (SpaceAlignment == default_space_alignment()) {
+      // Opted out of using largepage because MinHeapSize is too small.
+      assert(!is_aligned(SpaceAlignment, os::large_page_size()), "inv");
+      assert(heap_rs.page_size() == os::vm_page_size(), "inv");
+    } else {
+      // Opted in to using largepage
+      if (os::can_commit_large_page_memory()) {
+        // Keep SpaceAlignment as is so that largepage can be formed
+      } else {
+        // Explicit largepage; use actual pagesize or the default
+        SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
+      }
+    }
+  } else {
+    assert(heap_rs.page_size() == os::vm_page_size(), "inv");
+    assert(SpaceAlignment == default_space_alignment(), "inv");
+  }
+  assert(is_aligned(SpaceAlignment, heap_rs.page_size()), "inv");
 
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 

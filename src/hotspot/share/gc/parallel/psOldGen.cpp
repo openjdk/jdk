@@ -96,7 +96,7 @@ void PSOldGen::initialize_work() {
   // ObjectSpace stuff
   //
 
-  _object_space = new MutableSpace(virtual_space()->alignment());
+  _object_space = new MutableSpace(virtual_space()->page_size());
   object_space()->initialize(committed_mr,
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle,
