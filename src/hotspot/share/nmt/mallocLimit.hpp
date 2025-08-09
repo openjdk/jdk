@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class outputStream;
 
 class MallocLimitSet {
   malloclimit _glob;                    // global limit
-  malloclimit _cat[mt_number_of_tags]; // per-category limit
+  malloclimit _mtag[mt_number_of_tags]; // per-memtag limit
 public:
   MallocLimitSet();
 
@@ -54,10 +54,10 @@ public:
   bool parse_malloclimit_option(const char* optionstring, const char** err);
 
   void set_global_limit(size_t s, MallocLimitMode type);
-  void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
+  void set_mem_tag_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MemTag mem_tag) const { return &_cat[(int)mem_tag]; }
+  const malloclimit* mem_tag_limit(MemTag mem_tag) const { return &_mtag[(int)mem_tag]; }
 
   void print_on(outputStream* st) const;
 };
@@ -69,7 +69,7 @@ class MallocLimitHandler : public AllStatic {
 public:
 
   static const malloclimit* global_limit()             { return _limits.global_limit(); }
-  static const malloclimit* category_limit(MemTag mem_tag) { return _limits.category_limit(mem_tag); }
+  static const malloclimit* mem_tag_limit(MemTag mem_tag) { return _limits.mem_tag_limit(mem_tag); }
 
   static void initialize(const char* options);
   static void print_on(outputStream* st);
