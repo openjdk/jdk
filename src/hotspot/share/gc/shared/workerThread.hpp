@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKERTHREAD_HPP
 
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
@@ -35,6 +36,7 @@
 class ThreadClosure;
 class WorkerTaskDispatcher;
 class WorkerThread;
+class TaskTerminator;
 
 // An task to be worked on by worker threads
 class WorkerTask : public CHeapObj<mtInternal> {
