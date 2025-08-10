@@ -504,7 +504,6 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   return nullptr;
 }
 
-
 template<typename IntegerType>
 static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
   typedef typename IntegerType::NativeType NativeType;
@@ -536,7 +535,6 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   //   (i1->_lo, i2->_hi), (i1->_lo, i2->_lo), (i1->_hi, i2->_lo), (i1->_hi, i2->_hi).
   // We compute all four and take the min and max.
   // A special case handles overflow when dividing the most‐negative value by −1.
-
   NativeType new_lo = max_jint;
   NativeType new_hi = min_jint;
   // adjust i2 bounds to not include zero, as zero always throws
@@ -545,13 +543,13 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   NativeType min_val = std::numeric_limits<NativeType>::min();
   assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
 
-  // Special overflow case: min_val / (-1) == min_val
-  // We must include min_val in the output if i1->_lo == min_val and i2->_hi.
+  // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
+  // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
+  // We also must include min_val in the output if i1->_lo == min_val and i2->_hi.
   if (i1->_lo == min_val && i2_hi == -1) {
-    // special case: min_jint or min_jlong div -1 == min_val
     new_lo = i1->_lo;
     if (!i1->is_con()) {
-      // Also compute the “next” division result for a non‑constant range.
+      // Also compute the "next" division result for a non‑constant range.
       new_hi = MAX2(new_hi, i1->_lo + 1 / i2_hi);
     }
   } else {

@@ -120,9 +120,14 @@ public class IntegerDivValueTests {
         return a / b; // [1, 1] -> can be constant
     }
 
+    @Run(test = {"testIntConstantFolding", "testIntConstantFoldingSpecialCase"})
+    public void checkIntConstants(RunInfo info) {
+        Asserts.assertEquals(2, testIntConstantFolding());
+        Asserts.assertEquals(Integer.MIN_VALUE, testIntConstantFoldingSpecialCase());
+    }
+
     @Run(test = {"testIntRange", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRange5", "testIntRange6", "testIntRange7", "testIntRange8"})
     public void checkIntRanges(RunInfo info) {
-
         for (int j = 0; j < 20; j++) {
             int i1 = INTS.next();
             int i2 = INTS.next();
@@ -132,9 +137,6 @@ public class IntegerDivValueTests {
 
     @DontCompile
     public void checkInt(int in, int in2) {
-        Asserts.assertEquals(2, testIntConstantFolding());
-        Asserts.assertEquals(Integer.MIN_VALUE, testIntConstantFoldingSpecialCase());
-
         int a;
         int b;
         a = (in & 7) + 16;
@@ -167,7 +169,6 @@ public class IntegerDivValueTests {
         b = (in2 & 15) + 100;
         Asserts.assertEquals(a / b, testIntRange8(in, in2));
     }
-
 
     // Long variants
 
@@ -249,9 +250,14 @@ public class IntegerDivValueTests {
         return a / b; // [1, 1] -> can be constant
     }
 
+    @Run(test = {"testLongConstantFolding", "testLongConstantFoldingSpecialCase"})
+    public void checkLongConstants(RunInfo info) {
+        Asserts.assertEquals(2L, testLongConstantFolding());
+        Asserts.assertEquals(Long.MIN_VALUE, testLongConstantFoldingSpecialCase());
+    }
+
     @Run(test = {"testLongRange", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRange5", "testLongRange6", "testLongRange7", "testLongRange8"})
     public void checkLongRanges(RunInfo info) {
-
         for (int j = 0; j < 20; j++) {
             long l1 = LONGS.next();
             long l2 = LONGS.next();
@@ -261,9 +267,6 @@ public class IntegerDivValueTests {
 
     @DontCompile
     public void checkLong(long in, long in2) {
-        Asserts.assertEquals(2L, testLongConstantFolding());
-        Asserts.assertEquals(Long.MIN_VALUE, testLongConstantFoldingSpecialCase());
-
         long a;
         long b;
         a = (in & 7L) + 16L;
