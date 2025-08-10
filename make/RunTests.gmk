@@ -60,6 +60,17 @@ define SetTestOpt
   endif
 endef
 
+# Setup _NT_SYMBOL_PATH on Windows, which points to our pdb files.
+ifeq ($(call isTargetOs, windows), true)
+  ifndef _NT_SYMBOL_PATH
+    SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard \
+        $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb))))))
+    export _NT_SYMBOL_PATH := $(subst \\,\, $(call FixPath, \
+        $(subst $(DQUOTE),, $(SYMBOL_PATH))))
+    $(call LogDebug, Setting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
+  endif
+endif
+
 ################################################################################
 
 # This is the JDK that we will test
@@ -867,7 +878,7 @@ define SetupRunJtregTestBody
   endif
 
   ifneq ($$(JTREG_JVMTI_STRESS_AGENT), )
-    AGENT := $${LIBRARY_PREFIX}JvmtiStressAgent${SHARED_LIBRARY_SUFFIX}=$${JTREG_JVMTI_STRESS_AGENT}
+    AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
     $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:${TEST_IMAGE_DIR}/hotspot/jtreg/native/$${AGENT}'
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
 	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
