@@ -664,7 +664,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   const double max_old_reserve = ((ShenandoahOldEvacRatioPercent == 100)? bound_on_old_reserve: 
                                   MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent)
                                        / double(100 - ShenandoahOldEvacRatioPercent), bound_on_old_reserve));
-#define KELVIN_REBALANCE
+#undef KELVIN_REBALANCE
 #ifdef KELVIN_REBALANCE
   log_info(gc)("compute_old_gen_balance(%zu, %zu), bound_on_old_reserve: %.3f, max_old_reserve: %.3f",
                old_xfer_limit, old_cset_regions, bound_on_old_reserve, max_old_reserve);

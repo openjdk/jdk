@@ -63,7 +63,11 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   // to make sense under the race. See JDK-8207200.
   committed = MAX2(used, committed);
   assert(used <= committed, "used: %zu, committed: %zu", used,      committed);
-
+#define KELVIN_MEMORY_POOL
+#ifdef KELVIN_MEMORY_POOL
+  log_info(gc)("ShenMemPool::get_memory_usage(%zu, %zu, %zu, %zu)",
+               initial, used, committed, max);
+#endif
   return MemoryUsage(initial, used, committed, max);
 }
 
@@ -86,6 +90,10 @@ MemoryUsage ShenandoahGenerationalMemoryPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _generation->used_regions_size();
 
+#ifdef KELVIN_MEMORY_POOL
+  log_info(gc)("ShenGenMemPool::get_memory_usage(%zu, %zu, %zu, %zu) for generation %s",
+               initial, used, committed, max, _generation->is_young()? "young": _generation->is_old()? "old": "global");
+#endif
   return MemoryUsage(initial, used, committed, max);
 }
 

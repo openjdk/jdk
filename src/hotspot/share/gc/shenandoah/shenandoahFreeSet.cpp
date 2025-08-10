@@ -2743,7 +2743,7 @@ void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, si
                                                    size_t affiliated_young_regions, size_t affiliated_old_regions,
                                                    size_t young_used_bytes, size_t old_used_bytes) {
   assert(young_region_count + old_region_count == ShenandoahHeap::heap()->num_regions(), "Sanity");
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("establish_generation_sizes(young_region_count: %zu, old_region_count: %zu, ",
                young_region_count, old_region_count);
@@ -2873,7 +2873,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   shenandoah_assert_generational();
   shenandoah_assert_heaplocked();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("compute_young_and_old_reserve(young_trashed: %zu, old_trashed: %zu, have_reserves: %s)",
                young_trashed_regions, old_trashed_regions, have_evacuation_reserves? "yes": "no");
@@ -3008,7 +3008,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   young_used_bytes = 0;
   old_used_bytes = 0;
 
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("reserve_regions(to_reserve: %zu, to_reserve_old: %zu", to_reserve, to_reserve_old);
 #endif

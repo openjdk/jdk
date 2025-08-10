@@ -1111,7 +1111,7 @@ size_t ShenandoahGeneration::max_capacity() const {
     total_regions = _free_set->total_global_regions();
     break;
   }
-#define KELVIN_AVAILABLE
+#undef KELVIN_AVAILABLE
 #ifdef KELVIN_AVAILABLE
   log_info(gc)("max_capacity(_type: %d) returns %zu (%zu * %zu)", _type, total_regions * ShenandoahHeapRegion::region_size_bytes(),
                total_regions, ShenandoahHeapRegion::region_size_bytes());
@@ -1134,7 +1134,7 @@ size_t ShenandoahGeneration::free_unaffiliated_regions() const {
     free_regions = _free_set->global_unaffiliated_regions();
     break;
   }
-#define KELVIN_UNAFFILIATED
+#undef KELVIN_UNAFFILIATED
 #ifdef KELVIN_UNAFFILIATED
   log_info(gc)("free_unaffiliated_regions(_type == %d) returns %zu", _type, free_regions);
 #endif
