@@ -25,6 +25,7 @@
 
 package java.awt.geom;
 
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -1108,6 +1109,11 @@ public abstract class Arc2D extends RectangularShape {
         x1 = getX() + (x1 * 0.5 + 0.5) * w;
         y1 = getY() + (y1 * 0.5 + 0.5) * h;
         return makeBounds(x1, y1, x2, y2);
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        return getBounds2D().getBounds();
     }
 
     /**
