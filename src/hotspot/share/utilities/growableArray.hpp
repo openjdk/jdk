@@ -285,15 +285,6 @@ public:
     this->_len -= (end - start);
   }
 
-  // The order is changed.
-  void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    if (index < --_len) {
-      // Replace removed element with last one.
-      _data[index] = _data[_len];
-    }
-  }
-
   void sort(int f(E*, E*)) {
     if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
@@ -511,6 +502,15 @@ public:
   void trunc_to(int length) {
     assert(length <= this->_len,"cannot increase length");
     this->_len = length;
+  }
+
+  // Replaces the designated element with the last element and shrinks by 1.
+  void delete_at(int index) {
+    assert(0 <= index && index < this->_len, "illegal index %d for length %d", index, this->_len);
+    if (index < --this->_len) {
+      // Replace removed element with last one.
+      this->_data[index] = this->_data[this->_len];
+    }
   }
 
   // Reduce capacity to length.
