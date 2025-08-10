@@ -125,7 +125,7 @@ final class DateTimePrintContext {
      * <p>
      * This method serves as an optimization front-end that checks for non-null overrides in the formatter.
      * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
-     * Otherwise, delegates to the core adjustment method {@link #adjust(TemporalAccessor, Chronology, ZoneId)}.
+     * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
      *
      * @param temporal  the temporal object to adjust, not null
      * @param formatter the formatter providing potential chronology and time-zone overrides
@@ -143,7 +143,7 @@ final class DateTimePrintContext {
 
         // The chronology and zone fields of Formatter are usually null,
         // so the non-null processing code is placed in a separate method
-        return adjust(temporal, overrideChrono, overrideZone);
+        return adjustWithOverride(temporal, overrideChrono, overrideZone);
     }
 
     /**
@@ -167,7 +167,7 @@ final class DateTimePrintContext {
      * @implNote Optimizes for common cases where overrides are identical to existing values
      *           or where instant-based temporals can be directly converted with a time-zone.
      */
-    private static TemporalAccessor adjust(TemporalAccessor temporal, Chronology overrideChrono, ZoneId overrideZone) {
+    private static TemporalAccessor adjustWithOverride(TemporalAccessor temporal, Chronology overrideChrono, ZoneId overrideZone) {
         // ensure minimal change (early return is an optimization)
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
@@ -192,7 +192,7 @@ final class DateTimePrintContext {
         }
 
         // Split uncommon code branches into a separate method
-        return adjust(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
+        return adjustSlow(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
     }
 
     /**
@@ -231,7 +231,7 @@ final class DateTimePrintContext {
      *           <li>Preserves precision queries from original temporal</li>
      *         </ul>
      */
-    private static TemporalAccessor adjust(
+    private static TemporalAccessor adjustSlow(
             TemporalAccessor temporal,
             ZoneId overrideZone,
             ZoneId temporalZone,
