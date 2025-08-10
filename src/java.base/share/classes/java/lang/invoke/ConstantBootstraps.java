@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,13 +373,14 @@ public final class ConstantBootstraps {
      *     is applied to {@code value} as if by calling {@code dstType.cast(value)}.
      * <li>If {@code dstType} is a primitive type, then, if the runtime type
      *     of {@code value} is a primitive wrapper type (such as {@link Integer}),
-     *     a Java unboxing conversion is applied {@jls 5.1.8} followed by a
-     *     Java casting conversion {@jls 5.5} converting either directly to
+     *     a Java unboxing conversion is applied (JLS {@jls 5.1.8}) followed by a
+     *     Java casting conversion (JLS {@jls 5.5}) converting either directly to
      *     {@code dstType}, or, if {@code dstType} is {@code boolean},
      *     to {@code int}, which is then converted to either {@code true}
      *     or {@code false} depending on whether the least-significant-bit
-     *     is 1 or 0 respectively. If the runtime type of {@code value} is
-     *     not a primitive wrapper type a {@link ClassCastException} is thrown.
+     *     is 1 or 0 respectively.  If {@code value} is null, the zero value for
+     *     the {@code dstType} is returned.  Otherwise, a {@link ClassCastException}
+     *     is thrown.
      * </ol>
      * <p>
      * The result is the same as when using the following code:
@@ -397,8 +398,8 @@ public final class ConstantBootstraps {
      * @return the converted value
      * @throws ClassCastException when {@code dstType} is {@code void},
      *         when a cast per (1) fails, or when {@code dstType} is a primitive type
-     *         and the runtime type of {@code value} is not a primitive wrapper type
-     *         (such as {@link Integer})
+     *         and {@code value} is not null and its runtime type is not a primitive
+     *         wrapper type (such as {@link Integer})
      *
      * @since 15
      */
