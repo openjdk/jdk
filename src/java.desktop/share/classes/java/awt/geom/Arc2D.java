@@ -1053,19 +1053,7 @@ public abstract class Arc2D extends RectangularShape {
     }
 
     /**
-     * Returns the high-precision framing rectangle of the arc.  The framing
-     * rectangle contains only the part of this {@code Arc2D} that is
-     * in between the starting and ending angles and contains the pie
-     * wedge, if this {@code Arc2D} has a {@code PIE} closure type.
-     * <p>
-     * This method differs from the
-     * {@link RectangularShape#getBounds() getBounds} in that the
-     * {@code getBounds} method only returns the bounds of the
-     * enclosing ellipse of this {@code Arc2D} without considering
-     * the starting and ending angles of this {@code Arc2D}.
-     *
-     * @return the {@code Rectangle2D} that represents the arc's
-     * framing rectangle.
+     * {@inheritDoc}
      * @since 1.2
      */
     public Rectangle2D getBounds2D() {
@@ -1111,6 +1099,10 @@ public abstract class Arc2D extends RectangularShape {
         return makeBounds(x1, y1, x2, y2);
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 1.2
+     */
     @Override
     public Rectangle getBounds() {
         return getBounds2D().getBounds();
