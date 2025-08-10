@@ -243,13 +243,6 @@ public:
 
   // Order preserving remove operations.
 
-  void remove(const E& elem) {
-    // Assuming that element does exist.
-    bool removed = remove_if_existing(elem);
-    if (removed) return;
-    ShouldNotReachHere();
-  }
-
   bool remove_if_existing(const E& elem) {
     // Returns TRUE if elem is removed.
     for (int i = 0; i < _len; i++) {
@@ -486,6 +479,13 @@ public:
   void trunc_to(int length) {
     assert(length <= this->_len,"cannot increase length");
     this->_len = length;
+  }
+
+  void remove(const E& elem) {
+    // Assuming that element does exist.
+    bool removed = this->remove_if_existing(elem);
+    if (removed) return;
+    ShouldNotReachHere();
   }
 
   // Remove all elements up to the index (exclusive). The order is preserved.
