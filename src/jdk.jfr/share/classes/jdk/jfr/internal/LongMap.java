@@ -162,6 +162,7 @@ public final class LongMap<T> {
         objects = temp.objects;
         shift = temp.shift;
         bitSet = temp.bitSet;
+        count = temp.count;
     }
 
     public void put(long id, T object) {
@@ -245,6 +246,9 @@ public final class LongMap<T> {
         for (int i = 0; i < keys.length; i++) {
             T o = objects[i];
             if (o != null) {
+                if (o == NULL_OBJECT) {
+                    o = null;
+                }
                 consumer.accept(o);
             }
         }
