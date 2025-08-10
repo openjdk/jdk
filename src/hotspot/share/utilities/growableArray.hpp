@@ -269,22 +269,6 @@ public:
     _len--;
   }
 
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
-  }
-
-  // Remove all elements in the range [start - end). The order is preserved.
-  void remove_range(int start, int end) {
-    assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
-
-    for (int i = start, j = end; j < length(); i++, j++) {
-      at_put(i, at(j));
-    }
-    this->_len -= (end - start);
-  }
-
   void sort(int f(E*, E*)) {
     if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
@@ -502,6 +486,24 @@ public:
   void trunc_to(int length) {
     assert(length <= this->_len,"cannot increase length");
     this->_len = length;
+  }
+
+  // Remove all elements up to the index (exclusive). The order is preserved.
+  void remove_till(int idx) {
+    remove_range(0, idx);
+  }
+
+  // Remove all elements in the range [start - end). The order is preserved.
+  void remove_range(int start, int end) {
+    assert(0 <= start, "illegal start index %d", start);
+    assert(start < end && end <= this->_len,
+           "erase called with invalid range (%d, %d) for length %d",
+           start, end, this->_len);
+
+    for (int i = start, j = end; j < this->length(); i++, j++) {
+      this->at_put(i, this->at(j));
+    }
+    this->_len -= (end - start);
   }
 
   // Replaces the designated element with the last element and shrinks by 1.
