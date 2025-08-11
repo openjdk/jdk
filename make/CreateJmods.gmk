@@ -184,7 +184,7 @@ endif
 ################################################################################
 # Include module specific build settings
 
-THIS_SNIPPET := modules/$(MODULE)/Jmod.gmk
+THIS_SNIPPET := $(call GetModuleSnippetName, Jmod)
 
 ifneq ($(wildcard $(THIS_SNIPPET)), )
   include MakeSnippetStart.gmk

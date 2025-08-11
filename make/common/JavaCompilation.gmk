@@ -178,6 +178,10 @@ define SetupJavaCompilationBody
 
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 
+  ifeq ($$($1_LOG_ACTION), )
+    $1_LOG_ACTION := Compiling
+  endif
+
   ifeq ($$($1_SMALL_JAVA), )
     # If unspecified, default to true
     $1_SMALL_JAVA := true
@@ -472,7 +476,7 @@ define SetupJavaCompilationBody
     # list of files.
     $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
-		$$(call LogWarn, Compiling up to $$(words $$($1_SRCS)) files for $1)
+		$$(call LogWarn, $$($1_LOG_ACTION) up to $$(words $$($1_SRCS)) files for $1)
 		$$(eval $$(call ListPathsSafely, $1_SRCS, $$($1_FILELIST)))
 
     # Create a $$($1_MODFILELIST) file with significant modified dependencies
