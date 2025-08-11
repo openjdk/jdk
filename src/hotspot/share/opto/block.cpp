@@ -22,10 +22,10 @@
  *
  */
 
+#include "compiler/compilerDirectives.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"

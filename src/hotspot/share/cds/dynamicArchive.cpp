@@ -42,8 +42,8 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -382,11 +382,11 @@ void DynamicArchiveBuilder::gather_array_klasses() {
   log_debug(aot)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
 }
 
-class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
+class VM_PopulateDynamicDumpSharedSpace: public VM_Heap_Sync_Operation {
   DynamicArchiveBuilder _builder;
 public:
   VM_PopulateDynamicDumpSharedSpace(const char* archive_name)
-  : VM_GC_Sync_Operation(), _builder(archive_name) {}
+  : VM_Heap_Sync_Operation(), _builder(archive_name) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;

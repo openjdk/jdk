@@ -218,6 +218,18 @@ public:
   jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
+
+  virtual void set_trip_count(julong tc) = 0;
+  virtual julong trip_count() const = 0;
+
+  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
+  void set_exact_trip_count(julong tc) {
+    set_trip_count(tc);
+    _loop_flags |= HasExactTripCount;
+  }
+  void set_nonexact_trip_count() {
+    _loop_flags &= ~HasExactTripCount;
+  }
 };
 
 
@@ -298,26 +310,17 @@ public:
 
   int main_idx() const { return _main_idx; }
 
+  void set_trip_count(julong tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
+    _trip_count = checked_cast<uint>(tc);
+  }
+  julong trip_count() const      { return _trip_count; }
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  // We use max_juint for the default value of _trip_count to signal it wasn't set.
-  // We shouldn't set _trip_count to max_juint explicitly.
-  void set_trip_count(uint tc) { assert(tc < max_juint, "Cannot set trip count to max_juint"); _trip_count = tc; }
-  uint trip_count()            { return _trip_count; }
-
-  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
-  void set_exact_trip_count(uint tc) {
-    assert(tc < max_juint, "Cannot set trip count to max_juint");
-    _trip_count = tc;
-    _loop_flags |= HasExactTripCount;
-  }
-  void set_nonexact_trip_count() {
-    _loop_flags &= ~HasExactTripCount;
-  }
   void set_notpassed_slp() {
     _loop_flags &= ~PassedSlpAnalysis;
   }
@@ -380,9 +383,15 @@ public:
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
+private:
+  virtual uint size_of() const { return sizeof(*this); }
+
+  // Known trip count calculated by compute_exact_trip_count()
+  julong _trip_count;
+
 public:
   LongCountedLoopNode(Node *entry, Node *backedge)
-    : BaseCountedLoopNode(entry, backedge) {
+    : BaseCountedLoopNode(entry, backedge), _trip_count(max_julong) {
     init_class_id(Class_LongCountedLoop);
   }
 
@@ -391,6 +400,12 @@ public:
   virtual BasicType bt() const {
     return T_LONG;
   }
+
+  void set_trip_count(julong tc) {
+    assert(tc < max_julong, "Cannot set trip count to max_julong");
+    _trip_count = tc;
+  }
+  julong trip_count() const      { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
@@ -742,7 +757,7 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   bool do_one_iteration_loop( PhaseIdealLoop *phase );
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
@@ -778,7 +793,7 @@ public:
   uint est_loop_unroll_sz(uint factor) const;
 
   // Compute loop trip count if possible
-  void compute_trip_count(PhaseIdealLoop* phase);
+  void compute_trip_count(PhaseIdealLoop* phase, BasicType bt);
 
   // Compute loop trip count from profile data
   float compute_profile_trip_cnt_helper(Node* n);
@@ -1828,6 +1843,8 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
 
   ConINode* intcon(jint i);
 

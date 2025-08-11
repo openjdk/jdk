@@ -441,6 +441,17 @@ class InstructionAttr;
 // See fxsave and xsave(EVEX enabled) documentation for layout
 const int FPUStateSizeInWords = 2688 / wordSize;
 
+
+// AVX10 new minmax instruction control mask encoding.
+//
+// imm8[4]                  =  0  (please refer to Table 11.1 of section 11.2 of AVX10 manual[1] for details)
+// imm8[3:2] (sign control) =  01 (select sign, please refer to Table 11.5 of section 11.2 of AVX10 manual[1] for details)
+// imm8[1:0]                =  00 (min) / 01 (max)
+//
+// [1] https://www.intel.com/content/www/us/en/content-details/856721/intel-advanced-vector-extensions-10-2-intel-avx10-2-architecture-specification.html?wapkw=AVX10
+const int AVX10_MINMAX_MAX_COMPARE_SIGN = 0x5;
+const int AVX10_MINMAX_MIN_COMPARE_SIGN = 0x4;
+
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
 // is what you get. The Assembler is generating code into a CodeBuffer.
@@ -2744,6 +2755,17 @@ private:
   void vminps(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void minpd(XMMRegister dst, XMMRegister src);
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+
+  // AVX10.2 floating point minmax instructions
+  void eminmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
 
   // Maximum of packed integers
   void pmaxsb(XMMRegister dst, XMMRegister src);

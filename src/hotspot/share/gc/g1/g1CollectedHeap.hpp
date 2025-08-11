@@ -262,7 +262,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
-  void update_parallel_gc_threads_cpu_time();
+  void update_perf_counter_cpu_time();
 private:
 
   // Return true if an explicit GC should start a concurrent cycle instead
@@ -273,6 +273,14 @@ private:
   // (d) cause == _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
+
+  // Wait until a full mark (either currently in progress or one that completed
+  // after the current request) has finished. Returns whether that full mark started
+  // after this request. If so, we typically do not need another one.
+  bool wait_full_mark_finished(GCCause::Cause cause,
+                               uint old_marking_started_before,
+                               uint old_marking_started_after,
+                               uint old_marking_completed_after);
 
   // Attempt to start a concurrent cycle with the indicated cause.
   // precondition: should_do_concurrent_full_gc(cause)
@@ -473,6 +481,8 @@ private:
   void retire_gc_alloc_region(G1HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
 
+  void resize_heap(size_t resize_bytes, bool should_expand);
+
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
@@ -558,7 +568,8 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void resize_heap_if_necessary(size_t allocation_word_size);
+  void resize_heap_after_young_collection(size_t allocation_word_size);
+  void resize_heap_after_full_collection(size_t allocation_word_size);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
@@ -743,11 +754,11 @@ private:
   // followed by a by-policy upgrade to a full collection.
   // precondition: at safepoint on VM thread
   // precondition: !is_stw_gc_active()
-  void do_collection_pause_at_safepoint();
+  void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper();
+  void do_collection_pause_at_safepoint_helper(size_t allocation_word_size);
 
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -764,8 +775,6 @@ public:
   // Must be called before any decision based on pin counts.
   void flush_region_pin_cache();
 
-  void expand_heap_after_young_collection();
-  // Update object copying statistics.
   void record_obj_copy_mem_stats();
 
 private:
@@ -795,7 +804,7 @@ public:
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
-  void abandon_collection_set(G1CollectionSet* collection_set);
+  void abandon_collection_set();
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
@@ -882,6 +891,10 @@ public:
 private:
   jint initialize_concurrent_refinement();
   jint initialize_service_thread();
+
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
@@ -891,7 +904,6 @@ public:
   // Returns whether concurrent mark threads (and the VM) are about to terminate.
   bool concurrent_mark_is_terminating() const;
 
-  void stop() override;
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
@@ -1021,6 +1033,8 @@ public:
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
+
+  bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint humongous_regions_removed);
@@ -1190,6 +1204,7 @@ public:
 
   // Print the maximum heap capacity.
   size_t max_capacity() const override;
+  size_t min_capacity() const;
 
   Tickspan time_since_last_collection() const { return Ticks::now() - _collection_pause_end; }
 
@@ -1199,11 +1214,11 @@ public:
     return named_heap<G1CollectedHeap>(CollectedHeap::G1);
   }
 
-  void set_region_short_lived_locked(G1HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
   G1SurvivorRegions* survivor() { return &_survivor; }
 
+  inline uint eden_target_length() const;
   uint eden_regions_count() const { return _eden.length(); }
   uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
   uint survivor_regions_count() const { return _survivor.length(); }
@@ -1308,9 +1323,6 @@ public:
   void print_gc_on(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
-
-  // Override
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;
