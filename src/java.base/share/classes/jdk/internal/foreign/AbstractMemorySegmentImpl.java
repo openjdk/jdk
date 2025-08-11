@@ -244,7 +244,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (overlaps(that) == 0) {
+        if (overlaps(that) >= 0) {
             return Optional.empty();
         }
         final long offsetToThat = that.address() - this.address();
@@ -252,7 +252,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
     }
 
-    // Returns 1 if the regions overlap, otherwise 0.
+    // Returns a negative value if the regions overlap, otherwise a non-negative value.
     @ForceInline
     int overlaps(AbstractMemorySegmentImpl that) {
         if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
@@ -264,13 +264,14 @@ public abstract sealed class AbstractMemorySegmentImpl
 
             // The below computation is a branchless equivalent to
             // `return (thisStart < thatEnd && thisEnd > thatStart)?1:0;`. Here is how:
+            // All the variables thisStart, thisEnd, thatStart, and thatEnd are non-negative
             // First, consider (thisStart < thatEnd).
-            // We can subtract (non-negative) thatEnd on both sides:
+            // We can subtract thatEnd on both sides:
             // (thisStart < thatEnd) -> (thisStart - thatEnd < 0). In the same way we can say:
             // (thatStart < thisEnd) -> (thatStart - thisEnd < 0).
             // A long value that is less than zero has it's 63:th bit set and so,
-            // we can just AND the expressions and shift the sign bit 63 steps to get (0|1)
-            return (int) ((((thisStart - thatEnd) & (thatStart - thisEnd))) >>> 63);  //overlap occurs?
+            // we can just AND the expressions (and the sign bit 63)
+            return (int) (((thisStart - thatEnd) & (thatStart - thisEnd)));  // overlap occurs -> negative value
         }
         return 0;
     }
