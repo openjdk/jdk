@@ -105,7 +105,7 @@ protected:
     return hash;
   }
 
-  typedef ResourceHashtable<oop, ClassLoaderStats,
+  typedef HashTable<oop, ClassLoaderStats,
                             256, AnyObj::C_HEAP, mtStatistics,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 

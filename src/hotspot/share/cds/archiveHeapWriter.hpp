@@ -152,7 +152,7 @@ private:
   };
   static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
 
-  typedef ResizeableResourceHashtable<size_t, oop,
+  typedef ResizeableHashTable<size_t, oop,
       AnyObj::C_HEAP,
       mtClassShared> BufferOffsetToSourceObjectTable;
   static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;

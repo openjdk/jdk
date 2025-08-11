@@ -201,7 +201,7 @@ class ArgumentShuffle::ComputeMoveOrder: public StackObj {
     return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
   }
 
-  using KillerTable = ResourceHashtable<
+  using KillerTable = HashTable<
     VMStorage, MoveOperation*,
     32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
     AnyObj::RESOURCE_AREA,

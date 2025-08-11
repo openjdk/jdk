@@ -249,7 +249,7 @@ public:
 };
 
 class DumpTimeLambdaProxyClassDictionary
-  : public ResourceHashtable<LambdaProxyClassKey,
+  : public HashTable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
                              AnyObj::C_HEAP,

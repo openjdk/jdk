@@ -212,7 +212,7 @@ PackageEntryTable::~PackageEntryTable() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef ResourceHashtable<
+typedef HashTable<
   const PackageEntry*,
   PackageEntry*,
   557, // prime number

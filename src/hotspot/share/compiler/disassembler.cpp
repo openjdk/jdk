@@ -189,7 +189,7 @@ class decode_env {
     }
   };
 
-  typedef ResourceHashtable<
+  typedef HashTable<
       address, SourceFileInfo,
       15889,      // prime number
       AnyObj::C_HEAP> SourceFileInfoTable;

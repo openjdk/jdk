@@ -403,7 +403,7 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef ResourceHashtable<
+typedef HashTable<
   const ModuleEntry*,
   ModuleEntry*,
   557, // prime number

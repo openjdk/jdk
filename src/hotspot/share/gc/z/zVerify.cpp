@@ -516,7 +516,7 @@ void ZVerify::after_weak_processing() {
 // Remembered set verification
 //
 
-typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
+typedef HashTable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
 static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 

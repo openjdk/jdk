@@ -66,7 +66,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
-  using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
+  using AsyncLogMap = HashTable<LogFileStreamOutput*,
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 

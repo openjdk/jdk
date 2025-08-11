@@ -92,7 +92,7 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-class KeepAliveObjectsTable : public ResourceHashtable<oop, bool,
+class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,

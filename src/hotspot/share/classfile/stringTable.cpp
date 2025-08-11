@@ -810,7 +810,7 @@ class StringTable::VerifyCompStrings : StackObj {
     return java_lang_String::equals(a, b);
   }
 
-  ResizeableResourceHashtable<oop, bool, AnyObj::C_HEAP, mtInternal,
+  ResizeableHashTable<oop, bool, AnyObj::C_HEAP, mtInternal,
                               string_hash, string_equals> _table;
  public:
   size_t _errors;

@@ -53,7 +53,7 @@ class ResolutionErrorKey {
   }
 };
 
-using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = HashTable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
                   ResolutionErrorKey::equals>;
 
