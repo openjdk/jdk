@@ -2069,9 +2069,15 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* InvolutionNode::Identity(PhaseGVN* phase) {
-  // Op ( Op x ) => x
-  if (in(1)->Opcode() == Opcode()) {
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseI) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+Node* ReverseLNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseL) {
     return in(1)->in(1);
   }
   return this;

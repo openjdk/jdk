@@ -181,6 +181,17 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
   if (stubs_code == nullptr) {
+    // The compiler blob may be created late by a C2 compiler thread
+    // rather than during normal initialization by the initial thread.
+    // In that case we can tolerate an allocation failure because the
+    // compiler will have been shut down and we have no need of the
+    // blob.
+    if (Thread::current()->is_Compiler_thread()) {
+      assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
+      assert(DelayCompilerStubsGeneration, "sanity");
+      log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
+      return nullptr;
+    }
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
   }
   CodeBuffer buffer(stubs_code);
