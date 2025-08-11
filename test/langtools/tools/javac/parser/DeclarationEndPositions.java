@@ -128,6 +128,9 @@ public class DeclarationEndPositions {
            "/* comment */ class Fred { int x = 123; } /* comment */",
            "                           <---------->                ");
         checkPositions(JCVariableDecl.class,
+           "/* comment */ class A { try {} catch (Error err) {} } /* comment */",
+           "                                      <------->                    ");
+        checkPositions(JCVariableDecl.class,
            "/* comment */ class Fred { final int x = 123; } /* comment */",
            "                           <---------------->                ");
         checkPositions(JCVariableDecl.class,
