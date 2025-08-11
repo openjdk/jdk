@@ -310,11 +310,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
         return result;
       }
 
-      // If certain conditions hold, try allocating from the old gen.
-      if (!is_tlab && !should_alloc_in_eden(size)) {
-        result = old_gen()->cas_allocate_noexpand(size);
-        if (result != nullptr) {
-          return result;
+      // Try allocating from the old gen for non-TLAB in certain scenarios.
+      if (!is_tlab) {
+        if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
+          result = old_gen()->cas_allocate_noexpand(size);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
     }
