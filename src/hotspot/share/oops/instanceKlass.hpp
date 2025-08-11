@@ -444,6 +444,9 @@ public:
     assert(_nest_host != nullptr, "must be");
     return _nest_host;
   }
+  InstanceKlass* nest_host_or_null() {
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns null if there was no error.
@@ -760,6 +763,14 @@ public:
   void set_has_miranda_methods()        { _misc_flags.set_has_miranda_methods(true); }
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
+
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
+  bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
+  void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
+
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
+  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
+  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
 
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();

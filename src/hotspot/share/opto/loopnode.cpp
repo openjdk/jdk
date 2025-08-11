@@ -601,7 +601,6 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
     int trap_request = Deoptimization::make_trap_request(reason, Deoptimization::Action_maybe_recompile);
     address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
     const TypePtr* no_memory_effects = nullptr;
-    JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
                                            no_memory_effects);
 
@@ -856,8 +855,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     return false;
   }
 
+  assert(iters_limit > 0, "can't be negative");
+
   PhiNode* phi = head->phi()->as_Phi();
-  Node* incr = head->incr();
 
   Node* back_control = head->in(LoopNode::LoopBackControl);
 
@@ -888,7 +888,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   // Take what we know about the number of iterations of the long counted loop into account when computing the limit of
   // the inner loop.
-  const Node* init = head->init_trip();
+  Node* init = head->init_trip();
   const TypeInteger* lo = _igvn.type(init)->is_integer(bt);
   const TypeInteger* hi = _igvn.type(limit)->is_integer(bt);
   if (stride_con < 0) {
@@ -907,7 +907,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // going to execute as many range checks once transformed with range checks eliminated (1 peeled iteration with
     // range checks + 2 predicates per range checks) as it would have not transformed. It also has to pay for the extra
     // logic on loop entry and for the outer loop.
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, bt);
     if (head->is_CountedLoop() && head->as_CountedLoop()->has_exact_trip_count()) {
       if (head->as_CountedLoop()->trip_count() <= 3) {
         return false;
@@ -918,6 +918,11 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
         return false;
       }
     }
+  }
+
+  if (try_make_short_running_loop(loop, stride_con, range_checks, iters_limit)) {
+    C->set_major_progress();
+    return true;
   }
 
   julong orig_iters = (julong)hi->hi_as_long() - lo->lo_as_long();
@@ -1118,6 +1123,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (safepoint != nullptr) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
+    if (ShortRunningLongLoop) {
+      add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
+    }
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
       if (UseProfiledLoopPredicate) {
@@ -1143,6 +1151,215 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   inner_head->mark_loop_nest_inner_loop();
   outer_head->mark_loop_nest_outer_loop();
+
+  return true;
+}
+
+// Make a copy of Parse/Template Assertion predicates below existing predicates at the loop passed as argument
+class CloneShortLoopPredicateVisitor : public PredicateVisitor {
+  ClonePredicateToTargetLoop _clone_predicate_to_loop;
+  PhaseIdealLoop* const _phase;
+
+public:
+  CloneShortLoopPredicateVisitor(LoopNode* target_loop_head,
+                                 const NodeInSingleLoopBody &node_in_loop_body,
+                                 PhaseIdealLoop* phase)
+    : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
+      _phase(phase) {
+  }
+  NONCOPYABLE(CloneShortLoopPredicateVisitor);
+
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    _clone_predicate_to_loop.clone_parse_predicate(parse_predicate, true);
+    parse_predicate.kill(_phase->igvn());
+  }
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    template_assertion_predicate.kill(_phase->igvn());
+  }
+};
+
+// If the loop is either statically known to run for a small enough number of iterations or if profile data indicates
+// that, we don't want an outer loop because the overhead of having an outer loop whose backedge is never taken, has a
+// measurable cost. Furthermore, creating the loop nest usually causes one iteration of the loop to be peeled so
+// predicates can be set up. If the loop is short running, then it's an extra iteration that's run with range checks
+// (compared to an int counted loop with int range checks).
+//
+// In the short running case, turn the loop into a regular loop again and transform the long range checks:
+// - LongCountedLoop: Create LoopNode but keep the loop limit type with a CastLL node to avoid that we later try to
+//                    create a Loop Limit Check when turning the LoopNode into a CountedLoopNode.
+// - CountedLoop: Can be reused.
+bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
+                                                 const uint iters_limit) {
+  if (!ShortRunningLongLoop) {
+    return false;
+  }
+  BaseCountedLoopNode* head = loop->_head->as_BaseCountedLoop();
+  BasicType bt = head->bt();
+  Node* entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
+
+  loop->compute_trip_count(this, bt);
+  // Loop must run for no more than iter_limits as it guarantees no overflow of scale * iv in long range checks (see
+  // comment above PhaseIdealLoop::transform_long_range_checks()).
+  // iters_limit / ABS(stride_con) is the largest trip count for which we know it's correct to not create a loop nest:
+  // it's always beneficial to have a single loop rather than a loop nest, so we try to apply this transformation as
+  // often as possible.
+  bool known_short_running_loop = head->trip_count() <= iters_limit / ABS(stride_con);
+  bool profile_short_running_loop = false;
+  if (!known_short_running_loop) {
+    loop->compute_profile_trip_cnt(this);
+    if (StressShortRunningLongLoop) {
+      profile_short_running_loop = true;
+    } else {
+      profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() <= iters_limit / ABS(stride_con);
+    }
+  }
+
+  if (!known_short_running_loop && !profile_short_running_loop) {
+    return false;
+  }
+
+  Node* limit = head->limit();
+  Node* init = head->init_trip();
+
+  Node* new_limit;
+  if (stride_con > 0) {
+    new_limit = SubNode::make(limit, init, bt);
+  } else {
+    new_limit = SubNode::make(init, limit, bt);
+  }
+  register_new_node(new_limit, entry_control);
+
+  PhiNode* phi = head->phi()->as_Phi();
+  if (profile_short_running_loop) {
+    // Add a Short Running Long Loop Predicate. It's the first predicate in the predicate chain before entering a loop
+    // because a cast that's control dependent on the Short Running Long Loop Predicate is added to narrow the limit and
+    // future predicates may be dependent on the new limit (so have to be between the loop and Short Running Long Loop
+    // Predicate). The current limit could, itself, be dependent on an existing predicate. Clone parse and template
+    // assertion predicates below existing predicates to get proper ordering of predicates when walking from the loop
+    // up: future predicates, Short Running Long Loop Predicate, existing predicates.
+    //
+    //        Existing Hoisted
+    //        Check Predicates
+    //               |
+    //     New Short Running Long
+    //         Loop Predicate
+    //               |
+    //   Cloned Parse Predicates and
+    //  Template Assertion Predicates
+    //  (future predicates added here)
+    //               |
+    //             Loop
+    const Predicates predicates_before_cloning(entry_control);
+    const PredicateBlock* short_running_long_loop_predicate_block = predicates_before_cloning.short_running_long_loop_predicate_block();
+    if (!short_running_long_loop_predicate_block->has_parse_predicate()) { // already trapped
+      return false;
+    }
+    PredicateIterator predicate_iterator(entry_control);
+    NodeInSingleLoopBody node_in_short_loop_body(this, loop);
+    CloneShortLoopPredicateVisitor clone_short_loop_predicates_visitor(head, node_in_short_loop_body, this);
+    predicate_iterator.for_each(clone_short_loop_predicates_visitor);
+
+    entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
+
+    const Predicates predicates_after_cloning(entry_control);
+
+    ParsePredicateSuccessProj* short_running_loop_predicate_proj = predicates_after_cloning.
+        short_running_long_loop_predicate_block()->
+        parse_predicate_success_proj();
+    assert(short_running_loop_predicate_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
+
+    const jlong iters_limit_long = iters_limit;
+    Node* cmp_limit = CmpNode::make(new_limit, _igvn.integercon(iters_limit_long, bt), bt);
+    Node* bol = new BoolNode(cmp_limit, BoolTest::le);
+    Node* new_predicate_proj = create_new_if_for_predicate(short_running_loop_predicate_proj,
+                                                           nullptr,
+                                                           Deoptimization::Reason_short_running_long_loop,
+                                                           Op_If);
+    Node* iff = new_predicate_proj->in(0);
+    _igvn.replace_input_of(iff, 1, bol);
+    register_new_node(cmp_limit, iff->in(0));
+    register_new_node(bol, iff->in(0));
+    new_limit = ConstraintCastNode::make_cast_for_basic_type(new_predicate_proj, new_limit,
+                                                             TypeInteger::make(1, iters_limit_long, Type::WidenMin, bt),
+                                                             ConstraintCastNode::UnconditionalDependency, bt);
+    register_new_node(new_limit, new_predicate_proj);
+
+#ifndef PRODUCT
+    if (TraceLoopLimitCheck) {
+      tty->print_cr("Short Long Loop Check Predicate generated:");
+      DEBUG_ONLY(bol->dump(2);)
+    }
+#endif
+    entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
+  } else if (bt == T_LONG) {
+    // We're turning a long counted loop into a regular loop that will be converted into an int counted loop. That loop
+    // won't need loop limit check predicates (iters_limit guarantees that). Add a cast to make sure that, whatever
+    // transformation happens by the time the counted loop is created (in a subsequent pass of loop opts), C2 knows
+    // enough about the loop's limit that it doesn't try to add loop limit check predicates.
+    const Predicates predicates(entry_control);
+    const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
+    new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
+                                                             TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
+                                                             ConstraintCastNode::UnconditionalDependency, bt);
+    register_new_node(new_limit, predicates.entry());
+  } else {
+    assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+  }
+  IfNode* exit_test = head->loopexit();
+
+  if (bt == T_LONG) {
+    // The loop is short running so new_limit fits into an int: either we determined that statically or added a guard
+    new_limit = new ConvL2INode(new_limit);
+    register_new_node(new_limit, entry_control);
+  }
+
+  Node* int_zero = intcon(0);
+  if (stride_con < 0) {
+    new_limit = new SubINode(int_zero, new_limit);
+    register_new_node(new_limit, entry_control);
+  }
+
+  // Clone the iv data nodes as an integer iv
+  Node* int_stride = intcon(stride_con);
+  Node* inner_phi = new PhiNode(head, TypeInt::INT);
+  Node* inner_incr = new AddINode(inner_phi, int_stride);
+  Node* inner_cmp = new CmpINode(inner_incr, new_limit);
+  Node* inner_bol = new BoolNode(inner_cmp, exit_test->in(1)->as_Bool()->_test._test);
+  inner_phi->set_req(LoopNode::EntryControl, int_zero);
+  inner_phi->set_req(LoopNode::LoopBackControl, inner_incr);
+  register_new_node(inner_phi, head);
+  register_new_node(inner_incr, head);
+  register_new_node(inner_cmp, head);
+  register_new_node(inner_bol, head);
+
+  _igvn.replace_input_of(exit_test, 1, inner_bol);
+
+  // Replace inner loop long iv phi as inner loop int iv phi + outer
+  // loop iv phi
+  Node* iv_add = loop_nest_replace_iv(phi, inner_phi, init, head, bt);
+
+  LoopNode* inner_head = head;
+  if (bt == T_LONG) {
+    // Turn the loop back to a counted loop
+    inner_head = create_inner_head(loop, head, exit_test);
+  } else {
+    // Use existing counted loop
+    revert_to_normal_loop(head);
+  }
+
+  if (bt == T_INT) {
+    init = new ConvI2LNode(init);
+    register_new_node(init, entry_control);
+  }
+
+  transform_long_range_checks(stride_con, range_checks, init, new_limit,
+                              inner_phi, iv_add, inner_head);
+
+  inner_head->mark_loop_nest_inner_loop();
 
   return true;
 }
@@ -1318,7 +1535,6 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
-    ProjNode* unc_proj = proj->other_if_proj();
     RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
     jlong scale = 0;
     Node* offset = nullptr;
@@ -4415,6 +4631,9 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
+  if (predicates.short_running_long_loop_predicate_block()->is_non_empty()) {
+    tty->print(" short_running");
+  }
   if (UseLoopPredicate) {
     if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
       tty->print(" profile_predicated");
@@ -4922,7 +5141,7 @@ void PhaseIdealLoop::build_and_optimize() {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_innermost() && lpt->_allow_optimizations && !lpt->_has_call && lpt->is_counted()) {
-        lpt->compute_trip_count(this);
+        lpt->compute_trip_count(this, T_INT);
         if (!lpt->do_one_iteration_loop(this) &&
             !lpt->do_remove_empty_loop(this)) {
           AutoNodeBudget node_budget(this);

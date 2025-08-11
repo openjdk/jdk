@@ -24,24 +24,19 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.BundlerParamInfo.createBooleanBundlerParam;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
-import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
+import static jdk.jpackage.internal.FromParams.findLauncherShortcut;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
-import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_DESKTOP;
-import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_START_MENU;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import jdk.jpackage.internal.model.ConfigException;
@@ -63,18 +58,11 @@ final class WinFromParams {
 
             final boolean isConsole = CONSOLE_HINT.findIn(launcherParams).orElse(false);
 
-            final var shortcuts = Map.of(WIN_SHORTCUT_DESKTOP, List.of(SHORTCUT_HINT,
-                WIN_SHORTCUT_HINT), WIN_SHORTCUT_START_MENU, List.of(MENU_HINT,
-                        WIN_MENU_HINT)).entrySet().stream().filter(e -> {
+            final var startMenuShortcut = findLauncherShortcut(WIN_MENU_HINT, params, launcherParams);
 
-                    final var shortcutParams = e.getValue();
+            final var desktopShortcut = findLauncherShortcut(WIN_SHORTCUT_HINT, params, launcherParams);
 
-                    return shortcutParams.get(0).findIn(launcherParams).orElseGet(() -> {
-                        return shortcutParams.get(1).findIn(launcherParams).orElse(false);
-                    });
-                }).map(Map.Entry::getKey).collect(toSet());
-
-            return WinLauncher.create(launcher, new WinLauncherMixin.Stub(isConsole, shortcuts));
+            return WinLauncher.create(launcher, new WinLauncherMixin.Stub(isConsole, startMenuShortcut, desktopShortcut));
 
         }), APPLICATION_LAYOUT).create();
 

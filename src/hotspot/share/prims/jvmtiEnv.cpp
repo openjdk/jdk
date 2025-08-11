@@ -22,7 +22,6 @@
  *
  */
 
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
@@ -675,7 +674,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
-    ClassLoaderExt::append_boot_classpath(zip_entry);
+    ClassLoader::append_boot_classpath(zip_entry);
 #else
     ClassLoader::add_to_boot_append_entries(zip_entry);
 #endif

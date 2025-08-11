@@ -120,6 +120,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.pageSize", this::vmPageSize);
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
+        map.put("vm.cds.default.archive.available", this::vmCDSDefaultArchiveAvailable);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
@@ -422,6 +423,16 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDS() {
         return "" + WB.isCDSIncluded();
+    }
+
+    /**
+     * Check for CDS default archive existence.
+     *
+     * @return true if CDS default archive classes.jsa exists in the JDK to be tested.
+     */
+    protected String vmCDSDefaultArchiveAvailable() {
+        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes.jsa");
+        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 
     /**
