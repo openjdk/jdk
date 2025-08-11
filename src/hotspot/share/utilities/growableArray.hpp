@@ -241,16 +241,6 @@ public:
     return -1;
   }
 
-  // Order preserving remove operations.
-
-  void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    for (int j = index + 1; j < _len; j++) {
-      _data[j-1] = _data[j];
-    }
-    _len--;
-  }
-
   void sort(int f(E*, E*)) {
     if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
@@ -468,6 +458,17 @@ public:
   void trunc_to(int length) {
     assert(length <= this->_len,"cannot increase length");
     this->_len = length;
+  }
+
+  // Order preserving remove operations.
+
+  void remove_at(int index) {
+    assert(0 <= index && index < this->_len,
+           "illegal index %d for length %d", index, this->_len);
+    for (int j = index + 1; j < this->_len; j++) {
+      this->_data[j-1] = this->_data[j];
+    }
+    this->_len--;
   }
 
   void remove(const E& elem) {
