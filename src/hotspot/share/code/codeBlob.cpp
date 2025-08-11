@@ -158,8 +158,6 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
-  } else {
-    _mutable_data = nullptr;
   }
   assert(_mutable_data != nullptr || _mutable_data_size == 0, "No mutable data => mutable data size is 0");
 
@@ -184,6 +182,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
+  assert(_mutable_data == nullptr && _mutable_data_size == 0, "invariant");
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
 }
@@ -207,6 +206,7 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
 void CodeBlob::purge() {
   os::free(_mutable_data);
   _mutable_data = nullptr;
+  _mutable_data_size = 0;
   delete _oop_maps;
   _oop_maps = nullptr;
 
