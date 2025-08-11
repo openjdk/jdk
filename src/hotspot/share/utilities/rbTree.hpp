@@ -167,6 +167,7 @@ public:
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree {
   friend class RBTreeTest;
+  friend class NMTVMATreeTest;
   typedef AbstractRBTree<K, NodeType, COMPARATOR> TreeType;
 
 public:
@@ -404,12 +405,20 @@ public:
   }
 
   // Visit all RBNodes in ascending order, calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_in_order(F f) const;
 
+  template <typename F>
+  void visit_in_order(F f);
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_range_in_order(const K& from, const K& to, F f) const;
+
+  template <typename F>
+  void visit_range_in_order(const K &from, const K &to, F f);
 
   // Verifies that the tree is correct and holds rb-properties
   // If not using a key comparator (when using IntrusiveRBTree for example),
@@ -455,6 +464,12 @@ public:
     RBNode<K, V>* old_node = node_cursor.node();
     BaseType::replace_at_cursor(new_node, node_cursor);
     free_node(old_node);
+  }
+
+  RBNode<K, V>* allocate_node(const K& key) {
+    void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
+    assert(node_place != nullptr, "rb-tree allocator must exit on failure");
+    return new (node_place) RBNode<K, V>(key);
   }
 
   RBNode<K, V>* allocate_node(const K& key, const V& val) {
