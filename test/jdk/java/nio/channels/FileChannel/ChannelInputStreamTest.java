@@ -59,33 +59,6 @@ public class ChannelInputStreamTest {
         });
     }
 
-/*
-    public static void main(String[] args) throws IOException {
-        int failures = 0;
-
-        try {
-            testAvailable();
-        } catch (RuntimeException e) {
-            failures++;
-        }
-
-        try {
-            testRead();
-        } catch (RuntimeException e) {
-            failures++;
-        }
-        try {
-            testWrite();
-        } catch (RuntimeException e) {
-            failures++;
-        }
-
-        if (failures != 0) {
-            throw new RuntimeException("FAILED with " + failures + " failures");
-        }
-    }
-*/
-
     @Test
     public void available() throws IOException {
         var close = new ConcurrentLinkedQueue<Object>();
@@ -110,7 +83,6 @@ public class ChannelInputStreamTest {
                 close.offer(new Object());
                 break;
             } catch (ClosedChannelException ignored) {
-                System.out.println("ClosedChannelException ignored");
                 continue;
             } catch (Throwable t) {
                 close.offer(new Object());
@@ -155,7 +127,6 @@ public class ChannelInputStreamTest {
                 close.offer(new Object());
                 break;
             } catch (ClosedChannelException ignored) {
-                System.out.println("ClosedChannelException ignored");
                 continue;
             } catch (Throwable t) {
                 close.offer(new Object());
@@ -195,7 +166,6 @@ public class ChannelInputStreamTest {
                 close.offer(new Object());
                 break;
             } catch (ClosedChannelException ignored) {
-                System.out.println("ClosedChannelException ignored");
             } catch (Throwable t) {
                 close.offer(new Object());
                 throw new RuntimeException("Write error", t);
