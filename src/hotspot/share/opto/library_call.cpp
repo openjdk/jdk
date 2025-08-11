@@ -961,14 +961,14 @@ void LibraryCallKit::generate_string_range_check(Node* array,
   generate_limit_guard(offset, count, load_array_length(array), bailout);
 
   if (bailout->req() > 1) {
-    bailout = _gvn.transform(bailout)->as_Region();
     if (halt) {
+      bailout = _gvn.transform(bailout)->as_Region();
       Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
       Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
       C->root()->add_req(halt);
     } else {
       PreserveJVMState pjvms(this);
-      set_control(bailout);
+      set_control(_gvn.transform(bailout));
       uncommon_trap(Deoptimization::Reason_intrinsic,
                     Deoptimization::Action_maybe_recompile);
     }
