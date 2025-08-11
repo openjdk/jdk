@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,21 @@
  * @bug 4935798 6521210 6901159
  * @summary Tests that all family names that are reported in all locales
  * correspond to some font returned from getAllFonts().
- * @run main LocaleFamilyNames
+ * @run main/othervm/timeout=360 LocaleFamilyNames
  */
 import java.awt.*;
 import java.util.*;
 
 public class LocaleFamilyNames {
     public static void main(String[] args) throws Exception {
+        System.out.println("Start time: " + java.time.LocalDateTime.now());
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-
         Font[] all_fonts = ge.getAllFonts();
-
         Locale[] all_locales = Locale.getAvailableLocales();
+
+        System.out.println("Number of fonts: " + all_fonts.length);
+        System.out.println("Number of locales: " + all_locales.length);
 
         HashSet all_families = new HashSet();
         for (int i=0; i<all_fonts.length; i++) {
@@ -46,9 +48,10 @@ public class LocaleFamilyNames {
             for (int j=0; j<all_locales.length;j++) {
               all_families.add(all_fonts[i].getFamily(all_locales[j]));
             }
-
         }
 
+        System.out.println("Number of font families: " + all_families.size());
+        System.out.println("Time after preparing the font families HashSet: " + java.time.LocalDateTime.now());
 
         for (int i=0; i<all_locales.length; i++) {
             String[] families_for_locale =
