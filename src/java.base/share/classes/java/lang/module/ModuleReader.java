@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,6 @@ import java.util.stream.Stream;
  * try-with-resources} statement provides a useful construct to ensure that
  * module readers are closed. </p>
  *
- * <p> A {@code ModuleReader} implementation may require permissions to access
- * resources in the module. Consequently the {@link #find find}, {@link #open
- * open}, {@link #read read}, and {@link #list list} methods may throw {@code
- * SecurityException} if access is denied by the security manager. </p>
- *
  * @implSpec Implementations of {@code ModuleReader} should take great care
  * when translating an abstract resource name to the location of a resource in
  * a packaged module or on the file system. Implementations are advised to
@@ -95,8 +90,6 @@ public interface ModuleReader extends Closeable {
      *
      * @throws IOException
      *         If an I/O error occurs or the module reader is closed
-     * @throws SecurityException
-     *         If denied by the security manager
      *
      * @see ClassLoader#getResource(String)
      */
@@ -122,8 +115,6 @@ public interface ModuleReader extends Closeable {
      *
      * @throws IOException
      *         If an I/O error occurs or the module reader is closed
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     default Optional<InputStream> open(String name) throws IOException {
         Optional<URI> ouri = find(name);
@@ -162,8 +153,6 @@ public interface ModuleReader extends Closeable {
      *
      * @throws IOException
      *         If an I/O error occurs or the module reader is closed
-     * @throws SecurityException
-     *         If denied by the security manager
      * @throws OutOfMemoryError
      *         If the resource is larger than {@code Integer.MAX_VALUE},
      *         the maximum capacity of a byte buffer
@@ -209,9 +198,7 @@ public interface ModuleReader extends Closeable {
      * when using the stream to list the module contents. If this occurs then
      * the {@code IOException} will be wrapped in an {@link
      * java.io.UncheckedIOException} and thrown from the method that caused the
-     * access to be attempted. {@code SecurityException} may also be thrown
-     * when using the stream to list the module contents and access is denied
-     * by the security manager. </p>
+     * access to be attempted.
      *
      * <p> The returned stream may contain references to one or more open directories
      * in the module. The directories are closed by closing the stream. </p>
@@ -229,8 +216,6 @@ public interface ModuleReader extends Closeable {
      *
      * @throws IOException
      *         If an I/O error occurs or the module reader is closed
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     Stream<String> list() throws IOException;
 

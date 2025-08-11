@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,13 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include JavaCompilation.gmk
 include TextFileProcessing.gmk
-
-################################################################################
-
-$(eval $(call IncludeCustomExtension, CompileTools.gmk))
-
-################################################################################
 
 # Use += to be able to add to this from a custom extension
 BUILD_TOOLS_SRC_DIRS += \
@@ -160,4 +153,6 @@ ifeq ($(ENABLE_PANDOC), true)
   TARGETS += $(PANDOC_HTML_MANPAGE_FILTER_SETUP)
 endif
 
-all: $(TARGETS)
+################################################################################
+
+include MakeFileEnd.gmk

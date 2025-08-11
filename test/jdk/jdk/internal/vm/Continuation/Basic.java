@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 * @summary Basic tests for jdk.internal.vm.Continuation
 * @requires vm.continuations
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Basic
@@ -44,6 +45,7 @@
 * @requires vm.continuations
 * @requires vm.debug
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xint Basic
@@ -53,6 +55,8 @@
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
+
+import jdk.test.lib.Platform;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -272,37 +276,6 @@ public class Basic {
         }
         long r = b+1;
         return "" + r;
-    }
-
-    @Test
-    public void testPinnedMonitor() {
-        // Test pinning due to held monitor
-        final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
-
-        Continuation cont = new Continuation(FOO, ()-> {
-            syncFoo(1);
-        }) {
-            @Override
-            protected void onPinned(Continuation.Pinned reason) {
-                assert Continuation.isPinned(FOO);
-                res.set(reason);
-            }
-        };
-
-        cont.run();
-        assertEquals(res.get(), Continuation.Pinned.MONITOR);
-        boolean isDone = cont.isDone();
-        assertEquals(isDone, true);
-    }
-
-    static double syncFoo(int a) {
-        long x = 8;
-        String s = "yyy";
-        String r;
-        synchronized(FOO) {
-            r = bar2(a + 1);
-        }
-        return Integer.parseInt(r)+1;
     }
 
     @Test

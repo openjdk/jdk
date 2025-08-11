@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 7180907 8277224
+ * @library /test/lib
  * @summary Jarsigner -verify fails if rsa file used sha-256 with authenticated attributes
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.tools.keytool
@@ -36,6 +37,7 @@
 import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
@@ -52,8 +54,9 @@ public class NonStandardNames {
         byte[] data = "Hello".getBytes();
         X500Name n = new X500Name("cn=Me");
 
-        CertAndKeyGen cakg = new CertAndKeyGen("RSA", "SHA256withRSA");
-        cakg.generate(1024);
+        String kpgAlgorithm = "RSA";
+        CertAndKeyGen cakg = new CertAndKeyGen(kpgAlgorithm, "SHA256withRSA");
+        cakg.generate(SecurityUtils.getTestKeySize(kpgAlgorithm));
         X509Certificate cert = cakg.getSelfCertificate(n, 1000);
 
         MessageDigest md = MessageDigest.getInstance("SHA-256");

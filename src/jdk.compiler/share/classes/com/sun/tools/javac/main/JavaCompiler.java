@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,10 @@ import javax.tools.StandardLocation;
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.comp.CompileStates.CompileState;
@@ -85,10 +85,6 @@ import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
@@ -97,6 +93,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
+import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -237,10 +234,6 @@ public class JavaCompiler {
      */
     public Log log;
 
-    /** Whether or not the options lint category was initially disabled
-     */
-    boolean optionsCheckingInitiallyDisabled;
-
     /** Factory for creating diagnostic objects
      */
     JCDiagnostic.Factory diagFactory;
@@ -277,10 +270,6 @@ public class JavaCompiler {
      */
     protected Source source;
 
-    /** The preview language version.
-     */
-    protected Preview preview;
-
     /** The module for code generation.
      */
     protected Gen gen;
@@ -304,6 +293,10 @@ public class JavaCompiler {
     /** The flow analyzer.
      */
     protected Flow flow;
+
+    /** The warning analyzer.
+     */
+    protected WarningAnalyzer warningAnalyzer;
 
     /** The modules visitor
      */
@@ -412,12 +405,12 @@ public class JavaCompiler {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
         }
         source = Source.instance(context);
-        preview = Preview.instance(context);
         attr = Attr.instance(context);
         analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
         gen = Gen.instance(context);
         flow = Flow.instance(context);
+        warningAnalyzer = WarningAnalyzer.instance(context);
         transTypes = TransTypes.instance(context);
         lower = Lower.instance(context);
         annotate = Annotate.instance(context);
@@ -433,12 +426,6 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
-        // See if lint options checking was explicitly disabled by the
-        // user; this is distinct from the options check being
-        // enabled/disabled.
-        optionsCheckingInitiallyDisabled =
-            options.isSet(Option.XLINT_CUSTOM, "-options") ||
-            options.isSet(Option.XLINT_CUSTOM, "none");
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -922,11 +909,6 @@ public class JavaCompiler {
             checkReusable();
         hasBeenUsed = true;
 
-        // forcibly set the equivalent of -Xlint:-options, so that no further
-        // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
-
         start_msec = now();
 
         try {
@@ -961,20 +943,20 @@ public class JavaCompiler {
             if (!CompileState.ATTR.isAfter(shouldStopPolicyIfNoError)) {
                 switch (compilePolicy) {
                 case SIMPLE:
-                    generate(desugar(flow(attribute(todo))));
+                    generate(desugar(warn(flow(attribute(todo)))));
                     break;
 
                 case BY_FILE: {
                         Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
                         while (!q.isEmpty() && !shouldStop(CompileState.ATTR)) {
-                            generate(desugar(flow(attribute(q.remove()))));
+                            generate(desugar(warn(flow(attribute(q.remove())))));
                         }
                     }
                     break;
 
                 case BY_TODO:
                     while (!todo.isEmpty())
-                        generate(desugar(flow(attribute(todo.remove()))));
+                        generate(desugar(warn(flow(attribute(todo.remove())))));
                     break;
 
                 default:
@@ -1160,7 +1142,7 @@ public class JavaCompiler {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             }
         } else { // free resources
@@ -1434,6 +1416,56 @@ public class JavaCompiler {
         }
     }
 
+    /**
+     * Check for various things to warn about.
+     *
+     * @return the list of attributed parse trees
+     */
+    public Queue<Env<AttrContext>> warn(Queue<Env<AttrContext>> envs) {
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
+        for (Env<AttrContext> env: envs) {
+            warn(env, results);
+        }
+        return stopIfError(CompileState.WARN, results);
+    }
+
+    /**
+     * Check for various things to warn about in an attributed parse tree.
+     */
+    public Queue<Env<AttrContext>> warn(Env<AttrContext> env) {
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
+        warn(env, results);
+        return stopIfError(CompileState.WARN, results);
+    }
+
+    /**
+     * Check for various things to warn about in an attributed parse tree.
+     */
+    protected void warn(Env<AttrContext> env, Queue<Env<AttrContext>> results) {
+        if (compileStates.isDone(env, CompileState.WARN)) {
+            results.add(env);
+            return;
+        }
+
+        if (shouldStop(CompileState.WARN))
+            return;
+
+        if (verboseCompilePolicy)
+            printNote("[warn " + env.enclClass.sym + "]");
+        JavaFileObject prev = log.useSource(
+                                            env.enclClass.sym.sourcefile != null ?
+                                            env.enclClass.sym.sourcefile :
+                                            env.toplevel.sourcefile);
+        try {
+            warningAnalyzer.analyzeTree(env);
+            compileStates.put(env, CompileState.WARN);
+            results.add(env);
+        }
+        finally {
+            log.useSource(prev);
+        }
+    }
+
     private TaskEvent newAnalyzeTaskEvent(Env<AttrContext> env) {
         JCCompilationUnit toplevel = env.toplevel;
         ClassSymbol sym;
@@ -1491,6 +1523,10 @@ public class JavaCompiler {
             results.addAll(desugaredEnvs.get(env));
             return;
         }
+
+        // Ensure the file has reached the WARN state
+        if (!compileStates.isDone(env, CompileState.WARN))
+            warn(env);
 
         /**
          * Ensure that superclasses of C are desugared before C itself. This is
@@ -1550,6 +1586,13 @@ public class JavaCompiler {
                 super.visitBindingPattern(tree);
             }
             @Override
+            public void visitTypeTest(JCInstanceOf tree) {
+                if (tree.pattern.type.isPrimitive()) {
+                    hasPatterns = true;
+                }
+                super.visitTypeTest(tree);
+            }
+            @Override
             public void visitRecordPattern(JCRecordPattern that) {
                 hasPatterns = true;
                 super.visitRecordPattern(that);
@@ -1568,8 +1611,8 @@ public class JavaCompiler {
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);
         for (Env<AttrContext> dep: scanner.dependencies) {
-        if (!compileStates.isDone(dep, CompileState.FLOW))
-            desugaredEnvs.put(dep, desugar(flow(attribute(dep))));
+        if (!compileStates.isDone(dep, CompileState.WARN))
+            desugaredEnvs.put(dep, desugar(warn(flow(attribute(dep)))));
         }
 
         //We need to check for error another time as more classes might
@@ -1800,10 +1843,9 @@ public class JavaCompiler {
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
-        chk.reportDeferredDiagnostics();
-        preview.reportDeferredDiagnostics();
+        log.reportOutstandingNotes();
         if (log.compressedOutput) {
-            log.mandatoryNote(null, Notes.CompressedDiags);
+            log.note(Notes.CompressedDiags);
         }
     }
 
@@ -1831,7 +1873,7 @@ public class JavaCompiler {
 
     private Name parseAndGetName(JavaFileObject fo,
                                  Function<JCTree.JCCompilationUnit, Name> tree2Name) {
-        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        DiagnosticHandler dh = log.new DiscardDiagnosticHandler();
         JavaFileObject prevSource = log.useSource(fo);
         try {
             JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);

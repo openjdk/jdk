@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -90,6 +89,12 @@ bool C2Compiler::init_c2_runtime() {
   DEBUG_ONLY( Node::init_NodeProperty(); )
 
   compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
+
+  // If there was an error generating the blob then UseCompiler will
+  // have been unset and we need to skip the remaining initialization
+  if (!UseCompiler) {
+    return false;
+  }
 
   Compile::pd_compiler2_init();
 
@@ -353,6 +358,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatToFloat16:
     if (!Matcher::match_rule_supported(Op_ConvF2HF)) return false;
     break;
+  case vmIntrinsics::_sqrt_float16:
+    if (!Matcher::match_rule_supported(Op_SqrtHF)) return false;
+    break;
+  case vmIntrinsics::_fma_float16:
+    if (!Matcher::match_rule_supported(Op_FmaHF)) return false;
+    break;
 
   /* CompareAndSet, Object: */
   case vmIntrinsics::_compareAndSetReference:
@@ -610,7 +621,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -628,6 +641,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
+  case vmIntrinsics::_maxL:
+  case vmIntrinsics::_minL:
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_arraySort:
   case vmIntrinsics::_arrayPartition:
@@ -750,20 +765,15 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_clone:
   case vmIntrinsics::_isAssignableFrom:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_getModifiers:
-  case vmIntrinsics::_isInterface:
-  case vmIntrinsics::_isArray:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getClassAccessFlags:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
   case vmIntrinsics::_Reference_refersTo0:
   case vmIntrinsics::_PhantomReference_refersTo0:
   case vmIntrinsics::_Reference_clear0:
@@ -779,6 +789,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
+  case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:
@@ -788,6 +799,18 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
+  case vmIntrinsics::_kyberNtt:
+  case vmIntrinsics::_kyberInverseNtt:
+  case vmIntrinsics::_kyberNttMult:
+  case vmIntrinsics::_kyberAddPoly_2:
+  case vmIntrinsics::_kyberAddPoly_3:
+  case vmIntrinsics::_kyber12To16:
+  case vmIntrinsics::_kyberBarrettReduce:
+  case vmIntrinsics::_dilithiumAlmostNtt:
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+  case vmIntrinsics::_dilithiumNttMult:
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+  case vmIntrinsics::_dilithiumDecomposePoly:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
@@ -811,9 +834,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
-  case vmIntrinsics::_VectorShuffleIota:
-  case vmIntrinsics::_VectorShuffleToVector:
-  case vmIntrinsics::_VectorWrapShuffleIndexes:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:
@@ -835,13 +855,15 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_IndexVector:
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
+  case vmIntrinsics::_VectorUnaryLibOp:
+  case vmIntrinsics::_VectorBinaryLibOp:
+    return EnableVectorSupport && Matcher::supports_vector_calling_convention();
   case vmIntrinsics::_blackhole:
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:
   case vmIntrinsics::_notifyJvmtiVThreadEnd:
   case vmIntrinsics::_notifyJvmtiVThreadMount:
   case vmIntrinsics::_notifyJvmtiVThreadUnmount:
-  case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
   case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;

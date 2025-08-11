@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "oops/access.inline.hpp"
@@ -51,7 +52,11 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_cld(ClassLoaderData* cld)
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
-  ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
+  if (cld != nullptr) {
+    ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
+  } else {
+    assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
+  }
 }
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_nmethod(nmethod* nm) {

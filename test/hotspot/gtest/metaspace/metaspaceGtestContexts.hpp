@@ -37,10 +37,14 @@ using metaspace::chunklevel_t;
 using namespace metaspace::chunklevel;
 
 class MetaspaceGtestContext : public metaspace::MetaspaceTestContext {
+  int _num_arenas_created;
 public:
   MetaspaceGtestContext(size_t commit_limit = 0, size_t reserve_limit = 0) :
-    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit)
-  {}
+    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit),
+    _num_arenas_created(0) {}
+
+  int num_arenas_created() const { return _num_arenas_created; }
+  void inc_num_arenas_created() { _num_arenas_created ++; }
 };
 
 class ChunkGtestContext : public MetaspaceGtestContext {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
@@ -33,6 +32,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -51,25 +51,23 @@ uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
 
+const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
+
 static SpinWait get_spin_wait_desc() {
-  if (strcmp(OnSpinWaitInst, "nop") == 0) {
-    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
-    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
-    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
-  } else if (strcmp(OnSpinWaitInst, "none") != 0) {
-    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
+  SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
+  if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
+    vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
   }
 
-  if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
-    vm_exit_during_initialization("OnSpinWaitInstCount cannot be used for OnSpinWaitInst 'none'");
-  }
-
-  return SpinWait{};
+  return spin_wait;
 }
 
 void VM_Version::initialize() {
+#define SET_CPU_FEATURE_NAME(id, name, bit) \
+  _features_names[bit] = XSTR(name);
+  CPU_FEATURE_FLAGS(SET_CPU_FEATURE_NAME)
+#undef SET_CPU_FEATURE_NAME
+
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -158,6 +156,13 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment) &&
+        (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+    }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
+    }
   }
 
   // ThunderX
@@ -197,7 +202,7 @@ void VM_Version::initialize() {
 
   // Cortex A53
   if (_cpu == CPU_ARM && model_is(0xd03)) {
-    _features |= CPU_A53MAC;
+    set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
@@ -237,7 +242,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -258,6 +263,9 @@ void VM_Version::initialize() {
   if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
   }
 
@@ -370,7 +378,7 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
     }
-  } else if (UseSHA3Intrinsics) {
+  } else if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
@@ -397,7 +405,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (_features & CPU_ASIMD) {
+  if (supports_feature(CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       UseChaCha20Intrinsics = true;
     }
@@ -406,6 +414,28 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (supports_feature(CPU_ASIMD)) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
+  if (supports_feature(CPU_ASIMD)) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else if (UseDilithiumIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          warning("Dilithium intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -441,7 +471,19 @@ void VM_Version::initialize() {
   }
 
   if (UseSVE > 0) {
-    _initial_sve_vector_length = get_current_sve_vector_length();
+    int vl = get_current_sve_vector_length();
+    if (vl < 0) {
+      warning("Unable to get SVE vector length on this system. "
+              "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.");
+      FLAG_SET_DEFAULT(UseSVE, 0);
+    } else if ((vl == 0) || ((vl % FloatRegister::sve_vl_min) != 0) || !is_power_of_2(vl)) {
+      warning("Detected SVE vector length (%d) should be a power of two and a multiple of %d. "
+              "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.",
+              vl, FloatRegister::sve_vl_min);
+      FLAG_SET_DEFAULT(UseSVE, 0);
+    } else {
+      _initial_sve_vector_length = vl;
+    }
   }
 
   // This machine allows unaligned memory accesses
@@ -574,6 +616,10 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
+
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  }
 #endif
 
   _spin_wait = get_spin_wait_desc();
@@ -582,27 +628,38 @@ void VM_Version::initialize() {
 
   // Sync SVE related CPU features with flags
   if (UseSVE < 2) {
-    _features &= ~CPU_SVE2;
-    _features &= ~CPU_SVEBITPERM;
+    clear_feature(CPU_SVE2);
+    clear_feature(CPU_SVEBITPERM);
   }
   if (UseSVE < 1) {
-    _features &= ~CPU_SVE;
+    clear_feature(CPU_SVE);
   }
 
   // Construct the "features" string
-  char buf[512];
-  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  stringStream ss(512);
+  ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) {
-    os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
+    ss.print("(0x%03x)", _model2);
   }
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
-  do {                                                          \
-    if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
-  } while(0);
-  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
-#undef ADD_FEATURE_IF_SUPPORTED
+  ss.print(", ");
+  int features_offset = (int)ss.size();
+  insert_features_names(_features, ss);
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = ss.as_string(true);
+  _features_string = _cpu_info_string + features_offset;
+}
+
+void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
+    }
+    return (const char*)nullptr;
+  }, ", ");
 }
 
 #if defined(LINUX)
@@ -669,7 +726,7 @@ void VM_Version::initialize_cpu_information(void) {
   int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
-  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
 
   _initialized = true;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.LauncherAsServiceVerifier;
@@ -39,13 +38,12 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage with desktop integration and services on Linux
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile ServiceAndDesktopTest.java
+ * @compile -Xlint:all -Werror ServiceAndDesktopTest.java
  * @run main/othervm/timeout=720 jdk.jpackage.test.Main
  *  --jpt-run=ServiceAndDesktopTest
  */

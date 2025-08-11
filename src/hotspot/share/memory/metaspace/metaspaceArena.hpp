@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metachunkList.hpp"
 
 class outputStream;
@@ -37,11 +38,12 @@ class Mutex;
 namespace metaspace {
 
 class ArenaGrowthPolicy;
-class ChunkManager;
-class Metachunk;
-class FreeBlocks;
-
 struct ArenaStats;
+class ChunkManager;
+class FreeBlocks;
+class Metachunk;
+class MetaspaceContext;
+
 
 // The MetaspaceArena is a growable metaspace memory pool belonging to a CLD;
 //  internally it consists of a list of metaspace chunks, of which the head chunk
@@ -74,9 +76,13 @@ struct ArenaStats;
 //
 
 class MetaspaceArena : public CHeapObj<mtClass> {
+  friend class MetaspaceArenaTestFriend;
 
   // Please note that access to a metaspace arena may be shared
   // between threads and needs to be synchronized in CLMS.
+
+  // Allocation alignment specific to this arena
+  const size_t _allocation_alignment_words;
 
   // Reference to the chunk manager to allocate chunks from.
   ChunkManager* const _chunk_manager;
@@ -104,10 +110,10 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
   // free block list
   FreeBlocks* fbl() const                       { return _fbl; }
-  void add_allocation_to_fbl(MetaWord* p, size_t word_size);
+  void add_allocation_to_fbl(MetaBlock bl);
 
-  // Given a chunk, add its remaining free committed space to the free block list.
-  void salvage_chunk(Metachunk* c);
+  // Given a chunk, return the committed remainder of this chunk.
+  MetaBlock salvage_chunk(Metachunk* c);
 
   // Allocate a new chunk from the underlying chunk manager able to hold at least
   // requested word size.
@@ -122,32 +128,31 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_current_chunk(size_t requested_word_size);
 
-  // Returns true if the area indicated by pointer and size have actually been allocated
-  // from this arena.
-  DEBUG_ONLY(bool is_valid_area(MetaWord* p, size_t word_size) const;)
-
   // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
-  MetaWord* allocate_inner(size_t word_size);
+  MetaBlock allocate_inner(size_t word_size, MetaBlock& wastage);
 
 public:
 
-  MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
-                 SizeAtomicCounter* total_used_words_counter,
+  MetaspaceArena(MetaspaceContext* context,
+                 const ArenaGrowthPolicy* growth_policy,
+                 size_t allocation_alignment_words,
                  const char* name);
 
   ~MetaspaceArena();
 
+  size_t allocation_alignment_words() const { return _allocation_alignment_words; }
+  size_t allocation_alignment_bytes() const { return allocation_alignment_words() * BytesPerWord; }
+
   // Allocate memory from Metaspace.
-  // 1) Attempt to allocate from the dictionary of deallocated blocks.
-  // 2) Attempt to allocate from the current chunk.
-  // 3) Attempt to enlarge the current chunk in place if it is too small.
-  // 4) Attempt to get a new chunk and allocate from that chunk.
-  // At any point, if we hit a commit limit, we return null.
-  MetaWord* allocate(size_t word_size);
+  // On success, returns non-empty block of the specified word size, and
+  // possibly a wastage block that is the result of alignment operations.
+  // On failure, returns an empty block. Failure may happen if we hit a
+  // commit limit.
+  MetaBlock allocate(size_t word_size, MetaBlock& wastage);
 
   // Prematurely returns a metaspace allocation to the _block_freelists because it is not
   // needed anymore.
-  void deallocate(MetaWord* p, size_t word_size);
+  void deallocate(MetaBlock bl);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(ArenaStats* out) const;
@@ -161,6 +166,8 @@ public:
 
   void print_on(outputStream* st) const;
 
+  // Returns true if the given block is contained in this arena
+  DEBUG_ONLY(bool contains(MetaBlock bl) const;)
 };
 
 } // namespace metaspace

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
-#include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -43,9 +44,11 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -66,12 +69,16 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     _file_input(do_open(file), /* need_close=*/true),
     _input_stream(&_file_input),
     _parse_mode(parse_mode) {
-  log_info(cds)("Parsing %s%s", file,
+  aot_log_info(aot)("Parsing %s%s", file,
                 parse_lambda_forms_invokers_only() ? " (lambda form invokers only)" : "");
   if (!_file_input.is_open()) {
-    char errmsg[JVM_MAXPATHLEN];
-    os::lasterror(errmsg, JVM_MAXPATHLEN);
-    vm_exit_during_initialization("Loading classlist failed", errmsg);
+    char reason[JVM_MAXPATHLEN];
+    os::lasterror(reason, JVM_MAXPATHLEN);
+    vm_exit_during_initialization(err_msg("Loading %s %s failed",
+                                          FLAG_IS_DEFAULT(AOTConfiguration) ?
+                                          "classlist" : "AOTConfiguration file",
+                                          file),
+                                  reason);
   }
   _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
@@ -105,6 +112,12 @@ ClassListParser::~ClassListParser() {
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
+}
+
+void ClassListParser::parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+  UnregisteredClasses::initialize(CHECK);
+  ClassListParser parser(classlist_path, parse_mode);
+  parser.parse(THREAD);
 }
 
 void ClassListParser::parse(TRAPS) {
@@ -151,18 +164,18 @@ void ClassListParser::parse_class_name_and_attributes(TRAPS) {
     if (message != nullptr) {
       ex_msg = java_lang_String::as_utf8_string(message);
     }
-    log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+    aot_log_warning(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
     // We might have an invalid class name or an bad class. Warn about it
     // and keep going to the next line.
     CLEAR_PENDING_EXCEPTION;
-    log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
+    aot_log_warning(aot)("Preload Warning: Cannot find %s", _class_name);
     return;
   }
 
   assert(klass != nullptr, "sanity");
-  if (log_is_enabled(Trace, cds)) {
+  if (aot_log_is_enabled(Trace, aot)) {
     ResourceMark rm(THREAD);
-    log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
+    log_trace(aot)("Shared spaces preloaded: %s", klass->external_name());
   }
 
   if (klass->is_instance_klass()) {
@@ -383,6 +396,15 @@ bool ClassListParser::parse_uint_option(const char* option_name, int* value) {
   return false;
 }
 
+GrowableArray<InstanceKlass *> ClassListParser::get_specified_interfaces() {
+  const int n = _interfaces->length();
+  GrowableArray<InstanceKlass *> specified_interfaces(n);
+  for (int i = 0; i < n; i++) {
+    specified_interfaces.append(lookup_class_by_id(_interfaces->at(i)));
+  }
+  return specified_interfaces;
+}
+
 void ClassListParser::print_specified_interfaces() {
   const int n = _interfaces->length();
   jio_fprintf(defaultStream::error_stream(), "Currently specified interfaces[%d] = {\n", n);
@@ -419,10 +441,9 @@ void ClassListParser::print_diagnostic_info(outputStream* st, const char* msg, v
     error_index = 0;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s %zu:%d.\n",
-              _classlist_file, lineno(), (error_index + 1));
-  jio_vfprintf(defaultStream::error_stream(), msg, ap);
+  st->print("An error has occurred while processing class list file %s %zu:%d.\n",
+            _classlist_file, lineno(), (error_index + 1));
+  st->vprint(msg, ap);
 
   if (_line_len <= 0) {
     st->print("\n");
@@ -478,11 +499,30 @@ void ClassListParser::check_class_name(const char* class_name) {
 void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  LogTarget(Warning, cds, resolve) lt;
+  LogTarget(Warning, aot, resolve) lt;
   LogStream ls(lt);
   print_diagnostic_info(&ls, msg, ap);
   ls.print("Your classlist may be out of sync with the JDK or the application.");
   va_end(ap);
+}
+
+// If an unregistered class U is specified to have a registered supertype S1
+// named SN but an unregistered class S2 also named SN has already been loaded
+// S2 will be incorrectly used as the supertype of U instead of S1 due to
+// limitations in the loading mechanism of unregistered classes.
+void ClassListParser::check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS) {
+  if (specified_supertype->defined_by_other_loaders()) {
+    return; // Only registered supertypes can be obstructed
+  }
+  const InstanceKlass* obstructor = SystemDictionaryShared::get_unregistered_class(specified_supertype->name());
+  if (obstructor == nullptr) {
+    return; // No unregistered types with the same name have been loaded, i.e. no obstruction
+  }
+  // 'specified_supertype' is S1, 'obstructor' is S2 from the explanation above
+  ResourceMark rm;
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
+            err_msg("%s (id %d) has super-type %s (id %d) obstructed by another class with the same name",
+                    _class_name, _id, specified_supertype->external_name(), specified_supertype_id));
 }
 
 // This function is used for loading classes for customized class loaders
@@ -503,22 +543,46 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     error("If source location is specified, id must be also specified");
   }
   if (strncmp(_class_name, "java/", 5) == 0) {
-    log_info(cds)("Prohibited package for non-bootstrap classes: %s.class from %s",
+    aot_log_info(aot)("Prohibited package for non-bootstrap classes: %s.class from %s",
           _class_name, _source);
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
   ResourceMark rm;
-  char * source_path = os::strdup_check_oom(ClassLoader::uri_to_path(_source));
+  InstanceKlass* specified_super = lookup_class_by_id(_super);
+  GrowableArray<InstanceKlass*> specified_interfaces = get_specified_interfaces();
+  // Obstruction must be checked before the class loading attempt because it may
+  // cause class loading errors (JVMS 5.3.5.3-5.3.5.4)
+  check_supertype_obstruction(_super, specified_super, CHECK_NULL);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    check_supertype_obstruction(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);
+  }
+
+  const char* source_path = ClassLoader::uri_to_path(_source);
   InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
+
+  if (k->java_super() != specified_super) {
+    error("The specified super class %s (id %d) does not match actual super class %s",
+          specified_super->external_name(), _super,
+          k->java_super()->external_name());
+  }
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
     error("The number of interfaces (%d) specified in class list does not match the class file (%d)",
           _interfaces->length(), k->local_interfaces()->length());
   }
+  for (int i = 0; i < _interfaces->length(); i++) {
+    InstanceKlass* specified_interface = specified_interfaces.at(i);
+    if (!k->local_interfaces()->contains(specified_interface)) {
+      print_specified_interfaces();
+      print_actual_interfaces(k);
+      error("Specified interface %s (id %d) is not directly implemented",
+            specified_interface->external_name(), _interfaces->at(i));
+      }
+  }
 
-  assert(k->is_shared_unregistered_class(), "must be");
+  assert(k->defined_by_other_loaders(), "must be");
 
   bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {
@@ -585,7 +649,7 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
     if (message != nullptr) {
       ex_msg = java_lang_String::as_utf8_string(message);
     }
-    log_warning(cds)("resolve_indy for class %s has encountered exception: %s %s",
+    aot_log_warning(aot)("resolve_indy for class %s has encountered exception: %s %s",
                      class_name_symbol->as_C_string(),
                      PENDING_EXCEPTION->klass()->external_name(),
                      ex_msg);
@@ -594,9 +658,20 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
 }
 
 void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
+  if (CDSConfig::is_dumping_method_handles()) {
+    // The CP entry for the invokedynamic instruction will be resolved.
+    // No need to do the following.
+    return;
+  }
+
+  // This is an older CDS optimization:
+  // We store a pre-generated version of the lambda proxy class in the AOT cache,
+  // which will be loaded via JVM_LookupLambdaProxyClassFromArchive().
+  // This eliminate dynamic class generation of the proxy class, but we still need to
+  // resolve the CP entry for the invokedynamic instruction, which may result in
+  // generation of LambdaForm classes.
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
-  Handle protection_domain;
-  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK);
+  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     MetaspaceShared::try_link_class(THREAD, ik);
@@ -613,8 +688,8 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
-      if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
-        log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
+      if (!LambdaProxyClassDictionary::is_supported_invokedynamic(&bootstrap_specifier)) {
+        log_debug(aot, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
         continue;
       }
       bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
@@ -637,7 +712,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     }
     if (!found) {
       ResourceMark rm(THREAD);
-      log_warning(cds)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
+      aot_log_warning(aot)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
                      class_name_symbol->as_C_string());
     }
   }
@@ -699,7 +774,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
     if (id2klass_table()->maybe_grow()) {
-      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
+      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 
@@ -719,53 +794,9 @@ InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
   return *klass_ptr;
 }
 
-
-InstanceKlass* ClassListParser::lookup_super_for_current_class(Symbol* super_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  InstanceKlass* k = lookup_class_by_id(super());
-  if (super_name != k->name()) {
-    error("The specified super class %s (id %d) does not match actual super class %s",
-          k->name()->as_klass_external_name(), super(),
-          super_name->as_klass_external_name());
-  }
-  return k;
-}
-
-InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* interface_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  const int n = _interfaces->length();
-  if (n == 0) {
-    error("Class %s implements the interface %s, but no interface has been specified in the input line",
-          _class_name, interface_name->as_klass_external_name());
-    ShouldNotReachHere();
-  }
-
-  int i;
-  for (i=0; i<n; i++) {
-    InstanceKlass* k = lookup_class_by_id(_interfaces->at(i));
-    if (interface_name == k->name()) {
-      return k;
-    }
-  }
-
-  // interface_name is not specified by the "interfaces:" keyword.
-  print_specified_interfaces();
-  error("The interface %s implemented by class %s does not match any of the specified interface IDs",
-        interface_name->as_klass_external_name(), _class_name);
-  ShouldNotReachHere();
-  return nullptr;
-}
-
 InstanceKlass* ClassListParser::find_builtin_class_helper(JavaThread* current, Symbol* class_name_symbol, oop class_loader_oop) {
   Handle class_loader(current, class_loader_oop);
-  Handle protection_domain;
-  return SystemDictionary::find_instance_klass(current, class_name_symbol, class_loader, protection_domain);
+  return SystemDictionary::find_instance_klass(current, class_name_symbol, class_loader);
 }
 
 InstanceKlass* ClassListParser::find_builtin_class(JavaThread* current, const char* class_name) {
@@ -836,6 +867,8 @@ void ClassListParser::parse_constant_pool_tag() {
     case JVM_CONSTANT_InterfaceMethodref:
       preresolve_fmi = true;
       break;
+    case JVM_CONSTANT_InvokeDynamic:
+      preresolve_indy = true;
       break;
     default:
       constant_pool_resolution_warning("Unsupported constant pool index %d: %s (type=%d)",
@@ -844,10 +877,21 @@ void ClassListParser::parse_constant_pool_tag() {
     }
   }
 
+  if (SystemDictionaryShared::should_be_excluded(ik)) {
+    if (log_is_enabled(Warning, aot, resolve)) {
+      ResourceMark rm;
+      log_warning(aot, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());
+    }
+    return;
+  }
+
   if (preresolve_class) {
-    ClassPrelinker::preresolve_class_cp_entries(THREAD, ik, &preresolve_list);
+    AOTConstantPoolResolver::preresolve_class_cp_entries(THREAD, ik, &preresolve_list);
   }
   if (preresolve_fmi) {
-    ClassPrelinker::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
+    AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
+  }
+  if (preresolve_indy) {
+    AOTConstantPoolResolver::preresolve_indy_cp_entries(THREAD, ik, &preresolve_list);
   }
 }

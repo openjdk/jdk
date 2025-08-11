@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class GraphKit : public Phase {
                                         _sp = jvms->sp();
                                         _bci = jvms->bci();
                                         _method = jvms->has_method() ? jvms->method() : nullptr; }
-  void set_map(SafePointNode* m)      { _map = m; debug_only(verify_map()); }
+  void set_map(SafePointNode* m)      { _map = m; DEBUG_ONLY(verify_map()); }
   void set_sp(int sp)                 { assert(sp >= 0, "sp must be non-negative: %d", sp); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
 
@@ -226,14 +226,14 @@ class GraphKit : public Phase {
     if (ex_map != nullptr) {
       _exceptions = ex_map->next_exception();
       ex_map->set_next_exception(nullptr);
-      debug_only(verify_exception_state(ex_map));
+      DEBUG_ONLY(verify_exception_state(ex_map));
     }
     return ex_map;
   }
 
   // Add an exception, using the given JVM state, without commoning.
   void push_exception_state(SafePointNode* ex_map) {
-    debug_only(verify_exception_state(ex_map));
+    DEBUG_ONLY(verify_exception_state(ex_map));
     ex_map->set_next_exception(_exceptions);
     _exceptions = ex_map;
   }
@@ -276,6 +276,16 @@ class GraphKit : public Phase {
   // Helper to throw a built-in exception.
   // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
   void builtin_throw(Deoptimization::DeoptReason reason);
+  void builtin_throw(Deoptimization::DeoptReason reason,
+                     ciInstance* exception_object,
+                     bool allow_too_many_traps);
+  bool builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
+                                    ciInstance* exception_object);
+ private:
+  bool is_builtin_throw_hot(Deoptimization::DeoptReason reason);
+  ciInstance* builtin_throw_exception(Deoptimization::DeoptReason reason) const;
+
+ public:
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -542,26 +552,6 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from bottom_type
-    return make_load(ctl, adr, t, bt, adr->bottom_type()->is_ptr(),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != nullptr, "use other make_load factory");
-    return make_load(ctl, adr, t, bt, C->get_alias_index(adr_type),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  // This is the base version which is given an alias index.
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
                   bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
 
   // Create & transform a StoreNode and store the effect into the
@@ -572,26 +562,8 @@ class GraphKit : public Phase {
   // procedure must indicate that the store requires `release'
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
-  Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        const TypePtr* adr_type,
-                        MemNode::MemOrd mo,
-                        bool require_atomic_access = false,
-                        bool unaligned = false,
-                        bool mismatched = false,
-                        bool unsafe = false,
-                        int barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != nullptr, "use other store_to_memory factory");
-    return store_to_memory(ctl, adr, val, bt,
-                           C->get_alias_index(adr_type),
-                           mo, require_atomic_access,
-                           unaligned, mismatched, unsafe,
-                           barrier_data);
-  }
-  // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        int adr_idx,
                         MemNode::MemOrd,
                         bool require_atomic_access = false,
                         bool unaligned = false,
@@ -790,15 +762,6 @@ class GraphKit : public Phase {
   void final_sync(IdealKit& ideal);
 
   public:
-  // Helper function to round double arguments before a call
-  void round_double_arguments(ciMethod* dest_method);
-
-  // rounding for strict float precision conformance
-  Node* precision_rounding(Node* n);
-
-  // rounding for strict double precision conformance
-  Node* dprecision_rounding(Node* n);
-
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
@@ -821,6 +784,7 @@ class GraphKit : public Phase {
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
     RC_VECTOR = 64,             // CallLeafVectorNode
+    RC_PURE = 128,              // CallLeaf is pure
     RC_LEAF = 0                 // null value:  no flags set
   };
 
@@ -908,7 +872,7 @@ class GraphKit : public Phase {
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

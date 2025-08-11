@@ -113,12 +113,7 @@ import jdk.internal.vm.SharedThreadContainer;
  * alter the thread's name, thread group, priority, daemon status,
  * etc. If a {@code ThreadFactory} fails to create a thread when asked
  * by returning null from {@code newThread}, the executor will
- * continue, but might not be able to execute any tasks. Threads
- * should possess the "modifyThread" {@code RuntimePermission}. If
- * worker threads or other threads using the pool do not possess this
- * permission, service may be degraded: configuration changes may not
- * take effect in a timely manner, and a shutdown pool may remain in a
- * state in which termination is possible but not completed.</dd>
+ * continue, but might not be able to execute any tasks.</dd>
  *
  * <dt>Keep-alive times</dt>
  *
@@ -567,29 +562,6 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         new AbortPolicy();
 
     /**
-     * Permission required for callers of shutdown and shutdownNow.
-     * We additionally require (see checkShutdownAccess) that callers
-     * have permission to actually interrupt threads in the worker set
-     * (as governed by Thread.interrupt, which relies on
-     * ThreadGroup.checkAccess, which in turn relies on
-     * SecurityManager.checkAccess). Shutdowns are attempted only if
-     * these checks pass.
-     *
-     * All actual invocations of Thread.interrupt (see
-     * interruptIdleWorkers and interruptWorkers) ignore
-     * SecurityExceptions, meaning that the attempted interrupts
-     * silently fail. In the case of shutdown, they should not fail
-     * unless the SecurityManager has inconsistent policies, sometimes
-     * allowing access to a thread and sometimes not. In such cases,
-     * failure to actually interrupt threads may disable or delay full
-     * termination. Other uses of interruptIdleWorkers are advisory,
-     * and failure to actually interrupt will merely delay response to
-     * configuration changes so is not handled exceptionally.
-     */
-    private static final RuntimePermission shutdownPerm =
-        new RuntimePermission("modifyThread");
-
-    /**
      * Class Worker mainly maintains interrupt control state for
      * threads running tasks, along with other minor bookkeeping.
      * This class opportunistically extends AbstractQueuedSynchronizer
@@ -673,10 +645,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         void interruptIfStarted() {
             Thread t;
             if (getState() >= 0 && (t = thread) != null && !t.isInterrupted()) {
-                try {
-                    t.interrupt();
-                } catch (SecurityException ignore) {
-                }
+                t.interrupt();
             }
         }
     }
@@ -749,27 +718,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
 
     /**
-     * If there is a security manager, makes sure caller has
-     * permission to shut down threads in general (see shutdownPerm).
-     * If this passes, additionally makes sure the caller is allowed
-     * to interrupt each worker thread. This might not be true even if
-     * first check passed, if the SecurityManager treats some threads
-     * specially.
-     */
-    private void checkShutdownAccess() {
-        // assert mainLock.isHeldByCurrentThread();
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(shutdownPerm);
-            for (Worker w : workers)
-                security.checkAccess(w.thread);
-        }
-    }
-
-    /**
-     * Interrupts all threads, even if active. Ignores SecurityExceptions
-     * (in which case some threads may remain uninterrupted).
+     * Interrupts all threads, even if active.
      */
     private void interruptWorkers() {
         // assert mainLock.isHeldByCurrentThread();
@@ -780,9 +729,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Interrupts threads that might be waiting for tasks (as
      * indicated by not being locked) so they can check for
-     * termination or configuration changes. Ignores
-     * SecurityExceptions (in which case some threads may remain
-     * uninterrupted).
+     * termination or configuration changes.
      *
      * @param onlyOne If true, interrupt at most one worker. This is
      * called only from tryTerminate when termination is otherwise
@@ -805,7 +752,6 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 if (!t.isInterrupted() && w.tryLock()) {
                     try {
                         t.interrupt();
-                    } catch (SecurityException ignore) {
                     } finally {
                         w.unlock();
                     }
@@ -1305,13 +1251,19 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                               BlockingQueue<Runnable> workQueue,
                               ThreadFactory threadFactory,
                               RejectedExecutionHandler handler) {
-        if (corePoolSize < 0 ||
-            maximumPoolSize <= 0 ||
-            maximumPoolSize < corePoolSize ||
-            keepAliveTime < 0)
-            throw new IllegalArgumentException();
-        if (workQueue == null || threadFactory == null || handler == null)
-            throw new NullPointerException();
+        if (corePoolSize < 0) {
+            throw new IllegalArgumentException("corePoolSize must be non-negative");
+        } else if (maximumPoolSize <= 0) {
+            throw new IllegalArgumentException("maximumPoolSize must be positive");
+        } else if (maximumPoolSize < corePoolSize) {
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize");
+        } else if (keepAliveTime < 0) {
+            throw new IllegalArgumentException("keepAliveTime must be non-negative");
+        }
+        Objects.requireNonNull(unit, "unit");
+        Objects.requireNonNull(workQueue, "workQueue");
+        Objects.requireNonNull(threadFactory, "threadFactory");
+        Objects.requireNonNull(handler, "handler");
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -1338,8 +1290,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @throws NullPointerException if {@code command} is null
      */
     public void execute(Runnable command) {
-        if (command == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(command, "command");
         /*
          * Proceed in 3 steps:
          *
@@ -1385,14 +1336,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
-     *
-     * @throws SecurityException {@inheritDoc}
      */
     public void shutdown() {
         final ReentrantLock mainLock = this.mainLock;
         mainLock.lock();
         try {
-            checkShutdownAccess();
             advanceRunState(SHUTDOWN);
             interruptIdleWorkers();
             onShutdown(); // hook for ScheduledThreadPoolExecutor
@@ -1416,15 +1364,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * processing actively executing tasks.  This implementation
      * interrupts tasks via {@link Thread#interrupt}; any task that
      * fails to respond to interrupts may never terminate.
-     *
-     * @throws SecurityException {@inheritDoc}
      */
     public List<Runnable> shutdownNow() {
         List<Runnable> tasks;
         final ReentrantLock mainLock = this.mainLock;
         mainLock.lock();
         try {
-            checkShutdownAccess();
             advanceRunState(STOP);
             interruptWorkers();
             tasks = drainQueue();
@@ -1506,8 +1451,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getThreadFactory
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
-        if (threadFactory == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(threadFactory, "threadFactory");
         this.threadFactory = threadFactory;
     }
 
@@ -1529,8 +1473,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getRejectedExecutionHandler
      */
     public void setRejectedExecutionHandler(RejectedExecutionHandler handler) {
-        if (handler == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(handler, "handler");
         this.handler = handler;
     }
 
@@ -1558,8 +1501,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getCorePoolSize
      */
     public void setCorePoolSize(int corePoolSize) {
-        if (corePoolSize < 0 || maximumPoolSize < corePoolSize)
-            throw new IllegalArgumentException();
+        if (corePoolSize < 0) {
+            throw new IllegalArgumentException("corePoolSize must be non-negative");
+        } else if (corePoolSize > maximumPoolSize) {
+            throw new IllegalArgumentException("corePoolSize must be less than or equal to maximumPoolSize");
+        }
         int delta = corePoolSize - this.corePoolSize;
         this.corePoolSize = corePoolSize;
         if (workerCountOf(ctl.get()) > corePoolSize)
@@ -1683,8 +1629,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getMaximumPoolSize
      */
     public void setMaximumPoolSize(int maximumPoolSize) {
-        if (maximumPoolSize <= 0 || maximumPoolSize < corePoolSize)
-            throw new IllegalArgumentException();
+        if (maximumPoolSize <= 0) {
+            throw new IllegalArgumentException("maximumPoolSize must be positive");
+        } else if (maximumPoolSize < corePoolSize) {
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize");
+        }
         this.maximumPoolSize = maximumPoolSize;
         if (workerCountOf(ctl.get()) > maximumPoolSize)
             interruptIdleWorkers();
@@ -1718,9 +1667,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setKeepAliveTime(long time, TimeUnit unit) {
         if (time < 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("time must be non-negative");
         if (time == 0 && allowsCoreThreadTimeOut())
             throw new IllegalArgumentException("Core threads must have nonzero keep alive times");
+        Objects.requireNonNull(unit, "unit");
         long keepAliveTime = unit.toNanos(time);
         long delta = keepAliveTime - this.keepAliveTime;
         this.keepAliveTime = keepAliveTime;

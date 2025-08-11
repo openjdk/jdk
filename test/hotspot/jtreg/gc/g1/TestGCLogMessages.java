@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ package gc.g1;
  *                   gc.g1.TestGCLogMessages
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.code.Compiler;
 
@@ -187,13 +187,14 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("Reset Partial Array State Manager \\(ms\\)", Level.TRACE),
 
         // Misc Top-level
         new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),
         new LogMessageWithLevel("Serial Rebuild Free List:", Level.TRACE),
         new LogMessageWithLevel("Parallel Rebuild Free List \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Prepare For Mutator:", Level.DEBUG),
-        new LogMessageWithLevel("Expand Heap After Collection:", Level.DEBUG),
+        new LogMessageWithLevel("Resize Heap After Collection:", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
@@ -259,7 +260,6 @@ public class TestGCLogMessages {
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
-        new LogMessageWithLevel("Restore Preserved Marks \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Restore Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Process Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failed Regions:", Level.DEBUG),
@@ -320,8 +320,7 @@ public class TestGCLogMessages {
                                                                     "-XX:+WhiteBoxAPI",
                                                                     GCTest.class.getName());
 
-        output.shouldContain("Expand the heap. requested expansion amount: ");
-        output.shouldContain("B expansion amount: ");
+        output.shouldContain("Heap resize: ");
         output.shouldHaveExitValue(0);
     }
 

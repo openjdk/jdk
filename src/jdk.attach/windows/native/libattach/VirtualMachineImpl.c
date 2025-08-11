@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,7 @@ typedef struct {
    GetModuleHandleFunc _GetModuleHandle;
    GetProcAddressFunc _GetProcAddress;
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
-   char func1[MAX_FUNC_LENGTH];
-   char func2[MAX_FUNC_LENGTH];
+   char func[MAX_FUNC_LENGTH];
    char func_v2[MAX_FUNC_LENGTH];
    char cmd[MAX_CMD_LENGTH + 1];            /* "load", "dump", ...      */
    char arg[MAX_ARGS][MAX_ARG_LENGTH + 1];  /* arguments to command     */
@@ -113,10 +112,7 @@ DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
     }
 
     if (pData->version == 1) {
-        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func1));
-        if (addr == NULL) {
-            addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func2));
-        }
+        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func));
         if (addr == NULL) {
             return ERR_GET_ENQUEUE_FUNC_FAIL;
         }
@@ -231,24 +227,17 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
     }
 
     /*
-     * On Windows 64-bit we need to handle 32-bit tools trying to attach to 64-bit
-     * processes (and visa versa). X-architecture attaching is currently not supported
-     * by this implementation.
+     * On Windows we need to handle 64-bit tools trying to attach to 32-bit
+     * processes, which is currently not supported by this implementation.
      */
     if (_IsWow64Process != NULL) {
-        BOOL isCurrent32bit, isTarget32bit;
-        (*_IsWow64Process)(GetCurrentProcess(), &isCurrent32bit);
+        BOOL isTarget32bit;
         (*_IsWow64Process)(hProcess, &isTarget32bit);
 
-        if (isCurrent32bit != isTarget32bit) {
+        if (isTarget32bit) {
             CloseHandle(hProcess);
-            #ifdef _WIN64
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 32-bit process running under WOW64");
-            #else
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 64-bit process");
-            #endif
+            JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
+                "Unable to attach to 32-bit process running under WOW64");
         }
     }
 
@@ -302,11 +291,12 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
 
     hPipe = CreateNamedPipe(
           name,                         // pipe name
-          ver == 1 ? PIPE_ACCESS_INBOUND  // read access
-                   : PIPE_ACCESS_DUPLEX,  // read-write access
+          (ver == 1 ? PIPE_ACCESS_INBOUND : PIPE_ACCESS_DUPLEX) | // read or read-write access
+            FILE_FLAG_FIRST_PIPE_INSTANCE,
           PIPE_TYPE_BYTE |              // byte mode
             PIPE_READMODE_BYTE |
-            PIPE_WAIT,                  // blocking mode
+            PIPE_WAIT |                 // blocking mode
+            PIPE_REJECT_REMOTE_CLIENTS,
           1,                            // max. instances
           128,                          // output buffer size
           8192,                         // input buffer size
@@ -451,8 +441,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     data._GetProcAddress = _GetProcAddress;
 
     strcpy(data.jvmLib, "jvm");
-    strcpy(data.func1, "JVM_EnqueueOperation");
-    strcpy(data.func2, "_JVM_EnqueueOperation@20");
+    strcpy(data.func, "JVM_EnqueueOperation");
     strcpy(data.func_v2, "JVM_EnqueueOperation_v2");
 
     /*

@@ -102,15 +102,9 @@ public:
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC.
-  bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
+  void scan_old_to_young_refs();
 
   bool is_in(const void* p) const;
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4174551
+ * @bug 4174551 8346260
  * @summary JOptionPane should allow custom buttons
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

@@ -28,7 +28,7 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.Signature;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.components.CodeLocalsShifter;
+import jdk.internal.classfile.components.CodeLocalsShifter;
 import java.lang.classfile.instruction.IncrementInstruction;
 import java.lang.classfile.instruction.LoadInstruction;
 import java.lang.classfile.instruction.LocalVariable;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,15 +27,21 @@
 #define CPU_S390_VMREG_S390_INLINE_HPP
 
 inline VMReg Register::as_VMReg() const {
-  return VMRegImpl::as_VMReg(encoding() << 1);
+  return VMRegImpl::as_VMReg(encoding() * Register::max_slots_per_register);
 }
 
 inline VMReg FloatRegister::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
+  return VMRegImpl::as_VMReg((encoding() * FloatRegister::max_slots_per_register) +
+                              ConcreteRegisterImpl::max_gpr);
+}
+
+inline VMReg VectorRegister::as_VMReg() const {
+  return VMRegImpl::as_VMReg((encoding() * VectorRegister::max_slots_per_register) +
+                              ConcreteRegisterImpl::max_fpr);
 }
 
 inline VMReg ConditionRegister::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_fpr);
+  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_vr);
 }
 
 #endif // CPU_S390_VMREG_S390_INLINE_HPP

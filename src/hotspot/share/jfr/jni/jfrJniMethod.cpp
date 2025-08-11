@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/jfrEventSetting.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -50,6 +50,7 @@
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
+#include "jfr/support/methodtracer/jfrMethodTracer.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -169,7 +170,18 @@ NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_ty
   return JNI_TRUE;
 NO_TRANSITION_END
 
-NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value))
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate))
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, rate > 0);
+  JfrCPUTimeThreadSampling::set_rate(rate);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos))
+  assert(period_nanos >= 0, "invariant");
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, period_nanos > 0);
+  JfrCPUTimeThreadSampling::set_period(period_nanos);
+JVM_END
+
+NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);
   const JfrEventId typed_event_id = (JfrEventId)event_type_id;
   if (EventDeprecatedInvocation::eventId == typed_event_id) {
@@ -278,9 +290,9 @@ JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, j
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
   JfrEventSetting::set_enabled(typed_event_id, periodMillis > 0);
   if (EventExecutionSample::eventId == type) {
-    JfrThreadSampling::set_java_sample_period(periodMillis);
+    JfrThreadSampler::set_java_sample_period(periodMillis);
   } else {
-    JfrThreadSampling::set_native_sample_period(periodMillis);
+    JfrThreadSampler::set_native_sample_period(periodMillis);
   }
 JVM_END
 
@@ -301,13 +313,13 @@ JVM_ENTRY_NO_ENV(jobject, jfr_new_event_writer(JNIEnv* env, jclass jvm))
   return JfrJavaEventWriter::new_event_writer(thread);
 JVM_END
 
-NO_TRANSITION(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
-  JfrJavaEventWriter::flush(writer, used_size, requested_size, JavaThread::current());
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
+  JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
+JVM_END
 
-NO_TRANSITION(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
-  return JfrJavaEventWriter::commit(next_position);
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
+  return JfrJavaEventWriter::commit(next_position, thread);
+JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jclass jvm))
   JfrRepository::flush(thread);
@@ -430,3 +442,19 @@ JVM_END
 NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
   return JfrChunk::nanos_now();
 NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+NO_TRANSITION_END
+
+JVM_ENTRY_NO_ENV(jlongArray, jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications))
+  return JfrMethodTracer::set_filters(env, classes, methods, annotations, modifications, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
+  return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END

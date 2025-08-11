@@ -28,7 +28,6 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "opto/c2_MacroAssembler.hpp"
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.
@@ -193,13 +192,13 @@ private:
 
   static inline CompiledDirectCall* before(address return_addr) {
     CompiledDirectCall* st = new CompiledDirectCall(nativeCall_before(return_addr));
-    st->verify();
+    if (VerifyInlineCaches) st->verify();
     return st;
   }
 
   static inline CompiledDirectCall* at(address native_call) {
     CompiledDirectCall* st = new CompiledDirectCall(nativeCall_at(native_call));
-    st->verify();
+    if (VerifyInlineCaches) st->verify();
     return st;
   }
 

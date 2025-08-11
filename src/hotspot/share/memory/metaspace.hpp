@@ -108,6 +108,17 @@ public:
   // The largest possible single allocation
   static size_t max_allocation_word_size();
 
+  // Minimum allocation alignment, in bytes. All MetaData shall be aligned correctly
+  // to be able to hold 64-bit data types. Unlike malloc, we don't care for larger
+  // data types.
+  static constexpr size_t min_allocation_alignment_bytes = sizeof(uint64_t);
+
+  // Minimum allocation alignment, in words, Metaspace observes.
+  static constexpr size_t min_allocation_alignment_words = min_allocation_alignment_bytes / BytesPerWord;
+
+  // Every allocation will get rounded up to the minimum word size.
+  static constexpr size_t min_allocation_word_size = min_allocation_alignment_words;
+
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, bool use_class_space, TRAPS);
 

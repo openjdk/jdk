@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ JNI_COCOA_ENTER(env);
 
     GET_DTCP_CLASS_RETURN(result);
     DECLARE_METHOD_RETURN(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V", result);
-    if ((*env)->ExceptionOccurred(env) || !newDataMethod) {
+    if ((*env)->ExceptionCheck(env) || !newDataMethod) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: couldn't get newData method for %d.\n", (NSInteger) jdroptarget);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
         return result;

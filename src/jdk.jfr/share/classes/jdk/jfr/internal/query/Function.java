@@ -89,7 +89,7 @@ abstract class Function {
             return createPercentile(field, 0.99);
         }
         if (aggregator == Aggregator.P999) {
-            return createPercentile(field, 0.9999);
+            return createPercentile(field, 0.999);
         }
         if (aggregator == Aggregator.MAXIMUM) {
             return new Maximum();
@@ -175,9 +175,9 @@ abstract class Function {
         @Override
         public Object result() {
             if (count != 0) {
-                long s = seconds / count;
-                long n = nanos / count;
-                return Duration.ofSeconds(s, n);
+                double total = 1_000_000_000.0 * seconds + nanos;
+                double average = total / count;
+                return Duration.ofNanos(Math.round(average));
             } else {
                 return null;
             }
@@ -578,7 +578,7 @@ abstract class Function {
             double doubleIndex = (size + 1) * percentile;
             int valueIndex = (int) doubleIndex - 1;
             int valueNextIndex = (int) doubleIndex;
-            double fraction = doubleIndex - valueIndex;
+            double fraction = doubleIndex - (int) doubleIndex;
 
             if (valueIndex < 0) {
                 return numbers.getFirst();

@@ -32,7 +32,6 @@
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
- * @enablePreview
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -423,6 +422,19 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
             ResolvedJavaMethod m = e.getValue();
             assertFalse(m.isDefault());
+        }
+    }
+
+    @Test
+    public void isDeclaredTest() {
+        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+            ResolvedJavaMethod m = e.getValue();
+            boolean expectedDeclared = Arrays.stream(m.getDeclaringClass().getDeclaredMethods()).anyMatch(i -> i.equals(m));
+            assertEquals(expectedDeclared, m.isDeclared());
+        }
+        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+            ResolvedJavaMethod m = e.getValue();
+            assertFalse(m.isDeclared());
         }
     }
 

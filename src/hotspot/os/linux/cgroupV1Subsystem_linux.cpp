@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,47 @@
 /*
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
+ *
+ * The method determines whether it runs in
+ * - host mode
+ * - container mode
+ *
+ * In the host mode, _root is equal to "/" and
+ * the subsystem path is equal to the _mount_point path
+ * joined with cgroup_path.
+ *
+ * In the container mode, it can be two possibilities:
+ * - private namespace (cgroupns=private)
+ * - host namespace (cgroupns=host, default mode in cgroup V1 hosts)
+ *
+ * Private namespace is equivalent to the host mode, i.e.
+ * the subsystem path is set by concatenating
+ * _mount_point and cgroup_path.
+ *
+ * In the host namespace, _root is equal to host's cgroup path
+ * of the control group to which the containerized process
+ * belongs to at the moment of creation. The mountinfo and
+ * cgroup files are mirrored from the host, while the subsystem
+ * specific files are mapped directly at _mount_point, i.e.
+ * at /sys/fs/cgroup/<controller>/, the subsystem path is
+ * then set equal to _mount_point.
+ *
+ * A special case of the subsystem path is when a cgroup path
+ * includes a subgroup, when a containerized process was associated
+ * with an existing cgroup, that is different from cgroup
+ * in which the process has been created.
+ * Here, the _root is equal to the host's initial cgroup path,
+ * cgroup_path will be equal to host's new cgroup path.
+ * As host cgroup hierarchies are not accessible in the container,
+ * it needs to be determined which part of cgroup path
+ * is accessible inside container, i.e. mapped under
+ * /sys/fs/cgroup/<controller>/<subgroup>.
+ * In Docker default setup, host's cgroup path can be
+ * of the form: /docker/<CONTAINER_ID>/<subgroup>,
+ * from which only <subgroup> is mapped.
+ * The method trims cgroup path from left, until the subgroup
+ * component is found. The subsystem path will be set to
+ * the _mount_point joined with the subgroup path.
  */
 void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
@@ -49,28 +90,36 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   _cgroup_path = os::strdup(cgroup_path);
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
+    ss.print_raw(_mount_point);
     if (strcmp(_root, "/") == 0) {
-      ss.print_raw(_mount_point);
+      // host processes and containers with cgroupns=private
       if (strcmp(cgroup_path,"/") != 0) {
         ss.print_raw(cgroup_path);
       }
-      _path = os::strdup(ss.base());
     } else {
-      if (strcmp(_root, cgroup_path) == 0) {
-        ss.print_raw(_mount_point);
-        _path = os::strdup(ss.base());
-      } else {
-        char *p = strstr((char*)cgroup_path, _root);
-        if (p != nullptr && p == _root) {
-          if (strlen(cgroup_path) > strlen(_root)) {
-            ss.print_raw(_mount_point);
-            const char* cg_path_sub = cgroup_path + strlen(_root);
-            ss.print_raw(cg_path_sub);
-            _path = os::strdup(ss.base());
+      // containers with cgroupns=host, default setting is _root==cgroup_path
+      if (strcmp(_root, cgroup_path) != 0) {
+        if (*cgroup_path != '\0' && strcmp(cgroup_path, "/") != 0) {
+          // When moved to a subgroup, between subgroups, the path suffix will change.
+          const char *suffix = cgroup_path;
+          while (suffix != nullptr) {
+            stringStream pp;
+            pp.print_raw(_mount_point);
+            pp.print_raw(suffix);
+            if (os::file_exists(pp.base())) {
+              ss.print_raw(suffix);
+              if (suffix != cgroup_path) {
+                log_trace(os, container)("set_subsystem_path: cgroup v1 path reduced to: %s.", suffix);
+              }
+              break;
+            }
+            log_trace(os, container)("set_subsystem_path: skipped non-existent directory: %s.", suffix);
+            suffix = strchr(suffix + 1, '/');
           }
         }
       }
     }
+    _path = os::strdup(ss.base());
   }
 }
 
@@ -199,10 +248,16 @@ jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   }
 }
 
+jlong CgroupV1MemoryController::memory_throttle_limit_in_bytes() {
+  // Log this string at trace level so as to make tests happy.
+  log_trace(os, container)("Memory Throttle Limit is not supported.");
+  return OSCONTAINER_ERROR; // not supported
+}
+
 // Constructor
 CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
                       CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
+                      CgroupV1CpuacctController* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory) :
     _cpuset(cpuset),
@@ -300,9 +355,9 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, jul
   jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
   jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
 
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");
   OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes");
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
@@ -365,6 +420,13 @@ int CgroupV1CpuController::cpu_shares() {
   if (shares_int == 1024) return -1;
 
   return shares_int;
+}
+
+jlong CgroupV1CpuacctController::cpu_usage_in_micros() {
+  julong cpu_usage;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpuacct.usage", "CPU Usage", cpu_usage);
+  // Output is in nanoseconds, convert to microseconds.
+  return (jlong)cpu_usage / 1000;
 }
 
 /* pids_max

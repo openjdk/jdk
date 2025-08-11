@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,7 @@ public abstract class LookAndFeel
      * @see Class#getResourceAsStream(String)
      */
     public static Object makeIcon(final Class<?> baseClass, final String gifFile) {
-        return SwingUtilities2.makeIcon_Unprivileged(baseClass, baseClass, gifFile);
+        return SwingUtilities2.makeIcon(baseClass, baseClass, gifFile);
     }
 
     /**

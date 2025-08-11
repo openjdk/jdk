@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,22 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.jfr.Event;
 import jdk.jfr.api.consumer.recordingstream.TestUtils.TestError;
 import jdk.jfr.api.consumer.recordingstream.TestUtils.TestException;
-import jdk.jfr.api.consumer.security.TestStreamingRemote.TestEvent;
 import jdk.jfr.consumer.RecordingStream;
 
 /**
  * @test
  * @summary Tests RecordingStream::onError(...) when using RecordingStream:start
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestOnErrorSync
  */
 public class TestOnErrorSync {
+    private static class TestEvent extends Event {
+    }
     public static void main(String... args) throws Exception {
         testDefaultError();
         testCustomError();

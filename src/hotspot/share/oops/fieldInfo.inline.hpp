@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,16 +56,27 @@ inline Symbol* FieldInfo::lookup_symbol(int symbol_index) const {
 
 inline int FieldInfoStream::num_injected_java_fields(const Array<u1>* fis) {
   FieldInfoReader fir(fis);
-  fir.skip(1);
-  return fir.next_uint();
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return injected_fields_count;
 }
 
 inline int FieldInfoStream::num_total_fields(const Array<u1>* fis) {
   FieldInfoReader fir(fis);
-  return fir.next_uint() + fir.next_uint();
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return java_fields_count + injected_fields_count;
 }
 
-inline int FieldInfoStream::num_java_fields(const Array<u1>* fis) { return FieldInfoReader(fis).next_uint(); }
+inline int FieldInfoStream::num_java_fields(const Array<u1>* fis) {
+  FieldInfoReader fir(fis);
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return java_fields_count;
+}
 
 template<typename CON>
 inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
@@ -73,7 +84,7 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
   _consumer->accept_uint(fi.name_index());
   _consumer->accept_uint(fi.signature_index());
   _consumer->accept_uint(fi.offset());
-  _consumer->accept_uint(fi.access_flags().as_int());
+  _consumer->accept_uint(fi.access_flags().as_field_flags());
   _consumer->accept_uint(fi.field_flags().as_uint());
   if(fi.field_flags().has_any_optionals()) {
     if (fi.field_flags().is_initialized()) {
@@ -94,15 +105,24 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
 
 
 inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
-  : _r(fi->data(), 0),
+  : _r(fi->data(), fi->length()),
     _next_index(0) { }
+
+inline void FieldInfoReader::read_field_counts(int* java_fields, int* injected_fields) {
+  *java_fields = next_uint();
+  *injected_fields = next_uint();
+}
+
+inline void FieldInfoReader::read_name_and_signature(u2* name_index, u2* signature_index) {
+  *name_index = checked_cast<u2>(next_uint());
+  *signature_index = checked_cast<u2>(next_uint());
+}
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
-  fi._name_index = checked_cast<u2>(next_uint());
-  fi._signature_index = checked_cast<u2>(next_uint());
+  read_name_and_signature(&fi._name_index, &fi._signature_index);
   fi._offset = next_uint();
-  fi._access_flags = AccessFlags(next_uint());
+  fi._access_flags = AccessFlags(checked_cast<u2>(next_uint()));
   fi._field_flags = FieldInfo::FieldFlags(next_uint());
   if (fi._field_flags.is_initialized()) {
     fi._initializer_index = checked_cast<u2>(next_uint());

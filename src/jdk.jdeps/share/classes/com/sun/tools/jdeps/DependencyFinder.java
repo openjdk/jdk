@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,9 +173,9 @@ class DependencyFinder {
         trace("parsing %s %s%n", archive.getName(), archive.getPathName());
         FutureTask<Set<Location>> task = new FutureTask<>(() -> {
             Set<Location> targets = new HashSet<>();
-            for (var cf : archive.reader().getClassFiles()) {
+            archive.reader().forEachClassFile(cf -> {
                 if (cf.isModuleInfo())
-                    continue;
+                    return;
 
                 String classFileName;
                 try {
@@ -187,11 +187,11 @@ class DependencyFinder {
                 // filter source class/archive
                 String cn = classFileName.replace('/', '.');
                 if (!finder.accept(archive, cn, cf.flags()))
-                    continue;
+                    return;
 
                 // tests if this class matches the -include
                 if (!filter.matches(cn))
-                    continue;
+                    return;
 
                 for (Dependency d : finder.findDependencies(cf)) {
                     if (filter.accepts(d)) {
@@ -203,7 +203,7 @@ class DependencyFinder {
                     }
                     parsedClasses.putIfAbsent(d.getOrigin(), archive);
                 }
-            }
+            });
             return targets;
         });
         tasks.add(task);

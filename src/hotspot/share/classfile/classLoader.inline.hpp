@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "classfile/classLoader.hpp"
 
-#include "cds/cdsConfig.hpp"
 #include "runtime/atomic.hpp"
 
 // Next entry in class path
@@ -57,45 +56,5 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
     return e;
   }
 }
-
-#if INCLUDE_CDS
-
-// Helper function used by CDS code to get the number of boot classpath
-// entries during shared classpath setup time.
-
-inline int ClassLoader::num_boot_classpath_entries() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  assert(has_jrt_entry(), "must have a java runtime image");
-  int num_entries = 1; // count the runtime image
-  ClassPathEntry* e = first_append_entry();
-  while (e != nullptr) {
-    num_entries ++;
-    e = e->next();
-  }
-  return num_entries;
-}
-
-inline ClassPathEntry* ClassLoader::get_next_boot_classpath_entry(ClassPathEntry* e) {
-  if (e == ClassLoader::_jrt_entry) {
-    return first_append_entry();
-  } else {
-    return e->next();
-  }
-}
-
-// Helper function used by CDS code to get the number of app classpath
-// entries during shared classpath setup time.
-inline int ClassLoader::num_app_classpath_entries() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  int num_entries = 0;
-  ClassPathEntry* e= ClassLoader::_app_classpath_entries;
-  while (e != nullptr) {
-    num_entries ++;
-    e = e->next();
-  }
-  return num_entries;
-}
-
-#endif // INCLUDE_CDS
 
 #endif // SHARE_CLASSFILE_CLASSLOADER_INLINE_HPP

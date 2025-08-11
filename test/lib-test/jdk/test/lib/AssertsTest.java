@@ -25,12 +25,12 @@ import jdk.test.lib.Asserts;
 
 import java.lang.SuppressWarnings;
 import java.util.Arrays;
-import java.util.HexFormat;
 
 import static jdk.test.lib.Asserts.*;
 
 /*
  * @test
+ * @bug 8340493
  * @library /test/lib
  * @summary Tests the different assertions in the Assert class
  */
@@ -49,6 +49,29 @@ public class AssertsTest {
         }
     }
 
+    // equals() always returns true
+    public static class Bar {
+        private final int i;
+        public Bar(int i) {
+            this.i = i;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return Integer.toString(i);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         testLessThan();
         testLessThanOrEqual();
@@ -62,6 +85,19 @@ public class AssertsTest {
         testTrue();
         testFalse();
         testFail();
+
+        testErrorMessages();
+    }
+
+    public static void testErrorMessages() throws Exception {
+        try {
+            Asserts.assertNotEquals(new Bar(1), new Bar(2));
+            throw new Exception("Should fail");
+        } catch (RuntimeException e) {
+            if (!e.getMessage().contains("was 2")) {
+                throw new Exception("msg is " + e.getMessage());
+            }
+        }
     }
 
     private static void testLessThan() throws Exception {
@@ -216,8 +252,7 @@ public class AssertsTest {
                             " to throw a RuntimeException");
     }
 
-    private static void expectPass(Assertion assertion, byte[] b1, byte[] b2)
-            throws Exception {
+    private static void expectPass(Assertion assertion, byte[] b1, byte[] b2) {
         if (assertion == Assertion.EQBA) {
             String msg = "Expected " + Assertion.asString("assertEqualsByteArray",
                     Arrays.toString(b1), Arrays.toString(b2)) + " to pass";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,20 +711,9 @@ public abstract class HttpRequest {
         /**
          * A request body publisher that takes data from the contents of a File.
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodyPublisher} is created. Care must be taken
-         * that the {@code BodyPublisher} is not shared with untrusted code.
-         *
          * @param  path the path to the file containing the body
          * @return a BodyPublisher
          * @throws java.io.FileNotFoundException if the path is not found
-         * @throws SecurityException if
-         *         {@linkplain Files#newInputStream(Path, OpenOption...)
-         *         opening the file for reading} is denied:
-         *         in the case of the system-default file system provider,
-         *         and a security manager is installed,
-         *         {@link SecurityManager#checkRead(String) checkRead}
-         *         is invoked to check read access to the given file
          */
         public static BodyPublisher ofFile(Path path) throws FileNotFoundException {
             Objects.requireNonNull(path);

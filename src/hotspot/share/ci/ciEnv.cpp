@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -43,8 +42,8 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -107,7 +106,7 @@ static bool firstEnv = true;
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
 ciEnv::ciEnv(CompileTask* task)
-  : _ciEnv_arena(mtCompiler) {
+  : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -239,7 +238,7 @@ public:
   }
 };
 
-ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -462,14 +461,12 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(current, accessing_klass->loader());
-    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(current, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
@@ -1162,6 +1159,13 @@ int ciEnv::compile_id() {
 // ciEnv::notice_inlined_method()
 void ciEnv::notice_inlined_method(ciMethod* method) {
   _num_inlined_bytecodes += method->code_size_for_inlining();
+  CompileTrainingData* ctd = task()->training_data();
+  if (ctd != nullptr) {
+    GUARDED_VM_ENTRY({
+      methodHandle mh(Thread::current(), method->get_Method());
+      ctd->notice_inlined_method(task(), mh);
+    });
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1173,6 +1177,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);
@@ -1597,6 +1610,8 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  assert(this->task() != nullptr, "task must not be null");
+
   dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1609,17 +1624,14 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
 
-  // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
-  // protection domain to load subsequent classes during replay compilation.
+  // The very first entry is the InstanceKlass of the root method of the current compilation.
   ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
 
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
 
-  if (this->task() != nullptr) {
-    dump_compile_data(out);
-  }
+  dump_compile_data(out);
   out->flush();
 }
 

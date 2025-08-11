@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "nmt/memMapPrinter.hpp"
 #include "procMapsParser.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <limits.h>
@@ -141,7 +140,7 @@ public:
     st->print_cr("                      huge: mapping uses hugetlb pages");
     st->print_cr("vm info:         VM information (requires NMT)");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
     st->print_cr("file:            file mapped, if mapping is not anonymous");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
@@ -607,6 +606,40 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Restore constant pool cache
+  __ ldr(rcpool, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
+  // and null it as marker that esp is now tos until next java call
+  __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ lea(sp, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
+
+  // Restore method
+  __ ldr(rmethod, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  uint64_t offset;
+  __ adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
+  __ add(rdispatch, rdispatch, offset);
+
+  __ ret(lr);
+
+  return start;
+}
+
+
 // Helpers for commoning out cases in the various type of method entries.
 //
 
@@ -775,7 +808,7 @@ void TemplateInterpreterGenerator::lock_method() {
 #ifdef ASSERT
   {
     Label L;
-    __ ldrw(r0, access_flags);
+    __ ldrh(r0, access_flags);
     __ tst(r0, JVM_ACC_SYNCHRONIZED);
     __ br(Assembler::NE, L);
     __ stop("method doesn't need synchronization");
@@ -786,7 +819,7 @@ void TemplateInterpreterGenerator::lock_method() {
   // get synchronization object
   {
     Label done;
-    __ ldrw(r0, access_flags);
+    __ ldrh(r0, access_flags);
     __ tst(r0, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
@@ -832,6 +865,10 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
+  // Save ConstMethod* in r5_const_method for later use to avoid loading multiple times
+  Register r5_const_method = r5;
+  __ ldr(r5_const_method, Address(rmethod, Method::const_offset()));
+
   // initialize fixed part of activation frame
   if (native_call) {
     __ sub(esp, sp, 14 *  wordSize);
@@ -842,8 +879,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
-    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));    // get ConstMethod
-    __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
+    __ add(rbcp, r5_const_method, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
     __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
@@ -863,9 +899,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
-  __ ldr(rcpool, Address(rmethod, Method::const_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset()));
+  // Save ConstantPool* in r11_constants for later use to avoid loading multiple times
+  Register r11_constants = r11;
+  __ ldr(r11_constants, Address(r5_const_method, ConstMethod::constants_offset()));
+  __ ldr(rcpool, Address(r11_constants, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
   // Store relativized rlocals, see frame::interpreter_frame_locals().
@@ -875,11 +912,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // leave last_sp as null
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
-  // Get mirror
-  __ load_mirror(r10, rmethod, r5, rscratch2);
+  // Get mirror. Resolve ConstantPool* -> InstanceKlass* -> Java mirror.
+  __ ldr(r10, Address(r11_constants, ConstantPool::pool_holder_offset()));
+  __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
-    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
-    __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
+    __ ldrh(rscratch1, Address(r5_const_method, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
     __ andr(rscratch1, rscratch1, -16);
@@ -980,7 +1018,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
   Label slow_path;
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -1027,7 +1065,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
   Label slow_path;
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -1191,7 +1229,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldrw(r0, access_flags);
+  __ ldrh(r0, access_flags);
   {
     Label L;
     __ tst(r0, JVM_ACC_NATIVE);
@@ -1243,7 +1281,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ ldrw(r0, access_flags);
+      __ ldrh(r0, access_flags);
       __ tst(r0, JVM_ACC_SYNCHRONIZED);
       __ br(Assembler::EQ, L);
       __ stop("method needs synchronization");
@@ -1314,10 +1352,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in r0
   // set result handler
   __ mov(result_handler, r0);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
+  __ str(r0, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
-    __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
+    __ ldrh(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_STATIC), L);
     // get mirror
     __ load_mirror(t, rmethod, r10, rscratch2);
@@ -1349,9 +1390,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass JNIEnv
   __ add(c_rarg0, rthread, in_bytes(JavaThread::jni_environment_offset()));
 
-  // Set the last Java PC in the frame anchor to be the return address from
-  // the call to the native method: this will allow the debugger to
-  // generate an accurate stack trace.
+  // It is enough that the pc() points into the right code
+  // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, rfp, native_return, rscratch1);
 
@@ -1372,9 +1414,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ blr(r10);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1409,7 +1455,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L, Continue;
 
     // No need for acquire as Java threads always disarm themselves.
-    __ safepoint_poll(L, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L, true /* at_return */, false /* in_nmethod */);
     __ ldrw(rscratch2, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbz(rscratch2, Continue);
     __ bind(L);
@@ -1431,6 +1477,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
+
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ cbz(rscratch1, not_preempted);
+    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ br(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1505,7 +1568,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
+    __ ldrh(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_SYNCHRONIZED), L);
     // the code below should be shared with interpreter macro
     // assembler implementation
@@ -1535,6 +1598,30 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  __ br(Assembler::AL, fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(esp, rfp, __ pc(), rscratch1);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1556,6 +1643,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                     wordSize)); // get sender sp
   // remove frame anchor
   __ leave();
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // restore sender sp
   __ mov(sp, esp);
@@ -1636,7 +1725,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldrw(r0, access_flags);
+  __ ldrh(r0, access_flags);
   {
     Label L;
     __ tst(r0, JVM_ACC_NATIVE);
@@ -1692,7 +1781,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ ldrw(r0, access_flags);
+      __ ldrh(r0, access_flags);
       __ tst(r0, JVM_ACC_SYNCHRONIZED);
       __ br(Assembler::EQ, L);
       __ stop("method needs synchronization");
@@ -1741,12 +1830,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   return entry_point;
 }
-
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 
 //-----------------------------------------------------------------------------
 // Exceptions
@@ -1810,6 +1893,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We could have returned from deoptimizing this frame, so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe
@@ -1926,11 +2010,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(r0);
-  __ str(r0, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(r0, Address(rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, false, true, false);
   // restore exception
-  __ get_vm_result(r0, rthread);
+  __ get_vm_result_oop(r0, rthread);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the
@@ -2044,7 +2128,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ mov(r10, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addw(noreg, 1, r10);
+  __ atomic_add(noreg, 1, r10);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -2092,7 +2176,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ mov(rscratch1, (address) &BytecodeCounter::_counter_value);
   __ ldr(rscratch1, Address(rscratch1));
   __ mov(rscratch2, StopInterpreterAt);
-  __ cmpw(rscratch1, rscratch2);
+  __ cmp(rscratch1, rscratch2);
   __ br(Assembler::NE, L);
   __ brk(0);
   __ bind(L);

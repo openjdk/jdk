@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,12 +385,12 @@ public class Table<T> extends Content {
             table.add(getTableBody());
             main.add(table);
         } else {
-            var tablist = HtmlTree.DIV(HtmlStyles.tableTabs)
-                    .put(HtmlAttr.ROLE, "tablist")
-                    .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
+            var tablist = HtmlTree.DIV(HtmlStyles.tableTabs);
 
             HtmlId defaultTabId = HtmlIds.forTab(id, 0);
             if (renderTabs) {
+                tablist.put(HtmlAttr.ROLE, "tablist")
+                       .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
                 tablist.add(createTab(defaultTabId, HtmlStyles.activeTableTab, true, defaultTab));
                 for (var tab : tabs) {
                     if (occurringTabs.contains(tab)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,16 +77,14 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import jdk.internal.jmod.JmodFile;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -126,9 +124,9 @@ public class Locations {
     private FSInfo fsInfo;
 
     /**
-     * Whether to warn about non-existent path elements
+     * The root {@link Lint} instance.
      */
-    private boolean warn;
+    private Lint lint;
 
     private ModuleNameReader moduleNameReader;
 
@@ -139,7 +137,7 @@ public class Locations {
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
     List<Closeable> closeables = new ArrayList<>();
-    private Map<String,String> fsEnv = Collections.emptyMap();
+    private String releaseVersion = null;
 
     Locations() {
         initHandlers();
@@ -170,9 +168,9 @@ public class Locations {
         }
     }
 
-    void update(Log log, boolean warn, FSInfo fsInfo) {
+    void update(Log log, Lint lint, FSInfo fsInfo) {
         this.log = log;
-        this.warn = warn;
+        this.lint = lint;
         this.fsInfo = fsInfo;
     }
 
@@ -223,9 +221,7 @@ public class Locations {
                 try {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
-                    if (warn) {
-                        log.warning(LintCategory.PATH, Warnings.InvalidPath(s));
-                    }
+                    lint.logIfEnabled(LintWarnings.InvalidPath(s));
                 }
             }
         }
@@ -233,7 +229,8 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
+        // Null is implicitly allowed and unsets the value.
+        this.releaseVersion = multiReleaseValue;
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -313,14 +310,13 @@ public class Locations {
         }
 
         public SearchPath addDirectories(String dirs) {
-            return addDirectories(dirs, warn);
+            return addDirectories(dirs, true);
         }
 
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.DirPathElementNotFound(dir));
+                    lint.logIfEnabled(LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -340,7 +336,7 @@ public class Locations {
         }
 
         public SearchPath addFiles(String files) {
-            return addFiles(files, warn);
+            return addFiles(files, true);
         }
 
         public SearchPath addFiles(Iterable<? extends Path> files, boolean warn) {
@@ -353,7 +349,7 @@ public class Locations {
         }
 
         public SearchPath addFiles(Iterable<? extends Path> files) {
-            return addFiles(files, warn);
+            return addFiles(files, true);
         }
 
         public void addFile(Path file, boolean warn) {
@@ -365,8 +361,7 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.PathElementNotFound(file));
+                    lint.logIfEnabled(LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -388,14 +383,12 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.UnexpectedArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.InvalidArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -484,7 +477,7 @@ public class Locations {
         }
 
         /**
-         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject, String)
+         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject)
          */
         Location getLocationForModule(Path file) throws IOException  {
             return null;
@@ -1391,7 +1384,7 @@ public class Locations {
                         log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
-                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsEnv)) {
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(releaseVersion))) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1467,7 +1460,7 @@ public class Locations {
                                 log.error(Errors.LocnCantReadFile(p));
                                 return null;
                             }
-                            fs = jarFSProvider.newFileSystem(p, Collections.emptyMap());
+                            fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(null));
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
@@ -1489,8 +1482,8 @@ public class Locations {
                     }
                 }
 
-                if (warn && false) {  // temp disable, when enabled, massage examples.not-yet.txt suitably.
-                    log.warning(Warnings.LocnUnknownFileOnModulePath(p));
+                if (false) {  // temp disable, when enabled, massage examples.not-yet.txt suitably.
+                    log.warning(LintWarnings.LocnUnknownFileOnModulePath(p));
                 }
                 return null;
             }
@@ -1658,12 +1651,9 @@ public class Locations {
 
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
-                if (warn) {
-                    Warning key = Files.exists(prefix)
-                            ? Warnings.DirPathElementNotDirectory(prefix)
-                            : Warnings.DirPathElementNotFound(prefix);
-                    log.warning(Lint.LintCategory.PATH, key);
-                }
+                lint.logIfEnabled(Files.exists(prefix) ?
+                    LintWarnings.DirPathElementNotDirectory(prefix) :
+                    LintWarnings.DirPathElementNotFound(prefix));
                 return;
             }
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(prefix, path -> Files.isDirectory(path))) {

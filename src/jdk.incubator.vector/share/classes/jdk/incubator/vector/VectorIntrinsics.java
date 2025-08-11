@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,11 @@ package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 
 /*non-public*/ class VectorIntrinsics {
-    @SuppressWarnings("removal")
-    static final int VECTOR_ACCESS_OOB_CHECK = AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-            Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2));
+    static final int VECTOR_ACCESS_OOB_CHECK =
+            Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2);
 
     @ForceInline
     static void requireLength(int haveLength, int length) {

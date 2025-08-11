@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.crypto.KeyGenerator;
  */
 public class WrongAAD {
 
-    private static final String PROVIDER = "SunJCE";
+    private static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int TEXT_SIZE = 800;
     private static final int KEY_SIZE = 128;

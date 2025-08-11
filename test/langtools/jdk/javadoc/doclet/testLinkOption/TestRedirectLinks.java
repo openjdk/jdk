@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,41 +24,38 @@
 /*
  * @test
  * @bug 8190312
+ * @key intermittent
  * @summary test redirected URLs for -link
- * @library /tools/lib ../../lib
- * @library /test/lib
+ * @library /tools/lib ../../lib /test/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @build jtreg.SkippedException
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
  * @run main TestRedirectLinks
  */
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyStore;
 import java.time.Duration;
 import java.time.Instant;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -66,6 +63,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
 import javadoc.tester.JavadocTester;
+import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -73,6 +72,9 @@ import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 public class TestRedirectLinks extends JavadocTester {
+    // represents the HTTP response body length when the response contains no body
+    private static final int NO_RESPONSE_BODY = -1;
+
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
@@ -206,17 +208,28 @@ public class TestRedirectLinks extends JavadocTester {
 
         // start web servers
         // use loopback address to avoid any issues if proxy is in use
-        InetAddress localHost = InetAddress.getLoopbackAddress();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
-            oldServer = HttpServer.create(new InetSocketAddress(localHost, 0), 0);
-            String oldURL = "http:/" + oldServer.getAddress();
+            oldServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
+            String oldURL = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(oldServer.getAddress().getPort())
+                    .build().toString();
             oldServer.createContext("/", this::handleOldRequest);
             out.println("Starting old server (" + oldServer.getClass().getSimpleName() + ") on " + oldURL);
             oldServer.start();
 
             SSLContext sslContext = new SimpleSSLContext().get();
-            newServer = HttpsServer.create(new InetSocketAddress(localHost, 0), 0);
-            String newURL = "https:/" + newServer.getAddress();
+            if (sslContext == null) {
+                throw new AssertionError("Could not create a SSLContext");
+            }
+            newServer = HttpsServer.create(new InetSocketAddress(loopback, 0), 0);
+            String newURL = URIBuilder.newBuilder()
+                    .scheme("https")
+                    .loopback()
+                    .port(newServer.getAddress().getPort())
+                    .build().toString();
             newServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
             newServer.createContext("/", this::handleNewRequest);
             out.println("Starting new server (" + newServer.getClass().getSimpleName() + ") on " + newURL);
@@ -240,7 +253,7 @@ public class TestRedirectLinks extends JavadocTester {
                 javadoc("-d", "api",
                         "--module-source-path", src.toString(),
                         "--module-path", libModules.toString(),
-                        "-link", "http:/" + oldServer.getAddress(),
+                        "-link", oldURL,
                         "--module", "mC",
                         "-Xdoclint:none");
 
@@ -281,10 +294,19 @@ public class TestRedirectLinks extends JavadocTester {
                 + x.getRequestMethod() + " "
                 + x.getRequestURI());
         String newProtocol = (newServer instanceof HttpsServer) ? "https" : "http";
-        String redirectTo = newProtocol + ":/" + newServer.getAddress() + x.getRequestURI();
+        String redirectTo;
+        try {
+            redirectTo = URIBuilder.newBuilder().scheme(newProtocol)
+                    .host(newServer.getAddress().getAddress())
+                    .port(newServer.getAddress().getPort())
+                    .path(x.getRequestURI().getPath())
+                    .build().toString();
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
         out.println("    redirect to: " + redirectTo);
         x.getResponseHeaders().add("Location", redirectTo);
-        x.sendResponseHeaders(HttpURLConnection.HTTP_MOVED_PERM, 0);
+        x.sendResponseHeaders(HttpURLConnection.HTTP_MOVED_PERM, NO_RESPONSE_BODY);
         x.getResponseBody().close();
     }
 
@@ -305,64 +327,8 @@ public class TestRedirectLinks extends JavadocTester {
                 responseStream.write(bytes);
             }
         } else {
-            x.sendResponseHeaders(HttpURLConnection.HTTP_NOT_FOUND, 0);
+            x.sendResponseHeaders(HttpURLConnection.HTTP_NOT_FOUND, NO_RESPONSE_BODY);
             x.getResponseBody().close();
-        }
-    }
-
-    /**
-     * Creates a simple usable SSLContext for an HttpsServer using
-     * a default keystore in the test tree.
-     * <p>
-     * This class is based on
-     * test/jdk/java/net/httpclient/whitebox/java.net.http/jdk/internal/net/http/SimpleSSLContext.java
-     */
-    static class SimpleSSLContext {
-
-        private final SSLContext ssl;
-
-        /**
-         * Loads default keystore.
-         */
-        SimpleSSLContext() throws Exception {
-            Path p = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
-            while (!Files.exists(p.resolve("TEST.ROOT"))) {
-                p = p.getParent();
-                if (p == null) {
-                    throw new IOException("can't find TEST.ROOT");
-                }
-            }
-
-            System.err.println("Test suite root: " + p);
-            Path testKeys = p.resolve("../lib/jdk/test/lib/net/testkeys").normalize();
-            if (!Files.exists(testKeys)) {
-                throw new IOException("can't find testkeys");
-            }
-            System.err.println("Test keys: " + testKeys);
-
-            try (InputStream fis = Files.newInputStream(testKeys)) {
-                ssl = init(fis);
-            }
-        }
-
-        private SSLContext init(InputStream i) throws Exception {
-            char[] passphrase = "passphrase".toCharArray();
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            ks.load(i, passphrase);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-            tmf.init(ks);
-
-            SSLContext ssl = SSLContext.getInstance("TLS");
-            ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            return ssl;
-        }
-
-        SSLContext get() {
-            return ssl;
         }
     }
 }

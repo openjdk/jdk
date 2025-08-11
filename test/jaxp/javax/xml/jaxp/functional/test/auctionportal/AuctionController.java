@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMConfiguration;
@@ -70,10 +69,8 @@ import org.w3c.dom.ls.LSSerializer;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.auctionportal.AuctionController
  * @run testng/othervm test.auctionportal.AuctionController
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class AuctionController {
     /**
      * Check for DOMErrorHandler handling DOMError. Before fix of bug 4890927

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,161 +45,64 @@ int UnsafeMemoryAccess::_table_length                           = 0;
 int UnsafeMemoryAccess::_table_max_length                       = 0;
 address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
-// Implementation of StubRoutines - for a description
-// of how to extend it, see the header file.
+// Implementation of StubRoutines - for a description of how to
+// declare new blobs, stubs and entries , see stubDefinitions.hpp.
 
-// Class Variables
+// Define fields used to store blobs
 
-BufferBlob* StubRoutines::_initial_stubs_code                   = nullptr;
-BufferBlob* StubRoutines::_final_stubs_code                     = nullptr;
-BufferBlob* StubRoutines::_compiler_stubs_code                  = nullptr;
-BufferBlob* StubRoutines::_continuation_stubs_code              = nullptr;
+#define DEFINE_STUBGEN_BLOB_FIELD(blob_name)                            \
+  BufferBlob* StubRoutines:: STUBGEN_BLOB_FIELD_NAME(blob_name) = nullptr;
 
-address StubRoutines::_call_stub_return_address                 = nullptr;
-address StubRoutines::_call_stub_entry                          = nullptr;
+STUBGEN_BLOBS_DO(DEFINE_STUBGEN_BLOB_FIELD)
 
-address StubRoutines::_catch_exception_entry                    = nullptr;
-address StubRoutines::_forward_exception_entry                  = nullptr;
+#undef DEFINE_STUBGEN_BLOB_FIELD
+
+// Define fields used to store stubgen stub entries
+
+#define DEFINE_STUBGEN_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = nullptr;
+
+#define DEFINE_STUBGEN_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
+
+#define DEFINE_STUBGEN_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name)[count] = { nullptr };
+
+STUBGEN_ENTRIES_DO(DEFINE_STUBGEN_ENTRY_FIELD, DEFINE_STUBGEN_ENTRY_FIELD_INIT, DEFINE_STUBGEN_ENTRY_FIELD_ARRAY)
+
+#undef DEFINE_STUBGEN_ENTRY_FIELD_ARRAY
+#undef DEFINE_STUBGEN_ENTRY_FIELD_INIT
+#undef DEFINE_STUBGEN_ENTRY_FIELD
+
 jint    StubRoutines::_verify_oop_count                         = 0;
-address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
-address StubRoutines::_atomic_xchg_entry                        = nullptr;
-address StubRoutines::_atomic_cmpxchg_entry                     = nullptr;
-address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
-address StubRoutines::_atomic_add_entry                         = nullptr;
-address StubRoutines::_fence_entry                              = nullptr;
 
-// Compiled code entry points default values
-// The default functions don't have separate disjoint versions.
-address StubRoutines::_jbyte_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
-address StubRoutines::_jbyte_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_disjoint_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_disjoint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_disjoint_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_disjoint_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
-
-address StubRoutines::_arrayof_jbyte_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_arraycopy_uninit      = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
-address StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_disjoint_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_disjoint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
-
-address StubRoutines::_data_cache_writeback              = nullptr;
-address StubRoutines::_data_cache_writeback_sync         = nullptr;
-
-address StubRoutines::_checkcast_arraycopy               = nullptr;
-address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
-address StubRoutines::_unsafe_arraycopy                  = nullptr;
-address StubRoutines::_generic_arraycopy                 = nullptr;
-
-address StubRoutines::_unsafe_setmemory                  = nullptr;
-
-address StubRoutines::_jbyte_fill;
-address StubRoutines::_jshort_fill;
-address StubRoutines::_jint_fill;
-address StubRoutines::_arrayof_jbyte_fill;
-address StubRoutines::_arrayof_jshort_fill;
-address StubRoutines::_arrayof_jint_fill;
-
-address StubRoutines::_aescrypt_encryptBlock               = nullptr;
-address StubRoutines::_aescrypt_decryptBlock               = nullptr;
-address StubRoutines::_cipherBlockChaining_encryptAESCrypt = nullptr;
-address StubRoutines::_cipherBlockChaining_decryptAESCrypt = nullptr;
-address StubRoutines::_electronicCodeBook_encryptAESCrypt  = nullptr;
-address StubRoutines::_electronicCodeBook_decryptAESCrypt  = nullptr;
-address StubRoutines::_counterMode_AESCrypt                = nullptr;
-address StubRoutines::_galoisCounterMode_AESCrypt          = nullptr;
-address StubRoutines::_ghash_processBlocks                 = nullptr;
-address StubRoutines::_chacha20Block                       = nullptr;
-address StubRoutines::_base64_encodeBlock                  = nullptr;
-address StubRoutines::_base64_decodeBlock                  = nullptr;
-address StubRoutines::_poly1305_processBlocks              = nullptr;
-address StubRoutines::_intpoly_montgomeryMult_P256         = nullptr;
-address StubRoutines::_intpoly_assign                      = nullptr;
-
-address StubRoutines::_md5_implCompress      = nullptr;
-address StubRoutines::_md5_implCompressMB    = nullptr;
-address StubRoutines::_sha1_implCompress     = nullptr;
-address StubRoutines::_sha1_implCompressMB   = nullptr;
-address StubRoutines::_sha256_implCompress   = nullptr;
-address StubRoutines::_sha256_implCompressMB = nullptr;
-address StubRoutines::_sha512_implCompress   = nullptr;
-address StubRoutines::_sha512_implCompressMB = nullptr;
-address StubRoutines::_sha3_implCompress     = nullptr;
-address StubRoutines::_sha3_implCompressMB   = nullptr;
-
-address StubRoutines::_updateBytesCRC32 = nullptr;
-address StubRoutines::_crc_table_adr =    nullptr;
 
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 
-address StubRoutines::_crc32c_table_addr = nullptr;
-address StubRoutines::_updateBytesCRC32C = nullptr;
-address StubRoutines::_updateBytesAdler32 = nullptr;
+const char* StubRoutines::get_blob_name(BlobId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen blob %s", StubInfo::name(id));
+  return StubInfo::name(id);
+}
 
-address StubRoutines::_multiplyToLen = nullptr;
-address StubRoutines::_squareToLen = nullptr;
-address StubRoutines::_mulAdd = nullptr;
-address StubRoutines::_montgomeryMultiply = nullptr;
-address StubRoutines::_montgomerySquare = nullptr;
-address StubRoutines::_bigIntegerRightShiftWorker = nullptr;
-address StubRoutines::_bigIntegerLeftShiftWorker = nullptr;
+const char* StubRoutines::get_stub_name(StubId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen stub %s", StubInfo::name(id));
+  return StubInfo::name(id);
+}
 
-address StubRoutines::_vectorizedMismatch = nullptr;
+#ifdef ASSERT
+// translate a stub id to an associated blob id while checking that it
+// is a stubgen stub
 
-address StubRoutines::_dexp = nullptr;
-address StubRoutines::_dlog = nullptr;
-address StubRoutines::_dlog10 = nullptr;
-address StubRoutines::_fmod = nullptr;
-address StubRoutines::_dpow = nullptr;
-address StubRoutines::_dsin = nullptr;
-address StubRoutines::_dcos = nullptr;
-address StubRoutines::_dlibm_sin_cos_huge = nullptr;
-address StubRoutines::_dlibm_reduce_pi04l = nullptr;
-address StubRoutines::_dlibm_tan_cot_huge = nullptr;
-address StubRoutines::_dtan = nullptr;
-address StubRoutines::_dtanh = nullptr;
+BlobId StubRoutines::stub_to_blob(StubId id) {
+  assert(StubInfo::is_stubgen(id), "not a stubgen stub %s", StubInfo::name(id));
+  return StubInfo::blob(id);
+}
 
-address StubRoutines::_f2hf = nullptr;
-address StubRoutines::_hf2f = nullptr;
-
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-
-address StubRoutines::_method_entry_barrier = nullptr;
-address StubRoutines::_array_sort = nullptr;
-address StubRoutines::_array_partition  = nullptr;
-
-address StubRoutines::_cont_thaw          = nullptr;
-address StubRoutines::_cont_returnBarrier = nullptr;
-address StubRoutines::_cont_returnBarrierExc = nullptr;
-
-address StubRoutines::_upcall_stub_exception_handler = nullptr;
-address StubRoutines::_upcall_stub_load_target = nullptr;
-
-address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
-address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
-
+#endif // ASSERT
 
 // Initialization
-//
-// Note: to break cycle with universe initialization, stubs are generated in two phases.
-// The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
-// The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id); // only interface to generators
 
 void UnsafeMemoryAccess::create_table(int max_size) {
   UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
@@ -208,6 +110,7 @@ void UnsafeMemoryAccess::create_table(int max_size) {
 }
 
 bool UnsafeMemoryAccess::contains_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
@@ -218,6 +121,7 @@ bool UnsafeMemoryAccess::contains_pc(address pc) {
 }
 
 address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
@@ -227,25 +131,76 @@ address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
+// Used to retrieve mark regions that lie within a generated stub so
+// they can be saved along with the stub and used to reinit the table
+// when the stub is reloaded.
 
-static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
+void UnsafeMemoryAccess::collect_entries(address range_start, address range_end, GrowableArray<address>& entries)
+{
+  for (int i = 0; i < _table_length; i++) {
+    UnsafeMemoryAccess& e = _table[i];
+    assert((e._start_pc != nullptr &&
+            e._end_pc != nullptr &&
+            e._error_exit_pc != nullptr),
+           "search for entries found incomplete table entry");
+    if (e._start_pc >= range_start && e._end_pc <= range_end) {
+      assert(((e._error_exit_pc >= range_start &&
+               e._error_exit_pc <= range_end) ||
+              e._error_exit_pc == _common_exit_stub_pc),
+             "unexpected error exit pc");
+      entries.append(e._start_pc);
+      entries.append(e._end_pc);
+      // only return an exit pc when it is within the range of the stub
+      if (e._error_exit_pc != _common_exit_stub_pc) {
+        entries.append(e._error_exit_pc);
+      } else {
+        // an address outside the stub must be the common exit stub address
+        entries.append(nullptr);
+      }
+    }
+  }
+}
+
+static BufferBlob* initialize_stubs(BlobId blob_id,
                                     int code_size, int max_aligned_stubs,
                                     const char* timer_msg,
                                     const char* buffer_name,
                                     const char* assert_msg) {
+  assert(StubInfo::is_stubgen(blob_id), "not a stubgen blob %s", StubInfo::name(blob_id));
   ResourceMark rm;
+  if (code_size == 0) {
+    LogTarget(Info, stubs) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("%s\t not generated", buffer_name);
+    }
+    return nullptr;
+  }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
   if (stubs_code == nullptr) {
+    // The compiler blob may be created late by a C2 compiler thread
+    // rather than during normal initialization by the initial thread.
+    // In that case we can tolerate an allocation failure because the
+    // compiler will have been shut down and we have no need of the
+    // blob.
+    if (Thread::current()->is_Compiler_thread()) {
+      assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
+      assert(DelayCompilerStubsGeneration, "sanity");
+      log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
+      return nullptr;
+    }
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
   }
   CodeBuffer buffer(stubs_code);
-  StubGenerator_generate(&buffer, kind);
+  StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+  assert(code_size == 0 || buffer.insts_remaining() > 200,
+         "increase %s, code_size: %d, used: %d, free: %d",
+         assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
@@ -254,52 +209,46 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+
   return stubs_code;
 }
 
-void StubRoutines::initialize_initial_stubs() {
-  if (_initial_stubs_code == nullptr) {
-    _initial_stubs_code = initialize_stubs(StubCodeGenerator::Initial_stubs,
-                                           _initial_stubs_code_size, 10,
-                                           "StubRoutines generation initial stubs",
-                                           "StubRoutines (initial stubs)",
-                                           "_initial_stubs_code_size");
+#define DEFINE_BLOB_INIT_METHOD(blob_name)                              \
+  void StubRoutines::initialize_ ## blob_name ## _stubs() {             \
+    if (STUBGEN_BLOB_FIELD_NAME(blob_name) == nullptr) {                \
+      BlobId blob_id = BlobId:: JOIN3(stubgen, blob_name, id);          \
+      int size = _ ## blob_name ## _code_size;                          \
+      int max_aligned_size = 10;                                        \
+      const char* timer_msg = "StubRoutines generation " # blob_name " stubs"; \
+      const char* name = "StubRoutines (" # blob_name " stubs)";        \
+      const char* assert_msg = "_" # blob_name "_code_size";            \
+      STUBGEN_BLOB_FIELD_NAME(blob_name) =                              \
+        initialize_stubs(blob_id, size, max_aligned_size, timer_msg,    \
+                         name, assert_msg);                             \
+    }                                                                   \
   }
-}
 
-void StubRoutines::initialize_continuation_stubs() {
-  if (_continuation_stubs_code == nullptr) {
-    _continuation_stubs_code = initialize_stubs(StubCodeGenerator::Continuation_stubs,
-                                           _continuation_stubs_code_size, 10,
-                                           "StubRoutines generation continuation stubs",
-                                           "StubRoutines (continuation stubs)",
-                                           "_continuation_stubs_code_size");
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
+
+#undef DEFINE_BLOB_INIT_METHOD
+
+
+#define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
+  void blob_name ## _stubs_init()  {                    \
+    StubRoutines::initialize_ ## blob_name ## _stubs(); \
   }
-}
 
-void StubRoutines::initialize_compiler_stubs() {
-  if (_compiler_stubs_code == nullptr) {
-    _compiler_stubs_code = initialize_stubs(StubCodeGenerator::Compiler_stubs,
-                                           _compiler_stubs_code_size, 100,
-                                           "StubRoutines generation compiler stubs",
-                                           "StubRoutines (compiler stubs)",
-                                           "_compiler_stubs_code_size");
-  }
-}
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 
-void StubRoutines::initialize_final_stubs() {
-  if (_final_stubs_code == nullptr) {
-    _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
-                                         _final_stubs_code_size, 10,
-                                         "StubRoutines generation final stubs",
-                                         "StubRoutines (final stubs)",
-                                         "_final_stubs_code_size");
-  }
-}
+#undef DEFINE_BLOB_INIT_FUNCTION
 
-void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
-void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
-void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
+/*
+ * we generate the underlying driver method but this wrapper is needed
+ * to perform special handling depending on where the compiler init
+ * gets called from. it ought to be possible to remove this at some
+ * point and have a determinate ordered init.
+ */
 
 void compiler_stubs_init(bool in_compiler_thread) {
   if (in_compiler_thread && DelayCompilerStubsGeneration) {

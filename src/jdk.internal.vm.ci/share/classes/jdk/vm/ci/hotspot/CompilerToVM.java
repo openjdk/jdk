@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,9 +468,19 @@ final class CompilerToVM {
      */
     int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
       return decodeMethodIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
-  }
+    }
 
-  private native int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
+    private native int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
+
+    /**
+     * Returns the number of {@code ResolvedIndyEntry}s present within this constant
+     * pool.
+     */
+    int getNumIndyEntries(HotSpotConstantPool constantPool) {
+        return getNumIndyEntries(constantPool, constantPool.getConstantPoolPointer());
+    }
+
+    private native int getNumIndyEntries(HotSpotConstantPool constantPool, long constantPoolPointer);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -643,6 +653,8 @@ final class CompilerToVM {
                     InstalledCode code,
                     long failedSpeculationsAddress,
                     byte[] speculations);
+
+    native String getInvalidationReasonDescription(int invalidationReason);
 
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the
@@ -832,7 +844,7 @@ final class CompilerToVM {
      * {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and if
      * {@code deoptimize == true} any current activations of the {@code nmethod} are deoptimized.
      */
-    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize);
+    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize, int invalidationReason);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.
@@ -1148,13 +1160,23 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all the non-constructor methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all non-overpass and non-initializer
+     * methods of {@code klass}.
      */
     ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredMethods(klass, klass.getKlassPointer());
     }
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    /**
+     * Gets the {@link ResolvedJavaMethod}s for all methods of {@code klass}.
+     */
+    ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass) {
+        return getAllMethods(klass, klass.getKlassPointer());
+    }
+
+    native ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
@@ -1514,4 +1536,23 @@ final class CompilerToVM {
     }
 
     native void getOopMapAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
+
+    /**
+     * If the current thread is a CompilerThread associated with a JVMCI compiler where
+     * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
+     *
+     * @returns false if no change was made, otherwise true
+     */
+    native boolean updateCompilerThreadCanCallJava(boolean newState);
+
+    /**
+     * Returns the current {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    native int getCompilationActivityMode();
+
+    /**
+     * Returns whether the current thread is a CompilerThread.
+     */
+    native boolean isCompilerThread();
 }

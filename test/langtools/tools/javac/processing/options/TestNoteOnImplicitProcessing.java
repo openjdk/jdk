@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,9 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
                 List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
                 CompilationTask task = provider.getTask(compilerOut, null, null, options, null, inputFile);
 
-                task.call();
+                if (!task.call()) {
+                    throw new AssertionError("test failed due to a compilation error");
+                }
 
                 verifyMessages(out, compilerOut, false, false);
             }
@@ -335,7 +337,9 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
                         (Processor) processorClass.getDeclaredConstructor().newInstance();
 
                 task.setProcessors(List.of(processor));
-                task.call();
+                if (!task.call()) {
+                    throw new AssertionError("test failed due to a compilation error");
+                }
 
                 verifyMessages(out, compilerOut, false, true);
             }

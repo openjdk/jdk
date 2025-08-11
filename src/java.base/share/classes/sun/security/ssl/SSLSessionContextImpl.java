@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Cache;
-
+import sun.security.util.KeyUtil;
 
 /**
  * {@systemProperty jdk.tls.server.enableSessionTicketExtension} determines if the
@@ -199,11 +197,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             SessionTicketExtension.StatelessKey k = entry.getValue();
             if (k.isInvalid(this)) {
                 it.remove();
-                try {
-                    k.key.destroy();
-                } catch (Exception e) {
-                    // Suppress
-                }
+                KeyUtil.destroySecretKeys(k.key);
             }
         }
     }
@@ -324,10 +318,10 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
             // Property for Session Cache state
             if (server) {
-                st = GetPropertyAction.privilegedGetProperty(
+                st = System.getProperty(
                         "jdk.tls.server.enableSessionTicketExtension", "true");
             } else {
-                st = GetPropertyAction.privilegedGetProperty(
+                st = System.getProperty(
                         "jdk.tls.client.enableSessionTicketExtension", "true");
             }
 
@@ -337,7 +331,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
             // Property for Session Ticket Timeout.  The value can be changed
             // by SSLSessionContext.setSessionTimeout(int)
-            String s = GetPropertyAction.privilegedGetProperty(
+            String s = System.getProperty(
                     "jdk.tls.server.sessionTicketTimeout");
             if (s != null) {
                 try {
@@ -364,7 +358,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                 }
             }
 
-            int defaultCacheLimit = GetIntegerAction.privilegedGetProperty(
+            int defaultCacheLimit = Integer.getInteger(
                     "javax.net.ssl.sessionCacheSize", DEFAULT_MAX_CACHE_SIZE);
 
             if (defaultCacheLimit >= 0) {

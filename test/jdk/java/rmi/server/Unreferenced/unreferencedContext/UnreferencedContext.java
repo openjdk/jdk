@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary UnreferencedContext_Stub
- * @run main/othervm/timeout=120 -Djava.security.manager=allow UnreferencedContext
+ * @run main/othervm/timeout=120 UnreferencedContext
  */
 
 import java.net.*;
@@ -67,10 +67,6 @@ public class UnreferencedContext implements Remote, Unreferenced, Runnable {
     }
 
     public void unreferenced() {
-        // turn on security to ensure that the action below will not
-        // require extra permissions
-        System.setSecurityManager(new java.rmi.RMISecurityManager());
-
         // exercise functionality prohibited by 4214123
         (new Thread(this)).start();
 

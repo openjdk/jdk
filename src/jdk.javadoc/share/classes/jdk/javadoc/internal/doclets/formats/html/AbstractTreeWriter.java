@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,22 +128,20 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;
             for (TypeElement intf : interfaces) {
-                if (parent != intf) {
-                    if (utils.isPublic(intf) || utils.isLinkable(intf)) {
-                        if (isFirst) {
-                            isFirst = false;
-                            if (utils.isPlainInterface(typeElement)) {
-                                content.add(" (");
-                                content.add(contents.also);
-                                content.add(" extends ");
-                            } else {
-                                content.add(" (implements ");
-                            }
+                if (parent != intf && utils.isVisible(intf)) {
+                    if (isFirst) {
+                        isFirst = false;
+                        if (utils.isPlainInterface(typeElement)) {
+                            content.add(" (");
+                            content.add(contents.also);
+                            content.add(" extends ");
                         } else {
-                            content.add(", ");
+                            content.add(" (implements ");
                         }
-                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, intf, content);
+                    } else {
+                        content.add(", ");
                     }
+                    addPreQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, intf, content);
                 }
             }
             if (!isFirst) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -32,6 +31,9 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
+#include "jvmci/jniAccessMark.inline.hpp"
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -41,12 +43,10 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
-#include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompiler.hpp"
-#include "jvmci/jvmciRuntime.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -251,12 +251,9 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_OK) {
     return;
   }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
   stringStream st;
   st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+            _init_error, _init_error_msg != nullptr ? _init_error_msg : (_init_error == JNI_ENOMEM ? "JNI_ENOMEM" : "none"));
   THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
@@ -613,7 +610,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+    permit_forbidden_function::free((void*)_init_error_msg);
   }
   if (_init_error != JNI_OK) {
     return;
@@ -941,9 +938,8 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
-    Handle h_loader = Handle();
-    Handle h_protection_domain = Handle();
-    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader, h_protection_domain);
+    Handle h_loader;
+    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader );
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
@@ -1214,7 +1210,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
   }
 }
 
-JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jboolean profileDeopt, jlong compileId, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
 
   JVMCIObject methodObject = get_jvmci_method(method, JVMCI_CHECK_(JVMCIObject()));
@@ -1234,11 +1230,12 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(methodObject)));
     jargs.push_oop(nameStr);
     jargs.push_int(isDefault);
+    jargs.push_int(profileDeopt);
     jargs.push_long(compileId);
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, ik,
                             vmSymbols::object_initializer_name(),
-                            vmSymbols::method_string_bool_long_signature(),
+                            vmSymbols::method_string_bool_bool_long_signature(),
                             &jargs, CHECK_(JVMCIObject()));
     return wrap(obj_h());
   } else {
@@ -1467,8 +1464,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
 JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
-    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlass())->array_klass(CHECK_(JVMCIObject()));
-    objArrayOop result = ObjArrayKlass::cast(byteArrayArrayKlass) ->allocate(length, CHECK_(JVMCIObject()));
+    objArrayOop result = oopFactory::new_objArray(Universe::byteArrayKlass(), length, CHECK_(JVMCIObject()));
     return wrap(result);
   } else {
     JNIAccessMark jni(this, THREAD);
@@ -1593,7 +1589,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
     HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
     HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
     HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
-    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_field_flags());
     HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
     HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
     return wrap(obj_h());
@@ -1604,7 +1600,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
                                       (jint)fieldinfo->name_index(),
                                       (jint)fieldinfo->signature_index(),
                                       (jint)fieldinfo->offset(),
-                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->access_flags().as_field_flags(),
                                       (jint)fieldinfo->field_flags().as_uint(),
                                       (jint)fieldinfo->initializer_index());
 
@@ -1754,7 +1750,7 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nmethod::InvalidationReason invalidation_reason, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
@@ -1777,7 +1773,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant();
+    nm->make_not_entrant(invalidation_reason);
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1786,7 +1782,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant();
+    nm->make_not_entrant(invalidation_reason);
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 
@@ -1866,9 +1862,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
 
 void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->nmethod_entry_barrier(nm);
-  }
+  bs_nm->nmethod_entry_barrier(nm);
   _thread->set_live_nmethod(nm);
 }
 

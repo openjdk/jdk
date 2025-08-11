@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ package sun.util.resources;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -255,32 +253,25 @@ public abstract class Bundles {
     /**
      * Loads ResourceBundle from service providers.
      */
-    @SuppressWarnings("removal")
     private static ResourceBundle loadBundleFromProviders(String baseName,
                                                           Locale locale,
                                                           ServiceLoader<ResourceBundleProvider> providers,
                                                           CacheKey cacheKey)
     {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ResourceBundle run() {
-                        for (Iterator<ResourceBundleProvider> itr = providers.iterator(); itr.hasNext(); ) {
-                            try {
-                                ResourceBundleProvider provider = itr.next();
-                                ResourceBundle bundle = provider.getBundle(baseName, locale);
-                                if (bundle != null) {
-                                    return bundle;
-                                }
-                            } catch (ServiceConfigurationError | SecurityException e) {
-                                if (cacheKey != null) {
-                                    cacheKey.setCause(e);
-                                }
-                            }
-                        }
-                        return null;
-                    }
-                });
-
+        for (Iterator<ResourceBundleProvider> itr = providers.iterator(); itr.hasNext(); ) {
+            try {
+                ResourceBundleProvider provider = itr.next();
+                ResourceBundle bundle = provider.getBundle(baseName, locale);
+                if (bundle != null) {
+                    return bundle;
+                }
+            } catch (ServiceConfigurationError e) {
+                if (cacheKey != null) {
+                    cacheKey.setCause(e);
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean isValidBundle(ResourceBundle bundle) {

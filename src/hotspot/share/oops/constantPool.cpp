@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "cds/archiveHeapWriter.hpp"
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -35,6 +34,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -52,6 +52,7 @@
 #include "oops/array.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -60,6 +61,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -147,7 +149,7 @@ void ConstantPool::release_C_heap_structures() {
 }
 
 void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPool): %p", this);
+  log_trace(aot)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
@@ -283,6 +285,44 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
+template <typename Function>
+void ConstantPool::iterate_archivable_resolved_references(Function function) {
+  objArrayOop rr = resolved_references();
+  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_method_handles()) {
+    Array<ResolvedIndyEntry>* indy_entries = cache()->resolved_indy_entries();
+    if (indy_entries != nullptr) {
+      for (int i = 0; i < indy_entries->length(); i++) {
+        ResolvedIndyEntry *rie = indy_entries->adr_at(i);
+        if (rie->is_resolved() && AOTConstantPoolResolver::is_resolution_deterministic(this, rie->constant_pool_index())) {
+          int rr_index = rie->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
+          function(rr_index);
+
+          // Save the BSM as well (sometimes the JIT looks up the BSM it for replay)
+          int indy_cp_index = rie->constant_pool_index();
+          int bsm_mh_cp_index = bootstrap_method_ref_index_at(indy_cp_index);
+          int bsm_rr_index = cp_to_object_index(bsm_mh_cp_index);
+          assert(resolved_reference_at(bsm_rr_index) != nullptr, "must exist");
+          function(bsm_rr_index);
+        }
+      }
+    }
+
+    Array<ResolvedMethodEntry>* method_entries = cache()->resolved_method_entries();
+    if (method_entries != nullptr) {
+      for (int i = 0; i < method_entries->length(); i++) {
+        ResolvedMethodEntry* rme = method_entries->adr_at(i);
+        if (rme->is_resolved(Bytecodes::_invokehandle) && rme->has_appendix() &&
+            cache()->can_archive_resolved_method(this, rme)) {
+          int rr_index = rme->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
+          function(rr_index);
+        }
+      }
+    }
+  }
+}
+
 // Returns the _resolved_reference array after removing unarchivable items from it.
 // Returns null if this class is not supported, or _resolved_reference doesn't exist.
 objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
@@ -291,8 +331,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   InstanceKlass *ik = pool_holder();
-  if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
-        ik->is_shared_app_class())) {
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
     return nullptr;
@@ -300,9 +339,15 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
 
   objArrayOop rr = resolved_references();
   if (rr != nullptr) {
+    ResourceMark rm;
     int rr_len = rr->length();
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
+    GrowableArray<bool> keep_resolved_refs(rr_len, rr_len, false);
+
+    iterate_archivable_resolved_references([&](int rr_index) {
+      keep_resolved_refs.at_put(rr_index, true);
+    });
+
+    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -316,27 +361,18 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
             if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
+            continue;
           }
+        }
+
+        if (keep_resolved_refs.at(i)) {
+          scratch_rr->obj_at_put(i, obj);
         }
       }
     }
     return scratch_rr;
   }
   return rr;
-}
-
-void ConstantPool::add_dumped_interned_strings() {
-  objArrayOop rr = resolved_references();
-  if (rr != nullptr) {
-    int rr_len = rr->length();
-    for (int i = 0; i < rr_len; i++) {
-      oop p = rr->obj_at(i);
-      if (java_lang_String::is_instance(p) &&
-          !ArchiveHeapWriter::is_string_too_large_to_archive(p)) {
-        HeapShared::add_to_dumped_interned_strings(p);
-      }
-    }
-  }
 }
 #endif
 
@@ -349,6 +385,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
+  if (is_for_method_handle_intrinsic()) {
+    // See the same check in remove_unshareable_info() below.
+    assert(cache() == nullptr, "must not have cpCache");
+    return;
+  }
   assert(_cache != nullptr, "constant pool _cache should not be null");
 
   // Only create the new resolved references array if it hasn't been attempted before
@@ -379,6 +420,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       }
     }
   }
+
+  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
+    objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
+    HeapShared::add_scratch_resolved_references(this, scratch_references);
+  }
 }
 
 void ConstantPool::remove_unshareable_info() {
@@ -388,9 +434,31 @@ void ConstantPool::remove_unshareable_info() {
   // we always set _on_stack to true to avoid having to change _flags during runtime.
   _flags |= (_on_stack | _is_shared);
 
+  if (is_for_method_handle_intrinsic()) {
+    // This CP was created by Method::make_method_handle_intrinsic() and has nothing
+    // that need to be removed/restored. It has no cpCache since the intrinsic methods
+    // don't have any bytecodes.
+    assert(cache() == nullptr, "must not have cpCache");
+    return;
+  }
+
+  bool update_resolved_reference = true;
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    InstanceKlass* src_holder = src_cp->pool_holder();
+    if (src_holder->defined_by_other_loaders()) {
+      // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
+      // is already saved during the training run.
+      precond(!src_holder->is_loaded());
+      precond(resolved_reference_length() >= 0);
+      precond(resolved_references() == nullptr);
+      update_resolved_reference = false;
+    }
+  }
+
   // resolved_references(): remember its length. If it cannot be restored
   // from the archived heap objects at run time, we need to dynamically allocate it.
-  if (cache() != nullptr) {
+  if (update_resolved_reference && cache() != nullptr) {
     set_resolved_reference_length(
         resolved_references() != nullptr ? resolved_references()->length() : 0);
     set_resolved_references(OopHandle());
@@ -416,15 +484,14 @@ static const char* get_type(Klass* k) {
     type = "prim";
   } else {
     InstanceKlass* src_ik = InstanceKlass::cast(src_k);
-    oop loader = src_ik->class_loader();
-    if (loader == nullptr) {
-      type = "boot";
-    } else if (loader == SystemDictionary::java_platform_loader()) {
-      type = "plat";
-    } else if (loader == SystemDictionary::java_system_loader()) {
-      type = "app";
+    if (src_ik->defined_by_boot_loader()) {
+      return "boot";
+    } else if (src_ik->defined_by_platform_loader()) {
+      return "plat";
+    } else if (src_ik->defined_by_app_loader()) {
+      return "app";
     } else {
-      type = "unreg";
+      return "unreg";
     }
   }
 
@@ -433,7 +500,7 @@ static const char* get_type(Klass* k) {
 
 void ConstantPool::remove_unshareable_entries() {
   ResourceMark rm;
-  log_info(cds, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
+  log_info(aot, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
   for (int cp_index = 1; cp_index < length(); cp_index++) { // cp_index 0 is unused
     int cp_tag = tag_at(cp_index).value();
     switch (cp_tag) {
@@ -477,21 +544,22 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   if (k == nullptr) {
     // We'd come here if the referenced class has been excluded via
     // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
-    // has cleared the resolved_klasses()->at(...) pointer to NULL. Thus, we
+    // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
     // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
     can_archive = false;
   } else {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    can_archive = ClassPrelinker::is_resolution_deterministic(src_cp, cp_index);
+    can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
   }
 
   if (!can_archive) {
     int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
-    resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    // This might be at a safepoint but do this in the right order.
     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+    resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
-  LogStreamHandle(Trace, cds, resolve) log;
+  LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",
@@ -502,7 +570,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
                 (!k->is_instance_klass() || pool_holder()->is_subtype_of(k)) ? "" : " (not supertype)");
     } else {
       Symbol* name = klass_name_at(cp_index);
-      log.print("    %s", name->as_C_string());
+      log.print(" => %s", name->as_C_string());
     }
   }
 
@@ -567,9 +635,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // the unresolved_klasses() array.
   if (this_cp->tag_at(cp_index).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    if (klass != nullptr) {
-      return klass;
-    }
+    assert(klass != nullptr, "must be resolved");
+    return klass;
   }
 
   // This tag doesn't change back to unresolved class unless at a safepoint.
@@ -590,13 +657,12 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   Handle mirror_handle;
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
-  Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
 
   Klass* k;
   {
     // Turn off the single stepping while doing class resolution
     JvmtiHideSingleStepping jhss(javaThread);
-    k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+    k = SystemDictionary::resolve_or_fail(name, loader, true, THREAD);
   } //  JvmtiHideSingleStepping jhss(javaThread);
 
   if (!HAS_PENDING_EXCEPTION) {
@@ -623,12 +689,12 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     trace_class_resolution(this_cp, k);
   }
 
-  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
+  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
+  Atomic::release_store(adr, k);
 
   jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
                                   (jbyte)JVM_CONSTANT_UnresolvedClass,
@@ -637,7 +703,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    Atomic::store(adr, (Klass*)nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -657,7 +723,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 
   if (this_cp->tag_at(which).is_klass()) {
     Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(k != nullptr, "should be resolved");
+    assert(k != nullptr, "must be resolved");
     return k;
   } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
     return nullptr;
@@ -666,10 +732,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     HandleMark hm(current);
     Symbol* name = this_cp->symbol_at(name_index);
     oop loader = this_cp->pool_holder()->class_loader();
-    oop protection_domain = this_cp->pool_holder()->protection_domain();
-    Handle h_prot (current, protection_domain);
     Handle h_loader (current, loader);
-    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
+    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != nullptr && current->is_Java_thread()) {
@@ -748,9 +812,7 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_fast_invokevfinal: // Bytecode interpreter uses this
       return resolved_method_entry_at(index)->constant_pool_index();
     default:
-      tty->print_cr("Unexpected bytecode: %d", code);
-      ShouldNotReachHere(); // All cases should have been handled
-      return -1;
+      fatal("Unexpected bytecode: %s", Bytecodes::name(code));
   }
 }
 
@@ -1050,16 +1112,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // don't trigger resolution if the constant might need it
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
-    {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
-        (*status_return) = false;
-        return nullptr;
-      }
-      // the klass is waiting in the CP; go get it
+      assert(this_cp->resolved_klass_at(cp_index) != nullptr, "must be resolved");
       break;
-    }
     case JVM_CONSTANT_String:
     case JVM_CONSTANT_Integer:
     case JVM_CONSTANT_Float:
@@ -1181,6 +1235,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                  cp_index,
                  callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
                  callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), "%s", ss.as_string());
         save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
       }
@@ -1882,18 +1937,20 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  int k1 = operand_bootstrap_method_ref_index_at(idx1);
-  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
+  int k1 = e1->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
-  int argc = operand_argument_count_at(idx1);
-  if (argc == cp2->operand_argument_count_at(idx2)) {
+  int argc = e1->argument_count();
+  if (argc == e2->argument_count()) {
     for (int j = 0; j < argc; j++) {
-      k1 = operand_argument_index_at(idx1, j);
-      k2 = cp2->operand_argument_index_at(idx2, j);
+      k1 = e1->argument_index(j);
+      k2 = e2->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
@@ -1936,138 +1993,6 @@ const char* ConstantPool::printable_name_at(int cp_index) {
 }
 
 #endif // PRODUCT
-
-
-// JVMTI GetConstantPool support
-
-// For debugging of constant pool
-const bool debug_cpool = false;
-
-#define DBG(code) do { if (debug_cpool) { (code); } } while(0)
-
-static void print_cpool_bytes(jint cnt, u1 *bytes) {
-  const char* WARN_MSG = "Must not be such entry!";
-  jint size = 0;
-  u2   idx1, idx2;
-
-  for (jint idx = 1; idx < cnt; idx++) {
-    jint ent_size = 0;
-    u1   tag  = *bytes++;
-    size++;                       // count tag
-
-    printf("const #%03d, tag: %02d ", idx, tag);
-    switch(tag) {
-      case JVM_CONSTANT_Invalid: {
-        printf("Invalid");
-        break;
-      }
-      case JVM_CONSTANT_Unicode: {
-        printf("Unicode      %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_Utf8: {
-        u2 len = Bytes::get_Java_u2(bytes);
-        char str[128];
-        if (len > 127) {
-           len = 127;
-        }
-        strncpy(str, (char *) (bytes+2), len);
-        str[len] = '\0';
-        printf("Utf8          \"%s\"", str);
-        ent_size = 2 + len;
-        break;
-      }
-      case JVM_CONSTANT_Integer: {
-        u4 val = Bytes::get_Java_u4(bytes);
-        printf("int          %d", *(int *) &val);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Float: {
-        u4 val = Bytes::get_Java_u4(bytes);
-        printf("float        %5.3ff", *(float *) &val);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Long: {
-        u8 val = Bytes::get_Java_u8(bytes);
-        printf("long         " INT64_FORMAT, (int64_t) *(jlong *) &val);
-        ent_size = 8;
-        idx++; // Long takes two cpool slots
-        break;
-      }
-      case JVM_CONSTANT_Double: {
-        u8 val = Bytes::get_Java_u8(bytes);
-        printf("double       %5.3fd", *(jdouble *)&val);
-        ent_size = 8;
-        idx++; // Double takes two cpool slots
-        break;
-      }
-      case JVM_CONSTANT_Class: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        printf("class        #%03d", idx1);
-        ent_size = 2;
-        break;
-      }
-      case JVM_CONSTANT_String: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        printf("String       #%03d", idx1);
-        ent_size = 2;
-        break;
-      }
-      case JVM_CONSTANT_Fieldref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("Field        #%03d, #%03d", (int) idx1, (int) idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Methodref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("Method       #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_InterfaceMethodref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("InterfMethod #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_NameAndType: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("NameAndType  #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_ClassIndex: {
-        printf("ClassIndex  %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_UnresolvedClass: {
-        printf("UnresolvedClass: %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_UnresolvedClassInError: {
-        printf("UnresolvedClassInErr: %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_StringIndex: {
-        printf("StringIndex: %s", WARN_MSG);
-        break;
-      }
-    }
-    printf(";\n");
-    bytes += ent_size;
-    size  += ent_size;
-  }
-  printf("Cpool size: %d\n", size);
-  fflush(nullptr);
-  return;
-} /* end print_cpool_bytes */
 
 
 // Returns size of constant pool entry.
@@ -2132,7 +2057,6 @@ jint ConstantPool::hash_entries_to(SymbolHash *symmap,
       case JVM_CONSTANT_Utf8: {
         Symbol* sym = symbol_at(idx);
         symmap->add_if_absent(sym, idx);
-        DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
       case JVM_CONSTANT_Class:
@@ -2140,7 +2064,6 @@ jint ConstantPool::hash_entries_to(SymbolHash *symmap,
       case JVM_CONSTANT_UnresolvedClassInError: {
         Symbol* sym = klass_name_at(idx);
         classmap->add_if_absent(sym, idx);
-        DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
       case JVM_CONSTANT_Long:
@@ -2174,15 +2097,12 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
     assert(size + ent_size <= cpool_size, "Size mismatch");
 
     *bytes = tag;
-    DBG(printf("#%03hd tag=%03hd, ", (short)idx, (short)tag));
     switch(tag) {
       case JVM_CONSTANT_Invalid: {
-        DBG(printf("JVM_CONSTANT_Invalid"));
         break;
       }
       case JVM_CONSTANT_Unicode: {
         assert(false, "Wrong constant pool tag: JVM_CONSTANT_Unicode");
-        DBG(printf("JVM_CONSTANT_Unicode"));
         break;
       }
       case JVM_CONSTANT_Utf8: {
@@ -2194,7 +2114,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         for (int i = 0; i < len; i++) {
             bytes[3+i] = (u1) str[i];
         }
-        DBG(printf("JVM_CONSTANT_Utf8: %s ", str));
         break;
       }
       case JVM_CONSTANT_Integer: {
@@ -2227,7 +2146,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_Class: idx=#%03hd, %s", idx1, sym->as_utf8()));
         break;
       }
       case JVM_CONSTANT_String: {
@@ -2236,7 +2154,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_String: idx=#%03hd, %s", idx1, sym->as_utf8()));
         break;
       }
       case JVM_CONSTANT_Fieldref:
@@ -2246,7 +2163,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx2 = uncached_name_and_type_ref_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_Methodref: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_NameAndType: {
@@ -2254,21 +2170,18 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx2 = signature_ref_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_NameAndType: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_ClassIndex: {
         *bytes = JVM_CONSTANT_Class;
         idx1 = checked_cast<u2>(klass_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_ClassIndex: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_StringIndex: {
         *bytes = JVM_CONSTANT_String;
         idx1 = checked_cast<u2>(string_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_StringIndex: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_MethodHandle:
@@ -2278,7 +2191,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = checked_cast<u2>(method_handle_index_at(idx));
         *(bytes+1) = (unsigned char) kind;
         Bytes::put_Java_u2((address) (bytes+2), idx1);
-        DBG(printf("JVM_CONSTANT_MethodHandle: %d %hd", kind, idx1));
         break;
       }
       case JVM_CONSTANT_MethodType:
@@ -2286,7 +2198,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         *bytes = JVM_CONSTANT_MethodType;
         idx1 = checked_cast<u2>(method_type_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_Dynamic:
@@ -2297,7 +2208,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_Dynamic: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_InvokeDynamic: {
@@ -2307,22 +2217,16 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
         break;
       }
     }
-    DBG(printf("\n"));
     bytes += ent_size;
     size  += ent_size;
   }
   assert(size == cpool_size, "Size mismatch");
 
-  // Keep temporarily for debugging until it's stable.
-  DBG(print_cpool_bytes(cnt, start_bytes));
   return (int)(bytes - start_bytes);
 } /* end copy_cpool_bytes */
-
-#undef DBG
 
 bool ConstantPool::is_maybe_on_stack() const {
   // This method uses the similar logic as nmethod::is_maybe_on_stack()

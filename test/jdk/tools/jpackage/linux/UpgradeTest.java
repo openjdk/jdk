@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Linux upgrade testing
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile UpgradeTest.java
+ * @compile -Xlint:all -Werror UpgradeTest.java
  * @run main/othervm/timeout=360 jdk.jpackage.test.Main
  *  --jpt-run=UpgradeTest
  */
@@ -61,16 +60,16 @@ public class UpgradeTest {
         var alA = createAdditionalLauncher("launcherA");
 
         alA.applyTo(pkg);
-        createAdditionalLauncher("launcherB").addRawProperties(Map.entry(
-                "description", "Foo")).applyTo(pkg);
+        createAdditionalLauncher("launcherB").setProperty(
+                "description", "Foo").applyTo(pkg);
 
         var pkg2 = createPackageTest().addInitializer(cmd -> {
             cmd.addArguments("--app-version", "2.0");
         });
 
         alA.verifyRemovedInUpgrade(pkg2);
-        createAdditionalLauncher("launcherB").addRawProperties(Map.entry(
-                "description", "Bar")).applyTo(pkg2);
+        createAdditionalLauncher("launcherB").setProperty(
+                "description", "Bar").applyTo(pkg2);
         createAdditionalLauncher("launcherC").applyTo(pkg2);
 
         new PackageTest.Group(pkg, pkg2).run();
@@ -89,6 +88,6 @@ public class UpgradeTest {
         return new AdditionalLauncher(name).setIcon(GOLDEN_ICON);
     }
 
-    private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
+    private static final Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
             "resources", "icon" + TKit.ICON_SUFFIX));
 }

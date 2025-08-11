@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,10 @@ public class TestKGParity {
         Provider[] providers = Security.getProviders();
         for (Provider p : providers) {
             String prvName = p.getName();
-            if (prvName.startsWith("SunJCE")
-                    || prvName.startsWith("SunPKCS11-")) {
+            if ((System.getProperty("test.provider.name") != null &&
+                    prvName.equals(System.getProperty("test.provider.name"))) ||
+                    (System.getProperty("test.provider.name") == null &&
+                            (prvName.startsWith("SunJCE") || prvName.startsWith("SunPKCS11-")))) {
                 for (String algorithm : ALGORITHM_ARR) {
                     if (!runTest(p, algorithm)) {
                         throw new RuntimeException(

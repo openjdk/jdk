@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema Presentation module for XHTML
+      This is a REQUIRED module.
+      $Id: xhtml-pres-1.xsd,v 1.2 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Presentational Elements
+
+      This module defines elements and their attributes for
+      simple presentation-related markup.
+ 
+      Elements defined here:
+
+        * hr
+        * b, big, i, small, sub, sup, tt
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_presentationmodule"/>
+    </xs:annotation>
+    <xs:include schemaLocation="xhtml-blkpres-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Block Presentational module
+        Elements defined here:
+ 
+         * hr
+      </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+    <xs:include schemaLocation="xhtml-inlpres-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Inline Presentational module
+        Elements defined here:
+
+          * b, big, i, small, sub, sup, tt
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+</xs:schema>

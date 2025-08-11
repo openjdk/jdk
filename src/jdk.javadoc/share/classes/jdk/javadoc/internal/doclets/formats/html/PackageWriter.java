@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,13 +179,12 @@ public class PackageWriter extends HtmlDocletWriter {
      *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription,
+                TableOfContents.Level.FIRST);
         if (options.noComment()) {
             return;
         }
-        tableOfContents.pushNestedList();
         addPackageDescription(packageContent);
-        tableOfContents.popNestedList();
     }
 
     /**
@@ -339,7 +338,8 @@ public class PackageWriter extends HtmlDocletWriter {
             }
         }
         if (!table.isEmpty()) {
-            tableOfContents.addLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces);
+            tableOfContents.addLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces,
+                    TableOfContents.Level.FIRST);
             target.add(HtmlTree.LI(table));
         }
     }
@@ -347,7 +347,8 @@ public class PackageWriter extends HtmlDocletWriter {
     protected void addRelatedPackageSummary(TableHeader tableHeader, Content summaryContent,
                                      boolean showModules) {
         if (!relatedPackages.isEmpty()) {
-            tableOfContents.addLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages);
+            tableOfContents.addLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages,
+                    TableOfContents.Level.FIRST);
             var table = new Table<Void>(HtmlStyles.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(contents.relatedPackages)

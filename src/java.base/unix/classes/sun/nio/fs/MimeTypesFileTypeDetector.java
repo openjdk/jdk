@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -93,19 +91,13 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
         if (!loaded) {
             synchronized (this) {
                 if (!loaded) {
-                    @SuppressWarnings("removal")
-                    List<String> lines = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public List<String> run() {
-                                try {
-                                    return Files.readAllLines(mimeTypesFile,
-                                                              Charset.defaultCharset());
-                                } catch (IOException ignore) {
-                                    return Collections.emptyList();
-                                }
-                            }
-                        });
+                    List<String> lines;
+                    try {
+                        lines = Files.readAllLines(mimeTypesFile,
+                                                   Charset.defaultCharset());
+                    } catch (IOException ignore) {
+                        lines = Collections.emptyList();
+                    }
 
                     mimeTypeMap = HashMap.newHashMap(lines.size());
                     String entry = "";

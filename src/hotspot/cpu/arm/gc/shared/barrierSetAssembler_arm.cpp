@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -170,10 +169,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   Register tmp0 = Rtemp;
   Register tmp1 = R5; // must be callee-save register
 
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   // The are no GCs that require memory barrier on arm32 now
 #ifdef ASSERT
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -198,10 +193,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ bind(guard);
 
   // nmethod guard value. Skipped over in common case.
-  //
-  // Put a debug value to make any offsets skew
-  // clearly visible in coredump
-  __ emit_int32(0xDEADBEAF);
+  __ emit_int32(0); // initial armed value, will be reset later
 
   __ bind(skip);
   __ block_comment("nmethod_barrier end");

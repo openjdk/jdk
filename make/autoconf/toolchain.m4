@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
       TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+      if test "x$TOOLCHAIN_VERSION" = "x16" || test "x$TOOLCHAIN_VERSION" = "x16.1" ; then
+        AC_MSG_NOTICE([Xcode $TOOLCHAIN_VERSION has a compiler bug that causes the build to fail.])
+        AC_MSG_NOTICE([Please use Xcode 16.2 or later, or a version prior to 16.])
+        AC_MSG_ERROR([Compiler version is not supported.])
+      fi
     fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
@@ -445,6 +450,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
         AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
       fi
     fi
+    $1_IS_USER_SUPPLIED=true
   else
     # No user supplied value. Locate compiler ourselves.
 
@@ -462,6 +468,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi
+    $1_IS_USER_SUPPLIED=false
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
@@ -618,6 +625,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # Force use of lld, since that is what we expect when setting flags later on
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+        LD="$LD -fuse-ld=lld"
+        LDCXX="$LDCXX -fuse-ld=lld"
+      fi
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)

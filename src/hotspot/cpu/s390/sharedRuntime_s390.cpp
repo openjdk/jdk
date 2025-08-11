@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
@@ -80,6 +79,9 @@
 // Used to get same frame size for RegisterSaver_LiveRegs and RegisterSaver_LiveRegsWithoutR2.
 #define RegisterSaver_ExcludedFloatReg(regname) \
   { RegisterSaver::excluded_reg, regname->encoding(), regname->as_VMReg() }
+
+#define RegisterSaver_LiveVReg(regname) \
+  { RegisterSaver::v_reg,      regname->encoding(), regname->as_VMReg() }
 
 static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   // Live registers which get spilled to the stack. Register positions
@@ -258,6 +260,26 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVolatileRegs[] = {
   // RegisterSaver_ExcludedIntReg(Z_R15)  // stack pointer
 };
 
+static const RegisterSaver::LiveRegType RegisterSaver_LiveVRegs[] = {
+  // live vector registers (optional, only these are used by C2):
+  RegisterSaver_LiveVReg( Z_V16 ),
+  RegisterSaver_LiveVReg( Z_V17 ),
+  RegisterSaver_LiveVReg( Z_V18 ),
+  RegisterSaver_LiveVReg( Z_V19 ),
+  RegisterSaver_LiveVReg( Z_V20 ),
+  RegisterSaver_LiveVReg( Z_V21 ),
+  RegisterSaver_LiveVReg( Z_V22 ),
+  RegisterSaver_LiveVReg( Z_V23 ),
+  RegisterSaver_LiveVReg( Z_V24 ),
+  RegisterSaver_LiveVReg( Z_V25 ),
+  RegisterSaver_LiveVReg( Z_V26 ),
+  RegisterSaver_LiveVReg( Z_V27 ),
+  RegisterSaver_LiveVReg( Z_V28 ),
+  RegisterSaver_LiveVReg( Z_V29 ),
+  RegisterSaver_LiveVReg( Z_V30 ),
+  RegisterSaver_LiveVReg( Z_V31 )
+};
+
 int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
   int reg_space = -1;
   switch (reg_set) {
@@ -271,23 +293,28 @@ int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
   return (reg_space / sizeof(RegisterSaver::LiveRegType)) * reg_size;
 }
 
+int RegisterSaver::calculate_vregstosave_num() {
+  return (sizeof(RegisterSaver_LiveVRegs) / sizeof(RegisterSaver::LiveRegType));
+}
 
-int RegisterSaver::live_reg_frame_size(RegisterSet reg_set) {
-  return live_reg_save_size(reg_set) + frame::z_abi_160_size;
+int RegisterSaver::live_reg_frame_size(RegisterSet reg_set, bool save_vectors) {
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
+  return live_reg_save_size(reg_set) + vregstosave_num * v_reg_size + frame::z_abi_160_size;
 }
 
 
 // return_pc: Specify the register that should be stored as the return pc in the current frame.
-OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc) {
+OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc, bool save_vectors) {
   // Record volatile registers as callee-save values in an OopMap so
   // their save locations will be propagated to the caller frame's
   // RegisterMap during StackFrameStream construction (needed for
   // deoptimization; see compiledVFrame::create_stack_value).
 
   // Calculate frame size.
-  const int frame_size_in_bytes  = live_reg_frame_size(reg_set);
+  const int frame_size_in_bytes  = live_reg_frame_size(reg_set, save_vectors);
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
-  const int register_save_offset = frame_size_in_bytes - live_reg_save_size(reg_set);
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
+  const int register_save_offset = frame_size_in_bytes - (live_reg_save_size(reg_set) + vregstosave_num * v_reg_size);
 
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words.
   OopMap* map = new OopMap(frame_size_in_slots, 0);
@@ -382,6 +409,23 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_stmg(first, last, first_offset, Z_SP);
 
+  for (int i = 0; i < vregstosave_num; i++, offset += v_reg_size) {
+    int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
+
+    __ z_vst(as_VectorRegister(reg_num), Address(Z_SP, offset));
+
+    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
+                   RegisterSaver_LiveVRegs[i].vmreg);
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
+                   RegisterSaver_LiveVRegs[i].vmreg->next());
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
+                   RegisterSaver_LiveVRegs[i].vmreg->next(2));
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
+                   RegisterSaver_LiveVRegs[i].vmreg->next(3));
+  }
+
+  assert(offset == frame_size_in_bytes, "consistency check");
+
   // And we're done.
   return map;
 }
@@ -433,14 +477,18 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
     }
     offset += reg_size;
   }
+#ifdef ASSERT
+  assert(offset == frame_size_in_bytes, "consistency check");
+#endif
   return map;
 }
 
 
 // Pop the current frame and restore all the registers that we saved.
-void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg_set) {
+void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg_set, bool save_vectors) {
   int offset;
-  const int register_save_offset = live_reg_frame_size(reg_set) - live_reg_save_size(reg_set);
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
+  const int register_save_offset = live_reg_frame_size(reg_set, save_vectors) - (live_reg_save_size(reg_set) + vregstosave_num * v_reg_size);
 
   Register first = noreg;
   Register last = noreg;
@@ -517,6 +565,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_lmg(first, last, first_offset, Z_SP);
 
+  for (int i = 0; i < vregstosave_num; i++, offset += v_reg_size) {
+    int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
+
+    __ z_vl(as_VectorRegister(reg_num), Address(Z_SP, offset));
+  }
+
   // Pop the frame.
   __ pop_frame();
 
@@ -527,14 +581,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
 
 // Pop the current frame and restore the registers that might be holding a result.
 void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
-  int i;
-  int offset;
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
   const int register_save_offset = live_reg_frame_size(all_registers) - live_reg_save_size(all_registers);
 
   // Restore all result registers (ints and floats).
-  offset = register_save_offset;
+  int offset = register_save_offset;
   for (int i = 0; i < regstosave_num; i++, offset += reg_size) {
     int reg_num = RegisterSaver_LiveRegs[i].reg_num;
     int reg_type = RegisterSaver_LiveRegs[i].reg_type;
@@ -557,6 +609,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
         ShouldNotReachHere();
     }
   }
+  assert(offset == live_reg_frame_size(all_registers), "consistency check");
 }
 
 // ---------------------------------------------------------------------------
@@ -980,8 +1033,8 @@ static void gen_special_dispatch(MacroAssembler *masm,
 // Is the size of a vector size (in bytes) bigger than a size saved by default?
 // 8 bytes registers are saved by default on z/Architecture.
 bool SharedRuntime::is_wide_vector(int size) {
-  // Note, MaxVectorSize == 8 on this platform.
-  assert(size <= 8, "%d bytes vectors are not supported", size);
+  // Note, MaxVectorSize == 8/16 on this platform.
+  assert(size <= (SuperwordUseVX ? 16 : 8), "%d bytes vectors are not supported", size);
   return size > 8;
 }
 
@@ -1361,7 +1414,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
   //   1) add the JNIEnv*
@@ -1813,8 +1865,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       break;
   }
 
-  Label after_transition;
-
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
   // state is not atomic w.r.t. GC, as this scenario demonstrates:
@@ -1870,7 +1920,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //--------------------------------------------------------------------
   // Transition from _thread_in_native_trans to _thread_in_Java.
   __ set_thread_state(_thread_in_Java);
-  __ bind(after_transition);
 
   //--------------------------------------------------------------------
   // Reguard any pages if necessary.
@@ -2090,7 +2139,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   Register  value       = Z_R12;
 
   // Remember the senderSP so we can pop the interpreter arguments off of the stack.
-  // In addition, frame manager expects initial_caller_sp in Z_R10.
+  // In addition, template interpreter expects initial_caller_sp in Z_R10.
   __ z_lgr(sender_SP, Z_SP);
 
   // This should always fit in 14 bit immediate.
@@ -2303,12 +2352,12 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ z_br(Z_R1_scratch);
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   __ align(CodeEntryAlignment);
   address i2c_entry = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
@@ -2345,7 +2394,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ testbit(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
       __ z_bfalse(L_skip_barrier); // non-static
     }
 
@@ -2362,7 +2411,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 // This function returns the adjust size (in number of words) to a c2i adapter
@@ -2385,6 +2435,11 @@ uint SharedRuntime::in_preserve_stack_slots() {
 
 uint SharedRuntime::out_preserve_stack_slots() {
   return frame::z_jit_out_preserve_size/VMRegImpl::stack_slot_size;
+}
+
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
 }
 
 //
@@ -2489,7 +2544,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2708,11 +2763,15 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   Register unroll_block_reg = Z_tmp_1;
@@ -2827,7 +2886,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ z_br(Z_R14);
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -2836,7 +2895,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
@@ -2854,14 +2913,15 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
+  bool save_vectors = (id == StubId::shared_polling_page_vectors_safepoint_handler_id);
   // Save registers, fpu state, and flags
-  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
   if (!cause_return) {
     // Keep a copy of the return pc to detect if it gets modified.
@@ -2893,7 +2953,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 
   // Pending exception case, used (sporadically) by
   // api/java_lang/Thread.State/index#ThreadState et al.
-  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
+  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers, save_vectors);
 
   // Jump to forward_exception_entry, with the issuing PC in Z_R14
   // so it looks like the original nmethod called forward_exception_entry.
@@ -2906,7 +2966,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   if (!cause_return) {
     Label no_adjust;
      // If our stashed return pc was modified by the runtime we avoid touching it
-    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, save_vectors);
     __ z_cg(Z_R6, offset_of_return_pc, Z_SP);
     __ z_brne(no_adjust);
 
@@ -2919,7 +2979,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   }
 
   // Normal exit, restore registers and exit.
-  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
+  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers, save_vectors);
 
   __ z_br(Z_R14);
 
@@ -2927,7 +2987,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   masm->flush();
 
   // Fill-out other meta info
-  return SafepointBlob::create(&buffer, oop_maps, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers)/wordSize);
+  return SafepointBlob::create(&buffer, oop_maps, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, save_vectors)/wordSize);
 }
 
 
@@ -2939,7 +2999,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -2987,7 +3047,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
 
   // get the returned method
-  __ get_vm_result_2(Z_method);
+  __ get_vm_result_metadata(Z_method);
 
   // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
@@ -3001,7 +3061,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // exception pending => remove activation and forward to exception handler
 
   __ z_lgr(Z_R2, Z_R0); // pending_exception
-  __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+  __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
   __ load_const_optimized(Z_R1_scratch, StubRoutines::forward_exception_entry());
   __ z_br(Z_R1_scratch);
 
@@ -3038,7 +3098,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);

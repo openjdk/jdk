@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,35 @@
 /*
  * @test
  * @bug 8191053 8270380
- * @summary Test that the allow/disallow options of the java.security.manager
- *          system property work correctly
+ * @summary Test that the allow/disallow options are ignored
+ * @library /test/lib
  * @run main/othervm AllowSecurityManager
  * @run main/othervm -Djava.security.manager=disallow AllowSecurityManager
- * @run main/othervm -Djava.security.manager=allow AllowSecurityManager
+ * @run main/othervm AllowSecurityManager extra
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 public class AllowSecurityManager {
 
     public static void main(String args[]) throws Exception {
-        String prop = System.getProperty("java.security.manager");
-        boolean disallow = !"allow".equals(prop);
-        try {
-            System.setSecurityManager(new SecurityManager());
-            if (disallow) {
-                throw new Exception("System.setSecurityManager did not " +
-                                    "throw UnsupportedOperationException");
+        if (args.length > 0) {
+            // Any other system property value would fail
+            if (args[0].equals("extra")) {
+                ProcessTools.executeTestJava("-Djava.security.manager=other",
+                                "AllowSecurityManager", "test")
+                        .shouldHaveExitValue(1)
+                        .shouldContain("Enabling a Security Manager is not supported.");
+            } else {
+                // The sub-process is here
             }
-        } catch (UnsupportedOperationException uoe) {
-            if (!disallow) {
-                throw new Exception("UnsupportedOperationException " +
-                                    "unexpectedly thrown by " +
-                                    "System.setSecurityManager");
+        } else {
+            try {
+                System.setSecurityManager(new SecurityManager());
+                throw new Exception("System.setSecurityManager did not " +
+                        "throw UnsupportedOperationException");
+            } catch (UnsupportedOperationException uoe) {
+                // Will always happen
             }
         }
     }

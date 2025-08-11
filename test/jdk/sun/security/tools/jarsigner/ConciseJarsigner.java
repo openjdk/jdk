@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,15 @@ public class ConciseJarsigner {
     static OutputAnalyzer kt(String cmd) throws Exception {
         // Choose 2048-bit RSA to make sure it runs fine and fast. In
         // fact, every keyalg/keysize combination is OK for this test.
-        return SecurityTools.keytool("-storepass changeit -keypass changeit "
-                + "-keystore ks -keyalg rsa -keysize 2048 " + cmd);
+        // The start date is set to -1M to prevent the certificate not yet valid during fast enough execution.
+        // If -startdate is specified in cmd, cmd version will be used.
+        if (cmd.contains("-startdate")) {
+            return SecurityTools.keytool("-storepass changeit -keypass changeit "
+                    + "-keystore ks -keyalg rsa -keysize 2048 " + cmd);
+        } else {
+            return SecurityTools.keytool("-storepass changeit -keypass changeit "
+                    + "-keystore ks -keyalg rsa -keysize 2048 -startdate -1M " + cmd);
+        }
     }
 
     static void gencert(String owner, String cmd) throws Exception {

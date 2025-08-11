@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,6 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      -Dsun.net.httpserver.idleInterval=50000
- *      -Djdk.tracePinnedThreads=full
- *      HttpClientLocalAddrTest
- *
- * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
- *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
- *      -Djdk.internal.httpclient.debug=true
- *      -Dsun.net.httpserver.idleInterval=50000
- *      -Djdk.tracePinnedThreads=full
  *      HttpClientLocalAddrTest
  *
  */
@@ -179,7 +171,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
     @DataProvider(name = "params")
     private Object[][] paramsProvider() throws Exception {
-        final List<Object[]> testMethodParams = new ArrayList();
+        final List<Object[]> testMethodParams = new ArrayList<>();
         final URI[] requestURIs = new URI[]{httpURI, httpsURI, http2URI, https2URI};
         final Predicate<URI> requiresSSLContext = (uri) -> uri.getScheme().equals("https");
         for (var requestURI : requestURIs) {

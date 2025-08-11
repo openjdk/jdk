@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,18 @@
 
 /**
  * @test id=xint
- * @summary Do not suspend virtual threads in a critical section.
- * @bug 8311218
+ * @requires vm.debug != true
  * @requires vm.continuations
  * @library /testlibrary
  * @run main/othervm -Xint SuspendWithInterruptLock
+ */
+
+/**
+ * @test id=xint-debug
+ * @requires vm.debug == true
+ * @requires vm.continuations
+ * @library /testlibrary
+ * @run main/othervm -Xint -XX:-VerifyContinuations SuspendWithInterruptLock
  */
 
 import jvmti.JVMTIUtils;

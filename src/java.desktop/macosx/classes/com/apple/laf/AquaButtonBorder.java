@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         super(other);
     }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
         // for now we don't paint a border. We let the button paint it since there
         // needs to be a strict ordering for aqua components.
@@ -144,6 +145,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
      * Returns the insets of the border.
      * @param c the component for which this border insets value applies
      */
+    @Override
     public Insets getBorderInsets(final Component c) {
         if (!(c instanceof AbstractButton button)) return new Insets(0, 0, 0, 0);
 
@@ -172,18 +174,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
      * is opaque, it is responsible for filling in it's own
      * background when painting.
      */
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }
 
-    static class SizeConstants {
+    static final class SizeConstants {
         protected static final int fNormalButtonHeight = 29;
         protected static final int fNormalMinButtonWidth = 40;
         protected static final int fSquareButtonHeightThreshold = 23;
         protected static final int fSquareButtonWidthThreshold = 16;
     }
 
-    public static class Dynamic extends AquaButtonBorder {
+    public static final class Dynamic extends AquaButtonBorder {
         final Insets ALTERNATE_PUSH_INSETS = new Insets(3, 12, 5, 12);
         final Insets ALTERNATE_BEVEL_INSETS = new Insets(0, 5, 0, 5);
         final Insets ALTERNATE_SQUARE_INSETS = new Insets(0, 2, 0, 2);
@@ -202,12 +205,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
-        protected State getButtonState(final AbstractButton b, final ButtonModel model) {
-            final State state = super.getButtonState(b, model);
-            painter.state.set(state == State.PULSED ? Animating.YES : Animating.NO);
-            return state;
-        }
-
+        @Override
         public Insets getContentInsets(final AbstractButton b, final int width, final int height) {
             final Size size = AquaUtilControlSize.getUserSizeFrom(b);
             final Widget style = getStyleForSize(b, size, width, height);
@@ -225,6 +223,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             return null;
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, int x, int y, int width, int height) {
             final Size size = AquaUtilControlSize.getUserSizeFrom(b);
             painter.state.set(size);
@@ -262,7 +261,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         }
     }
 
-    public static class Toggle extends AquaButtonBorder {
+    public static final class Toggle extends AquaButtonBorder {
         public Toggle() {
             super(new SizeDescriptor(new SizeVariant().alterMargins(6, 6, 6, 6)));
         }
@@ -271,6 +270,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int width, final int height) {
             if (height < SizeConstants.fSquareButtonHeightThreshold || width < SizeConstants.fSquareButtonWidthThreshold) {
                 painter.state.set(Widget.BUTTON_BEVEL);
@@ -294,13 +294,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(sizeDescriptor);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int width, final int height) {
             painter.state.set(model.isSelected() ? BooleanValue.YES : BooleanValue.NO);
             super.doButtonPaint(b, model, g, x, y, width, height);
         }
     }
 
-    public static class Toolbar extends AquaButtonBorder {
+    public static final class Toolbar extends AquaButtonBorder {
         public Toolbar() {
             super(new SizeDescriptor(new SizeVariant().alterMargins(5, 5, 5, 5)));
             painter.state.set(Widget.TOOLBAR_ITEM_WELL);
@@ -310,6 +311,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int w, final int h) {
             if (!model.isSelected()) return; // only paint when the toolbar button is selected
             super.doButtonPaint(b, model, g, x, y, w, h);

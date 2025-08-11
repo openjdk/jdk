@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,8 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
     public static void main(String[] args) throws Exception {
 
         if (args.length == 0) {
-            System.setProperty("test.java.opts",
-                    "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                    " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
                             " -Djavax.net.debug=ssl,handshake");
 

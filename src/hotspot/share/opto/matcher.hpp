@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,13 +65,8 @@ public:
       Node_Stack::push(n, (uint)ns);
     }
     void push(Node *n, Node_State ns, Node *parent, int indx) {
-      ++_inode_top;
-      if ((_inode_top + 1) >= _inode_max) grow();
-      _inode_top->node = parent;
-      _inode_top->indx = (uint)indx;
-      ++_inode_top;
-      _inode_top->node = n;
-      _inode_top->indx = (uint)ns;
+      Node_Stack::push(parent, (uint)indx);
+      Node_Stack::push(n, (uint)ns);
     }
     Node *parent() {
       pop();
@@ -340,6 +335,8 @@ public:
   static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
+
+  static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
   static const RegMask* predicate_reg_mask(void);
 

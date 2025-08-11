@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "opto/vtransform.hpp"
-#include "opto/vectornode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
@@ -144,6 +144,355 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
+void VTransform::apply_speculative_runtime_checks() {
+  if (VLoop::vectors_should_be_aligned()) {
+#ifdef ASSERT
+    if (_trace._align_vector || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
+    }
+#endif
+
+    const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
+    for (int i = 0; i < vtnodes.length(); i++) {
+      VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+      if (vtn == nullptr) { continue; }
+      MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
+      if (p0 == nullptr) { continue; }
+      const VPointer& vp = vpointer(p0);
+      if (vp.mem_pointer().base().is_object()) { continue; }
+      assert(vp.mem_pointer().base().is_native(), "VPointer base must be object or native");
+
+      // We have a native memory reference. Build a runtime check for it.
+      // See: AlignmentSolver::solve
+      // In a future RFE we may be able to speculate on invar alignment as
+      // well, and allow vectorization of more cases.
+      add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
+    }
+  }
+}
+
+#define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
+  DEBUG_ONLY(                                                         \
+    if (_trace._align_vector || _trace._speculative_runtime_checks) { \
+      tty->print("  " #node ": ");                                    \
+      node->dump();                                                   \
+    }                                                                 \
+  )                                                                   \
+}                                                                     \
+
+// Check: (node % alignment) == 0.
+void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  Node* ctrl = phase()->get_ctrl(node);
+
+  // Cast adr/long -> int
+  if (node->bottom_type()->basic_type() == T_ADDRESS) {
+    // adr -> int/long
+    node = new CastP2XNode(nullptr, node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+  if (node->bottom_type()->basic_type() == T_LONG) {
+    // long -> int
+    node  = new ConvL2INode(node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+
+  Node* mask_alignment = igvn().intcon(alignment-1);
+  Node* base_alignment = new AndINode(node, mask_alignment);
+  phase()->register_new_node(base_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(mask_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(base_alignment);
+
+  Node* zero = igvn().intcon(0);
+  Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
+  BoolNode* bol_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
+  phase()->register_new_node(cmp_alignment, ctrl);
+  phase()->register_new_node(bol_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
+
+  add_speculative_check(bol_alignment);
+}
+
+void VTransform::add_speculative_check(BoolNode* bol) {
+  assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
+  ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
+  IfTrueNode* new_check_proj = nullptr;
+  if (parse_predicate_proj != nullptr) {
+    new_check_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                          Deoptimization::Reason_auto_vectorization_check,
+                                                          Op_If);
+  } else {
+    new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
+  }
+  Node* iff_speculate = new_check_proj->in(0);
+  igvn().replace_input_of(iff_speculate, 1, bol);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
+}
+
+// Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
+// It wraps a VPointer. The VPointer has an iv_offset applied, which
+// simulates a virtual unrolling. They represent the memory region:
+//   [adr, adr + size)
+//   adr = base + invar + iv_scale * (iv + iv_offset) + con
+class VMemoryRegion : public ResourceObj {
+private:
+  // Note: VPointer has no default constructor, so we cannot use VMemoryRegion
+  //       in-place in a GrowableArray. Hence, we make VMemoryRegion a resource
+  //       allocated object, so the GrowableArray of VMemoryRegion* has a default
+  //       nullptr element.
+  const VPointer _vpointer;
+  bool _is_load;      // load or store?
+  uint _schedule_order;
+
+public:
+  VMemoryRegion(const VPointer& vpointer, bool is_load, uint schedule_order) :
+    _vpointer(vpointer),
+    _is_load(is_load),
+    _schedule_order(schedule_order) {}
+
+    const VPointer& vpointer() const { return _vpointer; }
+    bool is_load()        const { return _is_load; }
+    uint schedule_order() const { return _schedule_order; }
+
+    static int cmp_for_sort_by_group(VMemoryRegion* r1, VMemoryRegion* r2) {
+      // Sort by mem_pointer (base, invar, iv_scale), except for the con.
+      return MemPointer::cmp_summands(r1->vpointer().mem_pointer(),
+                                      r2->vpointer().mem_pointer());
+    }
+
+    static int cmp_for_sort(VMemoryRegion** r1, VMemoryRegion** r2) {
+      int cmp_group = cmp_for_sort_by_group(*r1, *r2);
+      if (cmp_group != 0) { return cmp_group; }
+
+      // We use two comparisons, because a subtraction could underflow.
+      jint con1 = (*r1)->vpointer().con();
+      jint con2 = (*r2)->vpointer().con();
+      if (con1 < con2) { return -1; }
+      if (con1 > con2) { return  1; }
+      return 0;
+    }
+
+    enum Aliasing { DIFFERENT_GROUP, BEFORE, EXACT_OVERLAP, PARTIAL_OVERLAP, AFTER };
+
+    Aliasing aliasing(VMemoryRegion& other) {
+      VMemoryRegion* p1 = this;
+      VMemoryRegion* p2 = &other;
+      if (cmp_for_sort_by_group(p1, p2) != 0) { return DIFFERENT_GROUP; }
+
+      jlong con1 = p1->vpointer().con();
+      jlong con2 = p2->vpointer().con();
+      jlong size1 = p1->vpointer().size();
+      jlong size2 = p2->vpointer().size();
+
+      if (con1 >= con2 + size2) { return AFTER; }
+      if (con2 >= con1 + size1) { return BEFORE; }
+      if (con1 == con2 && size1 == size2) { return EXACT_OVERLAP; }
+      return PARTIAL_OVERLAP;
+    }
+
+#ifndef PRODUCT
+  void print() const {
+    tty->print("VMemoryRegion[%s schedule_order(%4d), ",
+               _is_load ? "load, " : "store,", _schedule_order);
+    vpointer().print_on(tty, false);
+    tty->print_cr("]");
+  }
+#endif
+};
+
+// Store-to-load-forwarding is a CPU memory optimization, where a load can directly fetch
+// its value from the store-buffer, rather than from the L1 cache. This is many CPU cycles
+// faster. However, this optimization comes with some restrictions, depending on the CPU.
+// Generally, store-to-load-forwarding works if the load and store memory regions match
+// exactly (same start and width). Generally problematic are partial overlaps - though
+// some CPU's can handle even some subsets of these cases. We conservatively assume that
+// all such partial overlaps lead to a store-to-load-forwarding failures, which means the
+// load has to stall until the store goes from the store-buffer into the L1 cache, incurring
+// a penalty of many CPU cycles.
+//
+// Example (with "iteration distance" 2):
+//   for (int i = 10; i < SIZE; i++) {
+//       aI[i] = aI[i - 2] + 1;
+//   }
+//
+//   load_4_bytes( ptr +  -8)
+//   store_4_bytes(ptr +   0)    *
+//   load_4_bytes( ptr +  -4)    |
+//   store_4_bytes(ptr +   4)    | *
+//   load_4_bytes( ptr +   0)  <-+ |
+//   store_4_bytes(ptr +   8)      |
+//   load_4_bytes( ptr +   4)  <---+
+//   store_4_bytes(ptr +  12)
+//   ...
+//
+//   In the scalar loop, we can forward the stores from 2 iterations back.
+//
+// Assume we have 2-element vectors (2*4 = 8 bytes), with the "iteration distance" 2
+// example. This gives us this machine code:
+//   load_8_bytes( ptr +  -8)
+//   store_8_bytes(ptr +   0) |
+//   load_8_bytes( ptr +   0) v
+//   store_8_bytes(ptr +   8)   |
+//   load_8_bytes( ptr +   8)   v
+//   store_8_bytes(ptr +  16)
+//   ...
+//
+//   We packed 2 iterations, and the stores can perfectly forward to the loads of
+//   the next 2 iterations.
+//
+// Example (with "iteration distance" 3):
+//   for (int i = 10; i < SIZE; i++) {
+//       aI[i] = aI[i - 3] + 1;
+//   }
+//
+//   load_4_bytes( ptr + -12)
+//   store_4_bytes(ptr +   0)    *
+//   load_4_bytes( ptr +  -8)    |
+//   store_4_bytes(ptr +   4)    |
+//   load_4_bytes( ptr +  -4)    |
+//   store_4_bytes(ptr +   8)    |
+//   load_4_bytes( ptr +   0)  <-+
+//   store_4_bytes(ptr +  12)
+//   ...
+//
+//   In the scalar loop, we can forward the stores from 3 iterations back.
+//
+// Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
+// Assume we have 2-element vectors (2*4 = 8 bytes), with the "iteration distance" 3
+// example. This gives us this machine code:
+//   load_8_bytes( ptr + -12)
+//   store_8_bytes(ptr +   0)  |   |
+//   load_8_bytes( ptr +  -4)  x   |
+//   store_8_bytes(ptr +   8)     ||
+//   load_8_bytes( ptr +   4)     xx  <-- partial overlap with 2 stores
+//   store_8_bytes(ptr +  16)
+//   ...
+//
+// We see that eventually all loads are dependent on earlier stores, but the values cannot
+// be forwarded because there is some partial overlap.
+//
+// Preferably, we would have some latency-based cost-model that accounts for such forwarding
+// failures, and decide if vectorization with forwarding failures is still profitable. For
+// now we go with a simpler heuristic: we simply forbid vectorization if we can PROVE that
+// there will be a forwarding failure. This approach has at least 2 possible weaknesses:
+//
+//  (1) There may be forwarding failures in cases where we cannot prove it.
+//      Example:
+//        for (int i = 10; i < SIZE; i++) {
+//            bI[i] = aI[i - 3] + 1;
+//        }
+//
+//      We do not know if aI and bI refer to the same array or not. However, it is reasonable
+//      to assume that if we have two different array references, that they most likely refer
+//      to different arrays (i.e. no aliasing), where we would have no forwarding failures.
+//  (2) There could be some loops where vectorization introduces forwarding failures, and thus
+//      the latency of the loop body is high, but this does not matter because it is dominated
+//      by other latency/throughput based costs in the loop body.
+//
+// Performance measurements with the JMH benchmark StoreToLoadForwarding.java have indicated
+// that there is some iteration threshold: if the failure happens between a store and load that
+// have an iteration distance below this threshold, the latency is the limiting factor, and we
+// should not vectorize to avoid the latency penalty of store-to-load-forwarding failures. If
+// the iteration distance is larger than this threshold, the throughput is the limiting factor,
+// and we should vectorize in these cases to improve throughput.
+//
+bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const {
+  if (SuperWordStoreToLoadForwardingFailureDetection == 0) { return false; }
+
+  // Collect all pointers for scalar and vector loads/stores.
+  ResourceMark rm;
+  // Use pointers because no default constructor for elements available.
+  GrowableArray<VMemoryRegion*> memory_regions;
+
+  // To detect store-to-load-forwarding failures at the iteration threshold or below, we
+  // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
+  // iterations at least. This is a heuristic, and we are not trying to be very precise
+  // with the iteration distance. If we have already unrolled more than the iteration
+  // threshold, i.e. if "SuperWordStoreToLoadForwardingFailureDetection < unrolled_count",
+  // then we simply check if there are any store-to-load-forwarding failures in the unrolled
+  // loop body, which may be at larger distance than the desired threshold. We cannot do any
+  // more fine-grained analysis, because the unrolling has lost the information about the
+  // iteration distance.
+  int simulated_unrolling_count = SuperWordStoreToLoadForwardingFailureDetection;
+  int unrolled_count = vloop_analyzer.vloop().cl()->unrolled_count();
+  uint simulated_super_unrolling_count = MAX2(1, simulated_unrolling_count / unrolled_count);
+  int iv_stride = vloop_analyzer.vloop().iv_stride();
+  int schedule_order = 0;
+  for (uint k = 0; k < simulated_super_unrolling_count; k++) {
+    int iv_offset = k * iv_stride; // virtual super-unrolling
+    for (int i = 0; i < _schedule.length(); i++) {
+      VTransformNode* vtn = _schedule.at(i);
+      if (vtn->is_load_or_store_in_loop()) {
+        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        if (p.is_valid()) {
+          VTransformVectorNode* vector = vtn->isa_Vector();
+          bool is_load = vtn->is_load_in_loop();
+          const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
+          if (iv_offset_p.is_valid()) {
+            // The iv_offset may lead to overflows. This is a heuristic, so we do not
+            // care too much about those edge cases.
+            memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          }
+        }
+      }
+    }
+  }
+
+  // Sort the pointers by group (same base, invar and stride), and then by offset.
+  memory_regions.sort(VMemoryRegion::cmp_for_sort);
+
+#ifndef PRODUCT
+  if (_trace._verbose) {
+    tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
+    tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
+    tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
+    for (int i = 0; i < memory_regions.length(); i++) {
+      VMemoryRegion& region = *memory_regions.at(i);
+      region.print();
+    }
+  }
+#endif
+
+  // For all pairs of pointers in the same group, check if they have a partial overlap.
+  for (int i = 0; i < memory_regions.length(); i++) {
+    VMemoryRegion& region1 = *memory_regions.at(i);
+
+    for (int j = i + 1; j < memory_regions.length(); j++) {
+      VMemoryRegion& region2 = *memory_regions.at(j);
+
+      const VMemoryRegion::Aliasing aliasing = region1.aliasing(region2);
+      if (aliasing == VMemoryRegion::Aliasing::DIFFERENT_GROUP ||
+          aliasing == VMemoryRegion::Aliasing::BEFORE) {
+        break; // We have reached the next group or pointers that are always after.
+      } else if (aliasing == VMemoryRegion::Aliasing::EXACT_OVERLAP) {
+        continue;
+      } else {
+        assert(aliasing == VMemoryRegion::Aliasing::PARTIAL_OVERLAP, "no other case can happen");
+        if ((region1.is_load() && !region2.is_load() && region1.schedule_order() > region2.schedule_order()) ||
+            (!region1.is_load() && region2.is_load() && region1.schedule_order() < region2.schedule_order())) {
+          // We predict that this leads to a store-to-load-forwarding failure penalty.
+#ifndef PRODUCT
+          if (_trace._rejections) {
+            tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
+            tty->print_cr("  Partial overlap of store->load. We predict that this leads to");
+            tty->print_cr("  a store-to-load-forwarding failure penalty which makes");
+            tty->print_cr("  vectorization unprofitable. These are the two pointers:");
+            region1.print();
+            region2.print();
+          }
+#endif
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
   assert(n != nullptr, "must find input IR node");
@@ -227,6 +576,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    const TypeVect* vt = TypeVect::make(bt, vlen);
+    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
@@ -243,8 +596,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD ||
-           opc == Op_FmaF ||
+    assert(opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");
@@ -307,12 +661,13 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
+  const VPointer& load_p = vpointer(vloop_analyzer);
   while (mem->is_StoreVector()) {
-    VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
-    if (p_store.overlap_possible_with_any_in(nodes())) {
-      break;
-    } else {
+    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
+    if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
+    } else {
+      break;
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 package sun.util.locale;
 
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,30 +42,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 
-public class LanguageTag {
-    //
-    // static fields
-    //
+// List fields are unmodifiable
+public record LanguageTag(String language, String script, String region, String privateuse,
+                          List<String> extlangs, List<String> variants, List<String> extensions) {
+
     public static final String SEP = "-";
     public static final String PRIVATEUSE = "x";
     public static final String UNDETERMINED = "und";
     public static final String PRIVUSE_VARIANT_PREFIX = "lvariant";
+    private static final String EMPTY_SUBTAG = "";
+    private static final List<String> EMPTY_SUBTAGS = List.of();
 
-    //
-    // Language subtag fields
-    //
-    private String language = "";      // language subtag
-    private String script = "";        // script subtag
-    private String region = "";        // region subtag
-    private String privateuse = "";    // privateuse
-
-    private List<String> extlangs = Collections.emptyList();   // extlang subtags
-    private List<String> variants = Collections.emptyList();   // variant subtags
-    private List<String> extensions = Collections.emptyList(); // extensions
     // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt
     // Keys are lower-case strings.
-    private static final Map<String, String[]> LEGACY = new HashMap<>();
+    private static final Map<String, String[]> LEGACY;
 
     static {
         // grandfathered = irregular           ; non-redundant tags registered
@@ -127,12 +119,10 @@ public class LanguageTag {
             {"zh-min-nan",  "nan"},
             {"zh-xiang",    "hsn"},
         };
+        LEGACY = HashMap.newHashMap(entries.length);
         for (String[] e : entries) {
             LEGACY.put(LocaleUtils.toLowerString(e[0]), e);
         }
-    }
-
-    private LanguageTag() {
     }
 
     /*
@@ -180,14 +170,10 @@ public class LanguageTag {
      * privateuse    = "x" 1*("-" (1*8alphanum))
      *
      */
-    public static LanguageTag parse(String languageTag, ParseStatus sts) {
-        if (sts == null) {
-            sts = new ParseStatus();
-        } else {
-            sts.reset();
-        }
-
+    public static LanguageTag parse(String languageTag, ParsePosition pp,
+                                    boolean lenient) {
         StringTokenIterator itr;
+        var errorMsg = new StringBuilder();
 
         // Check if the tag is a legacy language tag
         String[] gfmap = LEGACY.get(LocaleUtils.toLowerString(languageTag));
@@ -198,146 +184,147 @@ public class LanguageTag {
             itr = new StringTokenIterator(languageTag, SEP);
         }
 
-        LanguageTag tag = new LanguageTag();
-
+        String language = parseLanguage(itr, pp);
+        List<String> extlangs;
+        String script;
+        String region;
+        List<String> variants;
+        List<String> extensions;
         // langtag must start with either language or privateuse
-        if (tag.parseLanguage(itr, sts)) {
-            tag.parseExtlangs(itr, sts);
-            tag.parseScript(itr, sts);
-            tag.parseRegion(itr, sts);
-            tag.parseVariants(itr, sts);
-            tag.parseExtensions(itr, sts);
+        if (!language.isEmpty()) {
+            extlangs = parseExtlangs(itr, pp);
+            script = parseScript(itr, pp);
+            region = parseRegion(itr, pp);
+            variants = parseVariants(itr, pp);
+            extensions = parseExtensions(itr, pp, errorMsg);
+        } else {
+            extlangs = EMPTY_SUBTAGS;
+            script = EMPTY_SUBTAG;
+            region = EMPTY_SUBTAG;
+            variants = EMPTY_SUBTAGS;
+            extensions = EMPTY_SUBTAGS;
         }
-        tag.parsePrivateuse(itr, sts);
-        if (!itr.isDone() && !sts.isError()) {
+        String privateuse = parsePrivateuse(itr, pp, errorMsg);
+
+        if (!itr.isDone() && pp.getErrorIndex() == -1) {
             String s = itr.current();
-            sts.errorIndex = itr.currentStart();
+            pp.setErrorIndex(itr.currentStart());
             if (s.isEmpty()) {
-                sts.errorMsg = "Empty subtag";
+                errorMsg.append("Empty subtag");
             } else {
-                sts.errorMsg = "Invalid subtag: " + s;
+                errorMsg.append("Invalid subtag: ").append(s);
             }
         }
-        return tag;
+
+        if (!lenient && pp.getErrorIndex() != -1) {
+            throw new IllformedLocaleException(errorMsg.toString(), pp.getErrorIndex());
+        }
+
+        return new LanguageTag(language, script, region, privateuse, extlangs, variants, extensions);
     }
 
     //
     // Language subtag parsers
     //
 
-    private boolean parseLanguage(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static String parseLanguage(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAG;
         }
-
-        boolean found = false;
 
         String s = itr.current();
         if (isLanguage(s)) {
-            found = true;
-            language = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
+            return s;
         }
 
-        return found;
+        return EMPTY_SUBTAG;
     }
 
-    private boolean parseExtlangs(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static List<String> parseExtlangs(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAGS;
         }
-
-        boolean found = false;
-
+        List<String> extlangs = null;
         while (!itr.isDone()) {
             String s = itr.current();
             if (!isExtlang(s)) {
                 break;
             }
-            found = true;
-            if (extlangs.isEmpty()) {
+            if (extlangs == null) {
                 extlangs = new ArrayList<>(3);
             }
             extlangs.add(s);
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
-
             if (extlangs.size() == 3) {
                 // Maximum 3 extlangs
                 break;
             }
         }
-
-        return found;
+        return extlangs == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(extlangs);
     }
 
-    private boolean parseScript(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static String parseScript(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAG;
         }
-
-        boolean found = false;
 
         String s = itr.current();
         if (isScript(s)) {
-            found = true;
-            script = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
+            return s;
         }
 
-        return found;
+        return EMPTY_SUBTAG;
     }
 
-    private boolean parseRegion(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static String parseRegion(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAG;
         }
-
-        boolean found = false;
-
         String s = itr.current();
         if (isRegion(s)) {
-            found = true;
-            region = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
+            return s;
         }
 
-        return found;
+        return EMPTY_SUBTAG;
     }
 
-    private boolean parseVariants(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static List<String> parseVariants(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAGS;
         }
-
-        boolean found = false;
+        List<String> variants = null;
 
         while (!itr.isDone()) {
             String s = itr.current();
             if (!isVariant(s)) {
                 break;
             }
-            found = true;
-            if (variants.isEmpty()) {
+            if (variants == null) {
                 variants = new ArrayList<>(3);
             }
             variants.add(s);
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
         }
 
-        return found;
+        return variants == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(variants);
     }
 
-    private boolean parseExtensions(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static List<String> parseExtensions(StringTokenIterator itr, ParsePosition pp,
+                                    StringBuilder err) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAGS;
         }
-
-        boolean found = false;
+        List<String> extensions = null;
 
         while (!itr.isDone()) {
             String s = itr.current();
@@ -351,37 +338,36 @@ public class LanguageTag {
                     s = itr.current();
                     if (isExtensionSubtag(s)) {
                         sb.append(SEP).append(s);
-                        sts.parseLength = itr.currentEnd();
+                        pp.setIndex(itr.currentEnd());
                     } else {
                         break;
                     }
                     itr.next();
                 }
 
-                if (sts.parseLength <= start) {
-                    sts.errorIndex = start;
-                    sts.errorMsg = "Incomplete extension '" + singleton + "'";
+                if (pp.getIndex() <= start) {
+                    pp.setErrorIndex(start);
+                    err.append("Incomplete extension '").append(singleton).append("'");
                     break;
                 }
 
-                if (extensions.isEmpty()) {
+                if (extensions == null) {
                     extensions = new ArrayList<>(4);
                 }
                 extensions.add(sb.toString());
-                found = true;
             } else {
                 break;
             }
         }
-        return found;
+        return extensions == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(extensions);
     }
 
-    private boolean parsePrivateuse(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
-            return false;
+    private static String parsePrivateuse(StringTokenIterator itr, ParsePosition pp,
+                                    StringBuilder err) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
+            return EMPTY_SUBTAG;
         }
-
-        boolean found = false;
 
         String s = itr.current();
         if (isPrivateusePrefix(s)) {
@@ -395,32 +381,26 @@ public class LanguageTag {
                     break;
                 }
                 sb.append(SEP).append(s);
-                sts.parseLength = itr.currentEnd();
+                pp.setIndex(itr.currentEnd());
 
                 itr.next();
             }
 
-            if (sts.parseLength <= start) {
+            if (pp.getIndex() <= start) {
                 // need at least 1 private subtag
-                sts.errorIndex = start;
-                sts.errorMsg = "Incomplete privateuse";
+                pp.setErrorIndex(start);
+                err.append("Incomplete privateuse");
             } else {
-                privateuse = sb.toString();
-                found = true;
+                return sb.toString();
             }
         }
 
-        return found;
+        return EMPTY_SUBTAG;
     }
 
     public static String caseFoldTag(String tag) {
-        ParseStatus sts = new ParseStatus();
-        parse(tag, sts);
-        // Illegal tags
-        if (sts.errorMsg != null) {
-            throw new IllformedLocaleException(String.format("Ill formed tag:" +
-                    " %s", sts.errorMsg));
-        }
+        parse(tag, new ParsePosition(0), false);
+
         // Legacy tags
         String potentialLegacy = tag.toLowerCase(Locale.ROOT);
         if (LEGACY.containsKey(potentialLegacy)) {
@@ -462,48 +442,50 @@ public class LanguageTag {
     }
 
     public static LanguageTag parseLocale(BaseLocale baseLocale, LocaleExtensions localeExtensions) {
-        LanguageTag tag = new LanguageTag();
 
-        String language = baseLocale.getLanguage();
-        String script = baseLocale.getScript();
-        String region = baseLocale.getRegion();
-        String variant = baseLocale.getVariant();
+        String language = EMPTY_SUBTAG;
+        String script = EMPTY_SUBTAG;
+        String region = EMPTY_SUBTAG;
+
+        String baseLanguage = baseLocale.getLanguage();
+        String baseScript = baseLocale.getScript();
+        String baseRegion = baseLocale.getRegion();
+        String baseVariant = baseLocale.getVariant();
 
         boolean hasSubtag = false;
 
         String privuseVar = null;   // store ill-formed variant subtags
 
-        if (isLanguage(language)) {
+        if (isLanguage(baseLanguage)) {
             // Convert a deprecated language code to its new code
-            if (language.equals("iw")) {
-                language = "he";
-            } else if (language.equals("ji")) {
-                language = "yi";
-            } else if (language.equals("in")) {
-                language = "id";
-            }
-            tag.language = language;
+            baseLanguage = switch (baseLanguage) {
+                case "iw" -> "he";
+                case "ji" -> "yi";
+                case "in" -> "id";
+                default -> baseLanguage;
+            };
+            language = baseLanguage;
         }
 
-        if (isScript(script)) {
-            tag.script = canonicalizeScript(script);
+        if (isScript(baseScript)) {
+            script = canonicalizeScript(baseScript);
             hasSubtag = true;
         }
 
-        if (isRegion(region)) {
-            tag.region = canonicalizeRegion(region);
+        if (isRegion(baseRegion)) {
+            region = canonicalizeRegion(baseRegion);
             hasSubtag = true;
         }
 
         // Special handling for no_NO_NY - use nn_NO for language tag
-        if (tag.language.equals("no") && tag.region.equals("NO") && variant.equals("NY")) {
-            tag.language = "nn";
-            variant = "";
+        if (language.equals("no") && region.equals("NO") && baseVariant.equals("NY")) {
+            language = "nn";
+            baseVariant = EMPTY_SUBTAG;
         }
 
-        if (!variant.isEmpty()) {
-            List<String> variants = null;
-            StringTokenIterator varitr = new StringTokenIterator(variant, BaseLocale.SEP);
+        List<String> variants = null;
+        if (!baseVariant.isEmpty()) {
+            StringTokenIterator varitr = new StringTokenIterator(baseVariant, BaseLocale.SEP);
             while (!varitr.isDone()) {
                 String var = varitr.current();
                 if (!isVariant(var)) {
@@ -516,7 +498,6 @@ public class LanguageTag {
                 varitr.next();
             }
             if (variants != null) {
-                tag.variants = variants;
                 hasSubtag = true;
             }
             if (!varitr.isDone()) {
@@ -556,7 +537,6 @@ public class LanguageTag {
         }
 
         if (extensions != null) {
-            tag.extensions = extensions;
             hasSubtag = true;
         }
 
@@ -570,59 +550,21 @@ public class LanguageTag {
             }
         }
 
-        if (privateuse != null) {
-            tag.privateuse = privateuse;
-        }
-
-        if (tag.language.isEmpty() && (hasSubtag || privateuse == null)) {
+        if (language.isEmpty() && (hasSubtag || privateuse == null)) {
             // use lang "und" when 1) no language is available AND
             // 2) any of other subtags other than private use are available or
             // no private use tag is available
-            tag.language = UNDETERMINED;
+            language = UNDETERMINED;
         }
 
-        return tag;
-    }
+        privateuse = privateuse == null ? EMPTY_SUBTAG : privateuse;
+        extensions = extensions == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(extensions);
+        variants = variants == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(variants);
 
-    //
-    // Getter methods for language subtag fields
-    //
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public List<String> getExtlangs() {
-        if (extlangs.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(extlangs);
-    }
-
-    public String getScript() {
-        return script;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public List<String> getVariants() {
-        if (variants.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(variants);
-    }
-
-    public List<String> getExtensions() {
-        if (extensions.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(extensions);
-    }
-
-    public String getPrivateuse() {
-        return privateuse;
+        // extlangs always empty for locale parse
+        return new LanguageTag(language, script, region, privateuse, EMPTY_SUBTAGS, variants, extensions);
     }
 
     //

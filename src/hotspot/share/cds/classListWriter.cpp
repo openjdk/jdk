@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -58,7 +57,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   assert(is_enabled(), "must be");
 
   if (!ClassLoader::has_jrt_entry()) {
-    log_warning(cds)("DumpLoadedClassList and CDS are not supported in exploded build");
+    log_warning(aot)("DumpLoadedClassList and CDS are not supported in exploded build");
     DumpLoadedClassList = nullptr;
     return;
   }
@@ -128,9 +127,15 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
     }
   }
 
-  // filter out java/lang/invoke/BoundMethodHandle$Species...
-  if (cfs != nullptr && cfs->source() != nullptr && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
-    return;
+  if (cfs != nullptr && cfs->source() != nullptr) {
+    if (strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
+      return;
+    }
+
+    if (strncmp(cfs->source(), "__", 2) == 0) {
+      // generated class: __dynamic_proxy__, __JVM_LookupDefineClass__, etc
+      return;
+    }
   }
 
   {
@@ -256,6 +261,18 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
   }
 
   if (cp->cache() != nullptr) {
+    Array<ResolvedIndyEntry>* indy_entries = cp->cache()->resolved_indy_entries();
+    if (indy_entries != nullptr) {
+      for (int i = 0; i < indy_entries->length(); i++) {
+        ResolvedIndyEntry* rie = indy_entries->adr_at(i);
+        int cp_index = rie->constant_pool_index();
+        if (rie->is_resolved()) {
+          list.at_put(cp_index, true);
+          print = true;
+        }
+      }
+    }
+
     Array<ResolvedFieldEntry>* field_entries = cp->cache()->resolved_field_entries();
     if (field_entries != nullptr) {
       for (int i = 0; i < field_entries->length(); i++) {
@@ -274,7 +291,8 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         ResolvedMethodEntry* rme = method_entries->adr_at(i);
         if (rme->is_resolved(Bytecodes::_invokevirtual) ||
             rme->is_resolved(Bytecodes::_invokespecial) ||
-            rme->is_resolved(Bytecodes::_invokeinterface)) {
+            rme->is_resolved(Bytecodes::_invokeinterface) ||
+            rme->is_resolved(Bytecodes::_invokehandle)) {
           list.at_put(rme->constant_pool_index(), true);
           print = true;
         }
@@ -291,7 +309,8 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         assert(cp_tag.value() == JVM_CONSTANT_Class ||
                cp_tag.value() == JVM_CONSTANT_Fieldref ||
                cp_tag.value() == JVM_CONSTANT_Methodref||
-               cp_tag.value() == JVM_CONSTANT_InterfaceMethodref, "sanity");
+               cp_tag.value() == JVM_CONSTANT_InterfaceMethodref ||
+               cp_tag.value() == JVM_CONSTANT_InvokeDynamic, "sanity");
         stream->print(" %d", i);
       }
     }

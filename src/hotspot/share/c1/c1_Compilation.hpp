@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
 class CompilationFailureInfo;
@@ -156,7 +155,7 @@ class Compilation: public StackObj {
   CodeOffsets* offsets()                         { return &_offsets; }
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
-  bool should_install_code()                     { return _install_code && InstallMethods; }
+  bool should_install_code()                     { return _install_code; }
   LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
@@ -217,12 +216,8 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static uint desired_max_code_buffer_size() {
-    return (uint)NMethodSizeLimit;  // default 64K
-  }
-  static uint desired_max_constant_size() {
-    return desired_max_code_buffer_size() / 10;
-  }
+  const static uint desired_max_code_buffer_size = 64*K * wordSize;
+  const static uint desired_max_constant_size = desired_max_code_buffer_size / 10;
 
   static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 

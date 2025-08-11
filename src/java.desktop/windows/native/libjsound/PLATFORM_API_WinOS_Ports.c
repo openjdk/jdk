@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ void printInfo(PortInfo* info) {
     TRACE5(" PortInfo %p: handle=%p, mixerIndex=%d, dstLineCount=%d, dstLines=%p, ", info, (void*) info->handle, info->mixerIndex, info->dstLineCount, info->dstLines);
     TRACE5("srcLineCount=%d, srcLines=%p, targetPortCount=%d, sourcePortCount=%d, ports=%p, ", info->srcLineCount, info->srcLines, info->targetPortCount, info->sourcePortCount, info->ports);
     TRACE3("maxControlCount=%d, usedControlIDs=%d, controlIDs=%p \n", info->maxControlCount, info->usedControlIDs, info->controlIDs);
-    TRACE2("usedMuxData=%d, muxData=%p, controlIDs=%p \n", info->usedMuxData, info->muxData);
+    TRACE3("usedMuxData=%d, muxData=%p, controlIDs=%p \n", info->usedMuxData, info->muxData, info->controlIDs);
 }
 
 #endif // USE_TRACE

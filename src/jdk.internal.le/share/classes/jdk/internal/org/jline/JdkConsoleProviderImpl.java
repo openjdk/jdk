@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,18 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * {@inheritDoc}
      */
     @Override
-    public JdkConsole console(boolean isTTY, Charset charset) {
-        return new LazyDelegatingJdkConsoleImpl(charset);
+    public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
+        return new LazyDelegatingJdkConsoleImpl(inCharset, outCharset);
     }
 
     private static class LazyDelegatingJdkConsoleImpl implements JdkConsole {
-        private final Charset charset;
+        private final Charset outCharset;
         private volatile boolean jlineInitialized;
         private volatile JdkConsole delegate;
 
-        public LazyDelegatingJdkConsoleImpl(Charset charset) {
-            this.charset = charset;
-            this.delegate = new jdk.internal.io.JdkConsoleImpl(charset);
+        public LazyDelegatingJdkConsoleImpl(Charset inCharset, Charset outCharset) {
+            this.outCharset = outCharset;
+            this.delegate = new jdk.internal.io.JdkConsoleImpl(inCharset, outCharset);
         }
 
         @Override
@@ -91,11 +91,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             flushOldDelegateIfNeeded(delegate);
 
             return this;
-        }
-
-        @Override
-        public String readln(String prompt) {
-            return getDelegate(true).readln(prompt);
         }
 
         @Override
@@ -135,7 +130,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public Charset charset() {
-            return charset;
+            return outCharset;
         }
 
         private void flushOldDelegateIfNeeded(JdkConsole oldDelegate) {
@@ -162,7 +157,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             }
 
             try {
-                Terminal terminal = TerminalBuilder.builder().encoding(charset)
+                Terminal terminal = TerminalBuilder.builder().encoding(outCharset)
                                                    .exec(false)
                                                    .nativeSignals(false)
                                                    .systemOutput(SystemOutput.SysOut)
@@ -215,16 +210,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public String readln(String prompt) {
-            try {
-                initJLineIfNeeded();
-                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
-            } catch (EndOfFileException eofe) {
-                return null;
-            }
-        }
-
-        @Override
         public JdkConsole format(Locale locale, String format, Object ... args) {
             writer().format(locale, format, args).flush();
             return this;
@@ -242,7 +227,12 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readLine() {
-            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
+            try {
+                initJLineIfNeeded();
+                return jline.readLine();
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         @Override
@@ -283,7 +273,10 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 synchronized (this) {
                     jline = this.jline;
                     if (jline == null) {
-                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        jline = LineReaderBuilder.builder()
+                                                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                                                 .terminal(terminal)
+                                                 .build();
                         this.jline = jline;
                     }
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -39,7 +39,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * jpackagerTest keychain with
  * always allowed access to this keychain for user which runs test.
  * note:
- * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.openjdk.java.net" can be over-ridden by system property
  * "jpackage.mac.signing.key.user.name", and
  * "jpackagerTest" can be over-ridden by system property
  * "jpackage.mac.signing.keychain"
@@ -48,19 +48,35 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --mac-sign
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @library base
  * @key jpackagePlatformPackage
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest != null)
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * --jpt-run=SigningPackageTest
+ * --jpt-space-subst=*
+ * --jpt-include=SigningPackageTest.test(true,*true,*true,*ASCII_INDEX)
+ * --jpt-before-run=SigningBase.verifySignTestEnvReady
+ */
+
+/*
+ * @test
+ * @summary jpackage with --type pkg,dmg --mac-sign
+ * @library /test/jdk/tools/jpackage/helpers
+ * @library base
+ * @key jpackagePlatformPackage
+ * @build SigningBase
+ * @build jdk.jpackage.test.*
+ * @build SigningPackageTest
+ * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageTest {
 
@@ -111,29 +127,24 @@ public class SigningPackageTest {
             return SigningBase.getDevNameIndex(devName);
         } else {
             // Signing-indentity
-            return Integer.valueOf(SigningBase.UNICODE_INDEX);
+            return SigningBase.CertIndex.UNICODE_INDEX.value();
         }
     }
 
     @Test
     // ("signing-key or sign-identity", "sign app-image", "sign pkg", "certificate index"})
     // Signing-key and ASCII certificate
-    @Parameter({"true", "true", "true", SigningBase.ASCII_INDEX})
+    @Parameter({"true", "true", "true", "ASCII_INDEX"})
     // Signing-key and UNICODE certificate
-    @Parameter({"true", "true", "true", SigningBase.UNICODE_INDEX})
+    @Parameter({"true", "true", "true", "UNICODE_INDEX"})
     // Signing-indentity and UNICODE certificate
-    @Parameter({"false", "true", "true", SigningBase.UNICODE_INDEX})
+    @Parameter({"false", "true", "true", "UNICODE_INDEX"})
     // Signing-indentity, but sign app-image only and UNICODE certificate
-    @Parameter({"false", "true", "false", SigningBase.UNICODE_INDEX})
+    @Parameter({"false", "true", "false", "UNICODE_INDEX"})
     // Signing-indentity, but sign pkg only and UNICODE certificate
-    @Parameter({"false", "false", "true", SigningBase.UNICODE_INDEX})
-    public static void test(String... testArgs) throws Exception {
-        boolean signingKey = Boolean.parseBoolean(testArgs[0]);
-        boolean signAppImage = Boolean.parseBoolean(testArgs[1]);
-        boolean signPKG = Boolean.parseBoolean(testArgs[2]);
-        int certIndex = Integer.parseInt(testArgs[3]);
-
-        SigningCheck.checkCertificates(certIndex);
+    @Parameter({"false", "false", "true", "UNICODE_INDEX"})
+    public static void test(boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
+        final var certIndex = certEnum.value();
 
         new PackageTest()
                 .configureHelloApp()

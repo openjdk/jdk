@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,14 +197,14 @@ Java_java_util_zip_Deflater_deflateBytesBytes(JNIEnv *env, jobject this, jlong a
     jint res;
 
     if (input == NULL) {
-        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (inputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
     output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
     if (output == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
-        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (outputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
@@ -231,7 +231,7 @@ Java_java_util_zip_Deflater_deflateBytesBuffer(JNIEnv *env, jobject this, jlong 
     jlong retVal;
     jint res;
     if (input == NULL) {
-        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (inputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
@@ -257,7 +257,7 @@ Java_java_util_zip_Deflater_deflateBufferBytes(JNIEnv *env, jobject this, jlong 
     jlong retVal;
     jint res;
     if (output == NULL) {
-        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (outputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }

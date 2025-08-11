@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test id=ZSinglegen
- * @requires vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.gc.Z
  * @summary Unit test for jmap utility (Z GC)
  * @key intermittent
  * @library /test/lib
@@ -96,20 +96,7 @@ import jdk.test.lib.process.ProcessTools;
  * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.util.*
- * @run main/othervm/timeout=240 -XX:+UseZGC -XX:-ZGenerational BasicJMapTest
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
- * @summary Unit test for jmap utility (Z GC)
- * @key intermittent
- * @library /test/lib
- * @build jdk.test.lib.hprof.*
- * @build jdk.test.lib.hprof.model.*
- * @build jdk.test.lib.hprof.parser.*
- * @build jdk.test.lib.hprof.util.*
- * @run main/othervm/timeout=240 -XX:+UseZGC -XX:+ZGenerational BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseZGC BasicJMapTest
  */
 
 public class BasicJMapTest {
@@ -303,6 +290,8 @@ public class BasicJMapTest {
     private static OutputAnalyzer jmap(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jmap");
         launcher.addVMArgs(Utils.getTestJavaOpts());
+        // jmap output may be lengthy, disable streaming output to avoid deadlocks
+        launcher.addVMArg("-Djdk.attach.allowStreamingOutput=false");
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);

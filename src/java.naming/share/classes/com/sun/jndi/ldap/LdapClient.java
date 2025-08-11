@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.concurrent.locks.ReentrantLock;
@@ -86,32 +87,23 @@ public final class LdapClient implements PooledConnection {
     static final boolean caseIgnore = true;
 
     // Default list of binary attributes
-    private static final Hashtable<String, Boolean> defaultBinaryAttrs =
-            new Hashtable<>(23,0.75f);
-    static {
-        defaultBinaryAttrs.put("userpassword", Boolean.TRUE);      //2.5.4.35
-        defaultBinaryAttrs.put("javaserializeddata", Boolean.TRUE);
-                                                //1.3.6.1.4.1.42.2.27.4.1.8
-        defaultBinaryAttrs.put("javaserializedobject", Boolean.TRUE);
-                                                // 1.3.6.1.4.1.42.2.27.4.1.2
-        defaultBinaryAttrs.put("jpegphoto", Boolean.TRUE);
-                                                //0.9.2342.19200300.100.1.60
-        defaultBinaryAttrs.put("audio", Boolean.TRUE);  //0.9.2342.19200300.100.1.55
-        defaultBinaryAttrs.put("thumbnailphoto", Boolean.TRUE);
-                                                //1.3.6.1.4.1.1466.101.120.35
-        defaultBinaryAttrs.put("thumbnaillogo", Boolean.TRUE);
-                                                //1.3.6.1.4.1.1466.101.120.36
-        defaultBinaryAttrs.put("usercertificate", Boolean.TRUE);     //2.5.4.36
-        defaultBinaryAttrs.put("cacertificate", Boolean.TRUE);       //2.5.4.37
-        defaultBinaryAttrs.put("certificaterevocationlist", Boolean.TRUE);
-                                                //2.5.4.39
-        defaultBinaryAttrs.put("authorityrevocationlist", Boolean.TRUE); //2.5.4.38
-        defaultBinaryAttrs.put("crosscertificatepair", Boolean.TRUE);    //2.5.4.40
-        defaultBinaryAttrs.put("photo", Boolean.TRUE);   //0.9.2342.19200300.100.1.7
-        defaultBinaryAttrs.put("personalsignature", Boolean.TRUE);
-                                                //0.9.2342.19200300.100.1.53
-        defaultBinaryAttrs.put("x500uniqueidentifier", Boolean.TRUE); //2.5.4.45
-    }
+    private static final Set<String> defaultBinaryAttrs = Set.of(
+            "userpassword",             //2.5.4.35
+            "javaserializeddata",       //1.3.6.1.4.1.42.2.27.4.1.8
+            "javaserializedobject",     //1.3.6.1.4.1.42.2.27.4.1.2
+            "jpegphoto",                //0.9.2342.19200300.100.1.60
+            "audio",                    //0.9.2342.19200300.100.1.55
+            "thumbnailphoto",           //1.3.6.1.4.1.1466.101.120.35
+            "thumbnaillogo",            //1.3.6.1.4.1.1466.101.120.36
+            "usercertificate",          //2.5.4.36
+            "cacertificate",            //2.5.4.37
+            "certificaterevocationlist",//2.5.4.39
+            "authorityrevocationlist",  //2.5.4.38
+            "crosscertificatepair",     //2.5.4.40
+            "photo",                    //0.9.2342.19200300.100.1.7
+            "personalsignature",        //0.9.2342.19200300.100.1.53
+            "x500uniqueidentifier"      //2.5.4.45
+    );
 
     private static final String DISCONNECT_OID = "1.3.6.1.4.1.1466.20036";
 
@@ -790,7 +782,7 @@ public final class LdapClient implements PooledConnection {
         String id = attrid.toLowerCase(Locale.ENGLISH);
 
         return id.contains(";binary") ||
-            defaultBinaryAttrs.containsKey(id) ||
+            defaultBinaryAttrs.contains(id) ||
             ((binaryAttrs != null) && (binaryAttrs.containsKey(id)));
     }
 

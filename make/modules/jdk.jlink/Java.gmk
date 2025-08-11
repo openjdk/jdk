@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,4 +23,10 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
+################################################################################
+
+# Instruct SetupJavaCompilation for the jdk.jlink module to include
+# upgrade_files_<module-name>.conf files
+COPY += .conf
+
+################################################################################

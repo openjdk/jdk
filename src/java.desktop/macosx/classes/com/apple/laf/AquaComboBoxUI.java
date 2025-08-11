@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.ClientPropertyApplicator.Property;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
-public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
+public final class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     static final String POPDOWN_CLIENT_PROPERTY_KEY = "JComboBox.isPopDown";
     static final String ISSQUARE_CLIENT_PROPERTY_KEY = "JComboBox.isSquare";
 
@@ -85,6 +85,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     private boolean wasOpaque;
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
 
@@ -96,21 +97,25 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         c.setOpaque(false);
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         c.setOpaque(wasOpaque);
         super.uninstallUI(c);
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         AquaUtilControlSize.addSizePropertyListener(comboBox);
     }
 
+    @Override
     protected void uninstallListeners() {
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         super.uninstallListeners();
     }
 
+    @Override
     protected void installComponents() {
         super.installComponents();
 
@@ -119,6 +124,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         getApplicator().attachAndApplyClientProperties(comboBox);
     }
 
+    @Override
     protected void uninstallComponents() {
         getApplicator().removeFrom(comboBox);
         // AquaButtonUI install some listeners to all parents, which means that
@@ -129,6 +135,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         super.uninstallComponents();
     }
 
+    @Override
     protected ItemListener createItemListener() {
         return new ItemListener() {
             long lastBlink = 0L;
@@ -161,22 +168,27 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         };
     }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         // this space intentionally left blank
     }
 
+    @Override
     protected ListCellRenderer<Object> createRenderer() {
         return new AquaComboBoxRenderer(comboBox);
     }
 
+    @Override
     protected ComboPopup createPopup() {
         return new AquaComboBoxPopup(comboBox);
     }
 
+    @Override
     protected JButton createArrowButton() {
         return new AquaComboBoxButton(this, comboBox, currentValuePane, listBox);
     }
 
+    @Override
     protected ComboBoxEditor createEditor() {
         return new AquaComboBoxEditor();
     }
@@ -229,8 +241,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class AquaCustomComboTextField extends JTextField {
-        @SuppressWarnings("serial") // anonymous class
+    final class AquaCustomComboTextField extends JTextField {
         public AquaCustomComboTextField() {
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
@@ -259,6 +270,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
 
         // workaround for 4530952
+        @Override
         public void setText(final String s) {
             if (getText().equals(s)) {
                 return;
@@ -275,6 +287,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
      * around a Solaris-only bug that we don't have on Mac OS X.  So, remove the lightweight
      * popup check here. rdar://Problem/3518582
      */
+    @Override
     protected FocusListener createFocusListener() {
         return new BasicComboBoxUI.FocusHandler() {
             @Override
@@ -307,6 +320,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         };
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
 
@@ -331,6 +345,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private abstract class ComboBoxAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (!comboBox.isEnabled() || !comboBox.isShowing()) {
                 return;
@@ -350,7 +365,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     /**
      * Highlight _but do not select_ the next item in the list.
      */
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightNextAction = new ComboBoxAction() {
         @Override
         public void performComboBoxAction(AquaComboBoxUI ui) {
@@ -367,7 +381,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     /**
      * Highlight _but do not select_ the previous item in the list.
      */
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPreviousAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -380,7 +393,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightFirstAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -389,7 +401,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightLastAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -399,7 +410,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageUpAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -420,7 +430,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageDownAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -450,11 +459,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return popup;
     }
 
+    @Override
     protected LayoutManager createLayoutManager() {
         return new AquaComboBoxLayoutManager();
     }
 
-    class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+    final class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         protected Rectangle rectangleForCurrentValue() {
             int width = comboBox.getWidth();
             int height = comboBox.getBorder() == null ? 22 : comboBox.getHeight();
@@ -480,6 +490,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             }
         }
 
+        @Override
         public void layoutContainer(final Container parent) {
             if (arrowButton != null && !comboBox.isEditable()) {
                 final Insets insets = comboBox.getInsets();
@@ -560,7 +571,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     // This is somewhat messy.  The difference here from BasicComboBoxUI.EnterAction is that
     // arrow up or down does not automatically select the
-    @SuppressWarnings("serial") // anonymous class
     private final Action triggerSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             triggerSelectionEvent((JComboBox)e.getSource(), e);
@@ -572,7 +582,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private static final Action toggleSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
@@ -591,7 +600,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private final Action hideAction = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {
@@ -606,7 +614,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private final Action openPopupOrHighlightLast = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -617,7 +624,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private final Action openPopupOrHighlightFirst = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -627,6 +633,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @Override
     public void applySizeFor(final JComponent c, final Size size) {
         if (arrowButton == null) return;
         final Border border = arrowButton.getBorder();
@@ -635,6 +642,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         arrowButton.setBorder(aquaBorder.deriveBorderForSize(size));
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         if (!isMinimumSizeDirty) {
             return new Dimension(cachedMinimumSize);

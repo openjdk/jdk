@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,19 +104,19 @@ public final class ZoneOffsetTransition
      */
     private static final long serialVersionUID = -6946044323557704546L;
     /**
-     * The transition epoch-second.
+     * @serial The transition epoch-second.
      */
     private final long epochSecond;
     /**
-     * The local transition date-time at the transition.
+     * @serial The local transition date-time at the transition.
      */
     private final LocalDateTime transition;
     /**
-     * The offset before transition.
+     * @serial The offset before transition.
      */
     private final ZoneOffset offsetBefore;
     /**
-     * The offset after transition.
+     * @serial The offset after transition.
      */
     private final ZoneOffset offsetAfter;
 

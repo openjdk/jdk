@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,10 +277,6 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      *
      * @throws UnsupportedOperationException if the Java virtual
      *         machine does not support thread memory allocation measurement.
-     *
-     * @throws SecurityException if a security manager
-     *         exists and the caller does not have
-     *         ManagementPermission("control").
      *
      * @see #isThreadAllocatedMemorySupported
      */

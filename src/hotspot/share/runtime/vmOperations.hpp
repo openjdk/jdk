@@ -60,6 +60,18 @@ class VM_ForceSafepoint: public VM_EmptyOperation {
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
 };
 
+// used by whitebox API to emulate VM issues
+// when VM can't operate and doesn't respond to jcmd
+class VM_HangInSafepoint: public VM_Operation {
+public:
+  VMOp_Type type() const { return VMOp_ForceSafepoint; }
+  void doit() {
+    while(true) {
+      os::naked_short_sleep(10);
+    }
+  }
+};
+
 class VM_ClearICs: public VM_Operation {
  private:
   bool _preserve_static_stubs;

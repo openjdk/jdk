@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,31 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-AlignVector
+ * @bug 8329273 8348263
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector
+ */
+
+/*
+ * @test id=byte-array-NoShortRunningLongLoop
+ * @bug 8329273 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoShortRunningLongLoop
+ */
+
+/*
+ * @test id=byte-array-AlignVector-NoShortRunningLongLoop
+ * @bug 8329273 8348263 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoShortRunningLongLoop
+ */
+
+
+/*
  * @test id=char-array
  * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
@@ -64,11 +89,27 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=int-array-AlignVector
+ * @bug 8329273 8348263
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment IntArray AlignVector
+ */
+
+/*
  * @test id=long-array
  * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray
+ */
+
+/*
+ * @test id=long-array-AlignVector
+ * @bug 8329273 8348263
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment LongArray AlignVector
  */
 
 /*
@@ -111,6 +152,14 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegment Native
  */
 
+/*
+ * @test id=native-AlignVector
+ * @bug 8329273 8348263
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector
+ */
+
 // FAILS: mixed providers currently do not vectorize. Maybe there is some inlining issue.
 // /*
 //  * @test id=mixed-array
@@ -140,6 +189,16 @@ public class TestMemorySegment {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
+        for (int i = 1; i < args.length; i++) {
+            String tag = args[i];
+            switch (tag) {
+                case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
+                case "NoShortRunningLongLoop" ->     framework.addFlags("-XX:-ShortRunningLongLoop");
+            }
+        }
+        if (args.length > 1 && args[1].equals("AlignVector")) {
+            framework.addFlags("-XX:+AlignVector");
+        }
         framework.setDefaultWarmup(100);
         framework.start();
     }
@@ -396,7 +455,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS
     // Exit check: iv < long_limit      ->     (long)iv < long_limit
     // Thus, we have an int-iv, but a long-exit-check.
@@ -415,7 +474,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_iv_byte(MemorySegment a) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr = i;
@@ -430,7 +489,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_intInvar_sameAdr_byte(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr = (long)(i) + (long)(invar);
@@ -445,7 +504,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_longInvar_sameAdr_byte(MemorySegment a, long invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr = (long)(i) + (long)(invar);
@@ -456,13 +515,11 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
@@ -474,13 +531,11 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
@@ -496,7 +551,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: RangeCheck cannot be eliminated because of int_index
     static Object[] testIntLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
@@ -513,7 +568,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_iv_int(MemorySegment a) {
         for (int i = 0; i < (int)a.byteSize()/4; i++ ) {
             long adr = 4L * i;
@@ -529,7 +584,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
             long adr = 4L * (long)(i) + 4L * (long)(invar);
@@ -545,7 +600,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
             long adr = 4L * (long)(i) + 4L * (long)(invar);
@@ -556,13 +611,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
@@ -574,13 +628,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testIntLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
@@ -596,7 +649,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: RangeCheck cannot be eliminated because of int_index
     static Object[] testIntLoop_intIndex_intInvar_int(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
@@ -612,7 +665,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_iv_byte(MemorySegment a) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr = i;
@@ -627,7 +680,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_longIndex_intInvar_sameAdr_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr = (long)(i) + (long)(invar);
@@ -642,7 +695,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_longIndex_longInvar_sameAdr_byte(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr = (long)(i) + (long)(invar);
@@ -653,13 +706,9 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+    // See: JDK-8331659
+    // Interestingly, it now vectorizes for native, but not for arrays.
     static Object[] testLongLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
@@ -671,13 +720,9 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+    // See: JDK-8331659
+    // Interestingly, it now vectorizes for native, but not for arrays.
     static Object[] testLongLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
@@ -693,7 +738,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VB,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: RangeCheck cannot be eliminated because of int_index
     static Object[] testLongLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
@@ -710,7 +755,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_iv_int(MemorySegment a) {
         for (long i = 0; i < a.byteSize()/4; i++ ) {
             long adr = 4L * i;
@@ -721,14 +766,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    //@IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-    //              IRNode.ADD_VI,        "> 0",
-    //              IRNode.STORE_VECTOR,  "> 0"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: for native memory. I think it is because of invariants, but need investigation.
-    //        The long -> int loop conversion introduces extra invariants.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr = 4L * (long)(i) + 4L * (long)(invar);
@@ -739,14 +782,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    //@IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-    //              IRNode.ADD_VI,        "> 0",
-    //              IRNode.STORE_VECTOR,  "> 0"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: for native memory. I think it is because of invariants, but need investigation.
-    //        The long -> int loop conversion introduces extra invariants.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testLongLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr = 4L * (long)(i) + 4L * (long)(invar);
@@ -760,10 +801,17 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "true", "AlignVector", "false" },
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+    // See: JDK-8331659
     static Object[] testLongLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
@@ -778,10 +826,17 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "true", "AlignVector", "false" },
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
+    // See: JDK-8331659
     static Object[] testLongLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {
             long adr1 = 4L * (long)(i) + 4L * (long)(invar);
@@ -797,7 +852,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: RangeCheck cannot be eliminated because of int_index
     static Object[] testLongLoop_intIndex_intInvar_int(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize()/4; i++) {

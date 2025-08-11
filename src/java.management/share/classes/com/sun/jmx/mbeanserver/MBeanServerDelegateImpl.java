@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ final class MBeanServerDelegateImpl
         super();
         delegateInfo =
             new MBeanInfo("javax.management.MBeanServerDelegate",
-                          "Represents  the MBean server from the management "+
+                          "Represents the MBean server from the management "+
                           "point of view.",
                           MBeanServerDelegateImpl.attributeInfos, null,
                           null,getNotificationInfo());

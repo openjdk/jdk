@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163800 8175200 8186332 8182765
+ * @bug 8163800 8175200 8186332 8182765 8345908
  * @summary The fix for JDK-8072052 shows up other minor incorrect use of styles
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -66,10 +66,10 @@ public class TestClassLinks extends JavadocTester {
 
         checkOutput("p/C3.html", true,
                 """
-                    <code><a href="I1.html" title="interface in p">I1</a></code>, <code><a href="I12\
-                    .html" title="interface in p">I12</a></code>, <code><a href="I2.html" title="int\
-                    erface in p">I2</a></code>, <code><a href="IT1.html" title="interface in p">IT1<\
-                    /a>&lt;T&gt;</code>, <code><a href="IT2.html" title="interface in p">IT2</a>&lt;\
+                    <code><a href="I1.html" title="interface in p">I1</a>, <a href="I12\
+                    .html" title="interface in p">I12</a>, <a href="I2.html" title="int\
+                    erface in p">I2</a>, <a href="IT1.html" title="interface in p">IT1<\
+                    /a>&lt;T&gt;, <a href="IT2.html" title="interface in p">IT2</a>&lt;\
                     java.lang.String&gt;</code>""",
                 """
                     <code><a href="#%3Cinit%3E()" class="member-name-link">C3</a>()</code>""");
@@ -90,7 +90,7 @@ public class TestClassLinks extends JavadocTester {
                 """
                     <code><a href="C3.html" title="class in p">C3</a></code>""",
                 """
-                    <code><a href="I1.html" title="interface in p">I1</a></code>, <code><a href="I2.\
+                    <code><a href="I1.html" title="interface in p">I1</a>, <a href="I2.\
                     html" title="interface in p">I2</a></code>""");
 
         checkOutput("p/IT1.html", true,

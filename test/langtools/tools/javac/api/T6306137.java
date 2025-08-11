@@ -29,7 +29,7 @@
  *          jdk.compiler
  * @compile -encoding utf-8 T6306137.java
  * @run main T6306137
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  */
 
 import java.io.File;

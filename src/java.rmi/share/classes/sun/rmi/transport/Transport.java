@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,6 @@ import java.rmi.server.ObjID;
 import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import sun.rmi.runtime.Log;
 import sun.rmi.server.Dispatcher;
 import sun.rmi.server.UnicastServerRef;
@@ -51,15 +46,14 @@ import sun.rmi.server.UnicastServerRef;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings({"removal","deprecation"})
+@SuppressWarnings({"deprecation"})
 public abstract class Transport {
 
     /** "transport" package log level */
     static final int logLevel = LogStream.parseLevel(getLogLevel());
 
     private static String getLogLevel() {
-        return java.security.AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.transport.logLevel"));
+        return System.getProperty("sun.rmi.transport.logLevel");
     }
 
     /* transport package log */
@@ -71,15 +65,6 @@ public abstract class Transport {
 
     /** ObjID for DGCImpl */
     private static final ObjID dgcID = new ObjID(ObjID.DGC_ID);
-
-    /** AccessControlContext for setting context ClassLoader */
-    private static final AccessControlContext SETCCL_ACC;
-    static {
-        Permissions perms = new Permissions();
-        perms.add(new RuntimePermission("setContextClassLoader"));
-        ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
-        SETCCL_ACC = new AccessControlContext(pd);
-    }
 
     /**
      * Returns a <I>Channel</I> that generates connections to the
@@ -122,21 +107,10 @@ public abstract class Transport {
     }
 
     /**
-     * Verify that the current access control context has permission to accept
-     * the connection being dispatched by the current thread.  The current
-     * access control context is passed as a parameter to avoid the overhead of
-     * an additional call to AccessController.getContext.
-     */
-    protected abstract void checkAcceptPermission(AccessControlContext acc);
-
-    /**
      * Sets the context class loader for the current thread.
      */
     private static void setContextClassLoader(ClassLoader ccl) {
-        AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
-                Thread.currentThread().setContextClassLoader(ccl);
-                return null;
-            }, SETCCL_ACC);
+        Thread.currentThread().setContextClassLoader(ccl);
     }
 
     /**
@@ -183,27 +157,13 @@ public abstract class Transport {
                 /* call the dispatcher */
                 transportLog.log(Log.VERBOSE, "call dispatcher");
 
-                final AccessControlContext acc =
-                    target.getAccessControlContext();
                 ClassLoader ccl = target.getContextClassLoader();
-
                 ClassLoader savedCcl = Thread.currentThread().getContextClassLoader();
 
                 try {
                     if (ccl != savedCcl) setContextClassLoader(ccl);
                     currentTransport.set(this);
-                    try {
-                        java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedExceptionAction<Void>() {
-                            public Void run() throws IOException {
-                                checkAcceptPermission(acc);
-                                disp.dispatch(impl, call);
-                                return null;
-                            }
-                        }, acc);
-                    } catch (java.security.PrivilegedActionException pae) {
-                        throw (IOException) pae.getException();
-                    }
+                    disp.dispatch(impl, call);
                 } finally {
                     if (ccl != savedCcl) setContextClassLoader(savedCcl);
                     currentTransport.set(null);

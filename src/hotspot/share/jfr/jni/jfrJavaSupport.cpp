@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
@@ -36,6 +35,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -178,19 +178,6 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
   result->set_oop(h_obj());
 }
 
-static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
-  assert(args != nullptr, "invariant");
-  assert(result != nullptr, "invariant");
-  assert(klass != nullptr, "invariant");
-  assert(klass->is_initialized(), "invariant");
-
-  Klass* const ak = klass->array_klass(THREAD);
-  ObjArrayKlass::cast(ak)->initialize(THREAD);
-  HandleMark hm(THREAD);
-  objArrayOop arr = ObjArrayKlass::cast(ak)->allocate(array_length, CHECK);
-  result->set_oop(arr);
-}
-
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   assert(args != nullptr, "invariant");
   assert(result != nullptr, "invariant");
@@ -200,13 +187,7 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
   klass->initialize(CHECK);
 
-  const int array_length = args->array_length();
-
-  if (array_length >= 0) {
-    array_construction(args, result, klass, array_length, CHECK);
-  } else {
-    object_construction(args, result, klass, THREAD);
-  }
+  object_construction(args, result, klass, THREAD);
 }
 
 static void handle_result(JavaValue* result, bool global_ref, JavaThread* t) {
@@ -252,15 +233,6 @@ jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
   return (jstring)local_jni_handle(result, THREAD);
 }
 
-jobjectArray JfrJavaSupport::new_string_array(int length, TRAPS) {
-  DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/String", "<init>", "()V", CHECK_NULL);
-  args.set_array_length(length);
-  new_object_local_ref(&args, THREAD);
-  return (jobjectArray)args.result()->get_jobject();
-}
-
 jobject JfrJavaSupport::new_java_lang_Boolean(bool value, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
@@ -299,6 +271,24 @@ void JfrJavaSupport::set_array_element(jobjectArray arr, jobject element, int in
 /*
  *  Field access
  */
+static void write_bool_field(const Handle& h_oop, fieldDescriptor* fd, jboolean value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->bool_field_put(fd->offset(), value);
+}
+
+static void write_char_field(const Handle& h_oop, fieldDescriptor* fd, jchar value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->char_field_put(fd->offset(), value);
+}
+
+static void write_short_field(const Handle& h_oop, fieldDescriptor* fd, jshort value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->short_field_put(fd->offset(), value);
+}
+
 static void write_int_field(const Handle& h_oop, fieldDescriptor* fd, jint value) {
   assert(h_oop.not_null(), "invariant");
   assert(fd != nullptr, "invariant");
@@ -341,8 +331,14 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
 
   switch(fd->field_type()) {
     case T_BOOLEAN:
+      write_bool_field(h_oop, fd, args->param(1).get_jboolean());
+      break;
     case T_CHAR:
+      write_char_field(h_oop, fd, args->param(1).get_jchar());
+      break;
     case T_SHORT:
+      write_short_field(h_oop, fd, args->param(1).get_jshort());
+      break;
     case T_INT:
       write_int_field(h_oop, fd, args->param(1).get_jint());
       break;
@@ -374,8 +370,14 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
 
   switch(fd->field_type()) {
     case T_BOOLEAN:
+      result->set_jint(h_oop->bool_field(fd->offset()));
+      break;
     case T_CHAR:
+      result->set_jint(h_oop->char_field(fd->offset()));
+      break;
     case T_SHORT:
+      result->set_jint(h_oop->short_field(fd->offset()));
+      break;
     case T_INT:
       result->set_jint(h_oop->int_field(fd->offset()));
       break;
@@ -899,4 +901,15 @@ bool JfrJavaSupport::compute_field_offset(int &dest_offset,
   }
   dest_offset = fd.offset();
   return true;
+}
+
+jlongArray JfrJavaSupport::create_long_array(GrowableArray<jlong>* array, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  assert(array != nullptr, "invariant");
+  assert(array->is_nonempty(), "invariant");
+  const int length = array->length();
+  assert(length > 0, "invariant");
+  typeArrayOop obj = oopFactory::new_typeArray(T_LONG, length, CHECK_NULL);
+  ArrayAccess<>::arraycopy_from_native(&array->first(), obj, typeArrayOopDesc::element_offset<jlong>(0), length);
+  return static_cast<jlongArray>(JfrJavaSupport::local_jni_handle(obj, THREAD));
 }

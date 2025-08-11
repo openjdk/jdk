@@ -35,7 +35,6 @@ import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipEntry.isCENHeaderValid;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
-import sun.security.action.GetBooleanAction;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -58,7 +57,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * some in jdk7.
      */
     private static final boolean inhibitZip64 =
-        GetBooleanAction.privilegedGetProperty("jdk.util.zip.inhibitZip64");
+        Boolean.getBoolean("jdk.util.zip.inhibitZip64");
 
     private static class XEntry {
         final ZipEntry entry;

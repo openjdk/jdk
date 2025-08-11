@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,6 @@ import java.util.Objects;
  * }</pre>
  *
  * </ul>
- * @param <E> the boxed version of {@code ETYPE},
- *           the element type of a vector
  *
  * <h2>Value-based classes and identity operations</h2>
  *
@@ -128,6 +126,9 @@ import java.util.Objects;
  * {@code static final} constants, but storing them in other Java
  * fields or in array elements, while semantically valid, may incur
  * performance penalties.
+ *
+ * @param <E> the boxed version of {@code ETYPE},
+ *           the element type of a vector
  */
 @SuppressWarnings("exports")
 public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport.VectorMask<E> {
@@ -341,9 +342,9 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public abstract boolean anyTrue();
 
     /**
-     * Returns {@code true} if all of the mask lanes are set.
+     * Returns {@code true} if all the mask lanes are set.
      *
-     * @return {@code true} if all of the mask lanes are set, otherwise
+     * @return {@code true} if all the mask lanes are set, otherwise
      * {@code false}.
      */
     public abstract boolean allTrue();
@@ -527,7 +528,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * For each mask lane, where {@code N} is the mask lane index, if
      * the mask lane is set at {@code N} then the specific non-default
      * value {@code -1} is placed into the resulting vector at lane
-     * index {@code N}.  Otherwise the default element value {@code 0}
+     * index {@code N}.  Otherwise, the default element value {@code 0}
      * is placed into the resulting vector at lane index {@code N}.
      *
      * Whether the element type ({@code ETYPE}) of this mask is

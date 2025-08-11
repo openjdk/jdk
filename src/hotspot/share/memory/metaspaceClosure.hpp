@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/array.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -104,6 +105,18 @@ public:
   //         Symbol*     bar() { return (Symbol*)    _obj; }
   //
   // [2] All Array<T> dimensions are statically declared.
+  //
+  // Pointer Tagging
+  //
+  // All metaspace pointers are at least 4 byte aligned. Therefore, it's possible for
+  // certain pointers to contain "tags" in their lowest 2 bits.
+  //
+  // Ref::obj() clears the tag bits in the return values. As a result, most
+  // callers who just want walk a closure of metaspace objects do not need to worry
+  // about the tag bits.
+  //
+  // If you need to use the tags, you can access the tagged pointer with Ref::addr()
+  // and manipulate its parts with strip_tags(), decode_tags() and add_tags()
   class Ref : public CHeapObj<mtMetaspace> {
     Writability _writability;
     address _enclosing_obj;
@@ -123,7 +136,7 @@ public:
     virtual ~Ref() {}
 
     address obj() const {
-      return *addr();
+      return strip_tags(*addr());
     }
 
     address* addr() const {
@@ -143,12 +156,35 @@ public:
     Ref* next() const               { return _next; }
   };
 
+  // Pointer tagging support
+  constexpr static uintx TAG_MASK = 0x03;
+
+  template <typename T>
+  static T strip_tags(T ptr_with_tags) {
+    uintx n = (uintx)ptr_with_tags;
+    return (T)(n & ~TAG_MASK);
+  }
+
+  template <typename T>
+  static uintx decode_tags(T ptr_with_tags) {
+    uintx n = (uintx)ptr_with_tags;
+    return (n & TAG_MASK);
+  }
+
+  template <typename T>
+  static T add_tags(T ptr, uintx tags) {
+    uintx n = (uintx)ptr;
+    assert((n & TAG_MASK) == 0, "sanity");
+    assert(tags <= TAG_MASK, "sanity");
+    return (T)(n | tags);
+  }
+
 private:
   // MSORef -- iterate an instance of MetaspaceObj
   template <class T> class MSORef : public Ref {
     T** _mpp;
     T* dereference() const {
-      return *_mpp;
+      return strip_tags(*_mpp);
     }
   protected:
     virtual void** mpp() const {
@@ -176,7 +212,7 @@ private:
     Array<T>** _mpp;
   protected:
     Array<T>* dereference() const {
-      return *_mpp;
+      return strip_tags(*_mpp);
     }
     virtual void** mpp() const {
       return (void**)_mpp;
@@ -200,11 +236,11 @@ private:
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       Array<T>* array = ArrayRef<T>::dereference();
-      log_trace(cds)("Iter(OtherArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
     }
     virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
       Array<T>* array = (Array<T>*)new_loc;
-      log_trace(cds)("Iter(OtherArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
     }
   };
 
@@ -222,7 +258,7 @@ private:
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
-      log_trace(cds)("Iter(MSOArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(MSOArray): %p [%d]", array, array->length());
       for (int i = 0; i < array->length(); i++) {
         T* elm = array->adr_at(i);
         elm->metaspace_pointers_do(it);
@@ -244,7 +280,7 @@ private:
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
-      log_trace(cds)("Iter(MSOPointerArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, array->length());
       for (int i = 0; i < array->length(); i++) {
         T** mpp = array->adr_at(i);
         it->push(mpp);

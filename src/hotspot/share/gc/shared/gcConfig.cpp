@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -44,7 +43,7 @@
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/zSharedArguments.hpp"
+#include "gc/z/zArguments.hpp"
 #endif
 
 struct IncludedGC {
@@ -62,7 +61,7 @@ struct IncludedGC {
   PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
     SERIALGC_ONLY(static SerialArguments     serialArguments;)
 SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
-         ZGC_ONLY(static ZSharedArguments    zArguments;)
+         ZGC_ONLY(static ZArguments          zArguments;)
 
 // Table of included GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.

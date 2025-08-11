@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,35 @@
  * @summary Test virtual threads using Object.wait/notifyAll
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ */
+
+/*
+ * @test id=Xint
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ */
+
+/*
+ * @test id=Xcomp
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm/native -Xcomp --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ */
+
+/*
+ * @test id=Xcomp-TieredStopAtLevel1
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ */
+
+/*
+ * @test id=Xcomp-noTieredCompilation
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 import java.util.ArrayList;
@@ -50,7 +78,9 @@ import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.ma
 import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
@@ -203,6 +233,127 @@ class MonitorWaitNotify {
             thread.join();
         }
     }
+
+    /**
+     * Returns a stream of elements that are ordered pairs of platform and virtual thread
+     * counts. 0,2,4,..8 platform threads. 2,4,6,..16 virtual threads.
+     */
+    static Stream<Arguments> threadCounts() {
+        return IntStream.range(0, 9)
+                .filter(i -> i % 2 == 0)
+                .mapToObj(i -> i)
+                .flatMap(np -> IntStream.range(2, 17)
+                        .filter(i -> i % 2 == 0)
+                        .mapToObj(vp -> Arguments.of(np, vp)));
+    }
+
+    /**
+     * Test notify wakes only one thread when platform and virtual threads are waiting.
+     */
+    @ParameterizedTest
+    @MethodSource("threadCounts")
+    void testNotifyOneThread(int nPlatformThreads, int nVirtualThreads) throws Exception {
+        int nThreads = nPlatformThreads + nVirtualThreads;
+
+        var lock = new Object();
+        var ready = new CountDownLatch(nThreads);
+        var notified = new AtomicInteger();
+
+        Runnable waitTask = () -> {
+            synchronized (lock) {
+                try {
+                    ready.countDown();
+                    lock.wait();
+                    notified.incrementAndGet();
+                } catch (InterruptedException e) { }
+            }
+        };
+
+        var threads = new ArrayList<Thread>();
+        try {
+            for (int i = 0; i < nPlatformThreads; i++) {
+                threads.add(Thread.ofPlatform().start(waitTask));
+            }
+            for (int i = 0; i < nVirtualThreads; i++) {
+                threads.add(Thread.ofVirtual().start(waitTask));
+            }
+
+            // wait for all threads to wait
+            ready.await();
+
+            // wake threads, one by one
+            for (int i = 0; i < threads.size(); i++) {
+
+                // wake one thread
+                synchronized (lock) {
+                    lock.notify();
+                }
+
+                // one thread should have awoken
+                int expectedWakeups = i + 1;
+                while (notified.get() < expectedWakeups) {
+                    Thread.sleep(10);
+                }
+                assertEquals(expectedWakeups, notified.get());
+            }
+        } finally {
+            for (Thread t : threads) {
+                t.interrupt();
+                t.join();
+            }
+        }
+    }
+
+    /**
+     * Test notifyAll wakes all threads.
+     */
+    @ParameterizedTest
+    @MethodSource("threadCounts")
+    void testNotifyAllThreads(int nPlatformThreads, int nVirtualThreads) throws Exception {
+        int nThreads = nPlatformThreads + nVirtualThreads;
+
+        var lock = new Object();
+        var ready = new CountDownLatch(nThreads);
+        var notified = new CountDownLatch(nThreads);
+
+        Runnable waitTask = () -> {
+            synchronized (lock) {
+                try {
+                    ready.countDown();
+                    lock.wait();
+                    notified.countDown();
+                } catch (InterruptedException e) { }
+            }
+        };
+
+        var threads = new ArrayList<Thread>();
+        try {
+            for (int i = 0; i < nPlatformThreads; i++) {
+                threads.add(Thread.ofPlatform().start(waitTask));
+            }
+            for (int i = 0; i < nVirtualThreads; i++) {
+                threads.add(Thread.ofVirtual().start(waitTask));
+            }
+
+            // wait for all threads to wait
+            ready.await();
+
+            // wakeup all threads
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+
+            // wait for all threads to have awoken
+            notified.await();
+
+        } finally {
+            for (Thread t : threads) {
+                t.interrupt();
+                t.join();
+            }
+        }
+    }
+
     /**
      * Test duration of timed Object.wait.
      */
@@ -487,6 +638,95 @@ class MonitorWaitNotify {
         // thread should terminate
         vthread.join();
         assertTrue(completed.get());
+    }
+
+    /**
+     * Test that Object.wait releases the carrier. This test uses a custom scheduler
+     * with one carrier thread.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 30000, Integer.MAX_VALUE })
+    void testReleaseWhenWaiting1(int timeout) throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var lock = new Object();
+            var ready = new AtomicBoolean();
+            var completed = new AtomicBoolean();
+
+            var vthread1 = factory.newThread(() -> {
+                synchronized (lock) {
+                    try {
+                        ready.set(true);
+                        if (timeout > 0) {
+                            lock.wait(timeout);
+                        } else {
+                            lock.wait();
+                        }
+                    } catch (InterruptedException e) {
+                        fail("wait interrupted");
+                    }
+                }
+                completed.set(true);
+            });
+            vthread1.start();
+
+            // wait for vthread1 to start and wait
+            awaitTrue(ready);
+            await(vthread1, timeout > 0 ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
+
+            // carrier should be released, use it for another thread
+            var executed = new AtomicBoolean();
+            var vthread2 = factory.newThread(() -> {
+                executed.set(true);
+            });
+            vthread2.start();
+            vthread2.join();
+            assertTrue(executed.get());
+
+            // wakeup vthread1
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+
+            vthread1.join();
+            assertTrue(completed.get());
+        }
+    }
+
+    /**
+     * Test that Object.wait releases the carrier. This test arranges for 4*ncores - 1
+     * virtual threads to wait. For long timeout and no timeout cases, all virtual threads
+     * will wait until they are notified.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 10, 20, 100, 500, 30000, Integer.MAX_VALUE })
+    void testReleaseWhenWaiting2(int timeout) throws Exception {
+        int VTHREAD_COUNT = 4 * Runtime.getRuntime().availableProcessors();
+        CountDownLatch latch = new CountDownLatch(VTHREAD_COUNT);
+        Object lock = new Object();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        for (int i = 0; i < VTHREAD_COUNT; i++) {
+            Thread.ofVirtual().name("vthread-" + i).start(() -> {
+                synchronized (lock) {
+                    if (counter.incrementAndGet() == VTHREAD_COUNT) {
+                        lock.notifyAll();
+                    } else {
+                        try {
+                            if (timeout > 0) {
+                                lock.wait(timeout);
+                            } else {
+                                lock.wait();
+                            }
+                        } catch (InterruptedException e) {}
+                    }
+                }
+                latch.countDown();
+            });
+        }
+        latch.await();
     }
 
     /**

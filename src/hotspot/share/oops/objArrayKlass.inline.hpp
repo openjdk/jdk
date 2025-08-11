@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  assert (obj->is_array(), "obj must be array");
+  assert(obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
   if (Devirtualizer::do_metadata(closure)) {

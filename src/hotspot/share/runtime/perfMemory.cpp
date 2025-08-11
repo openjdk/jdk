@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -35,7 +34,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/statSampler.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -67,16 +65,16 @@ void perfMemory_exit() {
   if (!UsePerfData) return;
   if (!PerfMemory::is_usable()) return;
 
-  // Only destroy PerfData objects if we're at a safepoint and the
-  // StatSampler is not active. Otherwise, we risk removing PerfData
-  // objects that are currently being used by running JavaThreads
-  // or the StatSampler. This method is invoked while we are not at
+  // Only destroy PerfData objects if we're at a safepoint.
+  // Otherwise, we risk removing PerfData objects
+  // that are currently being used by running JavaThreads.
+  // This method is invoked while we are not at
   // a safepoint during a VM abort so leaving the PerfData objects
   // around may also help diagnose the failure. In rare cases,
   // PerfData objects are used in parallel with a safepoint. See
   // the work around in PerfDataManager::destroy().
   //
-  if (SafepointSynchronize::is_at_safepoint() && !StatSampler::is_active()) {
+  if (SafepointSynchronize::is_at_safepoint()) {
     PerfDataManager::destroy();
   }
 
@@ -97,8 +95,8 @@ void PerfMemory::initialize() {
                              os::vm_allocation_granularity());
 
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
-                          " os::vm_allocation_granularity = " SIZE_FORMAT
-                          ", adjusted size = " SIZE_FORMAT,
+                          " os::vm_allocation_granularity = %zu"
+                          ", adjusted size = %zu",
                           PerfDataMemorySize,
                           os::vm_allocation_granularity(),
                           capacity);
@@ -127,7 +125,7 @@ void PerfMemory::initialize() {
     // the PerfMemory region was created as expected.
 
     log_debug(perf, memops)("PerfMemory created: address = " INTPTR_FORMAT ","
-                            " size = " SIZE_FORMAT,
+                            " size = %zu",
                             p2i(_start),
                             _capacity);
 
@@ -178,8 +176,8 @@ void PerfMemory::destroy() {
     //
     if (PrintMiscellaneous && Verbose) {
       warning("PerfMemory Overflow Occurred.\n"
-              "\tCapacity = " SIZE_FORMAT " bytes"
-              "  Used = " SIZE_FORMAT " bytes"
+              "\tCapacity = %zu bytes"
+              "  Used = %zu bytes"
               "  Overflow = " INT32_FORMAT " bytes"
               "\n\tUse -XX:PerfDataMemorySize=<size> to specify larger size.",
               PerfMemory::capacity(),

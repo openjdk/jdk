@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8331535
+ * @bug 8331535 8341631 8344706
  * @summary Test the JShell tool Console handling
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open
@@ -56,8 +56,50 @@ public class ConsoleToolTest extends ReplToolTesting {
             );
     }
 
+    @Test //JDK-8341631
+    public void testIO() {
+        test(new String[] {"--enable-preview"},
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.readln(\"%%s\");",
+                                                      "input\n",
+                                                      "$1 ==> \"input\"",
+                                                      "%%s",
+                                                      """
+                                                      \u0005java.lang.IO.readln(\"%%s\");
+                                                      """);},
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.readln();",
+                                                      "input!\n",
+                                                      "$2 ==> \"input!\"",
+                                                      "",
+                                                      """
+                                                      \u0005java.lang.IO.readln();
+                                                      """);},
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.println(\"Hello, World!\");",
+                                                      "",
+                                                      "",
+                                                      "Hello, World!\n",
+                                                      """
+                                                      \u0005java.lang.IO.println(\"Hello, World!\");
+                                                      """);},
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.println();",
+                                                      "",
+                                                      "",
+                                                      "\n",
+                                                      """
+                                                      \u0005java.lang.IO.println();
+                                                      """);}
+            );
+    }
+
     void assertCommandWithOutputAndTerminal(boolean a, String command, String out, String terminalOut) {
         assertCommand(a, command, out, null, null, null, null, terminalOut);
+    }
+
+    void assertCommandWithOutputAndInput(boolean a, String command, String input, String out, String print, String terminalOut) {
+        assertCommand(a, command, out, null, input, print, null, terminalOut);
     }
 
 }

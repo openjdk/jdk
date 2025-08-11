@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -28,7 +28,6 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
@@ -56,6 +55,7 @@ import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 
 /**
  *
@@ -74,7 +74,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: Nov 2023
+ * @LastModified: Apr 2025
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -1374,7 +1374,8 @@ public class XMLDocumentFragmentScannerImpl
                         fAttributes.getLength() > fElementAttributeLimit){
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                  "ElementAttributeLimit",
-                                                 new Object[]{rawname, fElementAttributeLimit },
+                                                 new Object[]{rawname, fElementAttributeLimit,
+                                                     XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT.systemProperty() },
                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR );
                 }
 
@@ -1885,7 +1886,7 @@ public class XMLDocumentFragmentScannerImpl
             reportFatalError("MaxElementDepthLimit", new Object[]{elementName,
                 fLimitAnalyzer.getTotalValue(Limit.MAX_ELEMENT_DEPTH_LIMIT),
                 fSecurityManager.getLimit(Limit.MAX_ELEMENT_DEPTH_LIMIT),
-                "maxElementDepth"});
+                Limit.MAX_ELEMENT_DEPTH_LIMIT.systemProperty()});
         }
     }
 

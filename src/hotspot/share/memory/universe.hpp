@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_UNIVERSE_HPP
 
 #include "gc/shared/verifyOption.hpp"
+#include "memory/reservedSpace.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -42,7 +43,6 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
-class ReservedHeapSpace;
 class SerializeClosure;
 
 class Universe: AllStatic {
@@ -51,7 +51,6 @@ class Universe: AllStatic {
   friend class oopDesc;
   friend class ClassLoader;
   friend class SystemDictionary;
-  friend class ReservedHeapSpace;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
@@ -118,8 +117,8 @@ class Universe: AllStatic {
   static intptr_t _non_oop_bits;
 
   // array of dummy objects used with +FullGCAlot
-  debug_only(static OopHandle   _fullgc_alot_dummy_array;)
-  debug_only(static int         _fullgc_alot_dummy_next;)
+  DEBUG_ONLY(static OopHandle   _fullgc_alot_dummy_array;)
+  DEBUG_ONLY(static int         _fullgc_alot_dummy_next;)
 
   // Compiler/dispatch support
   static int  _base_vtable_size;                      // Java vtbl size of klass Object (in words)
@@ -358,7 +357,7 @@ class Universe: AllStatic {
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.
-  debug_only(static bool release_fullgc_alot_dummy();)
+  DEBUG_ONLY(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
   static void*         non_oop_word();
   static bool contains_non_oop_word(void* p);

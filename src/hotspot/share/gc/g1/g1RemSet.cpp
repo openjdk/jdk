@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
@@ -30,6 +29,7 @@
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSet.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -40,12 +40,12 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -107,7 +107,7 @@ public:
   // dirty card, i.e. actually needs scanning.
   bool chunk_needs_scan(uint const region_idx, uint const card_in_region) const {
     size_t const idx = ((size_t)region_idx << _log_scan_chunks_per_region) + (card_in_region >> _scan_chunks_shift);
-    assert(idx < _num_total_scan_chunks, "Index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+    assert(idx < _num_total_scan_chunks, "Index %zu out of bounds %zu",
            idx, _num_total_scan_chunks);
     return _region_scan_chunks[idx];
   }
@@ -347,7 +347,7 @@ public:
 
   void set_chunk_dirty(size_t const card_idx) {
     assert((card_idx >> _scan_chunks_shift) < _num_total_scan_chunks,
-           "Trying to access index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+           "Trying to access index %zu out of bounds %zu",
            card_idx >> _scan_chunks_shift, _num_total_scan_chunks);
     size_t const chunk_idx = card_idx >> _scan_chunks_shift;
     _region_scan_chunks[chunk_idx] = true;
@@ -755,26 +755,70 @@ public:
 
 // Heap region closure to be applied to all regions in the current collection set
 // increment to fix up non-card related roots.
-class G1ScanCollectionSetRegionClosure : public G1HeapRegionClosure {
+class G1ScanCodeRootsClosure : public G1HeapRegionClosure {
   G1ParScanThreadState* _pss;
   G1RemSetScanState* _scan_state;
-
-  G1GCPhaseTimes::GCParPhases _scan_phase;
-  G1GCPhaseTimes::GCParPhases _code_roots_phase;
 
   uint _worker_id;
 
   size_t _code_roots_scanned;
 
+public:
+  G1ScanCodeRootsClosure(G1RemSetScanState* scan_state,
+                         G1ParScanThreadState* pss,
+                         uint worker_id) :
+    _pss(pss),
+    _scan_state(scan_state),
+    _worker_id(worker_id),
+    _code_roots_scanned(0) { }
+
+  bool do_heap_region(G1HeapRegion* r) {
+    // Scan the code root list attached to the current region
+    G1ScanAndCountNMethodClosure cl(_pss->closures()->weak_nmethods());
+    r->code_roots_do(&cl);
+    _code_roots_scanned += cl.count();
+    return false;
+  }
+
+  size_t code_roots_scanned() const { return _code_roots_scanned; }
+};
+
+void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
+                                              uint worker_id,
+                                              G1GCPhaseTimes::GCParPhases coderoots_phase,
+                                              G1GCPhaseTimes::GCParPhases objcopy_phase) {
+  EventGCPhaseParallel event;
+
+  Tickspan code_root_scan_time;
+  Tickspan code_root_trim_partially_time;
+  G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
+
+  G1GCPhaseTimes* p = _g1h->phase_times();
+
+  G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
+  // Code roots work distribution occurs inside the iteration method. So scan all collection
+  // set regions for all threads.
+  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+
+  p->record_or_add_time_secs(coderoots_phase, worker_id, code_root_scan_time.seconds());
+  p->add_time_secs(objcopy_phase, worker_id, code_root_trim_partially_time.seconds());
+
+  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+
+  event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(coderoots_phase));
+}
+
+class G1ScanOptionalRemSetRootsClosure : public G1HeapRegionClosure {
+  G1ParScanThreadState* _pss;
+
+  uint _worker_id;
+
+  G1GCPhaseTimes::GCParPhases _scan_phase;
+
   size_t _opt_roots_scanned;
+
   size_t _opt_refs_scanned;
   size_t _opt_refs_memory_used;
-
-  Tickspan _code_root_scan_time;
-  Tickspan _code_trim_partially_time;
-
-  Tickspan _rem_set_opt_root_scan_time;
-  Tickspan _rem_set_opt_trim_partially_time;
 
   void scan_opt_rem_set_roots(G1HeapRegion* r) {
     G1OopStarChunkedList* opt_rem_set_list = _pss->oops_into_optional_region(r);
@@ -786,91 +830,57 @@ class G1ScanCollectionSetRegionClosure : public G1HeapRegionClosure {
   }
 
 public:
-  G1ScanCollectionSetRegionClosure(G1RemSetScanState* scan_state,
-                                   G1ParScanThreadState* pss,
+  G1ScanOptionalRemSetRootsClosure(G1ParScanThreadState* pss,
                                    uint worker_id,
-                                   G1GCPhaseTimes::GCParPhases scan_phase,
-                                   G1GCPhaseTimes::GCParPhases code_roots_phase) :
+                                   G1GCPhaseTimes::GCParPhases scan_phase) :
     _pss(pss),
-    _scan_state(scan_state),
-    _scan_phase(scan_phase),
-    _code_roots_phase(code_roots_phase),
     _worker_id(worker_id),
-    _code_roots_scanned(0),
+    _scan_phase(scan_phase),
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
-    _opt_refs_memory_used(0),
-    _code_root_scan_time(),
-    _code_trim_partially_time(),
-    _rem_set_opt_root_scan_time(),
-    _rem_set_opt_trim_partially_time() { }
+    _opt_refs_memory_used(0) { }
 
-  bool do_heap_region(G1HeapRegion* r) {
-    // The individual references for the optional remembered set are per-worker, so we
-    // always need to scan them.
+  bool do_heap_region(G1HeapRegion* r) override {
     if (r->has_index_in_opt_cset()) {
-      EventGCPhaseParallel event;
-      G1EvacPhaseWithTrimTimeTracker timer(_pss, _rem_set_opt_root_scan_time, _rem_set_opt_trim_partially_time);
       scan_opt_rem_set_roots(r);
-
-      event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
     }
-
-    // Scan code root remembered sets.
-    {
-      EventGCPhaseParallel event;
-      G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
-      G1ScanAndCountNMethodClosure cl(_pss->closures()->weak_nmethods());
-
-      // Scan the code root list attached to the current region
-      r->code_roots_do(&cl);
-
-      _code_roots_scanned += cl.count();
-
-      event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
-    }
-
     return false;
   }
-
-  Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
-  Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
-
-  size_t code_roots_scanned() const { return _code_roots_scanned; }
-
-  Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
-  Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
 
   size_t opt_roots_scanned() const { return _opt_roots_scanned; }
   size_t opt_refs_scanned() const { return _opt_refs_scanned; }
   size_t opt_refs_memory_used() const { return _opt_refs_memory_used; }
 };
 
-void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
-                                           uint worker_id,
-                                           G1GCPhaseTimes::GCParPhases scan_phase,
-                                           G1GCPhaseTimes::GCParPhases coderoots_phase,
-                                           G1GCPhaseTimes::GCParPhases objcopy_phase) {
-  G1ScanCollectionSetRegionClosure cl(_scan_state, pss, worker_id, scan_phase, coderoots_phase);
-  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+void G1RemSet::scan_collection_set_optional_roots(G1ParScanThreadState* pss,
+                                                  uint worker_id,
+                                                  G1GCPhaseTimes::GCParPhases scan_phase,
+                                                  G1GCPhaseTimes::GCParPhases objcopy_phase) {
+  assert(scan_phase == G1GCPhaseTimes::OptScanHR, "must be");
+
+  EventGCPhaseParallel event;
+
+  Tickspan rem_set_opt_root_scan_time;
+  Tickspan rem_set_opt_trim_partially_time;
+  G1EvacPhaseWithTrimTimeTracker timer(pss, rem_set_opt_root_scan_time, rem_set_opt_trim_partially_time);
 
   G1GCPhaseTimes* p = _g1h->phase_times();
 
-  p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_root_scan_time().seconds());
-  p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
+  G1ScanOptionalRemSetRootsClosure cl(pss, worker_id, scan_phase);
+  // The individual references for the optional remembered set are per-worker, so every worker
+  // always need to scan all regions (no claimer).
+  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
 
-  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
-  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+  p->record_or_add_time_secs(scan_phase, worker_id, rem_set_opt_root_scan_time.seconds());
+  p->record_or_add_time_secs(objcopy_phase, worker_id, rem_set_opt_trim_partially_time.seconds());
 
-  p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
+  p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_roots_scanned(), G1GCPhaseTimes::ScanHRFoundRoots);
+  p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_scanned(), G1GCPhaseTimes::ScanHRScannedOptRefs);
+  p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_memory_used(), G1GCPhaseTimes::ScanHRUsedMemory);
 
-  // At this time we record some metrics only for the evacuations after the initial one.
-  if (scan_phase == G1GCPhaseTimes::OptScanHR) {
-    p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_roots_scanned(), G1GCPhaseTimes::ScanHRFoundRoots);
-    p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_scanned(), G1GCPhaseTimes::ScanHRScannedOptRefs);
-    p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_memory_used(), G1GCPhaseTimes::ScanHRUsedMemory);
-  }
+  event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(scan_phase));
 }
+
 
 #ifdef ASSERT
 void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
@@ -976,13 +986,12 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for remembered sets. Several methods of it are called by a region's
   // card set iterator to drop card set remembered set entries onto the card.
-  // table. This is in addition to being the HG1eapRegionClosure to iterate over
-  // all region's remembered sets.
+  // table.
   //
   // We add a small prefetching cache in front of the actual work as dropping
   // onto the card table is basically random memory access. This improves
   // performance of this operation significantly.
-  class G1MergeCardSetClosure : public G1HeapRegionClosure {
+  class G1MergeCardSetClosure {
     friend class G1MergeCardSetCache;
 
     G1RemSetScanState* _scan_state;
@@ -1029,7 +1038,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-
     G1MergeCardSetClosure(G1RemSetScanState* scan_state) :
       _scan_state(scan_state),
       _ct(G1CollectedHeap::heap()->card_table()),
@@ -1061,38 +1069,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _scan_state->set_chunk_range_dirty(_region_base_idx + start_card_idx, length);
     }
 
-    // Helper to merge the cards in the card set for the given region onto the card
-    // table.
-    //
-    // Called directly for humongous starts regions because we should not add
-    // humongous eager reclaim candidates to the "all" list of regions to
-    // clear the card table by default as we do not know yet whether this region
-    // will be reclaimed (and reused).
-    // If the humongous region contains dirty cards, g1 will scan them
-    // because dumping the remembered set entries onto the card table will add
-    // the humongous region to the "dirty" region list to scan. Then scanning
-    // either clears the card during scan (if there is only an initial evacuation
-    // pass) or the "dirty" list will be merged with the "all" list later otherwise.
-    // (And there is no problem either way if the region does not contain dirty
-    // cards).
-    void merge_card_set_for_region(G1HeapRegion* r) {
-      assert(r->in_collection_set() || r->is_starts_humongous(), "must be");
-
-      G1HeapRegionRemSet* rem_set = r->rem_set();
-      if (!rem_set->is_empty()) {
-        rem_set->iterate_for_merge(*this);
-      }
-    }
-
-    virtual bool do_heap_region(G1HeapRegion* r) {
-      assert(r->in_collection_set(), "must be");
-
-      _scan_state->add_all_dirty_region(r->hrm_index());
-      merge_card_set_for_region(r);
-
-      return false;
-    }
-
     G1MergeCardSetStats stats() {
       _merge_card_set_cache.flush();
       // Compensation for the dummy cards that were initially pushed into the
@@ -1109,6 +1085,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // This is needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
+    G1RemSetScanState* _scan_state;
 
     void assert_bitmap_clear(G1HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
@@ -1127,13 +1104,16 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // Mark phase midway, which might have also left stale marks in old generation regions.
       // There might actually have been scheduled multiple collections, but at that point we do
       // not care that much about performance and just do the work multiple times if needed.
-      return (_g1h->collector_state()->clearing_bitmap() ||
+      return (_g1h->collector_state()->clear_bitmap_in_progress() ||
               _g1h->concurrent_mark_is_terminating()) &&
               hr->is_old();
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state) :
+      _g1h(g1h),
+      _scan_state(scan_state)
+    { }
 
     bool do_heap_region(G1HeapRegion* hr) {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
@@ -1147,23 +1127,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
       _g1h->concurrent_mark()->clear_statistics(hr);
+      _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
-    }
-  };
-
-  // Helper to allow two closure to be applied when
-  // iterating through the collection set.
-  class G1CombinedClosure : public G1HeapRegionClosure {
-    G1HeapRegionClosure* _closure1;
-    G1HeapRegionClosure* _closure2;
-  public:
-    G1CombinedClosure(G1HeapRegionClosure* cl1, G1HeapRegionClosure* cl2) :
-      _closure1(cl1),
-      _closure2(cl2) { }
-
-    bool do_heap_region(G1HeapRegion* hr) {
-      return _closure1->do_heap_region(hr) ||
-             _closure2->do_heap_region(hr);
     }
   };
 
@@ -1190,8 +1155,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
       if (!r->rem_set()->is_empty()) {
-        _cl.merge_card_set_for_region(r);
-
+        r->rem_set()->iterate_for_merge(_cl);
         // We should only clear the card based remembered set here as we will not
         // implicitly rebuild anything else during eager reclaim. Note that at the moment
         // (and probably never) we do not enter this path if there are other kind of
@@ -1267,6 +1231,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   };
 
   uint _num_workers;
+  G1HeapRegionClaimer _hr_claimer;
   G1RemSetScanState* _scan_state;
 
   // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
@@ -1296,6 +1261,7 @@ public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
     _num_workers(num_workers),
+    _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
@@ -1385,20 +1351,25 @@ public:
       {
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
-        G1ClearBitmapClosure clear(g1h);
-        G1CombinedClosure combined(&merge, &clear);
 
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
 
-        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
+        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+
         G1MergeCardSetStats stats = merge.stats();
 
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
           p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
         }
       }
+    }
+
+    // Preparation for evacuation failure handling.
+    {
+      G1ClearBitmapClosure clear(g1h, _scan_state);
+      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
     }
 
     // Now apply the closure to all remaining log entries.
@@ -1426,9 +1397,9 @@ void G1RemSet::print_merge_heap_roots_stats() {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     size_t total_old_region_cards =
-      (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
+      (g1h->num_committed_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
 
-    ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
+    ls.print_cr("Visited cards %zu Total dirty %zu (%.2lf%%) Total old %zu (%.2lf%%)",
                 num_visited_cards,
                 total_dirty_region_cards,
                 percent_of(num_visited_cards, total_dirty_region_cards),
@@ -1439,6 +1410,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
 
 void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1GCPhaseTimes* pt = g1h->phase_times();
 
   {
     Ticks start = Ticks::now();
@@ -1447,9 +1419,9 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
     Tickspan total = Ticks::now() - start;
     if (initial_evacuation) {
-      g1h->phase_times()->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     } else {
-      g1h->phase_times()->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     }
   }
 
@@ -1459,14 +1431,32 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   uint const num_workers = initial_evacuation ? workers->active_workers() :
                                                 MIN2(workers->active_workers(), (uint)increment_length);
 
+  Ticks start = Ticks::now();
+
   {
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
+    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
   }
 
+  {
+    size_t young_rs_length = g1h->young_regions_cardset()->occupied();
+    // We only use young_rs_length statistics to estimate young regions length.
+    g1h->policy()->record_card_rs_length(young_rs_length);
+
+    // Clear current young only collection set. Survivor regions will be added
+    // to the set during evacuation.
+    g1h->young_regions_cset_group()->clear();
+  }
+
   print_merge_heap_roots_stats();
+
+  if (initial_evacuation) {
+    pt->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  } else {
+    pt->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  }
 }
 
 void G1RemSet::complete_evac_phase(bool has_more_than_one_evacuation_phase) {
@@ -1494,7 +1484,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(g1h->is_in(ct->addr_for(card_ptr)),
-         "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
+         "Card at " PTR_FORMAT " index %zu representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),
          p2i(ct->addr_for(card_ptr)),
@@ -1649,7 +1639,6 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
 
     Log(gc, remset) log;
     log.trace("%s", header);
-    ResourceMark rm;
     LogStream ls(log.trace());
     _prev_period_summary.print_on(&ls, show_thread_times);
 
@@ -1662,7 +1651,6 @@ void G1RemSet::print_summary_info() {
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current;
-    ResourceMark rm;
     LogStream ls(log.trace());
     current.print_on(&ls, true /* show_thread_times*/);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires vm.bits == 64
+ * @modules java.base/sun.nio.ch
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
@@ -57,6 +59,12 @@ public class TestSegments {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(0, 1);
             assertEquals(segment.byteSize(), 0);
+            if (segment.address() == 0) {
+                fail("Segment address is zero");
+            }
+            if (segment.address() == arena.allocate(0, 1).address()) {
+                fail("Segment address was not distinct");
+            }
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
             segment = arena.allocate(seq);
             assertEquals(segment.byteSize(), 0);
@@ -69,6 +77,20 @@ public class TestSegments {
             assertEquals(rawAddress.address() % 4, 0);
         }
     }
+
+    @Test
+    public void testZeroLengthNativeSegmentHyperAligned() {
+        long byteAlignment = 1024;
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocate(0, byteAlignment);
+            assertEquals(segment.byteSize(), 0);
+            if (segment.address() == 0) {
+                fail("Segment address is zero");
+            }
+            assertTrue(segment.maxByteAlignment() >= byteAlignment);
+        }
+    }
+
 
     @Test(expectedExceptions = { OutOfMemoryError.class,
                                  IllegalArgumentException.class })
@@ -233,8 +255,10 @@ public class TestSegments {
         assertTrue(s.contains("byteSize: "));
         if (segment.heapBase().isPresent()) {
             assertTrue(s.contains("heapBase: ["));
+            assertFalse(s.contains("native"));
         } else {
             assertFalse(s.contains("heapBase: "));
+            assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
     }
@@ -390,6 +414,24 @@ public class TestSegments {
             assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(arena, _ -> counter.incrementAndGet()).isReadOnly());
         }
         assertEquals(counter.get(), 3);
+    }
+
+    @Test
+    void testReinterpretArenaClose() {
+        MemorySegment segment;
+        try (Arena arena = Arena.ofConfined()){
+            try (Arena otherArena = Arena.ofConfined()) {
+                segment = arena.allocate(100);
+                segment = segment.reinterpret(otherArena, null);
+            }
+            final MemorySegment sOther = segment;
+            assertThrows(IllegalStateException.class, () -> sOther.get(JAVA_BYTE, 0));
+            segment = segment.reinterpret(arena, null);
+            final MemorySegment sOriginal = segment;
+            sOriginal.get(JAVA_BYTE, 0);
+        }
+        final MemorySegment closed = segment;
+        assertThrows(IllegalStateException.class, () -> closed.get(JAVA_BYTE, 0));
     }
 
     @Test

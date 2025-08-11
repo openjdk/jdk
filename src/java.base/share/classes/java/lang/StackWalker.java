@@ -61,9 +61,6 @@ import jdk.internal.vm.ContinuationScope;
  *
  * <p> {@code StackWalker} is thread-safe. Multiple threads can share
  * a single {@code StackWalker} object to traverse its own stack.
- * A permission check is performed when a {@code StackWalker} is created,
- * according to the options it requests.
- * No further permission check is done at stack walking time.
  *
  * @apiNote
  * Examples
@@ -354,18 +351,10 @@ public final class StackWalker {
     /**
      * Returns a {@code StackWalker} instance with the given option specifying
      * the stack frame information it can access.
-     * <p>
-     * If a security manager is present and the given {@code option} is
-     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
-     * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * @param option {@link Option stack walking option}
      *
      * @return a {@code StackWalker} configured with the given option
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method denies access.
      */
     public static StackWalker getInstance(Option option) {
         return getInstance(EnumSet.of(Objects.requireNonNull(option)));
@@ -380,18 +369,9 @@ public final class StackWalker {
      * configured to skip all {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames}
      * and no {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
      *
-     * <p>
-     * If a security manager is present and the given {@code options} contains
-     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
-     * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
-     *
      * @param options {@link Option stack walking options}
      *
      * @return a {@code StackWalker} configured with the given options
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method denies access.
      */
     public static StackWalker getInstance(Set<Option> options) {
         if (options.isEmpty()) {
@@ -399,7 +379,6 @@ public final class StackWalker {
         }
 
         EnumSet<Option> optionSet = toEnumSet(options);
-        checkPermission(optionSet);
         return new StackWalker(optionSet);
     }
 
@@ -413,12 +392,6 @@ public final class StackWalker {
      * and no {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
      *
      * <p>
-     * If a security manager is present and the given {@code options} contains
-     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
-     * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
-     *
-     * <p>
      * The {@code estimateDepth} specifies the estimate number of stack frames
      * this {@code StackWalker} will traverse that the {@code StackWalker} could
      * use as a hint for the buffer size.
@@ -429,15 +402,12 @@ public final class StackWalker {
      * @return a {@code StackWalker} configured with the given options
      *
      * @throws IllegalArgumentException if {@code estimateDepth <= 0}
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method denies access.
      */
     public static StackWalker getInstance(Set<Option> options, int estimateDepth) {
         if (estimateDepth <= 0) {
             throw new IllegalArgumentException("estimateDepth must be > 0");
         }
         EnumSet<Option> optionSet = toEnumSet(options);
-        checkPermission(optionSet);
         return new StackWalker(optionSet, estimateDepth);
     }
 
@@ -459,17 +429,6 @@ public final class StackWalker {
         this.retainClassRef = hasOption(Option.RETAIN_CLASS_REFERENCE);
         this.contScope = contScope;
         this.continuation = continuation;
-    }
-
-    private static void checkPermission(Set<Option> options) {
-        Objects.requireNonNull(options);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (options.contains(Option.RETAIN_CLASS_REFERENCE)) {
-                sm.checkPermission(new RuntimePermission("getStackWalkerWithClassReference"));
-            }
-        }
     }
 
     /*
@@ -665,7 +624,6 @@ public final class StackWalker {
 
     static StackWalker newInstance(Set<Option> options, ExtendedOption extendedOption, ContinuationScope contScope, Continuation continuation) {
         EnumSet<Option> optionSet = toEnumSet(options);
-        checkPermission(optionSet);
         return new StackWalker(optionSet, 0, extendedOption, contScope, continuation);
     }
 

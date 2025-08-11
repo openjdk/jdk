@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ private:
 
   // Grow vector to required word capacity
   void maybe_grow(uint new_word_capacity) {
+    _nesting.check(_set_arena); // Check if a potential reallocation in the arena is safe
     if (new_word_capacity >= _size) {
       grow(new_word_capacity);
     }

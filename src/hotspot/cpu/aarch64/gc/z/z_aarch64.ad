@@ -104,8 +104,15 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
 instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseZGC && ZGenerational && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks, as long as
+  // legitimize_address() does not require a preceding lea instruction to
+  // materialize the memory operand. The absence of a preceding lea instruction
+  // is guaranteed for immLoffset8 memory operands, because these do not lead to
+  // out-of-range offsets (see definition of immLoffset8). Fortunately,
+  // immLoffset8 memory operands are the most common ones in practice.
+  ins_is_late_expanded_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
 
@@ -117,7 +124,11 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
       assert_different_registers(rscratch2, $dst$$Register);
-      ref_addr = __ legitimize_address(ref_addr, 8, rscratch2);
+      int size = 8;
+      assert(!this->is_late_expanded_null_check_candidate() ||
+             !MacroAssembler::legitimize_address_requires_lea(ref_addr, size),
+             "an instruction that can be used for implicit null checking should emit the candidate memory access first");
+      ref_addr = __ legitimize_address(ref_addr, size, rscratch2);
     }
     __ ldr($dst$$Register, ref_addr);
     z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
@@ -130,7 +141,7 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 instruct zLoadPVolatile(iRegPNoSp dst, indirect mem /* sync_memory */, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseZGC && ZGenerational && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
 
   ins_cost(VOLATILE_REF_COST);
@@ -149,7 +160,7 @@ instruct zLoadPVolatile(iRegPNoSp dst, indirect mem /* sync_memory */, rFlagsReg
 // Store Pointer
 instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
 %{
-  predicate(UseZGC && ZGenerational && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp, KILL cr);
 
@@ -166,7 +177,7 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
 // Store Pointer Volatile
 instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
 %{
-  predicate(UseZGC && ZGenerational && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp, KILL cr);
 
@@ -183,7 +194,7 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
 instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseZGC && ZGenerational && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -207,7 +218,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
 instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseZGC && ZGenerational && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -231,7 +242,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 
 instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  predicate(UseZGC && ZGenerational && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -254,7 +265,7 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
 
 instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  predicate(UseZGC && ZGenerational && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -277,7 +288,7 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
 
 instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && ZGenerational && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP prev, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -295,7 +306,7 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
 
 instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && ZGenerational && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP prev, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);

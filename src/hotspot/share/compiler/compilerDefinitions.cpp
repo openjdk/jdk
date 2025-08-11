@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -314,7 +313,7 @@ void CompilerConfig::set_compilation_policy_flags() {
     // Increase the code cache size - tiered compiles a lot more.
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
-                    MIN2(CODE_CACHE_DEFAULT_LIMIT, (size_t)ReservedCodeCacheSize * 5));
+                    MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
     // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
     // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
@@ -475,26 +474,27 @@ void CompilerConfig::set_jvmci_specific_flags() {
 
 bool CompilerConfig::check_args_consistency(bool status) {
   // Check lower bounds of the code cache
-  size_t min_code_cache_size = CompilerConfig::min_code_cache_size();
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  size_t min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
+                "Invalid ReservedCodeCacheSize: %zuK. Must be at least InitialCodeCacheSize=%zuK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
     status = false;
   } else if (ReservedCodeCacheSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                "Invalid ReservedCodeCacheSize=%zuK. Must be at least %zuK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
   } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
     // Code cache size larger than CODE_CACHE_SIZE_LIMIT is not supported.
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
+                "Invalid ReservedCodeCacheSize=%zuM. Must be at most %zuM.\n", ReservedCodeCacheSize/M,
                 CODE_CACHE_SIZE_LIMIT/M);
     status = false;
   } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
+                "Invalid NonNMethodCodeHeapSize=%zuK. Must be at least %zuK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
   }
@@ -560,11 +560,6 @@ void CompilerConfig::ergo_initialize() {
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
-#if defined(_WINDOWS) && !defined(_LP64)
-      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-      }
-#endif
       if (NeverActAsServerClassMachine) {
         set_client_emulation_mode_flags();
       }
@@ -628,4 +623,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-

@@ -935,27 +935,22 @@ class GTKPainter extends SynthPainter {
                                            Graphics g,
                                            int x, int y, int w, int h,
                                            int tabIndex) {
+        Region id = context.getRegion();
+        int state = context.getComponentState();
+        int gtkState = ((state & SynthConstants.SELECTED) != 0 ?
+                SynthConstants.ENABLED : SynthConstants.PRESSED);
         JTabbedPane pane = (JTabbedPane)context.getComponent();
-        if (UIManager.getBoolean("TabbedPane.tabsOpaque") || pane.isOpaque()) {
-            Region id = context.getRegion();
-            int state = context.getComponentState();
-            int gtkState = ((state & SynthConstants.SELECTED) != 0 ?
-                    SynthConstants.ENABLED : SynthConstants.PRESSED);
-            int placement = pane.getTabPlacement();
+        int placement = pane.getTabPlacement();
 
-            // Fill the tab rect area
-            g.fillRect(x, y, w, h);
-
-            synchronized (UNIXToolkit.GTK_LOCK) {
-                if (!ENGINE.paintCachedImage(g, x, y, w, h,
-                        id, gtkState, placement, tabIndex)) {
-                    PositionType side = POSITIONS[placement - 1];
-                    ENGINE.startPainting(g, x, y, w, h,
-                            id, gtkState, placement, tabIndex);
-                    ENGINE.paintExtension(g, context, id, gtkState,
-                            ShadowType.OUT, "tab", x, y, w, h, side, tabIndex);
-                    ENGINE.finishPainting();
-                }
+        synchronized (UNIXToolkit.GTK_LOCK) {
+            if (!ENGINE.paintCachedImage(g, x, y, w, h,
+                    id, gtkState, placement, tabIndex)) {
+                PositionType side = POSITIONS[placement - 1];
+                ENGINE.startPainting(g, x, y, w, h,
+                        id, gtkState, placement, tabIndex);
+                ENGINE.paintExtension(g, context, id, gtkState,
+                        ShadowType.OUT, "tab", x, y, w, h, side, tabIndex);
+                ENGINE.finishPainting();
             }
         }
     }

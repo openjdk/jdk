@@ -62,6 +62,7 @@ public:
 
 class GenDCmdArgument : public ResourceObj {
 protected:
+  static const int maxprint = 64;
   GenDCmdArgument* _next;
   const char* const _name;
   const char* const _description;

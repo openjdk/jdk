@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -84,16 +83,16 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   // since it can potentially block.
   context->new_handles = JNIHandleBlock::allocate_block(thread);
 
-  // clear any pending exception in thread (native calls start with no exception pending)
-  thread->clear_pending_exception();
-
   // The call to transition_from_native below contains a safepoint check
   // which needs the code cache to be writable.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   // After this, we are officially in Java Code. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
-  ThreadStateTransition::transition_from_native(thread, _thread_in_Java, true /* check_asyncs */);
+  ThreadStateTransition::transition_from_native(thread, _thread_in_Java, false /* check_asyncs */);
+
+  // clear any pending exception in thread, in case someone forgot to check it after a JNI API call.
+  thread->clear_pending_exception();
 
   context->old_handles = thread->active_handles();
 
@@ -105,7 +104,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   context->jfa.copy(thread->frame_anchor());
   thread->frame_anchor()->clear();
 
-  debug_only(thread->inc_java_call_counter());
+  DEBUG_ONLY(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
 
   return thread;
@@ -119,20 +118,16 @@ void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
   // restore previous handle block
   thread->set_active_handles(context->old_handles);
 
-  thread->frame_anchor()->zap();
+  DEBUG_ONLY(thread->dec_java_call_counter());
 
-  debug_only(thread->dec_java_call_counter());
+  thread->frame_anchor()->copy(&context->jfa);
 
   // Old thread-local info. has been restored. We are now back in native code.
   ThreadStateTransition::transition_from_java(thread, _thread_in_native);
 
-  thread->frame_anchor()->copy(&context->jfa);
-
   // Release handles after we are marked as being in native code again, since this
   // operation might block
   JNIHandleBlock::release_block(context->new_handles, thread);
-
-  assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
 }
 
 void UpcallLinker::handle_uncaught_exception(oop exception) {
@@ -187,6 +182,6 @@ static JNINativeMethod UL_methods[] = {
 JNI_ENTRY(void, JVM_RegisterUpcallLinkerMethods(JNIEnv *env, jclass UL_class))
   ThreadToNativeFromVM ttnfv(thread);
   int status = env->RegisterNatives(UL_class, UL_methods, sizeof(UL_methods)/sizeof(JNINativeMethod));
-  guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+  guarantee(status == JNI_OK && !env->ExceptionCheck(),
             "register jdk.internal.foreign.abi.UpcallLinker natives");
 JNI_END

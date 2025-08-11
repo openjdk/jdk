@@ -66,6 +66,7 @@
 
 #include "jni_util.h"
 
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Class:     sun_jvm_hotspot_asm_Disassembler
@@ -85,7 +86,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
 #endif
 
   libname = (*env)->GetStringUTFChars(env, libname_s, NULL);
-  if (libname == NULL || (*env)->ExceptionOccurred(env)) {
+  if (libname == NULL || (*env)->ExceptionCheck(env)) {
     return 0;
   }
 
@@ -139,13 +140,13 @@ static void* event_to_env(void* env_pv, const char* event, void* arg) {
   decode_env* denv = (decode_env*)env_pv;
   JNIEnv* env = denv->env;
   jstring event_string = (*env)->NewStringUTF(env, event);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     return NULL;
   }
 
   result = (*env)->CallLongMethod(env, denv->dis, denv->handle_event, denv->visitor,
                                   event_string, (jlong) (uintptr_t)arg);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
     return NULL;
@@ -176,11 +177,11 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   }
   if (raw != NULL) {
     jstring output = (*env)->NewStringUTF(env, raw);
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
       /* make sure that UTF allocation doesn't cause OOM */
       (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
     }
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
       /* ignore exceptions for now */
         (*env)->ExceptionClear(env);
     }
@@ -191,12 +192,12 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   va_end(ap);
 
   output = (*env)->NewStringUTF(env, denv->buffer);
-  if (!(*env)->ExceptionOccurred(env)) {
+  if (!(*env)->ExceptionCheck(env)) {
     /* make sure that UTF allocation doesn't cause OOM */
     (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
   }
 
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
   }
@@ -223,12 +224,12 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   decode_env denv;
 
   start = (*env)->GetByteArrayElements(env, code, NULL);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     return;
   }
   end = start + (*env)->GetArrayLength(env, code);
   options = (*env)->GetStringUTFChars(env, options_s, NULL);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     return;
   }
@@ -241,7 +242,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   /* find Disassembler.handleEvent callback */
   denv.handle_event = (*env)->GetMethodID(env, disclass, "handleEvent",
                                           "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;J)J");
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;
@@ -250,7 +251,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   /* find Disassembler.rawPrint callback */
   denv.raw_print = (*env)->GetMethodID(env, disclass, "rawPrint",
                                        "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;)V");
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;

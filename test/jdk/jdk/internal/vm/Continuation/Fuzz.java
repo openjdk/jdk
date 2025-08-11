@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,9 @@ import jdk.test.whitebox.WhiteBox;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
+
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
@@ -470,7 +473,8 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains);
+        // Returns false since we never pin after we removed legacy locking.
+        return traceHas(Op.PIN::contains) && false;
     }
 
     void verifyPin(boolean yieldResult) {

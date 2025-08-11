@@ -356,9 +356,6 @@ JNIEXPORT void InitializeEncoding(JNIEnv *env, const char *name);
 
 void* getProcessHandle();
 
-void buildJniFunctionName(const char *sym, const char *cname,
-                          char *jniEntryName);
-
 jstring getLastErrorString(JNIEnv *env);
 
 JNIEXPORT int JNICALL

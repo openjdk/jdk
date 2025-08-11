@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public:
 // Return from subroutine node
 class ReturnNode : public Node {
 public:
-  ReturnNode( uint edges, Node *cntrl, Node *i_o, Node *memory, Node *retadr, Node *frameptr );
+  ReturnNode(uint edges, Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr);
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
@@ -198,7 +198,6 @@ public:
 // This provides a way to map the optimized program back into the interpreter,
 // or to let the GC mark the stack.
 class JVMState : public ResourceObj {
-  friend class VMStructs;
 public:
   typedef enum {
     Reexecute_Undefined = -1, // not defined -- will be translated into false later
@@ -331,7 +330,7 @@ public:
 class SafePointNode : public MultiNode {
   friend JVMState;
   friend class GraphKit;
-  friend class VMStructs;
+  friend class LibraryCallKit;
 
   virtual bool           cmp( const Node &n ) const;
   virtual uint           size_of() const;       // Size is bigger
@@ -672,7 +671,6 @@ class CallGenerator;
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
-  friend class VMStructs;
 
 protected:
   bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
@@ -740,7 +738,7 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true);
+  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
 
   virtual uint match_edge(uint idx) const;
 
@@ -760,7 +758,6 @@ public:
 // convention.  (The "Java" calling convention is the compiler's calling
 // convention, as opposed to the interpreter's or that of native C.)
 class CallJavaNode : public CallNode {
-  friend class VMStructs;
 protected:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
@@ -794,6 +791,7 @@ public:
   void  set_arg_escape(bool f)             { _arg_escape = f; }
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
+  void register_for_late_inline();
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
@@ -914,6 +912,33 @@ public:
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
+};
+
+/* A pure function call, they are assumed not to be safepoints, not to read or write memory,
+ * have no exception... They just take parameters, return a value without side effect. It is
+ * always correct to create some, or remove them, if the result is not used.
+ *
+ * They still have control input to allow easy lowering into other kind of calls that require
+ * a control, but this is more a technical than a moral constraint.
+ *
+ * Pure calls must have only control and data input and output: I/O, Memory and so on must be top.
+ * Nevertheless, pure calls can typically be expensive math operations so care must be taken
+ * when letting the node float.
+ */
+class CallLeafPureNode : public CallLeafNode {
+protected:
+  bool is_unused() const;
+  bool is_dead() const;
+  TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
+
+public:
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
+                   const TypePtr* adr_type)
+      : CallLeafNode(tf, addr, name, adr_type) {
+    init_class_id(Class_CallLeafPure);
+  }
+  int Opcode() const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
@@ -1066,6 +1091,8 @@ public:
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------AllocateArray---------------------------------
@@ -1190,9 +1217,16 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
+  static const TypeFunc* _lock_type_Type;
 public:
 
-  static const TypeFunc *lock_type() {
+  static inline const TypeFunc* lock_type() {
+    assert(_lock_type_Type != nullptr, "should be initialized");
+    return _lock_type_Type;
+  }
+
+  static void initialize_lock_Type() {
+    assert(_lock_type_Type == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -1205,7 +1239,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-    return TypeFunc::make(domain,range);
+    _lock_type_Type = TypeFunc::make(domain,range);
   }
 
   virtual int Opcode() const;

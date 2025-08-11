@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,13 @@
  * questions.
  */
 import java.io.ByteArrayInputStream;
-import java.io.FilePermission;
 import java.io.IOException;
-import java.security.AccessControlException;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.ConcurrentModificationException;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.LogManager;
-import java.util.logging.LoggingPermission;
 
 /**
  * @test
@@ -47,150 +35,15 @@ import java.util.logging.LoggingPermission;
  * @summary tests LogManager.addConfigurationListener and
  *                LogManager.removeConfigurationListener;
  * @build TestConfigurationListeners
- * @run main/othervm TestConfigurationListeners UNSECURE
- * @run main/othervm -Djava.security.manager=allow TestConfigurationListeners PERMISSION
- * @run main/othervm -Djava.security.manager=allow TestConfigurationListeners SECURE
+ * @run main/othervm TestConfigurationListeners
  * @author danielfuchs
  */
 public class TestConfigurationListeners {
 
-    /**
-     * We will test add and remove ConfigurationListeners in 3 configurations.
-     * UNSECURE: No security manager.
-     * SECURE: With the security manager present - and the required
-     *         LoggingPermission("control") granted.
-     * PERMISSION: With the security manager present - and the required
-     *         LoggingPermission("control") *not* granted. Here we will
-     *         test that the expected security permission is thrown.
-     */
-    public static enum TestCase {
-        UNSECURE, SECURE, PERMISSION;
-        public void run(String name) throws Exception {
-            System.out.println("Running test case: " + name());
-            switch (this) {
-                case UNSECURE:
-                    testUnsecure(name);
-                    break;
-                case SECURE:
-                    testSecure(name);
-                    break;
-                case PERMISSION:
-                    testPermission(name);
-                    break;
-                default:
-                    throw new Error("Unknown test case: "+this);
-            }
-        }
-        public String loggerName(String name) {
-            return name;
-        }
-    }
-
+    // We will test add and remove ConfigurationListeners
     public static void main(String... args) throws Exception {
-
-
-        if (args == null || args.length == 0) {
-            args = new String[] {
-                TestCase.UNSECURE.name(),
-                TestCase.SECURE.name(),
-            };
-        }
-
-        for (String testName : args) {
-            TestCase test = TestCase.valueOf(testName);
-            test.run(test.loggerName("foo.bar"));
-        }
+       test("foo.bar");
     }
-
-    /**
-     * Test without security manager.
-     * @param loggerName The logger to use.
-     * @throws Exception if the test fails.
-     */
-    public static void testUnsecure(String loggerName) throws Exception {
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is set");
-        }
-        test(loggerName);
-    }
-
-    /**
-     * Test with security manager.
-     * @param loggerName The logger to use.
-     * @throws Exception if the test fails.
-     */
-    public static void testSecure(String loggerName) throws Exception {
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is already set");
-        }
-        Policy.setPolicy(new SimplePolicy(TestCase.SECURE));
-        System.setSecurityManager(new SecurityManager());
-        test(loggerName);
-    }
-
-    /**
-     * Test the LoggingPermission("control") is required.
-     * @param loggerName The logger to use.
-     */
-    public static void testPermission(String loggerName) {
-        TestConfigurationListener run = new TestConfigurationListener(
-                TestCase.PERMISSION.toString());
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is already set");
-        }
-        Policy.setPolicy(new SimplePolicy(TestCase.PERMISSION));
-        System.setSecurityManager(new SecurityManager());
-
-        try {
-            LogManager.getLogManager().addConfigurationListener(run);
-            throw new RuntimeException("addConfigurationListener: Permission not checked!");
-        } catch (AccessControlException x) {
-            boolean ok = false;
-            if (x.getPermission() instanceof LoggingPermission) {
-                if ("control".equals(x.getPermission().getName())) {
-                    System.out.println("addConfigurationListener: Got expected exception: " + x);
-                    ok = true;
-                }
-            }
-            if (!ok) {
-                throw new RuntimeException("addConfigurationListener: Unexpected exception: "+x, x);
-            }
-        }
-
-        try {
-            LogManager.getLogManager().removeConfigurationListener(run);
-            throw new RuntimeException("removeConfigurationListener: Permission not checked!");
-        } catch (AccessControlException x) {
-            boolean ok = false;
-            if (x.getPermission() instanceof LoggingPermission) {
-                if ("control".equals(x.getPermission().getName())) {
-                    System.out.println("removeConfigurationListener: Got expected exception: " + x);
-                    ok = true;
-                }
-            }
-            if (!ok) {
-                throw new RuntimeException("removeConfigurationListener: Unexpected exception: "+x, x);
-            }
-        }
-        try {
-            LogManager.getLogManager().addConfigurationListener(null);
-            throw new RuntimeException(
-                    "addConfigurationListener(null): Expected NPE not thrown.");
-        } catch (NullPointerException npe) {
-            System.out.println("Got expected NPE: "+npe);
-        }
-
-        try {
-            LogManager.getLogManager().removeConfigurationListener(null);
-            throw new RuntimeException(
-                    "removeConfigurationListener(null): Expected NPE not thrown.");
-        } catch (NullPointerException npe) {
-            System.out.println("Got expected NPE: "+npe);
-        }
-
-
-    }
-
 
     static class TestConfigurationListener implements Runnable {
         final AtomicLong  count = new AtomicLong(0);
@@ -273,6 +126,11 @@ public class TestConfigurationListeners {
 
     }
 
+    /**
+     * Main test runner.
+     * @param loggerName The logger to use.
+     * @throws Exception if the test fails.
+     */
     public static void test(String loggerName) throws Exception {
         System.out.println("Starting test for " + loggerName);
         test("m.readConfiguration()", (m) -> m.readConfiguration());
@@ -427,65 +285,4 @@ public class TestConfigurationListeners {
         System.out.println("END " + testName+"\n");
 
     }
-
-
-    static final class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions permissions;
-        public SimplePolicy(TestCase test) {
-            permissions = new Permissions();
-            if (test != TestCase.PERMISSION) {
-                permissions.add(new LoggingPermission("control", null));
-                permissions.add(new PropertyPermission("java.util.logging.config.class", "read"));
-                permissions.add(new PropertyPermission("java.util.logging.config.file", "read"));
-                permissions.add(new PropertyPermission("java.home", "read"));
-                permissions.add(new FilePermission("<<ALL FILES>>", "read"));
-            }
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(permissions).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(permissions).toPermissions();
-        }
-    }
-
 }

@@ -1,6 +1,10 @@
+#
+# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
 # This file identifies the root of the test-suite hierarchy.
 # It also contains test-suite configuration information.
-
+#
 # The list of keywords supported in the entire test suite.  The
 # "intermittent" keyword marks tests known to fail intermittently.
 # The "randomness" keyword marks tests using randomness with test
@@ -43,7 +47,7 @@
 # tests which require two displays connected.
 
 keys=headful sound printer multimon \
-     i18n intermittent randomness jfr cgroups
+     i18n intermittent randomness cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
@@ -70,13 +74,20 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.extraPropDefns.vmOpts = \
-    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
-    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
+    -XX:+PrintFlagsFinal \
+    -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    java.enablePreview \
     vm.flagless \
     vm.gc.G1 \
     vm.gc.Serial \
@@ -84,8 +95,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -93,6 +102,8 @@ requires.properties= \
     vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.musl \
+    vm.asan \
+    vm.ubsan \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
@@ -104,10 +115,13 @@ requires.properties= \
     systemd.support \
     release.implementor \
     jdk.containerized \
-    jdk.foreign.linker
+    jdk.foreign.linker \
+    jlink.runtime.linkable \
+    jlink.packagedModules \
+    jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.4+1
+requiredVersion=7.5.2+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Signature of method with type parameters
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="type-parameters">&lt;T extends java.util.List,<wbr>
+                    lass="type-parameters">&lt;T extends java.util.List, \
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="element-name">meth\
                     odThatHasTypeParameters</span><wbr><span class="parameters">(T&nbsp;param1,
@@ -218,8 +218,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="SubInterface.html" title="interface in pkg">SubInterface</a>&\
-                    lt;E&gt;</code>, <code><a href="SuperInterface.html" title="interface in pkg">Su\
-                    perInterface</a>&lt;E&gt;</code></dd>
+                    lt;E&gt;, <a href="SuperInterface.html" title="interface in pkg">SuperInterface<\
+                    /a>&lt;E&gt;</code></dd>
                     </dl>""");
 
         checkOutput("pkg/SuperInterface.html", true,
@@ -464,7 +464,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
         // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
@@ -473,7 +473,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
     }

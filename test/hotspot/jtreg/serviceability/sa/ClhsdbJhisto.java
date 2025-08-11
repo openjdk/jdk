@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @bug 8191658
  * @summary Test clhsdb jhisto command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbJhisto
  */

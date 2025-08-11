@@ -31,7 +31,6 @@
 
 package sun.security.krb5.internal;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Debug;
 
 import java.util.Hashtable;
@@ -317,8 +316,8 @@ public class Krb5 {
     }
 
     // Warning: used by NativeCreds.c
-    public static final Debug DEBUG = Debug.of("krb5", GetPropertyAction
-            .privilegedGetProperty("sun.security.krb5.debug"));
+    public static final Debug DEBUG = Debug.of("krb5",
+            System.getProperty("sun.security.krb5.debug"));
 
     static {
         errMsgList = new Hashtable<Integer,String> ();

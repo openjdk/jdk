@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,8 @@ import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URI;
-import java.net.URLPermission;
-import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
@@ -51,8 +50,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,6 +58,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,12 +74,10 @@ import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
 import jdk.internal.net.http.HttpRequestImpl;
 
 import sun.net.NetProperties;
-import sun.net.util.IPAddressUtil;
 import sun.net.www.HeaderParser;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.stream.Collectors.joining;
 import static java.net.Authenticator.RequestorType.PROXY;
 import static java.net.Authenticator.RequestorType.SERVER;
 
@@ -100,10 +96,7 @@ public final class Utils {
 
 //    public static final boolean TESTING;
 //    static {
-//        if (ASSERTIONSENABLED) {
-//            PrivilegedAction<String> action = () -> System.getProperty("test.src");
-//            TESTING = AccessController.doPrivileged(action) != null;
-//        } else TESTING = false;
+//        TESTING = ASSERTIONSENABLED ? System.getProperty("test.src") != null : false;
 //    }
     public static final LoggerConfig DEBUG_CONFIG =
             getLoggerConfig(DebugLogger.HTTP_NAME, LoggerConfig.OFF);
@@ -120,9 +113,7 @@ public final class Utils {
             hostnameVerificationDisabledValue();
 
     private static LoggerConfig getLoggerConfig(String loggerName, LoggerConfig def) {
-        PrivilegedAction<String> action = () -> System.getProperty(loggerName);
-        @SuppressWarnings("removal")
-        var prop = AccessController.doPrivileged(action);
+        var prop = System.getProperty(loggerName);
         if (prop == null) return def;
         var config = LoggerConfig.OFF;
         for (var s : prop.split(",")) {
@@ -195,6 +186,18 @@ public final class Utils {
 
     public static final BiPredicate<String, String>
             ALLOWED_HEADERS = (header, unused) -> !DISALLOWED_HEADERS_SET.contains(header);
+
+    private static final Set<String> DISALLOWED_REDIRECT_HEADERS_SET = getDisallowedRedirectHeaders();
+
+    private static Set<String> getDisallowedRedirectHeaders() {
+        Set<String> headers = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        headers.addAll(Set.of("Authorization", "Cookie", "Origin", "Referer", "Host"));
+
+        return Collections.unmodifiableSet(headers);
+    }
+
+    public static final BiPredicate<String, String>
+            ALLOWED_REDIRECT_HEADERS = (header, _) -> !DISALLOWED_REDIRECT_HEADERS_SET.contains(header);
 
     public static final BiPredicate<String, String> VALIDATE_USER_HEADER =
             (name, value) -> {
@@ -315,6 +318,17 @@ public final class Utils {
     public static boolean proxyHasDisabledSchemes(boolean tunnel) {
         return tunnel ? ! PROXY_AUTH_TUNNEL_DISABLED_SCHEMES.isEmpty()
                       : ! PROXY_AUTH_DISABLED_SCHEMES.isEmpty();
+    }
+
+    /**
+     * Creates a new {@link Proxy} instance for the given proxy iff it is
+     * neither null, {@link Proxy#NO_PROXY Proxy.NO_PROXY}, nor already a
+     * {@code Proxy} instance.
+     */
+    public static Proxy copyProxy(Proxy proxy) {
+        return proxy == null || proxy.getClass() == Proxy.class
+                ? proxy
+                : new Proxy(proxy.type(), proxy.address());
     }
 
     // WebSocket connection Upgrade headers
@@ -449,41 +463,6 @@ public final class Utils {
 
     private Utils() { }
 
-    /**
-     * Returns the security permissions required to connect to the proxy, or
-     * {@code null} if none is required or applicable.
-     */
-    public static URLPermission permissionForProxy(InetSocketAddress proxyAddress) {
-        if (proxyAddress == null)
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("socket://")
-          .append(proxyAddress.getHostString()).append(":")
-          .append(proxyAddress.getPort());
-        String urlString = sb.toString();
-        return new URLPermission(urlString, "CONNECT");
-    }
-
-    /**
-     * Returns the security permission required for the given details.
-     */
-    public static URLPermission permissionForServer(URI uri,
-                                                    String method,
-                                                    Stream<String> headers) {
-        String urlString = new StringBuilder()
-                .append(uri.getScheme()).append("://")
-                .append(uri.getRawAuthority())
-                .append(uri.getRawPath()).toString();
-
-        StringBuilder actionStringBuilder = new StringBuilder(method);
-        String collected = headers.collect(joining(","));
-        if (!collected.isEmpty()) {
-            actionStringBuilder.append(":").append(collected);
-        }
-        return new URLPermission(urlString, actionStringBuilder.toString());
-    }
-
     private static final boolean[] LOWER_CASE_CHARS = new boolean[128];
 
     // ABNF primitives defined in RFC 7230
@@ -530,39 +509,6 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public record ServerName (String name, boolean isLiteral) {
-    }
-
-    /**
-     * Analyse the given address and determine if it is literal or not,
-     * returning the address in String form.
-     */
-    public static ServerName getServerName(InetSocketAddress addr) {
-        String host = addr.getHostString();
-        byte[] literal = IPAddressUtil.textToNumericFormatV4(host);
-        if (literal == null) {
-            // not IPv4 literal. Check IPv6
-            literal = IPAddressUtil.textToNumericFormatV6(host);
-            return new ServerName(host, literal != null);
-        } else {
-            return new ServerName(host, true);
-        }
-    }
-
-    private static boolean isLoopbackLiteral(byte[] bytes) {
-        if (bytes.length == 4) {
-            return bytes[0] == 127;
-        } else if (bytes.length == 16) {
-            for (int i=0; i<14; i++)
-                if (bytes[i] != 0)
-                    return false;
-            if (bytes[15] != 1)
-                return false;
-            return true;
-        } else
-            throw new InternalError();
-    }
-
     /*
      * Validates an RFC 7230 field-value.
      *
@@ -587,34 +533,24 @@ public final class Utils {
         return true;
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                NetProperties.getInteger(name, defaultValue));
+        return NetProperties.getInteger(name, defaultValue);
     }
 
-    @SuppressWarnings("removal")
     public static String getNetProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                NetProperties.get(name));
+        return NetProperties.get(name);
     }
 
-    @SuppressWarnings("removal")
     public static boolean getBooleanProperty(String name, boolean def) {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-                Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
+        return Boolean.parseBoolean(System.getProperty(name, String.valueOf(def)));
     }
 
-    @SuppressWarnings("removal")
     public static String getProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                System.getProperty(name));
+        return System.getProperty(name);
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
+        return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
     }
 
     public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {
@@ -949,33 +885,6 @@ public final class Utils {
     }
 
     /**
-     * Return the host string from a HttpRequestImpl
-     *
-     * @param request
-     * @return
-     */
-    public static String hostString(HttpRequestImpl request) {
-        URI uri = request.uri();
-        int port = uri.getPort();
-        String host = uri.getHost();
-
-        boolean defaultPort;
-        if (port == -1) {
-            defaultPort = true;
-        } else if (uri.getScheme().equalsIgnoreCase("https")) {
-            defaultPort = port == 443;
-        } else {
-            defaultPort = port == 80;
-        }
-
-        if (defaultPort) {
-            return host;
-        } else {
-            return host + ":" + port;
-        }
-    }
-
-    /**
      * Get a logger for debug HPACK traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
      *
@@ -1186,5 +1095,32 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * {@return the exception the given {@code cf} was completed with,
+     * or a {@link CancellationException} if the given {@code cf} was
+     * cancelled}
+     *
+     * @param cf a {@code CompletableFuture} exceptionally completed
+     * @throws IllegalArgumentException if the given cf was not
+     *    {@linkplain CompletableFuture#isCompletedExceptionally()
+     *    completed exceptionally}
+     */
+    public static Throwable exceptionNow(CompletableFuture<?> cf) {
+        if (cf.isCompletedExceptionally()) {
+            if (cf.isCancelled()) {
+                try {
+                    cf.join();
+                } catch (CancellationException x) {
+                    return x;
+                } catch (CompletionException x) {
+                    return x.getCause();
+                }
+            } else {
+                return cf.exceptionNow();
+            }
+        }
+        throw new IllegalArgumentException("cf is not completed exceptionally");
     }
 }

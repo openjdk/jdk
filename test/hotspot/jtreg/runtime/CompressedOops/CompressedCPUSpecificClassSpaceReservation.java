@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +57,14 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
+                "-XX:-UseCompactObjectHeaders",
                 "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         final String tryReserveForUnscaled = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
+        final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveForZeroBased = "reserve_between (range [0x0000000100000000-0x0000000800000000)";
         final String tryReserveFor16bitMoveIntoQ3 = "reserve_between (range [0x0000000100000000-0x0001000000000000)";
         if (Platform.isAArch64()) {
@@ -84,15 +87,8 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isRISCV64()) {
             output.shouldContain(tryReserveForUnscaled); // unconditionally
-            if (CDS) {
-                output.shouldNotContain(tryReserveForZeroBased);
-                // bits 32..44
-                output.shouldContain("reserve_between (range [0x0000000100000000-0x0000100000000000)");
-            } else {
-                output.shouldContain(tryReserveForZeroBased);
-                // bits 32..44, but not lower than zero-based limit
-                output.shouldContain("reserve_between (range [0x0000000800000000-0x0000100000000000)");
-            }
+            // bits 32..44
+            output.shouldContain("reserve_between (range [0x0000000100000000-0x0000100000000000)");
             // bits 44..64
             output.shouldContain("reserve_between (range [0x0000100000000000-0xffffffffffffffff)");
         } else if (Platform.isS390x()) {
@@ -104,11 +100,10 @@ public class CompressedCPUSpecificClassSpaceReservation {
             }
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isX64()) {
+            output.shouldContain(tryReserveBelow4G);
             if (CDS) {
-                output.shouldNotContain(tryReserveForUnscaled);
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
-                output.shouldContain(tryReserveForUnscaled);
                 output.shouldContain(tryReserveForZeroBased);
             }
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/heap.hpp"
-#include "nmt/memTracker.hpp"
+#include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -190,16 +189,9 @@ static size_t align_to_page_size(size_t size) {
 }
 
 
-void CodeHeap::on_code_mapping(char* base, size_t size) {
-#ifdef LINUX
-  extern void linux_wrap_code(char* base, size_t size);
-  linux_wrap_code(base, size);
-#endif
-}
-
-
 bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_size) {
   assert(rs.size() >= committed_size, "reserved < committed");
+  assert(is_aligned(committed_size, rs.page_size()), "must be page aligned");
   assert(segment_size >= sizeof(FreeBlock), "segment size is too small");
   assert(is_power_of_2(segment_size), "segment_size must be a power of 2");
   assert_locked_or_safepoint(CodeCache_lock);
@@ -208,31 +200,23 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _log2_segment_size = exact_log2(segment_size);
 
   // Reserve and initialize space for _memory.
-  const size_t page_size = rs.page_size();
-  const size_t granularity = os::vm_allocation_granularity();
-  const size_t c_size = align_up(committed_size, page_size);
-  assert(c_size <= rs.size(), "alignment made committed size to large");
-
-  os::trace_page_sizes(_name, c_size, rs.size(), rs.base(), rs.size(), page_size);
-  if (!_memory.initialize(rs, c_size)) {
+  os::trace_page_sizes(_name, committed_size, rs.size(), rs.base(), rs.size(), rs.page_size());
+  if (!_memory.initialize(rs, committed_size)) {
     return false;
   }
 
-  on_code_mapping(_memory.low(), _memory.committed_size());
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
-  const size_t reserved_segments_alignment = MAX2(os::vm_page_size(), granularity);
+  const size_t reserved_segments_alignment = MAX2(os::vm_page_size(), os::vm_allocation_granularity());
   const size_t reserved_segments_size = align_up(_number_of_reserved_segments, reserved_segments_alignment);
   const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 
   // reserve space for _segmap
-  ReservedSpace seg_rs(reserved_segments_size);
+  ReservedSpace seg_rs = MemoryReserver::reserve(reserved_segments_size, mtCode);
   if (!_segmap.initialize(seg_rs, committed_segments_size)) {
     return false;
   }
-
-  MemTracker::record_virtual_memory_tag((address)_segmap.low_boundary(), mtCode);
 
   assert(_segmap.committed_size() >= (size_t) _number_of_committed_segments, "could not commit  enough space for segment map");
   assert(_segmap.reserved_size()  >= (size_t) _number_of_reserved_segments , "could not reserve enough space for segment map");
@@ -257,7 +241,6 @@ bool CodeHeap::expand_by(size_t size) {
     }
     char* base = _memory.low() + _memory.committed_size();
     if (!_memory.expand_by(dm)) return false;
-    on_code_mapping(base, dm);
     size_t i = _number_of_committed_segments;
     _number_of_committed_segments = size_to_segments(_memory.committed_size());
     assert(_number_of_reserved_segments == size_to_segments(_memory.reserved_size()), "number of reserved segments should not change");
@@ -297,7 +280,7 @@ void* CodeHeap::allocate(size_t instance_size) {
   }
 
   // Ensure minimum size for allocation to the heap.
-  number_of_segments = MAX2((int)CodeCacheMinBlockLength, (int)number_of_segments);
+  number_of_segments = MAX2(CodeCacheMinBlockLength, number_of_segments);
 
   if (_next_segment + number_of_segments <= _number_of_committed_segments) {
     mark_segmap_as_used(_next_segment, _next_segment + number_of_segments, false);

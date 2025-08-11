@@ -29,12 +29,10 @@
  *      8332600
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @run junit/othervm -DuseAP=false RecordCompilationTests
  * @run junit/othervm -DuseAP=true RecordCompilationTests

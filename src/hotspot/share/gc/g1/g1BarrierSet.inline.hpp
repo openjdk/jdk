@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,28 @@ oop_store_not_in_heap(T* addr, oop new_value) {
   G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   bs->write_ref_field_pre<decorators>(addr);
   Raw::oop_store(addr, new_value);
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
+inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
+oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
+  // Apply SATB barriers for all non-heap references, to allow
+  // concurrent scanning of such references.
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->write_ref_field_pre<decorators>(addr);
+  return Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
+inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
+oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
+  // Apply SATB barriers for all non-heap references, to allow
+  // concurrent scanning of such references.
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->write_ref_field_pre<decorators>(addr);
+  return Raw::oop_atomic_xchg(addr, new_value);
 }
 
 #endif // SHARE_GC_G1_G1BARRIERSET_INLINE_HPP

@@ -32,21 +32,23 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
+class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark();
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
+
   // Concurrent mark roots
   void mark_concurrent_roots();
+
   // Concurrent mark
   void concurrent_mark();
+
   // Finish mark at a safepoint
   void finish_mark();
-
-  static void cancel();
 
 private:
   void finish_mark_work();

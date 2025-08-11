@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,11 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test id=ZSinglegen
- * @requires vm.hasJFR & vm.gc.ZSinglegen
- * @key jfr
+ * @test
+ * @requires vm.hasJFR & vm.gc.Z
+ * @requires vm.flagless
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetGroupEvent
- */
-
-/**
- * @test id=ZGenerational
- * @requires vm.hasJFR & vm.gc.ZGenerational
- * @key jfr
- * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetGroupEvent
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetGroupEvent
  */
 
 public class TestZRelocationSetGroupEvent {

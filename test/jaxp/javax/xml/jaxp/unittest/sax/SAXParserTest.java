@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -43,7 +42,6 @@ import org.xml.sax.helpers.DefaultHandler;
  * @run testng sax.SAXParserTest
  * @summary Tests functionalities for SAXParser.
  */
-@Listeners({ jaxp.library.BasePolicy.class })
 public class SAXParserTest {
 
     /*

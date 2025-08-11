@@ -2366,7 +2366,7 @@ _unwind___jsvml_tan8_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_tan8_ha_z0_B12_B16:
-        DD      2808865
+        DD      2284577
         DD      7558364
         DD      7369937
         DD      7431367
@@ -2384,10 +2384,6 @@ _unwind___jsvml_tan8_ha_z0_B12_B16:
         DD      2791495
         DD      3049532
         DD      3307569
-        DD      7109414
-        DD      7170845
-        DD      7232276
-        DD      7293707
         DD      imagerel _B5_1
         DD      imagerel _B5_12
         DD      imagerel _unwind___jsvml_tan8_ha_z0_B1_B10
@@ -4331,7 +4327,7 @@ _unwind___jsvml_tan4_ha_l9_B12_B12:
         DD      imagerel _unwind___jsvml_tan4_ha_l9_B12_B12
 
 .pdata  ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
 __VUNPACK_EVEN_ind1_3308_0_10   DD      0
         DD      0
@@ -4443,7 +4439,7 @@ _unwind___jsvml_dtan_ha_cout_rare_internal_B1_B6:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ  'DATA'
+_RDATA  SEGMENT     READONLY  'DATA'
         DD 8 DUP (0H)
         PUBLIC __jsvml_dtan_ha_reduction_data_internal
 __jsvml_dtan_ha_reduction_data_internal DD      0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
@@ -51,18 +50,17 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return 0;
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
-                        MacroAssembler *masm,
-                        int total_args_passed,
-                        int comp_args_on_stack,
-                        const BasicType *sig_bt,
-                        const VMRegPair *regs,
-                        AdapterFingerPrint *fingerprint) {
-  return AdapterHandlerLibrary::new_entry(
-    fingerprint,
-    CAST_FROM_FN_PTR(address,zero_null_code_stub),
-    CAST_FROM_FN_PTR(address,zero_null_code_stub),
-    CAST_FROM_FN_PTR(address,zero_null_code_stub));
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
+  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            nullptr);
+  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
@@ -85,6 +83,11 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
+}
+
 JRT_LEAF(void, zero_stub())
   ShouldNotCallThis();
 JRT_END
@@ -105,15 +108,15 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   return generate_empty_safepoint_blob();
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   return generate_empty_runtime_stub();
 }
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   return generate_empty_runtime_stub();
 }
 

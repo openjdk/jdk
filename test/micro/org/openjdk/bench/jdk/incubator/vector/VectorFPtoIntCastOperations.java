@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorFPtoIntCastOperations {
     @Param({"512", "1024"})
     static int SIZE;
@@ -117,6 +117,18 @@ public class VectorFPtoIntCastOperations {
                 .convertShape(VectorOperators.F2B, OSPECIES, 0)
                 .reinterpretAsBytes()
                 .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat64ToShort64() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_64;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_64;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
         }
     }
 

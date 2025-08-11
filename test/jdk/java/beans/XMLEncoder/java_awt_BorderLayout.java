@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4916852
  * @summary Tests BorderLayout encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_BorderLayout
+ * @run main/othervm java_awt_BorderLayout
  * @author Sergey Malenkov
  */
 
@@ -46,7 +46,7 @@ public final class java_awt_BorderLayout extends AbstractTest<BorderLayout> {
     };
 
     public static void main(String[] args) {
-        new java_awt_BorderLayout().test(true);
+        new java_awt_BorderLayout().test();
     }
 
     @Override

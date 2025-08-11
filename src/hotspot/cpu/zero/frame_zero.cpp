@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -70,6 +69,11 @@ UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) cons
 bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
+}
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
 }
 
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
@@ -120,10 +124,10 @@ bool frame::safe_for_sender(JavaThread *thread) {
 bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   // These are hacks to keep us out of trouble.

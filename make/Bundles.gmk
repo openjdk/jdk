@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include MakeIO.gmk
@@ -43,8 +42,6 @@ ifeq ($(call isBuildOs, windows), true)
   TAR_IGNORE_EXIT_VALUE := || test "$$$$?" = "1"
 endif
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Bundles-pre.gmk))
 ################################################################################
 # BUNDLE : Name of bundle to create
 # FILES : Files in BASE_DIRS to add to bundle
@@ -177,9 +174,11 @@ else
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
   JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
+  STATIC_JDK_BUNDLE_SUBDIR := static-jdk-$(VERSION_NUMBER)
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
     JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
+    STATIC_JDK_BUNDLE_SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif
   # In certain situations, the JDK_IMAGE_DIR points to an image without the
   # the symbols and demos. If so, the symobls and demos can be found in a
@@ -245,7 +244,10 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
+      $(filter-out \
+          %.stripped.pdb, \
+          $(call FindFiles, $(SYMBOLS_IMAGE_DIR)) \
+      )
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
       $(ALL_JDK_DEMOS_FILES))
@@ -500,10 +502,20 @@ ifneq ($(filter static-libs-graal-bundles, $(MAKECMDGOALS)), )
   STATIC_LIBS_GRAAL_TARGETS += $(BUILD_STATIC_LIBS_GRAAL_BUNDLE)
 endif
 
-################################################################################
+#################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Bundles.gmk))
+ifneq ($(filter static-jdk-bundles, $(MAKECMDGOALS)), )
+  STATIC_JDK_BUNDLE_FILES := $(call FindFiles, $(STATIC_JDK_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_STATIC_JDK_BUNDLE, \
+      BUNDLE_NAME := $(STATIC_JDK_BUNDLE_NAME), \
+      FILES := $(STATIC_JDK_BUNDLE_FILES), \
+      BASE_DIRS := $(STATIC_JDK_IMAGE_DIR), \
+      SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR), \
+  ))
+
+  STATIC_JDK_TARGETS += $(BUILD_STATIC_JDK_BUNDLE)
+endif
 
 ################################################################################
 
@@ -515,8 +527,13 @@ docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
 docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
 static-libs-graal-bundles: $(STATIC_LIBS_GRAAL_TARGETS)
+static-jdk-bundles: $(STATIC_JDK_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
-.PHONY: all default product-bundles test-bundles \
+.PHONY: product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
-    static-libs-bundles static-libs-graal-bundles jcov-bundles
+    static-libs-bundles static-libs-graal-bundles static-jdk-bundles jcov-bundles
+
+################################################################################
+
+include MakeFileEnd.gmk

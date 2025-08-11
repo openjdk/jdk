@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4936682
  * @summary Tests encoding of reference to target
- * @run main/othervm -Djava.security.manager=allow Test4936682
+ * @run main/othervm Test4936682
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import java.beans.XMLEncoder;
 
 public final class Test4936682 extends AbstractTest<Object[]> {
     public static void main(String[] args) {
-        new Test4936682().test(true);
+        new Test4936682().test();
     }
 
     protected Object[] getObject() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8333086
+ * @bug 8333086 8344706
  * @summary Verify the JLine backend is not initialized for simple printing.
  * @enablePreview
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
@@ -32,7 +32,6 @@
  * @run main LazyJdkConsoleProvider
  */
 
-import java.io.IO;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.terminal.Terminal;
 
@@ -44,8 +43,8 @@ public class LazyJdkConsoleProvider {
     public static void main(String... args) throws Throwable {
         switch (args.length > 0 ? args[0] : "default") {
             case "write" -> {
-                System.console().println("Hello!");
-                System.console().print("Hello!");
+                System.console().printf("Hello!\n");
+                System.console().printf("Hello!");
                 System.console().format("\nHello!\n");
                 System.console().flush();
                 IO.println("Hello!");
@@ -66,7 +65,7 @@ public class LazyJdkConsoleProvider {
         TestCase[] testCases = new TestCase[] {
             new TestCase("write", null, Terminal.class.getName()),
             new TestCase("read", LineReader.class.getName(), null),
-            new TestCase("IO-read", LineReader.class.getName(), null)
+            new TestCase("IO-read", null, Terminal.class.getName())
         };
         for (TestCase tc : testCases) {
             ProcessBuilder builder =

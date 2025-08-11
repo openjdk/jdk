@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,23 +101,14 @@ class WindowsFileSystem
             throw new AssertionError(x.getMessage());
         }
 
-        // iterate over roots, ignoring those that the security manager denies
+        // iterate over roots
         ArrayList<Path> result = new ArrayList<>();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
         for (int i = 0; i <= 25; i++) {  // 0->A, 1->B, 2->C...
             if ((drives & (1 << i)) != 0) {
                 StringBuilder sb = new StringBuilder(3);
                 sb.append((char)('A' + i));
                 sb.append(":\\");
                 String root = sb.toString();
-                if (sm != null) {
-                    try {
-                        sm.checkRead(root);
-                    } catch (SecurityException x) {
-                        continue;
-                    }
-                }
                 result.add(WindowsPath.createFromNormalizedPath(this, root));
             }
         }
@@ -141,12 +132,6 @@ class WindowsFileSystem
                 if (!roots.hasNext())
                     return null;
                 WindowsPath root = (WindowsPath)roots.next();
-                // ignore if security manager denies access
-                try {
-                    root.checkRead();
-                } catch (SecurityException x) {
-                    continue;
-                }
                 try {
                     FileStore fs = WindowsFileStore.create(root.toString(), true);
                     if (fs != null)
@@ -186,20 +171,7 @@ class WindowsFileSystem
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
-            } catch (SecurityException se) {
-                return Collections.emptyList();
-            }
-        }
-        return new Iterable<FileStore>() {
-            public Iterator<FileStore> iterator() {
-                return new FileStoreIterator();
-            }
-        };
+        return FileStoreIterator::new;
     }
 
     // supported views

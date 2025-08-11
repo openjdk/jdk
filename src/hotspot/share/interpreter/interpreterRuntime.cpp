@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -72,13 +71,12 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Helper class to access current interpreter state
@@ -154,7 +152,7 @@ JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current, bool wide))
   assert (tag.is_unresolved_klass() || tag.is_klass(), "wrong ldc call");
   Klass* klass = pool->klass_at(cp_index, CHECK);
   oop java_class = klass->java_mirror();
-  current->set_vm_result(java_class);
+  current->set_vm_result_oop(java_class);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::Code bytecode)) {
@@ -197,14 +195,14 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     }
   }
 #endif
-  current->set_vm_result(result);
+  current->set_vm_result_oop(result);
   if (!is_fast_aldc) {
     // Tell the interpreter how to unbox the primitive.
     guarantee(java_lang_boxing_object::is_instance(result, type), "");
     int offset = java_lang_boxing_object::value_offset(type);
     intptr_t flags = ((as_TosState(type) << ConstantPoolCache::tos_state_shift)
                       | (offset & ConstantPoolCache::field_index_mask));
-    current->set_vm_result_2((Metadata*)flags);
+    current->set_vm_result_metadata((Metadata*)flags);
   }
 }
 JRT_END
@@ -224,20 +222,20 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   klass->initialize(CHECK);
 
   oop obj = klass->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
 JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
   oop obj = oopFactory::new_typeArray(type, size, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
 JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* current, ConstantPool* pool, int index, jint size))
   Klass*    klass = pool->klass_at(index, CHECK);
   objArrayOop obj = oopFactory::new_objArray(klass, size, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -265,7 +263,7 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* fi
     dims[index] = first_size_address[n];
   }
   oop obj = ArrayKlass::cast(klass)->multi_allocate(nof_dims, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -287,7 +285,7 @@ JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
   // thread quicken the bytecode before we get here.
   // assert( cpool->tag_at(which).is_unresolved_klass(), "should only come here to quicken bytecodes" );
   Klass* klass = cpool->klass_at(which, CHECK);
-  current->set_vm_result_2(klass);
+  current->set_vm_result_metadata(klass);
 JRT_END
 
 
@@ -387,7 +385,7 @@ JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current, char* 
   }
   // create exception
   Handle exception = Exceptions::new_exception(current, s, message);
-  current->set_vm_result(exception());
+  current->set_vm_result_oop(exception());
 JRT_END
 
 
@@ -406,7 +404,7 @@ JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, 
   }
   // create exception, with klass name as detail message
   Handle exception = Exceptions::new_exception(current, s, klass_name);
-  current->set_vm_result(exception());
+  current->set_vm_result_oop(exception());
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* current, arrayOopDesc* a, jint index))
@@ -465,7 +463,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // Allocation of scalar replaced object used in this frame
     // failed. Unconditionally pop the frame.
     current->dec_frames_to_pop_failed_realloc();
-    current->set_vm_result(h_exception());
+    current->set_vm_result_oop(h_exception());
     // If the method is synchronized we already unlocked the monitor
     // during deoptimization so the interpreter needs to skip it when
     // the frame is popped.
@@ -480,7 +478,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   if (current->do_not_unlock_if_synchronized()) {
     ResourceMark rm;
     assert(current_bci == 0,  "bci isn't zero for do_not_unlock_if_synchronized");
-    current->set_vm_result(exception);
+    current->set_vm_result_oop(exception);
     return Interpreter::remove_activation_entry();
   }
 
@@ -502,6 +500,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      Exceptions::log_exception_stacktrace(h_exception, h_method, current_bci);
+    }
+
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
 //       // disabled for now - interpreter is not using shortcut yet
@@ -581,7 +583,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     JvmtiExport::notice_unwind_due_to_exception(current, h_method(), handler_pc, h_exception(), (handler_pc != nullptr));
   }
 
-  current->set_vm_result(h_exception());
+  current->set_vm_result_oop(h_exception());
   return continuation;
 JRT_END
 
@@ -735,7 +737,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
   assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be null or an object");
 #ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(elem);
+  if (!current->preempting()) current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
 JRT_END
 
@@ -769,11 +771,11 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   // method will be called during an exception unwind.
 
   assert(!HAS_PENDING_EXCEPTION, "no pending exception");
-  Handle exception(current, current->vm_result());
+  Handle exception(current, current->vm_result_oop());
   assert(exception() != nullptr, "vm result should be set");
-  current->set_vm_result(nullptr); // clear vm result before continuing (may cause memory leaks and assert failures)
+  current->set_vm_result_oop(nullptr); // clear vm result before continuing (may cause memory leaks and assert failures)
   exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
-  current->set_vm_result(exception());
+  current->set_vm_result_oop(exception());
 JRT_END
 
 
@@ -922,7 +924,7 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
     // Can't link it here since there are no guarantees it'll be prelinked on the next run.
     ResourceMark rm;
     InstanceKlass* resolved_iklass = InstanceKlass::cast(link_info.resolved_klass());
-    log_info(cds, resolve)("Not resolved: class not linked: %s %s %s",
+    log_info(aot, resolve)("Not resolved: class not linked: %s %s %s",
                            resolved_iklass->is_shared() ? "is_shared" : "",
                            resolved_iklass->init_state_name(),
                            resolved_iklass->external_name());
@@ -949,6 +951,15 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   pool->cache()->set_method_handle(method_index, info);
 }
 
+void InterpreterRuntime::cds_resolve_invokehandle(int raw_index,
+                                                  constantPoolHandle& pool, TRAPS) {
+  const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
+  CallInfo info;
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
+
+  pool->cache()->set_method_handle(raw_index, info);
+}
+
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   LastFrameAccessor last_frame(current);
@@ -966,6 +977,14 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   } // end JvmtiHideSingleStepping
 
   pool->cache()->set_dynamic_call(info, index);
+}
+
+void InterpreterRuntime::cds_resolve_invokedynamic(int raw_index,
+                                                   constantPoolHandle& pool, TRAPS) {
+  const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
+  CallInfo info;
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
+  pool->cache()->set_dynamic_call(info, raw_index);
 }
 
 // This function is the interface to the assembly code. It returns the resolved
@@ -1020,7 +1039,7 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, add
     int bci = method->bci_from(last_frame.bcp());
     nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (nm != nullptr && bs_nm != nullptr) {
+    if (nm != nullptr) {
       // in case the transition passed a safepoint we need to barrier this again
       if (!bs_nm->nmethod_osr_entry_barrier(nm)) {
         nm = nullptr;
@@ -1061,7 +1080,7 @@ JRT_ENTRY(nmethod*,
   nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, nullptr, CHECK_NULL);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (osr_nm != nullptr && bs_nm != nullptr) {
+  if (osr_nm != nullptr) {
     if (!bs_nm->nmethod_osr_entry_barrier(osr_nm)) {
       osr_nm = nullptr;
     }
@@ -1155,6 +1174,7 @@ JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
@@ -1417,38 +1437,6 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
 #endif // ASSERT
 }
 
-void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
-  int handler_index = -1;
-  // use customized signature handler
-  MutexLocker mu(SignatureHandlerLibrary_lock);
-  // make sure data structure is initialized
-  initialize();
-  fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
-  handler_index = _fingerprints->find(fingerprint);
-  // create handler if necessary
-  if (handler_index < 0) {
-    if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
-      tty->cr();
-      tty->print_cr("argument handler #%d at " PTR_FORMAT " for fingerprint " UINT64_FORMAT,
-                    _handlers->length(),
-                    p2i(handler),
-                    fingerprint);
-    }
-    _fingerprints->append(fingerprint);
-    _handlers->append(handler);
-  } else {
-    if (PrintSignatureHandlers) {
-      tty->cr();
-      tty->print_cr("duplicate argument handler #%d for fingerprint " UINT64_FORMAT "(old: " PTR_FORMAT ", new : " PTR_FORMAT ")",
-                    _handlers->length(),
-                    fingerprint,
-                    p2i(_handlers->at(handler_index)),
-                    p2i(handler));
-    }
-  }
-}
-
-
 BufferBlob*              SignatureHandlerLibrary::_handler_blob = nullptr;
 address                  SignatureHandlerLibrary::_handler      = nullptr;
 GrowableArray<uint64_t>* SignatureHandlerLibrary::_fingerprints = nullptr;
@@ -1493,7 +1481,7 @@ JRT_END
 #if INCLUDE_JVMTI
 // This is a support of the JVMTI PopFrame interface.
 // Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
-// and return it as a vm_result so that it can be reloaded in the list of invokestatic parameters.
+// and return it as a vm_result_oop so that it can be reloaded in the list of invokestatic parameters.
 // The member_name argument is a saved reference (in local#0) to the member_name.
 // For backward compatibility with some JDK versions (7, 8) it can also be a direct method handle.
 // FIXME: remove DMH case after j.l.i.InvokerBytecodeGenerator code shape is updated.
@@ -1514,9 +1502,9 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
       // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
     }
-    current->set_vm_result(member_name_oop);
+    current->set_vm_result_oop(member_name_oop);
   } else {
-    current->set_vm_result(nullptr);
+    current->set_vm_result_oop(nullptr);
   }
 JRT_END
 #endif // INCLUDE_JVMTI

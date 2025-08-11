@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@ package sun.reflect.annotation;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaLangAccess;
 
@@ -105,14 +104,8 @@ public class AnnotationType {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
 
-        @SuppressWarnings("removal")
-        Method[] methods =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Method[] run() {
-                    // Initialize memberTypes and defaultValues
-                    return annotationClass.getDeclaredMethods();
-                }
-            });
+        // Initialize memberTypes and defaultValues
+        Method[] methods = annotationClass.getDeclaredMethods();
 
         memberTypes = new HashMap<>(methods.length+1, 1.0f);
         memberDefaults = new HashMap<>(0);

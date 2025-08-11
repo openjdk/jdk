@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -58,16 +57,16 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
-#include "services/writeableFlags.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
-#include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "services/threadService.hpp"
+#include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -160,7 +159,6 @@ void Management::initialize(TRAPS) {
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_agent_Agent(),
                                                    loader,
-                                                   Handle(),
                                                    THREAD);
     if (k == nullptr) {
       vm_exit_during_initialization("Management agent initialization failure: "
@@ -684,7 +682,7 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
 
   if ((size_t)threshold > max_uintx) {
     stringStream st;
-    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (" UINTX_FORMAT ")", threshold, max_uintx);
+    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (%zu)", threshold, max_uintx);
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), st.as_string(), -1);
   }
 
@@ -2014,10 +2012,6 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].name = info->name();
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
-    JavaPermission p = info->permission();
-    infoArray[i].permission_class = p._class;
-    infoArray[i].permission_name = p._name;
-    infoArray[i].permission_action = p._action;
     infoArray[i].num_arguments = info->num_arguments();
     infoArray[i].enabled = info->is_enabled();
   }

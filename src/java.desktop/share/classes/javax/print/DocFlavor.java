@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,10 +410,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @spec https://www.rfc-editor.org/info/rfc2278
      *      RFC 2278: IANA Charset Registration Procedures
      */
-    @SuppressWarnings("removal")
-    public static final String hostEncoding =
-            java.security.AccessController.doPrivileged(
-                  new sun.security.action.GetPropertyAction("file.encoding"));
+    public static final String hostEncoding = System.getProperty("file.encoding");
 
     /**
      * MIME type.

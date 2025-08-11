@@ -66,8 +66,7 @@ public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
     public SignatureBaseRSA(Provider provider) throws XMLSignatureException {
         String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
         this.signatureAlgorithm = getSignature(provider, algorithmID);
-        LOG.debug("Created SignatureRSA using {0} and provider {1}",
-            algorithmID, signatureAlgorithm.getProvider());
+        LOG.debug("Created SignatureRSA using {0}", algorithmID);
     }
 
     Signature getSignature(Provider provider, String algorithmID)

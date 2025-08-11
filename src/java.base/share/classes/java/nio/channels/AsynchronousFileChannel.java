@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.nio.channels;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.*;
@@ -240,14 +242,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file,
                                                Set<? extends OpenOption> options,
@@ -259,7 +253,7 @@ public abstract class AsynchronousFileChannel
         return provider.newAsynchronousFileChannel(file, options, executor, attrs);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
+    @SuppressWarnings("rawtypes") // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
@@ -301,14 +295,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException
@@ -709,7 +695,9 @@ public abstract class AsynchronousFileChannel
      *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
-     *          If the position is negative or the buffer is read-only
+     *          If the position is negative, or the buffer is read-only or a view of a
+     *          {@link MemorySegment} allocated from a {@linkplain Arena#ofConfined()
+     *          thread-confined arena}
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
      */
@@ -744,7 +732,9 @@ public abstract class AsynchronousFileChannel
      * @return  A {@code Future} object representing the pending result
      *
      * @throws  IllegalArgumentException
-     *          If the position is negative or the buffer is read-only
+     *          If the position is negative, or the buffer is read-only or a view of a
+     *          {@link MemorySegment} allocated from a {@linkplain Arena#ofConfined()
+     *          thread-confined arena}
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
      */
@@ -775,7 +765,9 @@ public abstract class AsynchronousFileChannel
      *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
-     *          If the position is negative
+     *          If the position is negative or the buffer is a view of a {@link
+     *          MemorySegment} allocated from a {@linkplain Arena#ofConfined()
+     *          thread-confined arena}
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
      */
@@ -811,7 +803,9 @@ public abstract class AsynchronousFileChannel
      * @return  A {@code Future} object representing the pending result
      *
      * @throws  IllegalArgumentException
-     *          If the position is negative
+     *          If the position is negative or the buffer is a view of a {@link
+     *          MemorySegment} allocated from a {@linkplain Arena#ofConfined()
+     *          thread-confined arena}
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
      */

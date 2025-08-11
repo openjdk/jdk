@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -180,11 +180,13 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 [
-  UTIL_LOOKUP_PROGS(JAVAC_CHECK, javac, , NOFIXPATH)
-  UTIL_LOOKUP_PROGS(JAVA_CHECK, java, , NOFIXPATH)
-  BINARY="$JAVAC_CHECK"
-  if test "x$JAVAC_CHECK" = x; then
-    BINARY="$JAVA_CHECK"
+  UTIL_LOOKUP_PROGS(JAVAC_CHECK, javac)
+  UTIL_GET_EXECUTABLE(JAVAC_CHECK) # Will setup JAVAC_CHECK_EXECUTABLE
+  UTIL_LOOKUP_PROGS(JAVA_CHECK, java)
+  UTIL_GET_EXECUTABLE(JAVA_CHECK) # Will setup JAVA_CHECK_EXECUTABLE
+  BINARY="$JAVAC_CHECK_EXECUTABLE"
+  if test "x$JAVAC_CHECK_EXECUTABLE" = x; then
+    BINARY="$JAVA_CHECK_EXECUTABLE"
   fi
   if test "x$BINARY" != x; then
     # So there is a java(c) binary, it might be part of a JDK.
@@ -470,7 +472,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Maximum amount of heap memory.
   JVM_HEAP_LIMIT_32="768"
   # Running a 64 bit JVM allows for and requires a bigger heap
-  JVM_HEAP_LIMIT_64="1600"
+  JVM_HEAP_LIMIT_64="2048"
   JVM_HEAP_LIMIT_GLOBAL=`expr $MEMORY_SIZE / 2`
   if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_32"; then
     JVM_HEAP_LIMIT_32=$JVM_HEAP_LIMIT_GLOBAL

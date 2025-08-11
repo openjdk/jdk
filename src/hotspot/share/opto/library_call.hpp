@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  *
  */
 
+#ifndef SHARE_OPTO_LIBRARY_CALL_HPP
+#define SHARE_OPTO_LIBRARY_CALL_HPP
+
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
 #include "opto/callGenerator.hpp"
-#include "opto/graphKit.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
 
@@ -106,6 +109,10 @@ class LibraryCallKit : public GraphKit {
   void push_result() {
     // Push the result onto the stack.
     if (!stopped() && result() != nullptr) {
+      if (result()->is_top()) {
+        assert(false, "Can't determine return value.");
+        C->record_method_not_compilable("Can't determine return value.");
+      }
       BasicType bt = result()->bottom_type()->basic_type();
       push_node(bt, result());
     }
@@ -121,6 +128,29 @@ class LibraryCallKit : public GraphKit {
   Node*     result() { return _result; }
 
   virtual int reexecute_sp() { return _reexecute_sp; }
+
+  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+   * bailout before making changes because the bailing out decision might depend on new nodes
+   * (their types, for instance).
+   *
+   * So, if an intrinsic might cause this situation, one must start by saving the state in a
+   * SavedState by constructing it, and the state will be restored on destruction. If the
+   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+   */
+  class SavedState {
+    LibraryCallKit* _kit;
+    uint _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(LibraryCallKit*);
+    ~SavedState();
+    void discard();
+  };
 
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
@@ -163,20 +193,20 @@ class LibraryCallKit : public GraphKit {
                                   RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
-  Node* generate_array_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, false, false);
+  Node* generate_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, false, false, obj);
   }
-  Node* generate_non_array_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, false, true);
+  Node* generate_non_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, false, true, obj);
   }
-  Node* generate_objArray_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, true, false);
+  Node* generate_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, true, false, obj);
   }
-  Node* generate_non_objArray_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, true, true);
+  Node* generate_non_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, true, true, obj);
   }
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
-                                    bool obj_array, bool not_array);
+                                    bool obj_array, bool not_array, Node** obj = nullptr);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
   CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
   CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {
@@ -198,7 +228,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
   bool inline_string_char_access(bool is_store);
-  Node* round_double_node(Node* n);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
@@ -206,7 +235,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_pow();
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
-  void inline_math_mathExact(Node* math, Node* test);
+  bool inline_math_mathExact(Node* math, Node* test);
   bool inline_math_addExactI(bool is_increment);
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();
@@ -219,7 +248,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_subtractExactL(bool is_decrement);
   bool inline_min_max(vmIntrinsics::ID id);
   bool inline_notify(vmIntrinsics::ID id);
-  Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
   Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
@@ -291,11 +319,14 @@ class LibraryCallKit : public GraphKit {
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_fp_range_check(vmIntrinsics::ID id);
+  bool inline_fp16_operations(vmIntrinsics::ID id, int num_args);
+  Node* unbox_fp16_value(const TypeInstPtr* box_class, ciField* field, Node* box);
+  Node* box_fp16_value(const TypeInstPtr* box_class, ciField* field, Node* value);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_compare_unsigned(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
-  bool inline_reference_get();
+  bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
@@ -309,12 +340,25 @@ class LibraryCallKit : public GraphKit {
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
+  bool inline_kyberNtt();
+  bool inline_kyberInverseNtt();
+  bool inline_kyberNttMult();
+  bool inline_kyberAddPoly_2();
+  bool inline_kyberAddPoly_3();
+  bool inline_kyber12To16();
+  bool inline_kyberBarrettReduce();
+  bool inline_dilithiumAlmostNtt();
+  bool inline_dilithiumAlmostInverseNtt();
+  bool inline_dilithiumNttMult();
+  bool inline_dilithiumMontMulByConstant();
+  bool inline_dilithiumDecomposePoly();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();
   bool inline_intpoly_assign();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
+  bool inline_double_keccak();
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
                                         BasicType elem_type, address stubAddr, const char *stubName,
@@ -341,7 +385,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_vectorizedMismatch();
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
-  bool inline_fp_min_max(vmIntrinsics::ID id);
   bool inline_galoisCounterMode_AESCrypt();
   Node* inline_galoisCounterMode_AESCrypt_predicate();
 
@@ -352,11 +395,8 @@ class LibraryCallKit : public GraphKit {
 
   // Vector API support
   bool inline_vector_nary_operation(int n);
+  bool inline_vector_call(int arity);
   bool inline_vector_frombits_coerced();
-  bool inline_vector_shuffle_to_vector();
-  bool inline_vector_wrap_shuffle_indexes();
-  bool inline_vector_shuffle_iota();
-  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);
@@ -402,3 +442,4 @@ class LibraryCallKit : public GraphKit {
   bool inline_blackhole();
 };
 
+#endif // SHARE_OPTO_LIBRARY_CALL_HPP

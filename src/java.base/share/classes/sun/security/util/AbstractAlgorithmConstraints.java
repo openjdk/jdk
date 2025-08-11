@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package sun.security.util;
 
-import java.security.AccessController;
 import java.security.AlgorithmConstraints;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,14 +46,7 @@ public abstract class AbstractAlgorithmConstraints
 
     // Get algorithm constraints from the specified security property.
     static Set<String> getAlgorithms(String propertyName) {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    @Override
-                    public String run() {
-                        return Security.getProperty(propertyName);
-                    }
-                });
+        String property = Security.getProperty(propertyName);
 
         String[] algorithmsInProperty = null;
         if (property != null && !property.isEmpty()) {

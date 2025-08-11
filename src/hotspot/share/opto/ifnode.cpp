@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -32,9 +31,9 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
-#include "opto/runtime.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
@@ -50,12 +49,11 @@ extern uint explicit_null_checks_elided;
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt)
     : MultiBranchNode(2),
       _prob(p),
-      _fcnt(fcnt)
-      NOT_PRODUCT(COMMA _assertion_predicate_type(AssertionPredicateType::None)) {
+      _fcnt(fcnt),
+      _assertion_predicate_type(AssertionPredicateType::None) {
   init_node(control, bol);
 }
 
-#ifndef PRODUCT
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
     : MultiBranchNode(2),
       _prob(p),
@@ -63,7 +61,6 @@ IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicate
       _assertion_predicate_type(assertion_predicate_type) {
   init_node(control, bol);
 }
-#endif // NOT_PRODUCT
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -472,7 +469,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
-IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol) {
   // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
   // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
   // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
@@ -1049,8 +1046,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->empty()) {
+        if (failtype->filter(type2) == Type::TOP) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
@@ -1524,6 +1520,14 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
+    // loop will go away. Mark this loop as no longer strip mined.
+    if (is_CountedLoopEnd()) {
+      CountedLoopNode* counted_loop_node = as_CountedLoopEnd()->loopnode();
+      if (counted_loop_node != nullptr) {
+        counted_loop_node->clear_strip_mined();
+      }
+    }
     // Replace dominated IfNode
     return dominated_by(prev_dom, igvn, false);
   }
@@ -2164,7 +2168,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
     : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
       _deopt_reason(deopt_reason),
-      _useless(false) {
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_ParsePredicate);
   gvn->C->add_parse_predicate(this);
   gvn->C->record_for_post_loop_opts_igvn(this);
@@ -2172,12 +2176,19 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
   switch (deopt_reason) {
     case Deoptimization::Reason_predicate:
     case Deoptimization::Reason_profile_predicate:
+    case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
+    case Deoptimization::Reason_short_running_long_loop:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
   }
 #endif // ASSERT
+}
+
+void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
@@ -2189,14 +2200,15 @@ Node* ParsePredicateNode::uncommon_trap() const {
 
 // Fold this node away once it becomes useless or at latest in post loop opts IGVN.
 const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
   if (phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT
@@ -2209,13 +2221,19 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
     case Deoptimization::DeoptReason::Reason_profile_predicate:
       st->print("Profiled_Loop ");
       break;
+    case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
+      st->print("Auto_Vectorization_Check ");
+      break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
       st->print("Loop_Limit_Check ");
+      break;
+    case Deoptimization::DeoptReason::Reason_short_running_long_loop:
+      st->print("Short_Running_Long_Loop ");
       break;
     default:
       fatal("unknown kind");
   }
-  if (_useless) {
+  if (_predicate_state == PredicateState::Useless) {
     st->print("#useless ");
   }
 }

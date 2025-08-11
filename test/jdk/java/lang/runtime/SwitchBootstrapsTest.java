@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import static org.testng.Assert.fail;
  * @test
  * @bug 8318144
  * @enablePreview
- * @modules java.base/jdk.internal.classfile
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
  */
@@ -73,6 +72,12 @@ public class SwitchBootstrapsTest {
         MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
         assertEquals((int) indy.invoke(target, start), result);
         assertEquals(-1, (int) indy.invoke(null, start));
+    }
+
+    private void testPrimitiveType(Object target, Class<?> targetType, int start, int result, Object... labels) throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, targetType, int.class);
+        MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
+        assertEquals((int) indy.invoke(target, start), result);
     }
 
     private void testEnum(Enum<?> target, int start, int result, Object... labels) throws Throwable {
@@ -131,6 +136,18 @@ public class SwitchBootstrapsTest {
                 return super.equals(obj);
             }
         }, 0, 1, 1L);
+    }
+
+    public void testPrimitiveTypes() throws Throwable {
+        testPrimitiveType((short) 1, short.class, 0, 1, String.class);
+        testPrimitiveType((byte) 1, byte.class,0, 1, String.class, byte.class);
+        testPrimitiveType(true, boolean.class,0, 1, false, boolean.class);
+        testPrimitiveType(1, int.class,0, 1, String.class);
+        testPrimitiveType(1, int.class,0, 1, true);
+        testPrimitiveType(true, boolean.class,0, 1, false);
+        testPrimitiveType((byte) 1, byte.class,0, 1, boolean.class, byte.class);
+        testPrimitiveType((byte) 1, byte.class,0, 1, Boolean.class, byte.class);
+        testPrimitiveType(true, boolean.class,0, 1, String.class, boolean.class);
     }
 
     public void testEnums() throws Throwable {

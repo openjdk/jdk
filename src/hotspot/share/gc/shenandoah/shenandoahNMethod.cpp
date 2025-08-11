@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,12 +23,10 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -126,13 +124,13 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->is_concurrent_mark_in_progress()) {
-    ShenandoahKeepAliveClosure cl;
-    data->oops_do(&cl);
-  } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress() ) {
+  if (heap->is_concurrent_weak_root_in_progress() ||
+      heap->is_concurrent_strong_root_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
+  } else if (heap->is_concurrent_mark_in_progress()) {
+    ShenandoahKeepAliveClosure cl;
+    data->oops_do(&cl);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
@@ -180,9 +178,9 @@ public:
   }
 };
 
-void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
+void ShenandoahNMethod::assert_same_oops() {
   ShenandoahNMethodOopDetector detector;
-  nm()->oops_do(&detector, allow_dead);
+  nm()->oops_do(&detector);
 
   GrowableArray<oop*>* oops = detector.oops();
 

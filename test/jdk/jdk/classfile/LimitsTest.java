@@ -41,6 +41,7 @@ import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
@@ -49,6 +50,7 @@ import jdk.internal.classfile.impl.DirectMethodBuilder;
 import jdk.internal.classfile.impl.LabelContext;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimitsTest {
@@ -145,7 +147,13 @@ class LimitsTest {
                                     b.writeInt(-2); //npairs to jump back and cause OOME if not checked
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
-                                }})))).methods().get(0).code().get().elementList());
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return mb.constantPool().utf8Entry(Attributes.NAME_CODE);
+                                }
+                        })))).methods().get(0).code().get().elementList());
     }
 
     @Test
@@ -167,7 +175,13 @@ class LimitsTest {
                                     b.writeInt(-5); //high to jump back and cause OOME if not checked
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
-                                }})))).methods().get(0).code().get().elementList());
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return mb.constantPool().utf8Entry(Attributes.NAME_CODE);
+                                }
+                        })))).methods().get(0).code().get().elementList());
         assertThrows(IllegalArgumentException.class, () ->
                 ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("TableSwitchClass"), cb -> cb.withMethod(
                 "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
@@ -189,7 +203,13 @@ class LimitsTest {
                                     b.writeInt(Integer.MAX_VALUE - 4); //high to jump back and cause infinite loop
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
-                                }})))).methods().get(0).code().get().elementList());
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return mb.constantPool().utf8Entry(Attributes.NAME_CODE);
+                                }
+                        })))).methods().get(0).code().get().elementList());
     }
 
     @Test

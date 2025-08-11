@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<ResolvedMethodEntry>* _resolved_method_entries;
 
   // Sizing
-  debug_only(friend class ClassVerifier;)
+  DEBUG_ONLY(friend class ClassVerifier;)
 
   public:
     // specific but defiinitions for ldc
@@ -110,7 +110,6 @@ class ConstantPoolCache: public MetaspaceObj {
   MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_references(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
   inline objArrayOop resolved_references();
@@ -224,8 +223,9 @@ class ConstantPoolCache: public MetaspaceObj {
 
 #if INCLUDE_CDS
   void remove_resolved_field_entries_if_non_deterministic();
+  void remove_resolved_indy_entries_if_non_deterministic();
   void remove_resolved_method_entries_if_non_deterministic();
-  bool can_archive_resolved_method(ResolvedMethodEntry* method_entry);
+  bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry);
 #endif
 
   // RedefineClasses support

@@ -25,7 +25,7 @@
 
 package java.lang;
 
-import jdk.internal.misc.Blocker;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -36,6 +36,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @see     java.lang.Class
  * @since   1.0
  */
+@AOTSafeClassInitializer // for hierarchy checks
 public class Object {
 
     /**
@@ -374,21 +375,20 @@ public class Object {
      * @see    #wait(long, int)
      */
     public final void wait(long timeoutMillis) throws InterruptedException {
-        if (!Thread.currentThread().isVirtual()) {
-            wait0(timeoutMillis);
-            return;
+        if (timeoutMillis < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
         }
 
-        // virtual thread waiting
-        boolean attempted = Blocker.begin();
-        try {
+        if (Thread.currentThread() instanceof VirtualThread vthread) {
+            try {
+                wait0(timeoutMillis);
+            } catch (InterruptedException e) {
+                // virtual thread's interrupt status needs to be cleared
+                vthread.getAndClearInterrupt();
+                throw e;
+            }
+        } else {
             wait0(timeoutMillis);
-        } catch (InterruptedException e) {
-            // virtual thread's interrupt status needs to be cleared
-            Thread.currentThread().getAndClearInterrupt();
-            throw e;
-        } finally {
-            Blocker.end(attempted);
         }
     }
 

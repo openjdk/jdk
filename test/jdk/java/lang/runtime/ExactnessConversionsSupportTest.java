@@ -44,8 +44,6 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8304487
  * @summary Verify boundary and special cases of exact conversion predicates
- * @enablePreview
- * @modules java.base/jdk.internal.classfile
  * @compile ExactnessConversionsSupportTest.java
  * @run testng/othervm ExactnessConversionsSupportTest
  */

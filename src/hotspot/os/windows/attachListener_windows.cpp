@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
@@ -65,6 +64,11 @@
 class PipeChannel : public AttachOperation::RequestReader, public AttachOperation::ReplyWriter {
 private:
   HANDLE _hPipe;
+  void close_impl() {
+    FlushFileBuffers(_hPipe);
+    CloseHandle(_hPipe);
+    _hPipe = INVALID_HANDLE_VALUE;
+  }
 public:
   PipeChannel() : _hPipe(INVALID_HANDLE_VALUE) {}
   ~PipeChannel() {
@@ -84,7 +88,8 @@ public:
                           0,              // default attributes
                           nullptr);       // no template file
     if (_hPipe == INVALID_HANDLE_VALUE) {
-      log_error(attach)("could not open (%d) pipe %s", GetLastError(), pipe);
+      log_error(attach)("could not open %s (%d) pipe %s",
+                        (write_only ? "write-only" : "read-write"), GetLastError(), pipe);
       return false;
     }
     return true;
@@ -92,8 +97,14 @@ public:
 
   void close() {
     if (opened()) {
-      CloseHandle(_hPipe);
-      _hPipe = INVALID_HANDLE_VALUE;
+      JavaThread* current = JavaThread::current();
+      // if we fail to read/parse request from Win32AttachListener::dequeue, current thread is already blocked
+      if (current->thread_state() == _thread_blocked) {
+        close_impl();
+      } else {
+        ThreadBlockInVM tbivm(current);
+        close_impl();
+      }
     }
   }
 
@@ -106,7 +117,11 @@ public:
                              (DWORD)size,
                              &nread,
                              nullptr);   // not overlapped
-    return fSuccess ? (int)nread : -1;
+    if (!fSuccess) {
+      log_error(attach)("pipe read error (%d)", GetLastError());
+      return -1;
+    }
+    return (int)nread;
   }
 
   // ReplyWriter
@@ -118,12 +133,14 @@ public:
                               (DWORD)size,
                               &written,
                               nullptr);  // not overlapped
-    return fSuccess ? (int)written : -1;
+    if (!fSuccess) {
+      log_error(attach)("pipe write error (%d)", GetLastError());
+      return -1;
+    }
+    return (int)written;
   }
 
   void flush() override {
-    assert(opened(), "must be");
-    FlushFileBuffers(_hPipe);
   }
 };
 
@@ -138,21 +155,25 @@ private:
 
 public:
   // for v1 pipe must be write-only
-  void open_pipe(const char* pipe_name, bool write_only) {
-    _pipe.open(pipe_name, write_only);
+  bool open_pipe(const char* pipe_name, bool write_only) {
+    return _pipe.open(pipe_name, write_only);
   }
 
   bool read_request() {
-      return AttachOperation::read_request(&_pipe);
+    return _pipe.read_request(this, &_pipe);
   }
 
 public:
   void complete(jint result, bufferedStream* result_stream) override;
+
+  ReplyWriter* get_reply_writer() override {
+    return &_pipe;
+  }
 };
 
 
 // Win32AttachOperationRequest is an element of AttachOperation request list.
-class Win32AttachOperationRequest {
+class Win32AttachOperationRequest: public CHeapObj<mtServiceability> {
 private:
   AttachAPIVersion _ver;
   char _name[AttachOperation::name_length_max + 1];
@@ -390,13 +411,17 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
         for (int i = 0; i < AttachOperation::arg_count_max; i++) {
           op->append_arg(request->arg(i));
         }
-        op->open_pipe(request->pipe(), true/*write-only*/);
+        if (!op->open_pipe(request->pipe(), true/*write-only*/)) {
+          // error is already logged
+          delete op;
+          op = nullptr;
+        }
         break;
       case ATTACH_API_V2:
         op = new Win32AttachOperation();
-        op->open_pipe(request->pipe(), false/*write-only*/);
-        if (!op->read_request()) {
-          log_error(attach)("AttachListener::dequeue, reading request ERROR");
+        if (!op->open_pipe(request->pipe(), false/*write-only*/)
+            || !op->read_request()) {
+          // error is already logged
           delete op;
           op = nullptr;
         }
@@ -420,11 +445,6 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
 }
 
 void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) {
-  JavaThread* thread = JavaThread::current();
-  ThreadBlockInVM tbivm(thread);
-
-  write_reply(&_pipe, result, result_stream);
-
   delete this;
 }
 

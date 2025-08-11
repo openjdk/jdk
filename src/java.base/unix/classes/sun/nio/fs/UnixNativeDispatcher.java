@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,25 +348,15 @@ class UnixNativeDispatcher {
     private static native void fchmod0(int fd, int mode) throws UnixException;
 
     /**
-     * utimes(const char* path, const struct timeval times[2])
+     * fchmodat(int fd, const char *path, mode_t mode, int flag)
      */
-    static void utimes(UnixPath path, long times0, long times1)
-        throws UnixException
-    {
+    static void fchmodat(int fd, UnixPath path, int mode, int flag)
+        throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            utimes0(buffer.address(), times0, times1);
+            fchmodat0(fd, buffer.address(), mode, flag);
         }
     }
-    private static native void utimes0(long pathAddress, long times0, long times1)
-        throws UnixException;
-
-    /**
-     * futimes(int fildes, const struct timeval times[2])
-     */
-    static void futimes(int fd, long times0, long times1) throws UnixException {
-        futimes0(fd, times0, times1);
-    }
-    private static native void futimes0(int fd, long times0, long times1)
+    private static native void fchmodat0(int fd, long pathAddress, int mode, int flag)
         throws UnixException;
 
     /**
@@ -379,16 +369,17 @@ class UnixNativeDispatcher {
         throws UnixException;
 
     /**
-     * lutimes(const char* path, const struct timeval times[2])
+     * utimensat(int fd, const char* path,
+     *           const struct timeval times[2], int flags)
      */
-    static void lutimes(UnixPath path, long times0, long times1)
+    static void utimensat(int fd, UnixPath path, long times0, long times1, int flags)
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            lutimes0(buffer.address(), times0, times1);
+            utimensat0(fd, buffer.address(), times0, times1, flags);
         }
     }
-    private static native void lutimes0(long pathAddress, long times0, long times1)
+    private static native void utimensat0(int fd, long pathAddress, long times0, long times1, int flags)
         throws UnixException;
 
     /**
@@ -554,10 +545,7 @@ class UnixNativeDispatcher {
      * Capabilities
      */
     private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_FUTIMES       = 1 << 2;
-    private static final int SUPPORTS_FUTIMENS      = 1 << 3;
-    private static final int SUPPORTS_LUTIMES       = 1 << 4;
-    private static final int SUPPORTS_XATTR         = 1 << 5;
+    private static final int SUPPORTS_XATTR         = 1 << 3;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -566,27 +554,6 @@ class UnixNativeDispatcher {
      */
     static boolean openatSupported() {
         return (capabilities & SUPPORTS_OPENAT) != 0;
-    }
-
-    /**
-     * Supports futimes or futimesat
-     */
-    static boolean futimesSupported() {
-        return (capabilities & SUPPORTS_FUTIMES) != 0;
-    }
-
-    /**
-     * Supports futimens
-     */
-    static boolean futimensSupported() {
-        return (capabilities & SUPPORTS_FUTIMENS) != 0;
-    }
-
-    /**
-     * Supports lutimes
-     */
-    static boolean lutimesSupported() {
-        return (capabilities & SUPPORTS_LUTIMES) != 0;
     }
 
     /**
@@ -602,6 +569,14 @@ class UnixNativeDispatcher {
     static boolean xattrSupported() {
         return (capabilities & SUPPORTS_XATTR) != 0;
     }
+
+    /**
+     * Supports fchmodat with AT_SYMLINK_NOFOLLOW flag
+     */
+    static boolean fchmodatNoFollowSupported() {
+        return fchmodatNoFollowSupported0();
+    }
+    private static native boolean fchmodatNoFollowSupported0();
 
     private static native int init();
     static {

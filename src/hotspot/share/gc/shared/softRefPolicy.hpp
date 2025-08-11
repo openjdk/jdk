@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,23 +56,6 @@ class SoftRefPolicy {
   void cleared_all_soft_refs() {
     _all_soft_refs_clear = true;
   }
-};
-
-class ClearedAllSoftRefs : public StackObj {
-  bool           _clear_all_soft_refs;
-  SoftRefPolicy* _soft_ref_policy;
- public:
-  ClearedAllSoftRefs(bool clear_all_soft_refs, SoftRefPolicy* soft_ref_policy) :
-    _clear_all_soft_refs(clear_all_soft_refs),
-    _soft_ref_policy(soft_ref_policy) {}
-
-  ~ClearedAllSoftRefs() {
-    if (_clear_all_soft_refs) {
-      _soft_ref_policy->cleared_all_soft_refs();
-    }
-  }
-
-  bool should_clear() { return _clear_all_soft_refs; }
 };
 
 #endif // SHARE_GC_SHARED_SOFTREFPOLICY_HPP

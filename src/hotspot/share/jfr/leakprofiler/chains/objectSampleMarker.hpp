@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class ObjectSampleMarker : public StackObj {
     // now we will set the mark word to "marked" in order to quickly
     // identify sample objects during the reachability search from gc roots.
     assert(!obj->mark().is_marked(), "should only mark an object once");
-    obj->set_mark(markWord::prototype().set_marked());
+    obj->set_mark(obj->prototype_mark().set_marked());
     assert(obj->mark().is_marked(), "invariant");
   }
 };

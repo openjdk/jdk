@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,8 +314,12 @@ class MetaspaceObj {
   f(ConstantPoolCache) \
   f(Annotations) \
   f(MethodCounters) \
-  f(SharedClassPathEntry) \
-  f(RecordComponent)
+  f(RecordComponent) \
+  f(KlassTrainingData) \
+  f(MethodTrainingData) \
+  f(CompileTrainingData) \
+  f(AdapterHandlerEntry) \
+  f(AdapterFingerPrint)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
 #define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
@@ -353,7 +357,9 @@ class MetaspaceObj {
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
                      Type type) throw();
-  void operator delete(void* p) { ShouldNotCallThis(); }
+  // This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
+  void* operator new(size_t size, MemTag flags);
+  void operator delete(void* p) = delete;
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj
   // that should be read-only by default. See symbol.hpp for an example. This function

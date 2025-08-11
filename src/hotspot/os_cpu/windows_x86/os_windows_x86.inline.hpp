@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,11 @@
 #include "runtime/os.hpp"
 #include "os_windows.hpp"
 
-#ifdef AMD64
 #define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
                                      char *buf, int buf_size, address& lastpc) {
   return os::win32::platform_print_native_stack(st, context, buf, buf_size, lastpc);
 }
-#endif
 
 inline jlong os::rdtsc() {
   // 32 bit: 64 bit result in edx:eax

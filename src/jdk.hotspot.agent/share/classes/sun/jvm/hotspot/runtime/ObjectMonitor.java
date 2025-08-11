@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class ObjectMonitor extends VMObject {
     objectFieldOffset = f.getOffset();
     f = type.getField("_owner");
     ownerFieldOffset = f.getOffset();
+    f = type.getField("_stack_locker");
+    stackLockerFieldOffset = f.getOffset();
     f = type.getField("_next_om");
     nextOMFieldOffset = f.getOffset();
     contentionsField  = new CIntField(type.getCIntegerField("_contentions"), 0);
@@ -87,6 +89,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
+  public Address stackLocker() { return addr.getAddressAt(stackLockerFieldOffset); }
   // FIXME
   //  void      set_owner(void* owner);
 
@@ -117,6 +120,7 @@ public class ObjectMonitor extends VMObject {
   private static long          metadataFieldOffset;
   private static long          objectFieldOffset;
   private static long          ownerFieldOffset;
+  private static long          stackLockerFieldOffset;
   private static long          nextOMFieldOffset;
   private static CIntField     contentionsField;
   private static CIntField     waitersField;

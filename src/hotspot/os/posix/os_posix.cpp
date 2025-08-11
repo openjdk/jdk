@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
@@ -49,6 +50,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -57,6 +59,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -74,6 +77,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <spawn.h>
+#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -491,9 +495,9 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size, exec);
+  char* extra_base = os::reserve_memory(extra_size, mem_tag, exec);
   if (extra_base == nullptr) {
     return nullptr;
   }
@@ -551,7 +555,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   setutxent();
   while ((ent = getutxent())) {
     if (!strcmp("system boot", ent->ut_line)) {
-      bootsec = ent->ut_tv.tv_sec;
+      bootsec = (int)ent->ut_tv.tv_sec;
       break;
     }
   }
@@ -696,14 +700,6 @@ void os::print_active_locale(outputStream* st) {
   }
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   int retcode = uname(&name);
@@ -717,7 +713,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::commit_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -735,31 +731,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  struct rlimit rlim;
-  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
-  // if there was an error when calling getrlimit, assume that there is no limitation
-  // on virtual memory.
-  bool result;
-  if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
-    result = false;
-  } else {
-    *limit = (size_t)rlim.rlim_cur;
-    result = true;
-  }
 #ifdef _LP64
-  return result;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
-  } else {
-    *limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -773,15 +757,15 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -794,10 +778,29 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    actual_limit = lower_limit;
   }
-  return true;
+
+  return actual_limit;
 #endif
+}
+
+size_t os::reserve_memory_limit() {
+  struct rlimit rlim;
+  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+
+  // If there was an error calling getrlimit, conservatively assume no limit.
+  if (getrlimit_res != 0) {
+    return SIZE_MAX;
+  }
+
+  // If the current limit is not infinity, there is a limit.
+  if (rlim.rlim_cur != RLIM_INFINITY) {
+    return (size_t)rlim.rlim_cur;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {
@@ -816,7 +819,7 @@ void* os::dll_lookup(void* handle, const char* name) {
   void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
-    // It is possible that we found a NULL symbol, hence no error.
+    // It is possible that we found a null symbol, hence no error.
     if (tmp != nullptr) {
       log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
     }
@@ -860,6 +863,12 @@ void os::dll_unload(void *lib) {
     JFR_ONLY(unload_event.set_error_msg(ebuf);)
   }
   LINUX_ONLY(os::free(l_pathdup));
+}
+
+void* os::lookup_function(const char* name) {
+  // This returns the global symbol in the main executable and its dependencies,
+  // as well as shared objects dynamically loaded with RTLD_GLOBAL flag.
+  return dlsym(RTLD_DEFAULT, name);
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
@@ -932,64 +941,15 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  ALLOW_C_FUNCTION(::exit, ::exit(num);)
+  permit_forbidden_function::exit(num);
 }
 
 void os::_exit(int num) {
-  ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
-}
-
-bool os::dont_yield() {
-  return DontYieldALot;
+  permit_forbidden_function::_exit(num);
 }
 
 void os::naked_yield() {
   sched_yield();
-}
-
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "/a/b/libL.so"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      }
-      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
@@ -1023,7 +983,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
   LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
-  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+  jio_snprintf(buf, buflen, "stacksize: %zuk, guardsize: %zuk, %s",
     stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
@@ -1042,7 +1002,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
+  char* p = permit_forbidden_function::realpath(filename, nullptr);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -1050,7 +1010,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -1059,7 +1019,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
+      p = permit_forbidden_function::realpath(filename, outbuf);
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
@@ -1107,6 +1067,95 @@ bool os::same_files(const char* file1, const char* file2) {
     is_same = true;
   }
   return is_same;
+}
+
+static char saved_jvm_path[MAXPATHLEN] = {0};
+
+// Find the full path to the current module, libjvm.so
+void os::jvm_path(char *buf, jint buflen) {
+  // Error checking.
+  if (buflen < MAXPATHLEN) {
+    assert(false, "must use a large-enough buffer");
+    buf[0] = '\0';
+    return;
+  }
+  // Lazy resolve the path to current module.
+  if (saved_jvm_path[0] != 0) {
+    strcpy(buf, saved_jvm_path);
+    return;
+  }
+
+  const char* fname;
+#ifdef AIX
+  Dl_info dlinfo;
+  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
+  assert(ret != 0, "cannot locate libjvm");
+  if (ret == 0) {
+    return;
+  }
+  fname = dlinfo.dli_fname;
+#else
+  char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
+  bool ret = dll_address_to_library_name(
+                                         CAST_FROM_FN_PTR(address, os::jvm_path),
+                                         dli_fname, sizeof(dli_fname), nullptr);
+  assert(ret, "cannot locate libjvm");
+  if (!ret) {
+    return;
+  }
+  fname = dli_fname;
+#endif // AIX
+  char* rp = nullptr;
+  if (fname[0] != '\0') {
+    rp = os::realpath(fname, buf, buflen);
+  }
+  if (rp == nullptr) {
+    return;
+  }
+
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
+
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
+
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      // If the path exists within JAVA_HOME, add the VM variant directory and JVM
+      // library name to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath(fname, buf, buflen);
+        if (rp == nullptr) {
+          return;
+        }
+      }
+    }
+  }
+
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 // Called when creating the thread.  The minimum stack sizes have already been calculated
@@ -1376,6 +1425,19 @@ void os::Posix::init_2(void) {
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
 
+int os::Posix::clock_tics_per_second() {
+  return clock_tics_per_sec;
+}
+
+#ifdef ASSERT
+bool os::Posix::ucontext_is_interpreter(const ucontext_t* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = os::Posix::ucontext_get_pc(uc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
+
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
 // and sem_timedwait().
@@ -1523,12 +1585,9 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
@@ -1548,7 +1607,16 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
+double os::elapsed_process_cpu_time() {
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_SELF, &usage);
+  if (retval == 0) {
+    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+         (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
+  } else {
+    return -1;
+  }
+}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.
@@ -2123,7 +2191,7 @@ void os::shutdown() {
 // easily trigger secondary faults in those threads. To reduce the likelihood
 // of that we use _exit rather than exit, so that no atexit hooks get run.
 // But note that os::shutdown() could also trigger secondary faults.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
@@ -2197,4 +2265,43 @@ char* os::pd_map_memory(int fd, const char* unused,
 // Unmap a block of memory. Uses munmap.
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
+}
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static ucontext_t _saved_assert_context;
+static bool _has_saved_context = false;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+void os::save_assert_context(const void* ucVoid) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  memcpy(&_saved_assert_context, ucVoid, sizeof(ucontext_t));
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
+  *((void**)&_saved_assert_context.uc_mcontext.regs) = &(_saved_assert_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents.
+  // Sanity check: fpregs should point into the context.
+  if ((address)((const ucontext_t*)ucVoid)->uc_mcontext.fpregs > (address)ucVoid) {
+    size_t fpregs_offset = pointer_delta(((const ucontext_t*)ucVoid)->uc_mcontext.fpregs, ucVoid, 1);
+    if (fpregs_offset < sizeof(ucontext_t)) {
+      // Preserve the offset.
+      *((void**)&_saved_assert_context.uc_mcontext.fpregs) = (void*)((address)(void*)&_saved_assert_context + fpregs_offset);
+    }
+  }
+#endif
+  _has_saved_context = true;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(sigInfo != nullptr, "invariant");
+  *sigInfo = nullptr;
+  return _has_saved_context ? &_saved_assert_context : nullptr;
+#endif
+  *sigInfo = nullptr;
+  return nullptr;
 }

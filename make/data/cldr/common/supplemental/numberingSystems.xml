@@ -25,12 +25,14 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="diak" type="numeric" digits="&#x11950;&#x11951;&#x11952;&#x11953;&#x11954;&#x11955;&#x11956;&#x11957;&#x11958;&#x11959;"/>
         <numberingSystem id="ethi" type="algorithmic" rules="ethiopic"/>
         <numberingSystem id="fullwide" type="numeric" digits="０１２３４５６７８９"/>
+        <numberingSystem id="gara" type="numeric" digits="&#x10D40;&#x10D41;&#x10D42;&#x10D43;&#x10D44;&#x10D45;&#x10D46;&#x10D47;&#x10D48;&#x10D49;"/>
         <numberingSystem id="geor" type="algorithmic" rules="georgian"/>
         <numberingSystem id="gong" type="numeric" digits="&#x11DA0;&#x11DA1;&#x11DA2;&#x11DA3;&#x11DA4;&#x11DA5;&#x11DA6;&#x11DA7;&#x11DA8;&#x11DA9;"/>
         <numberingSystem id="gonm" type="numeric" digits="&#x11D50;&#x11D51;&#x11D52;&#x11D53;&#x11D54;&#x11D55;&#x11D56;&#x11D57;&#x11D58;&#x11D59;"/>
         <numberingSystem id="grek" type="algorithmic" rules="greek-upper"/>
         <numberingSystem id="greklow" type="algorithmic" rules="greek-lower"/>
         <numberingSystem id="gujr" type="numeric" digits="૦૧૨૩૪૫૬૭૮૯"/>
+        <numberingSystem id="gukh" type="numeric" digits="&#x16130;&#x16131;&#x16132;&#x16133;&#x16134;&#x16135;&#x16136;&#x16137;&#x16138;&#x16139;"/>
         <numberingSystem id="guru" type="numeric" digits="੦੧੨੩੪੫੬੭੮੯"/>
         <numberingSystem id="hanidays" type="algorithmic" rules="zh/SpelloutRules/spellout-numbering-days"/>
         <numberingSystem id="hanidec" type="numeric" digits="〇一二三四五六七八九"/>
@@ -49,6 +51,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="kawi" type="numeric" digits="&#x11F50;&#x11F51;&#x11F52;&#x11F53;&#x11F54;&#x11F55;&#x11F56;&#x11F57;&#x11F58;&#x11F59;"/>
         <numberingSystem id="khmr" type="numeric" digits="០១២៣៤៥៦៧៨៩"/>
         <numberingSystem id="knda" type="numeric" digits="೦೧೨೩೪೫೬೭೮೯"/>
+        <numberingSystem id="krai" type="numeric" digits="&#x16D70;&#x16D71;&#x16D72;&#x16D73;&#x16D74;&#x16D75;&#x16D76;&#x16D77;&#x16D78;&#x16D79;"/>
         <numberingSystem id="lana" type="numeric" digits="᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉"/>
         <numberingSystem id="lanatham" type="numeric" digits="᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙"/>
         <numberingSystem id="laoo" type="numeric" digits="໐໑໒໓໔໕໖໗໘໙"/>
@@ -66,14 +69,18 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="mroo" type="numeric" digits="&#x16A60;&#x16A61;&#x16A62;&#x16A63;&#x16A64;&#x16A65;&#x16A66;&#x16A67;&#x16A68;&#x16A69;"/>
         <numberingSystem id="mtei" type="numeric" digits="꯰꯱꯲꯳꯴꯵꯶꯷꯸꯹"/>
         <numberingSystem id="mymr" type="numeric" digits="၀၁၂၃၄၅၆၇၈၉"/>
+        <numberingSystem id="mymrepka" type="numeric" digits="&#x116DA;&#x116DB;&#x116DC;&#x116DD;&#x116DE;&#x116DF;&#x116E0;&#x116E1;&#x116E2;&#x116E3;"/>
+        <numberingSystem id="mymrpao" type="numeric" digits="&#x116D0;&#x116D1;&#x116D2;&#x116D3;&#x116D4;&#x116D5;&#x116D6;&#x116D7;&#x116D8;&#x116D9;"/>
         <numberingSystem id="mymrshan" type="numeric" digits="႐႑႒႓႔႕႖႗႘႙"/>
         <numberingSystem id="mymrtlng" type="numeric" digits="&#xA9F0;&#xA9F1;&#xA9F2;&#xA9F3;&#xA9F4;&#xA9F5;&#xA9F6;&#xA9F7;&#xA9F8;&#xA9F9;"/>
         <numberingSystem id="nagm" type="numeric" digits="&#x1E4F0;&#x1E4F1;&#x1E4F2;&#x1E4F3;&#x1E4F4;&#x1E4F5;&#x1E4F6;&#x1E4F7;&#x1E4F8;&#x1E4F9;"/>
         <numberingSystem id="newa" type="numeric" digits="&#x11450;&#x11451;&#x11452;&#x11453;&#x11454;&#x11455;&#x11456;&#x11457;&#x11458;&#x11459;"/>
         <numberingSystem id="nkoo" type="numeric" digits="߀߁߂߃߄߅߆߇߈߉"/>
         <numberingSystem id="olck" type="numeric" digits="᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙"/>
+        <numberingSystem id="onao" type="numeric" digits="&#x1E5F1;&#x1E5F2;&#x1E5F3;&#x1E5F4;&#x1E5F5;&#x1E5F6;&#x1E5F7;&#x1E5F8;&#x1E5F9;&#x1E5FA;"/>
         <numberingSystem id="orya" type="numeric" digits="୦୧୨୩୪୫୬୭୮୯"/>
         <numberingSystem id="osma" type="numeric" digits="&#x104A0;&#x104A1;&#x104A2;&#x104A3;&#x104A4;&#x104A5;&#x104A6;&#x104A7;&#x104A8;&#x104A9;"/>
+        <numberingSystem id="outlined" type="numeric" digits="&#x1CCF0;&#x1CCF1;&#x1CCF2;&#x1CCF3;&#x1CCF4;&#x1CCF5;&#x1CCF6;&#x1CCF7;&#x1CCF8;&#x1CCF9;"/>
         <numberingSystem id="rohg" type="numeric" digits="&#x10D30;&#x10D31;&#x10D32;&#x10D33;&#x10D34;&#x10D35;&#x10D36;&#x10D37;&#x10D38;&#x10D39;"/>
         <numberingSystem id="roman" type="algorithmic" rules="roman-upper"/>
         <numberingSystem id="romanlow" type="algorithmic" rules="roman-lower"/>
@@ -84,6 +91,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="sinh" type="numeric" digits="&#x0DE6;&#x0DE7;&#x0DE8;&#x0DE9;&#x0DEA;&#x0DEB;&#x0DEC;&#x0DED;&#x0DEE;&#x0DEF;"/>
         <numberingSystem id="sora" type="numeric" digits="&#x110F0;&#x110F1;&#x110F2;&#x110F3;&#x110F4;&#x110F5;&#x110F6;&#x110F7;&#x110F8;&#x110F9;"/>
         <numberingSystem id="sund" type="numeric" digits="᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹"/>
+        <numberingSystem id="sunu" type="numeric" digits="&#x11BF0;&#x11BF1;&#x11BF2;&#x11BF3;&#x11BF4;&#x11BF5;&#x11BF6;&#x11BF7;&#x11BF8;&#x11BF9;"/>
         <numberingSystem id="takr" type="numeric" digits="&#x116C0;&#x116C1;&#x116C2;&#x116C3;&#x116C4;&#x116C5;&#x116C6;&#x116C7;&#x116C8;&#x116C9;"/>
         <numberingSystem id="talu" type="numeric" digits="᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙"/>
         <numberingSystem id="taml" type="algorithmic" rules="tamil"/>

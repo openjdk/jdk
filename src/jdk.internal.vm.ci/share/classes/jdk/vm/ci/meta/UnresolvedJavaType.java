@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,19 @@ package jdk.vm.ci.meta;
 public final class UnresolvedJavaType implements JavaType {
     private final String name;
 
+    /**
+     * The reason type resolution failed. Can be null.
+     */
+    private final Throwable cause;
+
     @Override
     public String getName() {
         return name;
     }
 
-    private UnresolvedJavaType(String name) {
+    private UnresolvedJavaType(String name, Throwable cause) {
         this.name = name;
+        this.cause = cause;
         assert name.length() == 1 && JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0)) != null || name.charAt(0) == '[' || name.charAt(name.length() - 1) == ';' : name;
     }
 
@@ -42,20 +48,34 @@ public final class UnresolvedJavaType implements JavaType {
      * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
      */
     public static UnresolvedJavaType create(String name) {
-        return new UnresolvedJavaType(name);
+        return new UnresolvedJavaType(name, null);
+    }
+
+    /**
+     * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
+     */
+    public static UnresolvedJavaType create(String name, Throwable cause) {
+        return new UnresolvedJavaType(name, cause);
+    }
+
+    /**
+     * Gets the exception, if any, representing the reason type resolution resulted in this object.
+     */
+    public Throwable getCause() {
+        return cause;
     }
 
     @Override
     public JavaType getComponentType() {
         if (getName().charAt(0) == '[') {
-            return new UnresolvedJavaType(getName().substring(1));
+            return new UnresolvedJavaType(getName().substring(1), null);
         }
         return null;
     }
 
     @Override
     public JavaType getArrayClass() {
-        return new UnresolvedJavaType('[' + getName());
+        return new UnresolvedJavaType('[' + getName(), null);
     }
 
     @Override

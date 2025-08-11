@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *    . 'list' lists the token aliases
  *    . 'basic' does not run with activcard,
  * @library /test/lib ..
- * @run testng/othervm -Djava.security.manager=allow Basic
+ * @run testng/othervm Basic
  */
 
 import java.io.*;
@@ -114,9 +114,8 @@ public class Basic extends PKCS11Test {
 
     @Test
     public void testBasic() throws Exception {
-        String[] args = {"sm", "Basic.policy"};
         try {
-            main(new Basic(), args);
+            main(new Basic(), new String[0]);
         } catch (SkippedException se) {
             throw new SkipException("One or more tests are skipped");
         }
@@ -142,7 +141,8 @@ public class Basic extends PKCS11Test {
 
         // get private keys
         KeyFactory kf = KeyFactory.getInstance("RSA");
-        KeyFactory dsaKf = KeyFactory.getInstance("DSA", "SUN");
+        KeyFactory dsaKf = KeyFactory.getInstance("DSA",
+                System.getProperty("test.provider.name", "SUN"));
 
         ObjectInputStream ois1 = new ObjectInputStream
                         (new FileInputStream(new File(DIR, "pk1.key")));

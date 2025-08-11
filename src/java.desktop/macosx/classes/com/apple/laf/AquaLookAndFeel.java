@@ -28,7 +28,6 @@ package com.apple.laf;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -63,7 +62,7 @@ import sun.swing.SwingUtilities2;
 import static javax.swing.UIDefaults.LazyValue;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaLookAndFeel extends BasicLookAndFeel {
+public final class AquaLookAndFeel extends BasicLookAndFeel {
     static final String sPropertyPrefix = "apple.laf."; // new prefix for things like 'useScreenMenuBar'
 
     // for lazy initalizers. Following the pattern from metal.
@@ -78,6 +77,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * that would be useful to a user trying to select a L&F from a list
      * of names.
      */
+    @Override
     public String getName() {
         return "Mac OS X";
     }
@@ -91,6 +91,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * that doesn't make any fundamental changes to the look or feel
      * shouldn't override this method.
      */
+    @Override
     public String getID() {
         return "Aqua";
     }
@@ -100,6 +101,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * e.g. "The CDE/Motif Look and Feel".   This string is intended for
      * the user, e.g. in the title of a window or in a ToolTip message.
      */
+    @Override
     public String getDescription() {
         return "Aqua Look and Feel for Mac OS X";
     }
@@ -119,6 +121,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see JRootPane#setWindowDecorationStyle
      * @since 1.4
      */
+    @Override
     public boolean getSupportsWindowDecorations() {
         return false;
     }
@@ -127,6 +130,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * If the underlying platform has a "native" look and feel, and this
      * is an implementation of it, return true.
      */
+    @Override
     public boolean isNativeLookAndFeel() {
         return true;
     }
@@ -139,6 +143,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      *
      * @see UIManager#setLookAndFeel
      */
+    @Override
     public boolean isSupportedLookAndFeel() {
         return true;
     }
@@ -154,22 +159,11 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings({"removal", "restricted"})
+    @Override
+    @SuppressWarnings("restricted")
     public void initialize() {
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            @Override
-            public Void run() {
-                JRSUIControl.initJRSUI();
-                return null;
-            }
-        });
+        System.loadLibrary("osxui");
+        JRSUIControl.initJRSUI();
 
         super.initialize();
         final ScreenPopupFactory spf = new ScreenPopupFactory();
@@ -188,6 +182,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      *
      * @see #initialize
      */
+    @Override
     public void uninitialize() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
                 .removeKeyEventPostProcessor(AltProcessor.getInstance());
@@ -222,6 +217,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #playSound(Action)
      * @since 1.4
      */
+    @Override
     protected ActionMap getAudioActionMap() {
         ActionMap audioActionMap = (ActionMap)UIManager.get("AuditoryCues.actionMap");
         if (audioActionMap != null) return audioActionMap;
@@ -242,6 +238,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * We override getDefaults() so we can install our own debug defaults
      * if needed for testing
      */
+    @Override
     public UIDefaults getDefaults() {
         final UIDefaults table = new UIDefaults();
         // use debug defaults if you want to see every query into the defaults object.
@@ -292,6 +289,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     /**
      * This is the last step in the getDefaults routine usually called from our superclass
      */
+    @Override
     protected void initComponentDefaults(final UIDefaults table) {
         initResourceBundle(table);
 
@@ -1030,6 +1028,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         SwingUtilities2.putAATextInfo(true, table);
     }
 
+    @Override
     protected void initSystemColorDefaults(final UIDefaults table) {
 //        String[] defaultSystemColors = {
 //                  "desktop", "#005C5C", /* Color of the desktop background */
@@ -1072,6 +1071,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      *
      * @see #getDefaults
      */
+    @Override
     protected void initClassDefaults(final UIDefaults table) {
         final String basicPackageName = "javax.swing.plaf.basic.";
 

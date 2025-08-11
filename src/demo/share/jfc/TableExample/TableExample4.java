@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -99,7 +99,6 @@ public class TableExample4 {
         };
 
         // Create a model of the data.
-        @SuppressWarnings("serial")
         TableModel dataModel = new AbstractTableModel() {
             // These methods always need to be implemented.
 
@@ -180,7 +179,6 @@ public class TableExample4 {
 
         // Show the values in the "Favorite Number" column in different colors.
         TableColumn numbersColumn = tableView.getColumn("Favorite Number");
-        @SuppressWarnings("serial")
         DefaultTableCellRenderer numberColumnRenderer
                 = new DefaultTableCellRenderer() {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,13 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
 import java.nio.CharBuffer;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.sun.tools.javac.parser.Tokens.*;
@@ -182,10 +181,10 @@ public class JavaTokenizer extends UnicodeReader {
     protected void checkSourceLevel(int pos, Feature feature) {
         if (preview.isPreview(feature) && !preview.isEnabled()) {
             //preview feature without --preview flag, error
-            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, preview.disabledError(feature));
+            lexError(pos, preview.disabledError(feature));
         } else if (!feature.allowedInSource(source)) {
             //incompatible source level, error
-            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+            lexError(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
             preview.warnPreview(pos, feature);
@@ -200,35 +199,21 @@ public class JavaTokenizer extends UnicodeReader {
      */
     protected void lexError(int pos, JCDiagnostic.Error key) {
         log.error(pos, key);
-        tk = TokenKind.ERROR;
-        errPos = pos;
-    }
-
-    /**
-     * Report an error at the given position using the provided arguments.
-     *
-     * @param flags  diagnostic flags.
-     * @param pos    position in input buffer.
-     * @param key    error key to report.
-     */
-    protected void lexError(DiagnosticFlag flags, int pos, JCDiagnostic.Error key) {
-        log.error(flags, pos, key);
-        if (flags != DiagnosticFlag.SOURCE_LEVEL) {
+        if (!key.hasFlag(DiagnosticFlag.SOURCE_LEVEL)) {
             tk = TokenKind.ERROR;
         }
         errPos = pos;
     }
 
     /**
-     * Report an error at the given position using the provided arguments.
+     * Report a warning at the given position using the provided arguments.
      *
-     * @param lc     lint category.
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
-    protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
+    protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(lc, dp, key);
+        log.warning(dp, key);
     }
 
     /**
@@ -391,6 +376,10 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
             }
         } else {
+            if (!isString && !Character.isBmpCodePoint(getCodepoint())) {
+                lexError(pos, Errors.IllegalCharLiteralMultipleSurrogates);
+            }
+
             putThenNext();
         }
     }
@@ -1075,12 +1064,12 @@ public class JavaTokenizer extends UnicodeReader {
                         Set<TextBlockSupport.WhitespaceChecks> checks =
                                 TextBlockSupport.checkWhitespace(string);
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.InconsistentWhiteSpaceIndentation);
+                            lexWarning(pos,
+                                    LintWarnings.InconsistentWhiteSpaceIndentation);
                         }
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.TrailingWhiteSpaceWillBeRemoved);
+                            lexWarning(pos,
+                                    LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                         }
                     }
                     // Remove incidental indentation.
@@ -1267,6 +1256,21 @@ public class JavaTokenizer extends UnicodeReader {
             return null;
         }
 
+        /**
+         * Return a version of this comment with incidental whitespace removed,
+         * or this comment if the operation is not supported.
+         *
+         * @return comment with removed whitespace or this comment
+         */
+        public Comment stripIndent() {
+            return this;
+        }
+
+        /**
+         * Return the diagnostic position of this comment.
+         *
+         * @return diagnostic position
+         */
         public DiagnosticPosition getPos() {
             return pos;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
@@ -425,7 +424,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, tmp);
+    get_vm_result_oop(oop_result, tmp);
   }
 }
 
@@ -529,17 +528,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register 
   call_VM_leaf_helper(entry_point, 4);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result, Register tmp) {
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register tmp) {
   assert_different_registers(oop_result, tmp);
-  ldr(oop_result, Address(Rthread, JavaThread::vm_result_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_offset()));
+  ldr(oop_result, Address(Rthread, JavaThread::vm_result_oop_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_oop_offset()));
   verify_oop(oop_result);
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register tmp) {
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register tmp) {
   assert_different_registers(metadata_result, tmp);
-  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_2_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_2_offset()));
+  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_metadata_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::add_rc(Register dst, Register arg1, RegisterOrConstant arg2) {

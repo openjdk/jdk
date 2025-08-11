@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws UnsupportedOperationException if this operation is not supported.
      * @throws IllegalArgumentException if {@code outputFile} does not end with ".hprof" suffix.
      * @throws NullPointerException if {@code outputFile} is {@code null}.
-     * @throws SecurityException
-     *         If a security manager exists and its {@link
-     *         java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *         method denies write access to the named file
-     *         or the caller does not have ManagmentPermission("control").
      */
     public void dumpHeap(String outputFile, boolean live) throws IOException;
 
@@ -113,10 +108,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the new value is invalid.
      * @throws IllegalArgumentException if the VM option is not writable.
      * @throws NullPointerException if name or value is {@code null}.
-     *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and the caller does not have
-     *     ManagementPermission("control").
      */
     public void setVMOption(String name, String value);
 
@@ -124,6 +115,13 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * Generate a thread dump to the given file in the given format. The
      * {@code outputFile} parameter must be an absolute path to a file that
      * does not exist.
+     *
+     * <p> When the format is specified as {@link ThreadDumpFormat#JSON JSON}, the
+     * thread dump is generated in JavaScript Object Notation.
+     * <a href="doc-files/threadDump.schema.json">threadDump.schema.json</a>
+     * describes the thread dump format in draft
+     * <a href="https://tools.ietf.org/html/draft-json-schema-language-02">
+     * JSON Schema Language version 2</a>.
      *
      * <p> The thread dump will include output for all platform threads. It may
      * include output for some or all virtual threads.
@@ -142,11 +140,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IOException if the file already exists or an I/O exception is
      *         thrown writing to the file
      * @throws NullPointerException if either parameter is {@code null}
-     * @throws SecurityException
-     *         if a security manager is set and its {@link
-     *         SecurityManager#checkWrite(java.lang.String)} method denies write
-     *         access to the file or {@link java.lang.management.ManagementPermission
-     *         ManagementPermission("control")} is denied
      * @throws UnsupportedOperationException if this operation is not supported
      * @since 21
      */
@@ -165,6 +158,8 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
         TEXT_PLAIN,
         /**
          * JSON (JavaScript Object Notation) format.
+         * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
+         *      Object Notation (JSON) Data Interchange Format
          */
         JSON,
     }

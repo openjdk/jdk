@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.io.File;
 import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
@@ -48,12 +47,10 @@ import jdk.jpackage.test.CfgFile;
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest != null)
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile AddLauncherTest.java
+ * @compile -Xlint:all -Werror AddLauncherTest.java
  * @run main/othervm/timeout=360 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest.test
  */
@@ -63,12 +60,10 @@ import jdk.jpackage.test.CfgFile;
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile AddLauncherTest.java
+ * @compile -Xlint:all -Werror AddLauncherTest.java
  * @run main/othervm/timeout=540 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest
  */
@@ -94,17 +89,17 @@ public class AddLauncherTest {
 
         new AdditionalLauncher("Baz2")
                 .setDefaultArguments()
-                .addRawProperties(Map.entry("description", "Baz2 Description"))
+                .setProperty("description", "Baz2 Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("foo")
                 .setDefaultArguments("yep!")
-                .addRawProperties(Map.entry("description", "foo Description"))
+                .setProperty("description", "foo Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("Bar")
                 .setDefaultArguments("one", "two", "three")
-                .addRawProperties(Map.entry("description", "Bar Description"))
+                .setProperty("description", "Bar Description")
                 .setIcon(GOLDEN_ICON)
                 .applyTo(packageTest);
 
@@ -199,8 +194,8 @@ public class AddLauncherTest {
                 .toString();
 
         new AdditionalLauncher("ModularAppLauncher")
-        .addRawProperties(Map.entry("module", expectedMod))
-        .addRawProperties(Map.entry("main-jar", ""))
+        .setProperty("module", expectedMod)
+        .setProperty("main-jar", "")
         .applyTo(cmd);
 
         new AdditionalLauncher("NonModularAppLauncher")
@@ -209,8 +204,8 @@ public class AddLauncherTest {
         .setPersistenceHandler((path, properties) -> TKit.createTextFile(path,
                 properties.stream().map(entry -> String.join(" ", entry.getKey(),
                         entry.getValue()))))
-        .addRawProperties(Map.entry("main-class", nonModularAppDesc.className()))
-        .addRawProperties(Map.entry("main-jar", nonModularAppDesc.jarFileName()))
+        .setProperty("main-class", nonModularAppDesc.className())
+        .setProperty("main-jar", nonModularAppDesc.jarFileName())
         .applyTo(cmd);
 
         cmd.executeAndAssertHelloAppImageCreated();
@@ -233,11 +228,11 @@ public class AddLauncherTest {
         TKit.assertEquals(ExpectedCN, mainClass,
                 String.format("Check value of app.mainclass=[%s]" +
                 "in NonModularAppLauncher cfg file is as expected", ExpectedCN));
-        TKit.assertTrue(classpath.startsWith("$APPDIR" + File.separator
-                + nonModularAppDesc.jarFileName()),
+        TKit.assertTrue(classpath.startsWith(Path.of("$APPDIR",
+                nonModularAppDesc.jarFileName()).toString()),
                 "Check app.classpath value in ModularAppLauncher cfg file");
     }
 
-    private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
+    private static final Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
             "resources", "icon" + TKit.ICON_SUFFIX));
 }

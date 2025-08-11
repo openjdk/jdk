@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,9 +280,8 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            if (!options.noExternalSpecsPage()){
-                writerFactory.newExternalSpecsWriter().buildPage();
-            }
+            writerFactory.newExternalSpecsWriter().buildPage();
+            writerFactory.newSearchTagsWriter().buildPage();
             writerFactory.newSystemPropertiesWriter().buildPage();
 
             configuration.indexBuilder.addElements();
@@ -312,20 +311,28 @@ public class HtmlDoclet extends AbstractDoclet {
             copyFontResources();
         }
 
+        var syntaxHighlight = options.syntaxHighlight();
+        if (syntaxHighlight) {
+            copyResource(DocPaths.HIGHLIGHT_CSS, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS), true);
+            copyResource(DocPaths.HIGHLIGHT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.HIGHLIGHT_JS), true);
+        }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         if (options.stylesheetFile().isEmpty()) {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.LEFT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LEFT_SVG), true);
+        copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
             copyResource(DocPaths.SEARCH_PAGE_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_PAGE_JS), true);
-            copyResource(DocPaths.GLASS_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_IMG), false);
-            copyResource(DocPaths.X_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_IMG), false);
+            copyResource(DocPaths.GLASS_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_SVG), false);
+            copyResource(DocPaths.X_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_SVG), false);
             // No newline replacement for JQuery files
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_JS),
                     DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS), false);
@@ -334,7 +341,7 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_CSS),
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
-        copyLegalFiles(options.createIndex());
+        copyLegalFiles(options.createIndex(), options.syntaxHighlight());
         // Print a notice if the documentation contains diagnostic markers
         if (messages.containsDiagnosticMarkers()) {
             messages.notice("doclet.contains.diagnostic.markers");
@@ -350,7 +357,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+    private void copyLegalFiles(boolean includeJQuery, boolean includeHighlightJs) throws DocletException {
         Path legalNoticesDir;
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
@@ -394,6 +401,9 @@ public class HtmlDoclet extends AbstractDoclet {
                     if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
                         continue;
                     }
+                    if (entry.getFileName().toString().equals("highlightjs.md") && !includeHighlightJs) {
+                        continue;
+                    }
                     DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
                     DocFile df = DocFile.createFileForOutput(configuration, filePath);
                     df.copyFile(DocFile.createFileForInput(configuration, entry));
@@ -408,7 +418,7 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
         for (TypeElement te : typeElems) {
-            if (utils.hasHiddenTag(te) ||
+            if (utils.isHidden(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }

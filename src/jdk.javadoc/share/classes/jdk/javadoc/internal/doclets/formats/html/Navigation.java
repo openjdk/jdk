@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -87,8 +86,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -274,6 +274,7 @@ public class Navigation {
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
@@ -402,7 +403,7 @@ public class Navigation {
                             : Text.of(pkg.getQualifiedName()));
             // Breadcrumb navigation displays nested classes as separate links.
             // Enclosing classes may be undocumented, in which case we just display the class name.
-            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.hasHiddenTag(type))
+            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.isHidden(type))
                     ? links.createLink(pathToRoot.resolve(
                             docPaths.forClass(type)), type.getSimpleName().toString())
                     : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
@@ -496,7 +497,8 @@ public class Navigation {
         var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
-                .put(HtmlAttr.AUTOCOMPLETE, "off");
+                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                .put(HtmlAttr.SPELLCHECK, "false");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
         var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)

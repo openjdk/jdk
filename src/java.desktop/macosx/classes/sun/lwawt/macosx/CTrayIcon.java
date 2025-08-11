@@ -45,8 +45,6 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.peer.TrayIconPeer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.swing.Icon;
 import javax.swing.UIManager;
@@ -56,7 +54,7 @@ import sun.awt.SunToolkit;
 import static sun.awt.AWTAccessor.MenuComponentAccessor;
 import static sun.awt.AWTAccessor.getMenuComponentAccessor;
 
-public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
+public final class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     private final TrayIcon target;
     private PopupMenu popup;
 
@@ -71,10 +69,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
 
-    @SuppressWarnings("removal")
-    private static final boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
-        () -> Boolean.getBoolean("apple.awt.enableTemplateImages")
-    );
+    private static final boolean useTemplateImages = Boolean.getBoolean("apple.awt.enableTemplateImages");
 
     CTrayIcon(TrayIcon target) {
         super(0, true);
@@ -145,6 +140,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
      * kind of window in Lion, NSPopover, so perhaps it could be used it
      * to implement better looking notifications.
      */
+    @Override
     public void displayMessage(final String caption, final String text,
                                final String messageType) {
         // obtain icon to show along the message
@@ -362,7 +358,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
     }
 
-    class IconObserver implements ImageObserver {
+    final class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
             if (image != target.getImage()) //if the image has been changed

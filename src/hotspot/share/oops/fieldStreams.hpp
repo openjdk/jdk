@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_HPP
 #define SHARE_OOPS_FIELDSTREAMS_HPP
 
-#include "oops/instanceKlass.hpp"
 #include "oops/fieldInfo.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/fieldDescriptor.hpp"
 
 // The is the base class for iteration over the fields array
@@ -56,17 +56,23 @@ class FieldStreamBase : public StackObj {
 
   inline FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit);
 
-  inline FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* constants);
+  inline FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants);
 
-  private:
+ private:
    void initialize() {
-    int java_fields_count = _reader.next_uint();
-    int injected_fields_count = _reader.next_uint();
-    assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
+    int java_fields_count;
+    int injected_fields_count;
+    _reader.read_field_counts(&java_fields_count, &injected_fields_count);
+    if (_limit < _index) {
+      _limit = java_fields_count + injected_fields_count;
+    } else {
+      assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
+    }
     if (_limit != 0) {
       _reader.read_field_info(_fi_buf);
     }
    }
+
  public:
   inline FieldStreamBase(InstanceKlass* klass);
 
@@ -120,7 +126,7 @@ class FieldStreamBase : public StackObj {
 
   // Convenient methods
 
-  FieldInfo to_FieldInfo() {
+  const FieldInfo& to_FieldInfo() const {
     return _fi_buf;
   }
 
@@ -131,15 +137,18 @@ class FieldStreamBase : public StackObj {
   // bridge to a heavier API:
   fieldDescriptor& field_descriptor() const {
     fieldDescriptor& field = const_cast<fieldDescriptor&>(_fd_buf);
-    field.reinitialize(field_holder(), _index);
+    field.reinitialize(field_holder(), to_FieldInfo());
     return field;
   }
 };
 
 // Iterate over only the Java fields
 class JavaFieldStream : public FieldStreamBase {
+  Array<u1>* _search_table;
+
  public:
-  JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()) {}
+  JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()),
+    _search_table(k->fieldinfo_search_table()) {}
 
   u2 name_index() const {
     assert(!field()->field_flags().is_injected(), "regular only");
@@ -149,7 +158,6 @@ class JavaFieldStream : public FieldStreamBase {
   u2 signature_index() const {
     assert(!field()->field_flags().is_injected(), "regular only");
     return field()->signature_index();
-    return -1;
   }
 
   u2 generic_signature_index() const {
@@ -164,6 +172,10 @@ class JavaFieldStream : public FieldStreamBase {
     assert(!field()->field_flags().is_injected(), "regular only");
     return field()->initializer_index();
   }
+
+  // Performs either a linear search or binary search through the stream
+  // looking for a matching name/signature combo
+  bool lookup(const Symbol* name, const Symbol* signature);
 };
 
 
@@ -176,7 +188,6 @@ class InternalFieldStream : public FieldStreamBase {
 
 class AllFieldStream : public FieldStreamBase {
  public:
-  AllFieldStream(Array<u1>* fieldinfo, ConstantPool* constants): FieldStreamBase(fieldinfo, constants) {}
   AllFieldStream(const InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants()) {}
 };
 

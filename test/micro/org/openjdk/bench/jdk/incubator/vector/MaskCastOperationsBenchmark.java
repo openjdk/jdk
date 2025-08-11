@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 10, time = 1)
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class MaskCastOperationsBenchmark {
     VectorMask<Byte> bmask64;
     VectorMask<Byte> bmask128;
@@ -49,6 +51,15 @@ public class MaskCastOperationsBenchmark {
     VectorMask<Long> lmask128;
     VectorMask<Long> lmask256;
     VectorMask<Long> lmask512;
+
+    VectorMask<Float> fmask64;
+    VectorMask<Float> fmask128;
+    VectorMask<Float> fmask256;
+    VectorMask<Float> fmask512;
+
+    VectorMask<Double> dmask128;
+    VectorMask<Double> dmask256;
+    VectorMask<Double> dmask512;
 
     static final boolean [] mask_arr = {
        false, false, false, true, false, false, false, false,
@@ -80,6 +91,15 @@ public class MaskCastOperationsBenchmark {
         lmask128 = VectorMask.fromArray(LongVector.SPECIES_128, mask_arr, 0);
         lmask256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
         lmask512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
+
+        fmask64 = VectorMask.fromArray(FloatVector.SPECIES_64, mask_arr, 0);
+        fmask128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
+        fmask256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
+        fmask512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
+
+        dmask128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
+        dmask256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
+        dmask512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
     }
 
     @Benchmark
@@ -221,4 +241,112 @@ public class MaskCastOperationsBenchmark {
     public VectorMask<Integer> microMaskCastLong512ToInteger256() {
         return lmask512.cast(IntVector.SPECIES_256);
     }
+
+    // Benchmarks for optimization "VectorMaskCast (VectorMaskCast x) => x"
+
+    @Benchmark
+    public int microMaskCastCastByte64() {
+        return bmask64.cast(ShortVector.SPECIES_128).cast(ByteVector.SPECIES_64).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastByte128() {
+        return bmask128.cast(ShortVector.SPECIES_256).cast(ByteVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastByte256() {
+        return bmask256.cast(ShortVector.SPECIES_512).cast(ByteVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastShort64() {
+        return smask64.cast(IntVector.SPECIES_128).cast(ShortVector.SPECIES_64).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastShort128() {
+        return smask128.cast(ByteVector.SPECIES_64).cast(ShortVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastShort256() {
+        return smask256.cast(IntVector.SPECIES_512).cast(ShortVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastShort512() {
+        return smask512.cast(ByteVector.SPECIES_256).cast(ShortVector.SPECIES_512).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastInt64() {
+        return imask64.cast(FloatVector.SPECIES_64).cast(IntVector.SPECIES_64).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastInt128() {
+        return imask128.cast(ShortVector.SPECIES_64).cast(IntVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastInt256() {
+        return imask256.cast(LongVector.SPECIES_512).cast(IntVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastInt512() {
+        return imask512.cast(ShortVector.SPECIES_256).cast(IntVector.SPECIES_512).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastLong128() {
+        return lmask128.cast(IntVector.SPECIES_64).cast(LongVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastLong256() {
+        return lmask256.cast(DoubleVector.SPECIES_256).cast(LongVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastLong512() {
+        return lmask512.cast(IntVector.SPECIES_256).cast(LongVector.SPECIES_512).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastFloat64() {
+        return fmask64.cast(DoubleVector.SPECIES_128).cast(FloatVector.SPECIES_64).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastFloat128() {
+        return fmask128.cast(DoubleVector.SPECIES_256).cast(FloatVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastFloat256() {
+        return fmask256.cast(IntVector.SPECIES_256).cast(FloatVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastFloat512() {
+        return fmask512.cast(ShortVector.SPECIES_256).cast(FloatVector.SPECIES_512).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastDouble128() {
+        return dmask128.cast(FloatVector.SPECIES_64).cast(DoubleVector.SPECIES_128).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastDouble256() {
+        return dmask256.cast(FloatVector.SPECIES_128).cast(DoubleVector.SPECIES_256).trueCount();
+    }
+
+    @Benchmark
+    public int microMaskCastCastDouble512() {
+        return dmask512.cast(IntVector.SPECIES_256).cast(DoubleVector.SPECIES_512).trueCount();
+    }
+
 }

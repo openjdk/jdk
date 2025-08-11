@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 
 package sun.security.jgss;
 
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import org.ietf.jgss.Oid;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A Configuration implementation especially designed for JGSS.
@@ -49,8 +47,7 @@ public class LoginConfigImpl extends Configuration {
     public static final boolean HTTP_USE_GLOBAL_CREDS;
 
     static {
-        String prop = GetPropertyAction
-                .privilegedGetProperty("http.use.global.creds");
+        String prop = System.getProperty("http.use.global.creds");
         //HTTP_USE_GLOBAL_CREDS = "true".equalsIgnoreCase(prop); // default false
         HTTP_USE_GLOBAL_CREDS = !"false".equalsIgnoreCase(prop); // default true
     }
@@ -62,7 +59,6 @@ public class LoginConfigImpl extends Configuration {
      * @param caller defined in GSSUtil as CALLER_XXX final fields
      * @param mech defined in GSSUtil as XXX_MECH_OID final fields
      */
-    @SuppressWarnings("removal")
     public LoginConfigImpl(GSSCaller caller, Oid mech) {
 
         this.caller = caller;
@@ -72,8 +68,7 @@ public class LoginConfigImpl extends Configuration {
         } else {
             throw new IllegalArgumentException(mech.toString() + " not supported");
         }
-        config = java.security.AccessController.doPrivileged
-                ((PrivilegedAction<Configuration>) Configuration::getConfiguration);
+        config = Configuration.getConfiguration();
     }
 
     /**

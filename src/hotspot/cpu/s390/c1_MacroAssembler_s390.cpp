@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -70,17 +69,18 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, Roop);
-    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    branch_optimized(Assembler::bcondAllOne, slow_case);
-  }
-
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(tmp, Roop);
+      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      branch_optimized(Assembler::bcondAllOne, slow_case);
+    }
+
     NearLabel done;
 
     // Load object header.
@@ -177,17 +177,21 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
-  // This assumes that all prototype bits fit in an int32_t.
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  if (UseCompactObjectHeaders) {
+    z_lg(t1, Address(klass, in_bytes(Klass::prototype_header_offset())));
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  } else {
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    store_klass(klass, obj, t1);
+  }
 
   if (len->is_valid()) {
     // Length will be in the klass gap, if one exists.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
   }
-  store_klass(klass, obj, t1);
 }
 
 void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_bytes, Register Rzero) {
@@ -258,7 +262,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (StubId::c1_dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -319,7 +323,7 @@ void C1_MacroAssembler::allocate_array(
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (StubId::c1_dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);

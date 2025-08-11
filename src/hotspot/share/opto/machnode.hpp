@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(S390)
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorRegister(reg(ra_, node));
+  }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+ }
+#endif
 #if defined(AARCH64)
   PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
     return ::as_PRegister(reg(ra_, node));
@@ -148,6 +156,7 @@ public:
   virtual jdouble constantD() const;
   virtual jfloat  constantF() const;
   virtual jlong   constantL() const;
+  virtual jshort  constantH() const;
   virtual TypeOopPtr *oop() const;
   virtual int  ccode() const;
   // A zero, default, indicates this value is not needed.
@@ -377,6 +386,13 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+
+  // Whether this node is expanded during code emission into a sequence of
+  // instructions and the first instruction can perform an implicit null check.
+  virtual bool is_late_expanded_null_check_candidate() const {
+    return false;
+  }
+
   void set_removed() { add_flag(Flag_is_removed_by_peephole); }
   bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 
@@ -490,6 +506,7 @@ public:
   int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
   // Unchecked version to avoid assertions in debug output.
   int  constant_offset_unchecked() const;
+  virtual uint size_of() const { return sizeof(MachConstantNode); }
 };
 
 //------------------------------MachUEPNode-----------------------------------
@@ -524,17 +541,15 @@ public:
 //------------------------------MachEpilogNode--------------------------------
 // Machine function Epilog Node
 class MachEpilogNode : public MachIdealNode {
+private:
+  bool _do_polling;
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
-
-private:
-  bool _do_polling;
-
-public:
+  virtual uint size_of() const { return sizeof(MachEpilogNode); }
   bool do_polling() const { return _do_polling; }
 
 #ifndef PRODUCT
@@ -558,6 +573,7 @@ public:
 
   virtual int ideal_Opcode() const { return Op_Con; } // bogus; see output.cpp
   virtual const Pipeline *pipeline() const;
+  virtual uint size_of() const { return sizeof(MachNopNode); }
 #ifndef PRODUCT
   virtual const char *Name() const { return "Nop"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -785,6 +801,7 @@ public:
   MachJumpNode() : MachConstantNode() {
     init_class_id(Class_MachJump);
   }
+  virtual uint size_of() const { return sizeof(MachJumpNode); }
 };
 
 //------------------------------MachGotoNode-----------------------------------
@@ -883,6 +900,7 @@ public:
     assert(verify_jvms(jvms), "jvms must match");
     set_req(_jvmadj + jvms->monoff() + idx, c);
   }
+  virtual uint size_of() const { return sizeof(MachSafePointNode); }
 };
 
 //------------------------------MachCallNode----------------------------------
@@ -997,6 +1015,7 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+  virtual uint size_of() const { return sizeof(MachCallDynamicJavaNode); }
 };
 
 //------------------------------MachCallRuntimeNode----------------------------
@@ -1030,6 +1049,7 @@ public:
   bool _reachable;
   const char* _halt_reason;
   virtual JVMState* jvms() const;
+  virtual uint size_of() const { return sizeof(MachHaltNode); }
   bool is_reachable() const {
     return _reachable;
   }

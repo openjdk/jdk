@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "castnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
-#include "castnode.hpp"
 #include "utilities/checkedCast.hpp"
 
 //=============================================================================
@@ -97,8 +98,14 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
+Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    return TypeNode::Ideal(phase, can_reshape);
+  }
+  return nullptr;
 }
 
 uint ConstraintCastNode::hash() const {
@@ -213,19 +220,15 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
 
   // Similar to ConvI2LNode::Value() for the same reasons
   // see if we can remove type assertion after loop opts
-  // But here we have to pay extra attention:
-  // Do not narrow the type of range check dependent CastIINodes to
-  // avoid corruption of the graph if a CastII is replaced by TOP but
-  // the corresponding range check is not removed.
-  if (!_range_check_dependency) {
-    res = widen_type(phase, res, T_INT);
-  }
+  res = widen_type(phase, res, T_INT);
 
   return res;
 }
 
-static Node* find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInteger* type, ConstraintCastNode::DependencyType dependency, BasicType bt) {
-  Node* n = ConstraintCastNode::make_cast_for_basic_type(control, parent, type, dependency, bt);
+Node* ConstraintCastNode::find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type) const {
+  Node* n = clone();
+  n->set_req(1, parent);
+  n->as_ConstraintCast()->set_type(type);
   Node* existing = igvn->hash_find_insert(n);
   if (existing != nullptr) {
     n->destruct(igvn);
@@ -239,13 +242,14 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  if (can_reshape && !_range_check_dependency && !phase->C->post_loop_opts_phase()) {
+  if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
   }
-  if (!_range_check_dependency) {
+  if (!_range_check_dependency || phase->C->post_loop_opts_phase()) {
     return optimize_integer_cast(phase, T_INT);
   }
+  phase->C->record_for_post_loop_opts_igvn(this);
   return nullptr;
 }
 
@@ -253,13 +257,6 @@ Node* CastIINode::Identity(PhaseGVN* phase) {
   Node* progress = ConstraintCastNode::Identity(phase);
   if (progress != this) {
     return progress;
-  }
-  if (_range_check_dependency) {
-    if (phase->C->post_loop_opts_phase()) {
-      return this->in(1);
-    } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
-    }
   }
   return this;
 }
@@ -289,6 +286,34 @@ CastIINode* CastIINode::pin_array_access_node() const {
   return nullptr;
 }
 
+void CastIINode::remove_range_check_cast(Compile* C) {
+  if (has_range_check()) {
+    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
+    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
+    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminate a
+    // range check or a null divisor check.
+    assert(in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(this);
+    for (uint next = 0; next < wq.size(); ++next) {
+      Node* m = wq.at(next);
+      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+        Node* use = m->fast_out(i);
+        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
+          use->ensure_control_or_add_prec(in(0));
+        } else if (!use->is_CFG() && !use->is_Phi()) {
+          wq.push(use);
+        }
+      }
+    }
+    subsume_by(in(1), C);
+    if (outcnt() == 0) {
+      disconnect_inputs(C);
+    }
+  }
+}
+
 
 const Type* CastLLNode::Value(PhaseGVN* phase) const {
   const Type* res = ConstraintCastNode::Value(phase);
@@ -298,6 +323,67 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
   assert(res->isa_long(), "res must be long");
 
   return widen_type(phase, res, T_LONG);
+}
+
+bool CastLLNode::is_inner_loop_backedge(ProjNode* proj) {
+  if (proj != nullptr) {
+    Node* ctrl_use = proj->unique_ctrl_out_or_null();
+    if (ctrl_use != nullptr && ctrl_use->Opcode() == Op_Loop &&
+        ctrl_use->in(2) == proj &&
+        ctrl_use->as_Loop()->is_loop_nest_inner_loop()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool CastLLNode::cmp_used_at_inner_loop_exit_test(CmpNode* cmp) {
+  for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
+    Node* bol = cmp->fast_out(i);
+    if (bol->Opcode() == Op_Bool) {
+      for (DUIterator_Fast jmax, j = bol->fast_outs(jmax); j < jmax; j++) {
+        Node* iff = bol->fast_out(j);
+        if (iff->Opcode() == Op_If) {
+          ProjNode* true_proj = iff->as_If()->proj_out_or_null(true);
+          ProjNode* false_proj = iff->as_If()->proj_out_or_null(false);
+          if (is_inner_loop_backedge(true_proj) || is_inner_loop_backedge(false_proj)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Find if this is a cast node added by PhaseIdealLoop::create_loop_nest() to narrow the number of iterations of the
+// inner loop
+bool CastLLNode::used_at_inner_loop_exit_test() const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* convl2i = fast_out(i);
+    if (convl2i->Opcode() == Op_ConvL2I) {
+      for (DUIterator_Fast jmax, j = convl2i->fast_outs(jmax); j < jmax; j++) {
+        Node* cmp_or_sub = convl2i->fast_out(j);
+        if (cmp_or_sub->Opcode() == Op_CmpI) {
+          if (cmp_used_at_inner_loop_exit_test(cmp_or_sub->as_Cmp())) {
+            // (Loop .. .. (IfProj (If (Bool (CmpI (ConvL2I (CastLL )))))))
+            return true;
+          }
+        } else if (cmp_or_sub->Opcode() == Op_SubI && cmp_or_sub->in(1)->find_int_con(-1) == 0) {
+          for (DUIterator_Fast kmax, k = cmp_or_sub->fast_outs(kmax); k < kmax; k++) {
+            Node* cmp = cmp_or_sub->fast_out(k);
+            if (cmp->Opcode() == Op_CmpI) {
+              if (cmp_used_at_inner_loop_exit_test(cmp->as_Cmp())) {
+                // (Loop .. .. (IfProj (If (Bool (CmpI (SubI 0 (ConvL2I (CastLL ))))))))
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
 
 Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -329,7 +415,12 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return optimize_integer_cast(phase, T_LONG);
+  // If it's a cast created by PhaseIdealLoop::short_running_loop(), don't transform it until the counted loop is created
+  // in next loop opts pass
+  if (!can_reshape || !used_at_inner_loop_exit_test()) {
+    return optimize_integer_cast(phase, T_LONG);
+  }
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -458,6 +549,8 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
     return new CastIINode(c, in, type, dependency, false, types);
   } else if (type->isa_long()) {
     return new CastLLNode(c, in, type, dependency, types);
+  } else if (type->isa_half_float()) {
+    return new CastHHNode(c, in, type, dependency, types);
   } else if (type->isa_float()) {
     return new CastFFNode(c, in, type, dependency, types);
   } else if (type->isa_double()) {
@@ -473,7 +566,11 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
 
 Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  const TypeInteger* this_type = this->type()->is_integer(bt);
+  const TypeInteger* this_type = this->type()->isa_integer(bt);
+  if (this_type == nullptr) {
+    return nullptr;
+  }
+
   Node* z = in(1);
   const TypeInteger* rx = nullptr;
   const TypeInteger* ry = nullptr;
@@ -489,8 +586,8 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_integer_cast(igvn, x, in(0), rx, _dependency, bt);
-    Node* cy = find_or_make_integer_cast(igvn, y, in(0), ry, _dependency, bt);
+    Node* cx = find_or_make_integer_cast(igvn, x, rx);
+    Node* cy = find_or_make_integer_cast(igvn, y, ry);
     if (op == Op_Add(bt)) {
       return AddNode::make(cx, cy, bt);
     } else {
@@ -506,6 +603,18 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
   if (!phase->C->post_loop_opts_phase()) {
     return res;
   }
+
+  // At VerifyConstraintCasts == 1, we verify the ConstraintCastNodes that are present during code
+  // emission. This allows us detecting possible mis-scheduling due to these nodes being pinned at
+  // the wrong control nodes.
+  // At VerifyConstraintCasts == 2, we do not perform widening so that we can verify the
+  // correctness of more ConstraintCastNodes. This further helps us detect possible
+  // mis-transformations that may happen due to these nodes being pinned at the wrong control
+  // nodes.
+  if (VerifyConstraintCasts > 1) {
+    return res;
+  }
+
   const TypeInteger* this_type = res->is_integer(bt);
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
   if (in_type != nullptr &&

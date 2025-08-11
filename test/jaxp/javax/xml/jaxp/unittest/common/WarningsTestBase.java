@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  */
 
 package common;
-
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -62,20 +60,20 @@ public abstract class WarningsTestBase {
         PrintStream defStdErr = System.err;
         //Set new byte array stream as standard error stream
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream(5000);
-        runWithAllPerm(() -> System.setErr(new PrintStream(byteStream)));
+        System.setErr(new PrintStream(byteStream));
         //Execute multiple TestWorker tasks
         for (int id = 0; id < THREADS_COUNT; id++) {
             EXECUTOR.execute(new TestWorker(id));
         }
         //Initiate shutdown of previously submitted task
-        runWithAllPerm(EXECUTOR::shutdown);
+        EXECUTOR.shutdown();
         //Wait for termination of submitted tasks
         if (!EXECUTOR.awaitTermination(THREADS_COUNT, TimeUnit.SECONDS)) {
             //If not all tasks terminates during the time out force them to shutdown
-            runWithAllPerm(EXECUTOR::shutdownNow);
+            EXECUTOR.shutdown();
         }
         //Restore default standard error stream
-        runWithAllPerm(() -> System.setErr(defStdErr));
+        System.setErr(defStdErr);
         //Print tasks stderr output
         String errContent = byteStream.toString();
         System.out.println("Standard error output content:");
