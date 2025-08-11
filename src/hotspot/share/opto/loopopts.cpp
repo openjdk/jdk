@@ -229,15 +229,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
 
   if (TraceLoopOpts) {
-    tty->print("Split N%d through Phi N%d in ", n->_idx, phi->_idx);
-    if (region->is_CountedLoop()) {
-      tty->print("CountedLoop ");
-    } else if (region->is_Loop()) {
-      tty->print("Loop ");
-    } else {
-      tty->print("Region ");
-    }
-    tty->print_cr("N%d", region->_idx);
+    tty->print("Split N%d through Phi N%d in %s N%d", n->_idx, phi->_idx, region->Name(), region->_idx);
   }
 
   return phi;
