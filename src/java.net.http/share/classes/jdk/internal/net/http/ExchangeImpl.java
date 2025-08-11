@@ -266,11 +266,25 @@ abstract class ExchangeImpl<T> {
             debug.log("Will use the first connection that succeeds from HTTP/2 or HTTP/3");
         }
         assert connection == null : "should not come here if connection is not null: " + connection;
-        CompletableFuture<Http2Connection> c2 = null;
-        CompletableFuture<?> cf = c3f.isDone()
-                ? c3f
-                : CompletableFuture.anyOf((c2 = c2fs.get()), c3f);
-        CompletableFuture<Http2Connection> c2f = c2;
+
+        // Set up a completable future (cf) that will complete
+        // when the first HTTP/3 or HTTP/2 connection result is
+        // available. Error cases (when the result is exceptional)
+        // is handled in a dependent action of cf later below
+        final CompletableFuture<?> cf;
+        // c3f is used for HTTP/3, c2f for HTTP/2
+        final CompletableFuture<Http2Connection> c2f;
+        if (c3f.isDone()) {
+            // We already have a result for HTTP/3, consider that first;
+            // There's no need to start HTTP/2 yet if the result is successful.
+            c2f = null;
+            cf = c3f;
+        } else {
+            // No result for HTTP/3 yet, start HTTP/2 now and wait for the
+            // first that completes.
+            c2f = c2fs.get();
+            cf = CompletableFuture.anyOf(c2f, c3f);
+        }
 
         CompletableFuture<CompletableFuture<? extends ExchangeImpl<U>>> cfxi = cf.handle((r, t) -> {
             if (debug.on()) {
