@@ -253,7 +253,7 @@ public final class SystemModuleFinders {
      * returned attributes are in no specific order.
      */
     private static Stream<ModuleInfo.Attributes> allModuleAttributes() {
-        // System reader is a singleton and should not be closed by callers.
+        // This reader is a singleton, so do not attempt to close it here.
         ImageReader reader = SystemImage.reader();
         try {
             return reader.findNode("/modules")
