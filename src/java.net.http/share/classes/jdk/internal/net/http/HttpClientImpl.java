@@ -31,7 +31,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.StackWalker.Option;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.Authenticator;
