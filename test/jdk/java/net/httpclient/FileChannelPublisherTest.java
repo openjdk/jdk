@@ -96,13 +96,11 @@ class FileChannelPublisherTest {
 
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
-    private static final ServerRequestPair HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false);
-
-    private static final ServerRequestPair HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true);
-
-    private static final ServerRequestPair HTTP2 = ServerRequestPair.of(Version.HTTP_2, false);
-
-    private static final ServerRequestPair HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
+    private static final ServerRequestPair
+            HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false),
+            HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true),
+            HTTP2 = ServerRequestPair.of(Version.HTTP_2, false),
+            HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
     private static SSLContext createSslContext() {
         try {
