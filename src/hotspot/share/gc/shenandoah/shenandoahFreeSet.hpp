@@ -319,7 +319,7 @@ public:
     
     _used[int(which_partition)] -= bytes;
     _available[int(which_partition)] += bytes;
-#define KELVIN_USED_PARTITION
+#undef KELVIN_USED_PARTITION
 #ifdef KELVIN_USED_PARTITION
     extern const char* _shenandoah_partition_name(ShenandoahFreeSetPartitionId t);
     log_info(gc)("ShenRegionPartitions %s decrease_used(%zu) to %zu, available grows to %zu",
