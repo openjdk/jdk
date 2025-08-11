@@ -28,7 +28,7 @@
 #include "cds/heapShared.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 class InstanceKlass;
 class Symbol;

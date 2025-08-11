@@ -47,7 +47,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = nullptr;
 

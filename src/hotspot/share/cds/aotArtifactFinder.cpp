@@ -37,7 +37,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/trainingData.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 // All the classes that should be included in the AOT cache (in at least the "allocated" state)
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;

@@ -32,7 +32,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 class LogFileStreamOutput;
 

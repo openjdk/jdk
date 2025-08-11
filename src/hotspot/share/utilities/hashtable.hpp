@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_RESOURCEHASH_HPP
-#define SHARE_UTILITIES_RESOURCEHASH_HPP
+#ifndef SHARE_UTILITIES_HASHTABLE_HPP
+#define SHARE_UTILITIES_HASHTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -377,4 +377,4 @@ public:
                                               K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS>() {}
 };
 
-#endif // SHARE_UTILITIES_RESOURCEHASH_HPP
+#endif // SHARE_UTILITIES_HASHTABLE_HPP

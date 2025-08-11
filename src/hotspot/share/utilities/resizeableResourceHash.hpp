@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
 #define SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
 
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 template<
     typename K, typename V,

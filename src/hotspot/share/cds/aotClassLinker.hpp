@@ -32,7 +32,7 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 class AOTLinkedClassTable;
 class InstanceKlass;

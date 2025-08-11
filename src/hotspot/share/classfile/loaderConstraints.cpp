@@ -31,7 +31,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 // Overview
 //

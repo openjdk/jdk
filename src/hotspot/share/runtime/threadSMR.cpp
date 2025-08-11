@@ -41,7 +41,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 #include "utilities/vmError.hpp"
 
 // The '_cnt', '_max' and '_times" fields are enabled via

@@ -52,7 +52,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef ASSERT

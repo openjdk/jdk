@@ -37,7 +37,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashtable.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
