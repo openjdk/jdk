@@ -2256,8 +2256,8 @@ final class FdLibm {
 
                 // Compute ss = s_h + s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5)
 
-                final double DP_H1   = 0x1.2b80_34p-1;           // 5.84962487220764160156e-01
-                final double DP_L1   = 0x1.cfde_b43c_fd006p-27;  // 1.35003920212974897128e-08
+                final double DP_H    = 0x1.2b80_34p-1;           // 5.84962487220764160156e-01
+                final double DP_L    = 0x1.cfde_b43c_fd006p-27;  // 1.35003920212974897128e-08
 
                 // Poly coefs for (3/2)*(log(x)-2s-2/3*s**3
                 final double L1      =  0x1.3333_3333_33303p-1;  //  5.99999999999994648725e-01
@@ -2294,12 +2294,12 @@ final class FdLibm {
                 p_h = __LO(p_h, 0);
                 p_l = v - (p_h - u);
                 z_h = CP_H * p_h;             // CP_H + CP_L = 2/(3*log2)
-                z_l = CP_L * p_h + p_l * CP + DP_L1*k;
+                z_l = CP_L * p_h + p_l * CP + DP_L*k;
                 // log2(x_abs) = (ss + ..)*2/(3*log2) = n + DP_H + z_h + z_l
                 t = (double)n;
-                t1 = (((z_h + z_l) + DP_H1*k) + t);
+                t1 = (((z_h + z_l) + DP_H*k) + t);
                 t1 = __LO(t1, 0);
-                t2 = z_l - (((t1 - t) - DP_H1*k) - z_h);
+                t2 = z_l - (((t1 - t) - DP_H*k) - z_h);
             }
 
             // Split up y into (y1 + y2) and compute (y1 + y2) * (t1 + t2)
