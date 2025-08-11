@@ -43,8 +43,11 @@ public class TestMemorySegmentField {
 
     public static void main(String[] args) {
         TestFramework f = new TestFramework();
-        f.addScenarios(new Scenario(0, "-XX:+AlignVector"),
-                       new Scenario(1, "-XX:-AlignVector"));
+        f.addFlags("-XX:+IgnoreUnrecognizedVMOptions");
+        f.addScenarios(new Scenario(0, "-XX:-AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(1, "-XX:+AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(2, "-XX:-AlignVector", "-XX:+ShortRunningLongLoop"),
+                       new Scenario(3, "-XX:+AlignVector", "-XX:+ShortRunningLongLoop"));
         f.start();
     }
 
