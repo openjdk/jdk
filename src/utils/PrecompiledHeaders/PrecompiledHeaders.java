@@ -24,11 +24,13 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,7 +43,6 @@ public final class PrecompiledHeaders {
 
     private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+.hpp)\\s*\\\\?");
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
-    private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP_NAME = "precompiled.hpp";
     private static final String PRECOMPILED_HPP_PATH = "src/hotspot/share/precompiled/" + PRECOMPILED_HPP_NAME;
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
@@ -67,14 +68,15 @@ public final class PrecompiledHeaders {
             throw new IllegalArgumentException("jdk_root is not a directory: " + jdkRoot);
         }
 
-        Path objsPath = buildRoot.resolve(OBJS_PATH);
-        if (!Files.isDirectory(objsPath)) {
-            throw new IllegalArgumentException("Could not find 'objs' directory: " + objsPath);
+        Path hotspotBuild = buildRoot.resolve("hotspot");
+        if (!Files.isDirectory(hotspotBuild)) {
+            throw new IllegalArgumentException("Could not find 'hotspot' directory: " + hotspotBuild);
         }
+        Path objs = getVariantDirectory(hotspotBuild).resolve("objs");
 
         // Count inclusion times for each header
         Map<String, Integer> occurrences;
-        try (Stream<Path> files = Files.list(objsPath)) {
+        try (Stream<Path> files = Files.list(objs)) {
             occurrences = files
                     .filter(file -> file.getFileName().toString().endsWith(".d"))
                     .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
@@ -131,6 +133,20 @@ public final class PrecompiledHeaders {
         Files.write(precompiledHpp,
                 (System.lineSeparator() + headerLines + System.lineSeparator()).getBytes(),
                 StandardOpenOption.APPEND);
+    }
+
+    private static Path getVariantDirectory(Path hotspotBuild) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(hotspotBuild, "variant-*")) {
+            for (Path variant : stream) {
+                Path libjvmDirectory = variant.resolve("libjvm");
+                if (Files.isDirectory(libjvmDirectory)) {
+                    return libjvmDirectory;
+                }
+            }
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+        throw new IllegalArgumentException("'variant-*/libjvm' not found in " + hotspotBuild);
     }
 
 }
