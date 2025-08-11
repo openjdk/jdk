@@ -54,8 +54,8 @@ class JfrSetConfig : public AllStatic {
 
 template <typename CONFIG>
 class JfrSetStorage : public AnyObj {
- protected:
   typedef typename CONFIG::KEY_TYPE K;
+ protected:
   K* _table;
   unsigned _table_size;
 
@@ -106,6 +106,8 @@ class JfrSetStorage : public AnyObj {
 
 template <typename CONFIG>
 class JfrSet : public JfrSetStorage<CONFIG> {
+  typedef typename CONFIG::KEY_TYPE K;
+  static_assert(sizeof(K) > 1, "invalid size of CONFIG::KEY_TYPE");
  private:
   static const constexpr unsigned max_initial_size = static_cast<unsigned>(max_jint) / 2;
   unsigned _max_probe_sequence;
@@ -116,26 +118,26 @@ class JfrSet : public JfrSetStorage<CONFIG> {
 
   void resize() {
    begin:
-    typename CONFIG::KEY_TYPE* const old_table = this->table();
+    K* const old_table = this->table();
     assert(old_table != nullptr, "invariant");
     const unsigned old_table_size = this->table_size();
     guarantee(old_table_size < max_initial_size, "overflow");
     this->_table_size = old_table_size * 2;
     this->_table = this->alloc_table(this->_table_size);
     for (unsigned i = 0; i < old_table_size; ++i) {
-      const typename CONFIG::KEY_TYPE k = old_table[i];
+      const K k = old_table[i];
       if (k != 0) {
         uint32_t idx = slot_idx(CONFIG::hash(k));
         unsigned probe_sequence = 0;
         do {
-          typename CONFIG::KEY_TYPE v = this->_table[idx];
+          K v = this->_table[idx];
           if (v == 0) {
             this->_table[idx] = k;
             goto continue_for_loop;
           }
           idx = slot_idx(idx + 1);
         } while (++probe_sequence < _max_probe_sequence);
-        memcpy(this->_table, old_table, old_table_size * sizeof(typename CONFIG::KEY_TYPE));
+        memcpy(this->_table, old_table, old_table_size * sizeof(K));
         if (CONFIG::alloc_type() == AnyObj::C_HEAP) {
           FREE_C_HEAP_ARRAY(K, old_table);
         }
@@ -149,17 +151,17 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     }
   }
 
-  typename CONFIG::KEY_TYPE* find_slot(typename CONFIG::KEY_TYPE const& k) const {
+  K* find_slot(K const& k) const {
     uint32_t idx = slot_idx(CONFIG::hash(k));
     assert(idx < this->table_size(), "invariant");
     unsigned probe_sequence = 0;
     do {
-      typename CONFIG::KEY_TYPE v = this->_table[idx];
+      K v = this->_table[idx];
       if (v == 0) {
         return &this->_table[idx];
       }
       if (CONFIG::cmp(v, k)) {
-        return reinterpret_cast<typename CONFIG::KEY_TYPE*>(p2i(&this->_table[idx]) | 1);
+        return reinterpret_cast<K*>(p2i(&this->_table[idx]) | 1);
       }
       idx = slot_idx(idx + 1);
     } while (++probe_sequence < _max_probe_sequence);
@@ -174,13 +176,13 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     assert(size < max_initial_size, "avoid overflow in resize");
   }
 
-  bool contains(typename CONFIG::KEY_TYPE const& k) const {
-    typename CONFIG::KEY_TYPE* const slot = find_slot(k);
+  bool contains(K const& k) const {
+    K* const slot = find_slot(k);
     return slot != nullptr && (p2i(slot) & 1);
   }
 
-  bool add(typename CONFIG::KEY_TYPE const& k) {
-    typename CONFIG::KEY_TYPE* const slot = find_slot(k);
+  bool add(K const& k) {
+    K* const slot = find_slot(k);
     if (slot != nullptr) {
       if (p2i(slot) & 1) {
         // Already exists.
