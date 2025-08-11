@@ -283,8 +283,7 @@ public class ServiceRegistry {
      * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
      * {@code onDeregistration} method will be called each time
-     * it is deregistered from a category or when the registry is
-     * finalized.
+     * it is deregistered from a category.
      *
      * @param provider the service provider object to be registered.
      *
@@ -313,8 +312,7 @@ public class ServiceRegistry {
      * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
      * {@code onDeregistration} method will be called each time
-     * it is deregistered from a category or when the registry is
-     * finalized.
+     * it is deregistered from a category.
      *
      * @param providers an Iterator containing service provider
      * objects to be registered.
@@ -668,26 +666,6 @@ public class ServiceRegistry {
     }
 
     /**
-     * Finalizes this object prior to garbage collection.  The
-     * {@code deregisterAll} method is called to deregister all
-     * currently registered service providers.  This method should not
-     * be called from application code.
-     *
-     * @throws Throwable if an error occurs during superclass
-     * finalization.
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    public void finalize() throws Throwable {
-        deregisterAll();
-        super.finalize();
-    }
-
-    /**
      * Checks whether the provided class is one of the allowed
      * ImageIO service provider classes. If it is, returns normally.
      * If it is not, throws IllegalArgumentException.
@@ -821,10 +799,6 @@ class SubRegistry {
         poset.clear();
     }
 
-    @SuppressWarnings("removal")
-    public synchronized void finalize() {
-        clear();
-    }
 }
 
 
