@@ -126,16 +126,8 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
     _gc_cause           = _cause;
 
     _full_gc_count_before = full_gc_count_before;
-    // In ParallelScavengeHeap::mem_allocate() collections can be
-    // executed within a loop and _all_soft_refs_clear can be set
-    // true after they have been cleared by a collection and another
-    // collection started so that _all_soft_refs_clear can be true
-    // when this collection is started.  Don't assert that
-    // _all_soft_refs_clear have to be false here even though
-    // mutators have run.  Soft refs will be cleared again in this
-    // collection.
   }
-  ~VM_GC_Operation();
+  ~VM_GC_Operation() {}
 
   virtual const char* cause() const;
 
