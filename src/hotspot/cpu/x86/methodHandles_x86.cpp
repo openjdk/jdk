@@ -137,7 +137,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
         __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
-        __ jccb(Assembler::equal, L_ok);
+        __ jcc(Assembler::equal, L_ok);
         break;
 
       case vmIntrinsicID::_linkToStatic:
