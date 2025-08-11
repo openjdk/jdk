@@ -190,10 +190,50 @@ public class AddLShortcutTest {
 
             predefinedAppImage[0] = cmd.outputBundle();
         }).addInitializer(cmd -> {
+            cfgs[0].applyToMainLauncher(cmd);
             cmd.removeArgumentWithValue("--input");
             cmd.setArgumentValue("--name", "AddLShortcutDir2Test");
             cmd.addArguments("--app-image", predefinedAppImage[0]);
-            cfgs[0].applyToMainLauncher(cmd);
+        }).run(RunnablePackageTest.Action.CREATE_AND_UNPACK);
+    }
+
+    @Test(ifNotOS = OperatingSystem.MACOS)
+    @Parameter(value = "DEFAULT")
+    @Parameter(value = "APP_DIR")
+    public void testLastArg(StartupDirectory startupDirectory) {
+        final List<String> shortcutArgs = new ArrayList<>();
+        if (TKit.isLinux()) {
+            shortcutArgs.add("--linux-shortcut");
+        } else if (TKit.isWindows()) {
+            shortcutArgs.add("--win-shortcut");
+        } else {
+            TKit.assertUnexpected("Unsupported platform");
+        }
+
+        if (startupDirectory == StartupDirectory.APP_DIR) {
+            shortcutArgs.add(startupDirectory.asStringValue());
+        }
+
+        Path[] predefinedAppImage = new Path[1];
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            var cmd = JPackageCommand.helloAppImage()
+                    .setArgumentValue("--name", "foo")
+                    .setFakeRuntime();
+
+            cmd.execute();
+
+            predefinedAppImage[0] = cmd.outputBundle();
+        }).addInitializer(cmd -> {
+            cmd.removeArgumentWithValue("--input");
+            cmd.setArgumentValue("--name", "AddLShortcutDir3Test");
+            cmd.addArguments("--app-image", predefinedAppImage[0]);
+            cmd.ignoreDefaultVerbose(true);
+        }).addInitializer(cmd -> {
+            cmd.addArguments(shortcutArgs);
+        }).addBundleVerifier(cmd -> {
+            TKit.assertEquals(shortcutArgs.getLast(), cmd.getAllArguments().getLast(),
+                    "Check the last argument of jpackage command line");
         }).run(RunnablePackageTest.Action.CREATE_AND_UNPACK);
     }
 
@@ -207,6 +247,7 @@ public class AddLShortcutTest {
 
     @Test(ifNotOS = OperatingSystem.MACOS)
     @Parameter(value = "DEFAULT")
+    @Parameter(value = "APP_DIR")
     public void testInvokeShortcuts(StartupDirectory startupDirectory) {
 
         var testApp = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");

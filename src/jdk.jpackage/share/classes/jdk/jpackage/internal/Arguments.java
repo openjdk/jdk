@@ -486,12 +486,17 @@ public class Arguments {
         private static Runnable createArgumentWithOptionalValueAction(String option) {
             Objects.requireNonNull(option);
             return () -> {
-                var value = popArg();
-                if (value.startsWith("-")) {
-                    prevArg();
-                    setOptionValue(option, true);
+                nextArg();
+                if (hasNextArg()) {
+                    var value = getArg();
+                    if (value.startsWith("-")) {
+                        prevArg();
+                        setOptionValue(option, true);
+                    } else {
+                        setOptionValue(option, value);
+                    }
                 } else {
-                    setOptionValue(option, value);
+                    setOptionValue(option, true);
                 }
             };
         }
