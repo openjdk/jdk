@@ -385,7 +385,7 @@ public:
 
 double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   int comp_count = compiler_count(level);
-  if (comp_count > 0) {
+  if (comp_count > 0 && feedback_k > 0) {
     double queue_size = CompileBroker::queue_size(level);
     double k = (double)queue_size / ((double)feedback_k * (double)comp_count) + 1;
 
@@ -571,11 +571,18 @@ void CompilationPolicy::initialize() {
 #ifdef COMPILER2
       c2_size = C2Compiler::initial_code_buffer_size();
 #endif
-      size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
-      int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
-      if (count > max_count) {
+      size_t buffer_size = 0;
+      if (c1_only) {
+        buffer_size = c1_size;
+      } else if (c2_only) {
+        buffer_size = c2_size;
+      } else {
+        buffer_size = c1_size / 3 + 2 * c2_size / 3;
+      }
+      size_t max_count = (NonNMethodCodeHeapSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / buffer_size;
+      if ((size_t)count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
-        count = MAX2(max_count, min_count);
+        count = MAX2((int)max_count, min_count);
       }
       FLAG_SET_ERGO(CICompilerCount, count);
     }
@@ -591,7 +598,7 @@ void CompilationPolicy::initialize() {
       count = 3;
       FLAG_SET_ERGO(CICompilerCount, count);
     }
-#endif
+#endif // _LP64
 
     if (c1_only) {
       // No C2 compiler threads are needed
@@ -924,7 +931,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
         if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_for_compiling_with_C1);
+          osr_nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1);
         }
         compile(mh, bci, CompLevel_simple, THREAD);
       }
@@ -1516,7 +1523,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
               int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
               print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
             }
-            nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_back_branch);
+            nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_BACK_BRANCH);
           }
         }
         // Fix up next_level if necessary to avoid deopts

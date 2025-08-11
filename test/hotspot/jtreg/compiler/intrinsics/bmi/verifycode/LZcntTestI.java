@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
 
         instrMask_x64 = new byte[]{(byte) 0xFF, (byte) 0x00, (byte) 0xFF, (byte) 0xFF};
         instrPattern_x64 = new byte[]{(byte) 0xF3, (byte) 0x00, (byte) 0x0F, (byte) 0xBD};
+
+        // REX2 variant
+        instrMaskAPX = new byte[]{(byte) 0xFF, (byte) 0xFF, (byte)0x80, (byte) 0xFF};
+        instrPatternAPX = new byte[]{(byte) 0xF3, (byte) 0xD5, (byte) 0x80, (byte) 0xBD};
     }
 
     public static void main(String[] args) throws Exception {

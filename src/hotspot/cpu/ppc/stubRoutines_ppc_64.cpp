@@ -74,6 +74,22 @@ static julong compute_inverse_poly(julong long_poly) {
   return div;
 }
 
+static address _crc_table_addr    = nullptr;
+static address _crc32c_table_addr = nullptr;
+
+address StubRoutines::crc_table_addr() {
+  if (_crc_table_addr == nullptr) {
+    _crc_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
+  }
+  return _crc_table_addr;
+}
+address StubRoutines::crc32c_table_addr() {
+  if (_crc32c_table_addr == nullptr) {
+    _crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
+  }
+  return _crc32c_table_addr;
+}
+
 // Constants to fold n words as needed by macroAssembler.
 address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
