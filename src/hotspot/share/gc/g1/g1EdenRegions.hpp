@@ -42,7 +42,7 @@ public:
   G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
   uint add(G1HeapRegion* hr) {
-    assert(!hr->is_eden(), "should not already be set");
+    assert(hr->is_eden(), "must be");
     _length++;
     return _regions_on_node.add(hr);
   }

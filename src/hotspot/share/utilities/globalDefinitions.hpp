@@ -25,13 +25,11 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
@@ -345,7 +343,7 @@ inline T byte_size_in_proper_unit(T s) {
 }
 
 #define PROPERFMT             "%zu%s"
-#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit<size_t>(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
@@ -1062,6 +1060,15 @@ const intptr_t OneBit     =  1; // only right_most bit set in a word
 // (note: #define used only so that they can be used in enum constant definitions)
 #define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
 #define right_n_bits(n)   (nth_bit(n) - 1)
+
+// same as nth_bit(n), but allows handing in a type as template parameter. Allows
+// us to use nth_bit with 64-bit types on 32-bit platforms
+template<class T> inline T nth_bit_typed(int n) {
+  return ((T)1) << n;
+}
+template<class T> inline T right_n_bits_typed(int n) {
+  return nth_bit_typed<T>(n) - 1;
+}
 
 // bit-operations using a mask m
 inline void   set_bits    (intptr_t& x, intptr_t m) { x |= m; }

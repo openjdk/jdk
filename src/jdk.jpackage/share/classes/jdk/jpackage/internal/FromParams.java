@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.Arguments.CLIOptions.LINUX_SHORTCUT_HINT;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_MENU_HINT;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_MODULES;
@@ -63,6 +66,8 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -165,6 +170,32 @@ final class FromParams {
                 jdk.jpackage.internal.model.Package.class.getName()));
     }
 
+    static Optional<LauncherShortcut> findLauncherShortcut(
+            BundlerParamInfo<Boolean> shortcutParam,
+            Map<String, ? super Object> mainParams,
+            Map<String, ? super Object> launcherParams) {
+
+        Optional<Boolean> launcherValue;
+        if (launcherParams == mainParams) {
+            // The main launcher
+            launcherValue = Optional.empty();
+        } else {
+            launcherValue = shortcutParam.findIn(launcherParams);
+        }
+
+        return launcherValue.map(withShortcut -> {
+            if (withShortcut) {
+                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
+            } else {
+                return Optional.<LauncherShortcutStartupDirectory>empty();
+            }
+        }).or(() -> {
+            return shortcutParam.findIn(mainParams).map(_ -> {
+                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
+            });
+        }).map(LauncherShortcut::new);
+    }
+
     private static ApplicationLaunchers createLaunchers(
             Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper) {
@@ -195,8 +226,9 @@ final class FromParams {
 //                    mainParams), APP_NAME.fetchFrom(launcherParams)));
             launcherParams.put(DESCRIPTION.getID(), DESCRIPTION.fetchFrom(mainParams));
         }
-        return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(), ADD_LAUNCHERS
-                .getID(), FILE_ASSOCIATIONS.getID());
+        return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(),
+                ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID(), WIN_MENU_HINT.getId(),
+                WIN_SHORTCUT_HINT.getId(), LINUX_SHORTCUT_HINT.getId());
     }
 
     static final BundlerParamInfo<Application> APPLICATION = createApplicationBundlerParam(null);

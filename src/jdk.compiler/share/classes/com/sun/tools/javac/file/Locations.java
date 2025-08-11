@@ -82,10 +82,8 @@ import jdk.internal.jmod.JmodFile;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -133,7 +131,7 @@ public class Locations {
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
     List<Closeable> closeables = new ArrayList<>();
-    private Map<String,String> fsEnv = Collections.emptyMap();
+    private String releaseVersion = null;
 
     Locations() {
         initHandlers();
@@ -224,7 +222,8 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
+        // Null is implicitly allowed and unsets the value.
+        this.releaseVersion = multiReleaseValue;
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -471,7 +470,7 @@ public class Locations {
         }
 
         /**
-         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject, String)
+         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject)
          */
         Location getLocationForModule(Path file) throws IOException  {
             return null;
@@ -1378,7 +1377,7 @@ public class Locations {
                         log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
-                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsEnv)) {
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(releaseVersion))) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1454,7 +1453,7 @@ public class Locations {
                                 log.error(Errors.LocnCantReadFile(p));
                                 return null;
                             }
-                            fs = jarFSProvider.newFileSystem(p, Collections.emptyMap());
+                            fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(null));
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
