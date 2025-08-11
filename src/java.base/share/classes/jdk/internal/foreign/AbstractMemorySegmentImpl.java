@@ -263,7 +263,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             final long thatEnd = thatStart + that.byteSize();
 
             // The below computation is a branchless equivalent to
-            // `return (thisStart < thatEnd && thisEnd > thatStart)?1:0;`. Here is how:
+            // `return (thisStart < thatEnd && thisEnd > thatStart)?-something:+somethingElse;`. Here is how:
             // All the variables thisStart, thisEnd, thatStart, and thatEnd are non-negative
             // First, consider (thisStart < thatEnd).
             // We can subtract thatEnd on both sides:
