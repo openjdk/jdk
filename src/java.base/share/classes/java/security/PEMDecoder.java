@@ -440,9 +440,9 @@ public final class PEMDecoder {
                     throw new IllegalArgumentException("Invalid KeySpec.");
                 }
             } catch (InvalidKeySpecException e) {
-                throw new IllegalArgumentException("Invalid KeySpec " +
-                    "specified (" + tClass.getName() +") for key (" +
-                    key.getClass().getName() +")", e);
+                throw new ClassCastException("Invalid KeySpec " +
+                    "specified: " + tClass.getName() +" for key " +
+                    key.getClass().getName());
             }
         }
 

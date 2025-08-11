@@ -78,7 +78,7 @@ public class PEMDecoderTest {
         System.out.println("Decoder test rsapub PEM asking X509EKS.class returned:");
         testClass(PEMData.rsapub, X509EncodedKeySpec.class, true);
         System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
-        testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false);
+        testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false, ClassCastException.class);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
         testClass(PEMData.rsaCert, X509EncodedKeySpec.class, false);
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
@@ -481,6 +481,19 @@ public class PEMDecoderTest {
             if (pass) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    static void testClass(PEMData.Entry entry, Class clazz, boolean pass,
+        Class ec) throws RuntimeException {
+        try {
+            testClass(entry, clazz);
+        } catch (Exception e) {
+            if (e.getClass().isAssignableFrom(ec)) {
+                System.out.println("PASS");
+                return;
+            }
+            throw new RuntimeException(e);
         }
     }
 
