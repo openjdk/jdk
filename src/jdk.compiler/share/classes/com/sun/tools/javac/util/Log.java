@@ -166,8 +166,6 @@ public class Log extends AbstractLog {
 
             // Apply the lint configuration (if any) and discard the warning if it gets filtered out
             if (lint != null) {
-
-                // Gather information
                 LintCategory category = diag.getLintCategory();
                 boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
                   lint.isEnabled(category, false) :                     // then emit if the category is enabled

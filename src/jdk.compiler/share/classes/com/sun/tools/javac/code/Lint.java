@@ -122,7 +122,7 @@ public class Lint {
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
 
-    // The symbol corresponding to some declaration, or null for the root instance
+    // The symbol of the declaration this instance was created for, or null for the root instance
     private final Symbol symbol;
 
     // LintCategory lookup by option string
