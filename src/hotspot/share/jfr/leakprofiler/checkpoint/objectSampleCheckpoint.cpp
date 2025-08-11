@@ -456,8 +456,8 @@ static void write_sample_blobs(const ObjectSampler* sampler, bool emit_all, Thre
   delete_unloaded_thread_id_set();
 }
 
-static inline unsigned int stacktrace_id_set_size() {
-  unsigned int queue_size = static_cast<unsigned int>(JfrOptionSet::old_object_queue_size());
+static inline unsigned stacktrace_id_set_size() {
+  unsigned queue_size = static_cast<unsigned>(JfrOptionSet::old_object_queue_size());
   if (!is_power_of_2(queue_size)) {
     queue_size = next_power_of_2(queue_size);
   }
