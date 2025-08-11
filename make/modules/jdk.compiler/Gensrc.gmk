@@ -76,8 +76,6 @@ $(eval $(call SetupExecute, PARSEPROPERTIES, \
 TARGETS += $(PARSEPROPERTIES)
 
 ################################################################################
-
-################################################################################
 #
 # Generate FlagsEnum from Flags constants:
 #
