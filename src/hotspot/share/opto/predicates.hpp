@@ -366,17 +366,24 @@ class RuntimePredicate : public Predicate {
   static bool is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason);
 };
 
-class CommonAssertionPredicate : public Predicate {
+// Class to represent a Template Assertion Predicate.
+class TemplateAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
 
-public:
-  explicit CommonAssertionPredicate(IfTrueNode* success_proj)
-    : _success_proj(success_proj),
-      _if_node(success_proj->in(0)->as_If()) {}
+ public:
+  explicit TemplateAssertionPredicate(IfTrueNode* success_proj)
+      : _success_proj(success_proj),
+        _if_node(success_proj->in(0)->as_If()) {
+    assert(is_predicate(success_proj), "must be valid");
+  }
 
   Node* entry() const override {
     return _if_node->in(0);
+  }
+
+  OpaqueTemplateAssertionPredicateNode* opaque_node() const {
+    return _if_node->in(1)->as_OpaqueTemplateAssertionPredicate();
   }
 
   IfNode* head() const override {
@@ -388,23 +395,7 @@ public:
   }
 
   bool is_last_value() const {
-    return head()->assertion_predicate_type() == AssertionPredicateType::LastValue;
-  }
-
-  void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
-                                     PhaseIdealLoop* phase) const;
-};
-
-class TemplateAssertionPredicate : public CommonAssertionPredicate {
-
- public:
-  explicit TemplateAssertionPredicate(IfTrueNode* success_proj)
-    : CommonAssertionPredicate(success_proj) {
-    assert(is_predicate(success_proj), "must be valid");
-  }
-
-  OpaqueTemplateAssertionPredicateNode* opaque_node() const {
-    return head()->in(1)->as_OpaqueTemplateAssertionPredicate();
+    return _if_node->assertion_predicate_type() == AssertionPredicateType::LastValue;
   }
 
   bool is_useless() const {
@@ -440,18 +431,37 @@ class TemplateAssertionPredicate : public CommonAssertionPredicate {
 
 // Class to represent an Initialized Assertion Predicate which always has a halt node on the failing path.
 // This predicate should never fail at runtime by design.
-class InitializedAssertionPredicate : public CommonAssertionPredicate {
+class InitializedAssertionPredicate : public Predicate {
+  IfTrueNode* const _success_proj;
+  IfNode* const _if_node;
 
   DEBUG_ONLY(static bool has_halt(const IfTrueNode* success_proj);)
 
  public:
   explicit InitializedAssertionPredicate(IfTrueNode* success_proj)
-    : CommonAssertionPredicate(success_proj) {
+      : _success_proj(success_proj),
+        _if_node(success_proj->in(0)->as_If()) {
     assert(is_predicate(success_proj), "must be valid");
   }
 
+  Node* entry() const override {
+    return _if_node->in(0);
+  }
+
   OpaqueInitializedAssertionPredicateNode* opaque_node() const {
-    return head()->in(1)->as_OpaqueInitializedAssertionPredicate();
+    return _if_node->in(1)->as_OpaqueInitializedAssertionPredicate();
+  }
+
+  IfNode* head() const override {
+    return _if_node;
+  }
+
+  IfTrueNode* tail() const override {
+    return _success_proj;
+  }
+
+  bool is_last_value() const {
+    return _if_node->assertion_predicate_type() == AssertionPredicateType::LastValue;
   }
 
   bool is_useless() const {
@@ -1126,7 +1136,6 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   using PredicateVisitor::visit;
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
-  void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
 };
 
 // This class establishes a predicate chain at the target loop by rewiring newly cloned predicates to the current head

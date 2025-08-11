@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1026,7 +1027,7 @@ private:
                                                      DEBUG_ONLY(uint last_node_index_from_backedge_goo COMMA)
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body, bool insert_vectorized_drain);
+                                                     uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
                                            const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
@@ -1372,9 +1373,8 @@ public:
                                  // either to inner clone or outer
                                  // strip mined loop.
     InsertVectorizedDrain = 3    // Only clone inner strip mined vector loop,
-                                 // result control flow branches to old post loop
-                                 // with merged exits from the main loop and
-                                 // the pre loop
+                                 // result control flow branches to inner clone or
+                                 // scalar post loop
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1386,9 +1386,12 @@ public:
   void handle_data_uses_for_vectorized_drain(Node* main_old, Node_List& old_new,
                                              IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                              Node_List& worklist, uint new_counter);
+  void clone_outer_nodes_helper(Node* root, uint new_counter, Node_List& old_new,
+                                LoopNode* head, Node_List& extra_data_nodes, CloneLoopMode mode);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                         Node_List& extra_data_nodes);
+  Node* find_merge_phi_for_vectorized_drain(Node* n, Node* merge_region);
 
   // If we got the effect of peeling, either by actually peeling or by
   // making a pre-loop which must execute at least once, we can remove
@@ -1406,22 +1409,27 @@ public:
   // Add post loop after the given loop.
   Node* insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* main_incr, Node* limit, CountedLoopNode*& post_head,
+                         CloneLoopMode mode);
 
   // Add a vectorized drain loop between the main loop and the current post loop.
   void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
-  // If Node n lives in the back_ctrl block, we clone a private version of n
-  // in preheader_ctrl block and return that, otherwise return n.
+// If 'back_ctrl' is not null:
+//   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
+//   - Otherwise, return 'n' unchanged.
+//
+// If 'back_ctrl' is null: (Specially for pre-loop exit in get_vectorized_drain_input())
+//   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
+//   - Otherwise, return 'n'.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
   // If Node 'main_incr' lives in the 'main_backedge_ctrl' block, we clone
   // a private version of 'main_incr' in 'drain_entry' block and return that,
   // otherwise return a phi node 'main_merge_phi' merging exit values from
   // the main loop and the pre loop.
   // When 'main_incr' is dead, return nullptr.
-  Node* clone_up_vectorized_drain_backedge_goo(Node* main_backedge_ctrl, Node* drain_entry,
-                                               Node* main_incr, VectorSet& visited,
-                                               Node_Stack& clones, Node* main_merge_region,
-                                               Node* main_phi);
+  Node* get_vectorized_drain_input(Node* main_backedge_ctrl, VectorSet& visited,
+                                   Node_Stack& clones, Node* main_merge_region,
+                                   Node* main_phi);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1856,7 +1864,6 @@ public:
                                      IdealLoopTree* use_loop, Node* side_by_side_idom);
   void fix_ctrl_uses_for_vectorized_drain(Node* main_use, Node* drain_use, Node_List& old_new,
                                           IdealLoopTree* use_loop);
-
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                      uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,
                      Node_List*& split_bool_set, Node_List*& split_cex_set);
