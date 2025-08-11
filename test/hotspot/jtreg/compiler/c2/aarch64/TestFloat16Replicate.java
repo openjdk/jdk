@@ -24,7 +24,7 @@
 * @test
 * @bug 8361582
 * @summary Ensure the correct backend replicate node is being generated for
-*          half precision float constants on >=32B SVE machines
+*          half precision float constants on >16B SVE machines
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @run main/othervm compiler.c2.aarch64.TestFloat16Replicate
@@ -32,15 +32,11 @@
 
 package compiler.c2.aarch64;
 
-import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
-import java.lang.Math;
 import java.util.Arrays;
-import java.util.stream.IntStream;
 import jdk.incubator.vector.Float16;
 import jdk.test.lib.*;
 
-import static compiler.lib.generators.Generators.G;
 import static java.lang.Float.*;
 import static jdk.incubator.vector.Float16.*;
 
@@ -48,11 +44,11 @@ public class TestFloat16Replicate {
     private static short[] input;
     private static short[] output;
 
-   // Choose FP16_CONST1 which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
-    private static final Float16 FP16_CONST1 = Float16.shortBitsToFloat16((short)512);
+   // Choose FP16_IN_RANGE which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
+    private static final Float16 FP16_IN_RANGE = Float16.shortBitsToFloat16((short)512);
 
-    // Choose a value out of the range of [-128 << 8, 127 << 8] or a non multiple of 256 for FP16_CONST2
-    private static final Float16 FP16_CONST2 = Float16.shortBitsToFloat16((short)1035);
+    // Choose a value out of the range of [-128 << 8, 127 << 8] or a non multiple of 256 for FP16_OUT_OF_RANGE
+    private static final Float16 FP16_OUT_OF_RANGE = Float16.shortBitsToFloat16((short)1035);
 
     private static final int LEN = 1024;
 
@@ -64,61 +60,64 @@ public class TestFloat16Replicate {
         input  = new short[LEN];
         output = new short[LEN];
 
-        Generator<Short> gen = G.float16s();
-        IntStream.range(0, LEN).forEach(i -> {input[i] = gen.next();});
+        for (int i = 0; i < LEN; i++) {
+            input[i] = (short) i;
+        }
     }
 
-    // For a loop which is vectorizable and has an FP16 constant as one of the inputs, the (dst (Replicate con)) IR
-    // will be generated. On SVE machines with vector length > 16B, the backend machnode - "replicateHF_imm_gt128b"
-    // should be generated if the immediate is a signed value within the range [-128, 127] or a signed multiple of
-    // 256 in the range [-32768, 32512] for element widths of 16 bits or higher
+    // For vectorizable loops containing FP16 operations with an FP16 constant as one of the inputs, the IR
+    // node `(dst (Replicate con))` is generated to broadcast the constant into all lanes of an SVE register.
+    // On SVE-capable hardware with vector length > 16B, if the FP16 immediate is a signed value within the
+    // range [-128, 127] or a signed multiple of 256 in the range [-32768, 32512] for element widths of
+    // 16 bits or higher then the backend should generate the "replicateHF_imm_gt128b" machnode.
     @Test
     @Warmup(5000)
     @IR(counts = {IRNode.REPLICATE_HF_IMM8, ">0"},
         phase = CompilePhase.FINAL_CODE,
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIf = {"MaxVectorSize", ">16"},
         applyIfCPUFeature = {"sve", "true"})
-    public void Float16AddConstInput1() {
+    public void TestFloat16AddInRange() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(Float16.add(shortBitsToFloat16(input[i]), FP16_CONST1));
+            output[i] = float16ToRawShortBits(Float16.add(shortBitsToFloat16(input[i]), FP16_IN_RANGE));
         }
     }
 
-    @Check(test="Float16AddConstInput1")
-    public void checkResultFloat16AddConstInput1() {
+    @Check(test="TestFloat16AddInRange")
+    public void checkResultFloat16AddInRange() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_CONST1.floatValue());
+            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_IN_RANGE.floatValue());
             if (expected != output[i]) {
-                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_CONST1 + " actual = " + output[i] +  " expected = " + expected);
+                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_IN_RANGE + " actual = " + output[i] +  " expected = " + expected);
             }
         }
     }
 
-    // For a loop which is vectorizable and has an FP16 constant as one of the inputs, the (dst (Replicate con)) IR
-    // will be generated. On SVE machines with vector length > 16B, the backend machnode - "replicateHF" should be
-    // generated in cases where the immediate falls out of the permissible range of values that are acceptable by the
-    // SVE "dup" instruction. This results in loading the FP16 constant from the constant pool which is then broadcasted
-    // to an SVE register for further operations. The backend machnode - "replicateHF_imm8_gt128b" should not be
-    // generated.
+    // For vectorizable loops containing FP16 operations with an FP16 constant as one of the inputs, the IR
+    // node `(dst (Replicate con))` is generated to broadcast the constant into all lanes of an SVE register.
+    // On SVE-capable hardware with vector length > 16B, if the FP16 constant falls outside the immediate
+    // range accepted by the SVE "dup" instruction, the backend must:
+    //   1. Generate the "loadConH" machnode to load the FP16 constant from the constant pool.
+    //   2. Emit the "replicateHF" machnode to broadcast this loaded constant into an SVE register.
+    // In this case, the backend should not generate the "replicateHF_imm8_gt128b" machnode.
     @Test
     @Warmup(5000)
     @IR(counts = {IRNode.REPLICATE_HF, ">0"},
         failOn = {IRNode.REPLICATE_HF_IMM8},
         phase = CompilePhase.FINAL_CODE,
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIf = {"MaxVectorSize", ">16"},
         applyIfCPUFeature = {"sve", "true"})
-    public void Float16AddConstInput2() {
+    public void TestFloat16AddOutOfRange() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input[i]), FP16_CONST2));
+            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input[i]), FP16_OUT_OF_RANGE));
         }
     }
 
-    @Check(test="Float16AddConstInput2")
-    public void checkResultFloat16AddConstInput2() {
+    @Check(test="TestFloat16AddOutOfRange")
+    public void checkResultFloat16AddOutOfRange() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_CONST2.floatValue());
+            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_OUT_OF_RANGE.floatValue());
             if (expected != output[i]) {
-                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_CONST2 + " actual = " + output[i] +  " expected = " + expected);
+                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_OUT_OF_RANGE + " actual = " + output[i] +  " expected = " + expected);
             }
         }
     }

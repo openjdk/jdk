@@ -436,7 +436,7 @@ int Assembler::operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement
 
 bool Assembler::operand_valid_for_sve_dup_immediate(int64_t imm) {
   return ((imm >= -128 && imm <= 127) ||
-          (((imm & 0xff) == 0) && imm >= -32768 && imm <= 32767));
+          (((imm & 0xff) == 0) && imm >= -32768 && imm <= 32512));
 }
 
 bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {
