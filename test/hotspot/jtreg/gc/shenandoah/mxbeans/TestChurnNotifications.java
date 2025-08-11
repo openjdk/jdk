@@ -144,9 +144,6 @@ public class TestChurnNotifications {
 
                     if ((before != null) && (after != null)) {
                         long diff = before.getUsed() - after.getUsed();
-                        System.out.println("Got GC notification " + info.getGcAction() + " for cause: " + info.getGcCause() + " from GC: " + info.getGcName() +
-                                           ", before: " + before.getUsed() + ", after: " + after.getUsed() +
-                                           ", diff: " + diff);
                         if (diff > 0) {
                             churnBytes.addAndGet(diff);
                         }
@@ -162,10 +159,8 @@ public class TestChurnNotifications {
         final int size = 100_000;
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * size);
 
-        long mem = count * (16 + 4 * size);
-
-        System.out.println("Preparing to allocate " + count + " arrays, each of length " + size);
-        System.out.println("POOL_NAME: " + POOL_NAME);
+        long anticipated_humongous_waste_per_array = 124_272;
+        long mem = count * (16 + 4 * size + anticipated_humongous_waste_per_array);
 
         for (int c = 0; c < count; c++) {
             sink = new int[size];
@@ -184,16 +179,13 @@ public class TestChurnNotifications {
         long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
 
         // Wait until enough notifications are accrued to match minimum boundary.
-        System.out.println("maxTries is " + maxTries + ", minExpected is: " + minExpected + ", spentTimeNanos: " + spentTimeNanos);
         long tries = 0;
         while (tries++ < maxTries) {
             actual = churnBytes.get();
-            System.out.println("churnBytes() got " + actual + " in outer loop");
             if (minExpected <= actual) {
                 // Wait some more to test if we are breaking the maximum boundary.
                 Thread.sleep(5000);
                 actual = churnBytes.get();
-                System.out.println("churnBytes() got " + actual + " in spin wait");
                 break;
             }
             Thread.sleep(STEP_MS);
