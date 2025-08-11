@@ -31,6 +31,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.StackWalker.Option;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.Authenticator;
@@ -1715,9 +1716,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     Optional<Duration> idleConnectionTimeout(Version version) {
         return switch (version) {
-            case HTTP_2 -> Optional.ofNullable(getIdleConnectionTimeoutH2());
-            case HTTP_3 -> Optional.ofNullable(getIdleConnectionTimeoutH3());
-            default -> null;
+            case HTTP_2 -> timeoutDuration(IDLE_CONNECTION_TIMEOUT_H2);
+            case HTTP_3 -> timeoutDuration(IDLE_CONNECTION_TIMEOUT_H3);
+            case HTTP_1_1 -> timeoutDuration(KEEP_ALIVE_TIMEOUT);
         };
     }
 
@@ -1889,18 +1890,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sslBufferSupplier;
     }
 
-    private Duration getIdleConnectionTimeoutH2() {
-        if (IDLE_CONNECTION_TIMEOUT_H2 >= 0) {
-            return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT_H2);
+    private Optional<Duration> timeoutDuration(long seconds) {
+        if (seconds >= 0) {
+            return Optional.of(Duration.ofSeconds(seconds));
         }
-        return null;
-    }
-
-    private Duration getIdleConnectionTimeoutH3() {
-        if (IDLE_CONNECTION_TIMEOUT_H3 >= 0) {
-            return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT_H3);
-        }
-        return null;
+        return Optional.empty();
     }
 
     private static long getTimeoutProp(String prop, long def) {
