@@ -67,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  SplitWins wins;
+  SplitThruPhiWins wins;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 

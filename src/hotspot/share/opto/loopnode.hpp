@@ -1631,15 +1631,18 @@ public:
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
 
 private:
-  // Class to keep track of wins in split_through_phi.
-  class SplitWins {
+  // Class to keep track of wins in split_thru_phi.
+  class SplitThruPhiWins {
   private:
+    // Sum of all wins regardless of where they happen.
     int _total_wins;
+    // Number of wins on a loop entry edge, which only pays dividens once per loop execution.
     int _loop_entry_wins;
+    // Number of wins on a loop back-edge, which pay dividends on every iteration.
     int _loop_back_wins;
 
   public:
-    SplitWins() :
+    SplitThruPhiWins() :
       _total_wins(0),
       _loop_entry_wins(0),
       _loop_back_wins(0) {};
@@ -1655,10 +1658,16 @@ private:
     }
     // Is this split profitable with respect to the policy?
     // In general this means that the split has to have more wins than specified
-    // in the policy. In loops, we want to avoid wins on the entry edge since
-    // that messes up the loop structure more often than not and prevents RCE
-    // and vectorization down the line. If the policy is less than 0, every
-    // split if profitable.
+    // in the policy. In loops, we need to be careful when splitting, because it
+    // can sufficiently rearrange the loop structure to prevent RCE and thus
+    // vectorization. Thus, we only deem splitting profitable if the win of a
+    // split is not on the entry edge, as such wins only pay off once and have
+    // a high chance of messing up the loop structure. However, if there are
+    // wins on the entry edge and also sufficient wins on the backadge, which
+    // pay off on every iteration, a split is also deemed profiable.
+    // If the policy is less than 0, a split is always profitable, i.e. we always
+    // split. This is needed when we split a node and then must also split a
+    // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
     bool profitable(int policy) const {
       return policy < 0 || (_loop_entry_wins == 0 && _total_wins > policy) || _loop_back_wins > policy;
     }
