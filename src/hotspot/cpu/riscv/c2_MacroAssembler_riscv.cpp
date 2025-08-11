@@ -2024,11 +2024,11 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const Register ary_end = tmp2;
   const Register consumed = tmp3;
 
-  const VectorRegister v_sum    =  v0;
+  const VectorRegister v_sum    = v2;
 
-  const VectorRegister v_src    =  v8;
-  const VectorRegister v_coeffs = v16;
-  const VectorRegister v_tmp    = v24;
+  const VectorRegister v_src    = v4;
+  const VectorRegister v_coeffs = v6;
+  const VectorRegister v_tmp    = v8;
   const VectorRegister v_zred = v_tmp;
 
   const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
