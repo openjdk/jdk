@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,7 +62,7 @@ public class FlagsGenerator {
 
             TypeElement clazz = (TypeElement) trees.getElement(new TreePath(new TreePath(cut), cut.getTypeDecls().get(0)));
             Map<Integer, List<String>> flag2Names = new TreeMap<>();
-            Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields = new HashMap<>();
+            Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields = new EnumMap<>(FlagTarget.class);
             Map<String, String> customToString = new HashMap<>();
             Set<String> noToString = new HashSet<>();
 
