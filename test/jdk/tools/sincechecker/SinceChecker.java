@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,20 @@ it is somewhat inspired from the VM Method Descriptors. But we use the erased re
 that were later generified remain the same.
 
 usage: the checker is run from a module specific test
-        `@run main SinceChecker <moduleName> [--exclude package1,package2 | --exclude package1 package2]`
+        `@run main SinceChecker <moduleName> [--ignoreSince <string1>,<string2>] [--exclude package1,package2 | --exclude package1 package2]`
+
+To help long running projects still in development, that do not have a fixed version number that conforms
+to the OpenJDK release cycle, one may want to use token name instead of continuely updating the current version since tags.
+For example, `@since LongRunningProjectName`. The option `--ignoreSince` maybe used to
+ignore these tags (`-ignoreSince LongRunningProjectName`). Maybe be specified multiple times.
 */
 
 public class SinceChecker {
+    private static final int JDK_CURRENT = Runtime.version().feature();
+    // Ignored since tags
+    private static final Set<String> IGNORE_LIST = new HashSet<>();
+    // Simply replace ignored since tags with the latest version
+    private static final Version IGNORE_VERSION = Version.parse(Integer.toString(JDK_CURRENT));
     private final Map<String, Set<String>> LEGACY_PREVIEW_METHODS = new HashMap<>();
     private final Map<String, IntroducedIn> classDictionary = new HashMap<>();
     private final JavaCompiler tool;
@@ -125,10 +135,16 @@ public class SinceChecker {
         }
         String moduleName = args[0];
         boolean excludeFlag = false;
+        boolean ignoreFlag = false;
 
         for (int i = 1; i < args.length; i++) {
-            if ("--exclude".equals(args[i])) {
+            if ("--ignoreSince".equals(args[i])) {
+                ignoreFlag = true;
+                excludeFlag = false;
+                continue;
+            } else if ("--exclude".equals(args[i])) {
                 excludeFlag = true;
+                ignoreFlag = false;
                 continue;
             }
 
@@ -137,6 +153,14 @@ public class SinceChecker {
                     EXCLUDE_LIST.addAll(Arrays.asList(args[i].split(",")));
                 } else {
                     EXCLUDE_LIST.add(args[i]);
+                }
+            }
+
+            if (ignoreFlag) {
+                if (args[i].contains(",")) {
+                    IGNORE_LIST.addAll(Arrays.asList(args[i].split(",")));
+                } else {
+                    IGNORE_LIST.add(args[i]);
                 }
             }
         }
@@ -152,7 +176,7 @@ public class SinceChecker {
 
     private SinceChecker(String moduleName) throws IOException {
         tool = ToolProvider.getSystemJavaCompiler();
-        for (int i = 9; i <= Runtime.version().feature(); i++) {
+        for (int i = 9; i <= JDK_CURRENT; i++) {
             DiagnosticListener<? super JavaFileObject> noErrors = d -> {
                 if (!d.getCode().equals("compiler.err.module.not.found")) {
                     error(d.getMessage(null));
@@ -402,7 +426,7 @@ public class SinceChecker {
 
     private void analyzeClassCheck(TypeElement te, String version, EffectiveSourceSinceHelper javadocHelper,
                                    Types types, Elements elementUtils) {
-        String currentjdkVersion = String.valueOf(Runtime.version().feature());
+        String currentjdkVersion = String.valueOf(JDK_CURRENT);
         if (!isDocumented(te)) {
             return;
         }
@@ -452,24 +476,31 @@ public class SinceChecker {
     }
 
     private Version extractSinceVersionFromText(String documentation) {
-        Pattern pattern = Pattern.compile("@since\\s+(\\d+(?:\\.\\d+)?)");
-        Matcher matcher = pattern.matcher(documentation);
-        if (matcher.find()) {
-            String versionString = matcher.group(1);
-            try {
-                if (versionString.equals("1.0")) {
-                    versionString = "1"; //ended up being necessary
-                } else if (versionString.startsWith("1.")) {
-                    versionString = versionString.substring(2);
-                }
-                return Version.parse(versionString);
-            } catch (NumberFormatException ex) {
-                error("`@since` value that cannot be parsed: " + versionString);
-                return null;
-            }
-        } else {
+        Matcher matcher = Pattern.compile("@since\\s+(\\S+)").matcher(documentation);
+        if (!matcher.find()) {
             return null;
         }
+
+        String versionString = matcher.group(1);
+        if (IGNORE_LIST.contains(versionString)) {
+            return IGNORE_VERSION;
+        }
+
+        versionString = switch (versionString) {
+            case "1.0" -> "1";
+            case String v when v.matches("1\\.\\d+\\.\\d+") -> "1";  // `1.x.x` -> `1`
+            case String v when v.startsWith("1.") -> v.substring(2);  // `1.x` -> `x`
+            case String v when v.contains("u") -> v.substring(0, v.indexOf('u')); // 6u25 -> 6
+            default -> versionString;
+        };
+
+        if (!versionString.matches("\\d+(?:\\.\\d+)?")) {
+            error("Non-numeric `@since` value encountered: '" + versionString +
+                    "'; If this is intentional, consider using the --ignoreSince option.");
+            return null;
+        }
+
+        return Version.parse(versionString);
     }
 
     private void checkEquals(String prefix, String sinceVersion, String mappedVersion, String name) {

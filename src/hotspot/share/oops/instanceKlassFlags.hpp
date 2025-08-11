@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,15 @@ class InstanceKlassFlags {
     flag(has_nonstatic_concrete_methods     , 1 << 4) /* class/superclass/implemented interfaces has non-static, concrete methods */ \
     flag(declares_nonstatic_concrete_methods, 1 << 5) /* directly declares non-static, concrete methods */ \
     flag(shared_loading_failed              , 1 << 6) /* class has been loaded from shared archive */ \
-    flag(is_shared_boot_class               , 1 << 7) /* defining class loader is boot class loader */ \
-    flag(is_shared_platform_class           , 1 << 8) /* defining class loader is platform class loader */ \
-    flag(is_shared_app_class                , 1 << 9) /* defining class loader is app class loader */ \
+    flag(defined_by_boot_loader             , 1 << 7) /* defining class loader is boot class loader */ \
+    flag(defined_by_platform_loader         , 1 << 8) /* defining class loader is platform class loader */ \
+    flag(defined_by_app_loader              , 1 << 9) /* defining class loader is app class loader */ \
     flag(has_contended_annotations          , 1 << 10) /* has @Contended annotation */ \
     flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
     flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
+    flag(has_aot_safe_initializer           , 1 << 14) /* has @AOTSafeClassInitializer annotation */ \
+    flag(is_runtime_setup_required          , 1 << 15) /* has a runtimeSetup method to be called */ \
     /* end of list */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -68,6 +70,7 @@ class InstanceKlassFlags {
     status(has_been_redefined                , 1 << 2) /* class has been redefined */ \
     status(is_scratch_class                  , 1 << 3) /* class is the redefined scratch class */ \
     status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */ \
+    status(has_init_deps_processed           , 1 << 5) /* all init dependencies are processed */ \
     /* end of list */
 
 #define IK_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -76,8 +79,8 @@ class InstanceKlassFlags {
   };
 #undef IK_STATUS_ENUM_NAME
 
-  u2 shared_loader_type_bits() const {
-    return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
+  u2 builtin_loader_type_bits() const {
+    return _misc_defined_by_boot_loader|_misc_defined_by_platform_loader|_misc_defined_by_app_loader;
   }
 
   // These flags are write-once before the class is published and then read-only so don't require atomic updates.
@@ -100,13 +103,12 @@ class InstanceKlassFlags {
   IK_FLAGS_DO(IK_FLAGS_GET_SET)
 #undef IK_FLAGS_GET_SET
 
-  bool is_shared_unregistered_class() const {
-    return (_flags & shared_loader_type_bits()) == 0;
+  bool defined_by_other_loaders() const {
+    return (_flags & builtin_loader_type_bits()) == 0;
   }
 
-  void set_shared_class_loader_type(s2 loader_type);
+  void set_class_loader_type(const ClassLoaderData* cld);
 
-  void assign_class_loader_type(const ClassLoaderData* cld);
   void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 
   // Create getters and setters for the status values.

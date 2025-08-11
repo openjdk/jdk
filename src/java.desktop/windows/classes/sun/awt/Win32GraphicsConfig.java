@@ -214,6 +214,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         return new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
     }
 
+    @Override
     public String toString() {
         return (super.toString()+"[dev="+device+",pixfmt="+visual+"]");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,20 +220,14 @@ public class LinkChecker implements HtmlChecker {
 
     @Override
     public boolean isOK() {
-        return duplicateIds == 0
-                && missingIds == 0
-                && missingFiles == 0
-                && badSchemes == 0;
+        return log.noErrors() && (missingFiles == 0);
     }
 
     @Override
     public void close() {
-        report();
-        if (!isOK()) {
-            throw new RuntimeException(
-                    "LinkChecker encountered errors. Duplicate IDs: "
-                            + duplicateIds + ", Missing IDs: " + missingIds
-                            + ", Missing Files: " + missingFiles + ", Bad Schemes: " + badSchemes);
+        if (!log.noErrors()) {
+            report();
+            throw new RuntimeException("LinkChecker encountered errors; see log above.");
         }
     }
 
@@ -274,6 +268,11 @@ public class LinkChecker implements HtmlChecker {
                     p = currFile;
                 } else {
                     p = currFile.getParent().resolve(resolvedUriPath).normalize();
+                }
+
+                if (!Files.exists(p)) {
+                    log.log(currFile, line, "missing file reference: " + log.relativize(p));
+                    return;
                 }
 
                 if (fragment != null && !fragment.isEmpty()) {
@@ -392,7 +391,7 @@ public class LinkChecker implements HtmlChecker {
 
         void addID(int line, String name) {
             if (checked) {
-                throw new IllegalStateException("Adding ID after file has been");
+                throw new IllegalStateException("Adding ID after file has been checked");
             }
             Objects.requireNonNull(name);
             IDInfo info = map.computeIfAbsent(name, _ -> new IDInfo());
@@ -413,7 +412,9 @@ public class LinkChecker implements HtmlChecker {
                 if (name != null) {
                     IDInfo id = map.get(name);
                     if (id == null || !id.declared) {
-                        log.log(log.relativize(from), line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(from), line,
+                                "id not found: " + this.pathOrURI + "#" + name);
+                        LinkChecker.this.missingIds++;
                     }
                 }
             } else {
@@ -429,7 +430,8 @@ public class LinkChecker implements HtmlChecker {
             map.forEach((name, id) -> {
                 if (name != null && !id.declared) {
                     for (Position ref : id.references) {
-                        log.log(log.relativize(ref.path), ref.line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(ref.path), ref.line,
+                                "id not found: " + this.pathOrURI + "#" + name);
                     }
                     missingIds++;
                 }

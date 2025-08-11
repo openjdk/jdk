@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package sun.nio.fs;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import static sun.nio.fs.UnixNativeDispatcher.*;
+
+import static jdk.internal.util.Exceptions.filterUserName;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Unix implementation of java.nio.file.attribute.UserPrincipal
@@ -132,18 +135,19 @@ public class UnixUserPrincipals {
     private static int lookupName(String name, boolean isGroup)
         throws IOException
     {
-        int id;
+        int id = -1;
         try {
             id = (isGroup) ? getgrnam(name) : getpwnam(name);
         } catch (UnixException x) {
-            throw new IOException(name + ": " + x.errorString());
+            throw new IOException(formatMsg("%s " + x.errorString(),
+                                            filterUserName(name).suffixWith(": ")));
         }
         if (id == -1) {
             // lookup failed, allow input to be uid or gid
             try {
                 id = Integer.parseInt(name);
             } catch (NumberFormatException ignore) {
-                throw new UserPrincipalNotFoundException(name);
+                throw new UserPrincipalNotFoundException(formatMsg("%s", filterUserName(name)));
             }
         }
         return id;

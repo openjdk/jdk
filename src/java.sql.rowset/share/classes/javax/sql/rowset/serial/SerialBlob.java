@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     private byte[] buf;
 
     /**
-     * The internal representation of the <code>Blob</code> object on which this
+     * @serial The internal representation of the <code>Blob</code> object on which this
      * <code>SerialBlob</code> object is based.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable; checked in writeObject

@@ -44,7 +44,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsSliderUI extends BasicSliderUI
+public final class WindowsSliderUI extends BasicSliderUI
 {
     private boolean rollover = false;
     private boolean pressed = false;
@@ -63,32 +63,38 @@ public class WindowsSliderUI extends BasicSliderUI
      * the HOT, PRESSED, and FOCUSED states.
      * @since 1.6
      */
+    @Override
     protected TrackListener createTrackListener(JSlider slider) {
         return new WindowsTrackListener();
     }
 
-    private class WindowsTrackListener extends TrackListener {
+    private final class WindowsTrackListener extends TrackListener {
 
+        @Override
         public void mouseMoved(MouseEvent e) {
             updateRollover(thumbRect.contains(e.getX(), e.getY()));
             super.mouseMoved(e);
         }
 
+        @Override
         public void mouseEntered(MouseEvent e) {
             updateRollover(thumbRect.contains(e.getX(), e.getY()));
             super.mouseEntered(e);
         }
 
+        @Override
         public void mouseExited(MouseEvent e) {
             updateRollover(false);
             super.mouseExited(e);
         }
 
+        @Override
         public void mousePressed(MouseEvent e) {
             updatePressed(thumbRect.contains(e.getX(), e.getY()));
             super.mousePressed(e);
         }
 
+        @Override
         public void mouseReleased(MouseEvent e) {
             updatePressed(false);
             super.mouseReleased(e);
@@ -119,6 +125,7 @@ public class WindowsSliderUI extends BasicSliderUI
     }
 
 
+    @Override
     public void paintTrack(Graphics g)  {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -141,6 +148,7 @@ public class WindowsSliderUI extends BasicSliderUI
     }
 
 
+    @Override
     protected void paintMinorTickForHorizSlider( Graphics g, Rectangle tickBounds, int x ) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -149,6 +157,7 @@ public class WindowsSliderUI extends BasicSliderUI
         super.paintMinorTickForHorizSlider(g, tickBounds, x);
     }
 
+    @Override
     protected void paintMajorTickForHorizSlider( Graphics g, Rectangle tickBounds, int x ) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -157,6 +166,7 @@ public class WindowsSliderUI extends BasicSliderUI
         super.paintMajorTickForHorizSlider(g, tickBounds, x);
     }
 
+    @Override
     protected void paintMinorTickForVertSlider( Graphics g, Rectangle tickBounds, int y ) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -165,6 +175,7 @@ public class WindowsSliderUI extends BasicSliderUI
         super.paintMinorTickForVertSlider(g, tickBounds, y);
     }
 
+    @Override
     protected void paintMajorTickForVertSlider( Graphics g, Rectangle tickBounds, int y ) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -174,6 +185,7 @@ public class WindowsSliderUI extends BasicSliderUI
     }
 
 
+    @Override
     public void paintThumb(Graphics g)  {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -199,6 +211,7 @@ public class WindowsSliderUI extends BasicSliderUI
         }
     }
 
+    @Override
     protected Dimension getThumbSize() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {

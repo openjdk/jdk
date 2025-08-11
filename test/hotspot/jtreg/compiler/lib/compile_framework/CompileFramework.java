@@ -71,8 +71,11 @@ public class CompileFramework {
      * Compile all sources: store the sources to the {@link sourceDir} directory, compile
      * Java and Jasm sources and store the generated class-files in the {@link classesDir}
      * directory.
+     *
+     * @param javacFlags: optional, list of additional flags for javac, e.g. to make modules
+     *                    visible.
      */
-    public void compile() {
+    public void compile(String... javacFlags) {
         if (classLoader != null) {
             throw new CompileFrameworkException("Cannot compile twice!");
         }
@@ -86,7 +89,7 @@ public class CompileFramework {
         System.out.println("Classes directory: " + classesDir);
 
         Compile.compileJasmSources(jasmSources, sourceDir, classesDir);
-        Compile.compileJavaSources(javaSources, sourceDir, classesDir);
+        Compile.compileJavaSources(javaSources, sourceDir, classesDir, javacFlags);
         classLoader = ClassLoaderBuilder.build(classesDir);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,7 +722,7 @@ public class TestModules extends JavadocTester {
     void checkModuleSummary() {
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -748,7 +748,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduleB/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -889,15 +889,15 @@ public class TestModules extends JavadocTester {
                      href="moduletags/module-summary.html">moduletags</a></div>
                     <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduletags module.<br>
-                     Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
+                    Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
                     ="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
-                     Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#test\
+                    Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#test\
                     Method(java.lang.String)"><code>TestClassInModuleTags.testMethod(String)</code></a>.<br>
-                     Package Link: <a href="moduletags/testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.<br></div>
+                    Package Link: <a href="moduletags/testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.<br></div>
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -912,7 +912,7 @@ public class TestModules extends JavadocTester {
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -960,7 +960,7 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -1037,7 +1037,7 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -1437,10 +1437,10 @@ public class TestModules extends JavadocTester {
                     <table summary="Package Summary table, listing packages, and an explanation">""");
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a\

@@ -35,20 +35,20 @@ class ShenandoahEvacuationInformation : public StackObj {
   size_t _collected_old;
   size_t _collected_promoted;
   size_t _collected_young;
+  size_t _free_regions;
   size_t _regions_promoted_humongous;
   size_t _regions_promoted_regular;
   size_t _regular_promoted_garbage;
   size_t _regular_promoted_free;
-  size_t _regions_freed;
   size_t _regions_immediate;
   size_t _immediate_size;
 
 public:
   ShenandoahEvacuationInformation() :
     _collection_set_regions(0), _collection_set_used_before(0), _collection_set_used_after(0),
-    _collected_old(0), _collected_promoted(0), _collected_young(0), _regions_promoted_humongous(0),
-    _regions_promoted_regular(0), _regular_promoted_garbage(0), _regular_promoted_free(0),
-    _regions_freed(0), _regions_immediate(0), _immediate_size(0) { }
+    _collected_old(0), _collected_promoted(0), _collected_young(0), _free_regions(0),
+    _regions_promoted_humongous(0), _regions_promoted_regular(0), _regular_promoted_garbage(0),
+    _regular_promoted_free(0), _regions_immediate(0), _immediate_size(0) { }
 
   void set_collection_set_regions(size_t collection_set_regions) {
     _collection_set_regions = collection_set_regions;
@@ -74,8 +74,8 @@ public:
     _collected_young = collected;
   }
 
-  void set_regions_freed(size_t freed) {
-    _regions_freed = freed;
+  void set_free_regions(size_t freed) {
+    _free_regions = freed;
   }
 
   void set_regions_promoted_humongous(size_t humongous) {
@@ -112,7 +112,7 @@ public:
   size_t regions_promoted_regular()   { return _regions_promoted_regular; }
   size_t regular_promoted_garbage()   { return _regular_promoted_garbage; }
   size_t regular_promoted_free()      { return _regular_promoted_free; }
-  size_t regions_freed()              { return _regions_freed; }
+  size_t free_regions()               { return _free_regions; }
   size_t regions_immediate()          { return _regions_immediate; }
   size_t immediate_size()             { return _immediate_size; }
 };

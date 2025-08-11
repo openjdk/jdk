@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -42,8 +41,6 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
@@ -55,6 +52,10 @@ final class StringLatin1 {
 
     public static boolean canEncode(int cp) {
         return cp >=0 && cp <= 0xff;
+    }
+
+    public static byte coderFromChar(char cp) {
+        return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
     }
 
     public static int length(byte[] value) {
@@ -712,25 +713,19 @@ final class StringLatin1 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
     }
 
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
-        assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
-        UNSAFE.putByte(val, offset + 4, (byte)(c5));
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
+        value[i + 4] = (byte)c5;
     }
 
     public static void putChar(byte[] val, int index, int c) {
@@ -764,10 +759,6 @@ final class StringLatin1 {
         }
         return new String(Arrays.copyOfRange(val, index, index + len),
                           LATIN1);
-    }
-
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index, end, (byte)0);
     }
 
     // inflatedCopy byte[] -> char[]

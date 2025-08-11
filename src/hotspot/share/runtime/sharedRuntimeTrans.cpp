@@ -112,7 +112,6 @@ ln2_hi  =  6.93147180369123816490e-01,        /* 3fe62e42 fee00000 */
 
 static double zero = 0.0;
 
-ATTRIBUTE_NO_UBSAN
 static double __ieee754_log(double x) {
   double hfsq,f,s,z,R,w,t1,t2,dk;
   int k,hx,i,j;
@@ -126,8 +125,8 @@ static double __ieee754_log(double x) {
   k=0;
   if (hx < 0x00100000) {                   /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;   /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN();   /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);             /* high word of x */
   }
@@ -209,7 +208,6 @@ ivln10     =  4.34294481903251816668e-01, /* 0x3FDBCB7B, 0x1526E50E */
   log10_2hi  =  3.01029995663611771306e-01, /* 0x3FD34413, 0x509F6000 */
   log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
 
-ATTRIBUTE_NO_UBSAN
 static double __ieee754_log10(double x) {
   double y,z;
   int i,k,hx;
@@ -223,8 +221,8 @@ static double __ieee754_log10(double x) {
   k=0;
   if (hx < 0x00100000) {                  /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;        /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN(); /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);                /* high word of x */
   }
@@ -516,14 +514,16 @@ static double __ieee754_pow(double x, double y) {
   if(lx==0) {
     if(ix==0x7ff00000||ix==0||ix==0x3ff00000){
       z = ax;                   /*x is +-0,+-inf,+-1*/
-      if(hy<0) z = one/z;       /* z = (1/|x|) */
+      if(hy<0) {
+        if (ix == 0) {
+          z = std::numeric_limits<double>::infinity();
+        } else {
+          z = one/z;       /* z = (1/|x|) */
+        }
+      }
       if(hx<0) {
         if(((ix-0x3ff00000)|yisint)==0) {
-#ifdef CAN_USE_NAN_DEFINE
-          z = NAN;
-#else
-          z = (z-z)/(z-z); /* (-1)**non-int is NaN */
-#endif
+          z = std::numeric_limits<double>::quiet_NaN();
         } else if(yisint==1)
           z = -1.0*z;           /* (x<0)**odd = -(|x|**odd) */
       }
@@ -534,12 +534,9 @@ static double __ieee754_pow(double x, double y) {
   n = (hx>>31)+1;
 
   /* (x<0)**(non-int) is NaN */
-  if((n|yisint)==0)
-#ifdef CAN_USE_NAN_DEFINE
-    return NAN;
-#else
-    return (x-x)/(x-x);
-#endif
+  if((n|yisint)==0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
 
   s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
   if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
@@ -660,7 +657,7 @@ static double __ieee754_pow(double x, double y) {
   z  = one-(r-z);
   j  = high(z);
   j += (n<<20);
-  if((j>>20)<=0) z = scalbnA(z,n);       /* subnormal output */
+  if((j>>20)<=0) z = scalbn(z,n);       /* subnormal output */
   else set_high(&z, high(z) + (n<<20));
   return s*z;
 }

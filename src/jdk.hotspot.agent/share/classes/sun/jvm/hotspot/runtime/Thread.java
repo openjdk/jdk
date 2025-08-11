@@ -80,16 +80,7 @@ public class Thread extends VMObject {
   }
 
   public boolean   isVMThread()                  { return false; }
-  public boolean   isJavaThread()                { return false; }
-  public boolean   isCompilerThread()            { return false; }
-  public boolean   isCodeCacheSweeperThread()    { return false; }
   public boolean   isHiddenFromExternalView()    { return false; }
-  public boolean   isJvmtiAgentThread()          { return false; }
-  public boolean   isWatcherThread()             { return false; }
-  public boolean   isServiceThread()             { return false; }
-  public boolean   isMonitorDeflationThread()    { return false; }
-  public boolean   isAttachListenerThread()      { return false; }
-  public boolean   isDeoptimizeObjectsALotThread() { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {

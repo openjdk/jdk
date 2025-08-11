@@ -78,7 +78,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -185,7 +184,6 @@ void DowncallLinker::StubGenerator::generate() {
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -289,7 +287,7 @@ void DowncallLinker::StubGenerator::generate() {
       __ membar(MacroAssembler::AnyAny);
     }
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, false /* in_nmethod */);
     __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
     __ bnez(t0, L_safepoint_poll_slow_path);
 

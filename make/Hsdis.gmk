@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,13 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-include JdkNativeCompilation.gmk
+include MakeFileStart.gmk
 
 ################################################################################
 # This makefile compiles and installs the hsdis library
-#
 ################################################################################
+
+include JdkNativeCompilation.gmk
 
 HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 REAL_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
@@ -201,8 +198,8 @@ endif
 
 TARGETS += install
 
+.PHONY: build install
+
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all default build install
+include MakeFileEnd.gmk

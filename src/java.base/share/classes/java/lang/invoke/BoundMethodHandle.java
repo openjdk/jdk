@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  *
  * All bound arguments are encapsulated in dedicated species.
  */
+@AOTSafeClassInitializer
 /*non-public*/
 abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
@@ -62,8 +64,40 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         return form.editor();
     }
 
-    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
+    static BoundMethodHandle bindSingleL(MethodType type, LambdaForm form, Object x) {
         return Species_L.make(type, form, x);
+    }
+
+    static BoundMethodHandle bindSingleI(MethodType type, LambdaForm form, int x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(I_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleJ(MethodType type, LambdaForm form, long x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(J_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleF(MethodType type, LambdaForm form, float x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(F_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleD(MethodType type, LambdaForm form, double x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(D_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
     @Override // there is a default binder in the super class, for 'L' types only
@@ -201,6 +235,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     // concrete BMH classes required to close bootstrap loops
     //
 
+    @AOTSafeClassInitializer
     private  // make it private to force users to access the enclosing class first
     static final class Species_L extends BoundMethodHandle {
 
@@ -280,6 +315,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     // BMH species meta-data
     //
 
+    @AOTSafeClassInitializer
     /*non-public*/
     static final class SpeciesData
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
@@ -370,6 +406,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         Species_L.BMH_SPECIES = BoundMethodHandle.SPECIALIZER.findSpecies("L");
     }
 
+    @AOTSafeClassInitializer
     /*non-public*/
     static final class Specializer
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData> {

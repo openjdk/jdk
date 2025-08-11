@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,91 +50,91 @@ import javax.net.ssl.TrustManagerFactory;
  * @test
  * @bug 8205111
  * @summary Test TLS with different types of supported keys.
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha384 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha512 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 ec_rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 ecdsa_sha1 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 ecdsa_secp384r1_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha384 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha512 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ec_rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_sha1 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_secp384r1_sha384
  *      TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 ecdsa_secp521r1_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_secp521r1_sha512
  *      TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha256 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha384 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha512 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha256 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha384 TLS_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha512 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha256 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha384 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha512 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha256 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha384 TLS_AES_128_GCM_SHA256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha512 TLS_AES_128_GCM_SHA256
  *
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha384 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pkcs1_sha512 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 ec_rsa_pkcs1_sha256 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 ecdsa_sha1 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 ecdsa_secp384r1_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha384 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha512 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ec_rsa_pkcs1_sha256 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_sha1 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_secp384r1_sha384
  *      TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 ecdsa_secp521r1_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 ecdsa_secp521r1_sha512
  *      TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha256 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha384 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_rsae_sha512 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha256 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha384 TLS_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha512 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha256 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha384 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_rsae_sha512 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha256 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha384 TLS_AES_256_GCM_SHA384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pss_pss_sha512 TLS_AES_256_GCM_SHA384
  *
- * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pkcs1_sha256
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pkcs1_sha384
  *      TLS_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pkcs1_sha512
  *      TLS_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.2 ec_rsa_pkcs1_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 ec_rsa_pkcs1_sha256
  *      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSTest TLSv1.2 ecdsa_sha1
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 ecdsa_sha1
  *      TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.2 ecdsa_secp384r1_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 ecdsa_secp384r1_sha384
  *      TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
- * @run main/othervm TLSTest TLSv1.2 ecdsa_secp521r1_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 ecdsa_secp521r1_sha512
  *      TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_rsae_sha256
  *      TLS_RSA_WITH_AES_256_CBC_SHA256
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_rsae_sha384
  *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_rsae_sha512
  *      TLS_RSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_pss_sha256
  *      TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_pss_sha384
  *      TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.2 rsa_pss_pss_sha512
  *      TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
  *
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pkcs1_sha256
  *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pkcs1_sha384
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pkcs1_sha512
  *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pss_rsae_sha256
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pss_rsae_sha384
  *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.1 rsa_pss_rsae_sha512
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  *
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha256 TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha384 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha512 TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha256
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pkcs1_sha256 TLS_RSA_WITH_AES_256_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pkcs1_sha384 TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pkcs1_sha512 TLS_RSA_WITH_AES_256_CBC_SHA
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pss_rsae_sha256
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha384
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pss_rsae_sha384
  *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha512
+ * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1 rsa_pss_rsae_sha512
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  */
 public class TLSTest {
@@ -279,7 +279,7 @@ public class TLSTest {
                     keyType.getTrustedCert(), null, null, keyType.getKeyType());
             SSLSocketFactory sslsf = ctx.getSocketFactory();
             try (SSLSocket sslSocket
-                    = (SSLSocket) sslsf.createSocket("localhost", serverPort)) {
+                    = (SSLSocket) sslsf.createSocket(InetAddress.getLoopbackAddress(), serverPort)) {
                 // Specify the client cipher suites
                 sslSocket.setEnabledCipherSuites(new String[]{this.cipher});
                 sslSocket.setEnabledProtocols(new String[]{this.tlsProtocol});

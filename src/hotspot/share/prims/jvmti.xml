@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
  Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
@@ -2987,12 +2987,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Called or calling method is a native method.
-          The implementation is unable to pop this frame.
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation
-          was unable to pop the current frame.
+          The implementation is unable to pop this frame
+          (e.g. called or calling method is a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -3078,8 +3074,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The frame at <code>depth</code> is executing a
-          native method.
+           A <eventlink id="FramePop"></eventlink> event cannot be generated for this frame
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -3188,12 +3184,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not
@@ -3240,12 +3232,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not
@@ -3288,12 +3276,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not <code>long</code>.
@@ -3333,12 +3317,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not <code>float</code>.
@@ -3378,12 +3358,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The result type of the called method is not <code>double</code>.
@@ -3417,12 +3393,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Attempted to return early from a frame
-          corresponding to a native method.
-          The thread is a suspended virtual thread and the implementation was
-          unable to force its current frame to return.
-          Or the implementation is unable to provide
-          this functionality on this frame.
+          The implementation is unable to force the current frame to return
+          (e.g. current frame is executing a native method).
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The called method has a result type.
@@ -5928,7 +5900,8 @@ class C2 extends C1 implements I2 {
           <code>Object</code> or a subclass of <code>Object</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
+          The implementation is unable to get the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6031,7 +6004,8 @@ class C2 extends C1 implements I2 {
           <code>boolean</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
+          The implementation is unable to get the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6085,7 +6059,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>long</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
+          The implementation is unable to get the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6139,7 +6114,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>float</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
+          The implementation is unable to get the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6151,7 +6127,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Local Variable - Double</synopsis>
       <description>
         This function can be used to retrieve the value of a local
-        variable whose type is <code>long</code>.
+        variable whose type is <code>double</code>.
         <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
@@ -6193,7 +6169,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>double</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
+          The implementation is unable to get the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6252,12 +6229,8 @@ class C2 extends C1 implements I2 {
           with the variable type.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation does not support
-          setting the value of locals in the frame of the given depth.
-          See <internallink id="local">Local Variables</internallink>.
+          The implementation is unable to set the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6316,12 +6289,8 @@ class C2 extends C1 implements I2 {
           <code>boolean</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation does not support
-          setting the value of locals in the frame of the given depth.
-          See <internallink id="local">Local Variables</internallink>.
+          The implementation is unable to set the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6375,12 +6344,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>long</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation does not support
-          setting the value of locals in the frame of the given depth.
-          See <internallink id="local">Local Variables</internallink>.
+          The implementation is unable to set the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6434,12 +6399,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>float</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation does not support
-          setting the value of locals in the frame of the given depth.
-          See <internallink id="local">Local Variables</internallink>.
+          The implementation is unable to set the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -6493,12 +6454,8 @@ class C2 extends C1 implements I2 {
           The variable type is not <code>double</code>.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          Not a visible frame
-        </error>
-        <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a suspended virtual thread and the implementation does not support
-          setting the value of locals in the frame of the given depth.
-          See <internallink id="local">Local Variables</internallink>.
+          The implementation is unable to set the frame locals
+          (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -8292,7 +8249,7 @@ class C2 extends C1 implements I2 {
         <field id="entry_count">
           <jint/>
           <description>
-            The number of times the platform thread owning this monitor has entered it, 
+            The number of times the platform thread owning this monitor has entered it,
             or <code>0</code> if owned by a virtual thread or not owned
           </description>
         </field>
@@ -12050,7 +12007,7 @@ myInit() {
     </errorid>
     <errorid id="JVMTI_ERROR_OPAQUE_FRAME" num="32">
       Information about the frame is not available (e.g. for native frames),
-      or the function cannot be performed on the thread's current frame.
+      or the implementation is unable to provide this functionality on this frame.
     </errorid>
     <errorid id="JVMTI_ERROR_DUPLICATE" num="40">
       Item already set.
@@ -12862,16 +12819,17 @@ myInit() {
       parameters  uniquely identify the current location
       (where the exception was detected) and allow
       the mapping to source file and line number when that information is
-      available. The <code>exception</code> field identifies the thrown
+      available. The <code>exception</code> parameter identifies the thrown
       exception object. The <code>catch_method</code>
       and <code>catch_location</code> identify the location of the catch clause,
       if any, that handles the thrown exception. If there is no such catch clause,
-      each field is set to 0. There is no guarantee that the thread will ever
+      the <code>catch_method</code> is set to null and the <code>catch_location</code>is set to 0.
+      There is no guarantee that the thread will ever
       reach this catch clause. If there are native methods on the call stack
       between the throw location and the catch clause, the exception may
       be reset by one of those native methods.
-      Similarly, exceptions that are reported as uncaught (<code>catch_klass</code>
-      et al. set to 0) may in fact be caught by native code.
+      Similarly, exceptions that are reported as uncaught (<code>catch_method</code>
+      set to null) may in fact be caught by native code.
       Agents can check for these occurrences by monitoring
       <eventlink id="ExceptionCatch"></eventlink> events.
       Note that finally clauses are implemented as catch and re-throw. Therefore they
@@ -12960,7 +12918,7 @@ myInit() {
       available. For exceptions caught in a Java programming language method, the
       <code>exception</code> object identifies the exception object. Exceptions
       caught in native methods are not necessarily available by the time the
-      exception catch is reported, so the <code>exception</code> field is set
+      exception catch is reported, so the <code>exception</code> parameter is set
       to null.
     </description>
     <origin>jvmdi</origin>

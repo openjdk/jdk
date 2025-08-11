@@ -24,8 +24,8 @@
  */
 
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"

@@ -24,7 +24,7 @@
 /*
  *
  * @summary Check getEnclosingClass and other methods
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  *
  * a) Top level classes
  * b) Nested classes (static member classes)

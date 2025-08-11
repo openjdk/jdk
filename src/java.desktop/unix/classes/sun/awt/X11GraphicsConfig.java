@@ -47,6 +47,7 @@ import java.awt.image.WritableRaster;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 import sun.java2d.SurfaceData;
@@ -55,6 +56,7 @@ import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.pipe.Region;
 import sun.java2d.x11.X11SurfaceData;
+import sun.java2d.x11.X11VolatileSurfaceManager;
 
 /**
  * This is an implementation of a GraphicsConfiguration object for a
@@ -64,7 +66,7 @@ import sun.java2d.x11.X11SurfaceData;
  * @see GraphicsDevice
  */
 public class X11GraphicsConfig extends GraphicsConfiguration
-    implements SurfaceManager.ProxiedGraphicsConfig
+    implements SurfaceManager.ProxiedGraphicsConfig, SurfaceManager.Factory
 {
     private final X11GraphicsDevice device;
     protected int visual;
@@ -312,6 +314,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return aData;
     }
 
+    @Override
     public String toString() {
         return ("X11GraphicsConfig[dev="+device+
                 ",vis=0x"+Integer.toHexString(visual)+
@@ -333,7 +336,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return device.getBounds();
     }
 
-    private static class XDBECapabilities extends BufferCapabilities {
+    private static final class XDBECapabilities extends BufferCapabilities {
         public XDBECapabilities() {
             super(imageCaps, imageCaps, FlipContents.UNDEFINED);
         }
@@ -362,7 +365,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
 
     private static native void dispose(long x11ConfigData);
 
-    private static class X11GCDisposerRecord implements DisposerRecord {
+    private static final class X11GCDisposerRecord implements DisposerRecord {
         private long x11ConfigData;
         public X11GCDisposerRecord(long x11CfgData) {
             this.x11ConfigData = x11CfgData;
@@ -500,4 +503,10 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     }
 
     private native boolean isTranslucencyCapable(long x11ConfigData);
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new X11VolatileSurfaceManager(image, context);
+    }
 }

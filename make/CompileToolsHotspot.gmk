@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,11 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include JavaCompilation.gmk
-
-TARGETS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, hotspot/CompileTools.gmk))
 
 ################################################################################
 # Build tools needed for the JFR source code generation
@@ -51,7 +44,6 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_HOTSPOT, \
 
 TARGETS += $(BUILD_TOOLS_HOTSPOT)
 
+################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all
+include MakeFileEnd.gmk

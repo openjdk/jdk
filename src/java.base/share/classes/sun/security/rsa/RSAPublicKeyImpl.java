@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
             break;
         case "PKCS#1":
             try {
-                BigInteger[] comps = parseASN1(encoded);
+                BigInteger[] comps = parsePKCS1(encoded);
                 key = new RSAPublicKeyImpl(type, null, comps[0], comps[1]);
             } catch (IOException ioe) {
                 throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
@@ -199,7 +199,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
 
     // utility method for parsing DER encoding of RSA public keys in PKCS#1
     // format as defined in RFC 8017 Appendix A.1.1, i.e. SEQ of n and e.
-    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+    private static BigInteger[] parsePKCS1(byte[] raw) throws IOException {
         DerValue derValue = new DerValue(raw);
         if (derValue.tag != DerValue.tag_Sequence) {
             throw new IOException("Not a SEQUENCE");
@@ -218,7 +218,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
      */
     protected void parseKeyBits() throws InvalidKeyException {
         try {
-            BigInteger[] comps = parseASN1(getKey().toByteArray());
+            BigInteger[] comps = parsePKCS1(getKey().toByteArray());
             n = comps[0];
             e = comps[1];
         } catch (IOException e) {

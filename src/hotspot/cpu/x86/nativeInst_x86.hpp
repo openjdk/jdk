@@ -126,10 +126,8 @@ class NativeCall: public NativeInstruction {
   address return_address() const            { return addr_at(return_address_offset); }
   address destination() const;
   void  set_destination(address dest)       {
-#ifdef AMD64
     intptr_t disp = dest - return_address();
     guarantee(disp == (intptr_t)(jint)disp, "must be 32-bit offset");
-#endif // AMD64
     set_int_at(displacement_offset, (int)(dest - return_address()));
   }
   // Returns whether the 4-byte displacement operand is 4-byte aligned.
@@ -211,15 +209,9 @@ class NativeCallReg: public NativeInstruction {
 // Instruction format for implied addressing mode immediate operand move to register instruction:
 //  [REX/REX2] [OPCODE] [IMM32]
 class NativeMovConstReg: public NativeInstruction {
-#ifdef AMD64
   static const bool has_rex = true;
   static const int rex_size = 1;
   static const int rex2_size = 2;
-#else
-  static const bool has_rex = false;
-  static const int rex_size = 0;
-  static const int rex2_size = 0;
-#endif // AMD64
  public:
   enum Intel_specific_constants {
     instruction_code             = 0xB8,
@@ -390,13 +382,8 @@ inline NativeMovRegMem* nativeMovRegMem_at (address address) {
 //        leal reg, [reg + offset]
 
 class NativeLoadAddress: public NativeMovRegMem {
-#ifdef AMD64
   static const bool has_rex = true;
   static const int rex_size = 1;
-#else
-  static const bool has_rex = false;
-  static const int rex_size = 0;
-#endif // AMD64
  public:
   enum Intel_specific_constants {
     instruction_prefix_wide             = Assembler::REX_W,
@@ -447,9 +434,7 @@ class NativeJump: public NativeInstruction {
     if (dest == (address) -1) {
       val = -5; // jump to self
     }
-#ifdef AMD64
     assert((labs(val)  & 0xFFFFFFFF00000000) == 0 || dest == (address)-1, "must be 32bit offset or -1");
-#endif // AMD64
     set_int_at(data_offset, (jint)val);
   }
 
@@ -460,9 +445,6 @@ class NativeJump: public NativeInstruction {
 
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
-  // MT-safe insertion of native jump at verified method entry
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 };
 
 inline NativeJump* nativeJump_at(address address) {
@@ -503,7 +485,7 @@ class NativeGeneralJump: public NativeInstruction {
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   NativeGeneralJump* jump = (NativeGeneralJump*)(address);
-  debug_only(jump->verify();)
+  DEBUG_ONLY(jump->verify();)
   return jump;
 }
 
@@ -572,19 +554,14 @@ inline bool NativeInstruction::is_jump_reg()     {
 inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) == 0x800F /* long jump */ ||
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
-#ifdef AMD64
   const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
   const int test_offset = has_rex2_prefix() ? 2 : (has_rex_prefix ? 1 : 0);
-#else
-  const int test_offset = 0;
-#endif
   const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
   const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
   return is_test_opcode && is_rax_target;
 }
 
 inline bool NativeInstruction::is_mov_literal64() {
-#ifdef AMD64
   bool valid_rex_prefix  = ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB;
   bool valid_rex2_prefix = ubyte_at(0) == Assembler::REX2  &&
        (ubyte_at(1) == Assembler::REX2BIT_W  ||
@@ -593,9 +570,6 @@ inline bool NativeInstruction::is_mov_literal64() {
 
   int opcode = has_rex2_prefix() ? ubyte_at(2) : ubyte_at(1);
   return ((valid_rex_prefix || valid_rex2_prefix) &&  (opcode & (0xff ^ NativeMovConstReg::register_mask)) == 0xB8);
-#else
-  return false;
-#endif // AMD64
 }
 
 class NativePostCallNop: public NativeInstruction {

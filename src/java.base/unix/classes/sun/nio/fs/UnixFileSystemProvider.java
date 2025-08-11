@@ -322,8 +322,12 @@ public abstract class UnixFileSystemProvider
             mode |= X_OK;
         }
         int errno = access(file, mode);
-        if (errno != 0)
+        if (errno != 0) {
+            if (errno == ENOTDIR) {
+                errno = ENOENT;
+            }
             new UnixException(errno).rethrowAsIOException(file);
+        }
     }
 
     @Override

@@ -70,14 +70,6 @@ public class JMTest_04 extends AbstractSwingTest {
     String MENU_ITEM_STRING =  "JMenuItem";
     String SUB_MENU_STRING =  "SubMenu";
 
-    /**
-     * This test cannot run as an applet because it
-     * posts events to the event queue
-     */
-    public boolean canRunInApplet() {
-        return false;
-    }
-
     public JComponent getTestComponent() {
         loadBundle();
         JPanel panel = new JPanel();

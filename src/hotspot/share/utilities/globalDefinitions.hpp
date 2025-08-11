@@ -25,12 +25,11 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
@@ -147,6 +146,9 @@ class oopDesc;
 #ifndef JULONG_FORMAT_X
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
+#ifndef JULONG_FORMAT_W
+#define JULONG_FORMAT_W(width)   UINT64_FORMAT_W(width)
+#endif
 
 // Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
@@ -172,35 +174,6 @@ inline uintptr_t p2u(const volatile void* p) {
 }
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
-
-//----------------------------------------------------------------------------------------------------
-// Forbid the use of various C library functions.
-// Some of these have os:: replacements that should normally be used instead.
-// Others are considered security concerns, with preferred alternatives.
-
-FORBID_C_FUNCTION(void exit(int), "use os::exit");
-FORBID_C_FUNCTION(void _exit(int), "use os::exit");
-FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
-FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
-FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
-FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
-FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
-
-// All of the following functions return raw C-heap pointers (sometimes as an option, e.g. realpath or getwd)
-// or, in case of free(), take raw C-heap pointers. Don't use them unless you are really sure you must.
-FORBID_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
-FORBID_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
-FORBID_C_FUNCTION(void free(void *ptr), "use os::free");
-FORBID_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::realloc");
-FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
-FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
-FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
-FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
-FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
-FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
-FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 
 //----------------------------------------------------------------------------------------------------
 // Constants
@@ -297,6 +270,9 @@ inline jdouble jdouble_cast(jlong x);
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
 
+// for timer info max values which include all bits, 0xffffffffffffffff
+const jlong all_bits_jlong = ~jlong(0);
+
 //-------------------------------------------
 // Constant for jdouble
 const jlong min_jlongDouble = CONST64(0x0000000000000001);
@@ -307,7 +283,6 @@ const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;
-const size_t HWperKB            = K / sizeof(HeapWord);
 
 // Constants for converting from a base unit to milli-base units.  For
 // example from seconds to milliseconds and microseconds
@@ -368,7 +343,7 @@ inline T byte_size_in_proper_unit(T s) {
 }
 
 #define PROPERFMT             "%zu%s"
-#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit<size_t>(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
@@ -546,6 +521,11 @@ const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
+const jshort max_jfloat16 = 31743;
+const jshort min_jfloat16 = 1;
+const jshort one_jfloat16 = 15360;
+const jshort pos_inf_jfloat16 = 31744;
+const jshort neg_inf_jfloat16 = -1024;
 // A named constant for the integral representation of a Java null.
 const intptr_t NULL_WORD = 0;
 
@@ -792,6 +772,22 @@ inline jlong min_signed_integer(BasicType bt) {
   return min_jlong;
 }
 
+inline julong max_unsigned_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_juint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_julong;
+}
+
+inline uint bits_per_java_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return BitsPerJavaInteger;
+  }
+  assert(bt == T_LONG, "int or long only");
+  return BitsPerJavaLong;
+}
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);
@@ -904,6 +900,7 @@ class JavaValue {
  void set_jfloat(jfloat f) { _value.f = f;}
  void set_jdouble(jdouble d) { _value.d = d;}
  void set_jint(jint i) { _value.i = i;}
+ void set_jshort(jshort i) { _value.i = i;}
  void set_jlong(jlong l) { _value.l = l;}
  void set_jobject(jobject h) { _value.h = h;}
  void set_oop(oopDesc* o) { _value.o = o;}
@@ -1021,6 +1018,8 @@ enum LockingMode {
   LM_LIGHTWEIGHT = 2
 };
 
+extern const int LockingMode;
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1061,6 +1060,15 @@ const intptr_t OneBit     =  1; // only right_most bit set in a word
 // (note: #define used only so that they can be used in enum constant definitions)
 #define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
 #define right_n_bits(n)   (nth_bit(n) - 1)
+
+// same as nth_bit(n), but allows handing in a type as template parameter. Allows
+// us to use nth_bit with 64-bit types on 32-bit platforms
+template<class T> inline T nth_bit_typed(int n) {
+  return ((T)1) << n;
+}
+template<class T> inline T right_n_bits_typed(int n) {
+  return nth_bit_typed<T>(n) - 1;
+}
 
 // bit-operations using a mask m
 inline void   set_bits    (intptr_t& x, intptr_t m) { x |= m; }
@@ -1130,7 +1138,7 @@ inline bool is_even(intx x) { return !is_odd(x); }
 
 // abs methods which cannot overflow and so are well-defined across
 // the entire domain of integer types.
-static inline unsigned int uabs(unsigned int n) {
+static inline unsigned int g_uabs(unsigned int n) {
   union {
     unsigned int result;
     int value;
@@ -1139,7 +1147,7 @@ static inline unsigned int uabs(unsigned int n) {
   if (value < 0) result = 0-result;
   return result;
 }
-static inline julong uabs(julong n) {
+static inline julong g_uabs(julong n) {
   union {
     julong result;
     jlong value;
@@ -1148,8 +1156,8 @@ static inline julong uabs(julong n) {
   if (value < 0) result = 0-result;
   return result;
 }
-static inline julong uabs(jlong n) { return uabs((julong)n); }
-static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
+static inline julong g_uabs(jlong n) { return g_uabs((julong)n); }
+static inline unsigned int g_uabs(int n) { return g_uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
 inline size_t byte_size(void* from, void* to) {

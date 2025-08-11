@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,6 +364,14 @@ public:
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
+  // Whether the given phi node joins OOPs from fast and slow allocation paths.
+  static bool is_allocation(const Node* node);
+  // Elide GC barriers from a Mach node according to elide_dominated_barriers().
+  virtual void elide_dominated_barrier(MachNode* mach) const { }
+  // Elide GC barriers from instructions in 'accesses' if they are dominated by
+  // instructions in 'access_dominators' (according to elide_mach_barrier()) and
+  // there is no safepoint poll in between.
+  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }

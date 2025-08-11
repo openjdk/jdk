@@ -123,9 +123,6 @@ class Klass : public Metadata {
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
                                 // Some flags created by the JVM, not in the class file itself,
                                 // are in _misc_flags below.
-  // Processed access flags, for use by Class.getModifiers.
-  u2          _modifier_flags;
-
   KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -169,9 +166,9 @@ class Klass : public Metadata {
   uint8_t  _hash_slot;
 
 private:
-  // This is an index into FileMapHeader::_shared_path_table[], to
-  // associate this class with the JAR file where it's loaded from during
-  // dump time. If a class is not loaded from the shared archive, this field is
+  // This is an index into AOTClassLocationConfig::class_locations(), to
+  // indicate the AOTClassLocation where this class is loaded from during
+  // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
   s2 _shared_class_path_index;
 
@@ -189,9 +186,6 @@ private:
     _is_generated_shared_class             = 1 << 5,
     // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
     _has_aot_initialized_mirror            = 1 << 6,
-    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
-    // method during the production run?
-    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
@@ -292,10 +286,6 @@ protected:
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
 
-  // modifier flags
-  u2 modifier_flags() const          { return _modifier_flags; }
-  void set_modifier_flags(u2 flags)  { _modifier_flags = flags; }
-
   // size helper
   int layout_helper() const            { return _layout_helper; }
   void set_layout_helper(int lh)       { _layout_helper = lh; }
@@ -387,15 +377,6 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_is_runtime_setup_required() {
-    assert(has_aot_initialized_mirror(), "sanity");
-    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
-  }
-  bool is_runtime_setup_required() const {
-    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
-    NOT_CDS(return false;)
-  }
-
   bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
     CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
     NOT_CDS(return false;)
@@ -448,7 +429,6 @@ protected:
   static ByteSize secondary_supers_offset()      { return byte_offset_of(Klass, _secondary_supers); }
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
-  static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
@@ -738,13 +718,14 @@ public:
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
   inline bool is_loader_alive() const;
+  inline bool is_loader_present_and_alive() const;
 
   void clean_subklass();
 
+  // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
-  static void clean_subklass_tree() {
-    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
-  }
+  // Clean out unnecessary weak klass links from the given InstanceKlass.
+  static void clean_weak_instanceklass_links(InstanceKlass* ik);
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
@@ -757,6 +738,12 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
+  // Get modifier flags from Java mirror cache.
+  int modifier_flags() const;
+
+  // Compute modifier flags from the original data. This also allows
+  // accessing flags when Java mirror is already dead, e.g. during class
+  // unloading.
   virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support

@@ -30,7 +30,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-#define LOG_PLEASE
+// #define LOG_PLEASE
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -157,7 +157,7 @@ public:
       // the hole.
       const uintptr_t candidate = nth_bit(i);
       if ((candidate + _len) <= ARMB_constants::absolute_max) {
-        _base = os::attempt_reserve_memory_at((char*)candidate, _len);
+        _base = os::attempt_reserve_memory_at((char*)candidate, _len, mtTest);
       }
     }
     if (_base == nullptr) {
@@ -165,8 +165,8 @@ public:
     }
     // Release total mapping, remap the individual non-holy parts
     os::release_memory(_base, _len);
-    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size);
-    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size);
+    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size, mtTest);
+    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size, mtTest);
     if (_p1 == nullptr || _p2 == nullptr) {
       return false;
     }
@@ -284,7 +284,7 @@ TEST_VM(os, attempt_reserve_memory_between_combos) {
   for (size_t range_size = allocation_granularity(); range_size <= large_end; range_size *= 2) {
     for (size_t start_offset = 0; start_offset <= large_end; start_offset += (large_end / 2)) {
       char* const min = (char*)(uintptr_t)start_offset;
-      char* const max = min + range_size;
+      char* const max = (char*)(p2u(min) + range_size);
       for (size_t bytes = os::vm_page_size(); bytes < large_end; bytes *= 2) {
         for (size_t alignment = allocation_granularity(); alignment < large_end; alignment *= 2) {
           test_attempt_reserve_memory_between(min, max, bytes, alignment, true, Expect::dontcare(), __LINE__);

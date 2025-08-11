@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662 8326333
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662 8326333 8326333 8353581
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -812,13 +812,26 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     //JDK-8326333: verify completion returns sensible output for arrays:
+    //JDK-8326333: jshell <TAB> completion on arrays is incomplete
     public void testArray() {
         assertEval("String[] strs = null;");
         assertCompletion("strs.to|", "toString()");
         assertCompletion("strs.le|", "length");
+        assertCompletion("strs.cl|", "clone()");
         assertEval("int[] ints = null;");
         assertCompletion("ints.no|", "notify()", "notifyAll()");
         assertCompletion("ints.le|", "length");
+        assertCompletion("ints.cl|", "clone()");
         assertCompletion("String[].|", "class");
+    }
+
+    //JDK-8353581: completion for module imports:
+    public void testModuleImport() {
+        assertCompletionIncludesExcludes("import |", Set.of("module "), Set.of());
+        assertCompletionIncludesExcludes("import module |", Set.of("java.base"), Set.of("java.", "module"));
+        assertCompletionIncludesExcludes("import module java.|", Set.of("java.base"), Set.of());
+        assertCompletion("import module java.ba|", "java.base");
+        assertCompletionIncludesExcludes("import module ja|", Set.of("java.base"), Set.of("jdk.compiler"));
+        assertCompletion("import module java/*c*/./*c*/ba|", "java.base");
     }
 }

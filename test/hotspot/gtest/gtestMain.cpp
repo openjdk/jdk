@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "unittest.hpp"
 
 #include <stdio.h>
@@ -66,17 +67,16 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   argc--;
   argv++;
 
-  int extra_jvm_args = disable_error_handling ? 4 : 2;
+  int extra_jvm_args = disable_error_handling ? 3 : 1;
   int num_jvm_options = argc + extra_jvm_args;
 
   JavaVMOption* options = new JavaVMOption[num_jvm_options];
-  options[0].optionString = (char*) "-Dsun.java.launcher.is_altjvm=true";
-  options[1].optionString = (char*) "-XX:+ExecutingUnitTests";
+  options[0].optionString = (char*) "-XX:+ExecutingUnitTests";
 
   if (disable_error_handling) {
     // don't create core files or hs_err files executing assert tests
-    options[2].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
-    options[3].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
+    options[1].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
+    options[2].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
   }
 
   for (int i = 0; i < argc; i++) {
@@ -193,7 +193,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
+  char** new_argv = (char**)permit_forbidden_function::malloc(sizeof(char*) * argc);
   int new_argc = 0;
 
   int i = 0;
@@ -289,7 +289,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   int result = RUN_ALL_TESTS();
 
-  ALLOW_C_FUNCTION(::free, ::free(argv);)
+  permit_forbidden_function::free(argv);
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have

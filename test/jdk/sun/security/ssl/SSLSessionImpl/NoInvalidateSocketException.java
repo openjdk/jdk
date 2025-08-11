@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 8274736 8277970
+ * @bug 8274736 8277970 8355262
  * @summary Concurrent read/close of SSLSockets causes SSLSessions to be
  *          invalidated unnecessarily
  * @library /javax/net/ssl/templates
@@ -285,7 +285,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
         // Signal the client, the server is ready to accept connection.
         serverCondition.countDown();
 
-        // Try to accept a connection in 5 seconds.
+        // Try to accept a connection in 10 seconds.
         // We will do this in a loop until the client flips the
         // finished variable to true
         SSLSocket sslSocket;
@@ -351,7 +351,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     public void configureServerSocket(SSLServerSocket socket) {
         try {
             socket.setReuseAddress(true);
-            socket.setSoTimeout(5000);
+            socket.setSoTimeout(10000);
         } catch (SocketException se) {
             // Rethrow as unchecked to satisfy the override signature
             throw new RuntimeException(se);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
+ *      8352533
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -35,8 +36,8 @@
  * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=300 Basic
- * @run main/othervm/native/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=360 Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
@@ -55,7 +56,6 @@ import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,6 +87,7 @@ public class Basic {
     /* Used for regex String matching for long error messages */
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
     static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
+    static final String SPAWNHELPER_FAILURE_MSG = "(Possible reasons:)";
 
     /**
      * Returns the number of milliseconds since time given by
@@ -207,7 +208,7 @@ public class Basic {
 
     private static final Runtime runtime = Runtime.getRuntime();
 
-    private static final String[] winEnvCommand = {"cmd.exe", "/c", "set"};
+    private static final String[] winEnvCommand = {"cmd.exe", "/d", "/c", "set"};
 
     private static String winEnvFilter(String env) {
         return env.replaceAll("\r", "")
@@ -319,7 +320,9 @@ public class Basic {
         } catch (IOException e) {
             String m = e.getMessage();
             if (EnglishUnix.is() &&
-                ! matches(m, PERMISSION_DENIED_ERROR_MSG))
+                !matches(m, PERMISSION_DENIED_ERROR_MSG))
+                unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                 unexpected(e);
         } catch (Throwable t) { unexpected(t); }
     }
@@ -334,7 +337,7 @@ public class Basic {
             } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
-                int n = new InputStreamReader(System.in).read(buf,0,buf.length);
+                int n = new InputStreamReader(System.in, System.getProperty("stdin.encoding")).read(buf,0,buf.length);
                 if (n != expected.length())
                     System.exit(5);
                 if (! new String(buf,0,n).equals(expected))
@@ -429,7 +432,9 @@ public class Basic {
                         } catch (IOException e) {
                             String m = e.getMessage();
                             if (EnglishUnix.is() &&
-                                ! matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                !matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                unexpected(e);
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                                 unexpected(e);
                         } catch (Throwable t) { unexpected(t); }
 
@@ -442,7 +447,9 @@ public class Basic {
                         } catch (IOException e) {
                             String m = e.getMessage();
                             if (EnglishUnix.is() &&
-                                ! matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                !matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                unexpected(e);
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                                 unexpected(e);
                         } catch (Throwable t) { unexpected(t); }
 
@@ -689,7 +696,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/true")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/true"))) {
                 return "/bin/true";
             } else {
                 File trueExe = new File("true");
@@ -704,7 +711,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/false")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/false"))) {
                 return "/bin/false";
             } else {
                 File falseExe = new File("false");
@@ -1841,7 +1848,9 @@ public class Basic {
         // Test Runtime.exec(...envp...) with envstrings without any `='
         //----------------------------------------------------------------
         try {
-            String[] cmdp = {"echo"};
+            // In Windows CMD (`cmd.exe`), `echo/` outputs a newline (i.e., an empty line).
+            // Wrapping it with `cmd.exe /c` ensures compatibility in both native Windows and Cygwin environments.
+            String[] cmdp = Windows.is() ? new String[]{"cmd.exe", "/c", "echo/"} : new String[]{"echo"};
             String[] envp = {"Hello", "World"}; // Yuck!
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             equal(commandOutput(p), "\n");
@@ -1977,6 +1986,8 @@ public class Basic {
             if (EnglishUnix.is() &&
                 ! matches(m, NO_SUCH_FILE_ERROR_MSG))
                 unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
+                unexpected(e);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -1994,6 +2005,8 @@ public class Basic {
                     || (EnglishUnix.is() &&
                         ! matches(m, NO_SUCH_FILE_ERROR_MSG)))
                     unexpected(e);
+                if (matches(m, SPAWNHELPER_FAILURE_MSG))
+                    unexpected(e);
             } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -2009,6 +2022,8 @@ public class Basic {
             if (! matches(m, "in directory")
                 || (EnglishUnix.is() &&
                     ! matches(m, NO_SUCH_FILE_ERROR_MSG)))
+                unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                 unexpected(e);
         } catch (Throwable t) { unexpected(t); }
 
@@ -2068,8 +2083,9 @@ public class Basic {
                         op.f();
                         fail();
                     } catch (IOException expected) {
-                        check(expected.getMessage()
-                              .matches("[Ss]tream [Cc]losed"));
+                        String m = expected.getMessage();
+                        check(m.matches("[Ss]tream [Cc]losed"));
+                        check(!matches(m, SPAWNHELPER_FAILURE_MSG));
                     }
                 }
             }
@@ -2121,8 +2137,12 @@ public class Basic {
                             }
                             equal(-1, r);
                         } catch (IOException ioe) {
-                            if (!ioe.getMessage().equals("Stream closed")) {
+                            String m = ioe.getMessage();
+                            if (!m.equals("Stream closed")) {
                                 // BufferedInputStream may throw IOE("Stream closed").
+                                unexpected(ioe);
+                            }
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG)) {
                                 unexpected(ioe);
                             }
                         } catch (Throwable t) { unexpected(t); }}};
@@ -2178,6 +2198,9 @@ public class Basic {
                                 ! (msg.matches(".*Bad file.*") ||
                                         msg.matches(".*Stream closed.*")))
                                 unexpected(e);
+                            if (matches(msg, SPAWNHELPER_FAILURE_MSG)) {
+                                unexpected(e);
+                            }
                         }
                         catch (Throwable t) { unexpected(t); }}};
                 reader.setDaemon(true);
@@ -2270,6 +2293,9 @@ public class Basic {
             if (EnglishUnix.is() &&
                 ! matches(m, PERMISSION_DENIED_ERROR_MSG))
                 unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG)) {
+                unexpected(e);
+            }
         } catch (Throwable t) { unexpected(t); }
 
         new File("emptyCommand").delete();

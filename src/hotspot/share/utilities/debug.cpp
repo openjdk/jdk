@@ -37,7 +37,6 @@
 #include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -64,8 +63,8 @@
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 // These functions needs to be exported on Windows only
 #define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
@@ -625,6 +624,7 @@ void help() {
   tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64 or");
   tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
   tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
+  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
   tty->print_cr("class metadata.");
@@ -711,7 +711,7 @@ struct TestMultipleStaticAssertFormsInClassScope {
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size(), !ExecMem, mtInternal);
+  char* page = os::reserve_memory(os::vm_page_size(), mtInternal);
   if (page) {
     if (os::commit_memory(page, os::vm_page_size(), !ExecMem) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {

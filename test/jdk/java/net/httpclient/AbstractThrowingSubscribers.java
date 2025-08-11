@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,7 +413,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                 excludes(SubscriberType.OFFLINE));
     }
 
-    private <T,U> void testThrowing(String name, String uri, boolean sameClient,
+    <T,U> void testThrowing(String name, String uri, boolean sameClient,
                                     Supplier<BodyHandler<T>> handlers,
                                     Finisher finisher, Thrower thrower,
                                     boolean async, EnumSet<Where> excludes)
@@ -585,8 +585,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return shouldHaveThrown(w, resp, thrower);
     }
 
-    private static Throwable findCause(Throwable x,
-                                       Predicate<Throwable> filter) {
+    static Throwable findCause(Throwable x, Predicate<Throwable> filter) {
         while (x != null && !filter.test(x)) x = x.getCause();
         return x;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4057701 6286712 6364377 8181919
+ * @bug 4057701 6286712 6364377 8181919 8349092
  * @requires (os.family == "linux" | os.family == "mac" |
  *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
@@ -176,6 +176,12 @@ public class GetXSpace {
         long fs = f.getFreeSpace();
         long us = f.getUsableSpace();
 
+        // Verify inequalities us <= ts and fs <= ts (JDK-8349092)
+        if (fs > ts)
+            throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
+        if (us > ts)
+            throw new RuntimeException(f + " usable space " + us + " > total space " + ts);
+
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
         String method = Platform.isWindows() & isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace0";
@@ -263,15 +269,9 @@ public class GetXSpace {
             pass();
         }
 
-        // usable space <= free space
-        if (us > s.free()) {
-            // free and usable change dynamically
-            System.err.println("Warning: us > s.free()");
-            if (1.0 - Math.abs((double)s.free()/(double)us) > 0.01) {
-                fail(s.name() + " usable vs. free space", us, ">", s.free());
-            } else {
-                pass();
-            }
+        // usable space <= total space
+        if (us > s.total()) {
+            fail(s.name() + " usable vs. total space", us, ">", s.total());
         } else {
             pass();
         }

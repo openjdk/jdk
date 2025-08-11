@@ -1720,7 +1720,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
             ? "ReentrantReadWriteLock$FairSync"
             : "ReentrantReadWriteLock$NonfairSync";
         final String conditionClassName
-            = "AbstractQueuedSynchronizer$ConditionObject";
+            = "AbstractQueuedLongSynchronizer$ConditionObject";
         final Thread.State expectedAcquireState = timedAcquire
             ? Thread.State.TIMED_WAITING
             : Thread.State.WAITING;

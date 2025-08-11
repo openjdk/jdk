@@ -31,6 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8339307
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackUpcall
  */

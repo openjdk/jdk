@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,6 +49,9 @@ private:
   volatile size_t _last_counter_update;
   volatile size_t _last_heap_print;
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   static EpsilonHeap* heap();
 
@@ -79,11 +82,6 @@ public:
   }
 
   bool requires_barriers(stackChunkOop obj) const override { return false; }
-
-  bool is_maximal_no_gc() const override {
-    // No GC is going to happen. Return "we are at max", when we are about to fail.
-    return used() == capacity();
-  }
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
@@ -131,8 +129,8 @@ public:
   bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
 
-  void print_on(outputStream* st) const override;
-  void print_tracing_info() const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override {}
   bool print_location(outputStream* st, void* addr) const override;
 
 private:

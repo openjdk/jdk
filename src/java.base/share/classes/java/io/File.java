@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ import jdk.internal.util.StaticProperty;
  * case of Microsoft Windows UNC pathnames, a hostname.  Each subsequent name
  * in an abstract pathname denotes a directory; the last name may denote
  * either a directory or a file.  The <em>empty</em> abstract pathname has no
- * prefix and an empty name sequence.
+ * prefix and an empty name sequence.  Accessing a file with the empty abstract
+ * pathname is equivalent to accessing the current user directory.
  *
  * <p> The conversion of a pathname string to or from an abstract pathname is
  * inherently system-dependent.  When an abstract pathname is converted into a
@@ -588,8 +589,8 @@ public class File
      * {@link #getAbsolutePath} method, and then maps it to its unique form in a
      * system-dependent way.  This typically involves removing redundant names
      * such as {@code "."} and {@code ".."} from the pathname, resolving
-     * symbolic links (on UNIX platforms), and converting drive letters to a
-     * standard case (on Microsoft Windows platforms).
+     * symbolic links, and converting drive letters to a standard case (on
+     * Microsoft Windows platforms).
      *
      * <p> Every pathname that denotes an existing file or directory has a
      * unique canonical form.  Every pathname that denotes a nonexistent file
@@ -680,7 +681,6 @@ public class File
         if (isInvalid()) {
             throw new MalformedURLException("Invalid file path");
         }
-        @SuppressWarnings("deprecation")
         var result = new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
         return result;
     }
@@ -1134,9 +1134,9 @@ public class File
         if (ss == null) return null;
         int n = ss.length;
         File[] fs = new File[n];
-        for (int i = 0; i < n; i++) {
-            fs[i] = new File(ss[i], this);
-        }
+        boolean isEmpty = path.isEmpty();
+        for (int i = 0; i < n; i++)
+            fs[i] = isEmpty ? new File(ss[i]) : new File(ss[i], this);
         return fs;
     }
 
@@ -1169,9 +1169,10 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
+        boolean isEmpty = path.isEmpty();
         for (String s : ss)
             if ((filter == null) || filter.accept(this, s))
-                files.add(new File(s, this));
+                files.add(isEmpty ? new File(s) : new File(s, this));
         return files.toArray(new File[files.size()]);
     }
 
@@ -1202,8 +1203,9 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
+        boolean isEmpty = path.isEmpty();
         for (String s : ss) {
-            File f = new File(s, this);
+            File f = isEmpty ? new File(s) : new File(s, this);
             if ((filter == null) || filter.accept(f))
                 files.add(f);
         }
@@ -1518,7 +1520,7 @@ public class File
      * virtual machine with special privileges that allow it to execute files
      * that are not marked executable.
      *
-     * <p>An invocation of this method of the form {@code file.setExcutable(arg)}
+     * <p>An invocation of this method of the form {@code file.setExecutable(arg)}
      * behaves in exactly the same way as the invocation
      *
      * {@snippet lang=java :

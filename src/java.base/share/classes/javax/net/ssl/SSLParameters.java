@@ -653,19 +653,28 @@ public class SSLParameters {
      * {@code String} should be exchanged using {@code UTF-8}, the
      * {@code String} should be converted to its {@code byte[]} representation
      * and stored as a byte-oriented {@code String} before calling this method.
+     * For example:
      *
      * <blockquote><pre>
-     *     // MEETEI MAYEK LETTERS HUK UN I (Unicode 0xabcd->0xabcf): 2 bytes
-     *     byte[] bytes = "\u005cuabcd\u005cuabce\u005cuabcf"
-     *             .getBytes(StandardCharsets.UTF_8);
-     *     String HUK_UN_I = new String(bytes, StandardCharsets.ISO_8859_1);
+     *     // Encode 3 Meetei Mayek letters (HUK, UN, I) using Unicode Escapes
+     *     //     0xabcd->0xabcf, 2 Unicode bytes/letter.
+     *     String HUK_UN_I =  "\u005cuabcd\u005cuabce\u005cuabcf";
      *
-     *     // 0x00-0xFF:  1 byte
-     *     String rfc7301Grease8A = "\u005cu008A\u005cu008A";
+     *     // Convert into UTF-8 encoded bytes (3 bytes/letter)
+     *     byte[] bytes = HUK_UN_I.getBytes(StandardCharsets.UTF_8);
      *
+     *     // Preserve octet byte order by using ISO_8859_1 encoding
+     *     String encodedHukUnI =
+     *         new String(bytes, StandardCharsets.ISO_8859_1);
+     *
+     *     // Also, encode a two byte RFC 8701 GREASE ALPN value
+     *     //     e.g. 0x0A, 0x1A, 0x2A...0xFA
+     *     String rfc8701Grease8A = "\u005cu008A\u005cu008A";
+     *
+     *     // Set the ALPN vlues on the sslSocket.
      *     SSLParameters p = sslSocket.getSSLParameters();
      *     p.setApplicationProtocols(new String[] {
-     *             "h2", "http/1.1", rfc7301Grease8A, HUK_UN_I});
+     *             "h2", "http/1.1", encodedHukUnI, rfc8701Grease8A});
      *     sslSocket.setSSLParameters(p);
      * </pre></blockquote>
      *

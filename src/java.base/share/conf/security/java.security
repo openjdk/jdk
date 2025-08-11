@@ -535,7 +535,10 @@ sun.security.krb5.maxReferrals=5
 #       denyAfter YYYY-MM-DD
 #
 #   UsageConstraint:
-#       usage [TLSServer] [TLSClient] [SignedJAR]
+#       usage UsageType { UsageType }
+#
+#   UsageType:
+#       TLSServer | TLSClient | SignedJAR
 #
 #   IncludeProperty:
 #       include <security property>
@@ -598,9 +601,9 @@ sun.security.krb5.maxReferrals=5
 #       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
 #
 #   UsageConstraint:
-#     usage [TLSServer] [TLSClient] [SignedJAR]
+#     usage UsageType { UsageType }
 #       This constraint prohibits the specified algorithm for
-#       a specified usage.  This should be used when disabling an algorithm
+#       a specified UsageType.  This should be used when disabling an algorithm
 #       for all usages is not practical. 'TLSServer' restricts the algorithm
 #       in TLS server certificate chains when server authentication is
 #       performed. 'TLSClient' restricts the algorithm in TLS client
@@ -729,11 +732,30 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string. Additionally, TLS cipher suites
-# can be disabled with this property using one or more "*" wildcard characters.
-# For example, "TLS_RSA_*" disables all cipher suites that start with
-# "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
-# wildcard characters.
+# syntax of the disabled algorithm string.
+#
+# Additional TLS-specific syntax supported by this property:
+#
+#   - TLS cipher suites can be disabled with this property using one or more
+#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
+#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "TLS_" are allowed to have wildcard characters.
+#
+#   - TLS protocol specific usage constraints are supported by this property:
+#
+#     UsageConstraint:
+#         usage UsageType { UsageType }
+#
+#     UsageType:
+#         HandshakeSignature | CertificateSignature
+#
+#     HandshakeSignature restricts the use of the algorithm in TLS handshake
+#     signatures. CertificateSignature restricts the use of the algorithm in
+#     certificate signatures. An algorithm with this constraint cannot include
+#     other usage types defined in the jdk.certpath.disabledAlgorithms
+#     property. The usage type follows the keyword and more than one usage type
+#     can be specified with a whitespace delimiter.
+#     Example: "rsa_pkcs1_sha1 usage HandshakeSignature"
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
@@ -746,7 +768,8 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH, TLS_RSA_*
+    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, \
+    ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -989,6 +1012,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/2000/09/xmldsig#rsa-sha1,\
     disallowAlg http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1,\
+    disallowAlg http://www.w3.org/TR/1999/REC-xpath-19991116,\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
@@ -1254,8 +1278,13 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #
 # Enhanced exception message information
 #
-# By default, exception messages should not include potentially sensitive
-# information such as file names, host names, or port numbers. This property
+# Exception messages may include potentially sensitive information such as file
+# names, host names, or port numbers. By default, socket related exceptions
+# have this information restricted (meaning the sensitive details are removed).
+# Exception messages relating to JAR files and exceptions containing user
+# identity information are also restricted by default.
+# This property can be used to relax this restriction or to place further
+# restrictions on other categories, defined below. The property
 # accepts one or more comma separated values, each of which represents a
 # category of enhanced exception message information to enable. Values are
 # case-insensitive. Leading and trailing whitespaces, surrounding each value,
@@ -1268,17 +1297,28 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #
 # The categories are:
 #
-#  hostInfo - IOExceptions thrown by java.net.Socket and the socket types in the
-#             java.nio.channels package will contain enhanced exception
-#             message information
+#  hostInfo - All networking related exceptions will contain enhanced
+#             exception message information.
+#
+#  hostInfoExclSocket - The hostInfo category defined above, excluding
+#             IOExceptions thrown by java.net.Socket and the NetworkChannel
+#             types in the java.nio.channels package, will contain enhanced
+#             exception message information
 #
 #  jar      - enables more detailed information in the IOExceptions thrown
 #             by classes in the java.util.jar package
 #
+#  userInfo - enables more detailed information in exceptions which may contain
+#             user identity information
+#
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#jdk.includeInExceptions=hostInfo,jar
+# If the property is not set or set to an empty string, then this is the most
+# restricted setting with all categories disabled. The following is the default
+# (out of the box) setting, meaning these categories are not restricted.
+#
+jdk.includeInExceptions=hostInfoExclSocket
 
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
@@ -1526,3 +1566,12 @@ jdk.tls.alpnCharset=ISO_8859_1
 # security property value defined here.
 #
 #jdk.security.krb5.name.case.sensitive=false
+
+#
+# Default algorithm for PEMEncoder Encrypted PKCS#8
+#
+# This property defines the default password-based encryption algorithm for
+# java.security.PEMEncoder when configured for encryption with the
+# withEncryption method.
+#
+jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128

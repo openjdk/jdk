@@ -29,10 +29,9 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:
@@ -127,9 +126,6 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
     if (r->is_cset()) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _heap->marked_object_iterate(r, &cl);
-      if (ShenandoahPacing) {
-        _heap->pacer()->report_evac(r->used() >> LogHeapWordSize);
-      }
     } else {
       maybe_promote_region(r);
     }
@@ -169,7 +165,8 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
 // We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting pointers"
 // contained herein.
 void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion* region) {
-  ShenandoahMarkingContext* const marking_context = _heap->complete_marking_context();
+  assert(!_heap->gc_generation()->is_old(), "Sanity check");
+  ShenandoahMarkingContext* const marking_context = _heap->young_generation()->complete_marking_context();
   HeapWord* const tams = marking_context->top_at_mark_start(region);
 
   {

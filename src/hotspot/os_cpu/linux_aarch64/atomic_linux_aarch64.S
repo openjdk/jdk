@@ -295,7 +295,7 @@ DECLARE_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
         ret
 
 /* Emit .note.gnu.property section in case of PAC or BTI being enabled.
- * For more details see "ELF for the Arm® 64-bit Architecture (AArch64)".
+ * For more details see "ELF for the Arm(R) 64-bit Architecture (AArch64)".
  * https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
  */
 #ifdef __ARM_FEATURE_BTI_DEFAULT

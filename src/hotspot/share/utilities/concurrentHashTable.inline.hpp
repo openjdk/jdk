@@ -1232,35 +1232,34 @@ inline void ConcurrentHashTable<CONFIG, MT>::
 
 template <typename CONFIG, MemTag MT>
 template <typename VALUE_SIZE_FUNC>
-inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
-  statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f)
+inline void ConcurrentHashTable<CONFIG, MT>::
+  internal_statistics_range(Thread* thread, size_t start, size_t stop,
+                            VALUE_SIZE_FUNC& vs_f, NumberSeq& summary, size_t& literal_size)
 {
-  constexpr size_t batch_size = 128;
-  NumberSeq summary;
-  size_t literal_bytes = 0;
-  InternalTable* table = get_table();
-  size_t num_batches = table->_size / batch_size;
-  for (size_t batch_start = 0; batch_start < _table->_size; batch_start += batch_size) {
-    // We batch the use of ScopedCS here as it has been found to be quite expensive to
-    // invoke it for every single bucket.
-    size_t batch_end = MIN2(batch_start + batch_size, _table->_size);
-    ScopedCS cs(thread, this);
-    for (size_t bucket_it = batch_start; bucket_it < batch_end; bucket_it++) {
-      size_t count = 0;
-      Bucket* bucket = table->get_bucket(bucket_it);
-      if (bucket->have_redirect() || bucket->is_locked()) {
-        continue;
-      }
-      Node* current_node = bucket->first();
-      while (current_node != nullptr) {
-        ++count;
-        literal_bytes += vs_f(current_node->value());
-        current_node = current_node->next();
-      }
-      summary.add((double)count);
+  // We batch the use of ScopedCS here as it has been found to be quite expensive to
+  // invoke it for every single bucket.
+  ScopedCS cs(thread, this);
+  for (size_t bucket_it = start; bucket_it < stop; bucket_it++) {
+    size_t count = 0;
+    Bucket* bucket = _table->get_bucket(bucket_it);
+    if (bucket->have_redirect() || bucket->is_locked()) {
+      continue;
     }
+    Node* current_node = bucket->first();
+    while (current_node != nullptr) {
+      ++count;
+      literal_size += vs_f(current_node->value());
+      current_node = current_node->next();
+    }
+    summary.add((double)count);
   }
+}
 
+template <typename CONFIG, MemTag MT>
+inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
+  internal_statistics_epilog(Thread* thread, NumberSeq summary, size_t literal_bytes)
+{
+  unlock_resize_lock(thread);
   if (_stats_rate == nullptr) {
     return TableStatistics(summary, literal_bytes, sizeof(Bucket), sizeof(Node));
   } else {
@@ -1276,28 +1275,12 @@ inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
   if (!try_resize_lock(thread)) {
     return old;
   }
+  InternalTable* table = get_table();
+  NumberSeq summary;
+  size_t    literal_bytes = 0;
 
-  TableStatistics ts = statistics_calculate(thread, vs_f);
-  unlock_resize_lock(thread);
-
-  return ts;
-}
-
-template <typename CONFIG, MemTag MT>
-template <typename VALUE_SIZE_FUNC>
-inline void ConcurrentHashTable<CONFIG, MT>::
-  statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f,
-                outputStream* st, const char* table_name)
-{
-  if (!try_resize_lock(thread)) {
-    st->print_cr("statistics unavailable at this moment");
-    return;
-  }
-
-  TableStatistics ts = statistics_calculate(thread, vs_f);
-  unlock_resize_lock(thread);
-
-  ts.print(st, table_name);
+  internal_statistics_range(thread, 0, table->_size, vs_f, summary, literal_bytes);
+  return internal_statistics_epilog(thread, summary, literal_bytes);
 }
 
 template <typename CONFIG, MemTag MT>

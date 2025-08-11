@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,6 @@ public class Continuation extends ResolveResult {
      * @param environment The environment used by the caller. It is used
      *          when setting the "environment" of a CannotProceedException.
      */
-    @SuppressWarnings("unchecked")  // For Hashtable clone: environment.clone()
     public Continuation(Name top, Hashtable<?,?> environment) {
         super();
         starter = top;

@@ -326,7 +326,7 @@ void OopMap::set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional) {
 
   assert(reg->value() < _locs_length, "too big reg value for stack size");
   assert( _locs_used[reg->value()] == OopMapValue::unused_value, "cannot insert twice" );
-  debug_only( _locs_used[reg->value()] = x; )
+  DEBUG_ONLY( _locs_used[reg->value()] = x; )
 
   OopMapValue o(reg, x, optional);
   o.write_on(write_stream());
@@ -511,7 +511,7 @@ void ImmutableOopMap::update_register_map(const frame *fr, RegisterMap *reg_map)
   // Any reg might be saved by a safepoint handler (see generate_handler_blob).
   assert( reg_map->_update_for_id == nullptr || fr->is_older(reg_map->_update_for_id),
          "already updated this map; do not 'update' it twice!" );
-  debug_only(reg_map->_update_for_id = fr->id());
+  DEBUG_ONLY(reg_map->_update_for_id = fr->id());
 
   // Check if caller must update oop argument
   assert((reg_map->include_argument_oops() ||
@@ -729,7 +729,6 @@ bool ImmutableOopMap::has_any(OopMapValue::oop_types type) const {
   return false;
 }
 
-#ifdef ASSERT
 int ImmutableOopMap::nr_of_bytes() const {
   OopMapStream oms(this);
 
@@ -738,7 +737,6 @@ int ImmutableOopMap::nr_of_bytes() const {
   }
   return sizeof(ImmutableOopMap) + oms.stream_position();
 }
-#endif
 
 ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _empty(nullptr), _last(nullptr), _empty_offset(-1), _last_offset(-1), _offset(0), _required(-1), _new_set(nullptr) {
   _mapping = NEW_RESOURCE_ARRAY(Mapping, _set->size());

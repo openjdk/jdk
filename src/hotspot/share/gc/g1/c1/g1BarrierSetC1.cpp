@@ -22,8 +22,8 @@
  *
  */
 
-#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
@@ -215,11 +215,12 @@ class C1G1PostBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   }
 };
 
-void G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
+bool G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1G1PreBarrierCodeGenClosure pre_code_gen_cl;
   C1G1PostBarrierCodeGenClosure post_code_gen_cl;
-  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_pre_barrier_slow",
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID, "g1_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
-  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_post_barrier_slow",
+  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID, "g1_post_barrier_slow",
                                                                false, &post_code_gen_cl);
+  return _pre_barrier_c1_runtime_code_blob != nullptr && _post_barrier_c1_runtime_code_blob != nullptr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,48 +34,14 @@
  * @run main/othervm SigSchemePropOrdering
  */
 
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
+import java.util.Arrays;
+import java.util.List;
 
-public class SigSchemePropOrdering extends SSLEngineTemplate {
-
-    // Helper map to correlate integral SignatureScheme identifiers to
-    // their IANA string name counterparts.
-    static final Map<Integer, String> sigSchemeMap = Map.ofEntries(
-            new SimpleImmutableEntry(0x0401, "rsa_pkcs1_sha256"),
-            new SimpleImmutableEntry(0x0501, "rsa_pkcs1_sha384"),
-            new SimpleImmutableEntry(0x0601, "rsa_pkcs1_sha512"),
-            new SimpleImmutableEntry(0x0403, "ecdsa_secp256r1_sha256"),
-            new SimpleImmutableEntry(0x0503, "ecdsa_secp384r1_sha384"),
-            new SimpleImmutableEntry(0x0603, "ecdsa_secp521r1_sha512"),
-            new SimpleImmutableEntry(0x0804, "rsa_pss_rsae_sha256"),
-            new SimpleImmutableEntry(0x0805, "rsa_pss_rsae_sha384"),
-            new SimpleImmutableEntry(0x0806, "rsa_pss_rsae_sha512"),
-            new SimpleImmutableEntry(0x0807, "ed25519"),
-            new SimpleImmutableEntry(0x0808, "ed448"),
-            new SimpleImmutableEntry(0x0809, "rsa_pss_pss_sha256"),
-            new SimpleImmutableEntry(0x080a, "rsa_pss_pss_sha384"),
-            new SimpleImmutableEntry(0x080b, "rsa_pss_pss_sha512"),
-            new SimpleImmutableEntry(0x0101, "rsa_md5"),
-            new SimpleImmutableEntry(0x0201, "rsa_pkcs1_sha1"),
-            new SimpleImmutableEntry(0x0202, "dsa_sha1"),
-            new SimpleImmutableEntry(0x0203, "ecdsa_sha1"),
-            new SimpleImmutableEntry(0x0301, "rsa_sha224"),
-            new SimpleImmutableEntry(0x0302, "dsa_sha224"),
-            new SimpleImmutableEntry(0x0303, "ecdsa_sha224"),
-            new SimpleImmutableEntry(0x0402, "rsa_pkcs1_sha256"));
-
-    // Other useful TLS definitions for these tests
-    private static final int TLS_HS_CLI_HELLO = 1;
-    private static final int TLS_HS_CERT_REQ = 13;
-    private static final int HELLO_EXT_SIG_ALGS = 13;
+public class SigSchemePropOrdering extends AbstractCheckSignatureSchemes {
 
     private static final String SIG_SCHEME_STR =
             "rsa_pkcs1_sha256,rsa_pss_rsae_sha256,rsa_pss_pss_sha256," +
-            "ed448,ed25519,ecdsa_secp256r1_sha256";
+                    "ed448,ed25519,ecdsa_secp256r1_sha256";
 
     SigSchemePropOrdering() throws Exception {
         super();
@@ -88,18 +54,8 @@ public class SigSchemePropOrdering extends SSLEngineTemplate {
         new SigSchemePropOrdering().run();
     }
 
-    @Override
-    protected SSLEngine configureClientEngine(SSLEngine clientEngine) {
-        clientEngine.setUseClientMode(true);
-        clientEngine.setEnabledProtocols(new String[] { "TLSv1.2" });
-        return clientEngine;
-    }
-
-    @Override
-    protected SSLEngine configureServerEngine(SSLEngine serverEngine) {
-        serverEngine.setUseClientMode(false);
-        serverEngine.setWantClientAuth(true);
-        return serverEngine;
+    protected String getProtocol() {
+        return "TLSv1.2";
     }
 
     private void run() throws Exception {
@@ -112,7 +68,8 @@ public class SigSchemePropOrdering extends SSLEngineTemplate {
         cTOs.flip();
 
         List<String> actualSS = getSigSchemesCliHello(
-                extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO));
+                extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
+                SIG_ALGS_EXT);
 
         // Make sure the ordering is correct
         if (!expectedSS.equals(actualSS)) {
@@ -154,178 +111,5 @@ public class SigSchemePropOrdering extends SSLEngineTemplate {
             throw new RuntimeException(
                     "FAIL: Expected and Actual values differ.");
         }
-    }
-
-    /**
-     * Given a TLS record containing one or more handshake messages, return
-     * the specific handshake message as a ByteBuffer (a slice of the record)
-     *
-     * @param tlsRecord a ByteBuffer containing a TLS record.  It is assumed
-     *      that the position of the ByteBuffer is on the first byte of the TLS
-     *      record header.
-     * @param hsMsgId the message identifier for the handshake message being
-     *      sought.
-     *
-     * @return a ByteBuffer containing the TLS handshake message.  The position
-     *      of the returned ByteBuffer will be on the first byte of the TLS
-     *      handshake message data, immediately following the handshake header.
-     *      If the message is not found, null will be returned.
-     *
-     * @throws SSLException if the incoming ByteBuffer does not contain a
-     *      well-formed TLS message.
-     */
-    private static ByteBuffer extractHandshakeMsg(ByteBuffer tlsRecord,
-            int hsMsgId) throws SSLException {
-        Objects.requireNonNull(tlsRecord);
-        tlsRecord.mark();
-
-        // Process the TLS record header
-        int type = Byte.toUnsignedInt(tlsRecord.get());
-        int ver_major = Byte.toUnsignedInt(tlsRecord.get());
-        int ver_minor = Byte.toUnsignedInt(tlsRecord.get());
-        int recLen = Short.toUnsignedInt(tlsRecord.getShort());
-
-        // Simple sanity checks
-        if (type != 22) {
-            throw new SSLException("Not a handshake: Type = " + type);
-        } else if (recLen > tlsRecord.remaining()) {
-            throw new SSLException("Incomplete record in buffer: " +
-                    "Record length = " + recLen + ", Remaining = " +
-                    tlsRecord.remaining());
-        }
-
-        while (tlsRecord.hasRemaining()) {
-            // Grab the handshake message header.
-            int msgHdr = tlsRecord.getInt();
-            int msgType = (msgHdr >> 24) & 0x000000FF;
-            int msgLen = msgHdr & 0x00FFFFFF;
-
-            if (msgType == hsMsgId) {
-                // Slice the buffer such that it contains the entire
-                // handshake message (less the handshake header).
-                ByteBuffer buf = tlsRecord.slice(tlsRecord.position(), msgLen);
-                tlsRecord.reset();
-                return buf;
-            } else {
-                // Skip to the next handshake message, if there is one
-                tlsRecord.position(tlsRecord.position() + msgLen);
-            }
-        }
-
-        tlsRecord.reset();
-        return null;
-    }
-
-
-    /**
-     * Parses the ClientHello message and extracts from it a list of
-     * SignatureScheme values in string form.  It is assumed that the provided
-     * ByteBuffer has its position set at the first byte of the ClientHello
-     * message body (AFTER the handshake header) and contains the entire
-     * hello message.  Upon successful completion of this method the ByteBuffer
-     * will have its position reset to the initial offset in the buffer.
-     * If an exception is thrown the position at the time of the exception
-     * will be preserved.
-     *
-     * @param data the ByteBuffer containing the ClientHello bytes
-     *
-     * @return A List of the signature schemes in string form.  If no
-     * signature_algorithms extension is present in the client hello then
-     * an empty list will be returned.
-     */
-    private static List<String> getSigSchemesCliHello(ByteBuffer data) {
-        Objects.requireNonNull(data);
-        data.mark();
-
-        // Skip over the protocol version and client random
-        data.position(data.position() + 34);
-
-        // Jump past the session ID (if there is one)
-        int sessLen = Byte.toUnsignedInt(data.get());
-        if (sessLen != 0) {
-            data.position(data.position() + sessLen);
-        }
-
-        // Jump past the cipher suites
-        int csLen = Short.toUnsignedInt(data.getShort());
-        if (csLen != 0) {
-            data.position(data.position() + csLen);
-        }
-
-        // ...and the compression
-        int compLen = Byte.toUnsignedInt(data.get());
-        if (compLen != 0) {
-            data.position(data.position() + compLen);
-        }
-
-        // Now for the fun part.  Go through the extensions and look
-        // for the two status request exts.
-        List<String> extSigAlgs = new ArrayList();
-        int extsLen = Short.toUnsignedInt(data.getShort());
-        while (data.hasRemaining()) {
-            int extType = Short.toUnsignedInt(data.getShort());
-            int extLen = Short.toUnsignedInt(data.getShort());
-            if (extType == HELLO_EXT_SIG_ALGS) {
-                // Start processing signature algorithms
-                int sigSchemeLen = Short.toUnsignedInt(data.getShort());
-                for (int ssOff = 0; ssOff < sigSchemeLen; ssOff += 2) {
-                    String schemeName = sigSchemeMap.get(
-                            Short.toUnsignedInt(data.getShort()));
-                    if (schemeName != null) {
-                        extSigAlgs.add(schemeName);
-                    }
-                }
-            } else {
-                // Not the extension we're looking for.  Skip past the
-                // extension data
-                data.position(data.position() + extLen);
-            }
-        }
-
-        // We should be at the end of the ClientHello
-        data.reset();
-        return extSigAlgs;
-    }
-
-    /**
-     * Parses the CertificateRequest message and extracts from it a list of
-     * SignatureScheme values in string form.  It is assumed that the provided
-     * ByteBuffer has its position set at the first byte of the
-     * CertificateRequest message body (AFTER the handshake header) and
-     * contains the entire CR message.  Upon successful completion of this
-     * method the ByteBuffer will have its position reset to the initial
-     * offset in the buffer.
-     * If an exception is thrown the position at the time of the exception
-     * will be preserved.
-     *
-     * @param data the ByteBuffer containing the CertificateRequest bytes
-     *
-     * @return A List of the signature schemes in string form.  If no
-     * signature_algorithms extension is present in the CertificateRequest
-     * then an empty list will be returned.
-     */
-    private static List<String> getSigSchemesCertReq(ByteBuffer data) {
-        Objects.requireNonNull(data);
-        data.mark();
-
-        // Jump past the certificate types
-        int certTypeLen = Byte.toUnsignedInt(data.get());
-        if (certTypeLen != 0) {
-            data.position(data.position() + certTypeLen);
-        }
-
-        // Collect the SignatureAndHashAlgorithms
-        List<String> extSigAlgs = new ArrayList();
-        int sigSchemeLen = Short.toUnsignedInt(data.getShort());
-        for (int ssOff = 0; ssOff < sigSchemeLen; ssOff += 2) {
-            String schemeName = sigSchemeMap.get(
-                    Short.toUnsignedInt(data.getShort()));
-            if (schemeName != null) {
-                extSigAlgs.add(schemeName);
-            }
-        }
-
-        data.reset();
-        return extSigAlgs;
     }
 }
