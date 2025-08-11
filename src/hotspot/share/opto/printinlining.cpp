@@ -46,7 +46,10 @@ void InlinePrinter::print_on(outputStream* tty) const {
   if (!is_enabled()) {
     return;
   }
-  _root.dump(tty, -1);
+  // using stringStream prevents interleaving with multiple compile threads
+  stringStream ss;
+  _root.dump(&ss, -1);
+  tty->print_raw(ss.freeze());
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
