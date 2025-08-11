@@ -34,7 +34,8 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseSerialGC compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.RelocateNMethod
  */
 
 /*
@@ -49,7 +50,8 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseParallelGC compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UseParallelGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.RelocateNMethod
  */
 
 /*
@@ -64,7 +66,8 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseG1GC compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.RelocateNMethod
  */
 
 /*
@@ -79,7 +82,8 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.RelocateNMethod
  */
 
 /*
@@ -94,7 +98,8 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseZGC compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.RelocateNMethod
  */
 
 package compiler.whitebox;

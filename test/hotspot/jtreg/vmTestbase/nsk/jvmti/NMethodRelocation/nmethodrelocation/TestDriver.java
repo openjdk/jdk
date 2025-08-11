@@ -51,6 +51,8 @@ public class TestDriver {
                 "-XX:+SegmentedCodeCache",
                 "-XX:-TieredCompilation",
                 "-Xbatch",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+NMethodRelocation",
                 nsk.jvmti.NMethodRelocation.nmethodrelocation.class.getName());
 
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());

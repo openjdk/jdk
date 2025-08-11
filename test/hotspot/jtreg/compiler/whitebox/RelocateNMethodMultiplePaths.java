@@ -34,7 +34,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -49,7 +50,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -64,7 +66,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -79,7 +82,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -94,7 +98,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -109,7 +114,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -124,7 +130,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -139,7 +146,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -154,7 +162,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
@@ -169,7 +178,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 package compiler.whitebox;
