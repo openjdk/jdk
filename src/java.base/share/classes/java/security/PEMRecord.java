@@ -47,7 +47,7 @@ import java.util.Objects;
  * {@code type} conforms to {@code RFC 7468}, that {@code content} is valid
  * Base64, or that {@code content} matches the {@code type}.
  * {@code leadingData} is not defensively copied and does not return a
- * clone when {@link #leadingData()} is called.
+ * clone when {@linkplain #leadingData()} is called.
  *
  * @param type the type identifier in the PEM header without PEM syntax labels.
  *           For a public key, {@code type} would be "PUBLIC KEY".
@@ -63,11 +63,11 @@ import java.util.Objects;
  * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-public record PEM(String type, String content, byte[] leadingData)
+public record PEMRecord(String type, String content, byte[] leadingData)
     implements DEREncodable {
 
     /**
-     * Creates a {@code PEM} instance with the given parameters.
+     * Creates a {@code PEMRecord} instance with the given parameters.
      *
      * @param type the type identifier
      * @param content the Base64-encoded data, excluding the PEM header and
@@ -79,7 +79,7 @@ public record PEM(String type, String content, byte[] leadingData)
      * @throws NullPointerException if {@code type} and/or {@code content} are
      * {@code null}.
      */
-    public PEM {
+    public PEMRecord {
         Objects.requireNonNull(type, "\"type\" cannot be null.");
         Objects.requireNonNull(content, "\"content\" cannot be null.");
 
@@ -94,7 +94,7 @@ public record PEM(String type, String content, byte[] leadingData)
     }
 
     /**
-     * Creates a {@code PEM} instance with a given {@code type} and
+     * Creates a {@code PEMRecord} instance with a given {@code type} and
      * {@code content} data in String form.  {@code leadingData} is set to null.
      *
      * @param type the PEM type identifier
@@ -105,7 +105,7 @@ public record PEM(String type, String content, byte[] leadingData)
      * @throws NullPointerException if {@code type} and/or {@code content} are
      * {@code null}.
      */
-    public PEM(String type, String content) {
+    public PEMRecord(String type, String content) {
         this(type, content, null);
     }
 

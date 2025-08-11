@@ -69,7 +69,7 @@ import java.util.Objects;
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
  *  Decryption)</li>
- *  <li>Other types : {@code PEM} </li>
+ *  <li>Other types : {@code PEMRecord} </li>
  * </ul>
  *
  * <p> The {@code PublicKey} and {@code PrivateKey} types, an algorithm specific
@@ -78,7 +78,7 @@ import java.util.Objects;
  *
  * <p> If the PEM type does not have a corresponding class,
  * {@code decode(String)} and {@code decode(InputStream)} will return a
- * {@link PEM}.
+ * {@link PEMRecord}.
  *
  * <p> The {@linkplain #decode(String, Class)} and
  * {@linkplain #decode(InputStream, Class)} methods take a class parameter
@@ -89,7 +89,7 @@ import java.util.Objects;
  * {@code PrivateKey.class} to return only the private key.
  * If the class parameter is set to {@code X509EncodedKeySpec.class}, the
  * public key will be returned in that format.  Any type of PEM data can be
- * decoded into a {@code PEM} by specifying {@code PEM.class}.
+ * decoded into a {@code PEMRecord} by specifying {@code PEMRecord.class}.
  * If the class parameter doesn't match the PEM content, a
  * {@linkplain ClassCastException} will be thrown.
  *
@@ -128,7 +128,7 @@ import java.util.Objects;
  * {@code X.509 CERTIFICATE}, {@code CRL}, and {@code RSA PRIVATE KEY}.
  *
  * @see PEMEncoder
- * @see PEM
+ * @see PEMRecord
  * @see EncryptedPrivateKeyInfo
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
@@ -172,7 +172,7 @@ public final class PEMDecoder {
      * header and footer and proceed with decoding the base64 for the
      * appropriate type.
      */
-    private DEREncodable decode(PEM pem) {
+    private DEREncodable decode(PEMRecord pem) {
         Base64.Decoder decoder = Base64.getMimeDecoder();
 
         try {
@@ -255,7 +255,7 @@ public final class PEMDecoder {
      * <p> This method returns a Java API cryptographic object,
      * such as a {@code PrivateKey}, if the PEM type is supported.
      * Any non-PEM data preceding the PEM header is ignored by the decoder.
-     * Otherwise, a {@link PEM} will be returned containing
+     * Otherwise, a {@link PEMRecord} will be returned containing
      * the type identifier and Base64-encoded data.
      * Any non-PEM data preceding the PEM header will be stored in
      * {@code leadingData}.
@@ -293,7 +293,7 @@ public final class PEMDecoder {
      * <p> This method returns a Java API cryptographic object,
      * such as a {@code PrivateKey}, if the PEM type is supported.
      * Any non-PEM data preceding the PEM header is ignored by the decoder.
-     * Otherwise, a {@link PEM} will be returned containing
+     * Otherwise, a {@link PEMRecord} will be returned containing
      * the type identifier and Base64-encoded data.
      * Any non-PEM data preceding the PEM header will be stored in
      * {@code leadingData}.
@@ -311,7 +311,7 @@ public final class PEMDecoder {
      */
     public DEREncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
-        PEM pem = Pem.readPEM(is);
+        PEMRecord pem = Pem.readPEM(is);
         return decode(pem);
     }
 
@@ -324,8 +324,8 @@ public final class PEMDecoder {
      * or the end of the {@code String} is reached.  If no PEM data is found,
      * an {@code IllegalArgumentException} is thrown.
      *
-     * <p> If the class parameter is {@code PEM.class},
-     * a {@linkplain PEM} is returned containing the
+     * <p> If the class parameter is {@code PEMRecord.class},
+     * a {@linkplain PEMRecord} is returned containing the
      * type identifier and Base64 encoding. Any non-PEM data preceding
      * the PEM header will be stored in {@code leadingData}.  Other
      * class parameters will not return preceding non-PEM data.
@@ -365,8 +365,8 @@ public final class PEMDecoder {
      * It is recommended to perform no further decoding operations
      * on the {@code InputStream}.
      *
-     * <p> If the class parameter is {@code PEM.class},
-     * a {@linkplain PEM} is returned containing the
+     * <p> If the class parameter is {@code PEMRecord.class},
+     * a {@linkplain PEMRecord} is returned containing the
      * type identifier and Base64 encoding. Any non-PEM data preceding
      * the PEM header will be stored in {@code leadingData}.  Other
      * class parameters will not return preceding non-PEM data.
@@ -393,9 +393,9 @@ public final class PEMDecoder {
         throws IOException {
         Objects.requireNonNull(is);
         Objects.requireNonNull(tClass);
-        PEM pem = Pem.readPEM(is);
+        PEMRecord pem = Pem.readPEM(is);
 
-        if (tClass.isAssignableFrom(PEM.class)) {
+        if (tClass.isAssignableFrom(PEMRecord.class)) {
             return tClass.cast(pem);
         }
         DEREncodable so = decode(pem);

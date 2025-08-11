@@ -57,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * into PEM and return the data in a byte array or String.
  *
  * <p> Private keys can be encrypted and encoded by configuring a
- * {@code PEMEncoder} with the {@link #withEncryption(char[])} method,
+ * {@code PEMEncoder} with the {@linkplain #withEncryption(char[])} method,
  * which takes a password and returns a new {@code PEMEncoder} instance
  * configured to encrypt the key with that password. Alternatively, a
  * private key encrypted as an {@code EncryptedKeyInfo} object can be encoded
@@ -70,10 +70,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code encodeToString} methods are encoded as a
  * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
- * <p> When encoding a {@link PEM}, the API surrounds the
- * {@link PEM#content()} with the PEM header and footer
- * from {@link PEM#type()}. {@link PEM#leadingData()} is
- * not included in the encoding.  {@code PEM} will not perform
+ * <p> When encoding a {@link PEMRecord}, the API surrounds the
+ * {@linkplain PEMRecord#content()} with the PEM header and footer
+ * from {@linkplain PEMRecord#type()}. {@linkplain PEMRecord#leadingData()} is
+ * not included in the encoding.  {@code PEMRecord} will not perform
  * validity checks on the data.
  *
  * <p>The following lists the supported {@code DEREncodable} classes and
@@ -90,7 +90,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *  <li>{@code KeyPair} : PRIVATE KEY</li>
  *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
  *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
- *  <li>{@code PEM} : {@code PEM.type()}</li>
+ *  <li>{@code PEMRecord} : {@code PEMRecord.type()}</li>
  *  </ul>
  *
  * <p> This class is immutable and thread-safe.
@@ -113,7 +113,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  *
  * @see PEMDecoder
- * @see PEM
+ * @see PEMRecord
  * @see EncryptedPrivateKeyInfo
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
@@ -219,9 +219,9 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException(e);
                 }
             }
-            case PEM rec -> {
+            case PEMRecord rec -> {
                 if (isEncrypted()) {
-                    throw new IllegalArgumentException("PEM cannot be " +
+                    throw new IllegalArgumentException("PEMRecord cannot be " +
                         "encrypted");
                 }
                 yield Pem.pemEncoded(rec);

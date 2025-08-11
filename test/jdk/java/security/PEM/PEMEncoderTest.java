@@ -103,14 +103,14 @@ public class PEMEncoderTest {
         }
 
         PEMDecoder d = PEMDecoder.of();
-        PEM pem =
-            d.decode(PEMData.ed25519ep8.pem(), PEM.class);
-        PEMData.checkResults(PEMData.ed25519ep8, pem.toString());
+        PEMRecord pemRecord =
+            d.decode(PEMData.ed25519ep8.pem(), PEMRecord.class);
+        PEMData.checkResults(PEMData.ed25519ep8, pemRecord.toString());
 
         // test PemRecord is encapsulated with PEM header and footer on encoding
         String[] pemLines = PEMData.ed25519ep8.pem().split("\n");
         String[] pemNoHeaderFooter = Arrays.copyOfRange(pemLines, 1, pemLines.length - 1);
-        PEM pemR = new PEM("ENCRYPTED PRIVATE KEY", String.join("\n",
+        PEMRecord pemR = new PEMRecord("ENCRYPTED PRIVATE KEY", String.join("\n",
                 pemNoHeaderFooter));
         PEMData.checkResults(PEMData.ed25519ep8.pem(), encoder.encodeToString(pemR));
     }

@@ -109,8 +109,8 @@ public class PEMDecoderTest {
         System.out.println("Checking if ecCSR:");
         test(PEMData.ecCSR);
         System.out.println("Checking if ecCSR with preData:");
-        DEREncodable result = PEMDecoder.of().decode(PEMData.ecCSRWithData.pem(), PEM.class);
-        if (result instanceof PEM rec) {
+        DEREncodable result = PEMDecoder.of().decode(PEMData.ecCSRWithData.pem(), PEMRecord.class);
+        if (result instanceof PEMRecord rec) {
             if (PEMData.preData.compareTo(new String(rec.leadingData())) != 0) {
                 System.err.println("expected: " + PEMData.preData);
                 System.err.println("received: " + new String(rec.leadingData()));
@@ -126,11 +126,11 @@ public class PEMDecoderTest {
         }
 
         System.out.println("Decoding RSA pub using class PEMRecord:");
-        result = PEMDecoder.of().decode(PEMData.rsapub.pem(), PEM.class);
-        if (!(result instanceof PEM)) {
+        result = PEMDecoder.of().decode(PEMData.rsapub.pem(), PEMRecord.class);
+        if (!(result instanceof PEMRecord)) {
             throw new AssertionError("pubecpem didn't return a PEMRecord");
         }
-        if (((PEM) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
+        if (((PEMRecord) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
         }
 
@@ -148,13 +148,13 @@ public class PEMDecoderTest {
 
         d = PEMDecoder.of();
         System.out.println("Check leadingData is null with back-to-back PEMs: ");
-        String s = new PEM("ONE", "1212").toString()
-            + new PEM("TWO", "3434").toString();
+        String s = new PEMRecord("ONE", "1212").toString()
+            + new PEMRecord("TWO", "3434").toString();
         var ins = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-        if (d.decode(ins, PEM.class).leadingData() != null) {
+        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
             throw new AssertionError("leading data not null on first pem");
         }
-        if (d.decode(ins, PEM.class).leadingData() != null) {
+        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
             throw new AssertionError("leading data not null on second pem");
         }
         System.out.println("PASS");
@@ -209,10 +209,10 @@ public class PEMDecoderTest {
         ByteArrayInputStream is = new ByteArrayInputStream(ba.toByteArray());
 
         System.out.println("Decoding 2 RSA pub with pre & post data:");
-        PEM obj;
+        PEMRecord obj;
         int keys = 0;
         while (keys++ < 2) {
-            obj = PEMDecoder.of().decode(is, PEM.class);
+            obj = PEMDecoder.of().decode(is, PEMRecord.class);
             if (!PEMData.preData.equalsIgnoreCase(
                 new String(obj.leadingData()))) {
                 System.out.println("expected: \"" + PEMData.preData + "\"");
@@ -223,7 +223,7 @@ public class PEMDecoderTest {
             System.out.println("  Read public key.");
         }
         try {
-            PEMDecoder.of().decode(is, PEM.class);
+            PEMDecoder.of().decode(is, PEMRecord.class);
             throw new AssertionError("3rd entry returned a PEMRecord");
         } catch (EOFException e) {
             System.out.println("Success: No 3rd entry found.  EOFE thrown.");
@@ -232,7 +232,7 @@ public class PEMDecoderTest {
         // End of stream
         try {
             System.out.println("Failed: There should be no PEMRecord: " +
-                PEMDecoder.of().decode(is, PEM.class));
+                PEMDecoder.of().decode(is, PEMRecord.class));
         } catch (EOFException e) {
             System.out.println("Success");
             return;
@@ -263,7 +263,7 @@ public class PEMDecoderTest {
     }
 
     static void testPEMRecord(PEMData.Entry entry) {
-        PEM r = PEMDecoder.of().decode(entry.pem(), PEM.class);
+        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
         String expected = entry.pem().split("-----")[2].replace(System.lineSeparator(), "");
         try {
             PEMData.checkResults(expected, r.content());
@@ -283,7 +283,7 @@ public class PEMDecoderTest {
             case Pem.X509_CRL ->
                 entry.clazz().isAssignableFrom(X509CRL.class);
             case "CERTIFICATE REQUEST" ->
-                entry.clazz().isAssignableFrom(PEM.class);
+                entry.clazz().isAssignableFrom(PEMRecord.class);
             default -> false;
         };
 
@@ -298,7 +298,7 @@ public class PEMDecoderTest {
 
 
     static void testPEMRecordDecode(PEMData.Entry entry) {
-        PEM r = PEMDecoder.of().decode(entry.pem(), PEM.class);
+        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
         DEREncodable de = PEMDecoder.of().decode(r.toString());
 
         boolean result = switch(r.type()) {
@@ -309,7 +309,7 @@ public class PEMDecoderTest {
             case Pem.CERTIFICATE, Pem.X509_CERTIFICATE ->
                 (de instanceof X509Certificate);
             case Pem.X509_CRL -> (de instanceof X509CRL);
-            case "CERTIFICATE REQUEST" -> (de instanceof PEM);
+            case "CERTIFICATE REQUEST" -> (de instanceof PEMRecord);
             default -> false;
         };
 

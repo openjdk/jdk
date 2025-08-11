@@ -26,7 +26,7 @@
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.DEREncodable;
 import java.security.KeyPair;
-import java.security.PEM;
+import java.security.PEMRecord;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
@@ -450,7 +450,7 @@ class PEMData {
         MQYMBGZpc2gwCgYIKoZIzj0EAwIDRwAwRAIgUBTdrMDE4BqruYRh1rRyKQBf48WR
         kIX8R4dBK9h1VRcCIEBR2Mzvku/huTbWTwKVlXBZeEmwIlxKwpRepPtViXcW
         -----END CERTIFICATE REQUEST-----
-        """, PEM.class, "SunEC");
+        """, PEMRecord.class, "SunEC");
 
     public static final String preData = "TEXT BLAH TEXT BLAH" +
         System.lineSeparator();
@@ -471,7 +471,7 @@ class PEMData {
         MQYMBGZpc2gwCgYIKoZIzj0EAwIDRwAwRAIgUBTdrMDE4BqruYRh1rRyKQBf48WR
         kIX8R4dBK9h1VRcCIEBR2Mzvku/huTbWTwKVlXBZeEmwIlxKwpRepPtViXcW
         -----END CERTIFICATE REQUEST-----
-        """ + postData, PEM.class, "SunEC");
+        """ + postData, PEMRecord.class, "SunEC");
 
     final static Pattern CR = Pattern.compile("\r");
     final static Pattern LF = Pattern.compile("\n");

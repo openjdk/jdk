@@ -30,7 +30,7 @@ import sun.security.x509.AlgorithmId;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
-import java.security.PEM;
+import java.security.PEMRecord;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -159,7 +159,7 @@ public class Pem {
      * but the read position in the stream is at the end of the block, so
      * future reads can be successful.
      */
-    public static PEM readPEM(InputStream is, boolean shortHeader)
+    public static PEMRecord readPEM(InputStream is, boolean shortHeader)
         throws IOException {
         Objects.requireNonNull(is);
 
@@ -311,10 +311,10 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
         }
 
-        return new PEM(typeConverter(headerType), data, preData);
+        return new PEMRecord(typeConverter(headerType), data, preData);
     }
 
-    public static PEM readPEM(InputStream is) throws IOException {
+    public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
@@ -342,7 +342,7 @@ public class Pem {
      * is not used with this method.
      * @return PEM in a string
      */
-    public static String pemEncoded(PEM pem) {
+    public static String pemEncoded(PEMRecord pem) {
         String p = pem.content().replaceAll("(.{64})", "$1\r\n");
         return pemEncoded(pem.type(), p);
     }
