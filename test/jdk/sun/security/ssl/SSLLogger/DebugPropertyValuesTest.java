@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582 8044609
+ * @bug 8350582 8340312 8044609
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -54,6 +54,8 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
 
     static {
+
+
         debugMessages.put("handshake",
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
@@ -76,6 +78,8 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("java.security.debug",
                 List.of("properties\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:",
                         "certpath\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:"));
+        // "ALL" shouldn't be seen as a valid Level
+        debugMessages.put("javax.net.debug.logger.ALL", List.of("ALL:"));
         debugMessages.put("javax.net.debug.logger",
                 List.of("FINE: adding as trusted certificates",
                         "FINE: WRITE: TLSv1.3 application_data"));
