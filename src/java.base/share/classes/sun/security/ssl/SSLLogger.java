@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,8 +142,10 @@ public final class SSLLogger {
         if (property.contains("all")) {
             return true;
         } else {
-            int offset = property.indexOf("ssl");
-            if (offset != -1 && property.indexOf("sslctx", offset) != -1) {
+            // remove first occurrence of "sslctx" since
+            // it interferes with search for "ssl"
+            String modified = property.replaceFirst("sslctx", "");
+            if (modified.contains("ssl")) {
                 // don't enable data and plaintext options by default
                 if (!(option.equals("data")
                         || option.equals("packet")
@@ -177,7 +179,7 @@ public final class SSLLogger {
     }
 
     public static void finest(String msg, Object... params) {
-        SSLLogger.log(Level.ALL, msg, params);
+        SSLLogger.log(Level.TRACE, msg, params);
     }
 
     private static void log(Level level, String msg, Object... params) {

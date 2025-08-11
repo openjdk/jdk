@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * Programmatic entry point to start the jwebserver tool.
  */
@@ -37,6 +35,8 @@ public class JWebServer {
     private static final String SYS_PROP_MAX_CONNECTIONS = "jdk.httpserver.maxConnections";
     private static final String DEFAULT_JWEBSERVER_MAX_CONNECTIONS = "200";
 
+    private static final String SYS_PROP_ENHANCED_EXCEP = "jdk.includeInExceptions";
+    private static final String DEFAULT_ENHANCED_EXCEP = "net";
     /**
      * This constructor should never be called.
      */
@@ -63,9 +63,10 @@ public class JWebServer {
      */
     public static void main(String... args) {
         setMaxReqTime();
+        setEnhancedExceptions();
         setMaxConnectionsIfNotSet();
 
-        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true), "jwebserver", args);
         if (ec != 0) {
             System.exit(ec);
         }  // otherwise, the server has either been started successfully and
@@ -80,6 +81,14 @@ public class JWebServer {
         if (System.getProperty(MAXREQTIME_KEY) == null) {
             System.setProperty(MAXREQTIME_KEY, MAXREQTIME_VAL);
         }
+    }
+
+    static void setEnhancedExceptions() {
+        if (System.getProperty(SYS_PROP_ENHANCED_EXCEP) != null) {
+            // an explicit value has already been set, so we don't override it
+            return;
+        }
+        System.setProperty(SYS_PROP_ENHANCED_EXCEP, DEFAULT_ENHANCED_EXCEP);
     }
 
     static void setMaxConnectionsIfNotSet() {

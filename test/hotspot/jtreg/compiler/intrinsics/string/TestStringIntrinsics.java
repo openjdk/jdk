@@ -160,6 +160,7 @@ public class TestStringIntrinsics {
 
                 // Different lengths
                 invokeAndCheck(m, 1, "ABCD", "ABC");
+                invokeAndCheck(m, '\uff21' - 'A', "ABCEFGHIJKLMNOPQRSTUVWXY\uff21Z", "ABCEFGHIJKLMNOPQRSTUVWXYAZ");
                 invokeAndCheck(m, -1, "\uff21\uff22\uff23", "\uff21\uff22\uff23\uff24");
                 invokeAndCheck(m, 1, "ABC\uff24", "ABC");
                 invokeAndCheck(m, 3, "ABC\uff24\uff25\uff26", "ABC");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,15 @@
 
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
+
+  void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
+                                    FloatRegister src2, FloatRegister index,
+                                    FloatRegister tmp, unsigned vector_length_in_bytes);
+
+  void select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
+                                   FloatRegister src2, FloatRegister index,
+                                   FloatRegister tmp, SIMD_RegVariant T,
+                                   unsigned vector_length_in_bytes);
 
  public:
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
@@ -179,11 +188,23 @@
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
+  void neon_rearrange_hsd(FloatRegister dst, FloatRegister src, FloatRegister shuffle,
+                          FloatRegister tmp, BasicType bt, bool isQ);
   // java.lang.Math::signum intrinsics
   void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
                           FloatRegister one, SIMD_Arrangement T);
 
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
+
+  void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
+
+  void reconstruct_frame_pointer(Register rtmp);
+
+  // Select from a table of two vectors
+  void select_from_two_vectors(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                               FloatRegister index, FloatRegister tmp, BasicType bt,
+                               unsigned vector_length_in_bytes);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

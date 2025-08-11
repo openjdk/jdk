@@ -32,7 +32,7 @@
 
 class ICache : public AbstractICache {
  public:
-  static void initialize();
+  static void initialize(int phase);
   static void invalidate_word(address addr) {
     __builtin___clear_cache((char *)addr, (char *)(addr + 4));
   }

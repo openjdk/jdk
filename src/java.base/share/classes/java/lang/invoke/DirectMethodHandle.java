@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
@@ -48,6 +50,7 @@ import static java.lang.invoke.MethodTypeForm.*;
  * to a class member.
  * @author jrose
  */
+@AOTSafeClassInitializer
 sealed class DirectMethodHandle extends MethodHandle {
     final MemberName member;
     final boolean crackable;
@@ -213,7 +216,6 @@ sealed class DirectMethodHandle extends MethodHandle {
             which = LF_INVSPECIAL_IFC;
         }
         LambdaForm lform = preparedLambdaForm(mtype, which);
-        maybeCompile(lform, m);
         assert(lform.methodType().dropParameterTypes(0, 1)
                 .equals(m.getInvocationType().basicType()))
                 : Arrays.asList(m, m.getInvocationType().basicType(), lform, lform.methodType());
@@ -319,12 +321,6 @@ sealed class DirectMethodHandle extends MethodHandle {
         return null;
     }
 
-    private static void maybeCompile(LambdaForm lform, MemberName m) {
-        if (lform.vmentry == null && VerifyAccess.isSamePackage(m.getDeclaringClass(), MethodHandle.class))
-            // Help along bootstrapping...
-            lform.compileToBytecode();
-    }
-
     /** Static wrapper for DirectMethodHandle.internalMemberName. */
     @ForceInline
     /*non-public*/
@@ -367,9 +363,9 @@ sealed class DirectMethodHandle extends MethodHandle {
             // It is a system class.  It is probably in the process of
             // being initialized, but we will help it along just to be safe.
             UNSAFE.ensureClassInitialized(cls);
-            return false;
+            return CDS.needsClassInitBarrier(cls);
         }
-        return UNSAFE.shouldBeInitialized(cls);
+        return UNSAFE.shouldBeInitialized(cls) || CDS.needsClassInitBarrier(cls);
     }
 
     private void ensureInitialized() {
@@ -472,6 +468,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass handles constructor references. */
+    @AOTSafeClassInitializer
     static final class Constructor extends DirectMethodHandle {
         final MemberName initMethod;
         final Class<?>   instanceClass;
@@ -620,10 +617,9 @@ sealed class DirectMethodHandle extends MethodHandle {
     // Enumerate the different field kinds using Wrapper,
     // with an extra case added for checked references.
     static final int
-            FT_LAST_WRAPPER    = Wrapper.COUNT-1,
             FT_UNCHECKED_REF   = Wrapper.OBJECT.ordinal(),
-            FT_CHECKED_REF     = FT_LAST_WRAPPER+1,
-            FT_LIMIT           = FT_LAST_WRAPPER+2;
+            FT_CHECKED_REF     = Wrapper.VOID.ordinal(),
+            FT_LIMIT           = Wrapper.COUNT;
     private static int afIndex(byte formOp, boolean isVolatile, int ftypeKind) {
         return ((formOp * FT_LIMIT * 2)
                 + (isVolatile ? FT_LIMIT : 0)
@@ -666,7 +662,6 @@ sealed class DirectMethodHandle extends MethodHandle {
             formOp += (AF_GETSTATIC_INIT - AF_GETSTATIC);
         }
         LambdaForm lform = preparedFieldLambdaForm(formOp, isVolatile, ftype);
-        maybeCompile(lform, m);
         assert(lform.methodType().dropParameterTypes(0, 1)
                 .equals(m.getInvocationType().basicType()))
                 : Arrays.asList(m, m.getInvocationType().basicType(), lform, lform.methodType());
@@ -682,63 +677,69 @@ sealed class DirectMethodHandle extends MethodHandle {
         return lform;
     }
 
-    private static final Wrapper[] ALL_WRAPPERS = Wrapper.values();
+    private static final @Stable Wrapper[] ALL_WRAPPERS = Wrapper.values();
 
-    private static Kind getFieldKind(boolean isGetter, boolean isVolatile, Wrapper wrapper) {
-        if (isGetter) {
-            if (isVolatile) {
-                switch (wrapper) {
-                    case BOOLEAN: return GET_BOOLEAN_VOLATILE;
-                    case BYTE:    return GET_BYTE_VOLATILE;
-                    case SHORT:   return GET_SHORT_VOLATILE;
-                    case CHAR:    return GET_CHAR_VOLATILE;
-                    case INT:     return GET_INT_VOLATILE;
-                    case LONG:    return GET_LONG_VOLATILE;
-                    case FLOAT:   return GET_FLOAT_VOLATILE;
-                    case DOUBLE:  return GET_DOUBLE_VOLATILE;
-                    case OBJECT:  return GET_REFERENCE_VOLATILE;
-                }
+    // Names in kind may overload but differ from their basic type
+    private static Kind getFieldKind(boolean isVolatile, boolean needsInit, boolean needsCast, Wrapper wrapper) {
+        if (isVolatile) {
+            if (needsInit) {
+                return switch (wrapper) {
+                    case BYTE -> VOLATILE_FIELD_ACCESS_INIT_B;
+                    case CHAR -> VOLATILE_FIELD_ACCESS_INIT_C;
+                    case SHORT -> VOLATILE_FIELD_ACCESS_INIT_S;
+                    case BOOLEAN -> VOLATILE_FIELD_ACCESS_INIT_Z;
+                    default -> needsCast ? VOLATILE_FIELD_ACCESS_INIT_CAST : VOLATILE_FIELD_ACCESS_INIT;
+                };
             } else {
-                switch (wrapper) {
-                    case BOOLEAN: return GET_BOOLEAN;
-                    case BYTE:    return GET_BYTE;
-                    case SHORT:   return GET_SHORT;
-                    case CHAR:    return GET_CHAR;
-                    case INT:     return GET_INT;
-                    case LONG:    return GET_LONG;
-                    case FLOAT:   return GET_FLOAT;
-                    case DOUBLE:  return GET_DOUBLE;
-                    case OBJECT:  return GET_REFERENCE;
-                }
+                return switch (wrapper) {
+                    case BYTE -> VOLATILE_FIELD_ACCESS_B;
+                    case CHAR -> VOLATILE_FIELD_ACCESS_C;
+                    case SHORT -> VOLATILE_FIELD_ACCESS_S;
+                    case BOOLEAN -> VOLATILE_FIELD_ACCESS_Z;
+                    default -> needsCast ? VOLATILE_FIELD_ACCESS_CAST : VOLATILE_FIELD_ACCESS;
+                };
             }
         } else {
-            if (isVolatile) {
-                switch (wrapper) {
-                    case BOOLEAN: return PUT_BOOLEAN_VOLATILE;
-                    case BYTE:    return PUT_BYTE_VOLATILE;
-                    case SHORT:   return PUT_SHORT_VOLATILE;
-                    case CHAR:    return PUT_CHAR_VOLATILE;
-                    case INT:     return PUT_INT_VOLATILE;
-                    case LONG:    return PUT_LONG_VOLATILE;
-                    case FLOAT:   return PUT_FLOAT_VOLATILE;
-                    case DOUBLE:  return PUT_DOUBLE_VOLATILE;
-                    case OBJECT:  return PUT_REFERENCE_VOLATILE;
-                }
+            if (needsInit) {
+                return switch (wrapper) {
+                    case BYTE -> FIELD_ACCESS_INIT_B;
+                    case CHAR -> FIELD_ACCESS_INIT_C;
+                    case SHORT -> FIELD_ACCESS_INIT_S;
+                    case BOOLEAN -> FIELD_ACCESS_INIT_Z;
+                    default -> needsCast ? FIELD_ACCESS_INIT_CAST : FIELD_ACCESS_INIT;
+                };
             } else {
-                switch (wrapper) {
-                    case BOOLEAN: return PUT_BOOLEAN;
-                    case BYTE:    return PUT_BYTE;
-                    case SHORT:   return PUT_SHORT;
-                    case CHAR:    return PUT_CHAR;
-                    case INT:     return PUT_INT;
-                    case LONG:    return PUT_LONG;
-                    case FLOAT:   return PUT_FLOAT;
-                    case DOUBLE:  return PUT_DOUBLE;
-                    case OBJECT:  return PUT_REFERENCE;
-                }
+                return switch (wrapper) {
+                    case BYTE -> FIELD_ACCESS_B;
+                    case CHAR -> FIELD_ACCESS_C;
+                    case SHORT -> FIELD_ACCESS_S;
+                    case BOOLEAN -> FIELD_ACCESS_Z;
+                    default -> needsCast ? FIELD_ACCESS_CAST : FIELD_ACCESS;
+                };
             }
         }
-        throw new AssertionError("Invalid arguments");
+    }
+
+    private static String unsafeMethodName(boolean isGetter, boolean isVolatile, Wrapper wrapper) {
+        var name = switch (wrapper) {
+            case BOOLEAN -> "Boolean";
+            case BYTE -> "Byte";
+            case CHAR -> "Char";
+            case SHORT -> "Short";
+            case INT -> "Int";
+            case FLOAT -> "Float";
+            case LONG -> "Long";
+            case DOUBLE -> "Double";
+            case OBJECT -> "Reference";
+            case VOID -> throw new InternalError();
+        };
+        var sb = new StringBuilder(3 + name.length() + (isVolatile ? 8 : 0))
+                .append(isGetter ? "get" : "put")
+                .append(name);
+        if (isVolatile) {
+            sb.append("Volatile");
+        }
+        return sb.toString();
     }
 
     static LambdaForm makePreparedFieldLambdaForm(byte formOp, boolean isVolatile, int ftypeKind) {
@@ -751,14 +752,16 @@ sealed class DirectMethodHandle extends MethodHandle {
         assert(ftypeKind(needsCast ? String.class : ft) == ftypeKind);
 
         // getObject, putIntVolatile, etc.
-        Kind kind = getFieldKind(isGetter, isVolatile, fw);
+        String unsafeMethodName = unsafeMethodName(isGetter, isVolatile, fw);
+        // isGetter and isStatic is reflected in field type; basic type clash for subwords
+        Kind kind = getFieldKind(isVolatile, needsInit, needsCast, fw);
 
         MethodType linkerType;
         if (isGetter)
             linkerType = MethodType.methodType(ft, Object.class, long.class);
         else
             linkerType = MethodType.methodType(void.class, Object.class, long.class, ft);
-        MemberName linker = new MemberName(Unsafe.class, kind.methodName, linkerType, REF_invokeVirtual);
+        MemberName linker = new MemberName(Unsafe.class, unsafeMethodName, linkerType, REF_invokeVirtual);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, LM_TRUSTED,
                                               NoSuchMethodException.class);
@@ -816,18 +819,12 @@ sealed class DirectMethodHandle extends MethodHandle {
             names[POST_CAST] = new Name(getFunction(NF_checkCast), names[DMH_THIS], names[LINKER_CALL]);
         for (Name n : names)  assert(n != null);
 
-        LambdaForm form;
-        if (needsCast || needsInit) {
-            // can't use the pre-generated form when casting and/or initializing
-            form = LambdaForm.create(ARG_LIMIT, names, RESULT);
-        } else {
-            form = LambdaForm.create(ARG_LIMIT, names, RESULT, kind);
-        }
+        LambdaForm form = LambdaForm.create(ARG_LIMIT, names, RESULT, kind);
 
         if (LambdaForm.debugNames()) {
             // add some detail to the lambdaForm debugname,
             // significant only for debugging
-            StringBuilder nameBuilder = new StringBuilder(kind.methodName);
+            StringBuilder nameBuilder = new StringBuilder(unsafeMethodName);
             if (isStatic) {
                 nameBuilder.append("Static");
             } else {
@@ -841,6 +838,9 @@ sealed class DirectMethodHandle extends MethodHandle {
             }
             LambdaForm.associateWithDebugName(form, nameBuilder.toString());
         }
+
+        // NF_UNSAFE uses field form, avoid circular dependency in interpreter
+        form.compileToBytecode();
         return form;
     }
 
@@ -940,5 +940,6 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     /* Placeholder class for DirectMethodHandles generated ahead of time */
+    @AOTSafeClassInitializer
     final class Holder {}
 }

@@ -24,16 +24,28 @@
  */
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/threadSMR.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.inline.hpp"
+
+ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get_category(
+  ShenandoahAffiliation from,
+  ShenandoahAffiliation to) {
+  if (from == YOUNG_GENERATION) {
+    if (to == YOUNG_GENERATION) {
+      return &_young;
+    }
+    assert(to == OLD_GENERATION, "If not evacuating to young, must be promotion to old");
+    return &_promotion;
+  }
+  assert(from == OLD_GENERATION, "If not evacuating from young, then must be from old");
+  return &_old;
+}
 
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
-  : _evacuations_completed(0), _bytes_completed(0),
-    _evacuations_attempted(0), _bytes_attempted(0),
-    _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring),
+  : _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring),
     _age_table(nullptr) {
   if (_use_age_table) {
     _age_table = new AgeTable(false);
@@ -45,14 +57,17 @@ AgeTable* ShenandoahEvacuationStats::age_table() const {
   return _age_table;
 }
 
-void ShenandoahEvacuationStats::begin_evacuation(size_t bytes) {
-  ++_evacuations_attempted;
-  _bytes_attempted += bytes;
+void ShenandoahEvacuationStats::begin_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+  ShenandoahEvacuations* category = get_category(from, to);
+  category->_evacuations_attempted++;
+  category->_bytes_attempted += bytes;
+
 }
 
-void ShenandoahEvacuationStats::end_evacuation(size_t bytes) {
-  ++_evacuations_completed;
-  _bytes_completed += bytes;
+void ShenandoahEvacuationStats::end_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+  ShenandoahEvacuations* category = get_category(from, to);
+  category->_evacuations_completed++;
+  category->_bytes_completed += bytes;
 }
 
 void ShenandoahEvacuationStats::record_age(size_t bytes, uint age) {
@@ -63,34 +78,39 @@ void ShenandoahEvacuationStats::record_age(size_t bytes, uint age) {
 }
 
 void ShenandoahEvacuationStats::accumulate(const ShenandoahEvacuationStats* other) {
-  _evacuations_completed += other->_evacuations_completed;
-  _bytes_completed += other->_bytes_completed;
-  _evacuations_attempted += other->_evacuations_attempted;
-  _bytes_attempted += other->_bytes_attempted;
+  _young.accumulate(other->_young);
+  _old.accumulate(other->_old);
+  _promotion.accumulate(other->_promotion);
+
   if (_use_age_table) {
     _age_table->merge(other->age_table());
   }
 }
 
 void ShenandoahEvacuationStats::reset() {
-  _evacuations_completed = _evacuations_attempted = 0;
-  _bytes_completed = _bytes_attempted = 0;
+  _young.reset();
+  _old.reset();
+  _promotion.reset();
+
   if (_use_age_table) {
     _age_table->clear();
   }
 }
 
-void ShenandoahEvacuationStats::print_on(outputStream* st) {
-#ifndef PRODUCT
+void ShenandoahEvacuationStats::ShenandoahEvacuations::print_on(outputStream* st) const {
   size_t abandoned_size = _bytes_attempted - _bytes_completed;
   size_t abandoned_count = _evacuations_attempted - _evacuations_completed;
-  st->print_cr("Evacuated %zu%s across %zu objects, "
-            "abandoned %zu%s across %zu objects.",
-            byte_size_in_proper_unit(_bytes_completed), proper_unit_for_byte_size(_bytes_completed),
-            _evacuations_completed,
-            byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
-            abandoned_count);
-#endif
+  st->print_cr("Evacuated " PROPERFMT" across %zu objects, "
+            "abandoned " PROPERFMT " across %zu objects.",
+            PROPERFMTARGS(_bytes_completed), _evacuations_completed,
+            PROPERFMTARGS(abandoned_size), abandoned_count);
+}
+
+void ShenandoahEvacuationStats::print_on(outputStream* st) const {
+  st->print("Young: "); _young.print_on(st);
+  st->print("Promotion: "); _promotion.print_on(st);
+  st->print("Old: "); _old.print_on(st);
+
   if (_use_age_table) {
     _age_table->print_on(st);
   }
@@ -103,10 +123,10 @@ void ShenandoahEvacuationTracker::print_global_on(outputStream* st) {
 void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
                                                        ShenandoahEvacuationStats* workers,
                                                        ShenandoahEvacuationStats* mutators) {
-  st->print("Workers: ");
+  st->print_cr("Workers: ");
   workers->print_on(st);
   st->cr();
-  st->print("Mutators: ");
+  st->print_cr("Mutators: ");
   mutators->print_on(st);
   st->cr();
 
@@ -154,18 +174,18 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
     // for use in the next cycle.
     // The first argument is used for any age 0 cohort population that we may otherwise have
     // missed during the census. This is non-zero only when census happens at marking.
-    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
+    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, mutators.age_table(), workers.age_table());
   }
 
   return {workers, mutators};
 }
 
-void ShenandoahEvacuationTracker::begin_evacuation(Thread* thread, size_t bytes) {
-  ShenandoahThreadLocalData::begin_evacuation(thread, bytes);
+void ShenandoahEvacuationTracker::begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+  ShenandoahThreadLocalData::begin_evacuation(thread, bytes, from, to);
 }
 
-void ShenandoahEvacuationTracker::end_evacuation(Thread* thread, size_t bytes) {
-  ShenandoahThreadLocalData::end_evacuation(thread, bytes);
+void ShenandoahEvacuationTracker::end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+  ShenandoahThreadLocalData::end_evacuation(thread, bytes, from, to);
 }
 
 void ShenandoahEvacuationTracker::record_age(Thread* thread, size_t bytes, uint age) {

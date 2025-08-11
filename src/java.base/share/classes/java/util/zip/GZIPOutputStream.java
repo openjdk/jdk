@@ -113,7 +113,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     public GZIPOutputStream(OutputStream out) throws IOException {
-        this(out, 512, false);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, false);
     }
 
     /**
@@ -135,7 +135,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, boolean syncFlush)
         throws IOException
     {
-        this(out, 512, syncFlush);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, syncFlush);
     }
 
     /**

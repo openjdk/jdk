@@ -25,11 +25,15 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
@@ -119,7 +123,7 @@ public class Lint {
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
 
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
+    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
@@ -149,10 +153,10 @@ public class Lint {
             return;
 
         // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
+        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
             values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
+        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
             // if -Xlint:none is given, disable all categories by default
             values = LintCategory.newEmptySet();
         } else {
@@ -173,15 +177,15 @@ public class Lint {
             if (!options.isSet(Option.PREVIEW)) {
                 values.add(LintCategory.PREVIEW);
             }
-            values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.IDENTITY);
             values.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
+            if (options.isLintExplicitlyEnabled(lc)) {
                 values.add(lc);
-            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
+            } else if (options.isLintExplicitlyDisabled(lc)) {
                 values.remove(lc);
             }
         }
@@ -212,9 +216,12 @@ public class Lint {
         CAST("cast"),
 
         /**
-         * Warn about issues related to classfile contents
+         * Warn about issues related to classfile contents.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile"),
+        CLASSFILE("classfile", false),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -259,9 +266,17 @@ public class Lint {
         FINALLY("finally"),
 
         /**
-         * Warn about use of incubating modules.
+         * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        INCUBATING("incubating"),
+        IDENTITY("identity", true, "synchronization"),
+
+        /**
+         * Warn about use of incubating modules.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
+         */
+        INCUBATING("incubating", false),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -284,14 +299,20 @@ public class Lint {
         OPENS("opens"),
 
         /**
-         * Warn about issues relating to use of command line options
+         * Warn about issues relating to use of command line options.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options"),
+        OPTIONS("options", false),
 
         /**
          * Warn when any output file is written to more than once.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash"),
+        OUTPUT_FILE_CLASH("output-file-clash", false),
 
         /**
          * Warn about issues regarding method overloads.
@@ -305,10 +326,11 @@ public class Lint {
 
         /**
          * Warn about invalid path elements on the command line.
-         * Such warnings cannot be suppressed with the SuppressWarnings
-         * annotation.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path"),
+        PATH("path", false),
 
         /**
          * Warn about issues regarding annotation processing.
@@ -351,14 +373,12 @@ public class Lint {
         STRICTFP("strictfp"),
 
         /**
-         * Warn about synchronization attempts on instances of @ValueBased classes.
-         */
-        SYNCHRONIZATION("synchronization"),
-
-        /**
          * Warn about issues relating to use of text blocks
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings} (yet - see JDK-8224228).
          */
-        TEXT_BLOCKS("text-blocks"),
+        TEXT_BLOCKS("text-blocks", false),
 
         /**
          * Warn about possible 'this' escapes before subclass instance is fully initialized.
@@ -391,8 +411,17 @@ public class Lint {
         RESTRICTED("restricted");
 
         LintCategory(String option) {
+            this(option, true);
+        }
+
+        LintCategory(String option, boolean annotationSuppression, String... aliases) {
             this.option = option;
-            map.put(option, this);
+            this.annotationSuppression = annotationSuppression;
+            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
+            optionList.add(option);
+            Collections.addAll(optionList, aliases);
+            this.optionList = Collections.unmodifiableList(optionList);
+            this.optionList.forEach(ident -> map.put(ident, this));
         }
 
         /**
@@ -405,12 +434,25 @@ public class Lint {
             return Optional.ofNullable(map.get(option));
         }
 
+        /**
+         * Get all lint category option strings and aliases.
+         */
+        public static Set<String> options() {
+            return Collections.unmodifiableSet(map.keySet());
+        }
+
         public static EnumSet<LintCategory> newEmptySet() {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
+        /** Get the "canonical" string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
+
+        /** Get a list containing "option" followed by zero or more aliases. */
+        public final List<String> optionList;
+
+        /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
+        public final boolean annotationSuppression;
     }
 
     /**
@@ -472,20 +514,6 @@ public class Lint {
         return suppressions;
     }
 
-    /**
-     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
-     *
-     * @param annotation @SuppressWarnings annotation, or null
-     * @return set of lint categories, possibly empty but never null
-     */
-    private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
-        initializeSymbolsIfNeeded();
-        if (annotation == null)
-            return LintCategory.newEmptySet();
-        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
-        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
-    }
-
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
         initializeSymbolsIfNeeded();
@@ -502,8 +530,11 @@ public class Lint {
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
         Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
         for (Attribute value : values.values) {
-            Optional.of((String)((Attribute.Constant)value).value)
+            Optional.of(value)
+              .filter(val -> val instanceof Attribute.Constant)
+              .map(val -> (String) ((Attribute.Constant) val).value)
               .flatMap(LintCategory::get)
+              .filter(lc -> lc.annotationSuppression)
               .ifPresent(result::add);
         }
         return result;

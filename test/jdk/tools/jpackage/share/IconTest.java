@@ -52,7 +52,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror IconTest.java
- * @run main/othervm/timeout=540 -Xmx512m
+ * @run main/othervm/timeout=720 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */
@@ -191,7 +191,7 @@ public class IconTest {
             var verifier = createConsoleOutputVerifier(cmd.name(), config.get(
                     Launcher.Main), null);
             if (verifier != null) {
-                verifier.apply(result.getOutput().stream());
+                verifier.apply(result.getOutput());
             }
 
             if (config.containsKey(Launcher.Additional)) {
@@ -199,7 +199,7 @@ public class IconTest {
                         Launcher.Additional.launcherName, config.get(
                                 Launcher.Additional), config.get(Launcher.Main));
                 if (verifier != null) {
-                    verifier.apply(result.getOutput().stream());
+                    verifier.apply(result.getOutput());
                 }
             }
         };

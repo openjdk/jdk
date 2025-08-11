@@ -40,7 +40,6 @@ import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.MandatoryWarningHandler;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -70,9 +69,6 @@ public class Preview {
 
     /** flag: is the "preview" lint category enabled? */
     private final boolean verbose;
-
-    /** the diag handler to manage preview feature usage diagnostics */
-    private final MandatoryWarningHandler previewHandler;
 
     /** test flag: should all features be considered as preview features? */
     private final boolean forcePreview;
@@ -105,7 +101,6 @@ public class Preview {
         log = Log.instance(context);
         source = Source.instance(context);
         verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
-        previewHandler = new MandatoryWarningHandler(log, source, verbose, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -153,9 +148,7 @@ public class Preview {
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(m)) ||
-               //the specification lists the java.se module as participating in preview:
-               m.name == names.java_se;
+                .anyMatch(ed -> ed.modules.contains(m));
     }
 
     /**
@@ -178,7 +171,8 @@ public class Preview {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
-        previewHandler.report(pos, feature.isPlural() ?
+        log.warning(pos,
+            feature.isPlural() ?
                 LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
                 LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
@@ -191,8 +185,7 @@ public class Preview {
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
         if (verbose) {
-            log.mandatoryWarning(null,
-                    LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
+            log.warning(LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
     }
 
@@ -203,10 +196,6 @@ public class Preview {
      */
     public void markUsesPreview(DiagnosticPosition pos) {
         sourcesWithPreviewFeatures.add(log.currentSourceFile());
-    }
-
-    public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        previewHandler.report(pos, warnKey);
     }
 
     public boolean usesPreview(JavaFileObject file) {
@@ -228,11 +217,7 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case IMPLICIT_CLASSES -> true;
-            case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
-            case MODULE_IMPORTS -> true;
-            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
@@ -275,25 +260,13 @@ public class Preview {
         return false;
     }
 
-    /**
-     * Report any deferred diagnostics.
-     */
-    public void reportDeferredDiagnostics() {
-        previewHandler.reportDeferredDiagnostic();
-    }
-
-    public void clear() {
-        previewHandler.clear();
-    }
-
     public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
         if (isPreview(feature) && !isEnabled()) {
             //preview feature without --preview flag, error
-            log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
+            log.error(pos, disabledError(feature));
         } else {
             if (!feature.allowedInSource(source)) {
-                log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos,
-                          feature.error(source.name));
+                log.error(pos, feature.error(source.name));
             }
             if (isEnabled() && isPreview(feature)) {
                 warnPreview(pos, feature);

@@ -409,7 +409,8 @@ public class JarFile extends ZipFile {
                             jv = new JarVerifier(manEntry.getName(), b);
                         } else {
                             if (JarVerifier.debug != null) {
-                                JarVerifier.debug.println("Multiple MANIFEST.MF found. Treat JAR file as unsigned");
+                                JarVerifier.debug.println(
+                                        JarVerifier.MULTIPLE_MANIFEST_WARNING);
                             }
                         }
                     }

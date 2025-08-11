@@ -25,6 +25,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/vmreg.inline.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -610,10 +611,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       methodHandle caller(current, elem->method());
       methodHandle callee(current, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
-      // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
-      // NOTE:  Use machinery here that avoids resolving of any kind.
-      const bool has_member_arg =
-          !inv.is_invokedynamic() && MethodHandles::has_member_arg(inv.klass(), inv.name());
+      const bool has_member_arg = inv.has_member_arg();
       callee_parameters = callee->size_of_parameters() + (has_member_arg ? 1 : 0);
       callee_locals     = callee->max_locals();
     }

@@ -29,7 +29,7 @@ import java.awt.*;
 
 import javax.swing.SwingConstants;
 
-class AquaTabbedPaneTabState {
+final class AquaTabbedPaneTabState {
     static final int FIXED_SCROLL_TAB_LENGTH = 27;
 
     protected final Rectangle leftScrollTabRect = new Rectangle();

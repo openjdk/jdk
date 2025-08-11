@@ -34,6 +34,7 @@ class Thread;
 // Mutexes used in the VM.
 
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
+extern Mutex*   NMethodEntryBarrier_lock;        // protects nmethod entry barrier
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;
@@ -44,9 +45,11 @@ extern Mutex*   CompiledIC_lock;                 // a lock used to guard compile
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
+extern Monitor* JNICritical_lock;                // a lock used while synchronizing with threads entering/leaving JNI critical regions
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* JvmtiVTMSTransition_lock;        // a lock for Virtual Thread Mount State transition (VTMS transition) management
+extern Mutex*   JvmtiVThreadSuspend_lock;        // a lock for virtual threads suspension
 extern Monitor* Heap_lock;                       // a lock on the heap
 #if INCLUDE_PARALLELGC
 extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
@@ -67,21 +70,16 @@ extern Monitor* Threads_lock;                    // a lock on the Threads table 
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
 extern Mutex*   NonJavaThreadsListSync_lock;     // a lock for NonJavaThreads list synchronization
-extern Monitor* CGC_lock;                        // used for coordination between
-                                                 // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
-extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
-extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
-extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
-extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
 extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools and allocated memory high water mark.
 extern Monitor* ConcurrentGCBreakpoints_lock;    // Protects concurrent GC breakpoint management
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
 extern Monitor* CompileThread_lock;              // a lock held by compile threads during compilation system initialization
 extern Monitor* Compilation_lock;                // a lock used to pause compilation
-extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
+extern Mutex*   TrainingData_lock;               // a lock used when accessing training records
+extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are added/removed to the training replay queue
+extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
@@ -94,14 +92,22 @@ extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize e
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
 #endif // PRODUCT
 
+#if INCLUDE_G1GC
+extern Monitor* G1CGC_lock;                      // used for coordination between fore- & background G1 concurrent GC threads.
+extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats for G1.
+extern Mutex*   G1FreeList_lock;                 // protects the G1 free region list during safepoints
+extern Mutex*   G1MarkStackChunkList_lock;       // Protects access to the G1 global mark stack chunk list.
+extern Mutex*   G1MarkStackFreeList_lock;        // Protects access to the G1 global mark stack free list.
+extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
+extern Mutex*   G1OldSets_lock;                  // protects the G1 old region sets
+extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
+extern Monitor* G1RootRegionScan_lock;           // used to notify that the G1 CM threads have finished scanning the root regions
+extern Mutex*   G1Uncommit_lock;                 // protects the G1 uncommit list when not at safepoints
+#endif
+
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
-
-extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
-extern Mutex*   OldSets_lock;                    // protects the old region sets
-extern Mutex*   Uncommit_lock;                   // protects the uncommit list when not at safepoints
-extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* MonitorDeflation_lock;           // a lock used for monitor deflation thread operation
@@ -122,18 +128,18 @@ extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory up
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
 extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::_dumptime_table
-extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
+extern Mutex*   CDSLambda_lock;                  // LambdaProxyClassDictionary::find_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
+extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used by FinalImageRecipes.
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
@@ -145,6 +151,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
 extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
+
+extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the AOT code C strings table
 
 extern Monitor* ContinuationRelativize_lock;
 

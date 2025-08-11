@@ -27,7 +27,6 @@
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -120,8 +119,7 @@ PackageEntry* CDSProtectionDomain::get_package_entry_from_class(InstanceKlass* i
   PackageEntry* pkg_entry = ik->package();
   if (CDSConfig::is_using_full_module_graph() && ik->is_shared() && pkg_entry != nullptr) {
     assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
-    assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
-    assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");
+    assert(!ik->defined_by_other_loaders(), "unexpected archived package entry for an unregistered class");
     return pkg_entry;
   }
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());

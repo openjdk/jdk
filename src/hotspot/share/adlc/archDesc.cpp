@@ -24,7 +24,7 @@
 
 
 // archDesc.cpp - Internal format for architecture definition
-#include <unordered_set>
+#include <unordered_set>  // do not reorder
 #include "adlc.hpp"
 
 static FILE *errfile = stderr;
@@ -751,12 +751,11 @@ bool ArchDesc::check_usage() {
   callback.do_form_by_name("sRegL");
 
   // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
-  // x86_32 combine x86.ad and x86_32.ad, the vec*/legVec* can not be cleaned from IA32
 #if defined(AARCH64)
   callback.do_form_by_name("vecA");
   callback.do_form_by_name("vecD");
   callback.do_form_by_name("vecX");
-#elif defined(IA32) || defined(AMD64)
+#elif defined(AMD64)
   callback.do_form_by_name("vecS");
   callback.do_form_by_name("vecD");
   callback.do_form_by_name("vecX");

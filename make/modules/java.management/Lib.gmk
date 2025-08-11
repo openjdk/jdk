@@ -31,16 +31,9 @@ include LibCommon.gmk
 ## Build libmanagement
 ################################################################################
 
-LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBMANAGEMENT_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
-    OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    DISABLED_WARNINGS_gcc_VMManagementImpl.c := unused-variable, \
-    DISABLED_WARNINGS_clang_VMManagementImpl.c := unused-variable, \
+    OPTIMIZATION := HIGH, \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat, \
     LIBS_windows := advapi32.lib psapi.lib, \

@@ -217,7 +217,7 @@ public:
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
     NOT_PRODUCT(_trace(trace) COMMA)
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
@@ -264,7 +264,8 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
-  // _in is split into required inputs (_req), and additional dependencies.
+  // _in is split into required inputs (_req, i.e. all data dependencies),
+  // and memory dependencies.
   const uint _req;
   GrowableArray<VTransformNode*> _in;
   GrowableArray<VTransformNode*> _out;
@@ -294,7 +295,7 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_dependency(VTransformNode* n) {
+  void add_memory_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
     _in.push(n);
     n->add_out(this);

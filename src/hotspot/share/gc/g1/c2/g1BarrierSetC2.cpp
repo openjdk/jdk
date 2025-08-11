@@ -29,8 +29,8 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/block.hpp"
 #include "opto/compile.hpp"
@@ -287,15 +287,15 @@ bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
 }
 
 uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // These Ideal node counts are extracted from the pre-matching Ideal graph
-  // generated when compiling the following method with early barrier expansion:
-  //   static void write(MyObject obj1, Object o) {
-  //     obj1.o1 = o;
-  //   }
   uint8_t barrier_data = MemNode::barrier_data(node);
   uint nodes = 0;
   if ((barrier_data & G1C2BarrierPre) != 0) {
-    nodes += 50;
+    // Only consider the fast path for the barrier that is
+    // actually inlined into the main code stream.
+    // The slow path is laid out separately and does not
+    // directly affect performance.
+    // It has a cost of 6 (AddP, LoadB, Cmp, Bool, If, IfProj).
+    nodes += 6;
   }
   if ((barrier_data & G1C2BarrierPost) != 0) {
     nodes += 60;

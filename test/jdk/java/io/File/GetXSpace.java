@@ -176,11 +176,11 @@ public class GetXSpace {
         long fs = f.getFreeSpace();
         long us = f.getUsableSpace();
 
-        // Verify inequalities us <= fs <= ts (JDK-8349092)
+        // Verify inequalities us <= ts and fs <= ts (JDK-8349092)
         if (fs > ts)
             throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
-        if (us > fs)
-            throw new RuntimeException(f + " usable space " + fs + " > free space " + ts);
+        if (us > ts)
+            throw new RuntimeException(f + " usable space " + us + " > total space " + ts);
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
@@ -269,15 +269,9 @@ public class GetXSpace {
             pass();
         }
 
-        // usable space <= free space
-        if (us > s.free()) {
-            // free and usable change dynamically
-            System.err.println("Warning: us > s.free()");
-            if (1.0 - Math.abs((double)s.free()/(double)us) > 0.01) {
-                fail(s.name() + " usable vs. free space", us, ">", s.free());
-            } else {
-                pass();
-            }
+        // usable space <= total space
+        if (us > s.total()) {
+            fail(s.name() + " usable vs. total space", us, ">", s.total());
         } else {
             pass();
         }

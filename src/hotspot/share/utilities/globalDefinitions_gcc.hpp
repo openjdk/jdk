@@ -33,8 +33,13 @@
 
 #include <alloca.h>
 #include <ctype.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
-#include <string.h>
+#include <limits.h>
+#include <math.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -48,16 +53,9 @@
   #undef malloc
   extern void *malloc(size_t) asm("vec_malloc");
 #endif
-#include <wchar.h>
-
-#include <math.h>
+#include <string.h>
 #include <time.h>
-#include <fcntl.h>
-#include <dlfcn.h>
-#include <pthread.h>
-
-#include <limits.h>
-#include <errno.h>
+#include <wchar.h>
 
 #if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <signal.h>
@@ -80,9 +78,6 @@ inline int g_isnan(double f) { return isnan(f); }
 #else
 #error "missing platform-specific definition here"
 #endif
-
-#define CAN_USE_NAN_DEFINE 1
-
 
 // Checking for finiteness
 

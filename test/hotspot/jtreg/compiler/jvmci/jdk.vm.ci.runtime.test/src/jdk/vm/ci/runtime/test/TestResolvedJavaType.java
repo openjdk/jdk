@@ -34,6 +34,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          java.base/jdk.internal.misc
@@ -71,7 +72,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -102,14 +105,23 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.AnnotationSupport;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 
 /**
  * Tests for {@link ResolvedJavaType}.
  */
 public class TestResolvedJavaType extends TypeUniverse {
     private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
+    private static final HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
 
     public TestResolvedJavaType() {
+    }
+
+    @Test
+    public void getMirrorTest() {
+        for (ResolvedJavaType type : javaTypes) {
+            assertEquals(type.toClassName(), runtime.getMirror(type).getName());
+        }
     }
 
     @Test
@@ -144,7 +156,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     public void findInstanceFieldWithOffsetTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            Set<Field> reflectionFields = getInstanceFields(c, true);
+            Set<Field> reflectionFields = Set.copyOf(getInstanceFields(c, true));
             for (Field f : reflectionFields) {
                 ResolvedJavaField rf = lookupField(type.getInstanceFields(true), f);
                 assertNotNull(rf);
@@ -153,6 +165,16 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertNotNull(result);
                 assertTrue(fieldsEqual(f, result));
             }
+        }
+    }
+
+    @Test
+    public void isAnnotationTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isAnnotation();
+            boolean actual = type.isAnnotation();
+            assertEquals(expected, actual);
         }
     }
 
@@ -872,18 +894,20 @@ public class TestResolvedJavaType extends TypeUniverse {
         assertEquals(thisMethod, ucm);
     }
 
-    public static Set<Field> getInstanceFields(Class<?> c, boolean includeSuperclasses) {
+    public static List<Field> getInstanceFields(Class<?> c, boolean includeSuperclasses) {
         if (c.isArray() || c.isPrimitive() || c.isInterface()) {
-            return Collections.emptySet();
+            return List.of();
         }
-        Set<Field> result = new HashSet<>();
+        List<Field> result = new ArrayList<>();
         for (Field f : c.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
                 result.add(f);
             }
         }
         if (includeSuperclasses && c != Object.class) {
-            result.addAll(getInstanceFields(c.getSuperclass(), true));
+            List<Field> allFields = getInstanceFields(c.getSuperclass(), true);
+            allFields.addAll(result);
+            result = allFields;
         }
         return result;
     }
@@ -912,7 +936,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         return null;
     }
 
-    public Field lookupField(Set<Field> fields, ResolvedJavaField key) {
+    public Field lookupField(Collection<Field> fields, ResolvedJavaField key) {
         for (Field f : fields) {
             if (fieldsEqual(f, key)) {
                 return f;
@@ -921,10 +945,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         return null;
     }
 
+    /**
+     * Replicates the semantics of jdk.internal.reflect.Reflection#fieldFilterMap.
+     */
     private static boolean isHiddenFromReflection(ResolvedJavaField f) {
-        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Throwable.class)) && f.getName().equals("backtrace")) {
-            return true;
-        }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ConstantPool.class)) && f.getName().equals("constantPoolOop")) {
             return true;
         }
@@ -955,20 +979,34 @@ public class TestResolvedJavaType extends TypeUniverse {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             for (boolean includeSuperclasses : new boolean[]{true, false}) {
-                Set<Field> expected = getInstanceFields(c, includeSuperclasses);
-                ResolvedJavaField[] actual = type.getInstanceFields(includeSuperclasses);
-                for (Field f : expected) {
-                    assertNotNull(lookupField(actual, f));
+                List<Field> reflectFields = getInstanceFields(c, includeSuperclasses);
+                ResolvedJavaField[] fields = type.getInstanceFields(includeSuperclasses);
+                int reflectFieldIndex = 0;
+                for (int i = 0; i < fields.length; i++) {
+                    ResolvedJavaField field = fields[i];
+                    var mirror = runtime.getMirror(field);
+                    if (field.isInternal()) {
+                        assertNull(field.toString(), mirror);
+                        continue;
+                    }
+                    assertNotNull(field.toString(), mirror);
+                    if (isHiddenFromReflection(field)) {
+                        continue;
+                    }
+                    Field reflectField = reflectFields.get(reflectFieldIndex++);
+                    ResolvedJavaField field2 = lookupField(fields, reflectField);
+
+                    assertEquals("ResolvedJavaType.getInstanceFields order differs from Class.getDeclaredFields", field, field2);
                 }
-                for (ResolvedJavaField rf : actual) {
+                for (ResolvedJavaField rf : fields) {
                     if (!isHiddenFromReflection(rf)) {
-                        assertEquals(rf.toString(), lookupField(expected, rf) != null, !rf.isInternal());
+                        assertEquals(rf.toString(), lookupField(reflectFields, rf) != null, !rf.isInternal());
                     }
                 }
 
                 // Test stability of getInstanceFields
-                ResolvedJavaField[] actual2 = type.getInstanceFields(includeSuperclasses);
-                assertArrayEquals(actual, actual2);
+                ResolvedJavaField[] fields2 = type.getInstanceFields(includeSuperclasses);
+                assertArrayEquals(fields, fields2);
             }
         }
     }
@@ -983,6 +1021,8 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertNotNull(lookupField(actual, f));
             }
             for (ResolvedJavaField rf : actual) {
+                var mirror = runtime.getMirror(rf);
+                assertNotNull(rf.toString(), mirror);
                 if (!isHiddenFromReflection(rf)) {
                     assertEquals(lookupField(expected, rf) != null, !rf.isInternal());
                 }
@@ -1006,7 +1046,41 @@ public class TestResolvedJavaType extends TypeUniverse {
                 expected.add(resolvedMethod);
             }
             Set<ResolvedJavaMethod> actual = new HashSet<>(Arrays.asList(type.getDeclaredMethods()));
+            for (ResolvedJavaMethod method : actual) {
+                assertNotNull(method.toString(), runtime.getMirror(method));
+            }
             assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void getDeclaredConstructorsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Constructor<?>[] raw = c.getDeclaredConstructors();
+            Set<ResolvedJavaMethod> expected = new HashSet<>();
+            for (Constructor<?> m : raw) {
+                ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(m);
+                assertNotNull(resolvedMethod);
+                expected.add(resolvedMethod);
+            }
+            Set<ResolvedJavaMethod> actual = new HashSet<>(Arrays.asList(type.getDeclaredConstructors()));
+            for (ResolvedJavaMethod method : actual) {
+                assertNotNull(runtime.getMirror(method));
+            }
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void getAllMethodsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Set<ResolvedJavaMethod> allMethods = new HashSet<>(type.getAllMethods(true));
+            Stream<ResolvedJavaMethod> allKnownMethods = Stream.concat(Arrays.stream(type.getDeclaredMethods()), Arrays.stream(type.getDeclaredConstructors()));
+            allKnownMethods = Stream.concat(allKnownMethods, Stream.ofNullable(type.getClassInitializer()));
+            List<ResolvedJavaMethod> missingMethods = allKnownMethods.filter(m -> !allMethods.contains(m)).toList();
+            assertTrue(missingMethods.toString(), missingMethods.isEmpty());
         }
     }
 
@@ -1036,6 +1110,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         if (clinit != null) {
             assertEquals(0, clinit.getAnnotations().length);
             assertEquals(0, clinit.getDeclaredAnnotations().length);
+            assertNull(runtime.getMirror(clinit));
         }
         return clinit;
     }
@@ -1207,7 +1282,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         "initialize",
         "isPrimitive",
         "newArray",
-        "getDeclaredConstructors",
         "isInitialized",
         "isLinked",
         "getJavaClass",
@@ -1246,25 +1320,59 @@ public class TestResolvedJavaType extends TypeUniverse {
         return method.getAnnotation(SIGNATURE_POLYMORPHIC_CLASS) != null;
     }
 
+    private static void getAnnotationDataExpectedToFail(Annotated annotated, ResolvedJavaType... annotationTypes) {
+        try {
+            if (annotationTypes.length == 1) {
+                annotated.getAnnotationData(annotationTypes[0]);
+            } else {
+                var tail = Arrays.copyOfRange(annotationTypes, 2, annotationTypes.length);
+                annotated.getAnnotationData(annotationTypes[0], annotationTypes[1], tail);
+            }
+            String s = Stream.of(annotationTypes).map(ResolvedJavaType::toJavaName).collect(Collectors.joining(", "));
+            throw new AssertionError("Expected IllegalArgumentException for retrieving (" + s + " from " + annotated);
+        } catch (IllegalArgumentException iae) {
+            assertTrue(iae.getMessage(), iae.getMessage().contains("not an annotation interface"));
+        }
+    }
+
     /**
      * Tests that {@link AnnotationData} obtained from a {@link Class}, {@link Method} or
      * {@link Field} matches {@link AnnotatedElement#getAnnotations()} for the corresponding JVMCI
      * object.
      *
-     * @param annotated a {@link Class}, {@link Method} or {@link Field} object
+     * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
      */
-    public static void getAnnotationDataTest(AnnotatedElement annotated) throws Exception {
-        testGetAnnotationData(annotated, List.of(annotated.getAnnotations()));
+    public static void getAnnotationDataTest(AnnotatedElement annotatedElement) throws Exception {
+        Annotated annotated = toAnnotated(annotatedElement);
+        ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
+        ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
+        getAnnotationDataExpectedToFail(annotated, objectType);
+        getAnnotationDataExpectedToFail(annotated, suppressWarningsType, objectType);
+        getAnnotationDataExpectedToFail(annotated, suppressWarningsType, suppressWarningsType, objectType);
+
+        // Check that querying a missing annotation returns null or an empty list
+        assertNull(annotated.getAnnotationData(suppressWarningsType));
+        List<AnnotationData> data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType);
+        assertTrue(data.toString(), data.isEmpty());
+        data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
+        assertTrue(data.toString(), data.isEmpty());
+
+        testGetAnnotationData(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
     }
 
-    private static void testGetAnnotationData(AnnotatedElement annotated, List<Annotation> annotations) throws AssertionError {
+    private static void testGetAnnotationData(AnnotatedElement annotatedElement, Annotated annotated, List<Annotation> annotations) throws AssertionError {
+        ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         for (Annotation a : annotations) {
-            AnnotationData ad = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
+            var annotationType = metaAccess.lookupJavaType(a.annotationType());
+            AnnotationData ad = annotated.getAnnotationData(annotationType);
             assertAnnotationsEquals(a, ad);
 
             // Check that encoding/decoding produces a stable result
-            AnnotationData ad2 = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
+            AnnotationData ad2 = annotated.getAnnotationData(annotationType);
             assertEquals(ad, ad2);
+
+            List<AnnotationData> annotationData = annotated.getAnnotationData(annotationType, suppressWarningsType, suppressWarningsType);
+            assertEquals(1, annotationData.size());
         }
         if (annotations.size() < 2) {
             return;
@@ -1277,7 +1385,7 @@ public class TestResolvedJavaType extends TypeUniverse {
                             subList(2, i + 1).//
                             stream().map(a -> metaAccess.lookupJavaType(a.annotationType())).//
                             toArray(ResolvedJavaType[]::new);
-            List<AnnotationData> annotationData = toAnnotated(annotated).getAnnotationData(type1, type2, types);
+            List<AnnotationData> annotationData = annotated.getAnnotationData(type1, type2, types);
             assertEquals(2 + types.length, annotationData.size());
 
             for (int j = 0; j < annotationData.size(); j++) {

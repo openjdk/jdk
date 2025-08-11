@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,17 @@
  */
 package com.sun.org.apache.xerces.internal.impl;
 
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 
 /**
  * This class manages the properties for the Stax specification and its
@@ -46,7 +45,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author K Venugopal
  * @author Sunitha Reddy
  *
- * @LastModified: Jan 2024
+ * @LastModified: May 2025
  */
 public class PropertyManager {
 
@@ -68,6 +67,7 @@ public class PropertyManager {
 
     HashMap<String, Object> supportedProps = new HashMap<>();
 
+    JdkXmlConfig config = JdkXmlConfig.getInstance(true);
     private XMLSecurityManager fSecurityManager;
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
@@ -143,9 +143,9 @@ public class PropertyManager {
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, false);
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, false);
 
-        fSecurityManager = new XMLSecurityManager(true);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
         supportedProps.put(SECURITY_MANAGER, fSecurityManager);
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         supportedProps.put(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         // Initialize Catalog features
@@ -187,20 +187,13 @@ public class PropertyManager {
         if (XMLInputFactory.SUPPORT_DTD.equals(property)) {
             return fSecurityManager.is(XMLSecurityManager.Limit.STAX_SUPPORT_DTD);
         }
-        /**
-         * Check to see if the property is managed by the security manager *
-         */
-        String propertyValue = (fSecurityManager != null)
-                ? fSecurityManager.getLimitAsString(property) : null;
-        /**
-         * Check to see if the property is managed by the security property
-         * manager
-         */
-        if (propertyValue == null) {
-            propertyValue = (fSecurityPropertyMgr != null)
-                    ? fSecurityPropertyMgr.getValue(property) : null;
+
+        //check if the property is managed by security manager
+        String value;
+        if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, property)) != null) {
+            return value;
         }
-        return propertyValue != null ? propertyValue : supportedProps.get(property);
+        return supportedProps.get(property);
     }
 
     /**
@@ -241,7 +234,7 @@ public class PropertyManager {
         }
         if (property.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
             } else {
                 fSecurityPropertyMgr = (XMLSecurityPropertyManager) value;
             }
@@ -249,15 +242,9 @@ public class PropertyManager {
             return;
         }
 
-        //check if the property is managed by security manager
-        if (fSecurityManager == null
-                || !fSecurityManager.setLimit(property, JdkProperty.State.APIPROPERTY, value)) {
-            //check if the property is managed by security property manager
-            if (fSecurityPropertyMgr == null
-                    || !fSecurityPropertyMgr.setValue(property, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {
-                //fall back to the existing property manager
-                supportedProps.put(property, value);
-            }
+        if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, property, value)) {
+            //fall back to the existing property manager
+            supportedProps.put(property, value);
         }
 
         if (equivalentProperty != null) {

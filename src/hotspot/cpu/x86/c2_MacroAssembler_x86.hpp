@@ -44,6 +44,9 @@ public:
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
 
+  void verify_int_in_range(uint idx, const TypeInt* t, Register val);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
+
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src, int vector_len);
@@ -68,6 +71,9 @@ public:
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                  XMMRegister src1, XMMRegister src2, int vlen_enc);
 
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
@@ -130,9 +136,7 @@ public:
 
  // Covert B2X
  void vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc);
-#ifdef _LP64
  void vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc);
-#endif
 
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister    src2, int comparison, int vector_len);
@@ -152,10 +156,8 @@ public:
 
   // dst = src1  reduce(op, src2) using vtmp as temps
   void reduceI(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
-#ifdef _LP64
   void reduceL(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
   void genmask(KRegister dst, Register len, Register temp);
-#endif // _LP64
 
   // dst = reduce(op, src2) using vtmp as temps
   void reduce_fp(int opcode, int vlen,
@@ -202,11 +204,9 @@ public:
   void reduce32S(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
 
   // Long Reduction
-#ifdef _LP64
   void reduce2L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduce4L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduce8L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
-#endif // _LP64
 
   // Float Reduction
   void reduce2F (int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
@@ -237,7 +237,6 @@ public:
   void unordered_reduce_operation_256(BasicType typ, int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
  public:
-#ifdef _LP64
   void vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen);
 
   void vector_mask_operation(int opc, Register dst, KRegister mask, Register tmp, int masklen, int masksize, int vec_enc);
@@ -246,13 +245,8 @@ public:
                              Register tmp, int masklen, BasicType bt, int vec_enc);
   void vector_long_to_maskvec(XMMRegister dst, Register src, Register rtmp1,
                               Register rtmp2, XMMRegister xtmp, int mask_len, int vec_enc);
-#endif
 
   void vector_maskall_operation(KRegister dst, Register src, int mask_len);
-
-#ifndef _LP64
-  void vector_maskall_operation32(KRegister dst, Register src, KRegister ktmp, int mask_len);
-#endif
 
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
@@ -313,9 +307,7 @@ public:
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
   void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
 
-#ifdef _LP64
   void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
-#endif
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
@@ -390,7 +382,6 @@ public:
 
   void vector_mask_cast(XMMRegister dst, XMMRegister src, BasicType dst_bt, BasicType src_bt, int vlen);
 
-#ifdef _LP64
   void vector_round_double_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                                 Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2);
 
@@ -403,13 +394,11 @@ public:
   void vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
                                    Register rtmp, Register rscratch, XMMRegister permv, XMMRegister xtmp,
                                    BasicType bt, int vec_enc);
-#endif // _LP64
 
   void udivI(Register rax, Register divisor, Register rdx);
   void umodI(Register rax, Register divisor, Register rdx);
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
 
-#ifdef _LP64
   void reverseI(Register dst, Register src, XMMRegister xtmp1,
                 XMMRegister xtmp2, Register rtmp);
   void reverseL(Register dst, Register src, XMMRegister xtmp1,
@@ -417,7 +406,6 @@ public:
   void udivL(Register rax, Register divisor, Register rdx);
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
-#endif
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
@@ -507,16 +495,14 @@ public:
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
-                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register mask,
+                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                        Register midx, Register length, int vector_len, int vlen_enc);
 
-#ifdef _LP64
-  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
-#endif
-  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                              Register offset, Register rtmp, int vlen_enc);
+  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                        Register mask, Register midx, Register rtmp, int vlen_enc);
+  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                 Register rtmp, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 
@@ -583,5 +569,17 @@ public:
                                        Address src2, bool merge, int vlen_enc);
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
+  void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+
+  void reconstruct_frame_pointer(Register rtmp);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

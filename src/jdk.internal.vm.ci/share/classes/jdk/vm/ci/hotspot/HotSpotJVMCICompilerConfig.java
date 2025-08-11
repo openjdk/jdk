@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
@@ -52,11 +51,27 @@ final class HotSpotJVMCICompilerConfig {
         DummyCompilerFactory(String reason, HotSpotJVMCIRuntime runtime) {
             this.reason = reason;
             this.runtime = runtime;
+            if (runtime.getConfig().getFlag("EagerJVMCI", Boolean.class)) {
+                if (runtime.getCompilerToVM().isCompilerThread()) {
+                    throw noCompilerError();
+                } else {
+                    // This path will be taken when initializing JVMCI on a non-JIT thread.
+                    // Such a usage of JVMCI might never request a compilation so delay the
+                    // noCompilerError until such a request is made.
+                }
+            }
+        }
+
+        /**
+         * Exits the VM due to unavailability of a JVMCI compiler.
+         */
+        Error noCompilerError() {
+            throw runtime.exitHotSpotWithMessage(1, "Cannot use JVMCI compiler: %s%n", reason);
         }
 
         @Override
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
-            throw runtime.exitHotSpotWithMessage(1, "Cannot use JVMCI compiler: %s%n", reason);
+            throw noCompilerError();
         }
 
         @Override
@@ -78,7 +93,7 @@ final class HotSpotJVMCICompilerConfig {
     /**
      * Factory of the selected system compiler.
      */
-    @NativeImageReinitialize private static JVMCICompilerFactory compilerFactory;
+    private static JVMCICompilerFactory compilerFactory;
 
     /**
      * Gets the selected system compiler factory.

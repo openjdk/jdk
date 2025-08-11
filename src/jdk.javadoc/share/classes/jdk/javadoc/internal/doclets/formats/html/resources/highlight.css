@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+ */
+/* Syntax highlight style sheet */
+.hljs-title.function_,
+.hljs-template-variable {
+    color: #00738F;
+}
+.hljs-code,
+.hljs-comment,
+.hljs-quote {
+    color: #6e6e71;
+    font-style: italic;
+}
+.hljs-meta {
+    color: #836F00;
+}
+.hljs-symbol,
+.hljs-template-tag,
+.hljs-keyword,
+.hljs-literal,
+.hljs-name,
+.hljs-built_in,
+.hljs-char.escape_ {
+    color: #0C40C2;
+}
+.hljs-variable,
+.hljs-property,
+.hljs-attr,
+.hljs-section {
+    color: #841191;
+}
+.hljs-attribute {
+    color: #164ad9;
+}
+.hljs-regexp,
+.hljs-number {
+    color: #104BEB;
+}
+.hljs-link {
+    color: #47688a;
+}
+.hljs-string {
+    color: #008313;
+}
+.hljs-doctag {
+    text-decoration: underline;
+}
+.hljs-emphasis {
+    font-style: italic;
+}
+.hljs-strong {
+    font-weight: bold;
+}
+.hljs-subst,
+.hljs-title,
+.hljs-params,
+.hljs-bullet,
+.hljs-formula,
+.hljs-tag,
+.hljs-type {
+    /* ignored */
+}
+

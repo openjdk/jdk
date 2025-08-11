@@ -358,7 +358,7 @@ final class D3DBlitLoops {
     }
 }
 
-class D3DSurfaceToSurfaceBlit extends Blit {
+final class D3DSurfaceToSurfaceBlit extends Blit {
 
     D3DSurfaceToSurfaceBlit() {
         super(D3DSurfaceData.D3DSurface,
@@ -366,6 +366,7 @@ class D3DSurfaceToSurfaceBlit extends Blit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -380,7 +381,7 @@ class D3DSurfaceToSurfaceBlit extends Blit {
     }
 }
 
-class D3DSurfaceToSurfaceScale extends ScaledBlit {
+final class D3DSurfaceToSurfaceScale extends ScaledBlit {
 
     D3DSurfaceToSurfaceScale() {
         super(D3DSurfaceData.D3DSurface,
@@ -388,6 +389,7 @@ class D3DSurfaceToSurfaceScale extends ScaledBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -405,7 +407,7 @@ class D3DSurfaceToSurfaceScale extends ScaledBlit {
     }
 }
 
-class D3DSurfaceToSurfaceTransform extends TransformBlit {
+final class D3DSurfaceToSurfaceTransform extends TransformBlit {
 
     D3DSurfaceToSurfaceTransform() {
         super(D3DSurfaceData.D3DSurface,
@@ -413,6 +415,7 @@ class D3DSurfaceToSurfaceTransform extends TransformBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -428,7 +431,7 @@ class D3DSurfaceToSurfaceTransform extends TransformBlit {
     }
 }
 
-class D3DRTTSurfaceToSurfaceBlit extends Blit {
+final class D3DRTTSurfaceToSurfaceBlit extends Blit {
 
     D3DRTTSurfaceToSurfaceBlit() {
         super(D3DSurfaceData.D3DSurfaceRTT,
@@ -436,6 +439,7 @@ class D3DRTTSurfaceToSurfaceBlit extends Blit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -450,7 +454,7 @@ class D3DRTTSurfaceToSurfaceBlit extends Blit {
     }
 }
 
-class D3DRTTSurfaceToSurfaceScale extends ScaledBlit {
+final class D3DRTTSurfaceToSurfaceScale extends ScaledBlit {
 
     D3DRTTSurfaceToSurfaceScale() {
         super(D3DSurfaceData.D3DSurfaceRTT,
@@ -458,6 +462,7 @@ class D3DRTTSurfaceToSurfaceScale extends ScaledBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -475,7 +480,7 @@ class D3DRTTSurfaceToSurfaceScale extends ScaledBlit {
     }
 }
 
-class D3DRTTSurfaceToSurfaceTransform extends TransformBlit {
+final class D3DRTTSurfaceToSurfaceTransform extends TransformBlit {
 
     D3DRTTSurfaceToSurfaceTransform() {
         super(D3DSurfaceData.D3DSurfaceRTT,
@@ -483,6 +488,7 @@ class D3DRTTSurfaceToSurfaceTransform extends TransformBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -497,7 +503,7 @@ class D3DRTTSurfaceToSurfaceTransform extends TransformBlit {
     }
 }
 
-class D3DSurfaceToSwBlit extends Blit {
+final class D3DSurfaceToSwBlit extends Blit {
 
     private int typeval;
     private WeakReference<SurfaceData> srcTmp;
@@ -567,6 +573,7 @@ class D3DSurfaceToSwBlit extends Blit {
         }
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy,
@@ -629,7 +636,7 @@ class D3DSurfaceToSwBlit extends Blit {
     }
 }
 
-class D3DSwToSurfaceBlit extends Blit {
+final class D3DSwToSurfaceBlit extends Blit {
 
     private int typeval;
 
@@ -640,6 +647,7 @@ class D3DSwToSurfaceBlit extends Blit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -653,7 +661,7 @@ class D3DSwToSurfaceBlit extends Blit {
     }
 }
 
-class D3DSwToSurfaceScale extends ScaledBlit {
+final class D3DSwToSurfaceScale extends ScaledBlit {
 
     private int typeval;
 
@@ -664,6 +672,7 @@ class D3DSwToSurfaceScale extends ScaledBlit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -680,7 +689,7 @@ class D3DSwToSurfaceScale extends ScaledBlit {
     }
 }
 
-class D3DSwToSurfaceTransform extends TransformBlit {
+final class D3DSwToSurfaceTransform extends TransformBlit {
 
     private int typeval;
 
@@ -691,6 +700,7 @@ class D3DSwToSurfaceTransform extends TransformBlit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -704,7 +714,7 @@ class D3DSwToSurfaceTransform extends TransformBlit {
     }
 }
 
-class D3DSwToTextureBlit extends Blit {
+final class D3DSwToTextureBlit extends Blit {
 
     private int typeval;
 
@@ -715,6 +725,7 @@ class D3DSwToTextureBlit extends Blit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -728,7 +739,7 @@ class D3DSwToTextureBlit extends Blit {
     }
 }
 
-class D3DTextureToSurfaceBlit extends Blit {
+final class D3DTextureToSurfaceBlit extends Blit {
 
     D3DTextureToSurfaceBlit() {
         super(D3DSurfaceData.D3DTexture,
@@ -736,6 +747,7 @@ class D3DTextureToSurfaceBlit extends Blit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -750,7 +762,7 @@ class D3DTextureToSurfaceBlit extends Blit {
     }
 }
 
-class D3DTextureToSurfaceScale extends ScaledBlit {
+final class D3DTextureToSurfaceScale extends ScaledBlit {
 
     D3DTextureToSurfaceScale() {
         super(D3DSurfaceData.D3DTexture,
@@ -758,6 +770,7 @@ class D3DTextureToSurfaceScale extends ScaledBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -775,7 +788,7 @@ class D3DTextureToSurfaceScale extends ScaledBlit {
     }
 }
 
-class D3DTextureToSurfaceTransform extends TransformBlit {
+final class D3DTextureToSurfaceTransform extends TransformBlit {
 
     D3DTextureToSurfaceTransform() {
         super(D3DSurfaceData.D3DTexture,
@@ -783,6 +796,7 @@ class D3DTextureToSurfaceTransform extends TransformBlit {
               D3DSurfaceData.D3DSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -804,7 +818,7 @@ class D3DTextureToSurfaceTransform extends TransformBlit {
  * IntArgbPre->D3DSurface/Texture loop to get the intermediate
  * (premultiplied) surface down to D3D using simple blit.
  */
-class D3DGeneralBlit extends Blit {
+final class D3DGeneralBlit extends Blit {
 
     private final Blit performop;
     private WeakReference<SurfaceData> srcTmp;
@@ -817,6 +831,7 @@ class D3DGeneralBlit extends Blit {
         this.performop = performop;
     }
 
+    @Override
     public synchronized void Blit(SurfaceData src, SurfaceData dst,
                                   Composite comp, Region clip,
                                   int sx, int sy, int dx, int dy,
@@ -917,7 +932,7 @@ final class D3DGeneralTransformedBlit extends TransformBlit {
  *
  */
 
-class D3DSurfaceToGDIWindowSurfaceBlit extends Blit {
+final class D3DSurfaceToGDIWindowSurfaceBlit extends Blit {
 
     D3DSurfaceToGDIWindowSurfaceBlit() {
         super(D3DSurfaceData.D3DSurface,
@@ -935,7 +950,7 @@ class D3DSurfaceToGDIWindowSurfaceBlit extends Blit {
 
 }
 
-class D3DSurfaceToGDIWindowSurfaceScale extends ScaledBlit {
+final class D3DSurfaceToGDIWindowSurfaceScale extends ScaledBlit {
 
     D3DSurfaceToGDIWindowSurfaceScale() {
         super(D3DSurfaceData.D3DSurface,
@@ -955,7 +970,7 @@ class D3DSurfaceToGDIWindowSurfaceScale extends ScaledBlit {
     }
 }
 
-class D3DSurfaceToGDIWindowSurfaceTransform extends TransformBlit {
+final class D3DSurfaceToGDIWindowSurfaceTransform extends TransformBlit {
 
     D3DSurfaceToGDIWindowSurfaceTransform() {
         super(D3DSurfaceData.D3DSurface,

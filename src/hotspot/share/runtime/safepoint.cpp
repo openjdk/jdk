@@ -66,6 +66,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
+#include "utilities/vmError.hpp"
 
 static void post_safepoint_begin_event(EventSafepointBegin& event,
                                        uint64_t safepoint_id,
@@ -151,7 +152,6 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
     // Robustness: asserted in the caller, but handle/tolerate it for release bits.
     LogTarget(Error, safepoint) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       ls.print("Illegal initial state detected: ");
       cur_state->print_on(&ls);
@@ -164,7 +164,6 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   }
   LogTarget(Trace, safepoint) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     cur_state->print_on(&ls);
   }
@@ -652,6 +651,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
     // Send the blocking thread a signal to terminate and write an error file.
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
       if (cur_thread->safepoint_state()->is_running()) {
+        VMError::set_safepoint_timed_out_thread(p2i(cur_thread));
         if (!os::signal_thread(cur_thread, SIGILL, "blocking a safepoint")) {
           break; // Could not send signal. Report fatal error.
         }
@@ -989,13 +989,16 @@ void SafepointTracing::end() {
      "Reaching safepoint: " JLONG_FORMAT " ns, "
      "At safepoint: " JLONG_FORMAT " ns, "
      "Leaving safepoint: " JLONG_FORMAT " ns, "
-     "Total: " JLONG_FORMAT " ns",
+     "Total: " JLONG_FORMAT " ns, "
+     "Threads: %d runnable, %d total",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
       _last_safepoint_sync_time_ns  - _last_safepoint_begin_time_ns,
       _last_safepoint_leave_time_ns - _last_safepoint_sync_time_ns,
       _last_safepoint_end_time_ns   - _last_safepoint_leave_time_ns,
-      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns
+      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns,
+      _nof_running,
+      _nof_threads
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);

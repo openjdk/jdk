@@ -36,6 +36,7 @@ class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahReferenceProcessor;
+class SATBMarkQueueSet;
 
 //
 // ========= Super
@@ -54,6 +55,14 @@ public:
 //
 // ========= Marking
 //
+
+class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
+private:
+  SATBMarkQueueSet& _qset;
+public:
+  inline explicit ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset);
+  inline void do_thread(Thread* thread) override;
+};
 
 class ShenandoahMarkRefsSuperClosure : public ShenandoahSuperClosure {
 private:

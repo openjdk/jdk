@@ -23,12 +23,12 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
@@ -151,7 +151,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   return _shared_library_handle;
 }
 
-void JVMCI::initialize_compiler(TRAPS) {
+void JVMCI::initialize_compiler_in_create_vm(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
     JNIJVMCI::initialize_ids(nullptr);
     ShouldNotReachHere();
@@ -162,7 +162,12 @@ void JVMCI::initialize_compiler(TRAPS) {
   } else {
       runtime = JVMCI::java_runtime();
   }
-  runtime->call_getCompiler(CHECK);
+
+  JVMCIENV_FROM_THREAD(THREAD);
+  JVMCIENV->check_init(CHECK);
+  JVMCIObject jvmciRuntime = runtime->get_HotSpotJVMCIRuntime(JVMCI_CHECK);
+  runtime->initialize(JVMCI_CHECK);
+  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
 void JVMCI::initialize_globals() {

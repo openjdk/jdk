@@ -57,6 +57,10 @@ size_t G1HeapRegion::max_region_size() {
   return G1HeapRegionBounds::max_size();
 }
 
+size_t G1HeapRegion::max_ergonomics_size() {
+  return G1HeapRegionBounds::max_ergonomics_size();
+}
+
 size_t G1HeapRegion::min_region_size_in_words() {
   return G1HeapRegionBounds::min_size() >> LogHeapWordSize;
 }
@@ -128,6 +132,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
   _parsable_bottom = bottom();
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
@@ -239,6 +244,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
 #endif
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
+  _incoming_refs(0),
   _young_index_in_cset(-1),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
@@ -278,6 +284,7 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {

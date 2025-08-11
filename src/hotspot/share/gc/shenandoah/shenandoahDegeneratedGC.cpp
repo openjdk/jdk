@@ -39,9 +39,9 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -136,9 +136,15 @@ void ShenandoahDegenGC::op_degenerated() {
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
                                 (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() && _generation->is_young()) {
-        // Swap remembered sets for young
-        _generation->swap_remembered_set();
+      if (heap->mode()->is_generational()) {
+        // Clean the read table before swapping it. The end goal here is to have a clean
+        // write table, and to have the read table updated with the previous write table.
+        heap->old_generation()->card_scan()->mark_read_table_as_clean();
+
+        if (_generation->is_young()) {
+          // Swap remembered sets for young
+          _generation->swap_card_tables();
+        }
       }
 
     case _degenerated_roots:
@@ -170,7 +176,7 @@ void ShenandoahDegenGC::op_degenerated() {
           // We only need this if the concurrent cycle has already swapped the card tables.
           // Marking will use the 'read' table, but interesting pointers may have been
           // recorded in the 'write' table in the time between the cancelled concurrent cycle
-          // and this degenerated cycle. These pointers need to be included the 'read' table
+          // and this degenerated cycle. These pointers need to be included in the 'read' table
           // used to scan the remembered set during the STW mark which follows here.
           _generation->merge_write_table();
         }
@@ -409,7 +415,7 @@ void ShenandoahDegenGC::op_evacuate() {
 void ShenandoahDegenGC::op_init_update_refs() {
   // Evacuation has completed
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->prepare_update_heap_references(false /*concurrent*/);
+  heap->prepare_update_heap_references();
   heap->set_update_refs_in_progress(true);
 }
 
@@ -476,7 +482,9 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 
 void ShenandoahDegenGC::upgrade_to_full() {
   log_info(gc)("Degenerated GC upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->increment_total_collections(true);
+  heap->shenandoah_policy()->record_degenerated_upgrade_to_full();
   ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }

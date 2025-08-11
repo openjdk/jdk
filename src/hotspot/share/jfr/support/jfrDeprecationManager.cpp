@@ -354,7 +354,6 @@ static void reset_type_set_blobs() {
 void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
   reset_type_set_blobs();
   if (_pending_list.is_nonempty()) {
-    JfrKlassUnloading::sort(true);
     JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);
@@ -391,15 +390,16 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
   _resolved_list.iterate(scw);
 }
 
-// First, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
-// and serialize it to the chunk. Then, all events are serialized, and unique type set blobs
-// written into the JfrCheckpoint system to be serialized to the chunk upon return.
+// First, all events are serialized, and unique type set blobs are written into the
+// JfrCheckpoint system to be serialized to the chunk upon return.
+// Then, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
+// and serialize it directly to the chunk.
 void JfrDeprecationManager::write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error /* false */) {
   if (_resolved_list.is_nonempty() && JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent)) {
+    write_events(cw, thread, on_error);
     if (has_stacktrace()) {
       write_stacktraces(cw);
     }
-    write_events(cw, thread, on_error);
   }
 }
 

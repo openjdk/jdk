@@ -28,6 +28,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/arena.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
@@ -61,10 +62,10 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ThreadCritical tc;
+  ChunkPoolLocker lock;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;

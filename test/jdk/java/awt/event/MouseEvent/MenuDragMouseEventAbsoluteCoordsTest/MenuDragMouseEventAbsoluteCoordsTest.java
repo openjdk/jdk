@@ -150,4 +150,4 @@ public class MenuDragMouseEventAbsoluteCoordsTest implements MouseListener
             }
         System.out.println(message);
     }
-}// class AutomaticAppletTest
+}

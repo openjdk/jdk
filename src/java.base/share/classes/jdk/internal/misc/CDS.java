@@ -31,15 +31,15 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
@@ -48,9 +48,10 @@ import jdk.internal.util.StaticProperty;
 public class CDS {
     // Must be in sync with cdsConfig.hpp
     private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
-    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 1;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 2;
-    private static final int IS_USING_ARCHIVE                = 1 << 3;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
+    private static final int IS_USING_ARCHIVE                = 1 << 4;
     private static final int configStatus = getCDSConfigStatus();
 
     /**
@@ -81,8 +82,35 @@ public class CDS {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
+    public static boolean isSingleThreadVM() {
+        return isDumpingStaticArchive();
+    }
+
     private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
+
+
+    // Used only when dumping static archive to keep weak references alive to
+    // ensure that Soft/Weak Reference objects can be reliably archived.
+    private static ArrayList<Object> keepAliveList;
+
+    public static void keepAlive(Object s) {
+        assert isSingleThreadVM(); // no need for synchronization
+        assert isDumpingStaticArchive();
+        if (keepAliveList == null) {
+            keepAliveList = new ArrayList<>();
+        }
+        keepAliveList.add(s);
+    }
+
+    // This is called by native JVM code at the very end of Java execution before
+    // dumping the static archive.
+    // It collects the objects from keepAliveList so that they can be easily processed
+    // by the native JVM code to check that any Reference objects that need special
+    // clean up must have been registed with keepAlive()
+    private static Object[] getKeepAliveObjects() {
+        return keepAliveList.toArray();
+    }
 
     /**
      * Initialize archived static fields in the given Class using archived
@@ -343,110 +371,182 @@ public class CDS {
     }
 
     /**
+     * Detects if we need to emit explicit class initialization checks in
+     * AOT-cached MethodHandles and VarHandles before accessing static fields
+     * and methods.
+     * @see jdk.internal.misc.Unsafe::shouldBeInitialized
+     *
+     * @return false only if a call to {@code ensureClassInitialized} would have
+     * no effect during the application's production run.
+     */
+    public static boolean needsClassInitBarrier(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+
+        if ((configStatus & IS_DUMPING_METHOD_HANDLES) == 0) {
+            return false;
+        } else {
+            return needsClassInitBarrier0(c);
+        }
+    }
+
+    private static native boolean needsClassInitBarrier0(Class<?> c);
+
+    /**
      * This class is used only by native JVM code at CDS dump time for loading
      * "unregistered classes", which are archived classes that are intended to
      * be loaded by custom class loaders during runtime.
      * See src/hotspot/share/cds/unregisteredClasses.cpp.
      */
-    private static class UnregisteredClassLoader extends URLClassLoader {
-        private String currentClassName;
-        private Class<?> currentSuperClass;
-        private Class<?>[] currentInterfaces;
-
-        /**
-         * Used only by native code. Construct an UnregisteredClassLoader for loading
-         * unregistered classes from the specified file. If the file doesn't exist,
-         * the exception will be caughted by native code which will print a warning message and continue.
-         *
-         * @param fileName path of the the JAR file to load unregistered classes from.
-         */
-        private UnregisteredClassLoader(String fileName) throws InvalidPathException, IOException {
-            super(toURLArray(fileName), /*parent*/null);
-            currentClassName = null;
-            currentSuperClass = null;
-            currentInterfaces = null;
+    private static class UnregisteredClassLoader extends ClassLoader {
+        static {
+            registerAsParallelCapable();
         }
 
-        private static URL[] toURLArray(String fileName) throws InvalidPathException, IOException {
-            if (!((new File(fileName)).exists())) {
-                throw new IOException("No such file: " + fileName);
-            }
-            return new URL[] {
-                // Use an intermediate File object to construct a URI/URL without
-                // authority component as URLClassPath can't handle URLs with a UNC
-                // server name in the authority component.
-                Path.of(fileName).toRealPath().toFile().toURI().toURL()
-            };
+        static interface Source {
+            public byte[] readClassFile(String className) throws IOException;
         }
 
+        static class JarSource implements Source {
+            private final JarFile jar;
 
-        /**
-         * Load the class of the given <code>/name<code> from the JAR file that was given to
-         * the constructor of the current UnregisteredClassLoader instance. This class must be
-         * a direct subclass of <code>superClass</code>. This class must be declared to implement
-         * the specified <code>interfaces</code>.
-         * <p>
-         * This method must be called in a single threaded context. It will never be recursed (thus
-         * the asserts)
-         *
-         * @param name the name of the class to be loaded.
-         * @param superClass must not be null. The named class must have a super class.
-         * @param interfaces could be null if the named class does not implement any interfaces.
-         */
-        private Class<?> load(String name, Class<?> superClass, Class<?>[] interfaces)
-            throws ClassNotFoundException
-        {
-            assert currentClassName == null;
-            assert currentSuperClass == null;
-            assert currentInterfaces == null;
-
-            try {
-                currentClassName = name;
-                currentSuperClass = superClass;
-                currentInterfaces = interfaces;
-
-                return findClass(name);
-            } finally {
-                currentClassName = null;
-                currentSuperClass = null;
-                currentInterfaces = null;
+            JarSource(File file) throws IOException {
+                jar = new JarFile(file);
             }
-        }
 
-        /**
-         * This method must be called from inside the <code>load()</code> method. The <code>/name<code>
-         * can be only:
-         * <ul>
-         * <li> the <code>name</code> parameter for <code>load()</code>
-         * <li> the name of the <code>superClass</code> parameter for <code>load()</code>
-         * <li> the name of one of the interfaces in <code>interfaces</code> parameter for <code>load()</code>
-         * <ul>
-         *
-         * For all other cases, a <code>ClassNotFoundException</code> will be thrown.
-         */
-        protected Class<?> findClass(final String name)
-            throws ClassNotFoundException
-        {
-            Objects.requireNonNull(currentClassName);
-            Objects.requireNonNull(currentSuperClass);
-
-            if (name.equals(currentClassName)) {
-                // Note: the following call will call back to <code>this.findClass(name)</code> to
-                // resolve the super types of the named class.
-                return super.findClass(name);
-            }
-            if (name.equals(currentSuperClass.getName())) {
-                return currentSuperClass;
-            }
-            if (currentInterfaces != null) {
-                for (Class<?> c : currentInterfaces) {
-                    if (name.equals(c.getName())) {
-                        return c;
-                    }
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var entryName = className.replace('.', '/').concat(".class");
+                final var entry = jar.getEntry(entryName);
+                if (entry == null) {
+                    throw new IOException("No such entry: " + entryName + " in " + jar.getName());
+                }
+                try (final var in = jar.getInputStream(entry)) {
+                    return in.readAllBytes();
                 }
             }
+        }
 
-            throw new ClassNotFoundException(name);
+        static class DirSource implements Source {
+            private final String basePath;
+
+            DirSource(File dir) {
+                assert dir.isDirectory();
+                basePath = dir.toString();
+            }
+
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var subPath = className.replace('.', File.separatorChar).concat(".class");
+                final var fullPath = Path.of(basePath, subPath);
+                return Files.readAllBytes(fullPath);
+            }
+        }
+
+        private final HashMap<String, Source> sources = new HashMap<>();
+
+        private Source resolveSource(String path) throws IOException {
+            Source source = sources.get(path);
+            if (source != null) {
+                return source;
+            }
+
+            final var file = new File(path);
+            if (!file.exists()) {
+                throw new IOException("No such file: " + path);
+            }
+            if (file.isFile()) {
+                source = new JarSource(file);
+            } else if (file.isDirectory()) {
+                source = new DirSource(file);
+            } else {
+                throw new IOException("Not a normal file: " + path);
+            }
+            sources.put(path, source);
+
+            return source;
+        }
+
+        /**
+         * Load the class of the given <code>name</code> from the given <code>source</code>.
+         * <p>
+         * All super classes and interfaces of the named class must have already been loaded:
+         * either defined by this class loader (unregistered ones) or loaded, possibly indirectly,
+         * by the system class loader (registered ones).
+         * <p>
+         * If the named class has a registered super class or interface named N there should be no
+         * unregistered class or interface named N loaded yet.
+         *
+         * @param name the name of the class to be loaded.
+         * @param source path to a directory or a JAR file from which the named class should be
+         *               loaded.
+         */
+        private Class<?> load(String name, String source) throws IOException {
+            final Source resolvedSource = resolveSource(source);
+            final byte[] bytes = resolvedSource.readClassFile(name);
+            // 'defineClass()' may cause loading of supertypes of this unregistered class by VM
+            // calling 'this.loadClass()'.
+            //
+            // For any supertype S named SN specified in the classlist the following is ensured by
+            // the CDS implementation:
+            // - if S is an unregistered class it must have already been defined by this class
+            //   loader and thus will be found by 'this.findLoadedClass(SN)',
+            // - if S is not an unregistered class there should be no unregistered class named SN
+            //   loaded yet so either S has previously been (indirectly) loaded by this class loader
+            //   and thus it will be found when calling 'this.findLoadedClass(SN)' or it will be
+            //   found when delegating to the system class loader, which must have already loaded S,
+            //   by calling 'this.getParent().loadClass(SN, false)'.
+            // See the implementation of 'ClassLoader.loadClass()' for details.
+            //
+            // Therefore, we should resolve all supertypes to the expected ones as specified by the
+            // "super:" and "interfaces:" attributes in the classlist. This invariant is validated
+            // by the C++ function 'ClassListParser::load_class_from_source()'.
+            assert getParent() == getSystemClassLoader();
+            return defineClass(name, bytes, 0, bytes.length);
+        }
+    }
+
+    /**
+     * This class is used only by native JVM code to spawn a child JVM process to assemble
+     * the AOT cache. <code>args[]</code> are passed in the <code>JAVA_TOOL_OPTIONS</code>
+     * environment variable.
+     */
+    private static class ProcessLauncher {
+        static int execWithJavaToolOptions(String javaLauncher, String args[]) throws IOException, InterruptedException {
+            ProcessBuilder pb = new ProcessBuilder().inheritIO().command(javaLauncher);
+            StringBuilder sb = new StringBuilder();
+
+            // Encode the args as described in
+            // https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions
+            String prefix = "";
+            for (String arg : args) {
+                sb.append(prefix);
+
+                for (int i = 0; i < arg.length(); i++) {
+                    char c = arg.charAt(i);
+                    if (c == '"' || Character.isWhitespace(c)) {
+                        sb.append('\'');
+                        sb.append(c);
+                        sb.append('\'');
+                    } else if (c == '\'') {
+                        sb.append('"');
+                        sb.append(c);
+                        sb.append('"');
+                    } else {
+                        sb.append(c);
+                    }
+                }
+
+                prefix = " ";
+            }
+
+            Map<String, String> env = pb.environment();
+            env.put("JAVA_TOOL_OPTIONS", sb.toString());
+            env.remove("_JAVA_OPTIONS");
+            env.remove("CLASSPATH");
+            Process process = pb.start();
+            return process.waitFor();
         }
     }
 }

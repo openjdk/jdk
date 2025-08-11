@@ -30,28 +30,28 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 #include "classfile/javaClasses.inline.hpp"
-#include "gc/shared/markBitMap.inline.hpp"
-#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/prefetch.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -252,7 +252,7 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() == CANCELLED;
+  return _cancelled_gc.get() != GCCause::_no_gc;
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
@@ -264,8 +264,12 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
+inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
+  return _cancelled_gc.get();
+}
+
 inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
-  _cancelled_gc.set(CANCELLABLE);
+  _cancelled_gc.set(GCCause::_no_gc);
   if (_cancel_requested_time > 0) {
     log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
@@ -637,11 +641,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const
   } else {
     return nullptr;
   }
-}
-
-inline ShenandoahMarkingContext* ShenandoahHeap::complete_marking_context() const {
-  assert (_marking_context->is_complete()," sanity");
-  return _marking_context;
 }
 
 inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {

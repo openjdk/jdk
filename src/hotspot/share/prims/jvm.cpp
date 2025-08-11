@@ -22,12 +22,14 @@
  *
  */
 
+#include "cds/aotClassInitializer.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -1586,7 +1588,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   fieldDescriptor fd;
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (!publicOnly || fs.access_flags().is_public()) {
-      fd.reinitialize(k, fs.index());
+      fd.reinitialize(k, fs.to_FieldInfo());
       oop field = Reflection::new_field(&fd, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -1736,19 +1738,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofC
   return get_class_declared_methods_helper(env, ofClass, publicOnly,
                                            /*want_constructor*/ true,
                                            vmClasses::reflect_Constructor_klass(), THREAD);
-}
-JVM_END
-
-JVM_ENTRY(jint, JVM_GetClassAccessFlags(JNIEnv *env, jclass cls))
-{
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    // Primitive type
-    return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-  }
-
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  return k->access_flags().as_class_flags();
 }
 JVM_END
 
@@ -2765,10 +2754,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // creates the module graph, etc. It's safe to not start the other
     // threads which are launched by class static initializers
     // (ReferenceHandler, FinalizerThread and CleanerImpl).
-    if (log_is_enabled(Info, cds)) {
+    if (log_is_enabled(Info, aot)) {
       ResourceMark rm;
       oop t = JNIHandles::resolve_non_null(jthread);
-      log_info(cds)("JVM_StartThread() ignored: %s", t->klass()->external_name());
+      log_info(aot)("JVM_StartThread() ignored: %s", t->klass()->external_name());
     }
     return;
   }
@@ -2891,15 +2880,16 @@ JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
   } else {
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);
-    if (!thread->sleep_nanos(nanos)) { // interrupted
+    if (!thread->sleep_nanos(nanos)) { // interrupted or async exception was installed
       // An asynchronous exception could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
         HOTSPOT_THREAD_SLEEP_END(1);
-
-        // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
-        // to properly restore the thread state.  That's likely wrong.
-        THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
+        if (!thread->has_async_exception_condition()) {
+          // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
+          // to properly restore the thread state.  That's likely wrong.
+          THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
+        }
       }
     }
     thread->osthread()->set_state(old_state);
@@ -2957,6 +2947,15 @@ JVM_END
 JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   oop trace = java_lang_Thread::async_get_stack_trace(JNIHandles::resolve(jthread), THREAD);
   return JNIHandles::make_local(THREAD, trace);
+JVM_END
+
+JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
+#if INCLUDE_JVMTI
+  oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
+  return JNIHandles::make_local(THREAD, snapshot);
+#else
+  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
+#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
@@ -3029,9 +3028,17 @@ JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   }
 JVM_END
 
+JVM_ENTRY(jobject, JVM_ReferenceGet(JNIEnv* env, jobject ref))
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // PhantomReference has its own implementation of get().
+  assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
+  oop referent = java_lang_ref_Reference::weak_referent(ref_oop);
+  return JNIHandles::make_local(THREAD, referent);
+JVM_END
+
 JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   oop ref_oop = JNIHandles::resolve_non_null(ref);
-  // PhantomReference has it's own implementation of refersTo().
+  // PhantomReference has its own implementation of refersTo().
   // See: JVM_PhantomReferenceRefersTo
   assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
   oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
@@ -3349,7 +3356,6 @@ JVM_END
 
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-  assert(k->is_klass(), "just checking");
   HeapShared::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
@@ -3362,7 +3368,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jobject dynamicMethodType,
                                               jclass lambdaProxyClass))
 #if INCLUDE_CDS
-  if (!CDSConfig::is_dumping_archive()) {
+  if (!CDSConfig::is_dumping_archive() || !CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
     return;
   }
 
@@ -3396,8 +3402,8 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Handle dynamic_method_type_oop(THREAD, JNIHandles::resolve_non_null(dynamicMethodType));
   Symbol* dynamic_method_type = java_lang_invoke_MethodType::as_signature(dynamic_method_type_oop(), true);
 
-  SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, interface_method_name, factory_type,
-                                                 interface_method_type, m, dynamic_method_type, THREAD);
+  LambdaProxyClassDictionary::add_lambda_proxy_class(caller_ik, lambda_ik, interface_method_name, factory_type,
+                                                     interface_method_type, m, dynamic_method_type, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3436,14 +3442,11 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
   Handle dynamic_method_type_oop(THREAD, JNIHandles::resolve_non_null(dynamicMethodType));
   Symbol* dynamic_method_type = java_lang_invoke_MethodType::as_signature(dynamic_method_type_oop(), true);
 
-  InstanceKlass* lambda_ik = SystemDictionaryShared::get_shared_lambda_proxy_class(caller_ik, interface_method_name, factory_type,
-                                                                                   interface_method_type, m, dynamic_method_type);
-  jclass jcls = nullptr;
-  if (lambda_ik != nullptr) {
-    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
-    jcls = loaded_lambda == nullptr ? nullptr : (jclass) JNIHandles::make_local(THREAD, loaded_lambda->java_mirror());
-  }
-  return jcls;
+  InstanceKlass* loaded_lambda =
+    LambdaProxyClassDictionary::load_shared_lambda_proxy_class(caller_ik, interface_method_name, factory_type,
+                                                               interface_method_type, m, dynamic_method_type,
+                                                               CHECK_(nullptr));
+  return loaded_lambda == nullptr ? nullptr : (jclass) JNIHandles::make_local(THREAD, loaded_lambda->java_mirror());
 #else
   return nullptr;
 #endif // INCLUDE_CDS
@@ -3465,7 +3468,7 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
-    log_debug(cds)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
+    log_debug(aot)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
     return seed;
   } else {
     return 0;
@@ -3511,6 +3514,29 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
   DynamicArchive::dump_for_jcmd(archive_name, CHECK);
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls))
+#if INCLUDE_CDS
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
+  if (!k->is_instance_klass()) {
+    return false;
+  } else {
+    if (InstanceKlass::cast(k)->is_enum_subclass() ||
+        AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(k))) {
+      // This class will be cached in AOT-initialized state. No need for init barriers.
+      return false;
+    } else {
+      // If we cannot cache the class in AOT-initialized state, java.lang.invoke handles
+      // must emit barriers to ensure class initialization during production run.
+      ResourceMark rm(THREAD);
+      log_debug(aot)("NeedsClassInitBarrierForCDS: %s", k->external_name());
+      return true;
+    }
+  }
+#else
+  return false;
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3766,7 +3792,7 @@ JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignore
   ParkEvent* parkEvent = ObjectMonitor::vthread_unparker_ParkEvent();
   assert(parkEvent != nullptr, "not initialized");
 
-  OopHandle& list_head = ObjectMonitor::vthread_cxq_head();
+  OopHandle& list_head = ObjectMonitor::vthread_list_head();
   oop vthread_head = nullptr;
   while (true) {
     if (list_head.peek() != nullptr) {

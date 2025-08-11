@@ -43,6 +43,9 @@ include JdkNativeCompilation.gmk
 #   OUTPUT_DIR Where to put the resulting files
 #   EXCLUDE A list of filenames to exclude from compilation
 #   EXTRA_FILES List of extra files not in SOURCE_DIRS
+#   CFLAGS List of extra CFLAGS to pass on for each test
+#   LDFLAGS List of extra LDFLAGS to pass on for each test
+#   LIBS List of extra LIBS to pass on for each test
 SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
 define SetupTestFilesCompilationBody
 
@@ -108,7 +111,7 @@ define SetupTestFilesCompilationBody
         CFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         CXXFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LD_SET_ORIGIN := $$($1_LD_SET_ORIGIN), \
-        LDFLAGS := $$($1_LDFLAGS_$$(name)), \
+        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
         DISABLED_WARNINGS_gcc := format undef unused-but-set-variable \
             unused-const-variable unused-function unused-value \
             unused-variable, \
@@ -117,7 +120,7 @@ define SetupTestFilesCompilationBody
             unused-but-set-variable unused-function unused-variable, \
         DEFAULT_LIBCXX := false, \
         JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
-        LIBS := $$($1_LIBS_$$(name)), \
+        LIBS := $$($1_LIBS) $$($1_LIBS_$$(name)), \
         DEFAULT_VERSIONINFO_RESOURCE := false, \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)), $$($1_OPTIMIZATION_$$(name)), LOW), \
         COPY_DEBUG_SYMBOLS := $$($1_COPY_DEBUG_SYMBOLS), \

@@ -145,7 +145,7 @@ class GraphKit : public Phase {
                                         _sp = jvms->sp();
                                         _bci = jvms->bci();
                                         _method = jvms->has_method() ? jvms->method() : nullptr; }
-  void set_map(SafePointNode* m)      { _map = m; debug_only(verify_map()); }
+  void set_map(SafePointNode* m)      { _map = m; DEBUG_ONLY(verify_map()); }
   void set_sp(int sp)                 { assert(sp >= 0, "sp must be non-negative: %d", sp); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
 
@@ -226,14 +226,14 @@ class GraphKit : public Phase {
     if (ex_map != nullptr) {
       _exceptions = ex_map->next_exception();
       ex_map->set_next_exception(nullptr);
-      debug_only(verify_exception_state(ex_map));
+      DEBUG_ONLY(verify_exception_state(ex_map));
     }
     return ex_map;
   }
 
   // Add an exception, using the given JVM state, without commoning.
   void push_exception_state(SafePointNode* ex_map) {
-    debug_only(verify_exception_state(ex_map));
+    DEBUG_ONLY(verify_exception_state(ex_map));
     ex_map->set_next_exception(_exceptions);
     _exceptions = ex_map;
   }
@@ -276,6 +276,16 @@ class GraphKit : public Phase {
   // Helper to throw a built-in exception.
   // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
   void builtin_throw(Deoptimization::DeoptReason reason);
+  void builtin_throw(Deoptimization::DeoptReason reason,
+                     ciInstance* exception_object,
+                     bool allow_too_many_traps);
+  bool builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
+                                    ciInstance* exception_object);
+ private:
+  bool is_builtin_throw_hot(Deoptimization::DeoptReason reason);
+  ciInstance* builtin_throw_exception(Deoptimization::DeoptReason reason) const;
+
+ public:
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -752,15 +762,6 @@ class GraphKit : public Phase {
   void final_sync(IdealKit& ideal);
 
   public:
-  // Helper function to round double arguments before a call
-  void round_double_arguments(ciMethod* dest_method);
-
-  // rounding for strict float precision conformance
-  Node* precision_rounding(Node* n);
-
-  // rounding for strict double precision conformance
-  Node* dprecision_rounding(Node* n);
-
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
@@ -783,6 +784,7 @@ class GraphKit : public Phase {
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
     RC_VECTOR = 64,             // CallLeafVectorNode
+    RC_PURE = 128,              // CallLeaf is pure
     RC_LEAF = 0                 // null value:  no flags set
   };
 

@@ -200,7 +200,7 @@ static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre
     return true;
   }
 
-  debug_only(warning(
+  DEBUG_ONLY(warning(
       "INFO: os::commit_memory(" PTR_FORMAT ", " PTR_FORMAT
       " size=%zu, executable=%d) failed",
       p2i(start), p2i(start + size), size, executable);)
@@ -371,7 +371,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_upper_new_high + upper_needs <= upper_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_upper_new_high, upper_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _upper_high -= upper_needs;
@@ -382,7 +382,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_middle_new_high + middle_needs <= middle_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_middle_new_high, middle_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _middle_high -= middle_needs;
@@ -393,7 +393,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_lower_new_high + lower_needs <= lower_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_lower_new_high, lower_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _lower_high -= lower_needs;
@@ -422,13 +422,13 @@ void VirtualSpace::check_for_contiguity() {
 }
 
 void VirtualSpace::print_on(outputStream* out) const {
-  out->print   ("Virtual space:");
-  if (special()) out->print(" (pinned in memory)");
-  out->cr();
-  out->print_cr(" - committed: %zu", committed_size());
-  out->print_cr(" - reserved:  %zu", reserved_size());
-  out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
-  out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
+  out->print_cr("Virtual space:%s", special() ? " (pinned in memory)" : "");
+
+  StreamIndentor si(out, 1);
+  out->print_cr("- committed: %zu", committed_size());
+  out->print_cr("- reserved:  %zu", reserved_size());
+  out->print_cr("- [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
+  out->print_cr("- [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
 void VirtualSpace::print() const {
@@ -436,3 +436,8 @@ void VirtualSpace::print() const {
 }
 
 #endif
+
+void VirtualSpace::print_space_boundaries_on(outputStream* out) const {
+  out->print_cr("[" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+                p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
+}

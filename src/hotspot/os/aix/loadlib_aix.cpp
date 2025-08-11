@@ -38,9 +38,13 @@
 #include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // For loadquery()
 #include <sys/ldr.h>
+
+// For getargs()
+#include <procinfo.h>
 
 // Use raw malloc instead of os::malloc - this code gets used for error reporting.
 
@@ -55,7 +59,7 @@ class StringList {
   // Enlarge list. If oom, leave old list intact and return false.
   bool enlarge() {
     int cap2 = _cap + 64;
-    char** l2 = (char**) ::realloc(_list, sizeof(char*) * cap2);
+    char** l2 = (char**) permit_forbidden_function::realloc(_list, sizeof(char*) * cap2);
     if (!l2) {
       return false;
     }
@@ -73,7 +77,7 @@ class StringList {
       }
     }
     assert0(_cap > _num);
-    char* s2 = ::strdup(s);
+    char* s2 = permit_forbidden_function::strdup(s);
     if (!s2) {
       return nullptr;
     }
@@ -167,7 +171,7 @@ static void free_entry_list(loaded_module_t** start) {
   loaded_module_t* lm = *start;
   while (lm) {
     loaded_module_t* const lm2 = lm->next;
-    ::free(lm);
+    permit_forbidden_function::free(lm);
     lm = lm2;
   }
   *start = nullptr;
@@ -190,7 +194,7 @@ static bool reload_table() {
   uint8_t* buffer = nullptr;
   size_t buflen = 1024;
   for (;;) {
-    buffer = (uint8_t*) ::realloc(buffer, buflen);
+    buffer = (uint8_t*) permit_forbidden_function::realloc(buffer, buflen);
     if (loadquery(L_GETINFO, buffer, buflen) == -1) {
       if (errno == ENOMEM) {
         buflen *= 2;
@@ -205,12 +209,28 @@ static bool reload_table() {
 
   trcVerbose("loadquery buffer size is %zu.", buflen);
 
+  // the entry for the executable itself does not contain a path.
+  // instead we retrieve the path of the executable with the getargs API.
+  static char pgmpath[PATH_MAX+1] = "";
+  static char* pgmbase = nullptr;
+  if (pgmpath[0] == 0) {
+    procentry64 PInfo;
+    PInfo.pi_pid = ::getpid();
+    if (0 == ::getargs(&PInfo, sizeof(PInfo), (char*)pgmpath, PATH_MAX) && *pgmpath) {
+      pgmpath[PATH_MAX] = '\0';
+      pgmbase = strrchr(pgmpath, '/');
+      if (pgmbase != nullptr) {
+        pgmbase += 1;
+      }
+    }
+  }
+
   // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
   ldi = (struct ld_info*) buffer;
 
   for (;;) {
 
-    loaded_module_t* lm = (loaded_module_t*) ::malloc(sizeof(loaded_module_t));
+    loaded_module_t* lm = (loaded_module_t*) permit_forbidden_function::malloc(sizeof(loaded_module_t));
     if (!lm) {
       log_warning(os)("OOM.");
       goto cleanup;
@@ -223,10 +243,15 @@ static bool reload_table() {
     lm->data     = ldi->ldinfo_dataorg;
     lm->data_len = ldi->ldinfo_datasize;
 
-    lm->path = g_stringlist.add(ldi->ldinfo_filename);
+    if (pgmbase != nullptr && 0 == strcmp(pgmbase, ldi->ldinfo_filename)) {
+      lm->path = g_stringlist.add(pgmpath);
+    } else {
+      lm->path = g_stringlist.add(ldi->ldinfo_filename);
+    }
+
     if (!lm->path) {
       log_warning(os)("OOM.");
-      free(lm);
+      permit_forbidden_function::free(lm);
       goto cleanup;
     }
 
@@ -248,7 +273,7 @@ static bool reload_table() {
       lm->member = g_stringlist.add(p_mbr_name);
       if (!lm->member) {
         log_warning(os)("OOM.");
-        free(lm);
+        permit_forbidden_function::free(lm);
         goto cleanup;
       }
     } else {
@@ -296,7 +321,7 @@ cleanup:
     free_entry_list(&new_list);
   }
 
-  ::free(buffer);
+  permit_forbidden_function::free(buffer);
 
   return rc;
 

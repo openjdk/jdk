@@ -25,7 +25,7 @@
  * @test
  * @bug     6391995
  * @summary removal of "rvalue conversion" causes problems
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  * @compile T6391995.java
  */
 

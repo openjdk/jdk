@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,8 @@ public final class Integer extends Number
     /**
      * All possible chars for representing a number as a String
      */
-    static final char[] digits = {
+    @Stable
+    static final byte[] digits = {
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
         'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
@@ -172,10 +173,10 @@ public final class Integer extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)digits[-(i % radix)];
+                buf[charPos--] = digits[-(i % radix)];
                 i = i / radix;
             }
-            buf[charPos] = (byte)digits[-i];
+            buf[charPos] = digits[-i];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -392,7 +393,7 @@ public final class Integer extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[val & mask];
+            buf[--charPos] = Integer.digits[val & mask];
             val >>>= shift;
         } while (charPos > 0);
     }
@@ -432,11 +433,11 @@ public final class Integer extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            DecimalDigits.getCharsLatin1(i, size, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            DecimalDigits.getCharsUTF16(i, size, buf);
+            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
     }
@@ -1024,7 +1025,7 @@ public final class Integer extends Number
      * {@link #valueOf(int)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Integer(int value) {
         this.value = value;
     }
@@ -1046,7 +1047,7 @@ public final class Integer extends Number
      * {@code int} primitive, or use {@link #valueOf(String)}
      * to convert a string to an {@code Integer} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Integer(String s) throws NumberFormatException {
         this.value = parseInt(s, 10);
     }

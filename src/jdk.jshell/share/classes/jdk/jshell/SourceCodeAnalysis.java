@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public abstract class SourceCodeAnalysis {
      * They will not appear in queries for snippets --
      * for example, {@link JShell#snippets() }.
      * <p>
-     * Restrictions on the input are as in {@link JShell#eval}.
+     * Restrictions on the input are as in {@link JShell#eval(String)}.
      * <p>
      * Only preliminary compilation is performed, sufficient to build the
      * {@code Snippet}.  Snippets known to be erroneous, are returned as

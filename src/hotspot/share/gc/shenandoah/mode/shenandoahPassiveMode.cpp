@@ -23,8 +23,8 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "logging/log.hpp"
@@ -35,9 +35,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
   FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
-
-  // Passive runs with max speed for allocation, because GC is always STW
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahPacing);
 
   // No need for evacuation reserve with Full GC, only for Degenerated GC.
   if (!ShenandoahDegeneratedGC) {

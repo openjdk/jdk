@@ -31,9 +31,9 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
-#include "opto/runtime.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
@@ -1046,8 +1046,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->empty()) {
+        if (failtype->filter(type2) == Type::TOP) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
@@ -2169,7 +2168,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
     : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
       _deopt_reason(deopt_reason),
-      _useless(false) {
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_ParsePredicate);
   gvn->C->add_parse_predicate(this);
   gvn->C->record_for_post_loop_opts_igvn(this);
@@ -2179,11 +2178,17 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
     case Deoptimization::Reason_profile_predicate:
     case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
+    case Deoptimization::Reason_short_running_long_loop:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
   }
 #endif // ASSERT
+}
+
+void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
@@ -2195,14 +2200,15 @@ Node* ParsePredicateNode::uncommon_trap() const {
 
 // Fold this node away once it becomes useless or at latest in post loop opts IGVN.
 const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
   if (phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT
@@ -2213,18 +2219,21 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled Loop ");
+      st->print("Profiled_Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
       st->print("Auto_Vectorization_Check ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop Limit Check ");
+      st->print("Loop_Limit_Check ");
+      break;
+    case Deoptimization::DeoptReason::Reason_short_running_long_loop:
+      st->print("Short_Running_Long_Loop ");
       break;
     default:
       fatal("unknown kind");
   }
-  if (_useless) {
+  if (_predicate_state == PredicateState::Useless) {
     st->print("#useless ");
   }
 }

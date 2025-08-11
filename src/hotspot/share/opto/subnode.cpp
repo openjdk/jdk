@@ -53,11 +53,16 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
-  // Remove double negation
-  const Type *zero = add_id();
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  const Type* zero = add_id();
+
+  // Remove double negation if it is not a floating point number since negation
+  // is not the same as subtraction for floating point numbers
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
@@ -398,7 +403,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }
@@ -555,17 +560,12 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
 const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
-  // no folding if one of operands is infinity or NaN, do not do constant folding
-  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+  // Half precision floating point subtraction follows the rules of IEEE 754
+  // applicable to other floating point types.
+  if (t1->isa_half_float_constant() != nullptr &&
+      t2->isa_half_float_constant() != nullptr)  {
     return TypeH::make(t1->getf() - t2->getf());
-  }
-  else if(g_isnan(t1->getf())) {
-    return t1;
-  }
-  else if(g_isnan(t2->getf())) {
-    return t2;
-  }
-  else {
+  } else {
     return Type::HALF_FLOAT;
   }
 }
@@ -1880,7 +1880,7 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
         // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1", cmp2 = m + 1
         Node* rhs_m = cmp2->in(1);
         const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
-        if (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1) {
+        if (rhs_m_type != nullptr && (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1)) {
           // Exclude any case where m == -1 is possible.
           m = rhs_m;
         }
@@ -1898,12 +1898,16 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
+  const Type* input_type = phase->type(in(1));
+  if (input_type == Type::TOP) {
+    return Type::TOP;
+  }
   const Type* t = Value_cmpu_and_mask(phase);
   if (t != nullptr) {
     return t;
   }
 
-  return _test.cc2logical( phase->type( in(1) ) );
+  return _test.cc2logical(input_type);
 }
 
 #ifndef PRODUCT
@@ -1938,14 +1942,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
     if (ti->is_con()) {
-      return TypeInt::make(uabs(ti->get_con()));
+      return TypeInt::make(g_uabs(ti->get_con()));
     }
     break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
-      return TypeLong::make(uabs(tl->get_con()));
+      return TypeLong::make(g_uabs(tl->get_con()));
     }
     break;
   }
@@ -2014,6 +2018,29 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if (f < 0.0f) return Type::HALF_FLOAT;
   return TypeH::make((float)sqrt((double)f));
+}
+
+static const Type* reverse_bytes(int opcode, const Type* con) {
+  switch (opcode) {
+    // It is valid in bytecode to load any int and pass it to a method that expects a smaller type (i.e., short, char).
+    // Let's cast the value to match the Java behavior.
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(static_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(static_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(con->is_int()->get_con()));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(con->is_long()->get_con()));
+    default: ShouldNotReachHere();
+  }
+}
+
+const Type* ReverseBytesNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
+  if (type == Type::TOP) {
+    return Type::TOP;
+  }
+  if (type->singleton()) {
+    return reverse_bytes(Opcode(), type);
+  }
+  return bottom_type();
 }
 
 const Type* ReverseINode::Value(PhaseGVN* phase) const {

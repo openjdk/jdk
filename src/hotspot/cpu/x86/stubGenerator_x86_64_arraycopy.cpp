@@ -90,25 +90,25 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(&entry);
   StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(entry, &entry_jshort_arraycopy);
 
-  StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(StubGenStubId::jint_disjoint_arraycopy_id, &entry);
-  StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(StubGenStubId::jint_arraycopy_id, entry, &entry_jint_arraycopy);
+  StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &entry);
+  StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(StubId::stubgen_jint_arraycopy_id, entry, &entry_jint_arraycopy);
 
-  StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubGenStubId::jlong_disjoint_arraycopy_id, &entry);
-  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubGenStubId::jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
+  StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_jlong_disjoint_arraycopy_id, &entry);
+  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
   if (UseCompressedOops) {
-    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(StubGenStubId::oop_disjoint_arraycopy_id, &entry);
-    StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(StubGenStubId::oop_arraycopy_id, entry, &entry_oop_arraycopy);
-    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_int_oop_copy(StubGenStubId::oop_disjoint_arraycopy_uninit_id, &entry);
-    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(StubGenStubId::oop_arraycopy_uninit_id, entry, nullptr);
+    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &entry);
+    StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_id, entry, &entry_oop_arraycopy);
+    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &entry);
+    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, entry, nullptr);
   } else {
-    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubGenStubId::oop_disjoint_arraycopy_id, &entry);
-    StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(StubGenStubId::oop_arraycopy_id, entry, &entry_oop_arraycopy);
-    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_long_oop_copy(StubGenStubId::oop_disjoint_arraycopy_uninit_id, &entry);
-    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubGenStubId::oop_arraycopy_uninit_id, entry, nullptr);
+    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &entry);
+    StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_id, entry, &entry_oop_arraycopy);
+    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &entry);
+    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, entry, nullptr);
   }
 
-  StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
-  StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr);
+  StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &entry_checkcast_arraycopy);
+  StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_uninit_id, nullptr);
 
   StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(entry_jbyte_arraycopy,
                                                             entry_jshort_arraycopy,
@@ -121,12 +121,12 @@ void StubGenerator::generate_arraycopy_stubs() {
                                                              entry_jlong_arraycopy,
                                                              entry_checkcast_arraycopy);
 
-  StubRoutines::_jbyte_fill = generate_fill(StubGenStubId::jbyte_fill_id);
-  StubRoutines::_jshort_fill = generate_fill(StubGenStubId::jshort_fill_id);
-  StubRoutines::_jint_fill = generate_fill(StubGenStubId::jint_fill_id);
-  StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
-  StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
-  StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+  StubRoutines::_jbyte_fill = generate_fill(StubId::stubgen_jbyte_fill_id);
+  StubRoutines::_jshort_fill = generate_fill(StubId::stubgen_jshort_fill_id);
+  StubRoutines::_jint_fill = generate_fill(StubId::stubgen_jint_fill_id);
+  StubRoutines::_arrayof_jbyte_fill = generate_fill(StubId::stubgen_arrayof_jbyte_fill_id);
+  StubRoutines::_arrayof_jshort_fill = generate_fill(StubId::stubgen_arrayof_jshort_fill_id);
+  StubRoutines::_arrayof_jint_fill = generate_fill(StubId::stubgen_arrayof_jint_fill_id);
 
   StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
 
@@ -484,7 +484,7 @@ void StubGenerator::copy_bytes_backward(Register from, Register dest,
 //   disjoint_copy_avx3_masked is set to the no-overlap entry point
 //   used by generate_conjoint_[byte/int/short/long]_copy().
 //
-address StubGenerator::generate_disjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry) {
+address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, address* entry) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   int shift;
@@ -492,32 +492,32 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubGenStubId stub_id,
   bool dest_uninitialized;
 
   switch (stub_id) {
-  case jbyte_disjoint_arraycopy_id:
+  case StubId::stubgen_jbyte_disjoint_arraycopy_id:
     shift = 0;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jshort_disjoint_arraycopy_id:
+  case StubId::stubgen_jshort_disjoint_arraycopy_id:
     shift = 1;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jint_disjoint_arraycopy_id:
+  case StubId::stubgen_jint_disjoint_arraycopy_id:
     shift = 2;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jlong_disjoint_arraycopy_id:
+  case StubId::stubgen_jlong_disjoint_arraycopy_id:
     shift = 3;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case oop_disjoint_arraycopy_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_id:
     shift = (UseCompressedOops ? 2 : 3);
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case oop_disjoint_arraycopy_uninit_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
     shift = (UseCompressedOops ? 2 : 3);
     is_oop = true;
     dest_uninitialized = true;
@@ -822,7 +822,7 @@ void StubGenerator::arraycopy_avx3_large(Register to, Register from, Register te
 //   c_rarg2   - element count, treated as ssize_t, can be zero
 //
 //
-address StubGenerator::generate_conjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry, address nooverlap_target) {
+address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, address* entry, address nooverlap_target) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   int shift;
@@ -830,32 +830,32 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubGenStubId stub_id,
   bool dest_uninitialized;
 
   switch (stub_id) {
-  case jbyte_arraycopy_id:
+  case StubId::stubgen_jbyte_arraycopy_id:
     shift = 0;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jshort_arraycopy_id:
+  case StubId::stubgen_jshort_arraycopy_id:
     shift = 1;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jint_arraycopy_id:
+  case StubId::stubgen_jint_arraycopy_id:
     shift = 2;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case jlong_arraycopy_id:
+  case StubId::stubgen_jlong_arraycopy_id:
     shift = 3;
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case oop_arraycopy_id:
+  case StubId::stubgen_oop_arraycopy_id:
     shift = (UseCompressedOops ? 2 : 3);
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case oop_arraycopy_uninit_id:
+  case StubId::stubgen_oop_arraycopy_uninit_id:
     shift = (UseCompressedOops ? 2 : 3);
     is_oop = true;
     dest_uninitialized = true;
@@ -1334,7 +1334,7 @@ void StubGenerator::copy64_avx(Register dst, Register src, Register index, XMMRe
 //   used by generate_conjoint_byte_copy().
 //
 address StubGenerator::generate_disjoint_byte_copy(address* entry) {
-  StubGenStubId stub_id = StubGenStubId::jbyte_disjoint_arraycopy_id;
+  StubId stub_id = StubId::stubgen_jbyte_disjoint_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
 #if COMPILER2_OR_JVMCI
@@ -1452,7 +1452,7 @@ __ BIND(L_exit);
 // and stored atomically.
 //
 address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, address* entry) {
-  StubGenStubId stub_id = StubGenStubId::jbyte_arraycopy_id;
+  StubId stub_id = StubId::stubgen_jbyte_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
 #if COMPILER2_OR_JVMCI
@@ -1565,7 +1565,7 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
 //   used by generate_conjoint_short_copy().
 //
 address StubGenerator::generate_disjoint_short_copy(address *entry) {
-  StubGenStubId stub_id = StubGenStubId::jshort_disjoint_arraycopy_id;
+  StubId stub_id = StubId::stubgen_jshort_disjoint_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
 #if COMPILER2_OR_JVMCI
@@ -1662,32 +1662,32 @@ __ BIND(L_exit);
 }
 
 
-address StubGenerator::generate_fill(StubGenStubId stub_id) {
+address StubGenerator::generate_fill(StubId stub_id) {
   BasicType t;
   bool aligned;
 
   switch (stub_id) {
-  case jbyte_fill_id:
+  case StubId::stubgen_jbyte_fill_id:
     t = T_BYTE;
     aligned = false;
     break;
-  case jshort_fill_id:
+  case StubId::stubgen_jshort_fill_id:
     t = T_SHORT;
     aligned = false;
     break;
-  case jint_fill_id:
+  case StubId::stubgen_jint_fill_id:
     t = T_INT;
     aligned = false;
     break;
-  case arrayof_jbyte_fill_id:
+  case StubId::stubgen_arrayof_jbyte_fill_id:
     t = T_BYTE;
     aligned = true;
     break;
-  case arrayof_jshort_fill_id:
+  case StubId::stubgen_arrayof_jshort_fill_id:
     t = T_SHORT;
     aligned = true;
     break;
-  case arrayof_jint_fill_id:
+  case StubId::stubgen_arrayof_jint_fill_id:
     t = T_INT;
     aligned = true;
     break;
@@ -1737,7 +1737,7 @@ address StubGenerator::generate_fill(StubGenStubId stub_id) {
 // and stored atomically.
 //
 address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, address *entry) {
-  StubGenStubId stub_id = StubGenStubId::jshort_arraycopy_id;
+  StubId stub_id = StubId::stubgen_jshort_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
 #if COMPILER2_OR_JVMCI
@@ -1843,22 +1843,22 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
 //   disjoint_int_copy_entry is set to the no-overlap entry point
 //   used by generate_conjoint_int_oop_copy().
 //
-address StubGenerator::generate_disjoint_int_oop_copy(StubGenStubId stub_id, address* entry) {
+address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* entry) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubGenStubId::jint_disjoint_arraycopy_id:
+  case StubId::stubgen_jint_disjoint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_disjoint_arraycopy_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_disjoint_arraycopy_uninit_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -1974,22 +1974,22 @@ __ BIND(L_exit);
 // the hardware handle it.  The two dwords within qwords that span
 // cache line boundaries will still be loaded and stored atomically.
 //
-address StubGenerator::generate_conjoint_int_oop_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
+address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address nooverlap_target, address *entry) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubGenStubId::jint_arraycopy_id:
+  case StubId::stubgen_jint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_arraycopy_id:
+  case StubId::stubgen_oop_arraycopy_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_arraycopy_uninit_id:
+  case StubId::stubgen_oop_arraycopy_uninit_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2107,22 +2107,22 @@ __ BIND(L_exit);
 //   disjoint_oop_copy_entry or disjoint_long_copy_entry is set to the
 //   no-overlap entry point used by generate_conjoint_long_oop_copy().
 //
-address StubGenerator::generate_disjoint_long_oop_copy(StubGenStubId stub_id, address *entry) {
+address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *entry) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubGenStubId::jlong_disjoint_arraycopy_id:
+  case StubId::stubgen_jlong_disjoint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_disjoint_arraycopy_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_disjoint_arraycopy_uninit_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2240,22 +2240,22 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubGenStubId stub_id, ad
 //   c_rarg1   - destination array address
 //   c_rarg2   - element count, treated as ssize_t, can be zero
 //
-address StubGenerator::generate_conjoint_long_oop_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
+address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address nooverlap_target, address *entry) {
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubGenStubId::jlong_arraycopy_id:
+  case StubId::stubgen_jlong_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_arraycopy_id:
+  case StubId::stubgen_oop_arraycopy_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubGenStubId::oop_arraycopy_uninit_id:
+  case StubId::stubgen_oop_arraycopy_uninit_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2391,14 +2391,14 @@ void StubGenerator::generate_type_check(Register sub_klass,
 //    rax ==  0  -  success
 //    rax == -1^K - failure, where K is partial transfer count
 //
-address StubGenerator::generate_checkcast_copy(StubGenStubId stub_id, address *entry) {
+address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubGenStubId::checkcast_arraycopy_id:
+  case StubId::stubgen_checkcast_arraycopy_id:
     dest_uninitialized = false;
     break;
-  case StubGenStubId::checkcast_arraycopy_uninit_id:
+  case StubId::stubgen_checkcast_arraycopy_uninit_id:
     dest_uninitialized = true;
     break;
   default:
@@ -2476,7 +2476,7 @@ address StubGenerator::generate_checkcast_copy(StubGenStubId stub_id, address *e
 
 #ifdef ASSERT
     Label L2;
-    __ get_thread(r14);
+    __ get_thread_slow(r14);
     __ cmpptr(r15_thread, r14);
     __ jcc(Assembler::equal, L2);
     __ stop("StubRoutines::call_stub: r15_thread is modified by call");
@@ -2623,7 +2623,7 @@ address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address sho
   const Register bits        = rax;      // test copy of low bits
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::unsafe_arraycopy_id;
+  StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2759,7 +2759,7 @@ static void do_setmemory_atomic_loop(USM_TYPE type, Register dest,
 //
 address StubGenerator::generate_unsafe_setmemory(address unsafe_byte_fill) {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::unsafe_setmemory_id;
+  StubId stub_id = StubId::stubgen_unsafe_setmemory_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();   // required for proper stackwalking of RuntimeStub frame
@@ -2929,7 +2929,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
     if (advance < 0)  advance += modulus;
     if (advance > 0)  __ nop(advance);
   }
-  StubGenStubId stub_id = StubGenStubId::generic_arraycopy_id;
+  StubId stub_id = StubId::stubgen_generic_arraycopy_id;
   StubCodeMark mark(this, stub_id);
 
   // Short-hop target to L_failed.  Makes for denser prologue code.
@@ -2943,7 +2943,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rklass_tmp); // rdi is callee-save on Windows
+  __ push_ppx(rklass_tmp); // rdi is callee-save on Windows
 #endif
 
   // bump this on entry, not on exit:
@@ -3077,7 +3077,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ andl(rax_lh, Klass::_lh_log2_element_size_mask); // rax_lh -> rax_elsize
 
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
 
   // next registers should be set before the jump to corresponding stub
@@ -3149,7 +3149,7 @@ __ BIND(L_objArray);
   __ movl2ptr(count, r11_length); // length
 __ BIND(L_plain_copy);
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
   __ jump(RuntimeAddress(oop_copy_entry));
 
@@ -3191,7 +3191,7 @@ __ BIND(L_checkcast_copy);
     assert_clean_int(sco_temp, rax);
 
 #ifdef _WIN64
-    __ pop(rklass_tmp); // Restore callee-save rdi
+    __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
 
     // the checkcast_copy loop needs two extra arguments:
@@ -3204,7 +3204,7 @@ __ BIND(L_checkcast_copy);
 
 __ BIND(L_failed);
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
   __ xorptr(rax, rax);
   __ notptr(rax); // return -1

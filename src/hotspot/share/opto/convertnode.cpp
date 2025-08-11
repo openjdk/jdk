@@ -79,6 +79,11 @@ Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[in(1)->Opcode()]);
       }
 
+      // Skip the transformation if input is unexpected.
+      if (cmp == nullptr) {
+        return nullptr;
+      }
+
       // Replace Conv2B with the cmove
       Node* bol = phase->transform(new BoolNode(cmp, BoolTest::eq));
       return new CMoveINode(bol, phase->intcon(1), phase->intcon(0), TypeInt::BOOL);
@@ -181,16 +186,6 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::d2i( td->getd() ) );
 }
 
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
-}
-
 //------------------------------Identity---------------------------------------
 // Int's can be converted to doubles with no loss of bits.  Hence
 // converting an integer to a double and back to an integer is a NOP.
@@ -215,16 +210,6 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
      in(1)->in(1)->Opcode() == Op_ConvD2L )
   return in(1)->in(1);
   return this;
-}
-
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
 }
 
 //=============================================================================
@@ -279,8 +264,68 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new ReinterpretHF2SNode(binop);
     }
   }
+
+  // Detects following ideal graph pattern
+  //      ConvF2HF(binopF(conF, ConvHF2F(varS))) =>
+  //              ReinterpretHF2SNode(binopHF(conHF, ReinterpretS2HFNode(varS)))
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
+    Node* binopF = in(1);
+    // Check if the incoming binary operation has one floating point constant
+    // input and the other input is a half precision to single precision upcasting node.
+    // We land here because a prior HalfFloat to Float conversion promotes
+    // an integral constant holding Float16 value to a floating point constant.
+    // i.e. ConvHF2F ConI(short) => ConF
+    Node* conF = nullptr;
+    Node* varS = nullptr;
+    if (binopF->in(1)->is_Con() && binopF->in(2)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(1);
+      varS = binopF->in(2)->in(1);
+    } else if (binopF->in(2)->is_Con() &&  binopF->in(1)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(2);
+      varS = binopF->in(1)->in(1);
+    }
+
+    if (conF != nullptr &&
+        varS != nullptr &&
+        conF->bottom_type()->isa_float_constant() != nullptr &&
+        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(binopF->Opcode())) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
+        StubRoutines::hf2f_adr() != nullptr &&
+        StubRoutines::f2hf_adr() != nullptr) {
+      jfloat con = conF->bottom_type()->getf();
+      // Conditions under which floating point constant can be considered for a pattern match.
+      // 1. conF must lie within Float16 value range, otherwise we would have rounding issues:
+      //    Doing the operation in float32 and then rounding is not the same as
+      //    rounding first and doing the operation in float16.
+      // 2. If a constant value is one of the valid IEEE 754 binary32 NaN bit patterns
+      // then it's safe to consider it for pattern match because of the following reasons:
+      //   a. As per section 2.8 of JVMS, Java Virtual Machine does not support
+      //   signaling NaN value.
+      //   b. Any signaling NaN which takes part in a non-comparison expression
+      //   results in a quiet NaN but preserves the significand bits of signaling NaN.
+      //   c. The pattern being matched includes a Float to Float16 conversion after binary
+      //   expression, this downcast will still preserve the significand bits of binary32 NaN.
+      bool isnan = g_isnan((jdouble)con);
+      if (StubRoutines::hf2f(StubRoutines::f2hf(con)) == con || isnan) {
+        Node* newVarHF = phase->transform(new ReinterpretS2HFNode(varS));
+        Node* conHF = phase->makecon(TypeH::make(con));
+        Node* binopHF = nullptr;
+        // Preserving original input order for semantic correctness
+        // of non-commutative operation.
+        if (binopF->in(1) == conF) {
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), conHF, newVarHF));
+        } else {
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), newVarHF, conHF));
+        }
+        return new ReinterpretHF2SNode(binopHF);
+      }
+    }
+  }
+
   return nullptr;
 }
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
@@ -300,16 +345,6 @@ Node* ConvF2INode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
-}
-
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2LNode::Value(PhaseGVN* phase) const {
@@ -327,16 +362,6 @@ Node* ConvF2LNode::Identity(PhaseGVN* phase) {
      in(1)->in(1)->Opcode() == Op_ConvF2L )
   return in(1)->in(1);
   return this;
-}
-
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
 }
 
 //=============================================================================
@@ -729,7 +754,14 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 
 
 //------------------------------Ideal------------------------------------------
-Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
+    if (progress != nullptr) {
+      return progress;
+    }
+  }
+
   const TypeLong* this_type = this->type()->is_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
@@ -831,7 +863,14 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Blow off prior masking to int
-Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* ConvL2INode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
+    if (progress != nullptr) {
+      return progress;
+    }
+  }
+
   Node *andl = in(1);
   uint andl_op = andl->Opcode();
   if( andl_op == Op_AndL ) {
@@ -863,52 +902,6 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // It causes problems (sizes of Load and Store nodes do not match)
   // in objects initialization code and Escape Analysis.
   return nullptr;
-}
-
-
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings
-Node* RoundFloatNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::FloatCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundFloat ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadF ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundFloatNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
-}
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings.  Incoming arguments are already rounded.
-Node* RoundDoubleNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::DoubleCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundDouble ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadD ) return in(1);
-  if( op == Op_ConvF2D ) return in(1);
-  if( op == Op_ConvI2D ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
 }
 
 //=============================================================================

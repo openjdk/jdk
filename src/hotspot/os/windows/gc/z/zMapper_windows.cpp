@@ -78,7 +78,7 @@ void ZMapper::unreserve(zaddress_unsafe addr, size_t size) {
   const bool res = ZSyscall::VirtualFreeEx(
     GetCurrentProcess(), // hProcess
     (void*)untype(addr), // lpAddress
-    size,                // dwSize
+    0,                   // dwSize
     MEM_RELEASE          // dwFreeType
     );
 

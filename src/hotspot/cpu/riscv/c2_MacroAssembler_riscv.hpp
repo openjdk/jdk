@@ -39,6 +39,15 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
+  void string_compare_long_same_encoding(Register result, Register str1, Register str2,
+                                  const bool isLL, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE);
+  void string_compare_long_different_encoding(Register result, Register str1, Register str2,
+                                  bool isLU, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *DONE);
+
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
@@ -120,6 +129,10 @@
                  Register op1, Register op2,
                  Register dst, Register src);
 
+  void enc_cmove_cmp_fp(int cmpFlag,
+                        FloatRegister op1, FloatRegister op2,
+                        Register dst, Register src, bool is_single);
+
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
          : sw(r, Address(sp, offset));
@@ -163,9 +176,15 @@
     }
   }
 
+  enum class FLOAT_TYPE {
+    half_precision,
+    single_precision,
+    double_precision
+  };
+
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
-                 bool is_double, bool is_min);
+                 FLOAT_TYPE ft, bool is_min);
 
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
