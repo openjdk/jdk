@@ -160,7 +160,7 @@ RELAUNCHER_SRC := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/launc
 # $1: The module name
 # $2: The launcher name
 define SetupRelauncher
-  $1_$2_LAUNCHER_ARGS_LINE :=  $$(shell cat $$(SUPPORT_OUTPUTDIR)/static-native/relaunchers/$1/$2-relauncher-arguments.txt)
+  $1_$2_LAUNCHER_ARGS_LINE := $$(call ReadFile, $$(SUPPORT_OUTPUTDIR)/static-native/relaunchers/$1/$2-relauncher-arguments.txt)
   # Restore |||| with space
   $1_$2_LAUNCHER_ARGS := '{ $$(subst ||||,$(SPACE),$$(strip $$(foreach a, $$($1_$2_LAUNCHER_ARGS_LINE), "-J$$a"$$(COMMA) )) ) }'
 
