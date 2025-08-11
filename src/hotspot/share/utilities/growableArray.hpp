@@ -183,11 +183,6 @@ public:
     return GrowableArrayIterator<E>(this, length());
   }
 
-  E pop() {
-    assert(_len > 0, "empty list");
-    return _data[--_len];
-  }
-
   void at_put(int i, const E& elem) {
     assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     _data[i] = elem;
@@ -367,6 +362,11 @@ public:
   }
 
   void push(const E& elem) { append(elem); }
+
+  E pop() {
+    assert(this->_len > 0, "empty list");
+    return this->_data[--this->_len];
+  }
 
   E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
