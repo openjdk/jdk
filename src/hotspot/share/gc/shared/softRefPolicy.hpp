@@ -58,21 +58,4 @@ class SoftRefPolicy {
   }
 };
 
-class ClearedAllSoftRefs : public StackObj {
-  bool           _clear_all_soft_refs;
-  SoftRefPolicy* _soft_ref_policy;
- public:
-  ClearedAllSoftRefs(bool clear_all_soft_refs, SoftRefPolicy* soft_ref_policy) :
-    _clear_all_soft_refs(clear_all_soft_refs),
-    _soft_ref_policy(soft_ref_policy) {}
-
-  ~ClearedAllSoftRefs() {
-    if (_clear_all_soft_refs) {
-      _soft_ref_policy->cleared_all_soft_refs();
-    }
-  }
-
-  bool should_clear() { return _clear_all_soft_refs; }
-};
-
 #endif // SHARE_GC_SHARED_SOFTREFPOLICY_HPP

@@ -47,6 +47,7 @@ public:
 // Class used to group scoped objects used in the Full GC together.
 class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
+  bool                    _should_clear_soft_refs;
   bool                    _do_maximal_compaction;
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
@@ -54,7 +55,6 @@ class G1FullGCScope : public StackObj {
   G1FullGCTracer*         _tracer;
   IsSTWGCActiveMark       _active;
   G1FullGCJFRTracerMark   _tracer_mark;
-  ClearedAllSoftRefs      _soft_refs;
   G1FullGCMonitoringScope _monitoring_scope;
   G1HeapPrinterMark       _heap_printer;
   size_t                  _region_compaction_threshold;
@@ -65,7 +65,7 @@ public:
                 bool do_maximal_compaction,
                 G1FullGCTracer* tracer);
 
-  bool should_clear_soft_refs();
+  bool should_clear_soft_refs() const { return _should_clear_soft_refs; }
   bool do_maximal_compaction() { return _do_maximal_compaction; }
 
   STWGCTimer* timer();
