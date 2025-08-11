@@ -53,7 +53,7 @@ import apple.laf.JRSUIConstants.Widget;
 import apple.laf.JRSUIState;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class AquaComboBoxButton extends JButton {
+final class AquaComboBoxButton extends JButton {
     protected final JComboBox<Object> comboBox;
     protected final JList<?> list;
     protected final CellRendererPane rendererPane;
