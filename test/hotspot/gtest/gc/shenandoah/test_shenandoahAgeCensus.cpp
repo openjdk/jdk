@@ -69,4 +69,5 @@ TEST_VM_F(ShenandoahAgeCensusTest, find_high_mortality_rate) {
     0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
   build_mortality_rate_curve(census, mortality_rates, sizeof(mortality_rates) / sizeof(double));
+  EXPECT_EQ(2u, census.tenuring_threshold());
 }
