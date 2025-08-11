@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,27 @@
 package jdk.jfr.event.runtime;
 
 import java.util.List;
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.ArrayList;
 
 import jdk.jfr.consumer.RecordedMethod;
-import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.internal.test.DeprecatedMethods;
 import jdk.jfr.internal.test.DeprecatedThing;
 import jdk.jfr.Recording;
+import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertNull;
+import static jdk.test.lib.Asserts.assertNotNull;
 
 /**
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
+ * @library /test/lib
  *
  * @run main/othervm/timeout=300 -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent Default
@@ -64,8 +68,7 @@ public class TestDeprecatedEvent {
  *      jdk.jfr.event.runtime.TestDeprecatedEvent JVMCI
  *
  */
-    public static String EVENT_NAME = "jdk.DeprecatedInvocation";
-    private static int fileID = 0;
+    public static String EVENT_NAME = EventNames.DeprecatedInvocation;
     private static String mode;
     public static int counter;
 
@@ -112,7 +115,7 @@ public class TestDeprecatedEvent {
     }
 
     private static void validateLevelAll(Recording r) throws Exception {
-        List<RecordedEvent> events = fromRecording(r);
+        List<RecordedEvent> events = Events.fromRecording(r);
         printInvocations(events, "all");
         assertMethod(events, "testLevelAll", "deprecated");
         assertMethod(events, "testLevelAll", "deprecatedSince");
@@ -157,7 +160,7 @@ public class TestDeprecatedEvent {
     }
 
     private static void validateReflectionLevelAll(Recording r) throws Exception {
-        List<RecordedEvent> events = fromRecording(r);
+        List<RecordedEvent> events = Events.fromRecording(r);
         printInvocations(events, "reflectionAll");
         assertMethod(events, "testReflectionAll", "reflectionDeprecated");
         assertMethod(events, "testReflectionAll", "reflectionDeprecatedSince");
@@ -178,7 +181,7 @@ public class TestDeprecatedEvent {
     }
 
     private static void validateLevelForRemoval(Recording r) throws Exception {
-        List<RecordedEvent> events = fromRecording(r);
+        List<RecordedEvent> events = Events.fromRecording(r);
         printInvocations(events, "forRemoval");
         assertMethod(events, "testLevelAll", "deprecatedForRemoval");
         assertMethod(events, "testLevelAll", "deprecatedSinceForRemoval");
@@ -233,32 +236,5 @@ public class TestDeprecatedEvent {
             System.out.println(e);
         }
         System.out.println();
-    }
-
-    // To reduce the number of classes that need to be compiled with -Xcomp,
-    // use local versions of assert methods and fromRecording.
-    private static void assertNull(Object object, String message) {
-        if (object != null) {
-            throw new AssertionError(message);
-        }
-    }
-
-    private static void assertTrue(boolean condition, String message) {
-        if (!condition) {
-            throw new AssertionError(message);
-        }
-    }
-
-    private static void assertNotNull(Object object, String message) {
-        if (object == null) {
-            throw new AssertionError(message);
-        }
-    }
-
-    private static List<RecordedEvent> fromRecording(Recording r) throws IOException {
-        fileID++;
-        Path p = Path.of(mode + "-" + fileID + ".jfr");
-        r.dump(p);
-        return RecordingFile.readAllEvents(p);
     }
 }
