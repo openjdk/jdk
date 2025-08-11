@@ -1234,9 +1234,9 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
     }
     return TypeInteger::make(i1->get_con_as_long(bt) % i2->get_con_as_long(bt), bt);
   }
-  // We checked that t2 is not the zero constant. Hence at least i2->_lo or i2->_hi must be non-zero,
-  // and hence its its absoute value is bigger than zero. Hence, the magnitude of the divisor (i.e. the
-  // largest absolute value for any value in i2) must be in the  range [1, 2^31] or [1, 2^63], depending
+  // We checked that t2 is not the zero constant. Hence, at least i2->_lo or i2->_hi must be non-zero,
+  // and hence its absoute value is bigger than zero. Hence, the magnitude of the divisor (i.e. the
+  // largest absolute value for any value in i2) must be in the range [1, 2^31] or [1, 2^63], depending
   // on the BasicType.
   julong divisor_magnitude = MAX2(g_uabs(i2->lo_as_long()), g_uabs(i2->hi_as_long()));
   // JVMS lrem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
