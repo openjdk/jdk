@@ -243,7 +243,7 @@ public class TestAliasingFuzzer {
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
-            "p.xyz", "InnerTest",
+            "compiler.loopopts.superword.templated", "AliasingFuzzer",
             // List of imports.
             Set.of("compiler.lib.generators.*",
                    "compiler.lib.verify.*",
