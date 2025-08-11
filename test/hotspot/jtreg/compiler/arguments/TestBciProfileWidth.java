@@ -25,6 +25,7 @@
  * @test
  * @summary Test the range defined in globals.hpp for BciProfileWidth
  * @bug 8358696
+ * @requires vm.debug
  * @run main/othervm -XX:BciProfileWidth=0
  *      compiler.arguments.TestBciProfileWidth
  * @run main/othervm -XX:BciProfileWidth=1000
