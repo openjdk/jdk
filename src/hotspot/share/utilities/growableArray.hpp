@@ -243,17 +243,6 @@ public:
 
   // Order preserving remove operations.
 
-  bool remove_if_existing(const E& elem) {
-    // Returns TRUE if elem is removed.
-    for (int i = 0; i < _len; i++) {
-      if (_data[i] == elem) {
-        remove_at(i);
-        return true;
-      }
-    }
-    return false;
-  }
-
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
     for (int j = index + 1; j < _len; j++) {
@@ -486,6 +475,17 @@ public:
     bool removed = this->remove_if_existing(elem);
     if (removed) return;
     ShouldNotReachHere();
+  }
+
+  bool remove_if_existing(const E& elem) {
+    // Returns TRUE if elem is removed.
+    for (int i = 0; i < this->_len; i++) {
+      if (this->_data[i] == elem) {
+        this->remove_at(i);
+        return true;
+      }
+    }
+    return false;
   }
 
   // Remove all elements up to the index (exclusive). The order is preserved.
