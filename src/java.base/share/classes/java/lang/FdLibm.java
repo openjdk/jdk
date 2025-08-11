@@ -2256,14 +2256,8 @@ final class FdLibm {
 
                 // Compute ss = s_h + s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5)
 
-                // final double BP[]    = {1.0,
-                //                       1.5};
-                // final double DP_H[]  = {0.0,
-                //                        0x1.2b80_34p-1};        // 5.84962487220764160156e-01
-                final double DP_H1   = 0x1.2b80_34p-1;
-                // final double DP_L[]  = {0.0,
-                //                        0x1.cfde_b43c_fd006p-27};// 1.35003920212974897128e-08
-                final double DP_L1 = 0x1.cfde_b43c_fd006p-27;
+                final double DP_H1   = 0x1.2b80_34p-1;           // 5.84962487220764160156e-01
+                final double DP_L1   = 0x1.cfde_b43c_fd006p-27;  // 1.35003920212974897128e-08
 
                 // Poly coefs for (3/2)*(log(x)-2s-2/3*s**3
                 final double L1      =  0x1.3333_3333_33303p-1;  //  5.99999999999994648725e-01
@@ -2445,15 +2439,12 @@ final class FdLibm {
     static final class Exp {
         private Exp() {throw new UnsupportedOperationException();}
 
-        // @Stable
-        // private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
         private static final double o_threshold=  0x1.62e42fefa39efp9;     //  7.09782712893383973096e+02
         private static final double u_threshold= -0x1.74910d52d3051p9;     // -7.45133219101941108420e+02;
-        //@Stable
         private static final double ln2HI   =     0x1.62e42feep-1;         //  6.93147180369123816490e-01
-        //                                       -0x1.62e42feep-1          // -6.93147180369123816490e-01
+
         @Stable
         private static final double[] ln2LO   ={  0x1.a39ef35793c76p-33,   //  1.90821492927058770002e-10
                                                  -0x1.a39ef35793c76p-33};  // -1.90821492927058770002e-10
