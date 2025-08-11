@@ -153,6 +153,8 @@ RelocIterator::RelocIterator(relocInfo& ri) {
   _base = &ri;
   _len = 1;
   _current = -1;
+  _limit = nullptr;
+  _addr = 0;
 }
 
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
@@ -351,7 +353,7 @@ void Relocation::const_verify_data_value(address x) {
 
 RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   if (rtype == relocInfo::none)  return RelocationHolder::none;
-  relocInfo ri = relocInfo(rtype, 0);
+  relocInfo ri(rtype, 0);
   RelocIterator itr(ri);
   itr.next();
   itr.reloc();
