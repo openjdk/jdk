@@ -40,13 +40,16 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 
 template <typename T>
 void GCTracer::report_object_count(T* heap) {
-  KlassInfoTable* cit = heap->get_cit();
-
-  if (cit == nullptr || !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
+  if (!ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
     return;
   }
-  ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
-  cit->iterate(&event_sender);
+  
+  KlassInfoTable* cit = heap->get_cit();
+
+  if (!cit->allocation_failed()) {
+    ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
+    cit->iterate(&event_sender);
+  }
 }
 
 #endif // INCLUDE_SERVICES
