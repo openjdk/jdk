@@ -7115,7 +7115,7 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
 void C2_MacroAssembler::vector_slice_32B_op(XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                             XMMRegister xtmp, int origin, int vlen_enc) {
    assert(vlen_enc == Assembler::AVX_256bit, "");
-   if (origin <= 16) {
+   if (origin < 16) {
      // ALIGNR instruction concatenates the corresponding 128 bit
      // lanes of two source vectors and then performs the right
      // shift operation over intermediate value. Thus source vectors
@@ -7156,7 +7156,7 @@ void C2_MacroAssembler::vector_slice_32B_op(XMMRegister dst, XMMRegister src1, X
 
 void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                             XMMRegister xtmp, int origin, int vlen_enc) {
-  if (origin <= 16) {
+  if (origin < 16) {
     // Initial source vectors
     //        0.........512            0.........512
     // src1 = [v1 v2 v3 v4] and src2 = [v5 v6 v7 v8]
@@ -7184,7 +7184,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
     //                  |_____________|
      evalignd(xtmp, src2, src1, 4, vlen_enc);
      vpalignr(dst, xtmp, src1, origin, vlen_enc);
-   } else if (origin > 16 && origin <= 32) {
+   } else if (origin > 16 && origin < 32) {
     // Similarly, for SHIFT between 16 and 32 bytes
     // result will be sliced out of src1 and lower
     // two 128 bit lanes of src2.
@@ -7198,7 +7198,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
      evalignd(xtmp, src2, src1, 4, vlen_enc);
      evalignd(dst, src2, src1, 8, vlen_enc);
      vpalignr(dst, dst, xtmp, origin - 16, vlen_enc);
-   } else if (origin > 32 && origin <= 48) {
+   } else if (origin > 32 && origin < 48) {
     // For SHIFT between 32 and 48 bytes
     // result will be sliced out of src1 and lower
     // four 128 bit lanes of src2.
@@ -7223,7 +7223,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
     // res[511:384] = {src2[511:384], src2[383:256]}
     // Thus, source vector lanes should have following format.
     // src1 = {v4, v5, v6, v7} and src2 = {v5, v6, v7, v8}
-     assert(origin > 48 && origin <= 64, "");
+     assert(origin > 48 && origin < 64, "");
      evalignd(xtmp, src2, src1, 12, vlen_enc);
      vpalignr(dst, src2, xtmp, origin - 48, vlen_enc);
    }
@@ -7231,7 +7231,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
 
 void C2_MacroAssembler::vector_slice_op(XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                         XMMRegister xtmp, int origin, int vlen_enc) {
-  if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
+  if (VM_Version::supports_avx512vlbw()) {
     vector_slice_64B_op(dst, src1, src2, xtmp, origin, vlen_enc);
   } else {
     assert(vlen_enc == Assembler::AVX_256bit, "");

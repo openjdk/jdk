@@ -1672,7 +1672,7 @@ bool LibraryCallKit::inline_vector_blend() {
 //                       Class<? extends V> vClass, Class<E> eClass, int length, V v1, V v2,
 //                       VectorSliceOp<V> defaultImpl)
 bool LibraryCallKit::inline_vector_slice() {
-  const TypeInt*     origin         = gvn().type(argument(0))->isa_int();
+  const TypeInt*     origin       = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
@@ -1700,13 +1700,13 @@ bool LibraryCallKit::inline_vector_slice() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = elem_type->basic_type();
 
-  if (!Matcher::supports_vector_slice_with_non_constant_index(num_elem, elem_bt) && !origin->is_con()) {
+  if (Matcher::supports_vector_slice_with_non_constant_index(num_elem, elem_bt) || !origin->is_con()) {
     log_if_needed("  ** vector slice from non-constant index not supported");
     return false;
   }
 
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
-    log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s ismask=useload/none",
+    log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
                     num_elem, type2name(elem_bt));
     return false; // not supported
   }
@@ -1720,6 +1720,7 @@ bool LibraryCallKit::inline_vector_slice() {
     return false; // operand unboxing failed
   }
 
+  // Defining origin in terms of number of bytes to make it type agnostic value.
   Node* origin_node = gvn().intcon(origin->get_con() * type2aelembytes(elem_bt));
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   Node* operation = gvn().transform(new VectorSliceNode(v1, v2, origin_node, vector_type));

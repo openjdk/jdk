@@ -2240,6 +2240,26 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
     }
 
+    public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_B, "VectorSlice", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_SLICE_S = VECTOR_PREFIX + "VECTOR_SLICE_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_S, "VectorSlice", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_SLICE_I = VECTOR_PREFIX + "VECTOR_SLICE_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_I, "VectorSlice", TYPE_INT);
+    }
+
+    public static final String VECTOR_SLICE_L = VECTOR_PREFIX + "VECTOR_SLICE_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_L, "VectorSlice", TYPE_LONG);
+    }
+
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);

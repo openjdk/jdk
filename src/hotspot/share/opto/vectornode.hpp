@@ -1727,6 +1727,7 @@ class VectorSliceNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* origin() const { return in(3); }
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 
