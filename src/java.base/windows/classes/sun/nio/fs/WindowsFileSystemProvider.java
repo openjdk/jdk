@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,6 +420,7 @@ class WindowsFileSystemProvider
 
     @Override
     public boolean isSameFile(Path obj1, Path obj2) throws IOException {
+        // toWindowsPath verifies its argument is a non-null UnixPath
         WindowsPath file1 = WindowsPath.toWindowsPath(obj1);
         if (file1.equals(obj2))
             return true;
@@ -429,40 +430,52 @@ class WindowsFileSystemProvider
             return false;
         WindowsPath file2 = (WindowsPath)obj2;
 
-        // open both files and see if they are the same
-        long h1 = 0L;
-        try {
-            h1 = file1.openForReadAttributeAccess(true);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(file1);
-        }
-        try {
-            WindowsFileAttributes attrs1 = null;
+        // check existence
+        boolean exists1 = exists(obj1);
+        boolean exists2 = exists(obj2);
+
+        if (exists1 && exists2) {
+            // open both files and see if they are the same
+            long h1 = 0L;
             try {
-                attrs1 = WindowsFileAttributes.readAttributes(h1);
+                h1 = file1.openForReadAttributeAccess(true);
             } catch (WindowsException x) {
                 x.rethrowAsIOException(file1);
             }
-            long h2 = 0L;
             try {
-                h2 = file2.openForReadAttributeAccess(true);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(file2);
-            }
-            try {
-                WindowsFileAttributes attrs2 = null;
+                WindowsFileAttributes attrs1 = null;
                 try {
-                    attrs2 = WindowsFileAttributes.readAttributes(h2);
+                    attrs1 = WindowsFileAttributes.readAttributes(h1);
+                } catch (WindowsException x) {
+                    x.rethrowAsIOException(file1);
+                }
+                long h2 = 0L;
+                try {
+                    h2 = file2.openForReadAttributeAccess(true);
                 } catch (WindowsException x) {
                     x.rethrowAsIOException(file2);
                 }
-                return WindowsFileAttributes.isSameFile(attrs1, attrs2);
+                try {
+                    WindowsFileAttributes attrs2 = null;
+                    try {
+                        attrs2 = WindowsFileAttributes.readAttributes(h2);
+                    } catch (WindowsException x) {
+                        x.rethrowAsIOException(file2);
+                    }
+                    return WindowsFileAttributes.isSameFile(attrs1, attrs2);
+                } finally {
+                    CloseHandle(h2);
+                }
             } finally {
-                CloseHandle(h2);
+                CloseHandle(h1);
             }
-        } finally {
-            CloseHandle(h1);
+        } else if (exists1 || exists2) {
+            // only one exists, they cannot be equal
+            return false;
         }
+
+        // neither exists, compare normalized paths without filesystem access
+        return obj1.normalize().equals(obj2.normalize());
     }
 
     @Override
