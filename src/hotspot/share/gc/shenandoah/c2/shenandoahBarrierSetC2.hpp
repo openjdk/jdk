@@ -32,14 +32,18 @@
 
 class ShenandoahBarrierStub;
 
-class ShenandoahBarrierSetC2State : public ArenaObj {
-private:
+const uint8_t ShenandoahC2CASBarrier         = 1;
+
+class ShenandoahBarrierSetC2State : public BarrierSetC2State {
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
   GrowableArray<ShenandoahBarrierStub*>* _stubs;
   int _stubs_start_offset;
 
 public:
-  ShenandoahBarrierSetC2State(Arena* comp_arena);
+  explicit ShenandoahBarrierSetC2State(Arena* comp_arena);
+
+  bool needs_liveness_data(const MachNode* mach) const override;
+  bool needs_livein_data() const override;
 
   int load_reference_barriers_count() const;
   ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
@@ -199,10 +203,11 @@ public:
 class ShenandoahCASBarrierMidStub : public ShenandoahBarrierStub {
   ShenandoahCASBarrierSlowStub* _slow_stub;
   Register _tmp;
-  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp) :
-    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _tmp(tmp) {}
+  bool _cae;
+  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp, bool cae) :
+    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _tmp(tmp), _cae(cae) {}
 public:
-  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp);
+  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp, bool cae);
   void emit_code(MacroAssembler& masm) override;
 };
 

@@ -119,7 +119,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       break;
     }
 
-    if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
+    if (new_garbage < min_garbage || r->garbage() > garbage_threshold) {
       cset->add_region(r);
       cur_cset = new_cset;
       cur_garbage = new_garbage;

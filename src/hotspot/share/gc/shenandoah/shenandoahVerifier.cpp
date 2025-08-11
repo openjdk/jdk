@@ -116,6 +116,10 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
+      assert(Universe::is_in_heap(obj), "ref: " PTR_FORMAT ", obj: " PTR_FORMAT ", use_fwd_table: %s, obj-mark: " INTPTR_FORMAT, p2i(p), p2i(obj), BOOL_TO_STR(_heap->collection_set()->use_forward_table(obj)), obj->mark().value());
+      if (_heap->collection_set()->use_forward_table(obj)) {
+        obj = ShenandoahForwarding::get_forwardee(obj);
+      }
       // log_info(gc)("load Klass* from obj: " PTR_FORMAT, p2i(obj));
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
@@ -691,7 +695,12 @@ public:
         if (!in_generation(r)) {
           continue;
         }
-
+        if (_heap->collection_set()->use_forward_table(r)) {
+          // That region has no parsable objects anymore.
+          // TODO: We could probably still parse marked locations and verify
+          // the forwardees from the forwarding table.
+          continue;
+        }
         if (!r->is_humongous() && !r->is_trash()) {
           work_regular(r, stack, cl);
         } else if (r->is_humongous_start()) {

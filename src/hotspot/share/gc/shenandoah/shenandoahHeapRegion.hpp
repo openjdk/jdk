@@ -495,8 +495,8 @@ public:
     _needs_bitmap_reset = false;
   }
 
-  void build_forwarding_table(size_t num_forwardings) {
-    _fwd_table.build(num_forwardings);
+  bool build_forwarding_table(size_t num_forwardings) {
+    return _fwd_table.build(num_forwardings);
   }
 
   void zap_to_fwd_table() {

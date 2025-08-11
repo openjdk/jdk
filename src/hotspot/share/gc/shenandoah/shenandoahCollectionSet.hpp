@@ -109,6 +109,7 @@ public:
   inline bool is_in_loc(void* loc)           const;
 
   inline bool use_forward_table(oop obj) const;
+  inline bool use_forward_table(ShenandoahHeapRegion* const region) const;
 
   void print_on(outputStream* out) const;
 

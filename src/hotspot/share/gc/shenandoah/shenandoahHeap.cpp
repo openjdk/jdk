@@ -1139,19 +1139,27 @@ MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 class ShenandoahConcurrentEvacuateRegionObjectClosure : public ObjectClosure {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahHeapRegion* const _region;
   Thread* const _thread;
   ShenandoahMarkingContext* const _context;
   HeapWord* _tams;
   size_t _num_forwardings;
 public:
-  ShenandoahConcurrentEvacuateRegionObjectClosure(ShenandoahHeap* heap) :
-    _heap(heap), _thread(Thread::current()), _context(heap->marking_context()), _num_forwardings(0) {}
+  ShenandoahConcurrentEvacuateRegionObjectClosure(ShenandoahHeap* heap, ShenandoahHeapRegion* r) :
+    _heap(heap), _region(r), _thread(Thread::current()), _context(heap->marking_context()),
+    _tams(_context->top_at_mark_start(_region)), _num_forwardings(0) {
+  }
 
-  void do_object(oop p) {
+  ~ShenandoahConcurrentEvacuateRegionObjectClosure() {
+    _context->capture_top_at_mark_start(_region);
+  }
+
+  void do_object(oop p) final {
     shenandoah_assert_marked(nullptr, p);
     _num_forwardings++;
     if (!p->is_forwarded()) {
-      _heap->evacuate_object(p, _thread);
+      oop fwd = _heap->evacuate_object(p, _thread);
+      //log_info(gc)("evacuated object: " PTR_FORMAT ", to: " PTR_FORMAT, p2i(p), p2i(fwd));
     }
     // Mark objects beyond TAMS here, so that we can find their headers
     // quickly when we're building the forwarding table.
@@ -1160,15 +1168,6 @@ public:
       _context->mark_strong_ignore_tams(p, upgraded);
     }
     assert(_context->is_marked(p), "must be marked");
-  }
-
-  void start_region(ShenandoahHeapRegion* region) {
-    _tams = _context->top_at_mark_start(region);
-    _num_forwardings = 0;
-  }
-
-  void end_region(ShenandoahHeapRegion* region) {
-    _context->capture_top_at_mark_start(region);
   }
 
   size_t num_forwardings() const {
@@ -1191,43 +1190,60 @@ public:
     _concurrent(concurrent)
   {}
 
-  void work(uint worker_id) {
+  void work(uint worker_id) final {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
 
 private:
+  void evacuate_region(ShenandoahHeapRegion* r, ShenandoahConcurrentEvacuateRegionObjectClosure& cl) {
+    assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+    assert(!_sh->collection_set()->use_forward_table(r), "must not use forward table");
+    log_develop_debug(gc)("GC Thread " PTR_FORMAT " evacuating region: %lu", p2i(Thread::current()), r->index());
+    _sh->marked_object_iterate(r, &cl);
+  }
+
   void do_work() {
-    ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != nullptr) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      log_develop_debug(gc)("GC Thread " PTR_FORMAT " evacuating region: %lu", p2i(Thread::current()), r->index());
-      cl.start_region(r);
-      _sh->marked_object_iterate(r, &cl);
-      cl.end_region(r);
-      if (!_sh->cancelled_gc()) {
-        r->build_forwarding_table(cl.num_forwardings());
+      if (_sh->collection_set()->use_forward_table(r)) {
+        //log_info(gc)("Not evacuating region because it is using fwd table already: %lu", r->index());
+        continue;
+      }
+      size_t num_forwardings;
+      {
+        ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh, r);
+        ShenandoahSuspendibleThreadSetJoiner stsj(_concurrent);
+        ShenandoahEvacOOMScope oom_evac_scope;
+        evacuate_region(r, cl);
+        if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
+          break;
+        }
+        num_forwardings = cl.num_forwardings();
+      }
+
+      // We checked above that we're not cancelled, therefore it
+      // is safe to build the forwarding table now.
+      bool use_fwd_table = r->build_forwarding_table(num_forwardings);
+
+      if (use_fwd_table) {
+        // Got to make sure that everybody sees the table before
+        // turning on use_forward_table for the region.
         OrderAccess::fence();
         _sh->collection_set()->switch_to_forward_table(r);
-        {
-          ShenandoahEvacOOMScopeLeaver oom_evac_scope;
-          ShenandoahSuspendibleThreadSetLeaver stsl(_concurrent);
+        if (_concurrent) {
+          // We need to bring mutator threads to a safepoint, otherwise
+          // they might see use_forward_table=false and then end up trying
+          // to read the forwarding pointer from the mark-word which might
+          // not exist anymore.
           _sh->rendezvous_threads("Switch to Forward Table");
         }
         r->zap_to_fwd_table();
-      }
-
-      if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
-        break;
       }
     }
   }
@@ -1450,8 +1466,10 @@ void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapRegion* r;
   set->clear_current_index();
   while ((r = set->next()) != nullptr) {
+    //log_info(gc)("Make region trash: %lu", r->index());
     r->make_trash();
   }
+  //log_info(gc)("Clearing cset");
   collection_set()->clear();
 }
 
@@ -2508,6 +2526,9 @@ private:
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
       if (r->is_active() && !r->is_cset()) {
+        //if (!CONCURRENT) {
+        //  log_info(gc)("Updating refs in region: %lu, is_active: %s, is_cset: %s", r->index(), BOOL_TO_STR(r->is_active()), BOOL_TO_STR(r->is_cset()));
+        //}
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {

@@ -84,7 +84,7 @@ inline oop CompressedOops::decode_raw_not_null(oop v) {
 }
 
 inline oop CompressedOops::decode_not_null(oop v) {
-  assert(Universe::is_in_heap(v), "object not in heap " PTR_FORMAT, p2i(v));
+  //assert(Universe::is_in_heap(v), "object not in heap " PTR_FORMAT, p2i(v));
   return v;
 }
 

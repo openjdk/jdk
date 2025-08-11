@@ -60,6 +60,10 @@ bool ShenandoahCollectionSet::use_forward_table(oop obj) const {
   return _biased_cset_map[index] == FWD_TABLE;
 }
 
+bool ShenandoahCollectionSet::use_forward_table(ShenandoahHeapRegion* const region) const {
+  return _cset_map[region->index()] == FWD_TABLE;
+}
+
 size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
   return _old_bytes_to_evacuate;
 }

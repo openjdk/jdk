@@ -481,25 +481,25 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(const MachNode* node,
                                                 Register result) {
 
   Register tmp1 = rscratch1;
-  assert_different_registers(addr, expected, tmp1);
-  assert_different_registers(addr, new_val,  tmp1);
+  Register tmp2 = rscratch2;
+  assert_different_registers(addr, expected, new_val, result, tmp1, tmp2);
 
   ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, is_cae);
-  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1);
+  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1, is_cae);
   bool is_narrow = UseCompressedOops;
   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
 
   __ cmpxchg(addr, expected, new_val, size, acquire, release, false, result);
+  if (!is_cae) {
+    __ cset(result, Assembler::EQ);
+  }
 
   // If CAS failed, we need to check in the mid-path whether or not we need to deal with
   // false negatives.
   __ br(Assembler::NE, *mid_stub->entry());
-  __ bind(*mid_stub->continuation());
 
-  // result holds value fetched. When we need the boolean result in status register, then establish that here.
-  if (!is_cae) {
-    __ cmp(result, expected);
-  }
+  __ bind(*slow_stub->continuation());
+  __ bind(*mid_stub->continuation());
 }
 
 #undef __
@@ -510,9 +510,8 @@ void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
 
   Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ ldrb(_tmp, gc_state);
-  __ tst(_tmp, ShenandoahHeap::HAS_FORWARDED);
+  __ tstw(_tmp, ShenandoahHeap::HAS_FORWARDED);
   __ br(Assembler::NE, *_slow_stub->entry());
-  __ bind(*_slow_stub->continuation());
 
   __ b(*continuation());
 }
@@ -521,9 +520,29 @@ void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
   {
     SaveLiveRegisters save_live_registers(&masm, this);
-    __ mov(c_rarg0, _addr);
-    __ mov(c_rarg1, _expected);
-    __ mov(c_rarg2, _new_val);
+    // Setup c_rarg0 to hold addr.
+    Register expected = _expected;
+    Register new_val = _new_val;
+    if (c_rarg0 != _addr) {
+      if (c_rarg0 == expected) {
+        __ mov(rscratch1, expected);
+        expected = rscratch1;
+      } else if (c_rarg0 == new_val) {
+        __ mov(rscratch1, new_val);
+        new_val = rscratch1;
+      }
+      __ mov(c_rarg0, _addr);
+    }
+    // Setup c_rarg1 to hold expected.
+    if (c_rarg1 != expected) {
+      if (c_rarg1 == new_val) {
+        __ mov(rscratch2, new_val);
+        new_val = rscratch2;
+      }
+      __ mov(c_rarg1, expected);
+    }
+    // Setup c_rarg2 to hold new_val.
+    __ mov(c_rarg2, new_val);
 
     if (UseCompressedOops) {
       __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop_narrow));
@@ -531,10 +550,14 @@ void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
       __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop));
     }
     __ blr(lr);
-    __ mov(_result, r0);
+    __ mov(rscratch1, r0);
   }
-  if (!_cae) {
-    __ cmp(_result, _expected);
+
+  if (_cae) {
+    __ mov(_result, rscratch1);
+  } else {
+    __ cmp(rscratch1, _expected);
+    __ cset(_result, Assembler::EQ);
   }
   __ b(*continuation());
 }

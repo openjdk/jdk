@@ -112,6 +112,11 @@ private:
     return raw_to_words_align_down(bit);
   }
 
+  // Get a word and flip its bits according to flip.
+  bm_word_t flipped_word(idx_t word, bm_word_t flip) const {
+    return _map[word] ^ flip;
+  }
+
   // Helper for get_next_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
@@ -119,7 +124,11 @@ private:
   template<bm_word_t flip, bool aligned_right>
   inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
 
+  template<bm_word_t flip, bool aligned_right>
+  inline idx_t get_last_bit_impl(idx_t l_index, idx_t r_index) const;
+
   inline idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
+  inline idx_t get_last_one_offset (idx_t l_index, idx_t r_index) const;
 
   void clear_large_range (idx_t beg, idx_t end);
 
@@ -170,6 +179,10 @@ public:
   // "addr", and before "limit", if "limit" is non-null.  If there is no
   // such bit, returns "limit" if that is non-null, or else "endWord()".
   HeapWord* get_next_marked_addr(const HeapWord* addr,
+                                 const HeapWord* limit) const;
+
+  // Finds last marked address between in interval [addr, limit), return limit, if not found.
+  HeapWord* get_last_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
 
   bm_word_t inverted_bit_mask_for_range(idx_t beg, idx_t end) const;

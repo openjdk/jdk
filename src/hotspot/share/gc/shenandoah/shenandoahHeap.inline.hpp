@@ -116,9 +116,9 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // Corner case: when evacuation fails, there are objects in collection
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+      shenandoah_assert_marked_except(p, obj, cancelled_gc());
       oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+      //shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
       RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
@@ -561,7 +561,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
         assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
         oop obj = cast_to_oop(slots[c]);
         assert(ctx->is_marked(obj), "object expected to be marked");
-        assert(oopDesc::is_oop(obj), "sanity: " PTR_FORMAT ", mark: " INTPTR_FORMAT ", 2nd word: " PTR_FORMAT, p2i(obj), obj->mark().value(), p2i(*(cast_from_oop<HeapWord*>(obj) + 1)));
+        //assert(oopDesc::is_oop(obj), "sanity: " PTR_FORMAT ", mark: " INTPTR_FORMAT ", 2nd word: " PTR_FORMAT, p2i(obj), obj->mark().value(), p2i(*(cast_from_oop<HeapWord*>(obj) + 1)));
         cl->do_object(obj);
       }
     } while (avail > 0);

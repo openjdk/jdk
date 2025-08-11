@@ -565,6 +565,8 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   if (!os::is_readable_pointer(obj)) {
     return false;
   }
+  k = ShenandoahForwarding::klass(obj);
+  /*
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) { // look in forwardee
       markWord mark = obj->mark();
@@ -586,5 +588,6 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   } else {
     k = obj->klass();
   }
+  */
   return k != nullptr;
 }

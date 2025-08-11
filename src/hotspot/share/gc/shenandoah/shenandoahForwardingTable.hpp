@@ -45,18 +45,22 @@ class ShenandoahForwardingTable {
   ShenandoahHeapRegion* const _region;
   Entry* _table;
   size_t _num_entries;
+  size_t _num_expected_forwardings;
+  size_t _num_actual_forwardings;
+  size_t _num_live_words;
 
-  void initialize(size_t num_forwardings);
+  bool initialize(size_t num_forwardings);
   void clear();
   uint64_t hash(HeapWord* original, Entry* table);
   void enter_forwarding(HeapWord* original, HeapWord* forwardee);
   void fill_forwardings();
+  void log_stats() const;
   void verify_forwardings() PRODUCT_RETURN;
 
 public:
   ShenandoahForwardingTable(ShenandoahHeapRegion* region) : _region(region), _table(nullptr), _num_entries(0) {}
 
-  void build(size_t num_forwardings);
+  bool build(size_t num_forwardings);
 
   HeapWord* forwardee(HeapWord* orginal) const;
 
