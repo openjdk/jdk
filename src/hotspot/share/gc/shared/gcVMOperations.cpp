@@ -62,11 +62,6 @@ void VM_Verify::doit() {
   Universe::verify();
 }
 
-VM_GC_Operation::~VM_GC_Operation() {
-  CollectedHeap* ch = Universe::heap();
-  ch->soft_ref_policy()->set_all_soft_refs_clear(false);
-}
-
 const char* VM_GC_Operation::cause() const {
   return GCCause::to_string(_gc_cause);
 }
