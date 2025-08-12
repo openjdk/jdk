@@ -5382,7 +5382,7 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
   return nullptr;
 }
 
-Node* Compile::make_debug_print_call(const char* str, address call_addr, Node* parm0, Node* parm1,
+Node* Compile::make_debug_print_call(const char* str, address call_addr, bool add_to_igvn, Node* parm0, Node* parm1,
                                      Node* parm2, Node* parm3, Node* parm4, Node* parm5, Node* parm6) {
   // TODO is it okay to call igvn like this? Or do we need to pass it as argument?
   Node* str_node = initial_gvn()->transform(new ConPNode(TypeRawPtr::make(((address) str))));
@@ -5440,13 +5440,15 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, Node* p
       initial_gvn()->hash_delete(p);
       p->set_req(TypeFunc::Control, call_control_proj);
       --i; // we have to do this because we delete users
-      igvn_worklist()->push(p);
+      if (add_to_igvn) igvn_worklist()->push(p);
     }
   }
 
-  igvn_worklist()->push(c);
-  igvn_worklist()->push(call_control_proj);
-  igvn_worklist()->push(control);
+  if (add_to_igvn) {
+    igvn_worklist()->push(c);
+    igvn_worklist()->push(call_control_proj);
+    igvn_worklist()->push(control);
+  }
 
   return c;
 }

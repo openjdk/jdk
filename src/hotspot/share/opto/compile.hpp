@@ -1322,7 +1322,7 @@ private:
   //                 Node* parm4 = nullptr, Node* parm5 = nullptr,
   //                 Node* parm6 = nullptr);
 
-  Node* make_debug_print_call(const char* str, address call_addr, Node* parm0 = nullptr, Node* parm1 = nullptr,
+  Node* make_debug_print_call(const char* str, address call_addr, bool add_to_igvn, Node* parm0 = nullptr, Node* parm1 = nullptr,
                               Node* parm2 = nullptr, Node* parm3 = nullptr,
                               Node* parm4 = nullptr, Node* parm5 = nullptr,
                               Node* parm6 = nullptr);
@@ -1330,9 +1330,9 @@ private:
 public:
   // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
   template <typename... TT, typename... NN>
-  Node* make_debug_print_new(const char* str, NN... in) {
+  Node* make_debug_print_new(const char* str, bool add_to_igvn, NN... in) {
     address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
-    return make_debug_print_call(str, call_addr, in...);
+    return make_debug_print_call(str, call_addr, add_to_igvn, in...);
   }
 #endif
 };
