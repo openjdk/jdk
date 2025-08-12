@@ -2172,7 +2172,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
 HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
   assert(ShenandoahHeapRegion::requires_humongous(req.size()), "Must be humongous alloc");
   ShenandoahHeapLocker locker(_heap->lock(), req.is_mutator_alloc());
-  return allocate_contiguous(req);
+  return allocate_contiguous(req, /*is_humongous*/true);
 }
 
 template<bool IS_TLAB>
