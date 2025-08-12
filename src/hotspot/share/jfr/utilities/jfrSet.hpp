@@ -109,7 +109,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
   typedef typename CONFIG::KEY_TYPE K;
   static_assert(sizeof(K) > 1, "invalid size of CONFIG::KEY_TYPE");
  private:
-  static const constexpr unsigned max_initial_size = static_cast<unsigned>(max_jint) / 2;
+  static const constexpr unsigned max_initial_size = 1 << 30;
   unsigned _max_probe_sequence;
 
   uint32_t slot_idx(const uint32_t hash) const {
@@ -169,7 +169,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
   }
 
  public:
-  JfrSet(unsigned size, unsigned max_probe_sequence = 4) :
+  JfrSet(unsigned size, unsigned max_probe_sequence = 8) :
     JfrSetStorage<CONFIG>(size),
     _max_probe_sequence(max_probe_sequence) {
     assert(size % 2 == 0, "invariant");
