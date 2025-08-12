@@ -117,8 +117,8 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
  public:
   VM_GC_Operation(uint gc_count_before,
                   GCCause::Cause _cause,
-                  uint full_gc_count_before = 0,
-                  bool full = false) : VM_Heap_Sync_Operation() {
+                  uint full_gc_count_before,
+                  bool full) : VM_Heap_Sync_Operation() {
     _full = full;
     _prologue_succeeded = false;
     _gc_count_before    = gc_count_before;
@@ -147,8 +147,8 @@ class VM_GC_Service_Operation : public VM_GC_Operation {
 public:
   VM_GC_Service_Operation(uint gc_count_before,
                           GCCause::Cause _cause,
-                          uint full_gc_count_before = 0,
-                          bool full = false) :
+                          uint full_gc_count_before,
+                          bool full) :
     VM_GC_Operation(gc_count_before, _cause, full_gc_count_before, full) {}
 };
 
