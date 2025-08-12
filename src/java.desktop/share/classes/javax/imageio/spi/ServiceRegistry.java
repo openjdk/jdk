@@ -78,7 +78,7 @@ import java.util.ServiceLoader;
  * proxy for the heavyweight service.
  *
  * <p> An application may customize the contents of a registry as it
- * sees fit, so long as it has the appropriate runtime permission.
+ * sees fit.
  *
  * <p> For information on how to create and deploy service providers,
  * refer to the documentation on {@link java.util.ServiceLoader ServiceLoader}
@@ -658,6 +658,12 @@ public class ServiceRegistry {
     /**
      * Deregisters all currently registered service providers from all
      * categories.
+     * <p>
+     * If an application creates a new {@code ServiceRegistry} instance and registers providers,
+     * and at some point no longer needs the instance, it should call this method to ensure
+     * that all providers which are instances of {@link RegisterableService}
+     * receive a {@link RegisterableService#onDeregistration(ServiceRegistry, Class<?>)} call back,
+     * before allowing the instance to be garbage collected.
      */
     public void deregisterAll() {
         for (SubRegistry reg : categoryMap.values()) {
