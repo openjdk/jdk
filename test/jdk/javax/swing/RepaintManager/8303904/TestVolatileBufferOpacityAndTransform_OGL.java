@@ -23,14 +23,16 @@
 
 /* @test
    @bug 8303904
-   @summary this tests bug8303904 with the OpenGL pipeline
+   @summary this tests TestVolatileBufferOpacityAndTransform with the OpenGL
+            pipeline
 */
 
-public class bug8303904_OGL {
+public class TestVolatileBufferOpacityAndTransform_OGL {
 
-    public static void main(String[] args) {
-        // a capital "T" in "True" should add "OpenGL pipeline enabled [..]" log output
+    public static void main(String[] args) throws Exception {
+        // a capital "T" in "True" should add "OpenGL pipeline enabled [..]"
+        // log output
         System.setProperty("sun.java2d.opengl", "True");
-        bug8303904.main(args);
+        TestVolatileBufferOpacityAndTransform.main(args);
     }
 }
