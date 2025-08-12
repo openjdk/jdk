@@ -21,12 +21,12 @@
  * questions.
  *
  */
-#include "classfile/classFileParser.hpp"
 #include "cds/cdsConfig.hpp"
+#include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "classfile/javaClasses.inline.hpp"

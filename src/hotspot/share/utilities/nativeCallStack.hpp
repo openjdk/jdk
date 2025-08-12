@@ -27,8 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/ostream.hpp"
 
 /*
  * This class represents a native call path (does not include Java frame)

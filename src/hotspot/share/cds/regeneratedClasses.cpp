@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/regeneratedClasses.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
