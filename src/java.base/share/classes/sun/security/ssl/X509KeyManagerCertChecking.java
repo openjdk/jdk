@@ -108,7 +108,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         if (keyIndex == -1) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("Ignore alias " + alias
                         + ": key algorithm does not match");
             }
@@ -126,7 +126,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 }
             }
             if (!found) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                     SSLLogger.fine(
                             "Ignore alias " + alias
                                     + ": issuers do not match");
@@ -142,7 +143,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 !conformsToAlgorithmConstraints(constraints, chain,
                         checkType.getValidator())) {
 
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("Ignore alias " + alias +
                         ": certificate chain does not conform to " +
                         "algorithm constraints");
@@ -237,7 +238,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             checker.init(false);
         } catch (CertPathValidatorException cpve) {
             // unlikely to happen
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine(
                         "Cannot initialize algorithm constraints checker",
                         cpve);
@@ -253,7 +254,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 // We don't care about the unresolved critical extensions.
                 checker.check(cert, Collections.emptySet());
             } catch (CertPathValidatorException cpve) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                     SSLLogger.fine("Certificate does not conform to " +
                             "algorithm constraints", cert, cpve);
                 }
@@ -410,8 +412,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                                         serverName.getEncoded());
                             } catch (IllegalArgumentException iae) {
                                 // unlikely to happen, just in case ...
-                                if (SSLLogger.isOn &&
-                                        SSLLogger.isOn("keymanager")) {
+                                if (SSLLogger.logging &&
+                                        SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                                     SSLLogger.fine("Illegal server name: "
                                             + serverName);
                                 }
@@ -426,8 +428,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                             X509TrustManagerImpl.checkIdentity(hostname,
                                     cert, idAlgorithm);
                         } catch (CertificateException e) {
-                            if (SSLLogger.isOn &&
-                                    SSLLogger.isOn("keymanager")) {
+                            if (SSLLogger.logging &&
+                                    SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                                 SSLLogger.fine(
                                         "Certificate identity does not match "
                                                 + "Server Name Indication (SNI): "
