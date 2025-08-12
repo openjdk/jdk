@@ -1351,11 +1351,11 @@ void VMError::set_safepoint_timed_out_thread(Thread* thread) {
 }
 
 Thread* VMError::get_handshake_timed_out_thread() {
-  return _handshake_timed_out_thread;
+  return Atomic::load(&_handshake_timed_out_thread);
 }
 
 Thread* VMError::get_safepoint_timed_out_thread() {
-  return _safepoint_timed_out_thread;
+  return Atomic::load(&_safepoint_timed_out_thread);
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting
