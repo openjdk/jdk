@@ -491,7 +491,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
 //
 // This would allow situations where for some iv p1 is lower than p2, and for
-// other iv p1 is higher than p2. This is not very useful inpractice. We can
+// other iv p1 is higher than p2. This is not very useful in practice. We can
 // strengthen the condition, which will make the check simpler later:
 //
 //   for all iv in r: p1(iv) + size1 <= p2(iv)                    (P1-BEFORE-P2)
@@ -591,17 +591,17 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   (Otherwise, we just swap p1 and p2).
 //
 //   If iv_stride >= 0, i.e. init <= iv <= last:
-//     (iv - init) * scale_1 <= (iv - init) * iv_scale
-//     (iv - last) * scale_1 >= (iv - last) * iv_scale                   (POS-STRIDE)
+//     (iv - init) * iv_scale1 <= (iv - init) * iv_scale2
+//     (iv - last) * iv_scale1 >= (iv - last) * iv_scale2                 (POS-STRIDE)
 //   If iv_stride <= 0, i.e. last <= iv <= init:
-//     (iv - init) * scale_1 >= (iv - init) * iv_scale
-//     (iv - last) * scale_1 <= (iv - last) * iv_scale                   (NEG-STRIDE)
+//     (iv - init) * iv_scale1 >= (iv - init) * iv_scale2
+//     (iv - last) * iv_scale1 <= (iv - last) * iv_scale2                 (NEG-STRIDE)
 //
 //   Below, we show that these conditions are equivalent:
 //
 //       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(last) + size2 <= p1(last)      (if iv_stride >= 0)   |
 //       p1(last) + size1 <= p2(last)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
-//       ----- is equivalent to -----                            |    ----- is equivalent to -----                            |
+//       ---- are equivalent to -----                            |    ---- are equivalent to -----                            |
 //              (P1-BEFORE-P2)                                   |           (P1-AFTER-P2)                                    |
 //                                                               |                                                            |
 //   Proof:                                                      |                                                            |
@@ -618,11 +618,11 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //                                                               |                                                            |
 //          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
 //                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
-//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(last) - init * iv_scale2 + iv * iv_scale2 |
+//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(last) - last * iv_scale2 + iv * iv_scale2 |
 //                           ------ apply (POS-STRIDE) --------- |                        ------ apply (POS-STRIDE) --------- |
-//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(last) - init * iv_scale1 + iv * iv_scale1 |
+//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(last) - last * iv_scale1 + iv * iv_scale1 |
 //          -- assumption --                                     |       -- assumption --                                     |
-//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(last) - init * iv_scale1 + iv * iv_scale1 |
+//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(last) - last * iv_scale1 + iv * iv_scale1 |
 //                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
 //        =         p2(iv)                                       |     =         p1(iv)                                       |
 //                                                               |                                                            |
@@ -632,11 +632,11 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //                                                               |                                                            |
 //          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
 //                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
-//        = size1 + p1(last) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
+//        = size1 + p1(last) - last * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
 //                           ------ apply (NEG-STRIDE) --------- |                        ------ apply (NEG-STRIDE) --------- |
-//       <= size1 + p1(last) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
+//       <= size1 + p1(last) - last * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
 //          -- assumption --                                     |       -- assumption --                                     |
-//       <=         p2(last) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
+//       <=         p2(last) - last * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
 //                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
 //        =         p2(iv)                                       |     =         p1(iv)                                       |
 //                                                               |                                                            |
@@ -739,8 +739,8 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //              negative. Thus, we can just clamp k to zero, or last to init, so that we get
 //              a solution that also works when the loop is not entered:
 //
-//              k = (init - stride - 1) / abs(stride)
-//              last = MAX(init, init + k * stride)
+//              k = (init - limit - 1) / abs(stride)
+//              last = MIN(init, init + k * stride)
 //
 // Now we can put it all together:
 //   LAST(init, stride, limit)
@@ -748,8 +748,8 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //       k = (limit - init - 1) / abs(stride)
 //       last = MAX(init, init + k * stride)
 //     If stride < 0:
-//       k = (init - stride - 1) / abs(stride)
-//       last = MAX(init, init + k * stride)
+//       k = (init - limit - 1) / abs(stride)
+//       last = MIN(init, init + k * stride)
 //
 // We will have to consider the implications of clamping to init when the loop is not entered
 // at the use of LAST further down.
@@ -850,7 +850,7 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   //
   // For the computation of main_init, we also need the pre_limit, and so we need
   // to check that this value is pre-loop invariant. In the case of non-equal iv_scales,
-  // we also need toe main_limit in the aliasing check, and so this value must then
+  // we also need the main_limit in the aliasing check, and so this value must then
   // also be pre-loop invariant.
   Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* pre_limit = pre_limit_opaq->in(1);
