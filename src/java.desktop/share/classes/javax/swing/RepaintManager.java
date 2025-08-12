@@ -27,6 +27,8 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BaseMultiResolutionImage;
+import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1065,7 +1067,7 @@ public class RepaintManager
         Image result = doubleBuffer.image;
 
         if (doubleBuffer.image == null) {
-            result = c.createImage(width , height);
+            result = createImage(c, width, height);
             doubleBuffer.size = new Dimension(width, height);
             if (c instanceof JComponent) {
                 ((JComponent)c).setCreatedDoubleBuffer(true);
@@ -1077,6 +1079,51 @@ public class RepaintManager
             // (indirectly through the Image) by stashing the image.
         }
         return result;
+    }
+
+    /**
+     * Return an Image that can be used to paint a Component that may take into
+     * account the AffineTransform of the Component's GraphicConfiguration.
+     * <p>
+     * For example: if a Component is 100x100 pixels on a high-resolution
+     * (200%) monitor, then this return a MultiResolutionImage that is
+     * backed by a 200x200 pixel BufferedImage.
+     * </p>
+     */
+    private Image createImage(Component c, int virtualWidth, int virtualHeight) {
+        GraphicsConfiguration gc = c.getGraphicsConfiguration();
+        int scaledWidth, scaledHeight;
+        double scaleX, scaleY;
+        if (gc != null) {
+            AffineTransform at = gc.getDefaultTransform();
+            scaleX = at.getScaleX();
+            scaleY = at.getScaleY();
+        } else {
+            scaleX = scaleY = 1.0;
+        }
+        scaledWidth = Math.round((float) scaleX * virtualWidth);
+        scaledHeight = Math.round((float) scaleY * virtualHeight);
+
+        Image img = c.createImage(scaledWidth, scaledHeight);
+        if (scaledWidth == virtualWidth && scaledHeight == virtualHeight) {
+            return img;
+        }
+
+        // The only reason we need baseImage is to call .getWidth(..) and
+        // getHeight(..). Image.getScaledInstance is notoriously slow, but
+        // that doesn't matter here because we never actually scale any pixels.
+        Image baseImage = img.getScaledInstance(virtualWidth, virtualHeight,
+                Image.SCALE_DEFAULT);
+
+        return new BaseMultiResolutionImage(baseImage, img) {
+            @Override
+            public Graphics getGraphics() {
+                Graphics graphics = img.getGraphics();
+                if (graphics instanceof Graphics2D g2d)
+                    g2d.scale(scaleX, scaleY);
+                return graphics;
+            }
+        };
     }
 
 
