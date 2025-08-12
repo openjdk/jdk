@@ -110,7 +110,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
   static_assert(sizeof(K) > 1, "invalid size of CONFIG::KEY_TYPE");
  private:
   static const constexpr unsigned max_initial_size = 1 << 30;
-  unsigned _max_probe_sequence;
+  const unsigned _max_probe_sequence;
 
   uint32_t slot_idx(const uint32_t hash) const {
     return hash & (this->table_size() - 1);
@@ -173,7 +173,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     JfrSetStorage<CONFIG>(size),
     _max_probe_sequence(max_probe_sequence) {
     assert(size % 2 == 0, "invariant");
-    assert(size < max_initial_size, "avoid overflow in resize");
+    assert(size <= max_initial_size, "avoid overflow in resize");
   }
 
   bool contains(K const& k) const {
