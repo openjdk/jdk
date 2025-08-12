@@ -306,17 +306,15 @@ public class MixingPanelsResizing {
         mainThread.interrupt();
     }//fail()
     private static boolean isAlmostEqualColor(Color color, Color refColor) {
-        System.out.println("Comparing color: "+color+" with reference color: "+refColor);
-                if(color.equals(refColor)){
-            return true;
-        } else {
-            return Math.abs(color.getRed() - refColor.getRed()) <
-                    COLOR_TOLERANCE_MACOSX &&
-                    Math.abs(color.getGreen() - refColor.getGreen()) <
-                            COLOR_TOLERANCE_MACOSX &&
-                    Math.abs(color.getBlue() - refColor.getBlue()) <
-                            COLOR_TOLERANCE_MACOSX;
-        }
+        System.out.println("Comparing color: " + color + " with reference " +
+                "color: " + refColor);
+        return color.equals(refColor)
+                || (Math.abs(color.getRed() - refColor.getRed())
+                < COLOR_TOLERANCE_MACOSX
+                && Math.abs(color.getGreen() - refColor.getGreen())
+                < COLOR_TOLERANCE_MACOSX
+                && Math.abs(color.getBlue() - refColor.getBlue())
+                < COLOR_TOLERANCE_MACOSX;
     }
 }// class JButtonInGlassPane
 class TestPassedException extends RuntimeException {
