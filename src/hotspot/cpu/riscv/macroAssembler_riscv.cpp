@@ -5665,17 +5665,15 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   const Register cnt = tmp1;
   const Register idx = tmp2;
   const VectorRegister vrm = v0;
-  const VectorRegister vra = v8;
-  const VectorRegister vrb = v16;
+  const VectorRegister vra = v2;
+  const VectorRegister vrb = v4;
   Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
 
-  beqz(length, NO_MISMATCH_FOUND);
-
   sll(cnt, length, log2_array_indxscale);
-  mv(consumed, 0);
+  mv(consumed, x0);
 
   bind(VEC_LOOP);
-  vsetvli(t0, cnt, Assembler::e8, Assembler::m8);
+  vsetvli(t0, cnt, Assembler::e8, Assembler::m2);
   vle8_v(vra, obja);
   vle8_v(vrb, objb);
   vmsne_vv(vrm, vra, vrb);
