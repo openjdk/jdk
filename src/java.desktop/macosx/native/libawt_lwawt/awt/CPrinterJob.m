@@ -617,11 +617,11 @@ JNI_COCOA_EXIT(env);
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPrinterJob_createNSPrintInfo
-  (JNIEnv *env, jobject jthis)
+  (JNIEnv *env, jclass clazz)
 {
     jlong result = -1;
 JNI_COCOA_ENTER(env);
-    // This is used to create the NSPrintInfo for this PrinterJob. Thread
+    // This is used to create the NSPrintInfo for a PrinterJob. Thread
     //  safety is assured by the java side of this call.
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
@@ -634,11 +634,11 @@ JNI_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CPrinterJob
- * Method:    dispose
+ * Method:    disposeNSPrintInfo
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_dispose
-  (JNIEnv *env, jobject jthis, jlong nsPrintInfo)
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_disposeNSPrintInfo
+  (JNIEnv *env, jclass clazz, jlong nsPrintInfo)
 {
 JNI_COCOA_ENTER(env);
     if (nsPrintInfo != -1)

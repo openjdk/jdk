@@ -579,7 +579,7 @@ private:
   // object.  No other objects are packed into these regions.
   //
   // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
+  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
 
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 

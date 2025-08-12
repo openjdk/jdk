@@ -558,6 +558,10 @@ public:
 
   ShenandoahEvacOOMHandler*  oom_evac_handler()        { return &_oom_evac_handler; }
 
+  ShenandoahEvacuationTracker* evac_tracker() const {
+    return _evac_tracker;
+  }
+
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
@@ -682,7 +686,7 @@ public:
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return !ShenandoahCardBarrier; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 
@@ -705,8 +709,6 @@ public:
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
-
-  void notify_mutator_alloc_words(size_t words, size_t waste);
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
   size_t tlab_capacity(Thread *thr) const override;
@@ -758,8 +760,9 @@ public:
   inline bool requires_marking(const void* entry) const;
 
   // Support for bitmap uncommits
-  bool commit_bitmap_slice(ShenandoahHeapRegion *r);
-  bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  void commit_bitmap_slice(ShenandoahHeapRegion *r);
+  void uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  bool is_bitmap_region_special() { return _bitmap_region_special; }
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
   // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
@@ -789,6 +792,10 @@ private:
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+protected:
+  // Used primarily to look for failed evacuation attempts.
+  ShenandoahEvacuationTracker*  _evac_tracker;
 
 public:
   static address in_cset_fast_test_addr();

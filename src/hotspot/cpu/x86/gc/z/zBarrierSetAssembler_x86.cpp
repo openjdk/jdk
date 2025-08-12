@@ -288,7 +288,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   Register scratch = tmp1;
   if (tmp1 == noreg) {
     scratch = r12;
-    __ push(scratch);
+    __ push_ppx(scratch);
   }
 
   assert_different_registers(dst, scratch);
@@ -348,7 +348,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Restore scratch register
   if (tmp1 == noreg) {
-    __ pop(scratch);
+    __ pop_ppx(scratch);
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
@@ -462,10 +462,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ movptr(rnew_zpointer, rnew_zaddress);
     }
     assert_different_registers(rcx, rnew_zpointer);
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shlq(rnew_zpointer);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
     __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
@@ -483,7 +483,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ jcc(Assembler::equal, slow_path);
 
   Register tmp2 = r15_thread;
-  __ push(tmp2);
+  __ push_ppx(tmp2);
 
   // Bump the pointer
   __ movq(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
@@ -501,7 +501,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ movptr(tmp1, Address(tmp1, 0));
   __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())), tmp1);
 
-  __ pop(tmp2);
+  __ pop_ppx(tmp2);
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -528,9 +528,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
-    __ push(rax);
-    __ push(rbx);
-    __ push(rcx);
+    __ push_ppx(rax);
+    __ push_ppx(rbx);
+    __ push_ppx(rcx);
 
     __ lea(rcx, ref_addr);
     __ xorq(rax, rax);
@@ -539,9 +539,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ lock();
     __ cmpxchgq(rbx, Address(rcx, 0));
 
-    __ pop(rcx);
-    __ pop(rbx);
-    __ pop(rax);
+    __ pop_ppx(rcx);
+    __ pop_ppx(rbx);
+    __ pop_ppx(rax);
 
     __ jcc(Assembler::notEqual, slow_path);
 
@@ -583,10 +583,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       } else {
         __ movptr(tmp1, src);
       }
-      __ push(rcx);
+      __ push_ppx(rcx);
       __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
       __ shlq(tmp1);
-      __ pop(rcx);
+      __ pop_ppx(rcx);
       __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
@@ -1007,10 +1007,10 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(obj);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ bind(done);
@@ -1089,7 +1089,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Save rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ push(rax);
+    __ push_ppx(rax);
   }
 
   // Setup arguments and call runtime stub
@@ -1109,7 +1109,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Restore rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ pop(rax);
+    __ pop_ppx(rax);
   }
 
   // Stub exit
@@ -1451,12 +1451,12 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
   if (rcx != tmp1 && rcx != tmp2) {
-    __ push(rcx);
+    __ push_ppx(rcx);
   }
   __ movl(rcx, Address(tmp2, tmp1, Address::times_4, 0));
   __ shrq(obj);
   if (rcx != tmp1 && rcx != tmp2) {
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ jmp(check_zaddress);

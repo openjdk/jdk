@@ -2149,7 +2149,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   }
   {
     TracePhase tp(_t_incrInline_igvn);
-    igvn.reset_from_gvn(initial_gvn());
+    igvn.reset();
     igvn.optimize();
     if (failing()) return;
   }
@@ -2310,8 +2310,7 @@ void Compile::Optimize() {
 
  {
   // Iterative Global Value Numbering, including ideal transforms
-  // Initialize IterGVN with types and values from parse-time GVN
-  PhaseIterGVN igvn(initial_gvn());
+  PhaseIterGVN igvn;
 #ifdef ASSERT
   _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
 #endif
@@ -2380,7 +2379,7 @@ void Compile::Optimize() {
       ResourceMark rm;
       PhaseRenumberLive prl(initial_gvn(), *igvn_worklist());
     }
-    igvn.reset_from_gvn(initial_gvn());
+    igvn.reset();
     igvn.optimize();
     if (failing()) return;
   }
@@ -3303,6 +3302,25 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
+  case Op_CallLeafPure: {
+    // If the pure call is not supported, then lower to a CallLeaf.
+    if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
+      CallNode* call = n->as_Call();
+      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
+                                            call->_name, TypeRawPtr::BOTTOM);
+      new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
+      new_call->init_req(TypeFunc::I_O, C->top());
+      new_call->init_req(TypeFunc::Memory, C->top());
+      new_call->init_req(TypeFunc::ReturnAdr, C->top());
+      new_call->init_req(TypeFunc::FramePtr, C->top());
+      for (unsigned int i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
+        new_call->init_req(i, call->in(i));
+      }
+      n->subsume_by(new_call, this);
+    }
+    frc.inc_call_count();
+    break;
+  }
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
@@ -3601,7 +3619,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(t->make_narrowklass());
+          ciKlass* klass = t->is_klassptr()->exact_klass();
+          if (klass->is_in_encoding_range()) {
+            new_in2 = ConNode::make(t->make_narrowklass());
+          }
         }
       }
       if (new_in2 != nullptr) {
@@ -3638,7 +3659,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       } else if (t->isa_oopptr()) {
         n->subsume_by(ConNode::make(t->make_narrowoop()), this);
       } else if (t->isa_klassptr()) {
-        n->subsume_by(ConNode::make(t->make_narrowklass()), this);
+        ciKlass* klass = t->is_klassptr()->exact_klass();
+        if (klass->is_in_encoding_range()) {
+          n->subsume_by(ConNode::make(t->make_narrowklass()), this);
+        } else {
+          assert(false, "unencodable klass in ConP -> EncodeP");
+          C->record_failure("unencodable klass in ConP -> EncodeP");
+        }
       }
     }
     if (in1->outcnt() == 0) {
