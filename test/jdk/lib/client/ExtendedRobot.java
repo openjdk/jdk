@@ -117,4 +117,45 @@ public class ExtendedRobot extends Robot {
     public synchronized void mouseMove(Point position) {
         mouseMove(position.x, position.y);
     }
+
+    /**
+     * Emulate native drag and drop process using {@code InputEvent.BUTTON1_DOWN_MASK}.
+     * The method successively moves mouse cursor to point with coordinates
+     * ({@code fromX}, {@code fromY}), presses mouse button 1, drag mouse to
+     * point with coordinates ({@code toX}, {@code toY}) and releases mouse
+     * button 1 at last.
+     *
+     * @param   fromX   Source point x coordinate
+     * @param   fromY   Source point y coordinate
+     * @param   toX     Destination point x coordinate
+     * @param   toY     Destination point y coordinate
+     *
+     * @see     #mousePress(int)
+     * @see     #glide(int, int, int, int)
+     */
+    public void dragAndDrop(int fromX, int fromY, int toX, int toY){
+        mouseMove(fromX, fromY);
+        mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        waitForIdle();
+        glide(toX, toY);
+        mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        waitForIdle();
+    }
+
+    /**
+     * Emulate native drag and drop process using {@code InputEvent.BUTTON1_DOWN_MASK}.
+     * The method successively moves mouse cursor to point {@code from},
+     * presses mouse button 1, drag mouse to point {@code to} and releases
+     * mouse button 1 at last.
+     *
+     * @param   from    Source point
+     * @param   to      Destination point
+     *
+     * @see     #mousePress(int)
+     * @see     #glide(int, int, int, int)
+     * @see     #dragAndDrop(int, int, int, int)
+     */
+    public void dragAndDrop(Point from, Point to){
+        dragAndDrop(from.x, from.y, to.x, to.y);
+    }
 }
