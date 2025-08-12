@@ -27,27 +27,29 @@
  * @summary Test that repeated stacked string concatenations do not
  *          consume too many compilation resources.
  * @requires vm.compiler2.enabled
+ * @library /test/lib /
  * @run main/othervm -XX:-OptoScheduling compiler.stringopts.TestStackedConcatsMany
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
  *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsMany::f
  *                   compiler.stringopts.TestStackedConcatsMany
  */
 
+// The test uses -XX:-OptoScheduling to avoid the assert "too many D-U pinch points" on aarch64.
+
 package compiler.stringopts;
+
+import jdk.test.lib.Asserts;
 
 public class TestStackedConcatsMany {
 
     public static void main (String... args) {
         new StringBuilder(); // Trigger loading of the StringBuilder class.
-        String s = f(); // warmup call
-        s = f();
+        String s = f();
         String z = "xy";
         for (int i = 0; i < 24; i++) {
             z = z + z;
         }
-        if (!(s.equals(z))) {
-            throw new RuntimeException("wrong result.");
-        }
+        Asserts.assertEQ(s, z);
     }
 
     static String f() {

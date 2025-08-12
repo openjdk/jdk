@@ -53,6 +53,8 @@ class StringConcat : public ResourceObj {
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
 
+  static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
+
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -296,8 +298,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
 
-  const int concat_argument_upper_bound = 100;
-  int arguments_appended = 0;
+  uint arguments_appended = 0;
   for (int x = 0; x < num_arguments(); x++) {
     Node* argx = argument_uncast(x);
     if (argx == arg) {
@@ -313,7 +314,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
     }
     // Check if this concatenation would result in an excessive number
     // of arguments and bail out in that case.
-    if (concat_argument_upper_bound < arguments_appended) {
+    if (STACKED_CONCAT_UPPER_BOUND < arguments_appended) {
       return nullptr;
     }
   }
