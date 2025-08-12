@@ -1672,6 +1672,8 @@ private:
     // split. This is needed when we split a node and then must also split a
     // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
     bool profitable(int policy) const {
+      assert(_region->is_Loop() || (_loop_entry_wins == 0 && _loop_back_wins == 0), "wins on loop edges without a loop");
+      assert(!_region->is_Loop() || _total_wins == _loop_entry_wins + _loop_back_wins, "missed some win");
       return policy < 0 || (_loop_entry_wins == 0 && _total_wins > policy) || _loop_back_wins > policy;
     }
   };
