@@ -786,47 +786,6 @@ class GraphKit : public Phase {
 
     return call;
   }
-
-  static void hook_params(Node* call, Node* parm0 = nullptr, Node* parm1 = nullptr,
-                  Node* parm2 = nullptr, Node* parm3 = nullptr,
-                  Node* parm4 = nullptr, Node* parm5 = nullptr,
-                  Node* parm6 = nullptr) {
-    // TODO is there an inherent limitation on the number of params? we don't depend on make_runtime_call anymore
-    if (parm0 != nullptr) { call->init_req(TypeFunc::Parms+1, parm0);
-    if (parm1 != nullptr) { call->init_req(TypeFunc::Parms+2, parm1);
-    if (parm2 != nullptr) { call->init_req(TypeFunc::Parms+3, parm2);
-    if (parm3 != nullptr) { call->init_req(TypeFunc::Parms+4, parm3);
-    if (parm4 != nullptr) { call->init_req(TypeFunc::Parms+5, parm4);
-    if (parm5 != nullptr) { call->init_req(TypeFunc::Parms+6, parm5);
-    if (parm6 != nullptr) { call->init_req(TypeFunc::Parms+7, parm6);
-    /* close each nested if ===> */  } } } } } } }
-    assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
-  }
-
-  // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
-  template <typename... TT, typename... NN>
-  Node* make_debug_print_new(const char* str, NN... in) {
-    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
-
-    Node* str_node = _gvn.transform(new ConPNode(TypeRawPtr::make(((address) str))));
-    CallNode* call = new CallLeafNode(OptoRuntime::debug_print_Type(in...), call_addr, "debug_print", TypeRawPtr::BOTTOM);
-
-    // note: we do not actually care about IO and memory as it uses neither
-    call->init_req( TypeFunc::Control,   control()  );
-    call->init_req( TypeFunc::I_O,       top()      );
-    call->init_req( TypeFunc::Memory,    top()          );
-    call->init_req( TypeFunc::FramePtr,  frameptr() );
-    call->init_req( TypeFunc::ReturnAdr, top()      );
-
-    call->init_req(TypeFunc::Parms+0, str_node);
-    hook_params(call, in...);
-
-    Node* c = _gvn.transform(call);
-    set_control(_gvn.transform( new ProjNode(c,TypeFunc::Control) ));
-
-    return c;
-  }
-
 #endif // PRODUCT
 
   Node* sign_extend_byte(Node* in);
