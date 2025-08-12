@@ -160,28 +160,28 @@ public class MixingPanelsResizing {
             public void run() {
                 Point btnLoc = jbutton.getLocationOnScreen();
                 Color c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                System.out.println("Color picked for jbutton: "+c);
+                System.out.println("Color picked for jbutton: " + c);
                 if (!isAlmostEqualColor(c, jbColor)) {
                     fail("JButton was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = awtButton.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                System.out.println("Color picked for awtButton: "+c);
+                System.out.println("Color picked for awtButton: " + c);
                 if (!isAlmostEqualColor(c, awtColor)) {
                     fail("AWT Button was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = jbutton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                System.out.println("Color picked for jbutton2: "+c);
+                System.out.println("Color picked for jbutton2: " + c);
                 if (!isAlmostEqualColor(c, jb2Color)) {
                     fail("JButton was not redrawn properly on JPanel during move");
                 }
 
                 btnLoc = awtButton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                System.out.println("Color picked for awtButton2: "+c);
+                System.out.println("Color picked for awtButton2: " + c);
                 if (!isAlmostEqualColor(c, awt2Color)) {
                     fail("ATW Button was not redrawn properly on JPanel during move");
                 }
