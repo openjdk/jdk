@@ -749,7 +749,7 @@ public class Flow {
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 Set<String> pendingNotExhaustiveDetails = new TreeSet<>();
-                tree.isExhaustive |= exhausts(tree.selector, tree.cases, pendingNotExhaustiveDetails);
+                tree.isExhaustive = tree.isExhaustive || exhausts(tree.selector, tree.cases, pendingNotExhaustiveDetails);
                 if (!tree.isExhaustive) {
                     if (pendingNotExhaustiveDetails.isEmpty()) {
                         log.error(tree, Errors.NotExhaustiveStatement);
@@ -857,7 +857,7 @@ public class Flow {
                 if (missingExhaustivenessTimeout == 0) {
                     return false;
                 }
-
+                //TODO: should stop computation when time runs out:
                 PatternDescription defaultPattern = new BindingPattern(selector.type);
                 Set<PatternDescription> missingPatterns = expandMissingPatternDescriptions(selector.type, selector.type, defaultPattern, coveredResult.incompletePatterns(), Set.of(defaultPattern));
 
@@ -1191,7 +1191,7 @@ public class Flow {
             if (checkCovered(selectorType, patterns)) {
                 return new CoverageResult(true, null);
             }
-            return new CoverageResult(false, updatedPatterns);
+            return new CoverageResult(false, patterns);
         }
 
         private record CoverageResult(boolean covered, Set<PatternDescription> incompletePatterns) {}
