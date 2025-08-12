@@ -35,7 +35,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Transparency;
-import java.awt.Window;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
@@ -260,10 +259,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
-        int transparency = Transparency.OPAQUE;
-        if (target instanceof Window window && !window.isOpaque())
-            transparency = Transparency.TRANSLUCENT;
-        ColorModel model = getColorModel(transparency);
+        ColorModel model = getColorModel(Transparency.OPAQUE);
         WritableRaster wr =
             model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,

@@ -35,7 +35,6 @@ import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Transparency;
-import java.awt.Window;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
@@ -404,10 +403,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
                                         int width, int height)
     {
         // As of 1.7 we no longer create pmoffscreens here...
-        int transparency = Transparency.OPAQUE;
-        if (target instanceof Window window && !window.isOpaque())
-            transparency = Transparency.TRANSLUCENT;
-        ColorModel model = getColorModel(transparency);
+        ColorModel model = getColorModel(Transparency.OPAQUE);
         WritableRaster wr =
             model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
