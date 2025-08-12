@@ -1634,9 +1634,13 @@ private:
   // Class to keep track of wins in split_thru_phi.
   class SplitThruPhiWins {
   private:
+    // Region containing the phi we are splitting through.
     const Node* _region;
-    // Sum of all wins regardless of where they happen.
+
+    // Sum of all wins regardless of where they happen. This applies to Loops phis as well as non-loop phis.
     int _total_wins;
+
+    // For Loops, wins have different impact depending on if they happen on loop entry or on the backedge.
     // Number of wins on a loop entry edge if the split is through a loop head,
     // otherwise 0. Entry edge wins only pay dividends once on loop entry.
     int _loop_entry_wins;
