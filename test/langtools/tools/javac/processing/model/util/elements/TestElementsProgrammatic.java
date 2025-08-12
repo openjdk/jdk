@@ -38,7 +38,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
-import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,24 +50,25 @@ public class TestElementsProgrammatic {
 
     private final JavaCompiler systemCompiler = ToolProvider.getSystemJavaCompiler();
 
-    @Test
-    public void automaticallyEnter() {
+    @ParameterizedTest
+    @MethodSource
+    public void automaticallyEnter(Consumer<JavacTask> verify) {
         //make sure the get{All,}{Module,Package,Type}Element{s,} methods will automatically enter:
-        List<Consumer<JavacTask>> testCases = List.of(
-                task -> assertFalse(task.getElements().getAllModuleElements().isEmpty()),
-                task -> assertNotNull(task.getElements().getModuleElement("java.base")),
-                task -> assertNotNull(task.getElements().getPackageElement("java.lang")),
-                task -> assertFalse(task.getElements().getAllPackageElements("java.lang").isEmpty()),
-                task -> assertNotNull(task.getElements().getTypeElement("java.lang.Object")),
-                task -> assertFalse(task.getElements().getAllTypeElements("java.lang.Object").isEmpty())
-        );
-        for (Consumer<JavacTask> testCase : testCases) {
-            JavaFileObject input =
-                    SimpleJavaFileObject.forSource(URI.create("mem://Test.java"), "");
-            List<JavaFileObject> inputs = List.of(input);
-            JavacTask task = (JavacTask) systemCompiler.getTask(null, null, null, null, null, inputs);
-            testCase.accept(task);
-        }
+        JavaFileObject input =
+                SimpleJavaFileObject.forSource(URI.create("mem://Test.java"), "");
+        List<JavaFileObject> inputs = List.of(input);
+        JavacTask task = (JavacTask) systemCompiler.getTask(null, null, null, null, null, inputs);
+        verify.accept(task);
     }
 
+    private static List<Consumer<JavacTask>> automaticallyEnter() {
+        return List.of(
+            task -> assertFalse(task.getElements().getAllModuleElements().isEmpty()),
+            task -> assertNotNull(task.getElements().getModuleElement("java.base")),
+            task -> assertNotNull(task.getElements().getPackageElement("java.lang")),
+            task -> assertFalse(task.getElements().getAllPackageElements("java.lang").isEmpty()),
+            task -> assertNotNull(task.getElements().getTypeElement("java.lang.Object")),
+            task -> assertFalse(task.getElements().getAllTypeElements("java.lang.Object").isEmpty())
+        );
+    }
 }
