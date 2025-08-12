@@ -3173,13 +3173,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register scale  = c_rarg3;
     const Register tmp1   = x28;
     const Register tmp2   = x29;
-    const VectorRegister vrm = v0;
-    const VectorRegister vra = v8;
-    const VectorRegister vrb = v16;
 
     BLOCK_COMMENT("Entry:");
     __ enter();
-    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vrm, vra, vrb);
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2);
     __ leave();
     __ ret();
 

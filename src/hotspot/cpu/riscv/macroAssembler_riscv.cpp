@@ -5657,15 +5657,16 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length,
                                          Register log2_array_indxscale, Register result,
-                                         Register tmp1, Register tmp2,
-                                         VectorRegister vrm, VectorRegister vra, VectorRegister vrb) {
+                                         Register tmp1, Register tmp2) {
   assert(UseVectorizedMismatchIntrinsic, "sanity");
   assert_different_registers(obja, objb, length, log2_array_indxscale, tmp1, tmp2, t0, t1);
-  assert_different_registers(vra, vrb, vrm);
 
   const Register consumed = t1;
   const Register cnt = tmp1;
   const Register idx = tmp2;
+  const VectorRegister vrm = v0;
+  const VectorRegister vra = v8;
+  const VectorRegister vrb = v16;
   Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
 
   beqz(length, NO_MISMATCH_FOUND);
