@@ -22,9 +22,9 @@
  */
 
 #include "classfile/symbolTable.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "nmt/nmtCommon.hpp"
 #include "oops/symbolHandle.hpp"
 #include "unittest.hpp"
 #include "utilities/debug.hpp"

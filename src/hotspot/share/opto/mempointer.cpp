@@ -22,9 +22,9 @@
  *
  */
 
-#include "opto/mempointer.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "opto/addnode.hpp"
+#include "opto/mempointer.hpp"
 #include "utilities/hashtable.hpp"
 
 MemPointerParserCallback MemPointerParserCallback::_empty;

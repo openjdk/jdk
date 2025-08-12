@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "gc/z/zVerify.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -35,6 +34,7 @@
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
+#include "gc/z/zVerify.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"

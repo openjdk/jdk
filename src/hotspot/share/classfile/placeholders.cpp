@@ -22,8 +22,8 @@
  *
  */
 
-#include "classfile/placeholders.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/placeholders.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"

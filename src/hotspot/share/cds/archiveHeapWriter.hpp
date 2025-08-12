@@ -26,8 +26,8 @@
 #define SHARE_CDS_ARCHIVEHEAPWRITER_HPP
 
 #include "cds/heapShared.hpp"
-#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
