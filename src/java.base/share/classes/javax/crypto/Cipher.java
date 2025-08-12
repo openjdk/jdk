@@ -564,8 +564,8 @@ public class Cipher {
      * transformation.
      *
      * <p> A new {@code Cipher} object encapsulating the
-     * {@code CipherSpi} implementation from the specified provider
-     * is returned.  The specified provider must be registered
+     * {@code CipherSpi} implementation from the specified {@code provider}
+     * is returned.  The specified {@code provider} must be registered
      * in the security provider list.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -605,8 +605,8 @@ public class Cipher {
      *         the {@code provider} due to causes not covered by the
      *         {@code NoSuchPaddingException}
      *
-     * @throws NoSuchPaddingException if a {@code CipherSpi} object
-     *         from the {@code provider} is found using the algorithm
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found using the algorithm
      *         and mode but not the padding scheme
      *
      * @throws NoSuchProviderException if the specified {@code provider} is not
@@ -680,7 +680,7 @@ public class Cipher {
      *         the specified {@code provider} due to causes not covered
      *         by the {@code NoSuchPaddingException}
      *
-     * @throws NoSuchPaddingException if the {@code CipherSpi} object
+     * @throws NoSuchPaddingException if the {@code CipherSpi} implementation
      *         from the {@code provider} is found using the algorithm
      *         and mode but not the padding scheme
      *
