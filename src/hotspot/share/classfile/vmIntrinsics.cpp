@@ -27,12 +27,12 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // These are flag-matching functions:
 inline bool match_F_R(u2 flags) {
@@ -91,14 +91,16 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
   case vmIntrinsics::_Continuation_doYield:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
@@ -143,7 +145,9 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -242,7 +246,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
     case vmIntrinsics::_countPositives:
-    case vmIntrinsics::_Reference_get:
+    case vmIntrinsics::_Reference_get0:
     case vmIntrinsics::_Continuation_doYield:
     case vmIntrinsics::_Continuation_enterSpecial:
     case vmIntrinsics::_Continuation_pin:
@@ -287,7 +291,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
-  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
@@ -312,6 +315,14 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
+    break;
+  case vmIntrinsics::_dsinh:
+  case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
+    if (!InlineMathNatives || !InlineIntrinsics) return true;
+#if defined(AMD64) && (defined(COMPILER1) || defined(COMPILER2))
+    if (!UseLibmIntrinsic) return true;
+#endif
     break;
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
@@ -496,6 +507,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_kyber12To16:
   case vmIntrinsics::_kyberBarrettReduce:
     if (!UseKyberIntrinsics) return true;
+    break;
   case vmIntrinsics::_dilithiumAlmostNtt:
   case vmIntrinsics::_dilithiumAlmostInverseNtt:
   case vmIntrinsics::_dilithiumNttMult:

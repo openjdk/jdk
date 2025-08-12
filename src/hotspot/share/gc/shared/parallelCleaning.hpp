@@ -52,23 +52,16 @@ public:
   void work(uint worker_id);
 };
 
-
+// Cleans out the Klass tree from stale data.
 class KlassCleaningTask : public StackObj {
-  volatile int                            _clean_klass_tree_claimed;
+  volatile bool _clean_klass_tree_claimed;
   ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
 
-public:
-  KlassCleaningTask();
-
-private:
   bool claim_clean_klass_tree_task();
   InstanceKlass* claim_next_klass();
 
 public:
-
-  void clean_klass(InstanceKlass* ik) {
-    ik->clean_weak_instanceklass_links();
-  }
+  KlassCleaningTask();
 
   void work();
 };

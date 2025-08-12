@@ -164,18 +164,6 @@ public class Check {
         profile = Profile.instance(context);
         preview = Preview.instance(context);
 
-        boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
-        boolean verboseRemoval = lint.isEnabled(LintCategory.REMOVAL);
-        boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
-        boolean enforceMandatoryWarnings = true;
-
-        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
-                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
-        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
-                enforceMandatoryWarnings, LintCategory.REMOVAL);
-        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
-                enforceMandatoryWarnings, LintCategory.UNCHECKED);
-
         deferredLintHandler = DeferredLintHandler.instance(context);
 
         allowModules = Feature.MODULES.allowedInSource(source);
@@ -191,18 +179,6 @@ public class Check {
      *  to their symbols; maintained from outside.
      */
     private Map<Pair<ModuleSymbol, Name>,ClassSymbol> compiled = new HashMap<>();
-
-    /** A handler for messages about deprecated usage.
-     */
-    private MandatoryWarningHandler deprecationHandler;
-
-    /** A handler for messages about deprecated-for-removal usage.
-     */
-    private MandatoryWarningHandler removalHandler;
-
-    /** A handler for messages about unchecked or unsafe usage.
-     */
-    private MandatoryWarningHandler uncheckedHandler;
 
     /** A handler for deferred lint warnings.
      */
@@ -253,21 +229,24 @@ public class Check {
      *  @param sym        The deprecated symbol.
      */
     void warnDeprecated(DiagnosticPosition pos, Symbol sym) {
+        LintWarning warningKey = null;
         if (sym.isDeprecatedForRemoval()) {
             if (!lint.isSuppressed(LintCategory.REMOVAL)) {
                 if (sym.kind == MDL) {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym));
+                    warningKey = LintWarnings.HasBeenDeprecatedForRemovalModule(sym);
                 } else {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
+                    warningKey = LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location());
                 }
             }
         } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
             if (sym.kind == MDL) {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecatedModule(sym));
+                warningKey = LintWarnings.HasBeenDeprecatedModule(sym);
             } else {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecated(sym, sym.location()));
+                warningKey = LintWarnings.HasBeenDeprecated(sym, sym.location());
             }
         }
+        if (warningKey != null)
+            log.warning(pos, warningKey);
     }
 
     /** Log a preview warning.
@@ -276,7 +255,7 @@ public class Check {
      */
     public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
         if (!importSuppression && !lint.isSuppressed(LintCategory.PREVIEW))
-            preview.reportPreviewWarning(pos, warnKey);
+            log.warning(pos, warnKey);
     }
 
     /** Log a preview warning.
@@ -293,25 +272,15 @@ public class Check {
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
         if (!lint.isSuppressed(LintCategory.UNCHECKED))
-            uncheckedHandler.report(pos, warnKey);
+            log.warning(pos, warnKey);
     }
-
-    /**
-     * Report any deferred diagnostics.
-     */
-    public void reportDeferredDiagnostics() {
-        deprecationHandler.reportDeferredDiagnostic();
-        removalHandler.reportDeferredDiagnostic();
-        uncheckedHandler.reportDeferredDiagnostic();
-    }
-
 
     /** Report a failure to complete a class.
      *  @param pos        Position to be used for error reporting.
      *  @param ex         The failure to report.
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
-        log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, Errors.CantAccess(ex.sym, ex.getDetailValue()));
+        log.error(DiagnosticFlag.NON_DEFERRABLE, pos, Errors.CantAccess(ex.sym, ex.getDetailValue()));
         return syms.errType;
     }
 
@@ -472,12 +441,6 @@ public class Check {
     public void newRound() {
         compiled.clear();
         localClassNameIndexes.clear();
-    }
-
-    public void clear() {
-        deprecationHandler.clear();
-        removalHandler.clear();
-        uncheckedHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -3796,7 +3759,7 @@ public class Check {
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
             deferredLintHandler.report(_l -> {
-                log.mandatoryWarning(pos, Warnings.SunProprietary(s));
+                log.warning(pos, Warnings.SunProprietary(s));
             });
         }
     }
@@ -5729,14 +5692,14 @@ public class Check {
                     if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
                         VarSymbol lastParam = ms.params.head;
                         for (VarSymbol param: ms.params) {
-                            if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                            if ((param.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
                                 lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             lastParam = param;
                             argExps = argExps.tail;
                         }
                         while (argExps != null && !argExps.isEmpty() && lastParam != null) {
-                            if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                            if ((lastParam.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
                                 lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             argExps = argExps.tail;
@@ -5813,7 +5776,7 @@ public class Check {
                 SymbolMetadata sm = t.tsym.getMetadata();
                 if (sm != null && !t.getTypeArguments().isEmpty()) {
                     if (sm.getTypeAttributes().stream()
-                            .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym &&
+                            .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
                                     t.getTypeArguments().get(ta.position.parameter_index) != null &&
                                     t.getTypeArguments().get(ta.position.parameter_index).isValueBased()).findAny().isPresent()) {
                         requiresWarning = true;
@@ -5838,11 +5801,16 @@ public class Check {
             }
             if (sm != null)
                 sm.getTypeAttributes().stream()
-                        .filter(ta -> (ta.type.tsym == syms.requiresIdentityType.tsym) &&
+                        .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
                                 typeParamTrees.get(ta.position.parameter_index).type != null &&
                                 typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
                         .forEach(ta -> lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
                                 CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
         }
+    }
+
+    private boolean isRequiresIdentityAnnotation(TypeSymbol annoType) {
+        return annoType == syms.requiresIdentityType.tsym ||
+               annoType.flatName() == syms.requiresIdentityInternalType.tsym.flatName();
     }
 }

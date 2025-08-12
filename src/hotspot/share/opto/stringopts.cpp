@@ -256,6 +256,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
@@ -987,12 +994,21 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
 
-      // A test which leads to an uncommon trap which should be safe.
-      // Later this trap will be converted into a trap that restarts
+      // A test which leads to an uncommon trap. It is safe to convert the trap
+      // into a trap that restarts at the beginning as long as its test does not
+      // depend on intermediate results of the candidate chain.
       // at the beginning.
       if (otherproj->outcnt() == 1) {
         CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
         if (call != nullptr && call->_name != nullptr && strcmp(call->_name, "uncommon_trap") == 0) {
+          // First check for dependency on a toString that is going away during stacked concats.
+          if (_multiple &&
+              ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+               (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            fail = true;
+            break;
+          }
           // control flow leads to uct so should be ok
           _uncommon_traps.push(call);
           ctrl_path.push(call);
@@ -1457,9 +1473,14 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
 
   Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
   Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
-  // Check if destination address is aligned to HeapWordSize
-  const TypeInt* tdst = __ gvn().type(start)->is_int();
-  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Check if src array address is aligned to HeapWordSize
+  bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+  // If true, then check if dst array address is aligned to HeapWordSize
+  if (aligned) {
+    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
+                                  tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  }
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);

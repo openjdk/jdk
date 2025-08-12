@@ -36,8 +36,8 @@
 #include "cds/cdsHeapVerifier.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
@@ -337,6 +337,9 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
       } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
         Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
         if (m != nullptr) {
+          if (RegeneratedClasses::has_been_regenerated(m)) {
+            m = RegeneratedClasses::get_regenerated_object(m);
+          }
           InstanceKlass* method_holder = m->method_holder();
           AOTArtifactFinder::add_cached_class(method_holder);
         }
@@ -502,14 +505,18 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
 
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
-  if (AOTClassInitializer::is_runtime_setup_required(ik)) {
-    ik->set_is_runtime_setup_required();
+
+  oop orig_mirror;
+  if (RegeneratedClasses::is_regenerated_object(ik)) {
+    InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
+    precond(orig_ik->is_initialized());
+    orig_mirror = orig_ik->java_mirror();
+  } else {
+    precond(ik->is_initialized());
+    orig_mirror = ik->java_mirror();
   }
 
-  oop orig_mirror = ik->java_mirror();
   oop m = scratch_java_mirror(ik);
-  assert(ik->is_initialized(), "must be");
-
   int nfields = 0;
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
@@ -803,7 +810,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
-      assert(InstanceKlass::cast(abk)->is_shared_boot_class(),
+      assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
@@ -1097,7 +1104,7 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
     InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
-    assert(k != nullptr && k->is_shared_boot_class(), "sanity");
+    assert(k != nullptr && k->defined_by_boot_loader(), "sanity");
     resolve_classes_for_subgraph_of(current, k);
   }
 }
@@ -1284,7 +1291,7 @@ void HeapShared::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
   if (k == nullptr) {
     return;
   }
-  assert(k->is_shared_boot_class(), "sanity");
+  assert(k->defined_by_boot_loader(), "sanity");
   resolve_or_init(k, false, CHECK);
   if (do_init) {
     resolve_or_init(k, true, CHECK);
@@ -1520,6 +1527,13 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
                  p2i(scratch_java_mirror(orig_obj)));
   }
 
+  if (java_lang_Class::is_instance(orig_obj)) {
+    Klass* k = java_lang_Class::as_Klass(orig_obj);
+    if (RegeneratedClasses::has_been_regenerated(k)) {
+      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+    }
+  }
+
   if (CDSConfig::is_initing_classes_at_dump_time()) {
     if (java_lang_Class::is_instance(orig_obj)) {
       orig_obj = scratch_java_mirror(orig_obj);
@@ -1644,7 +1658,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              int field_offset,
                                                              const char* field_name) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
-  assert(k->is_shared_boot_class(), "must be boot class");
+  assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
 
@@ -1695,7 +1709,7 @@ class VerifySharedOopClosure: public BasicOopIterateClosure {
 
 void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
-  assert(k->is_shared_boot_class(), "must be boot class");
+  assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
   oop f = m->obj_field(field_offset);
@@ -1869,7 +1883,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     }
 
     InstanceKlass* ik = InstanceKlass::cast(k);
-    assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
+    assert(InstanceKlass::cast(ik)->defined_by_boot_loader(),
            "Only support boot classes");
 
     if (is_test_class) {

@@ -31,8 +31,8 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/rewriter.hpp"
@@ -538,8 +538,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
 
 bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry) {
   InstanceKlass* pool_holder = constant_pool()->pool_holder();
-  if (!(pool_holder->is_shared_boot_class() || pool_holder->is_shared_platform_class() ||
-        pool_holder->is_shared_app_class())) {
+  if (pool_holder->defined_by_other_loaders()) {
     // Archiving resolved cp entries for classes from non-builtin loaders
     // is not yet supported.
     return false;

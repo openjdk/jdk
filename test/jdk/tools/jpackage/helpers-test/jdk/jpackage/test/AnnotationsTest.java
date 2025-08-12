@@ -225,7 +225,7 @@ public class AnnotationsTest extends JUnitAdapter {
             );
         }
 
-        private final static TestExecutionRecorder staticRecorder = new TestExecutionRecorder(ParameterizedInstanceTest.class);
+        private static final TestExecutionRecorder staticRecorder = new TestExecutionRecorder(ParameterizedInstanceTest.class);
     }
 
     public static class IfOSTest extends TestExecutionRecorder {

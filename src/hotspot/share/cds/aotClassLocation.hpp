@@ -28,8 +28,8 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -204,6 +204,7 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                                 const char* prepend, size_t prepend_len) const;
 
   void print_on(outputStream* st) const;
+  void log_locations(const char* cache_filename, bool is_writing) const;
 
 public:
   static AOTClassLocationConfig* dumptime() {
@@ -269,7 +270,7 @@ public:
   AOTClassLocationConfig* write_to_archive() const;
 
   // Functions used only during runtime
-  bool validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const;
+  bool validate(const char* cache_filename, bool has_aot_linked_classes, bool* has_extra_module_paths) const;
 
   bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
 

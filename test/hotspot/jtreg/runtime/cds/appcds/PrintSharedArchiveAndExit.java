@@ -59,9 +59,9 @@ public class PrintSharedArchiveAndExit {
     String appJar = JarBuilder.getOrCreateHelloJar();
     String appJar2 = JarBuilder.build("PrintSharedArchiveAndExit-more", "HelloMore");
     String cp = appJar + File.pathSeparator + appJar2;
-    String firstCheckShortMsg = "Checking 'hello.jar' file"; // the first JAR to check (without directory prefix)
-    String firstCheckMsg = "Checking '" + appJar + "' file"; // the first JAR to check
-    String lastCheckMsg = "Checking '" + appJar2 + "' file"; // the last JAR to check
+    String firstCheckShortMsg = "Checking [1] 'hello.jar' file"; // the first JAR to check (without directory prefix)
+    String firstCheckMsg = "Checking [1] '" + appJar + "' file"; // the first JAR to check
+    String lastCheckMsg = "Checking [2] '" + appJar2 + "' file"; // the last JAR to check
 
     TestCommon.testDump(cp, TestCommon.list("Hello", "HelloMore"));
 

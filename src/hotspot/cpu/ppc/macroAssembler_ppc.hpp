@@ -501,12 +501,10 @@ class MacroAssembler: public Assembler {
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                          RegisterOrConstant compare_value, Register exchange_value,
-                         Register addr_base, Register tmp1, Register tmp2,
-                         Label &retry, Label &failed, bool cmpxchgx_hint, int size);
+                         Register addr_base,Label &retry, Label &failed, bool cmpxchgx_hint, int size);
   void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
                        RegisterOrConstant compare_value, Register exchange_value,
-                       Register addr_base, Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
@@ -549,20 +547,20 @@ class MacroAssembler: public Assembler {
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgb(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, Label* failed = nullptr,
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, semantics,
+                    cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgh(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, Label* failed = nullptr,
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
   void cmpxchgw(ConditionRegister flag, Register dest_current_value,
@@ -570,7 +568,7 @@ class MacroAssembler: public Assembler {
                 Register addr_base,
                 int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
                 Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 4);
   }
   void cmpxchgd(ConditionRegister flag, Register dest_current_value,
@@ -731,6 +729,7 @@ class MacroAssembler: public Assembler {
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
+  void jump_to_polling_page_return_handler_blob(int safepoint_offset, bool fixed_size = false);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
@@ -897,10 +896,6 @@ class MacroAssembler: public Assembler {
   void update_1word_crc32(Register crc, Register buf, Register table, int bufDisp, int bufInc,
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3);
-  void kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3,
-                          Register tc0, Register tc1, Register tc2, Register tc3,
-                          bool invertCRC);
   void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
                            Register t0, Register t1, Register t2, Register t3, Register t4,
                            Register t5, Register t6, bool invertCRC);
