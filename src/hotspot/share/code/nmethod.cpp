@@ -33,9 +33,9 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.inline.hpp"
@@ -59,8 +59,8 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
@@ -2230,10 +2230,7 @@ void nmethod::inc_decompile_count() {
   if (!is_compiled_by_c2() && !is_compiled_by_jvmci()) return;
   // Could be gated by ProfileTraps, but do not bother...
 #if INCLUDE_JVMCI
-  // Deoptimization count is used by the CompileBroker to reason about compilations
-  // it requests so do not pollute the count for deoptimizations in non-default (i.e.
-  // non-CompilerBroker) compilations.
-  if (is_jvmci_hosted()) {
+  if (jvmci_skip_profile_deopt()) {
     return;
   }
 #endif
@@ -2752,7 +2749,7 @@ void nmethod::do_unloading(bool unloading_occurred) {
   }
 }
 
-void nmethod::oops_do(OopClosure* f, bool allow_dead) {
+void nmethod::oops_do(OopClosure* f) {
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {
     RelocIterator iter(this, oops_reloc_begin());
@@ -4369,7 +4366,7 @@ const char* nmethod::jvmci_name() {
   return nullptr;
 }
 
-bool nmethod::is_jvmci_hosted() const {
-  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default();
+bool nmethod::jvmci_skip_profile_deopt() const {
+  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->profile_deopt();
 }
 #endif

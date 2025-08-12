@@ -1097,6 +1097,15 @@ final class CertificateMessage {
 
             // clean up this consumer
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
+
+            // Ensure that the Certificate message has not been sent w/o
+            // an EncryptedExtensions preceding
+            if (hc.handshakeConsumers.containsKey(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
+                throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                                           "Unexpected Certificate handshake message");
+            }
+
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
             if (hc.sslConfig.isClientMode) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
