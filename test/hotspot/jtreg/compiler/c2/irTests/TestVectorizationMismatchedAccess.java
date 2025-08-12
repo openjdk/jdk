@@ -51,18 +51,24 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                           "-XX:+UnlockExperimentalVMOptions");
+
         // Cross-product:
         //   +-AlignVector
         //   +-UseCompactObjectHeaders
         //   +-UseAutoVectorizationSpeculativeAliasingChecks
+        int idx = 0;
         for (String av : List.of("-XX:-AlignVector", "-XX:+AlignVector")) {
             for (String coh : List.of("-XX:-UseCompactObjectHeaders", "-XX:+UseCompactObjectHeaders")) {
                 for (String sac : List.of("-XX:-UseAutoVectorizationSpeculativeAliasingChecks", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks")) {
-                    TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                               "-XX:+UnlockExperimentalVMOptions", av, coh, sac);
+                    framework.addScenarios(new Scenario(idx++, av, coh, sac));
                 }
             }
         }
+
+        framework.start();
     }
 
     static int size = 1024;
