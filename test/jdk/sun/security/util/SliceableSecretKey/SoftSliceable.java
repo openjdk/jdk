@@ -42,10 +42,11 @@ import java.util.Arrays;
 /*
  * @test
  * @bug 8325448
- * @library /test/lib
+ * @library /test/lib /test/jdk/security/unsignedjce
+ * @build java.base/javax.crypto.ProviderVerifier
  * @modules java.base/sun.security.util
- * @summary Showcase how Sliceable can be used in DHKEM
  * @run main/othervm SoftSliceable
+ * @summary Showcase how Sliceable can be used in DHKEM
  */
 public class SoftSliceable {
 
