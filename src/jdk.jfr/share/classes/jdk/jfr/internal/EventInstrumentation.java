@@ -124,11 +124,7 @@ public final class EventInstrumentation {
         this.eventClassDesc = inspector.getClassDesc();
         this.staticCommitMethod = inspector.findStaticCommitMethod();
         this.untypedEventConfiguration = hasUntypedConfiguration();
-        if (inspector.isJDK()) {
-            this.throttled = inspector.hasStaticMethod(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
-        } else {
-            this.throttled = inspector.isThrottled();
-        }
+        this.throttled = inspector.isThrottled(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
     }
 
     byte[] buildInstrumented() {

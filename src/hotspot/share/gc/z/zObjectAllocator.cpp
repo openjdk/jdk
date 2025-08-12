@@ -204,7 +204,7 @@ void ZObjectAllocator::PerAge::retire_pages() {
 ZObjectAllocator::ZObjectAllocator()
   : _allocators() {
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     _allocators[untype(age)].initialize(age);
   }
 }
