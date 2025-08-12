@@ -1,0 +1,71 @@
+#
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+
+##########
+## Tests failing when main() is executed in additional vthread or in vthread instead of thread
+#
+
+com/sun/jdi/ExceptionEvents.java 8278470 generic-all
+com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
+
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
+
+javax/management/remote/mandatory/loading/MissingClassTest.java 8145413 windows-x64
+
+javax/management/remote/mandatory/loading/RMIDownloadTest.java 8308366 windows-x64
+
+java/lang/ScopedValue/StressStackOverflow.java#default 8309646 generic-all
+java/lang/ScopedValue/StressStackOverflow.java#no-TieredCompilation 8309646 generic-all
+java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generic-all
+
+javax/management/remote/mandatory/connection/DeadLockTest.java 8309069 windows-x64
+
+javax/management/remote/mandatory/connection/ConnectionTest.java 8308352 windows-x64
+
+##########
+## Tests incompatible with virtual test thread factory.
+## There is no goal to run all test with virtual test thread factory.
+## So any test might be added as incompatible, the bug id is not required.
+
+# Incorrect stack/threadgroup/exception expectations for main thread
+java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
+java/lang/StackWalker/StackWalkTest.java 0000000 generic-all
+java/lang/StackWalker/CallerFromMain.java 0000000 generic-all
+java/lang/Thread/MainThreadTest.java 0000000 generic-all
+java/lang/Thread/UncaughtExceptionsTest.java 0000000 generic-all
+java/lang/Thread/virtual/GetStackTraceWhenRunnable.java 0000000 generic-all
+java/lang/invoke/condy/CondyNestedResolutionTest.java 0000000 generic-all
+java/lang/ref/OOMEInReferenceHandler.java 0000000 generic-all
+java/util/concurrent/locks/Lock/OOMEInAQS.java 0000000 generic-all
+jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
+
+# The problems with permissions
+jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
+java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic-all
+java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
+java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
+javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all

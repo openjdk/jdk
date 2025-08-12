@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,42 +23,29 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 
-void FreeBlocks::add_block(MetaWord* p, size_t word_size) {
-  assert(word_size >= MinWordSize, "sanity (" SIZE_FORMAT ")", word_size);
-  if (word_size > MaxSmallBlocksWordSize) {
-    _tree.add_block(p, word_size);
+void FreeBlocks::add_block(MetaBlock bl) {
+  if (bl.word_size() > _small_blocks.MaxWordSize) {
+    _tree.add_block(bl);
   } else {
-    _small_blocks.add_block(p, word_size);
+    _small_blocks.add_block(bl);
   }
 }
 
-MetaWord* FreeBlocks::remove_block(size_t requested_word_size) {
-  assert(requested_word_size >= MinWordSize,
-      "requested_word_size too small (" SIZE_FORMAT ")", requested_word_size);
+MetaBlock FreeBlocks::remove_block(size_t requested_word_size) {
   size_t real_size = 0;
-  MetaWord* p = nullptr;
-  if (requested_word_size > MaxSmallBlocksWordSize) {
-    p = _tree.remove_block(requested_word_size, &real_size);
+  MetaBlock bl;
+  if (requested_word_size > _small_blocks.MaxWordSize) {
+    bl = _tree.remove_block(requested_word_size);
   } else {
-    p = _small_blocks.remove_block(requested_word_size, &real_size);
+    bl = _small_blocks.remove_block(requested_word_size);
   }
-  if (p != nullptr) {
-    // Blocks which are larger than a certain threshold are split and
-    //  the remainder is handed back to the manager.
-    const size_t waste = real_size - requested_word_size;
-    if (waste > MinWordSize) {
-      add_block(p + requested_word_size, waste);
-    }
-  }
-  return p;
+  return bl;
 }
 
 } // namespace metaspace
-

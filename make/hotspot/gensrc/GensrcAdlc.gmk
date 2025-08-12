@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcAdlc.gmk))
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 ifeq ($(call check-jvm-feature, compiler2), true)
 
@@ -37,16 +40,15 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
   else ifeq ($(call isBuildOs, aix), true)
-    ADLC_LDFLAGS += -q64
-    ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
+    ADLC_LDFLAGS += -m64
+    ADLC_CFLAGS := -fno-rtti -fexceptions -ffunction-sections -m64 -DAIX -mcpu=pwr8
   else ifeq ($(call isBuildOs, windows), true)
-    ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
 
   # Set the C++ standard
-  ADLC_CFLAGS += $(ADLC_LANGSTD_CXXFLAG)
+  ADLC_CFLAGS += $(ADLC_LANGSTD_CXXFLAGS)
 
   # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
   # hurt.
@@ -57,22 +59,29 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
 
   # Add file macro mappings
-  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
+  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS) $(REPRODUCIBLE_CFLAGS)
 
   ifeq ($(UBSAN_ENABLED), true)
     ADLC_CFLAGS += $(UBSAN_CFLAGS)
     ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
+  ##############################################################################
+  ## Build adlc
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_ADLC, \
       NAME := adlc, \
-      TYPE := EXECUTABLE, \
-      TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
+      TARGET_TYPE := BUILD, \
+      LINK_TYPE := C++, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
+      DEFAULT_CFLAGS := false, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
+      DEFAULT_LDFLAGS := false, \
       LDFLAGS := $(ADLC_LDFLAGS), \
       LIBS := $(ADLC_LIBS), \
+      DEFAULT_VERSIONINFO_RESOURCE := false, \
       OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \
@@ -98,9 +107,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       ADLCFLAGS += -DR18_RESERVED
     endif
   else ifeq ($(call isTargetOs, windows), true)
-    ifeq ($(call isTargetCpuBits, 64), true)
-      ADLCFLAGS += -D_WIN64=1
-    endif
+    ADLCFLAGS += -D_WIN64=1
     ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
       ADLCFLAGS += -DR18_RESERVED
     endif
@@ -126,6 +133,21 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), arm)
     ADLCFLAGS += -DARM=1
+  endif
+
+  # Set ASSERT, NDEBUG and PRODUCT flags just like in JvmFlags.gmk
+  ifeq ($(DEBUG_LEVEL), release)
+    # release builds disable uses of assert macro from <assert.h>.
+    ADLCFLAGS += -DNDEBUG
+    # For hotspot, release builds differ internally between "optimized" and "product"
+    # in that "optimize" does not define PRODUCT.
+    ifneq ($(HOTSPOT_DEBUG_LEVEL), optimized)
+      ADLCFLAGS += -DPRODUCT
+    endif
+  else ifeq ($(DEBUG_LEVEL), fastdebug)
+    ADLCFLAGS += -DASSERT
+  else ifeq ($(DEBUG_LEVEL), slowdebug)
+    ADLCFLAGS += -DASSERT
   endif
 
   ##############################################################################
@@ -172,15 +194,22 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       )))
   endif
 
+  ifeq ($(call check-jvm-feature, g1gc), true)
+    AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/g1/g1_$(HOTSPOT_TARGET_CPU).ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/g1/g1_$(HOTSPOT_TARGET_CPU_ARCH).ad \
+      )))
+  endif
+
   SINGLE_AD_SRCFILE := $(ADLC_SUPPORT_DIR)/all-ad-src.ad
 
   INSERT_FILENAME_AWK_SCRIPT := \
       '{ \
-         if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
-         if (need_lineno && $$0 !~ /\/\//) \
-           { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
-         print \
-       }'
+        if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
+        if (need_lineno && $$0 !~ /\/\//) \
+          { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
+        print \
+      }'
 
   $(SINGLE_AD_SRCFILE): $(AD_SRC_FILES)
 	$(call LogInfo, Preprocessing adlc files $(^F))
@@ -234,3 +263,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   TARGETS += $(ADLC_GENERATED_FILES)
 
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -74,7 +74,7 @@ public abstract class NonBlockingInputStream extends InputStream {
         if (c == EOF) {
             return EOF;
         }
-        b[off] = (byte)c;
+        b[off] = (byte) c;
         return 1;
     }
 
@@ -115,9 +115,7 @@ public abstract class NonBlockingInputStream extends InputStream {
      * thread is currently blocked waiting for I/O it may not actually
      * shut down until the I/O is received.
      */
-    public void shutdown() {
-    }
+    public void shutdown() {}
 
     public abstract int read(long timeout, boolean isPeek) throws IOException;
-
 }

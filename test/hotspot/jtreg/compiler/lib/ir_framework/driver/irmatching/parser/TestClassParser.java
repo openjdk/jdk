@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,11 @@ import java.util.SortedSet;
  */
 public class TestClassParser {
     private final Class<?> testClass;
+    private final boolean allowNotCompilable;
 
-    public TestClassParser(Class<?> testClass) {
+    public TestClassParser(Class<?> testClass, boolean allowNotCompilable) {
         this.testClass = testClass;
+        this.allowNotCompilable = allowNotCompilable;
     }
 
     /**
@@ -54,10 +56,11 @@ public class TestClassParser {
     public Matchable parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
         TestMethods testMethods = irEncodingParser.parse(irEncoding);
+        VMInfo vmInfo = VMInfoParser.parseVMInfo(irEncoding);
         if (testMethods.hasTestMethods()) {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
             LoggedMethods loggedMethods = hotSpotPidFileParser.parse(hotspotPidFileName);
-            return createTestClass(testMethods, loggedMethods);
+            return createTestClass(testMethods, loggedMethods, vmInfo);
         }
         return new NonIRTestClass();
     }
@@ -66,9 +69,9 @@ public class TestClassParser {
      * Create test class with IR methods for all test methods identified by {@link IREncodingParser} by combining them
      * with the parsed compilation output from {@link HotSpotPidFileParser}.
      */
-    private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods) {
-        IRMethodBuilder irMethodBuilder = new IRMethodBuilder(testMethods, loggedMethods);
-        SortedSet<IRMethodMatchable> irMethods = irMethodBuilder.build();
+    private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods, VMInfo vmInfo) {
+        IRMethodBuilder irMethodBuilder = new IRMethodBuilder(testMethods, loggedMethods, allowNotCompilable);
+        SortedSet<IRMethodMatchable> irMethods = irMethodBuilder.build(vmInfo);
         TestFormat.throwIfAnyFailures();
         return new TestClass(irMethods);
     }

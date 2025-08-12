@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -845,9 +845,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Jersey", GMTBST},
             {"Europe/Kaliningrad", EET},
             {"Europe/Kiev", EET},
-            {"Europe/Kirov", new String[] {"Kirov Standard Time", "GMT+03:00",
-                                           "Kirov Daylight Time", "GMT+03:00",
-                                           "Kirov Time", "GMT+03:00"}},
+            {"Europe/Kirov", MSK},
             {"Europe/Lisbon", WET},
             {"Europe/Ljubljana", CET},
             {"Europe/London", GMTBST},
@@ -931,9 +929,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Japan", JST},
             {"Kwajalein", MHT},
             {"Libya", EET},
-            {"MET", new String[] {"Middle Europe Time", "MET",
-                                  "Middle Europe Summer Time", "MEST",
-                                  "Middle Europe Time", "MET"}},
+            {"MET", CET},
             {"Mexico/BajaNorte", PST},
             {"Mexico/BajaSur", MST},
             {"Mexico/General", CST},

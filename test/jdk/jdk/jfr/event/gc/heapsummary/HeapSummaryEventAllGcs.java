@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,11 @@ public class HeapSummaryEventAllGcs {
         GCHelper.callSystemGc(5, true);
         recording.stop();
 
-        if (!checkCollectors(recording, expectedYoungCollector, expectedOldCollector)) {
+        List<RecordedEvent> allEvents = Events.fromRecording(recording);
+        if (!checkCollectors(allEvents, expectedYoungCollector, expectedOldCollector)) {
             return;
         }
-        List<RecordedEvent> events = GCHelper.removeFirstAndLastGC(Events.fromRecording(recording));
+        List<RecordedEvent> events = GCHelper.removeFirstAndLastGC(allEvents);
         for (RecordedEvent event : events) {
             System.out.println("Event:" + event);
         }
@@ -160,18 +161,18 @@ public class HeapSummaryEventAllGcs {
         long toStart = Events.assertField(event, "toSpace.start").getValue();
         long toEnd = Events.assertField(event, "toSpace.end").getValue();
         Asserts.assertEquals(oldEnd, youngStart, "Young should start where old ends");
-        Asserts.assertEquals(youngStart, edenStart, "Eden should be placed first in young");
         if (fromStart < toStart) {
-            // [eden][from][to]
-            Asserts.assertGreaterThanOrEqual(fromStart, edenEnd, "From should start after eden");
+            // [from][to][eden]
+            Asserts.assertEquals(youngStart, fromStart, "From should be placed first in young");
             Asserts.assertLessThanOrEqual(fromEnd, toStart, "To should start after From");
-            Asserts.assertLessThanOrEqual(toEnd, youngEnd, "To should start after From");
+            Asserts.assertLessThanOrEqual(toEnd, edenStart, "Eden should start after To");
         } else {
-            // [eden][to][from]
-            Asserts.assertGreaterThanOrEqual(toStart, edenEnd, "From should start after eden");
-            Asserts.assertLessThanOrEqual(toEnd, fromStart, "To should start after From");
-            Asserts.assertLessThanOrEqual(fromEnd, youngEnd, "To should start after From");
+            // [to][from][eden]
+            Asserts.assertEquals(youngStart, toStart, "To should be placed first in young");
+            Asserts.assertLessThanOrEqual(toEnd, fromStart, "From should start after to");
+            Asserts.assertLessThanOrEqual(fromEnd, edenStart, "Eden should start after From");
         }
+        Asserts.assertEquals(edenEnd, youngEnd, "Eden should be last of young");
     }
 
     private static void checkVirtualSpace(RecordedEvent event, String structName) {
@@ -190,8 +191,8 @@ public class HeapSummaryEventAllGcs {
         Asserts.assertEquals(size, end - start, "Size mismatch");
     }
 
-    private static boolean checkCollectors(Recording recording, String expectedYoung, String expectedOld) throws Exception {
-        for (RecordedEvent event : Events.fromRecording(recording)) {
+    private static boolean checkCollectors(List<RecordedEvent> events, String expectedYoung, String expectedOld) throws Exception {
+        for (RecordedEvent event : events) {
             if (Events.isEventType(event, EventNames.GCConfiguration)) {
                 final String young = Events.assertField(event, "youngCollector").notEmpty().getValue();
                 final String old = Events.assertField(event, "oldCollector").notEmpty().getValue();

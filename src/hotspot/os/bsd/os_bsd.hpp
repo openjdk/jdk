@@ -46,6 +46,7 @@ class os::Bsd {
   static pthread_t _main_thread;
 
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
@@ -68,6 +69,8 @@ class os::Bsd {
 
   // Real-time clock functions
   static void clock_init(void);
+
+  static void *dlopen_helper(const char *path, int mode, char *ebuf, int ebuflen);
 
   // Stack repair handling
 

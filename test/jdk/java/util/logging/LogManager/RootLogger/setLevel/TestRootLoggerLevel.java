@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,8 @@
  * questions.
  */
 
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
-
-
 
 /**
  * @test
@@ -38,8 +31,7 @@ import java.util.logging.LoggingPermission;
  * @modules java.base/sun.util.logging
  *          java.logging
  * @build TestRootLoggerLevel
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestRootLoggerLevel
- * @run main/othervm -Dtest.security=off TestRootLoggerLevel
+ * @run main/othervm TestRootLoggerLevel
  * @author danielfuchs
  */
 public class TestRootLoggerLevel {
@@ -65,15 +57,6 @@ public class TestRootLoggerLevel {
             System.out.println(log.displayName + ": "
                     + Logger.getLogger(log.name)
                     + ": " + Logger.getLogger(log.name).getLevel());
-        }
-
-        if ("on".equals(System.getProperty("test.security","on"))) {
-            System.out.println("*** SecurityManager is ON");
-            Policy.setPolicy(new SimplePolicy());
-
-            System.setSecurityManager(new SecurityManager());
-        } else {
-            System.out.println("*** SecurityManager is OFF");
         }
 
         // Before the fix, setting the root logger level here had only
@@ -117,36 +100,4 @@ public class TestRootLoggerLevel {
         }
 
      }
-
-    private static final class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        private final Permissions perms;
-
-        private static final Permissions permissions(Permission... perms) {
-            Permissions permissions = new Permissions();
-            for (Permission perm : perms) {
-                permissions.add(perm);
-            }
-            return permissions;
-        }
-
-        SimplePolicy() {
-            this(permissions(new LoggingPermission("control", null),
-                    new RuntimePermission("accessClassInPackage.sun.util.logging")
-            ));
-        }
-
-        SimplePolicy(Permissions perms) {
-            this.perms = perms;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return perms.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-    }
-
 }

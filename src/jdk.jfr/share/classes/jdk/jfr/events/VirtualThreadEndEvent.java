@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,16 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
-import jdk.jfr.Experimental;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 
 @Category("Java Application")
 @Label("Virtual Thread End")
 @Name("jdk.VirtualThreadEnd")
-@MirrorEvent(className = "jdk.internal.event.VirtualThreadEndEvent")
-@Experimental
-public final class VirtualThreadEndEvent extends AbstractJDKEvent {
+@RemoveFields({"duration", "stackTrace"})
+public final class VirtualThreadEndEvent extends MirrorEvent {
 
     @Label("Thread Id")
     public long javaThreadId;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.test.lib.security.TestTLSHandshake;
  * @test
  * @bug 8148188
  * @summary Enhance the security libraries to record events of interest
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.security.TestTLSHandshakeEvent
@@ -43,7 +43,7 @@ import jdk.test.lib.security.TestTLSHandshake;
 public class TestTLSHandshakeEvent {
     public static void main(String[] args) throws Exception {
         try (Recording recording = new Recording()) {
-            recording.enable(EventNames.TLSHandshake);
+            recording.enable(EventNames.TLSHandshake).withStackTrace();
             recording.start();
             TestTLSHandshake handshake = new TestTLSHandshake();
             handshake.run();
@@ -63,6 +63,10 @@ public class TestTLSHandshakeEvent {
                 Events.assertField(e, "protocolVersion").equal(handshake.protocolVersion);
                 Events.assertField(e, "certificateId").equal(TestTLSHandshake.CERT_ID);
                 Events.assertField(e, "cipherSuite").equal(TestTLSHandshake.CIPHER_SUITE);
+                var method = e.getStackTrace().getFrames().get(0).getMethod();
+                if (method.getName().equals("recordEvent")) {
+                    throw new Exception("Didn't expected recordEvent as top frame");
+                }
                 return;
             }
         }

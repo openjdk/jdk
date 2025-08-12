@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package stream.XMLEventReaderTest;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import javax.xml.stream.*;
 import java.io.ByteArrayInputStream;
@@ -35,11 +34,9 @@ import java.util.Iterator;
  * @test
  * @bug 8209615
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.JDK8209615
  * @run testng/othervm stream.XMLEventReaderTest.JDK8209615
  * @summary Verifies that the parser continues parsing the character data
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class JDK8209615 {
 
     /**

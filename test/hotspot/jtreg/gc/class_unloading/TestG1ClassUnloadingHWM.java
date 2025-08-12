@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class TestG1ClassUnloadingHWM {
   private static long YoungGenSize  = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run(boolean enableUnloading) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    return ProcessTools.executeLimitedTestJava(
       "-Xbootclasspath/a:.",
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+WhiteBoxAPI",
@@ -57,7 +57,6 @@ public class TestG1ClassUnloadingHWM {
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
       "" + MetaspaceSize,
       "" + YoungGenSize);
-    return new OutputAnalyzer(pb.start());
   }
 
   public static OutputAnalyzer runWithG1ClassUnloading() throws Exception {
@@ -126,4 +125,3 @@ public class TestG1ClassUnloadingHWM {
     }
   }
 }
-

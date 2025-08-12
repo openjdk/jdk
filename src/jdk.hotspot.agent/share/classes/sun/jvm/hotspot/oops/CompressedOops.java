@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,8 @@ public class CompressedOops {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("CompressedOops");
 
-    baseField = type.getAddressField("_narrow_oop._base");
-    shiftField = type.getCIntegerField("_narrow_oop._shift");
+    baseField = type.getAddressField("_base");
+    shiftField = type.getCIntegerField("_shift");
   }
 
   public CompressedOops() {

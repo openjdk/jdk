@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,6 +379,10 @@ private:
   // Data entries
   intptr_t* _data;
 
+  // layout of _data
+  int _parameters_data_offset;
+  int _exception_handlers_data_offset;
+
   // Cached hint for data_layout_before()
   int _hint_di;
 
@@ -403,17 +407,13 @@ private:
   // Coherent snapshot of original header.
   MethodData::CompilerCounters _orig;
 
-  // Area dedicated to parameters. null if no parameter profiling for this method.
-  DataLayout* _parameters;
-  int parameters_size() const {
-    return _parameters == nullptr ? 0 : parameters_type_data()->size_in_bytes();
-  }
-
   ciMethodData(MethodData* md = nullptr);
 
   // Accessors
   int data_size() const { return _data_size; }
   int extra_data_size() const { return _extra_data_size; }
+  int parameter_data_size() const { return _exception_handlers_data_offset - _parameters_data_offset; }
+  int exception_handler_data_size() const { return dp_to_di((address) exception_handler_data_limit()) - _exception_handlers_data_offset; }
   intptr_t * data() const { return _data; }
 
   MethodData* get_MethodData() const {
@@ -425,13 +425,19 @@ private:
   void print_impl(outputStream* st);
 
   DataLayout* data_layout_at(int data_index) const {
-    assert(data_index % sizeof(intptr_t) == 0, "unaligned");
+    assert(data_index % sizeof(intptr_t) == 0, "unaligned: %d", data_index);
     return (DataLayout*) (((address)_data) + data_index);
   }
 
   bool out_of_bounds(int data_index) {
     return data_index >= data_size();
   }
+
+  bool out_of_bounds_extra(int data_index) {
+    return data_index < data_size() || data_index >= data_size() + extra_data_size();
+  }
+
+  DataLayout* next_data_layout_helper(DataLayout* current, bool extra);
 
   // hint accessors
   int      hint_di() const  { return _hint_di; }
@@ -473,17 +479,6 @@ public:
 
   int invocation_count() { return _invocation_counter; }
 
-#if INCLUDE_RTM_OPT
-  // return cached value
-  int rtm_state() {
-    if (is_empty()) {
-      return NoRTM;
-    } else {
-      return get_MethodData()->rtm_state();
-    }
-  }
-#endif
-
   // Transfer information about the method to MethodData*.
   // would_profile means we would like to profile this method,
   // meaning it's not trivial.
@@ -500,8 +495,8 @@ public:
   bool load_data();
 
   // Convert a dp (data pointer) to a di (data index).
-  int dp_to_di(address dp) {
-    return dp - ((address)_data);
+  int dp_to_di(address dp) const {
+    return pointer_delta_as_int(dp, ((address)_data));
   }
 
   // Get the data at an arbitrary (sort of) data index.
@@ -511,16 +506,27 @@ public:
   ciProfileData* first_data() { return data_at(first_di()); }
   ciProfileData* next_data(ciProfileData* current);
   DataLayout* next_data_layout(DataLayout* current);
+  DataLayout* next_extra_data_layout(DataLayout* current);
   bool is_valid(ciProfileData* current) { return current != nullptr; }
   bool is_valid(DataLayout* current)    { return current != nullptr; }
 
+  // pointers to sections in _data
+  // NOTE: these may be called before ciMethodData::load_data
+  //       this works out since everything is initialized to 0 (i.e. there will appear to be no data)
   DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
-  DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
-                                                               parameters_size()); }
+  DataLayout* extra_data_limit() const { return data_layout_at(data_size() + extra_data_size()); }
+  // pointers to sections in extra data
+  DataLayout* args_data_limit() const  { return parameters_data_base(); }
+  DataLayout* parameters_data_base() const { return data_layout_at(_parameters_data_offset); }
+  DataLayout* parameters_data_limit() const { return exception_handler_data_base(); }
+  DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handlers_data_offset); }
+  DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
 
   // Get the data at an arbitrary bci, or null if there is none. If m
   // is not null look for a SpeculativeTrapData if any first.
   ciProfileData* bci_to_data(int bci, ciMethod* m = nullptr);
+
+  ciBitData exception_handler_bci_to_data(int bci);
 
   uint overflow_trap_count() const {
     return _orig.overflow_trap_count();

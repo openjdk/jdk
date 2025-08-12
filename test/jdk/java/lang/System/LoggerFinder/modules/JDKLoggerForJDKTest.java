@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  *            2. clients are in named/unnamed module,
  *               patched system module, or Xbootclasspath
  *          This test DOES require existence of java.logging module
+ * @requires vm.flagless
  * @library /test/lib
  * @build Base jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm JDKLoggerForJDKTest

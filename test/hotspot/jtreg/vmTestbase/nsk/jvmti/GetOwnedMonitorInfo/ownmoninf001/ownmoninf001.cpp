@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 
@@ -53,7 +53,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -89,7 +89,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 jobject *getInfo(JNIEnv *env, jint point, jthread thr, int count) {
     jvmtiError err;
     jint owned_monitor_count;
-    jobject *owned_monitors = NULL;
+    jobject *owned_monitors = nullptr;
 
     err = jvmti->GetOwnedMonitorInfo(thr,
         &owned_monitor_count, &owned_monitors);
@@ -100,13 +100,13 @@ jobject *getInfo(JNIEnv *env, jint point, jthread thr, int count) {
         printf("(GetOwnedMonitorInfo#%d) unexpected error: %s (%d)\n",
                point, TranslateError(err), err);
         result = STATUS_FAILED;
-        return NULL;
+        return nullptr;
     } else {
         if (owned_monitor_count != count) {
             result = STATUS_FAILED;
             printf("Point %d: number of owned monitors expected: %d, got: %d\n",
                    point, count, owned_monitor_count);
-            return NULL;
+            return nullptr;
         }
     }
     return owned_monitors;
@@ -123,7 +123,7 @@ Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon1(JNIEnv *env,
         jclass cls, jint point, jthread thr, jobject lock) {
     jobject *monitors;
     monitors = getInfo(env, point, thr, 1);
-    if (monitors == NULL) {
+    if (monitors == nullptr) {
         return;
     }
     if (!env->IsSameObject(lock, monitors[0])) {
@@ -137,7 +137,7 @@ Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon2(JNIEnv *env,
         jclass cls, jint point, jthread thr, jobject lock1, jobject lock2) {
     jobject *monitors;
     monitors = getInfo(env, point, thr, 2);
-    if (monitors == NULL) {
+    if (monitors == nullptr) {
         return;
     }
     if (!env->IsSameObject(lock1, monitors[0]) && !env->IsSameObject(lock2, monitors[0])) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,6 @@ public class DefNewGeneration extends Generation {
     super(addr);
   }
 
-  public Generation.Name kind() {
-    return Generation.Name.DEF_NEW;
-  }
-
   // Accessing spaces
   public ContiguousSpace eden() {
     return VMObjectFactory.newObject(ContiguousSpace.class, edenSpaceField.getValue(addr));
@@ -88,12 +84,12 @@ public class DefNewGeneration extends Generation {
     return "default new generation";
   }
 
-  public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-    blk.doSpace(eden());
-    blk.doSpace(from());
-    if (!usedOnly) {
-      blk.doSpace(to());
-    }
+  /* Returns "TRUE" iff "p" points into an allocated object in young
+     generation. */
+  public boolean isIn(Address p) {
+    return eden().contains(p)
+        || from().contains(p)
+        || to().contains(p);
   }
 
   public void liveRegionsIterate(LiveRegionsClosure closure) {

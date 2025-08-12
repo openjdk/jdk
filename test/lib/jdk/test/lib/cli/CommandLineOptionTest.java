@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class CommandLineOptionTest {
         finalOptions.add("-version");
 
         ProcessBuilder processBuilder
-                = ProcessTools.createJavaProcessBuilder(finalOptions.toArray(
+                = ProcessTools.createLimitedTestJavaProcessBuilder(finalOptions.toArray(
                 new String[finalOptions.size()]));
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());
@@ -122,8 +122,8 @@ public abstract class CommandLineOptionTest {
                 outputAnalyzer.shouldHaveExitValue(exitCode.value);
         } catch (RuntimeException e) {
             String errorMessage = String.format(
-                    "JVM process should have exit value '%d'.%n%s",
-                    exitCode.value, exitErrorMessage);
+                    "JVM process should have exit value '%d', but has '%d'.%n%s",
+                    exitCode.value, outputAnalyzer.getExitValue(), exitErrorMessage);
             throw new AssertionError(errorMessage, e);
         }
 
@@ -199,7 +199,9 @@ public abstract class CommandLineOptionTest {
             String wrongWarningMessage, ExitCode exitCode, String... options)
             throws Throwable {
         List<String> finalOptions = new ArrayList<>();
-        finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        if (!Platform.isStatic()) {
+            finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        }
         String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
         if (extraFlagForEmulated != null) {
             finalOptions.add(extraFlagForEmulated);
@@ -263,7 +265,7 @@ public abstract class CommandLineOptionTest {
         Collections.addAll(vmOpts, additionalVMOpts);
         Collections.addAll(vmOpts, "-XX:+PrintFlagsFinal", "-version");
 
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
                 vmOpts.toArray(new String[vmOpts.size()]));
 
         OutputAnalyzer outputAnalyzer
@@ -300,9 +302,12 @@ public abstract class CommandLineOptionTest {
                     CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
                     optionName, expectedValue));
         } catch (RuntimeException e) {
+            String observedValue = outputAnalyzer.firstMatch(String.format(
+                CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
+                optionName, "\\S"));
             String errorMessage = String.format(
-                    "Option '%s' is expected to have '%s' value%n%s",
-                    optionName, expectedValue,
+                    "Option '%s' is expected to have '%s' value, but is '%s'.%n%s",
+                    optionName, expectedValue, observedValue,
                     optionErrorString);
             throw new AssertionError(errorMessage, e);
         }
@@ -333,7 +338,7 @@ public abstract class CommandLineOptionTest {
         Collections.addAll(vmOpts, additionalVMOpts);
         Collections.addAll(vmOpts, "-version");
 
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
                 vmOpts.toArray(new String[vmOpts.size()]));
 
         return new OutputAnalyzer(processBuilder.start());
@@ -394,7 +399,9 @@ public abstract class CommandLineOptionTest {
             String expectedValue, String optionErrorString,
             String... additionalVMOpts) throws Throwable {
         List<String> finalOptions = new ArrayList<>();
-        finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        if (!Platform.isStatic()) {
+            finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        }
         String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
         if (extraFlagForEmulated != null) {
             finalOptions.add(extraFlagForEmulated);

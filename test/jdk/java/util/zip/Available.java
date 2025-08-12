@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,69 +22,136 @@
  */
 
 /* @test
-   @bug 4028605 4109069 4234207 4401122
-   @summary Make sure ZipInputStream/InflaterInputStream.available() will
-            return 0 after EOF has reached and 1 otherwise.
-   */
+ * @bug 4028605 4109069 4234207 4401122 8339154
+ * @summary Verify that ZipInputStream, InflaterInputStream, ZipFileInputStream,
+ *          ZipFileInflaterInputStream.available() return values according
+ *          to their specification or long-standing behavior
+ * @run junit Available
+ */
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.zip.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Available {
 
-    public static void main(String[] args) throws Exception {
-        // 4028605 4109069 4234207
-        test1();
-        // test 4401122
-        test2();
+    // ZIP file produced in this test
+    private final Path zip = Path.of("available.jar");
+
+    /**
+     * Create the ZIP file used in this test, containing
+     * one deflated and one stored entry.
+     *
+     * @throws IOException if an unexpected error occurs
+     */
+    @BeforeEach
+    public void setup() throws IOException {
+        byte[] contents = "contents".repeat(10).getBytes(StandardCharsets.UTF_8);
+
+        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(zip))) {
+            // First entry uses DEFLATE method
+            zo.putNextEntry(new ZipEntry("deflated.txt"));
+            zo.write(contents);
+
+            // Second entry uses STORED method
+            ZipEntry stored = new ZipEntry("stored.txt");
+            stored.setMethod(ZipEntry.STORED);
+            stored.setSize(contents.length);
+            CRC32 crc32 = new CRC32();
+            crc32.update(contents);
+            stored.setCrc(crc32.getValue());
+            zo.putNextEntry(stored);
+            zo.write(contents);
+        }
     }
 
-    private static void test1() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.jar");
+    /**
+     * Delete the ZIP file created by this test
+     *
+     * @throws IOException if an unexpected error occurs
+     */
+    @AfterEach
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(zip);
+    }
 
-        // test ZipInputStream
-        try (FileInputStream fis = new FileInputStream(f);
-             ZipInputStream z = new ZipInputStream(fis))
-        {
+    /**
+     * Verify that ZipInputStream.available() returns 0 after EOF or
+     * closeEntry, otherwise 1, as specified in the API description.
+     * This tests 4028605 4109069 4234207
+     * @throws IOException if an unexpected error occurs
+     */
+    @Test
+    public void testZipInputStream() throws IOException {
+        try (InputStream in = Files.newInputStream(zip)) {
+            ZipInputStream z = new ZipInputStream(in);
             z.getNextEntry();
-            tryAvail(z);
+            assertEquals(1, z.available());
+            z.read();
+            assertEquals(1, z.available());
+            z.transferTo(OutputStream.nullOutputStream());
+            assertEquals(0, z.available(),
+                    "ZipInputStream.available() should return 0 after EOF");
+
+            z.close();
+            assertThrows(IOException.class, () -> z.available(),
+                    "Expected an IOException when calling available on a closed stream");
         }
 
-        // test InflaterInputStream
-        try (ZipFile zfile = new ZipFile(f)) {
-            tryAvail(zfile.getInputStream(zfile.getEntry("Available.java")));
+        try (InputStream in = Files.newInputStream(zip);
+             ZipInputStream z = new ZipInputStream(in)) {
+            z.getNextEntry();
+            z.closeEntry();
+            assertEquals(0, z.available(),
+                    "ZipInputStream.available() should return 0 after closeEntry");
         }
     }
 
-    static void tryAvail(InputStream in) throws Exception {
-        byte[] buf = new byte[1024];
-        int n;
-
-        while ((n = in.read(buf)) != -1);
-        if (in.available() != 0) {
-            throw new Exception("available should return 0 after EOF");
-        }
-    }
-
-    // To reproduce 4401122
-    private static void test2() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.jar");
-        try (ZipFile zf = new ZipFile(f)) {
-            InputStream in = zf.getInputStream(zf.getEntry("Available.java"));
+    /**
+     * Verify that ZipFileInputStream|ZipFileInflaterInputStream.available()
+     * return the number of remaining uncompressed bytes.
+     *
+     * This verifies unspecified, but long-standing behavior. See 4401122.
+     *
+     * @throws IOException if an unexpected error occurs
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { "stored.txt", "deflated.txt" })
+    public void testZipFileStreamsRemainingBytes(String entryName) throws IOException {
+        try (ZipFile zfile = new ZipFile(zip.toFile())) {
+            ZipEntry entry = zfile.getEntry(entryName);
+            // Could be ZipFileInputStream or ZipFileInflaterInputStream
+            InputStream in = zfile.getInputStream(entry);
 
             int initialAvailable = in.available();
-            in.read();
-            if (in.available() != initialAvailable - 1)
-                throw new RuntimeException("Available not decremented.");
-            for(int j=0; j<initialAvailable-1; j++)
+
+            // Initally, the number of remaining uncompressed bytes is the entry size
+            assertEquals(entry.getSize(), initialAvailable);
+
+            // Read all bytes one by one
+            for (int i = initialAvailable; i > 0; i--) {
+                // Reading a single byte should decrement available by 1
                 in.read();
-            if (in.available() != 0)
-                throw new RuntimeException();
+                assertEquals(i - 1, in.available(), "Available not decremented");
+            }
+
+            // No remaining uncompressed bytes
+            assertEquals(0, in.available());
+
+            // available() should still return 0 after close
             in.close();
-            if (in.available() != 0)
-                throw new RuntimeException();
+            assertEquals(0, in.available());
         }
     }
-
 }

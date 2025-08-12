@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -144,7 +143,7 @@ bool ciObject::equals(ciObject* obj) {
 //
 // Implementation note: we use the address of the ciObject as the
 // basis for the hash.  Use the _ident field, which is well-behaved.
-int ciObject::hash() {
+uint ciObject::hash() {
   return ident() * 31;
 }
 

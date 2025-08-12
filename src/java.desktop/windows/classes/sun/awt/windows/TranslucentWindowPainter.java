@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.VolatileImage;
-import java.security.AccessController;
 import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.InvalidPipeException;
@@ -45,7 +44,6 @@ import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
-import sun.security.action.GetPropertyAction;
 
 import static java.awt.image.VolatileImage.*;
 import static sun.java2d.pipe.hw.AccelSurface.*;
@@ -66,14 +64,10 @@ abstract class TranslucentWindowPainter {
     protected WWindowPeer peer;
 
     // REMIND: we probably would want to remove this later
-    @SuppressWarnings("removal")
-    private static final boolean forceOpt  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forceopt", "false")));
-    @SuppressWarnings("removal")
-    private static final boolean forceSW  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forcesw", "false")));
+    private static final boolean forceOpt =
+        Boolean.getBoolean("sun.java2d.twp.forceopt");
+    private static final boolean forceSW =
+        Boolean.getBoolean("sun.java2d.twp.forcesw");
 
     /**
      * Creates an instance of the painter for particular peer.
@@ -254,7 +248,7 @@ abstract class TranslucentWindowPainter {
         protected Graphics getGraphics(boolean clear) {
             Graphics g = getBackBuffer(clear).getGraphics();
             /*
-             * This graphics object returned by BuffereImage is not scaled to
+             * This graphics object returned by BufferedImage is not scaled to
              * graphics configuration, but this graphics object can be used by
              * components inside this TranslucentWindow. So need to scale this
              * before returning.
@@ -361,7 +355,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptD3DWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptD3DWindowPainter extends VIOptWindowPainter {
 
         protected VIOptD3DWindowPainter(WWindowPeer peer) {
             super(peer);
@@ -376,7 +370,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptWGLWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptWGLWindowPainter extends VIOptWindowPainter {
 
         protected VIOptWGLWindowPainter(WWindowPeer peer) {
             super(peer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8202947 8239804
+ * @bug      8202947 8239804 8324342
  * @summary  test the at-author tag, and corresponding option
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -128,5 +128,105 @@ public class TestAuthor extends JavadocTester {
                     <dt>Author:</dt>
                     <dd>anonymous</dd>
                     </dl>""");
+    }
+
+    @Test
+    public void testAuthorDefault(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @author J. Duke
+                 */
+                 public class C {
+                     /** Class Nested, with no explicit at-author. */
+                     public class Nested { }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-author",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke</dd>""");
+    }
+
+    @Test
+    public void testAuthorDefault_Multiple(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @author J. Duke
+                 * @author A. N. Other
+                 */
+                 public class C {
+                     /** Class Nested, with no explicit at-author. */
+                     public class Nested { }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-author",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+    }
+
+    @Test
+    public void testAuthorDefault_Nested(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @author J. Duke
+                 * @author A. N. Other
+                 */
+                 public class C {
+                     public class Nested1 {
+                         /** Class Nested, with no explicit at-author. */
+                         public class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-author",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
     }
 }

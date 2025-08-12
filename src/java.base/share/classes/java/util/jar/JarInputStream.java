@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.util.jar;
 import java.util.zip.*;
 import java.io.*;
 import sun.security.util.ManifestEntryVerifier;
-import jdk.internal.util.jar.JarIndex;
 
 /**
  * The {@code JarInputStream} class, which extends {@link ZipInputStream},
@@ -37,7 +36,11 @@ import jdk.internal.util.jar.JarIndex;
  * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
- *
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ * </p>
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest() getManifest} method is used to return the
@@ -121,6 +124,7 @@ public class JarInputStream extends ZipInputStream {
      * it is signed.
      * @throws    IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public JarInputStream(InputStream in, boolean verify) throws IOException {
         super(in);
         this.doVerify = verify;
@@ -147,7 +151,17 @@ public class JarInputStream extends ZipInputStream {
                 jv = new JarVerifier(e.getName(), bytes);
                 mev = new ManifestEntryVerifier(man, jv.manifestName);
             }
-            return (JarEntry)super.getNextEntry();
+            JarEntry nextEntry = (JarEntry)super.getNextEntry();
+            if (nextEntry != null &&
+                    JarFile.MANIFEST_NAME.equalsIgnoreCase(nextEntry.getName())) {
+                if (JarVerifier.debug != null) {
+                    JarVerifier.debug.println(JarVerifier.MULTIPLE_MANIFEST_WARNING);
+                }
+
+                jv = null;
+                mev = null;
+            }
+            return nextEntry;
         }
         return e;
     }
@@ -185,7 +199,7 @@ public class JarInputStream extends ZipInputStream {
             }
         } else {
             e = first;
-            if (first.getName().equalsIgnoreCase(JarIndex.INDEX_NAME))
+            if (first.getName().equalsIgnoreCase(JarFile.INDEX_NAME))
                 tryManifest = true;
             first = null;
         }
@@ -242,7 +256,6 @@ public class JarInputStream extends ZipInputStream {
      * @param len the maximum number of bytes to read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}

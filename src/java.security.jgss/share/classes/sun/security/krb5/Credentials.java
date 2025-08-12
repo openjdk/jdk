@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 package sun.security.krb5;
 
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.OperatingSystem;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
 import sun.security.krb5.internal.crypto.EType;
@@ -39,8 +39,9 @@ import sun.security.util.SecurityProperties;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Locale;
 import java.net.InetAddress;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class encapsulates the concept of a Kerberos service
@@ -62,12 +63,11 @@ public class Credentials {
     KerberosTime renewTill;
     HostAddresses cAddr;
     AuthorizationData authzData;
-    private static boolean DEBUG = Krb5.DEBUG;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
 
     public static final boolean S4U2PROXY_ACCEPT_NON_FORWARDABLE
-            = "true".equalsIgnoreCase(SecurityProperties.privilegedGetOverridable(
+            = "true".equalsIgnoreCase(SecurityProperties.getOverridableProperty(
                     "jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket"));
 
     private Credentials proxy = null;
@@ -241,8 +241,8 @@ public class Credentials {
         try {
             retVal = ticket.asn1Encode();
         } catch (Asn1Exception | IOException e) {
-            if (DEBUG) {
-                System.out.println(e);
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return retVal;
@@ -327,26 +327,25 @@ public class Credentials {
 
         if (ticketCache == null) {
             // The default ticket cache on Windows and Mac is not a file.
-            String os = GetPropertyAction.privilegedGetProperty("os.name");
-            if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS") ||
-                    os.toUpperCase(Locale.ENGLISH).contains("OS X")) {
+            if (OperatingSystem.isWindows() ||
+                    OperatingSystem.isMacOS()) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
-                    if (DEBUG) {
-                        System.out.println(">>> Found no TGT's in native ccache");
+                    if (DEBUG != null) {
+                        DEBUG.println(">>> Found no TGT's in native ccache");
                     }
                     return null;
                 }
                 if (princ != null) {
                     if (creds.getClient().equals(princ)) {
-                        if (DEBUG) {
-                            System.out.println(">>> Obtained TGT from native ccache: "
+                        if (DEBUG != null) {
+                            DEBUG.println(">>> Obtained TGT from native ccache: "
                                                + creds);
                         }
                         return creds;
                     } else {
-                        if (DEBUG) {
-                            System.out.println(">>> native ccache contains TGT for "
+                        if (DEBUG != null) {
+                            DEBUG.println(">>> native ccache contains TGT for "
                                                + creds.getClient()
                                                + " not "
                                                + princ);
@@ -354,8 +353,8 @@ public class Credentials {
                         return null;
                     }
                 } else {
-                    if (DEBUG) {
-                        System.out.println(">>> Obtained TGT from native ccache: "
+                    if (DEBUG != null) {
+                        DEBUG.println(">>> Obtained TGT from native ccache: "
                                            + creds);
                     }
                     return creds;
@@ -383,8 +382,8 @@ public class Credentials {
         if (EType.isSupported(tgtCred.key.getEType())) {
             return tgtCred;
         } else {
-            if (DEBUG) {
-                System.out.println(
+            if (DEBUG != null) {
+                DEBUG.println(
                     ">>> unsupported key type found the default TGT: " +
                     tgtCred.key.getEType());
             }
@@ -422,15 +421,15 @@ public class Credentials {
         if (cache != null) {
             Credentials temp = cache.getInitialCreds();
             if (temp != null) {
-                if (DEBUG) {
-                    System.out.println(">>> KrbCreds found the default ticket"
+                if (DEBUG != null) {
+                    DEBUG.println(">>> KrbCreds found the default ticket"
                             + " granting ticket in credential cache.");
                 }
                 if (EType.isSupported(temp.key.getEType())) {
                     result = temp;
                 } else {
-                    if (DEBUG) {
-                        System.out.println(
+                    if (DEBUG != null) {
+                        DEBUG.println(
                             ">>> unsupported key type found the default TGT: " +
                             temp.key.getEType());
                     }
@@ -446,8 +445,8 @@ public class Credentials {
                 try {
                     ensureLoaded();
                 } catch (Exception e) {
-                    if (DEBUG) {
-                        System.out.println("Can not load native ccache library");
+                    if (DEBUG != null) {
+                        DEBUG.println("Can not load native ccache library");
                         e.printStackTrace();
                     }
                     alreadyTried = true;
@@ -455,8 +454,8 @@ public class Credentials {
             }
             if (alreadyLoaded) {
                 // There is some native code
-                if (DEBUG) {
-                    System.out.println(">> Acquire default native Credentials");
+                if (DEBUG != null) {
+                    DEBUG.println(">> Acquire default native Credentials");
                 }
                 try {
                     result = acquireDefaultNativeCreds(
@@ -509,35 +508,29 @@ public class Credentials {
      * Prints out debug info.
      */
     public static void printDebug(Credentials c) {
-        System.out.println(">>> DEBUG: ----Credentials----");
-        System.out.println("\tclient: " + c.client.toString());
+        DEBUG.println(">>> DEBUG: ----Credentials----");
+        DEBUG.println("\tclient: " + c.client.toString());
         if (c.clientAlias != null)
-            System.out.println("\tclient alias: " + c.clientAlias.toString());
-        System.out.println("\tserver: " + c.server.toString());
+            DEBUG.println("\tclient alias: " + c.clientAlias.toString());
+        DEBUG.println("\tserver: " + c.server.toString());
         if (c.serverAlias != null)
-            System.out.println("\tserver alias: " + c.serverAlias.toString());
-        System.out.println("\tticket: sname: " + c.ticket.sname.toString());
+            DEBUG.println("\tserver alias: " + c.serverAlias.toString());
+        DEBUG.println("\tticket: sname: " + c.ticket.sname.toString());
         if (c.startTime != null) {
-            System.out.println("\tstartTime: " + c.startTime.getTime());
+            DEBUG.println("\tstartTime: " + c.startTime.getTime());
         }
-        System.out.println("\tendTime: " + c.endTime.getTime());
-        System.out.println("        ----Credentials end----");
+        DEBUG.println("\tendTime: " + c.endTime.getTime());
+        DEBUG.println("        ----Credentials end----");
     }
 
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     static void ensureLoaded() {
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void> () {
-                        public Void run() {
-                                if (System.getProperty("os.name").contains("OS X")) {
-                                    System.loadLibrary("osxkrb5");
-                                } else {
-                                    System.loadLibrary("w2k_lsa_auth");
-                                }
-                                return null;
-                        }
-                });
+        if (OperatingSystem.isMacOS()) {
+            System.loadLibrary("osxkrb5");
+        } else {
+            System.loadLibrary("w2k_lsa_auth");
+        }
         alreadyLoaded = true;
     }
 

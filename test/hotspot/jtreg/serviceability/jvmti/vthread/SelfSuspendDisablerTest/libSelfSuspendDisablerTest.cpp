@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 extern "C" {
 
@@ -50,12 +50,12 @@ Java_SelfSuspendDisablerTest_isSuspended(JNIEnv* jni, jclass cls, jthread thread
 
 JNIEXPORT void JNICALL
 Java_SelfSuspendDisablerTest_suspendAllVirtualThreads(JNIEnv* jni, jclass cls) {
-  check_jvmti_status(jni, jvmti->SuspendAllVirtualThreads(0, NULL), "Error in SuspendAllVirtualThreads");
+  check_jvmti_status(jni, jvmti->SuspendAllVirtualThreads(0, nullptr), "Error in SuspendAllVirtualThreads");
 }
 
 JNIEXPORT void JNICALL
 Java_SelfSuspendDisablerTest_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
-  check_jvmti_status(jni, jvmti->ResumeAllVirtualThreads(0, NULL), "Error in ResumeAllVirtualThreads");
+  check_jvmti_status(jni, jvmti->ResumeAllVirtualThreads(0, nullptr), "Error in ResumeAllVirtualThreads");
 }
 
 JNIEXPORT jint JNICALL

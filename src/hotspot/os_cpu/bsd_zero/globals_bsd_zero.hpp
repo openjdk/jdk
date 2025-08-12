@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,6 @@
 // runtime system.  See globals.hpp for details of what they do.
 //
 
-define_pd_global(bool,  DontYieldALot,           false);
 define_pd_global(intx,  ThreadStackSize,         1536);
 #ifdef _LP64
 define_pd_global(intx,  VMThreadStackSize,       1024);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,20 @@ import java.io.File;
 import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
-import jdk.internal.module.ModuleInfoWriter;
 import java.util.stream.Stream;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 /*
  * @test
  * @bug 8151654 8183310
  * @summary Test default callback handler with all possible modular option.
- * @library /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.module
- * @build jdk.test.lib.util.JarUtils
+ * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
  * @build TestCallbackHandler TestLoginModule JaasClientWithDefaultHandler
  * @run main JaasModularDefaultHandlerTest
  */
@@ -167,7 +168,7 @@ public class JaasModularDefaultHandlerTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        OutputAnalyzer out = ProcessTools.executeTestJava(safeArgs);
         // Handle response.
         if (out.getExitValue() != 0) {
             System.out.printf("OUTPUT: %s", out.getOutput());

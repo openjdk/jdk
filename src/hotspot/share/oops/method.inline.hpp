@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 #include "oops/method.hpp"
 
 #include "classfile/vmIntrinsics.hpp"
+#include "code/nmethod.inline.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.inline.hpp"
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
@@ -38,14 +41,7 @@ inline address Method::from_interpreted_entry() const {
   return Atomic::load_acquire(&_from_interpreted_entry);
 }
 
-inline void Method::set_method_data(MethodData* data) {
-  // The store into method must be released. On platforms without
-  // total store order (TSO) the reference may become visible before
-  // the initialization of data otherwise.
-  Atomic::release_store(&_method_data, data);
-}
-
-inline CompiledMethod* volatile Method::code() const {
+inline nmethod* Method::code() const {
   assert( check_code(), "" );
   return Atomic::load_acquire(&_code);
 }
@@ -69,7 +65,7 @@ inline void CompressedLineNumberWriteStream::write_pair_inline(int bci, int line
   // Check if bci is 5-bit and line number 3-bit unsigned.
   if (((bci_delta & ~0x1F) == 0) && ((line_delta & ~0x7) == 0)) {
     // Compress into single byte.
-    jubyte value = ((jubyte) bci_delta << 3) | (jubyte) line_delta;
+    jubyte value = (jubyte)((bci_delta << 3) | line_delta);
     // Check that value doesn't match escape character.
     if (value != 0xFF) {
       write_byte(value);
@@ -105,6 +101,130 @@ inline bool Method::is_continuation_native_intrinsic() const {
 
 inline bool Method::is_special_native_intrinsic() const {
   return is_method_handle_intrinsic() || is_continuation_native_intrinsic();
+}
+
+#if INCLUDE_JVMTI
+inline u2 Method::number_of_breakpoints() const {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return 0;
+  } else {
+    return mcs->number_of_breakpoints();
+  }
+}
+
+inline void Method::incr_number_of_breakpoints(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->incr_number_of_breakpoints();
+  }
+}
+
+inline void Method::decr_number_of_breakpoints(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->decr_number_of_breakpoints();
+  }
+}
+
+// Initialization only
+inline void Method::clear_number_of_breakpoints() {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->clear_number_of_breakpoints();
+  }
+}
+#endif // INCLUDE_JVMTI
+
+#if COMPILER2_OR_JVMCI
+inline void Method::interpreter_throwout_increment(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->interpreter_throwout_increment();
+  }
+}
+#endif
+
+inline int Method::interpreter_throwout_count() const        {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return 0;
+  } else {
+    return mcs->interpreter_throwout_count();
+  }
+}
+
+inline int Method::prev_event_count() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->prev_event_count();
+}
+
+inline void Method::set_prev_event_count(int count) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_prev_event_count(count);
+  }
+}
+
+inline jlong Method::prev_time() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->prev_time();
+}
+
+inline void Method::set_prev_time(jlong time) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_prev_time(time);
+  }
+}
+
+inline float Method::rate() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->rate();
+}
+
+inline void Method::set_rate(float rate) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_rate(rate);
+  }
+}
+
+inline int Method::invocation_count() const {
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != nullptr) ? mcs->invocation_counter()->carry() : false) ||
+      ((mdo != nullptr) ? mdo->invocation_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
+  } else {
+    return ((mcs != nullptr) ? mcs->invocation_counter()->count() : 0) +
+           ((mdo != nullptr) ? mdo->invocation_counter()->count() : 0);
+  }
+}
+
+inline int Method::backedge_count() const {
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != nullptr) ? mcs->backedge_counter()->carry() : false) ||
+      ((mdo != nullptr) ? mdo->backedge_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
+  } else {
+    return ((mcs != nullptr) ? mcs->backedge_counter()->count() : 0) +
+           ((mdo != nullptr) ? mdo->backedge_counter()->count() : 0);
+  }
+}
+
+inline int Method::highest_comp_level() const {
+  const MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    return mcs->highest_comp_level();
+  } else {
+    return CompLevel_none;
+  }
+}
+
+inline int Method::interpreter_invocation_count() const {
+  return invocation_count();
 }
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP

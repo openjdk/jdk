@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -883,6 +883,11 @@ public class JOptionPane extends JComponent implements Accessible
 
         Object        selectedValue = pane.getValue();
 
+        if (parentComponent != null) {
+            parentComponent.revalidate();
+            parentComponent.repaint();
+        }
+
         if(selectedValue == null)
             return CLOSED_OPTION;
         if(options == null) {
@@ -1311,11 +1316,7 @@ public class JOptionPane extends JComponent implements Accessible
 
             /* Since all input will be blocked until this dialog is dismissed,
              * make sure its parent containers are visible first (this component
-             * is tested below).  This is necessary for JApplets, because
-             * because an applet normally isn't made visible until after its
-             * start() method returns -- if this method is called from start(),
-             * the applet will appear to hang while an invisible modal frame
-             * waits for input.
+             * is tested below).
              */
             if (dialog.isVisible() && !dialog.isShowing()) {
                 Container parent = dialog.getParent();
@@ -1455,11 +1456,7 @@ public class JOptionPane extends JComponent implements Accessible
 
         /* Since all input will be blocked until this dialog is dismissed,
          * make sure its parent containers are visible first (this component
-         * is tested below).  This is necessary for JApplets, because
-         * because an applet normally isn't made visible until after its
-         * start() method returns -- if this method is called from start(),
-         * the applet will appear to hang while an invisible modal frame
-         * waits for input.
+         * is tested below).
          */
         if (dialog.isVisible() && !dialog.isShowing()) {
             Container parent = dialog.getParent();

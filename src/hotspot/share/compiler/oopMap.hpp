@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map
@@ -48,14 +49,15 @@ class OopClosure;
 class CodeBlob;
 class ImmutableOopMap;
 
+enum class derived_base : intptr_t {};
 enum class derived_pointer : intptr_t {};
 
 class OopMapValue: public StackObj {
   friend class VMStructs;
 private:
-  short _value;
-  int value() const                                 { return _value; }
-  void set_value(int value)                         { _value = value; }
+  unsigned short _value;
+  unsigned short value() const                      { return _value; }
+  void set_value(unsigned short value)              { _value = value; }
   short _content_reg;
 
 public:
@@ -87,8 +89,8 @@ public:
   }
 
  private:
-    void set_reg_type(VMReg p, oop_types t) {
-    set_value((p->value() << register_shift) | t);
+  void set_reg_type(VMReg p, oop_types t) {
+    set_value(checked_cast<unsigned short>((p->value() << register_shift) | t));
     assert(reg() == p, "sanity check" );
     assert(type() == t, "sanity check" );
   }
@@ -102,7 +104,7 @@ public:
     } else {
       assert (!r->is_valid(), "valid VMReg not allowed");
     }
-    _content_reg = r->value();
+    _content_reg = checked_cast<short>(r->value());
   }
 
  public:
@@ -110,12 +112,12 @@ public:
   void write_on(CompressedWriteStream* stream) {
     stream->write_int(value());
     if(is_callee_saved() || is_derived_oop()) {
-      stream->write_int(content_reg()->value());
+      stream->write_int(checked_cast<int>(content_reg()->value()));
     }
   }
 
   void read_from(CompressedReadStream* stream) {
-    set_value(stream->read_int());
+    set_value(checked_cast<unsigned short>(stream->read_int()));
     if (is_callee_saved() || is_derived_oop()) {
       set_content_reg(VMRegImpl::as_VMReg(stream->read_int(), true));
     }
@@ -127,7 +129,7 @@ public:
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
 
-  VMReg reg() const { return VMRegImpl::as_VMReg(mask_bits(value(), register_mask_in_place) >> register_shift); }
+  VMReg reg() const { return VMRegImpl::as_VMReg(checked_cast<int>(mask_bits(value(), register_mask_in_place) >> register_shift)); }
   oop_types type() const      { return (oop_types)mask_bits(value(), type_mask_in_place); }
 
   static bool legal_vm_reg_name(VMReg p) {
@@ -160,7 +162,7 @@ class OopMap: public ResourceObj {
   bool _has_derived_oops;
   CompressedWriteStream* _write_stream;
 
-  debug_only( OopMapValue::oop_types* _locs_used; int _locs_length;)
+  DEBUG_ONLY( OopMapValue::oop_types* _locs_used; int _locs_length;)
 
   // Accessors
   int omv_count() const                       { return _omv_count; }
@@ -290,9 +292,7 @@ public:
   bool has_derived_oops() const { return _has_derived_oops; }
   bool has_any(OopMapValue::oop_types type) const;
 
-#ifdef ASSERT
-  int nr_of_bytes() const; // this is an expensive operation, only used in debug builds
-#endif
+  int nr_of_bytes() const; // this is an expensive operation, only used in debug builds or in aot code generation
 
   void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedOopClosure* df) const;
   void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedPointerIterationMode derived_mode) const;
@@ -333,7 +333,10 @@ private:
   address data() const { return (address) this + sizeof(*this) + sizeof(ImmutableOopMapPair) * _count; }
 
 public:
+  void operator delete(void* p);
+
   ImmutableOopMapSet(const OopMapSet* oopmap_set, int size) : _count(oopmap_set->size()), _size(size) {}
+  ~ImmutableOopMapSet() = default;
 
   ImmutableOopMap* oopmap_at_offset(int offset) const {
     assert(offset >= 0 && offset < _size, "must be within boundaries");
@@ -373,9 +376,7 @@ class OopMapStream : public StackObj {
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
-#ifdef ASSERT
   int stream_position() const           { return _stream.position(); }
-#endif
 };
 
 class ImmutableOopMapBuilder {
@@ -406,7 +407,7 @@ private:
 
     Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(nullptr) {}
 
-    void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
+    void set(kind_t kind, int offset, int size, const OopMap* map, const OopMap* other = nullptr) {
       _kind = kind;
       _offset = offset;
       _size = size;
@@ -481,12 +482,12 @@ class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
   class Entry;
-  static bool _active;                                  // do not record pointers for verify pass etc.
+  static bool _active;                                           // do not record pointers for verify pass etc.
 
  public:
-  static void clear();                                  // Called before scavenge/GC
-  static void add(derived_pointer* derived, oop *base); // Called during scavenge/GC
-  static void update_pointers();                        // Called after  scavenge/GC
+  static void clear();                                           // Called before scavenge/GC
+  static void add(derived_pointer* derived, derived_base* base); // Called during scavenge/GC
+  static void update_pointers();                                 // Called after  scavenge/GC
   static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }

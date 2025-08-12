@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@ package java.net;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.channels.DatagramChannel;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Set;
@@ -110,16 +107,6 @@ final class NetMulticastSocket extends MulticastSocket {
         checkAddress(address, "connect");
         if (isClosed())
             return;
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (address.isMulticastAddress()) {
-                security.checkMulticast(address);
-            } else {
-                security.checkConnect(address.getHostAddress(), port);
-                security.checkAccept(address.getHostAddress(), port);
-            }
-        }
 
         if (port == 0) {
             throw new SocketException("Can't connect to port 0");
@@ -181,11 +168,7 @@ final class NetMulticastSocket extends MulticastSocket {
         InetAddress iaddr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress(iaddr, "bind");
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkListen(port);
-        }
+
         try {
             getImpl().bind(port, iaddr);
         } catch (SocketException e) {
@@ -289,22 +272,7 @@ final class NetMulticastSocket extends MulticastSocket {
                 }
                 if (packetPort < 0 || packetPort > 0xFFFF)
                     throw new IllegalArgumentException("port out of range: " + packetPort);
-                // check the address is ok with the security manager on every send.
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
 
-                // The reason you want to synchronize on datagram packet
-                // is because you don't want an applet to change the address
-                // while you are trying to send the packet for example
-                // after the security check but before the send.
-                if (security != null) {
-                    if (packetAddress.isMulticastAddress()) {
-                        security.checkMulticast(packetAddress);
-                    } else {
-                        security.checkConnect(packetAddress.getHostAddress(),
-                                packetPort);
-                    }
-                }
                 if (packetPort == 0) {
                     throw new SocketException("Can't send to port 0");
                 }
@@ -333,41 +301,13 @@ final class NetMulticastSocket extends MulticastSocket {
         synchronized (p) {
             if (!isBound())
                 bind(new InetSocketAddress(0));
-            if (connectState == ST_NOT_CONNECTED) {
-                // check the address is ok with the security manager before every recv.
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) {
-                    while (true) {
-                        int peekPort = 0;
-                        // peek at the packet to see who it is from.
-                        DatagramPacket peekPacket = new DatagramPacket(new byte[1], 1);
-                        peekPort = getImpl().peekData(peekPacket);
-                        String peekAd = peekPacket.getAddress().getHostAddress();
-                        try {
-                            security.checkAccept(peekAd, peekPort);
-                            // security check succeeded - so now break
-                            // and recv the packet.
-                            break;
-                        } catch (SecurityException se) {
-                            // Throw away the offending packet by consuming
-                            // it in a tmp buffer.
-                            DatagramPacket tmp = new DatagramPacket(new byte[1], 1);
-                            getImpl().receive(tmp);
-
-                            // silently discard the offending packet
-                            // and continue: unknown/malicious
-                            // entities on nets should not make
-                            // runtime throw security exception and
-                            // disrupt the applet by sending random
-                            // datagram packets.
-                            continue;
-                        }
-                    } // end of while
-                }
-            }
             DatagramPacket tmp = null;
+            // explicitFilter may be set to 'true' at connect() time and will
+            // be set to 'false' in disconnect() - or when there's no more
+            // pending packets to filter. If explicitFilter is true,
+            // it means we're connected.
             if (explicitFilter) {
+                assert connectState == ST_CONNECTED;
                 // We have to do the filtering the old fashioned way since
                 // the native impl doesn't support connect or the connect
                 // via the impl failed, or .. "explicitFilter" may be set when
@@ -394,8 +334,7 @@ final class NetMulticastSocket extends MulticastSocket {
                     }
                 }
             }
-            // If the security check succeeds, or the datagram is
-            // connected then receive the packet
+            // receive the packet
             getImpl().receive(p);
             if (explicitFilter && tmp == null) {
                 // packet was not filtered, account for it here
@@ -422,11 +361,6 @@ final class NetMulticastSocket extends MulticastSocket {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
             if (in.isAnyLocalAddress()) {
                 in = InetAddress.anyLocalAddress();
-            }
-            @SuppressWarnings("removal")
-            SecurityManager s = System.getSecurityManager();
-            if (s != null) {
-                s.checkConnect(in.getHostAddress(), -1);
             }
         } catch (Exception e) {
             in = InetAddress.anyLocalAddress(); // "0.0.0.0"
@@ -634,12 +568,6 @@ final class NetMulticastSocket extends MulticastSocket {
     private boolean interfaceSet;
 
     /**
-     * The lock on the socket's TTL. This is for set/getTTL and
-     * send(packet,ttl).
-     */
-    private final Object ttlLock = new Object();
-
-    /**
      * The lock on the socket's interface - used by setInterface
      * and getInterface
      */
@@ -650,14 +578,6 @@ final class NetMulticastSocket extends MulticastSocket {
      */
     private InetAddress infAddress = null;
 
-    @Deprecated
-    @Override
-    public void setTTL(byte ttl) throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        getImpl().setTTL(ttl);
-    }
-
     @Override
     public void setTimeToLive(int ttl) throws IOException {
         if (ttl < 0 || ttl > 255) {
@@ -666,14 +586,6 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setTimeToLive(ttl);
-    }
-
-    @Deprecated
-    @Override
-    public byte getTTL() throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        return getImpl().getTTL();
     }
 
     @Override
@@ -691,11 +603,6 @@ final class NetMulticastSocket extends MulticastSocket {
         }
 
         checkAddress(mcastaddr, "joinGroup");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkMulticast(mcastaddr);
-        }
 
         if (!mcastaddr.isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
@@ -722,11 +629,6 @@ final class NetMulticastSocket extends MulticastSocket {
         }
 
         checkAddress(mcastaddr, "leaveGroup");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkMulticast(mcastaddr);
-        }
 
         if (!mcastaddr.isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
@@ -745,11 +647,6 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new IllegalArgumentException("Unsupported address type");
 
         checkAddress(addr.getAddress(), "joinGroup");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkMulticast(addr.getAddress());
-        }
 
         if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
@@ -768,11 +665,6 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new IllegalArgumentException("Unsupported address type");
 
         checkAddress(addr.getAddress(), "leaveGroup");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkMulticast(addr.getAddress());
-        }
 
         if (!addr.getAddress().isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
@@ -882,63 +774,4 @@ final class NetMulticastSocket extends MulticastSocket {
     public boolean getLoopbackMode() throws SocketException {
         return ((Boolean)getImpl().getOption(SocketOptions.IP_MULTICAST_LOOP)).booleanValue();
     }
-
-    @SuppressWarnings("removal")
-    @Deprecated
-    @Override
-    public void send(DatagramPacket p, byte ttl)
-            throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        synchronized(ttlLock) {
-            synchronized(p) {
-                InetAddress packetAddress = p.getAddress();
-                checkAddress(packetAddress, "send");
-                if (connectState == NetMulticastSocket.ST_NOT_CONNECTED) {
-                    if (packetAddress == null) {
-                        throw new IllegalArgumentException("Address not set");
-                    }
-                    // Security manager makes sure that the multicast address
-                    // is allowed one and that the ttl used is less
-                    // than the allowed maxttl.
-                    SecurityManager security = System.getSecurityManager();
-                    if (security != null) {
-                        if (packetAddress.isMulticastAddress()) {
-                            security.checkMulticast(packetAddress, ttl);
-                        } else {
-                            security.checkConnect(packetAddress.getHostAddress(),
-                                    p.getPort());
-                        }
-                    }
-                } else {
-                    // we're connected
-                    if (packetAddress == null) {
-                        p.setAddress(connectedAddress);
-                        p.setPort(connectedPort);
-                    } else if ((!packetAddress.equals(connectedAddress)) ||
-                            p.getPort() != connectedPort) {
-                        throw new IllegalArgumentException("connected address and packet address" +
-                                " differ");
-                    }
-                }
-                byte dttl = getTTL();
-                try {
-                    if (ttl != dttl) {
-                        // set the ttl
-                        getImpl().setTTL(ttl);
-                    }
-                    if (p.getPort() == 0) {
-                        throw new SocketException("Can't send to port 0");
-                    }
-                    // call the datagram method to send
-                    getImpl().send(p);
-                } finally {
-                    // set it back to default
-                    if (ttl != dttl) {
-                        getImpl().setTTL(dttl);
-                    }
-                }
-            } // synch p
-        }  //synch ttl
-    } //method
 }

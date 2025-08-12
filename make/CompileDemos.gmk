@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,16 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # Build demos for the JDK into $(SUPPORT_OUTPUTDIR)/demos/image.
 ################################################################################
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+include CopyFiles.gmk
 include JavaCompilation.gmk
-include NativeCompilation.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-pre.gmk))
 
 # Prepare the find cache.
 DEMO_SRC_DIRS += $(TOPDIR)/src/demo
@@ -58,7 +53,7 @@ DEMO_MANIFEST := $(SUPPORT_OUTPUTDIR)/demos/java-main-manifest.mf
 # This rule will be depended on due to the MANIFEST line in SetupBuildDemo
 # and SetupBuildJvmtiDemo.
 $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
-  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf.template, \
   OUTPUT_FILE := $(DEMO_MANIFEST), \
   REPLACEMENTS := \
       @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
@@ -131,12 +126,19 @@ define SetupBuildDemoBody
         JARMAIN := $$($1_MAIN_CLASS), \
         MANIFEST := $(DEMO_MANIFEST), \
         EXTRA_MANIFEST_ATTR := $$($1_EXTRA_MANIFEST_ATTR), \
-        SRCZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
         EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
         DISABLED_WARNINGS := $$($1_DISABLED_WARNINGS), \
     ))
 
     $1 += $$(BUILD_DEMO_$1)
+
+    $$(eval $$(call SetupZipArchive, ZIP_SRC_DEMO_$1, \
+        SRC := $$($1_MAIN_SRC) $$($1_EXTRA_SRC_DIR), \
+        ZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
+        EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
+    ))
+
+    $1 += $$(ZIP_SRC_DEMO_$1)
   endif
 
   # Copy files. Sort is needed to remove duplicates.
@@ -171,41 +173,41 @@ $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked this-escape, \
 ))
 
 $(eval $(call SetupBuildDemo, SwingSet2, \
     DEMO_SUBDIR := jfc, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast this-escape, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, J2Ddemo, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := java2d.J2Ddemo, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions this-escape, \
     JAR_NAME := J2Ddemo, \
 ))
 
 $(eval $(call SetupBuildDemo, Metalworks, \
-    DISABLED_WARNINGS := rawtypes unchecked, \
+    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Notepad, \
-    DISABLED_WARNINGS := rawtypes, \
+    DISABLED_WARNINGS := rawtypes this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Stylepad, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes unchecked, \
+    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
     EXTRA_SRC_DIR := $(DEMO_SHARE_SRC)/jfc/Notepad, \
     EXCLUDE_FILES := $(DEMO_SHARE_SRC)/jfc/Notepad/README.txt, \
 ))
@@ -215,11 +217,12 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, TransparentRuler, \
+    DISABLED_WARNINGS := this-escape, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := transparentruler.Ruler, \
 ))
@@ -255,11 +258,8 @@ ifneq ($(filter images, $(MAKECMDGOALS)), )
   IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)
 endif
 
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-post.gmk))
-
-all: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
-.PHONY: all
+################################################################################
+
+include MakeFileEnd.gmk

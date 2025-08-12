@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.*;
@@ -41,7 +42,7 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaSliderUI extends BasicSliderUI implements Sizeable {
+public final class AquaSliderUI extends BasicSliderUI implements Sizeable {
 //    static final Dimension roundThumbSize = new Dimension(21 + 4, 21 + 4); // +2px on both sides for focus fuzz
 //    static final Dimension pointingThumbSize = new Dimension(19 + 4, 22 + 4);
 
@@ -99,6 +100,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
         super(b);
     }
 
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
 
@@ -106,28 +108,33 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
         tickColor = UIManager.getColor("Slider.tickColor");
     }
 
+    @Override
     protected BasicSliderUI.TrackListener createTrackListener(final JSlider s) {
         return new TrackListener();
     }
 
+    @Override
     protected void installListeners(final JSlider s) {
         super.installListeners(s);
         AquaFocusHandler.install(s);
         AquaUtilControlSize.addSizePropertyListener(s);
     }
 
+    @Override
     protected void uninstallListeners(final JSlider s) {
         AquaUtilControlSize.removeSizePropertyListener(s);
         AquaFocusHandler.uninstall(s);
         super.uninstallListeners(s);
     }
 
+    @Override
     public void applySizeFor(final JComponent c, final Size size) {
         thumbPainter.state.set(size);
         trackPainter.state.set(size);
     }
 
     // Paint Methods
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         // We have to override paint of BasicSliderUI because we need slight differences.
         // We don't paint focus the same way - it is part of the thumb.
@@ -213,6 +220,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
         return State.ACTIVE;
     }
 
+    @Override
     public void paintTicks(final Graphics g) {
         if (slider.isEnabled()) {
             g.setColor(tickColor);
@@ -229,6 +237,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
     // Layout Methods
 
     // Used lots
+    @Override
     protected void calculateThumbLocation() {
         super.calculateThumbLocation();
 
@@ -251,6 +260,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
     }
 
     // Only called from calculateGeometry
+    @Override
     protected void calculateThumbSize() {
         final SizeDescriptor descriptor = shouldUseArrowThumb() ? pointingThumbDescriptor.get() : roundThumbDescriptor.get();
         final SizeVariant variant = descriptor.get(slider);
@@ -273,6 +283,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
         return false;
     }
 
+    @Override
     protected void calculateTickRect() {
         // super assumes tickRect ends align with trackRect ends.
         // Ours need to inset by trackBuffer
@@ -292,14 +303,17 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
     }
 
     // Basic's preferred size doesn't allow for our focus ring, throwing off things like SwingSet2
+    @Override
     public Dimension getPreferredHorizontalSize() {
         return new Dimension(190, 21);
     }
 
+    @Override
     public Dimension getPreferredVerticalSize() {
         return new Dimension(21, 190);
     }
 
+    @Override
     protected ChangeListener createChangeListener(final JSlider s) {
         return new ChangeListener() {
             public void stateChanged(final ChangeEvent e) {
@@ -312,10 +326,11 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
 
     // This is copied almost verbatim from superclass, except we changed things to use fIsDragging
     // instead of isDragging since isDragging was a private member.
-    class TrackListener extends javax.swing.plaf.basic.BasicSliderUI.TrackListener {
+    final class TrackListener extends javax.swing.plaf.basic.BasicSliderUI.TrackListener {
         protected transient int offset;
         protected transient int currentMouseX = -1, currentMouseY = -1;
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (!slider.isEnabled()) return;
 
@@ -341,6 +356,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             slider.repaint();
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (!slider.isEnabled()) return;
 
@@ -356,7 +372,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             currentMouseY = e.getY();
 
             if (slider.isRequestFocusEnabled()) {
-                slider.requestFocus();
+                slider.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
 
             boolean isMouseEventInThumb = thumbRect.contains(currentMouseX, currentMouseY);
@@ -397,6 +413,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             fIsDragging = false;
         }
 
+        @Override
         public boolean shouldScroll(final int direction) {
             final Rectangle r = thumbRect;
             if (slider.getOrientation() == SwingConstants.VERTICAL) {
@@ -428,6 +445,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
          * Set the models value to the position of the top/left
          * of the thumb relative to the origin of the track.
          */
+        @Override
         public void mouseDragged(final MouseEvent e) {
             int thumbMiddle = 0;
 
@@ -492,6 +510,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             }
         }
 
+        @Override
         public void mouseMoved(final MouseEvent e) { }
     }
 

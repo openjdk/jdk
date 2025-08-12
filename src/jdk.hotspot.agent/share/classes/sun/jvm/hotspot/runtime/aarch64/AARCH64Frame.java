@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -292,7 +292,7 @@ public class AARCH64Frame extends Frame {
     }
 
     if (cb != null) {
-      return senderForCompiledFrame(map, cb);
+      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -327,29 +327,48 @@ public class AARCH64Frame extends Frame {
     return fr;
   }
 
+  private Frame senderForUpcallStub(AARCH64RegisterMap map, UpcallStub stub) {
+    if (DEBUG) {
+      System.out.println("senderForUpcallStub");
+    }
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map != null, "map must be set");
+    }
+
+    var lastJavaFP = stub.getLastJavaFP(this);
+    var lastJavaSP = stub.getLastJavaSP(this);
+    var lastJavaPC = stub.getLastJavaPC(this);
+
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
+    }
+    AARCH64Frame fr;
+    if (lastJavaPC != null) {
+      fr = new AARCH64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
+    } else {
+      fr = new AARCH64Frame(lastJavaSP, lastJavaFP);
+    }
+    map.clear();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
+    }
+    return fr;
+  }
+
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
-    // If we are returning to a compiled MethodHandle call site, the
-    // saved_fp will in fact be a saved value of the unextended SP.  The
-    // simplest way to tell whether we are returning to such a call site
-    // is as follows:
+    // Sites calling method handle intrinsics and lambda forms are
+    // treated as any other call site. Therefore, no special action is
+    // needed when we are returning to any of these call sites.
 
     CodeBlob cb = cb();
     NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
     if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original
-      // PC.  For MethodHandle call site the unextended_sp is stored in
-      // saved_fp.
-      if (senderNm.isDeoptMhEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptMhOriginalPc(senderNm, getFP()));
-        raw_unextendedSP = getFP();
-      }
-      else if (senderNm.isDeoptEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptOriginalPc(senderNm, raw_unextendedSp));
-      }
-      else if (senderNm.isMethodHandleReturn(getPC())) {
-        raw_unextendedSP = getFP();
+      // If the sender PC is a deoptimization point, get the original PC.
+      if (senderNm.isDeoptEntry(getPC()) ||
+          senderNm.isDeoptMhEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
       }
     }
   }
@@ -533,7 +552,8 @@ public class AARCH64Frame extends Frame {
   }
 
   public BasicObjectLock interpreterFrameMonitorEnd() {
-    Address result = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getAddressAt(0);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    Address result = getFP().addOffsetTo(n * VM.getVM().getAddressSize());
     if (Assert.ASSERTS_ENABLED) {
       // make sure the pointer points inside the frame
       Assert.that(AddressOps.gt(getFP(), result), "result must <  than frame pointer");

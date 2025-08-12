@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
@@ -101,7 +101,7 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   }
 }
 
-void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
+void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
@@ -111,7 +111,7 @@ void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
   // skip young gen cards
   if (*byte == G1CardTable::g1_young_card_val()) {
     // MemRegion should not span multiple regions for the young gen.
-    DEBUG_ONLY(HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
+    DEBUG_ONLY(G1HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
     assert(containing_hr->is_young(), "it should be young");
     assert(containing_hr->is_in(mr.start()), "it should contain start");
     assert(containing_hr->is_in(mr.last()), "it should also contain last");
@@ -144,18 +144,18 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
   BarrierSet::on_thread_attach(thread);
-  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-  assert(!queue.is_active(), "SATB queue should not be active");
-  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
-  assert(queue.index() == 0, "SATB queue index should be zero");
-  // Can't assert that the DCQ is empty.  There is early execution on
-  // the main thread, before it gets added to the threads list, which
-  // is where this is called.  That execution may enqueue dirty cards.
+  SATBMarkQueue& satbq = G1ThreadLocalData::satb_mark_queue(thread);
+  assert(!satbq.is_active(), "SATB queue should not be active");
+  assert(satbq.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(satbq.index() == 0, "SATB queue index should be zero");
+  G1DirtyCardQueue& dirtyq = G1ThreadLocalData::dirty_card_queue(thread);
+  assert(dirtyq.buffer() == nullptr, "Dirty Card queue should not have a buffer");
+  assert(dirtyq.index() == 0, "Dirty Card queue index should be zero");
 
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.  That involves
   // copying the global is_active value to this thread's queue.
-  queue.set_active(_satb_mark_queue_set.is_active());
+  satbq.set_active(_satb_mark_queue_set.is_active());
 }
 
 void G1BarrierSet::on_thread_detach(Thread* thread) {
@@ -170,5 +170,9 @@ void G1BarrierSet::on_thread_detach(Thread* thread) {
     G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
     qset.flush_queue(queue);
     qset.record_detached_refinement_stats(queue.refinement_stats());
+  }
+  {
+    G1RegionPinCache& cache = G1ThreadLocalData::pin_count_cache(thread);
+    cache.flush();
   }
 }

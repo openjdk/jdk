@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 
 package sun.security.krb5;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.*;
 import java.io.IOException;
@@ -47,9 +46,6 @@ import sun.security.krb5.internal.util.KerberosString;
  * This class is immutable.
  */
 public class Realm implements Cloneable {
-
-    public static final boolean AUTODEDUCEREALM = GetBooleanAction
-            .privilegedGetProperty("sun.security.krb5.autodeducerealm");
 
     private final String realm; // not null nor empty
 
@@ -72,19 +68,17 @@ public class Realm implements Cloneable {
         return this;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (!(obj instanceof Realm)) {
-            return false;
-        }
-
-        Realm that = (Realm)obj;
-        return this.realm.equals(that.realm);
+        return obj instanceof Realm that
+                && this.realm.equals(that.realm);
     }
 
+    @Override
     public int hashCode() {
         return realm.hashCode();
     }

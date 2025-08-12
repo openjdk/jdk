@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import sun.security.jgss.spnego.NegTokenInit;
 import sun.security.jgss.spnego.NegTokenTarg;
-import javax.security.auth.kerberos.DelegationPermission;
 import java.io.*;
 
 
@@ -79,9 +78,6 @@ class NativeGSSContext implements GSSContextSpi {
     private GSSCredElement disposeDelegatedCred;
     private final GSSLibStub cStub;
 
-    private boolean skipDelegPermCheck;
-    private boolean skipServicePermCheck;
-
     // Retrieve the (preferred) mech out of SPNEGO tokens, i.e.
     // NegTokenInit & NegTokenTarg
     private static Oid getMechFromSpNegoToken(byte[] token,
@@ -112,59 +108,16 @@ class NativeGSSContext implements GSSContextSpi {
         return mech;
     }
 
-    // Perform the Service permission check
-    @SuppressWarnings("removal")
-    private void doServicePermCheck() throws GSSException {
-        if (System.getSecurityManager() != null) {
-            String action = (isInitiator? "initiate" : "accept");
-            // Need to check Service permission for accessing
-            // initiator cred for SPNEGO during context establishment
-            if (GSSUtil.isSpNegoMech(cStub.getMech()) && isInitiator
-                && !isEstablished) {
-                if (srcName == null) {
-                    // Check by creating default initiator KRB5 cred
-                    GSSCredElement tempCred =
-                        new GSSCredElement(null, lifetime,
-                                           GSSCredential.INITIATE_ONLY,
-                                           GSSLibStub.getInstance(GSSUtil.GSS_KRB5_MECH_OID));
-                    tempCred.dispose();
-                } else {
-                    String tgsName = Krb5Util.getTGSName(srcName);
-                    Krb5Util.checkServicePermission(tgsName, action);
-                }
-            }
-            String targetStr = targetName.getKrbName();
-            Krb5Util.checkServicePermission(targetStr, action);
-            skipServicePermCheck = true;
-        }
-    }
-
-    // Perform the Delegation permission check
-    private void doDelegPermCheck() throws GSSException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            String targetStr = targetName.getKrbName();
-            String tgsStr = Krb5Util.getTGSName(targetName);
-            String krbPrincPair = "\"" + targetStr + "\" \"" +
-                    tgsStr + '\"';
-            SunNativeProvider.debug("Checking DelegationPermission (" +
-                                    krbPrincPair + ")");
-            DelegationPermission perm =
-                new DelegationPermission(krbPrincPair);
-            sm.checkPermission(perm);
-            skipDelegPermCheck = true;
-        }
-    }
-
     private byte[] retrieveToken(InputStream is, int mechTokenLen)
         throws GSSException {
         try {
             byte[] result;
             if (mechTokenLen != -1) {
                 // Need to add back the GSS header for a complete GSS token
-                SunNativeProvider.debug("Precomputed mechToken length: " +
-                                         mechTokenLen);
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("Precomputed mechToken length: " +
+                            mechTokenLen);
+                }
                 GSSHeader gssHeader = new GSSHeader
                     (ObjectIdentifier.of(cStub.getMech().toString()),
                      mechTokenLen);
@@ -182,8 +135,10 @@ class NativeGSSContext implements GSSContextSpi {
                 DerValue dv = new DerValue(is);
                 result = dv.toByteArray();
             }
-            SunNativeProvider.debug("Complete Token length: " +
-                                    result.length);
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("Complete Token length: " +
+                        result.length);
+            }
             return result;
         } catch (IOException ioe) {
             throw new GSSExceptionImpl(GSSException.FAILURE, ioe);
@@ -204,7 +159,6 @@ class NativeGSSContext implements GSSContextSpi {
         lifetime = time;
 
         if (GSSUtil.isKerberosMech(cStub.getMech())) {
-            doServicePermCheck();
             if (cred == null) {
                 disposeCred = cred =
                     new GSSCredElement(null, lifetime,
@@ -224,11 +178,6 @@ class NativeGSSContext implements GSSContextSpi {
         if (cred != null) targetName = cred.getName();
 
         isInitiator = false;
-        // Defer Service permission check for default acceptor cred
-        // to acceptSecContext()
-        if (GSSUtil.isKerberosMech(cStub.getMech()) && targetName != null) {
-            doServicePermCheck();
-        }
 
         // srcName and potentially targetName (when myCred is null)
         // will be set in GSSLibStub.acceptContext(...)
@@ -252,13 +201,6 @@ class NativeGSSContext implements GSSContextSpi {
         isEstablished = (info[3] != 0);
         flags = (int) info[4];
         lifetime = (int) info[5];
-
-        // Do Service Permission check when importing SPNEGO context
-        // just to be safe
-        Oid mech = cStub.getMech();
-        if (GSSUtil.isSpNegoMech(mech) || GSSUtil.isKerberosMech(mech)) {
-            doServicePermCheck();
-        }
     }
 
     public Provider getProvider() {
@@ -273,32 +215,25 @@ class NativeGSSContext implements GSSContextSpi {
             // Ignore the specified input stream on the first call
             if (pContext != 0) {
                 inToken = retrieveToken(is, mechTokenLen);
-                SunNativeProvider.debug("initSecContext=> inToken len=" +
-                    inToken.length);
-            }
-
-            if (!getCredDelegState()) skipDelegPermCheck = true;
-
-            if (GSSUtil.isKerberosMech(cStub.getMech()) && !skipDelegPermCheck) {
-                doDelegPermCheck();
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("initSecContext=> inToken len=" +
+                            inToken.length);
+                }
             }
 
             long pCred = (cred == null? 0 : cred.pCred);
             outToken = cStub.initContext(pCred, targetName.pName,
                                          cb, inToken, this);
-            SunNativeProvider.debug("initSecContext=> outToken len=" +
-                (outToken == null ? 0 : outToken.length));
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("initSecContext=> outToken len=" +
+                        (outToken == null ? 0 : outToken.length));
+            }
 
             // Only inspect the token when the permission check
             // has not been performed
             if (GSSUtil.isSpNegoMech(cStub.getMech()) && outToken != null) {
                 // WORKAROUND for SEAM bug#6287358
                 actualMech = getMechFromSpNegoToken(outToken, true);
-
-                if (GSSUtil.isKerberosMech(actualMech)) {
-                    if (!skipServicePermCheck) doServicePermCheck();
-                    if (!skipDelegPermCheck) doDelegPermCheck();
-                }
             }
 
             if (isEstablished) {
@@ -321,13 +256,17 @@ class NativeGSSContext implements GSSContextSpi {
         byte[] outToken = null;
         if ((!isEstablished) && (!isInitiator)) {
             byte[] inToken = retrieveToken(is, mechTokenLen);
-            SunNativeProvider.debug("acceptSecContext=> inToken len=" +
-                                    inToken.length);
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("acceptSecContext=> inToken len=" +
+                        inToken.length);
+            }
             long pCred = (cred == null? 0 : cred.pCred);
             outToken = cStub.acceptContext(pCred, cb, inToken, this);
             disposeDelegatedCred = delegatedCred;
-            SunNativeProvider.debug("acceptSecContext=> outToken len=" +
-                                    (outToken == null? 0 : outToken.length));
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("acceptSecContext=> outToken len=" +
+                        (outToken == null ? 0 : outToken.length));
+            }
 
             if (targetName == null) {
                 targetName = new GSSNameElement
@@ -340,16 +279,6 @@ class NativeGSSContext implements GSSContextSpi {
                 disposeCred = cred =
                     new GSSCredElement(targetName, lifetime,
                             GSSCredential.ACCEPT_ONLY, cStub);
-            }
-
-            // Only inspect token when the permission check has not
-            // been performed
-            if (GSSUtil.isSpNegoMech(cStub.getMech()) &&
-                (outToken != null) && !skipServicePermCheck) {
-                if (GSSUtil.isKerberosMech(getMechFromSpNegoToken
-                                           (outToken, false))) {
-                    doServicePermCheck();
-                }
             }
         }
         return outToken;

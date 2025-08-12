@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciKlass.hpp"
@@ -36,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.hpp"
@@ -59,6 +59,8 @@ static bool must_be_in_vm() {
 }
 #endif //ASSERT
 
+bool Dependencies::_verify_in_progress = false;  // don't -Xlog:dependencies
+
 void Dependencies::initialize(ciEnv* env) {
   Arena* arena = env->arena();
   _oop_recorder = env->oop_recorder();
@@ -69,7 +71,7 @@ void Dependencies::initialize(ciEnv* env) {
 #endif
   DEBUG_ONLY(_deps[end_marker] = nullptr);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
-    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
+    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, nullptr);
   }
   _content_bytes = nullptr;
   _size_in_bytes = (size_t)-1;
@@ -110,11 +112,7 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm)
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  if (UseVtableBasedCHA) {
-    assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
-  } else {
-    assert_common_2(unique_concrete_method_2, ctxk, uniqm);
-  }
+  assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
 }
 
 void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
@@ -385,9 +383,7 @@ void Dependencies::copy_to(nmethod* nm) {
   address beg = nm->dependencies_begin();
   address end = nm->dependencies_end();
   guarantee(end - beg >= (ptrdiff_t) size_in_bytes(), "bad sizing");
-  Copy::disjoint_words((HeapWord*) content_bytes(),
-                       (HeapWord*) beg,
-                       size_in_bytes() / sizeof(HeapWord));
+  (void)memcpy(beg, content_bytes(), size_in_bytes());
   assert(size_in_bytes() % sizeof(HeapWord) == 0, "copy by words");
 }
 
@@ -638,7 +634,7 @@ Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, cha
           // resizing in the context of an inner resource mark.
           char* buffer = NEW_RESOURCE_ARRAY(char, O_BUFLEN);
           stringStream st(buffer, O_BUFLEN);
-          deps.print_dependency(witness, true, &st);
+          deps.print_dependency(&st, witness, true);
           *failure_detail = st.as_string();
         }
       }
@@ -866,7 +862,7 @@ void Dependencies::DepStream::log_dependency(Klass* witness) {
   guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");
 }
 
-void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose, outputStream* st) {
+void Dependencies::DepStream::print_dependency(outputStream* st, Klass* witness, bool verbose) {
   ResourceMark rm;
   int nargs = argument_count();
   GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
@@ -896,7 +892,7 @@ void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose, out
 void Dependencies::DepStream::initial_asserts(size_t byte_limit) {
   assert(must_be_in_vm(), "raw oops here");
   _byte_limit = byte_limit;
-  _type       = (DepType)(end_marker-1);  // defeat "already at end" assert
+  _type       = undefined_dependency;  // defeat "already at end" assert
   assert((_code!=nullptr) + (_deps!=nullptr) == 1, "one or t'other");
 }
 #endif //ASSERT
@@ -1166,7 +1162,7 @@ Klass* AbstractClassHierarchyWalker::find_witness(InstanceKlass* context_type, K
       return nullptr; // no implementors
     } else if (nof_impls == 1) { // unique implementor
       assert(context_type != context_type->implementor(), "not unique");
-      context_type = InstanceKlass::cast(context_type->implementor());
+      context_type = context_type->implementor();
     } else { // nof_impls >= 2
       // Avoid this case: *I.m > { A.m, C }; B.m > C
       // Here, I.m has 2 concrete implementations, but m appears unique
@@ -1473,7 +1469,6 @@ class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
   // Optionally, a method which was previously determined as a unique target (uniqm) is added as a participant
   // to enable dependency spot-checking and speed up the search.
   LinkedConcreteMethodFinder(InstanceKlass* resolved_klass, Method* resolved_method, Method* uniqm = nullptr) : AbstractClassHierarchyWalker(nullptr) {
-    assert(UseVtableBasedCHA, "required");
     assert(resolved_klass->is_linked(), "required");
     assert(resolved_method->method_holder()->is_linked(), "required");
     assert(!resolved_method->can_be_statically_bound(), "no vtable index available");
@@ -1597,10 +1592,9 @@ bool Dependencies::verify_method_context(InstanceKlass* ctxk, Method* m) {
     return true;  // Must punt the assertion to true.
   }
   Method* lm = ctxk->lookup_method(m->name(), m->signature());
-  if (lm == nullptr && ctxk->is_instance_klass()) {
+  if (lm == nullptr) {
     // It might be an interface method
-    lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                        m->signature());
+    lm = ctxk->lookup_method_in_ordered_interfaces(m->name(), m->signature());
   }
   if (lm == m) {
     // Method m is inherited into ctxk.
@@ -1764,7 +1758,7 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
     // Make sure the dependency mechanism will pass this discovery:
     if (VerifyDependencies) {
       // Turn off dependency tracing while actually testing deps.
-      FlagSetting fs(TraceDependencies, false);
+      FlagSetting fs(_verify_in_progress, true);
       if (!Dependencies::is_concrete_klass(ctxk)) {
         guarantee(nullptr == (void *)
                   check_abstract_with_unique_concrete_subtype(ctxk, conck),
@@ -1948,7 +1942,6 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
                                                   Klass* resolved_klass,
                                                   Method* resolved_method,
                                                   KlassDepChange* changes) {
-  assert(UseVtableBasedCHA, "required");
   assert(!ctxk->is_interface() || ctxk == resolved_klass, "sanity");
   assert(!resolved_method->can_be_statically_bound() || resolved_method == uniqm, "sanity");
   assert(resolved_klass->is_subtype_of(resolved_method->method_holder()), "sanity");
@@ -2059,9 +2052,12 @@ Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_hand
 }
 
 void Dependencies::DepStream::trace_and_log_witness(Klass* witness) {
+  if (_verify_in_progress) return;  // don't log
   if (witness != nullptr) {
-    if (TraceDependencies) {
-      print_dependency(witness, /*verbose=*/ true);
+    LogTarget(Debug, dependencies) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(&lt);
+      print_dependency(&ls, witness, /*verbose=*/ true);
     }
     // The following is a no-op unless logging is enabled:
     log_dependency(witness);
@@ -2126,7 +2122,7 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
   Dependencies::check_valid_dependency_type(type());
 
   if (changes != nullptr) {
-    if (UseVtableBasedCHA && changes->is_klass_init_change()) {
+    if (changes->is_klass_init_change()) {
       return check_klass_init_dependency(changes->as_klass_init_change());
     } else {
       return check_new_klass_dependency(changes->as_new_klass_change());
@@ -2171,26 +2167,28 @@ Klass* Dependencies::DepStream::spot_check_dependency_at(DepChange& changes) {
 }
 
 
-void DepChange::print() {
+void DepChange::print() { print_on(tty); }
+
+void DepChange::print_on(outputStream* st) {
   int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
-    Klass* k = str.klass();
+    InstanceKlass* k = str.klass();
     switch (str.change_type()) {
     case Change_new_type:
-      tty->print_cr("  dependee = %s", k->external_name());
+      st->print_cr("  dependee = %s", k->external_name());
       break;
     case Change_new_sub:
       if (!WizardMode) {
         ++nsup;
       } else {
-        tty->print_cr("  context super = %s", k->external_name());
+        st->print_cr("  context super = %s", k->external_name());
       }
       break;
     case Change_new_impl:
       if (!WizardMode) {
         ++nint;
       } else {
-        tty->print_cr("  context interface = %s", k->external_name());
+        st->print_cr("  context interface = %s", k->external_name());
       }
       break;
     default:
@@ -2198,12 +2196,12 @@ void DepChange::print() {
     }
   }
   if (nsup + nint != 0) {
-    tty->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
+    st->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
   }
 }
 
 void DepChange::ContextStream::start() {
-  Klass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (Klass*) nullptr);
+  InstanceKlass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (InstanceKlass*) nullptr);
   _change_type = (type == nullptr ? NO_CHANGE : Start_Klass);
   _klass = type;
   _ti_base = nullptr;
@@ -2214,7 +2212,7 @@ void DepChange::ContextStream::start() {
 bool DepChange::ContextStream::next() {
   switch (_change_type) {
   case Start_Klass:             // initial state; _klass is the new type
-    _ti_base = InstanceKlass::cast(_klass)->transitive_interfaces();
+    _ti_base = _klass->transitive_interfaces();
     _ti_index = 0;
     _change_type = Change_new_type;
     return true;
@@ -2224,7 +2222,7 @@ bool DepChange::ContextStream::next() {
   case Change_new_sub:
     // 6598190: brackets workaround Sun Studio C++ compiler bug 6629277
     {
-      _klass = _klass->super();
+      _klass = _klass->java_super();
       if (_klass != nullptr) {
         return true;
       }
@@ -2254,9 +2252,9 @@ void KlassDepChange::initialize() {
   // Mark all dependee and all its superclasses
   // Mark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    assert(!InstanceKlass::cast(d)->is_marked_dependent(), "checking");
-    InstanceKlass::cast(d)->set_is_marked_dependent(true);
+    InstanceKlass* d = str.klass();
+    assert(!d->is_marked_dependent(), "checking");
+    d->set_is_marked_dependent(true);
   }
 }
 
@@ -2264,8 +2262,8 @@ KlassDepChange::~KlassDepChange() {
   // Unmark all dependee and all its superclasses
   // Unmark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    InstanceKlass::cast(d)->set_is_marked_dependent(false);
+    InstanceKlass* d = str.klass();
+    d->set_is_marked_dependent(false);
   }
 }
 

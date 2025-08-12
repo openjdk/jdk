@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.services.PreProcessor;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.ColorFilter;
@@ -33,9 +34,11 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.graph.MatcherSelector;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
+import com.sun.hotspot.igv.view.actions.CutEdgesAction;
 import com.sun.hotspot.igv.view.actions.GlobalSelectionAction;
 import java.awt.Color;
 import java.util.*;
@@ -52,62 +55,119 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
-    private final FilterChain filterChain;
+    private Set<Integer> selectedLiveRanges;
+    private FilterChain filterChain;
+    private final FilterChain customFilterChain;
+    private final FilterChain filtersOrder;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
-    private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
-    private final ChangedEvent<DiagramViewModel> graphChangedEvent;
-    private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent;
-    private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
+    private final ChangedEvent<DiagramViewModel> diagramChangedEvent = new ChangedEvent<>(this);
+    private final ChangedEvent<DiagramViewModel> graphChangedEvent = new ChangedEvent<>(this);
+    // This event signals a change in the selection of nodes and/or live ranges.
+    private final ChangedEvent<DiagramViewModel> selectedElementsChangedEvent = new ChangedEvent<>(this);
+    private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
+    private boolean showFreeInteractive;
+    private boolean showStableSea;
     private boolean showSea;
     private boolean showBlocks;
     private boolean showCFG;
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
-    private boolean hideDuplicates;
+    private boolean showLiveRanges;
     private static boolean globalSelection = false;
+    private static boolean cutEdges = false;
 
-    private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
+    private final ChangedListener<FilterChain> filterChainChangedListener = changedFilterChain -> {
+        assert filterChain == changedFilterChain;
+        rebuildDiagram();
+    };
 
     public Group getGroup() {
         return group;
+    }
+
+    public boolean getCutEdges() {
+        return cutEdges;
+    }
+
+    public void setCutEdges(boolean enable, boolean fire) {
+        boolean prevEnable = cutEdges;
+        cutEdges = enable;
+        if (fire && prevEnable != enable) {
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getGlobalSelection() {
         return globalSelection;
     }
 
-    public void setGlobalSelection(boolean enable) {
+    public void setGlobalSelection(boolean enable, boolean fire) {
         globalSelection = enable;
-        diagramChangedEvent.fire();
+        if (fire && enable) {
+            diagramChangedEvent.fire();
+        }
+    }
+
+    public boolean getShowFreeInteractive() {
+        return showFreeInteractive;
+    }
+
+    public void setShowFreeInteractive(boolean enable) {
+        showFreeInteractive = enable;
+        if (enable) {
+            selectedLiveRanges.clear();
+            diagramChangedEvent.fire();
+        }
+    }
+
+    public boolean getShowStableSea() {
+        return showStableSea;
+    }
+
+    public void setShowStableSea(boolean enable) {
+        showStableSea = enable;
+        if (enable) {
+            selectedLiveRanges.clear();
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getShowSea() {
         return showSea;
     }
 
-    public void setShowSea(boolean b) {
-        showSea = b;
-        diagramChangedEvent.fire();
+    public void setShowSea(boolean enable) {
+        showSea = enable;
+        if (enable) {
+            selectedLiveRanges.clear();
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getShowBlocks() {
         return showBlocks;
     }
 
-    public void setShowBlocks(boolean b) {
-        showBlocks = b;
-        diagramChangedEvent.fire();
+    public void setShowBlocks(boolean enable) {
+        showBlocks = enable;
+        if (enable) {
+            selectedLiveRanges.clear();
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getShowCFG() {
         return showCFG;
     }
 
-    public void setShowCFG(boolean b) {
-        showCFG = b;
-        diagramChangedEvent.fire();
+    public void setShowCFG(boolean enable) {
+        showCFG = enable;
+        diagram.setCFG(enable);
+        if (enable) {
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getShowNodeHull() {
@@ -128,52 +188,20 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         diagramChangedEvent.fire();
     }
 
-    public void setHideDuplicates(boolean hideDuplicates) {
-        this.hideDuplicates = hideDuplicates;
-        InputGraph currentGraph = getFirstGraph();
-        if (hideDuplicates) {
-            // Back up to the unhidden equivalent graph
-            int index = graphs.indexOf(currentGraph);
-            while (graphs.get(index).getProperties().get("_isDuplicate") != null) {
-                index--;
-            }
-            currentGraph = graphs.get(index);
-        }
-        filterGraphs();
-        selectGraph(currentGraph);
+    public boolean getShowLiveRanges() {
+        return showLiveRanges;
     }
 
-    public boolean getHideDuplicates() {
-        return hideDuplicates;
+    public void setShowLiveRanges(boolean b) {
+        showLiveRanges = b;
+        if (!showLiveRanges) {
+            selectedLiveRanges.clear();
+        }
+        diagramChangedEvent.fire();
     }
 
-    public DiagramViewModel(InputGraph graph) {
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider == null) {
-            filterChain = new FilterChain();
-        } else {
-            filterChain = provider.getFilterChain();
-        }
-        globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
-        showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
-        showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
-        showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
-        showNodeHull = true;
-        showEmptyBlocks = true;
-        group = graph.getGroup();
-        hiddenNodes = new HashSet<>();
-        selectedNodes = new HashSet<>();
-
-        diagramChangedEvent = new ChangedEvent<>(this);
-        graphChangedEvent = new ChangedEvent<>(this);
-        selectedNodesChangedEvent = new ChangedEvent<>(this);
-        hiddenNodesChangedEvent = new ChangedEvent<>(this);
-
-        super.getChangedEvent().addListener(this);
-
-        // If the group has been emptied, all corresponding graph views
-        // will be closed, so do nothing.
-        ChangedListener<Group> groupContentChangedListener = g -> {
+    private void initGroup() {
+        group.getChangedEvent().addListener(g -> {
             assert g == group;
             if (group.getGraphs().isEmpty()) {
                 // If the group has been emptied, all corresponding graph views
@@ -182,12 +210,67 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             }
             filterGraphs();
             setSelectedNodes(selectedNodes);
-        };
-
-        group.getChangedEvent().addListener(groupContentChangedListener);
-        filterChain.getChangedEvent().addListener(filterChainChangedListener);
-
+        });
         filterGraphs();
+        super.getChangedEvent().addListener(this);
+    }
+
+    public DiagramViewModel(DiagramViewModel model) {
+        super(model);
+        globalSelection = false;
+        cutEdges = false;
+        group = model.getGroup();
+        initGroup();
+        graphs = new ArrayList<>(model.graphs);
+
+        // initialize the filters from a model
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        assert provider != null;
+        customFilterChain = provider.createNewCustomFilterChain();
+        customFilterChain.clearFilters();
+        customFilterChain.addFilters(model.getCustomFilterChain().getFilters());
+        setFilterChain(model.getFilterChain());
+        filtersOrder = provider.getAllFiltersOrdered();
+
+        globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
+        showCFG = model.getShowCFG();
+        showSea = model.getShowSea();
+        showBlocks = model.getShowBlocks();
+        showNodeHull = model.getShowNodeHull();
+        showEmptyBlocks = model.getShowEmptyBlocks();
+        showLiveRanges = model.getShowLiveRanges();
+
+        hiddenNodes = new HashSet<>(model.getHiddenNodes());
+        selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
+        changed(this);
+    }
+
+    public DiagramViewModel(InputGraph graph) {
+        group = graph.getGroup();
+        initGroup();
+
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        assert provider != null;
+        customFilterChain = provider.createNewCustomFilterChain();
+        setFilterChain(provider.getFilterChain());
+        filtersOrder = provider.getAllFiltersOrdered();
+
+        globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
+        showFreeInteractive = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.INTERACTIVE_FREE_NODES;
+        showStableSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.STABLE_SEA_OF_NODES;
+        showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
+        showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
+        showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
+        showNodeHull = true;
+        showEmptyBlocks = true;
+        showLiveRanges = true;
+
+        hiddenNodes = new HashSet<>();
+        selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
         selectGraph(graph);
     }
 
@@ -199,8 +282,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return graphChangedEvent;
     }
 
-    public ChangedEvent<DiagramViewModel> getSelectedNodesChangedEvent() {
-        return selectedNodesChangedEvent;
+    public ChangedEvent<DiagramViewModel> getSelectedElementsChangedEvent() {
+        return selectedElementsChangedEvent;
     }
 
     public ChangedEvent<DiagramViewModel> getHiddenNodesChangedEvent() {
@@ -221,7 +304,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         for (String ignored : getPositions()) {
             colors.add(Color.black);
         }
-        if (nodes.size() >= 1) {
+        if (!nodes.isEmpty()) {
             for (Integer id : nodes) {
                 if (id < 0) {
                     id = -id;
@@ -253,7 +336,16 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             }
         }
         setColors(colors);
-        selectedNodesChangedEvent.fire();
+        selectedElementsChangedEvent.fire();
+    }
+
+    public Set<Integer> getSelectedLiveRanges() {
+        return selectedLiveRanges;
+    }
+
+    public void setSelectedLiveRanges(Set<Integer> liveRanges) {
+        selectedLiveRanges = liveRanges;
+        selectedElementsChangedEvent.fire();
     }
 
     public void showFigures(Collection<Figure> figures) {
@@ -278,10 +370,28 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return result;
     }
 
+    public Set<LiveRangeSegment> getSelectedLiveRangeSegments() {
+        Set<LiveRangeSegment> result = new HashSet<>();
+        for (LiveRangeSegment segment : diagram.getLiveRangeSegments()) {
+            if (getSelectedLiveRanges().contains(segment.getLiveRange().getId())) {
+                result.add(segment);
+            }
+        }
+        return result;
+    }
+
     public void showOnly(final Set<Integer> nodes) {
         final HashSet<Integer> allNodes = new HashSet<>(getGroup().getAllNodes());
         allNodes.removeAll(nodes);
         setHiddenNodes(allNodes);
+
+
+    }
+
+    public Set<Integer> getVisibleNodes() {
+        final Set<Integer> visibleNodes = new HashSet<>(getGraph().getNodesAsSet());
+        visibleNodes.removeAll(hiddenNodes);
+        return visibleNodes;
     }
 
     public void setHiddenNodes(Set<Integer> nodes) {
@@ -290,13 +400,37 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent.fire();
     }
 
-    public FilterChain getSequenceFilterChain() {
-        return filterChain;
+    private void setFilterChain(FilterChain newFC) {
+        assert newFC != null && customFilterChain != null;
+        if (filterChain != null) {
+            filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+        }
+        if (newFC.getName().equals(customFilterChain.getName())) {
+            filterChain = customFilterChain;
+        } else {
+            filterChain = newFC;
+        }
+        filterChain.getChangedEvent().addListener(filterChainChangedListener);
     }
 
-    private void filterChanged() {
-        rebuildDiagram();
-        diagramChangedEvent.fire();
+    void activateModel() {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        if (provider != null) {
+            provider.setCustomFilterChain(customFilterChain);
+            provider.selectFilterChain(filterChain);
+
+            // link the Filters window with this model
+            provider.setFilterChainSelectionChangedListener(l -> {
+                // this function is called when user selects a different filter profile for this model
+                setFilterChain(provider.getFilterChain());
+                rebuildDiagram();
+            });
+        }
+    }
+
+    void close() {
+        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+        getChangedEvent().fire();
     }
 
     private void rebuildDiagram() {
@@ -308,11 +442,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             s.schedule(graph);
             graph.ensureNodesInBlocks();
         }
+        PreProcessor p = Lookup.getDefault().lookup(PreProcessor.class);
+        p.preProcess(graph);
         diagram = new Diagram(graph,
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-        getFilterChain().apply(diagram, getSequenceFilterChain());
+        diagram.setCFG(getShowCFG());
+        filterChain.applyInOrder(diagram, filtersOrder);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
             f.addRule(stateColorRule("same",    Color.white));
@@ -321,10 +458,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.addRule(stateColorRule("deleted", Color.red));
             f.apply(diagram);
         }
+        diagramChangedEvent.fire();
     }
 
     public FilterChain getFilterChain() {
         return filterChain;
+    }
+
+    public FilterChain getCustomFilterChain() {
+        return customFilterChain;
     }
 
     /*
@@ -334,11 +476,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         ArrayList<InputGraph> result = new ArrayList<>();
         List<String> positions = new ArrayList<>();
         for (InputGraph graph : group.getGraphs()) {
-            String duplicate = graph.getProperties().get("_isDuplicate");
-            if (duplicate == null || !hideDuplicates) {
-                result.add(graph);
-                positions.add(graph.getName());
-            }
+            result.add(graph);
+            positions.add(graph.getName());
         }
         this.graphs = result;
         setPositions(positions);
@@ -372,22 +511,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void selectGraph(InputGraph graph) {
         int index = graphs.indexOf(graph);
-        if (index == -1 && hideDuplicates) {
-            // A graph was selected that's currently hidden, so unhide and select it.
-            setHideDuplicates(false);
-            index = graphs.indexOf(graph);
-        }
         assert index != -1;
         setPositions(index, index);
     }
 
     public void selectDiffGraph(InputGraph graph) {
         int index = graphs.indexOf(graph);
-        if (index == -1 && hideDuplicates) {
-            // A graph was selected that's currently hidden, so unhide and select it.
-            setHideDuplicates(false);
-            index = graphs.indexOf(graph);
-        }
         assert index != -1;
         int firstIndex = getFirstPosition();
         int secondIndex = getSecondPosition();
@@ -403,7 +532,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public Diagram getDiagram() {
-        diagram.setCFG(getShowCFG());
         return diagram;
     }
 
@@ -429,11 +557,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     void addTitleCallback(Consumer<InputGraph> titleCallback) {
         titleChangedListener = titleCallback::accept;
-    }
-
-    void close() {
-        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        getChangedEvent().fire();
     }
 
     Iterable<InputGraph> getGraphsForward() {

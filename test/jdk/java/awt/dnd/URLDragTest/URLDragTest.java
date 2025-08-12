@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,8 @@
  * questions.
  */
 
-/*
-  test
-  @bug 8031964
-  @summary Dragging images from the browser does not work
-  @author Petr Pchelko : area=dnd
-  @library ../../regtesthelpers
-  @build Sysout
-  @run applet/manual=yesno URLDragTest.html
-*/
-
-import test.java.awt.regtesthelpers.Sysout;
-
-import java.applet.Applet;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Frame;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
@@ -42,13 +30,41 @@ import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 
-public class URLDragTest extends Applet {
+/*
+ * @test
+ * @bug 8031964
+ * @summary Dragging images from the browser does not work.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual URLDragTest
+*/
 
+public class URLDragTest {
+    private static final String INSTRUCTIONS = """
+            1) When the test starts, open any browser.
+            2) Drag any image from the browser page onto the RED window.
+            3) When the image is dropped you should see the list of available
+               DataFlavors in the log area below the instruction window.
+            4) If you see application/x-java-url and text/uri-list flavors in
+               the logs then please press PASS, else FAIL.
+            """;
 
-    @Override
-    public void init() {
-        setBackground(Color.red);
-        setDropTarget(new DropTarget(this,
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(40)
+                .logArea(8)
+                .testUI(URLDragTest::createUI)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static Frame createUI() {
+        Frame frame = new Frame("Browser Image DnD Test");
+        frame.setBackground(Color.RED);
+        frame.setDropTarget(new DropTarget(frame,
                 DnDConstants.ACTION_COPY,
                 new DropTargetAdapter() {
                     @Override
@@ -67,22 +83,12 @@ public class URLDragTest extends Applet {
                         dtde.getCurrentDataFlavorsAsList()
                                 .stream()
                                 .map(DataFlavor::toString)
-                                .forEach(Sysout::println);
+                                .forEach(PassFailJFrame::log);
                     }
                 }));
 
-        String[] instructions = {
-                "1) Open the browser.",
-                "2) Drag any image from the browser page to the red square",
-                "3) When the image is dropped you should se the list of available DataFlavors",
-                "4) If you see application/x-java-url and text/uri-list flavors - test PASSED",
-                "5) Otherwise the test is FAILED"};
-        Sysout.createDialogWithInstructions(instructions);
-    }
-
-    @Override
-    public void start() {
-        setSize(200, 200);
-        setVisible(true);
+        frame.setSize(400, 200);
+        frame.setAlwaysOnTop(true);
+        return frame;
     }
 }

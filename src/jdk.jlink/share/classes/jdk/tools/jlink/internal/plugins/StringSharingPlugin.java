@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,14 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
-import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
-import com.sun.tools.classfile.Signature_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -63,6 +51,8 @@ import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 
+import static java.lang.classfile.constantpool.PoolEntry.*;
+
 /**
  *
  * A Plugin that stores the image classes constant pool UTF_8 entries into the
@@ -80,10 +70,10 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
         private static final class DescriptorsScanner {
 
-            private final ClassFile cf;
+            private final ClassModel cm;
 
-            private DescriptorsScanner(ClassFile cf) {
-                this.cf = cf;
+            private DescriptorsScanner(ClassModel cm) {
+                this.cm = cm;
             }
 
             private Set<Integer> scan() throws Exception {
@@ -94,132 +84,110 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
                 scanMethods(utf8Descriptors);
 
-                scanAttributes(cf.attributes, utf8Descriptors);
+                scanAttributes(cm.attributes(), utf8Descriptors);
 
                 return utf8Descriptors;
             }
 
-            private void scanAttributes(Attributes attributes,
+            private void scanAttributes(List<Attribute<?>> attributes,
                     Set<Integer> utf8Descriptors) throws Exception {
-                for (Attribute a : attributes) {
-                    if (a instanceof Signature_attribute) {
-                        Signature_attribute sig = (Signature_attribute) a;
-                        utf8Descriptors.add(sig.signature_index);
-                    } else if (a instanceof RuntimeVisibleAnnotations_attribute) {
-                        RuntimeVisibleAnnotations_attribute an
-                                = (RuntimeVisibleAnnotations_attribute) a;
-                        for (Annotation annotation : an.annotations) {
-                            scanAnnotation(annotation, utf8Descriptors);
+                for (Attribute<?> a : attributes) {
+                    switch (a) {
+                        case SignatureAttribute sig -> {
+                            utf8Descriptors.add(sig.signature().index());
                         }
-                    } else if (a instanceof RuntimeInvisibleAnnotations_attribute) {
-                        RuntimeInvisibleAnnotations_attribute an
-                                = (RuntimeInvisibleAnnotations_attribute) a;
-                        for (Annotation annotation : an.annotations) {
-                            scanAnnotation(annotation, utf8Descriptors);
+                        case RuntimeVisibleAnnotationsAttribute an -> {
+                            for (Annotation annotation : an.annotations())
+                                scanAnnotation(annotation, utf8Descriptors);
                         }
-                    } else if (a instanceof RuntimeParameterAnnotations_attribute) {
-                        RuntimeParameterAnnotations_attribute rap
-                                = (RuntimeParameterAnnotations_attribute) a;
-                        for (Annotation[] arr : rap.parameter_annotations) {
-                            for (Annotation an : arr) {
-                                scanAnnotation(an, utf8Descriptors);
+                        case RuntimeInvisibleAnnotationsAttribute an -> {
+                            for (Annotation annotation : an.annotations())
+                                scanAnnotation(annotation, utf8Descriptors);
+                        }
+                        case RuntimeVisibleParameterAnnotationsAttribute rap -> {
+                            for (List<Annotation> arr : rap.parameterAnnotations()) {
+                                for (Annotation an : arr)
+                                    scanAnnotation(an, utf8Descriptors);
                             }
                         }
-                    } else if (a instanceof LocalVariableTable_attribute) {
-                        LocalVariableTable_attribute lvt
-                                = (LocalVariableTable_attribute) a;
-                        for (LocalVariableTable_attribute.Entry entry
-                                : lvt.local_variable_table) {
-                            utf8Descriptors.add(entry.descriptor_index);
+                        case RuntimeInvisibleParameterAnnotationsAttribute rap -> {
+                            for (List<Annotation> arr : rap.parameterAnnotations()) {
+                                for (Annotation an : arr)
+                                    scanAnnotation(an, utf8Descriptors);
+                            }
                         }
-                    } else if (a instanceof LocalVariableTypeTable_attribute) {
-                        LocalVariableTypeTable_attribute lvt
-                                = (LocalVariableTypeTable_attribute) a;
-                        for (LocalVariableTypeTable_attribute.Entry entry
-                                : lvt.local_variable_table) {
-                            utf8Descriptors.add(entry.signature_index);
+                        case LocalVariableTableAttribute lvt -> {
+                            for (LocalVariableInfo entry: lvt.localVariables())
+                                utf8Descriptors.add(entry.name().index());
                         }
+                        case LocalVariableTypeTableAttribute lvt -> {
+                            for (LocalVariableTypeInfo entry: lvt.localVariableTypes())
+                                utf8Descriptors.add(entry.signature().index());
+                        }
+                        default -> {}
                     }
                 }
             }
 
             private void scanAnnotation(Annotation annotation,
                     Set<Integer> utf8Descriptors) throws Exception {
-                utf8Descriptors.add(annotation.type_index);
-                for (Annotation.element_value_pair evp : annotation.element_value_pairs) {
-                    utf8Descriptors.add(evp.element_name_index);
-                    scanElementValue(evp.value, utf8Descriptors);
+                utf8Descriptors.add(annotation.className().index());
+                for (AnnotationElement evp : annotation.elements()) {
+                    utf8Descriptors.add(evp.name().index());
+                    scanElementValue(evp.value(), utf8Descriptors);
                 }
             }
 
-            private void scanElementValue(Annotation.element_value value,
+            private void scanElementValue(AnnotationValue value,
                     Set<Integer> utf8Descriptors) throws Exception {
-                if (value instanceof Annotation.Enum_element_value) {
-                    Annotation.Enum_element_value eev
-                            = (Annotation.Enum_element_value) value;
-                    utf8Descriptors.add(eev.type_name_index);
-                }
-                if (value instanceof Annotation.Class_element_value) {
-                    Annotation.Class_element_value eev
-                            = (Annotation.Class_element_value) value;
-                    utf8Descriptors.add(eev.class_info_index);
-                }
-                if (value instanceof Annotation.Annotation_element_value) {
-                    Annotation.Annotation_element_value aev
-                            = (Annotation.Annotation_element_value) value;
-                    scanAnnotation(aev.annotation_value, utf8Descriptors);
-                }
-                if (value instanceof Annotation.Array_element_value) {
-                    Annotation.Array_element_value aev
-                            = (Annotation.Array_element_value) value;
-                    for (Annotation.element_value v : aev.values) {
-                        scanElementValue(v, utf8Descriptors);
+                switch (value) {
+                    case AnnotationValue.OfEnum eev ->
+                        utf8Descriptors.add(eev.className().index());
+                    case AnnotationValue.OfClass eev ->
+                        utf8Descriptors.add(eev.className().index());
+                    case AnnotationValue.OfAnnotation aev ->
+                        scanAnnotation(aev.annotation(), utf8Descriptors);
+                    case AnnotationValue.OfArray aev -> {
+                        for (AnnotationValue v : aev.values())
+                            scanElementValue(v, utf8Descriptors);
                     }
+                    default -> {}
                 }
             }
 
             private void scanFields(Set<Integer> utf8Descriptors)
                     throws Exception {
-                for (Field field : cf.fields) {
-                    int descriptorIndex = field.descriptor.index;
+                for (FieldModel field : cm.fields()) {
+                    int descriptorIndex = field.fieldType().index();
                     utf8Descriptors.add(descriptorIndex);
-                    scanAttributes(field.attributes, utf8Descriptors);
+                    scanAttributes(field.attributes(), utf8Descriptors);
                 }
 
             }
 
             private void scanMethods(Set<Integer> utf8Descriptors)
                     throws Exception {
-                for (Method m : cf.methods) {
-                    int descriptorIndex = m.descriptor.index;
+                for (MethodModel m : cm.methods()) {
+                    int descriptorIndex = m.methodType().index();
                     utf8Descriptors.add(descriptorIndex);
-                    scanAttributes(m.attributes, utf8Descriptors);
+                    scanAttributes(m.attributes(), utf8Descriptors);
                 }
             }
 
             private void scanConstantPool(Set<Integer> utf8Descriptors)
                     throws Exception {
-                for (int i = 1; i < cf.constant_pool.size(); i++) {
-                    try {
-                        ConstantPool.CPInfo info = cf.constant_pool.get(i);
-                        if (info instanceof ConstantPool.CONSTANT_NameAndType_info) {
-                            ConstantPool.CONSTANT_NameAndType_info nameAndType
-                                    = (ConstantPool.CONSTANT_NameAndType_info) info;
-                            utf8Descriptors.add(nameAndType.type_index);
+                try {
+                    for (PoolEntry info : cm.constantPool()) {
+                        switch (info) {
+                            case NameAndTypeEntry nameAndType ->
+                                utf8Descriptors.add(nameAndType.type().index());
+                            case MethodTypeEntry mt ->
+                                utf8Descriptors.add(mt.descriptor().index());
+                            default -> {}
                         }
-                        if (info instanceof ConstantPool.CONSTANT_MethodType_info) {
-                            ConstantPool.CONSTANT_MethodType_info mt
-                                    = (ConstantPool.CONSTANT_MethodType_info) info;
-                            utf8Descriptors.add(mt.descriptor_index);
-                        }
-
-                        if (info instanceof ConstantPool.CONSTANT_Double_info
-                                || info instanceof ConstantPool.CONSTANT_Long_info) {
-                            i++;
-                        }
-                    } catch (ConstantPool.InvalidIndex ex) {
-                        throw new IOException(ex);
                     }
+                } catch (ConstantPoolException ex) {
+                    throw new IOException(ex);
                 }
             }
         }
@@ -227,13 +195,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
         public byte[] transform(ResourcePoolEntry resource, ResourcePoolBuilder out,
                 StringTable strings) throws IOException, Exception {
             byte[] content = resource.contentBytes();
-            ClassFile cf;
-            try (InputStream stream = new ByteArrayInputStream(content)) {
-                cf = ClassFile.read(stream);
-            } catch (ConstantPoolException ex) {
-                throw new IOException("Compressor EX " + ex + " for "
-                        + resource.path() + " content.length " + content.length, ex);
-            }
+            ClassModel cf = ClassFile.of().parse(content);
             DescriptorsScanner scanner = new DescriptorsScanner(cf);
             return optimize(resource, out, strings, scanner.scan(), content);
         }
@@ -254,16 +216,14 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                 int tag = stream.readUnsignedByte();
                 byte[] arr;
                 switch (tag) {
-                    case ConstantPool.CONSTANT_Utf8: {
+                    case TAG_UTF8: {
                         String original = stream.readUTF();
                         // 2 cases, a Descriptor or a simple String
                         if (descriptorIndexes.contains(i)) {
                             SignatureParser.ParseResult parseResult
                                     = SignatureParser.parseSignatureDescriptor(original);
                             List<Integer> indexes
-                                    = parseResult.types.stream().map((type) -> {
-                                        return strings.addString(type);
-                                    }).toList();
+                                    = parseResult.types.stream().map(strings::addString).toList();
                             if (!indexes.isEmpty()) {
                                 out.write(StringSharingDecompressor.EXTERNALIZED_STRING_DESCRIPTOR);
                                 int sigIndex = strings.addString(parseResult.formatted);
@@ -280,11 +240,9 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
                         break;
                     }
-
-                    case ConstantPool.CONSTANT_Long:
-                    case ConstantPool.CONSTANT_Double: {
+                    case TAG_LONG:
+                    case TAG_DOUBLE:
                         i++;
-                    }
                     default: {
                         out.write(tag);
                         int size = SIZES[tag];
@@ -349,14 +307,14 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
         in.transformAndCopy((resource) -> {
             ResourcePoolEntry res = resource;
             if (predicate.test(resource.path()) && resource.path().endsWith(".class")) {
-                byte[] compressed = null;
+                byte[] compressed;
                 try {
                     compressed = visit.transform(resource, result, ((ResourcePoolImpl)in).getStringTable());
                 } catch (Exception ex) {
                     throw new PluginException(ex);
                 }
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;

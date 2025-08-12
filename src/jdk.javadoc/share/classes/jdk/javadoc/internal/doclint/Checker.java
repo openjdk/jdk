@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -73,8 +75,10 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SinceTree;
@@ -97,9 +101,16 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
-import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
-import jdk.javadoc.internal.doclint.HtmlTag.ElemKind;
-import static jdk.javadoc.internal.doclint.Messages.Group.*;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlAttr.AttrKind;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTag.ElemKind;
+
+import static jdk.javadoc.internal.doclint.Messages.Group.ACCESSIBILITY;
+import static jdk.javadoc.internal.doclint.Messages.Group.HTML;
+import static jdk.javadoc.internal.doclint.Messages.Group.MISSING;
+import static jdk.javadoc.internal.doclint.Messages.Group.REFERENCE;
+import static jdk.javadoc.internal.doclint.Messages.Group.SYNTAX;
 
 
 /**
@@ -128,12 +139,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     static class TagStackItem {
         final DocTree tree; // typically, but not always, StartElementTree
         final HtmlTag tag;
-        final Set<HtmlTag.Attr> attrs;
+        final Set<HtmlAttr> attrs;
         final Set<Flag> flags;
         TagStackItem(DocTree tree, HtmlTag tag) {
             this.tree = tree;
             this.tag = tag;
-            attrs = EnumSet.noneOf(HtmlTag.Attr.class);
+            attrs = EnumSet.noneOf(HtmlAttr.class);
             flags = EnumSet.noneOf(Flag.class);
         }
         @Override
@@ -148,6 +159,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private int implicitHeadingRank;
     private boolean inIndex;
     private boolean inLink;
+    private boolean inSee;
     private boolean inSummary;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
@@ -190,7 +202,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()
+                        && !isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -308,6 +321,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         env.messages.report(REFERENCE, Kind.WARNING, env.currPath.getLeaf(), code, args);
     }
 
+    @Override
+    public Void scan(DocTreePath path, Void unused) {
+        // interposition point for all scans
+        return super.scan(path, unused);
+    }
+
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree tree, Void ignore) {
         scan(tree.getFirstSentence(), ignore);
@@ -387,7 +406,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
-        final HtmlTag t = HtmlTag.get(treeName);
+        final HtmlTag t = HtmlTag.of(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.elemKind == ElemKind.HTML4) {
@@ -460,7 +479,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
 
                     case IMG -> {
-                        if (!top.attrs.contains(HtmlTag.Attr.ALT))
+                        if (!top.attrs.contains(HtmlAttr.ALT))
                             env.messages.error(ACCESSIBILITY, tree, "dc.no.alt.attr.for.image");
                     }
                 }
@@ -492,15 +511,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     case START_ELEMENT -> {
                         if (top.tag.blockType == HtmlTag.BlockType.INLINE) {
                             Name name = ((StartElementTree) top.tree).getName();
-                            env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
-                                    treeName, name);
+                            // Links may use block display style so issue warning instead of error
+                            if ("a".equalsIgnoreCase(name.toString())) {
+                                env.messages.warning(HTML, tree, "dc.tag.not.allowed.element.default.style",
+                                        treeName, name);
+                            } else {
+                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
+                                        treeName, name);
+                            }
                             return;
                         }
                     }
 
                     case LINK, LINK_PLAIN -> {
                         String name = top.tree.getKind().tagName;
-                        env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
+                        env.messages.warning(HTML, tree, "dc.tag.not.allowed.tag.default.style",
                                 treeName, name);
                         return;
                     }
@@ -574,7 +599,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEndElement(EndElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
-        final HtmlTag t = HtmlTag.get(treeName);
+        final HtmlTag t = HtmlTag.of(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.endKind == HtmlTag.EndKind.NONE) {
@@ -587,7 +612,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     switch (t) {
                         case TABLE -> {
                             if (!top.flags.contains(Flag.TABLE_IS_PRESENTATION)
-                                    && !top.attrs.contains(HtmlTag.Attr.SUMMARY)
+                                    && !top.attrs.contains(HtmlAttr.SUMMARY)
                                     && !top.flags.contains(Flag.TABLE_HAS_CAPTION)) {
                                 env.messages.error(ACCESSIBILITY, tree,
                                         "dc.no.summary.or.caption.for.table");
@@ -653,7 +678,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="HTML attributes">
 
-    @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         // for now, ensure we're in an HTML StartElementTree;
         // in time, we might check uses of attributes in other tree nodes
@@ -664,7 +689,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
-            HtmlTag.Attr attr = currTag.getAttr(name);
+            HtmlAttr attr = currTag.getAttr(name);
             if (attr != null) {
                 boolean first = tagStack.peek().attrs.add(attr);
                 if (!first)
@@ -672,7 +697,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
             // for now, doclint allows all attribute names beginning with "on" as event handler names,
             // without checking the validity or applicability of the name
-            if (!name.toString().startsWith("on")) {
+            // custom "data-*" attributes are also accepted
+            var attrName = name.toString();
+            if (!attrName.startsWith("on") && !attrName.startsWith("data-")) {
                 AttrKind k = currTag.getAttrKind(name);
                 switch (k) {
                     case OK -> { }
@@ -738,19 +765,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1)) {
-                                    env.messages.error(HTML, tree, "dc.attr.table.border.not.valid", attr);
+                                    env.messages.error(HTML, tree, "dc.attr.table.border.not.valid",
+                                            (v == null ? tree : v));
                                 }
                             } catch (NumberFormatException ex) {
-                                env.messages.error(HTML, tree, "dc.attr.table.border.not.number", attr);
+                                env.messages.error(HTML, tree, "dc.attr.table.border.not.number", v);
                             }
                         } else if (currTag == HtmlTag.IMG) {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 0)) {
-                                    env.messages.error(HTML, tree, "dc.attr.img.border.not.valid", attr);
+                                    env.messages.error(HTML, tree, "dc.attr.img.border.not.valid",
+                                            (v == null ? tree : v));
                                 }
                             } catch (NumberFormatException ex) {
-                                env.messages.error(HTML, tree, "dc.attr.img.border.not.number", attr);
+                                env.messages.error(HTML, tree, "dc.attr.img.border.not.number", v);
                             }
                         }
                     }
@@ -887,6 +916,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
+    @Override
+    public Void visitSee(SeeTree node, Void unused) {
+        try {
+            inSee = true;
+            return super.visitSee(node, unused);
+        } finally {
+            inSee = false;
+        }
+    }
+
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLiteral(LiteralTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
@@ -968,6 +1007,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         Element e = env.trees.getElement(getCurrentPath());
         if (e == null) {
             reportBadReference(tree);
+        } else if ((inLink || inSee)
+                && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
+            reportBadReference(tree);
         }
         return super.visitReference(tree, ignore);
     }
@@ -997,8 +1039,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             env.messages.warning(REFERENCE, tree, "dc.exists.return");
         }
         if (tree.isInline()) {
-            DocCommentTree dct = getCurrentPath().getDocComment();
-            if (dct.getFirstSentence().isEmpty() || tree != dct.getFirstSentence().get(0)) {
+            var dct = getCurrentPath().getDocComment();
+            var first = dct.getFirstSentence().stream()
+                    .filter(t -> !isBlank(t))
+                    .findFirst();
+            if (first.isEmpty() || first.get() != tree) {
                 env.messages.warning(SYNTAX, tree, "dc.return.not.first");
             }
         }
@@ -1010,6 +1055,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         foundReturn = true;
         warnIfEmpty(tree, tree.getDescription());
         return super.visitReturn(tree, ignore);
+    }
+
+    private static boolean isBlank(DocTree t) {
+        return switch (t.getKind()) {
+            case TEXT -> ((TextTree) t).getBody().isBlank();
+            case MARKDOWN -> ((RawTextTree) t).getContent().isBlank();
+            default -> false;
+        };
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1132,8 +1185,29 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private void checkUnknownTag(DocTree tree, String tagName) {
-        if (env.customTags != null && !env.customTags.contains(tagName))
-            env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+        // if it were a standard tag, this method wouldn't be called:
+        // a standard tag is never represented by Unknown{Block,Inline}TagTree
+        var k = tree.getKind();
+        assert k == DocTree.Kind.UNKNOWN_BLOCK_TAG
+                || k == DocTree.Kind.UNKNOWN_INLINE_TAG;
+        assert !getStandardTags().contains(tagName);
+        // report an unknown tag only if custom tags are set, see 8314213
+        if (env.customTags != null && !env.customTags.contains(tagName)) {
+            var suggestions = DocLint.suggestSimilar(env.customTags, tagName);
+            if (suggestions.isEmpty()) {
+                env.messages.error(SYNTAX, tree, "dc.unknown.javadoc.tag");
+            } else {
+                env.messages.error(SYNTAX, tree, "dc.unknown.javadoc.tag.with.hint",
+                        String.join(", ", suggestions)); // TODO: revisit after 8041488
+            }
+        }
+    }
+
+    private Set<String> getStandardTags() {
+        return Stream.of(DocTree.Kind.values())
+                .filter(k -> k.tagName != null) // not all DocTree represent tags
+                .map(k -> k.tagName)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1219,14 +1293,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isDefaultConstructor() {
-        if (env.currElement.getKind() == ElementKind.CONSTRUCTOR) {
-            // A synthetic default constructor has the same pos as the
-            // enclosing class
-            TreePath p = env.currPath;
-            return env.getPos(p) == env.getPos(p.getParentPath());
-        } else {
-            return false;
-        }
+        return env.currElement.getKind() == ElementKind.CONSTRUCTOR
+                && env.elements.getOrigin(env.currElement) == Elements.Origin.MANDATED;
     }
 
     private boolean isDeclaredType() {
@@ -1252,9 +1320,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isNormalClass(TreePath p) {
         return switch (p.getLeaf().getKind()) {
             case ENUM, RECORD -> false;
-            case CLASS -> true;
+            case CLASS -> !isImplicitlyDeclaredClass(p.getLeaf());
             default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
         };
+    }
+
+    /*
+     * If a similar query is ever added to com.sun.source.tree, use that instead.
+     */
+    private boolean isImplicitlyDeclaredClass(Tree t) {
+        return t.getKind() == Tree.Kind.CLASS
+                && t instanceof com.sun.tools.javac.tree.JCTree.JCClassDecl classDecl
+                && (classDecl.mods.flags & com.sun.tools.javac.code.Flags.IMPLICIT_CLASS) != 0;
     }
 
     void markEnclosingTag(Flag flag) {

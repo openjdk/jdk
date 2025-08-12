@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,12 +24,10 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -51,8 +49,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -83,14 +83,12 @@
 #endif
 
 #define SPELL_REG_SP "sp"
-#define SPELL_REG_FP "fp"
 
 #ifdef __APPLE__
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
 // 10.5 UNIX03 member name prefixes
 #define DU3_PREFIX(s, m) __ ## s.__ ## m
-#endif
 
 #define context_x    uc_mcontext->DU3_PREFIX(ss,x)
 #define context_fp   uc_mcontext->DU3_PREFIX(ss,fp)
@@ -99,6 +97,33 @@
 #define context_pc   uc_mcontext->DU3_PREFIX(ss,pc)
 #define context_cpsr uc_mcontext->DU3_PREFIX(ss,cpsr)
 #define context_esr  uc_mcontext->DU3_PREFIX(es,esr)
+#endif
+
+#ifdef __FreeBSD__
+# define context_x  uc_mcontext.mc_gpregs.gp_x
+# define context_fp context_x[REG_FP]
+# define context_lr uc_mcontext.mc_gpregs.gp_lr
+# define context_sp uc_mcontext.mc_gpregs.gp_sp
+# define context_pc uc_mcontext.mc_gpregs.gp_elr
+#endif
+
+#ifdef __NetBSD__
+# define context_x  uc_mcontext.__gregs
+# define context_fp uc_mcontext.__gregs[_REG_FP]
+# define context_lr uc_mcontext.__gregs[_REG_LR]
+# define context_sp uc_mcontext.__gregs[_REG_SP]
+# define context_pc uc_mcontext.__gregs[_REG_ELR]
+#endif
+
+#ifdef __OpenBSD__
+# define context_x  sc_x
+# define context_fp sc_x[REG_FP]
+# define context_lr sc_lr
+# define context_sp sc_sp
+# define context_pc sc_elr
+#endif
+
+#define REG_BCP context_x[22]
 
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
@@ -160,6 +185,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -175,9 +206,16 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
+}
+
 // JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
 NOINLINE frame os::current_frame() {
@@ -191,15 +229,6 @@ NOINLINE frame os::current_frame() {
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }
-}
-
-ATTRIBUTE_PRINTF(6, 7)
-static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...) {
-  va_list va;
-  va_start(va, detail_fmt);
-  VMError::report_and_die(thread, context, filename, lineno, message, detail_fmt, va);
-  va_end(va);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -244,14 +273,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
-      // Handle signal from NativeJump::patch_verified_entry().
-      if ((sig == SIGILL)
-          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-      } else if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
+      if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
 #if defined(__APPLE__)
       // 32-bit Darwin reports a SIGBUS for nearly all memory access exceptions.
@@ -266,21 +288,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + NativeCall::instruction_size;
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in r0
+        const char *detail_msg = (const char *)(uc->uc_mcontext->DU3_PREFIX(ss,x[0]));
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -288,7 +307,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&
@@ -309,8 +328,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
       address next_pc = pc + NativeCall::instruction_size;
-      if (UnsafeCopyMemory::contains_pc(pc)) {
-        next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+      if (UnsafeMemoryAccess::contains_pc(pc)) {
+        next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
       }
       stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -354,13 +373,13 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
-
-static void current_stack_region(address * bottom, size_t * size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  void *stacktop = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
-  *bottom = (address) stacktop - *size;
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
@@ -368,8 +387,9 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
-  *size   = ss.ss_size;
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -384,30 +404,17 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
-    pthread_attr_getstacksize(&attr, size) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -464,68 +471,34 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Bsd::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, 4/*native instruction size*/);
-  st->cr();
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
-  st->print(" x0="); print_location(st, uc->context_x[ 0]);
-  st->print(" x1="); print_location(st, uc->context_x[ 1]);
-  st->print(" x2="); print_location(st, uc->context_x[ 2]);
-  st->print(" x3="); print_location(st, uc->context_x[ 3]);
-  st->print(" x4="); print_location(st, uc->context_x[ 4]);
-  st->print(" x5="); print_location(st, uc->context_x[ 5]);
-  st->print(" x6="); print_location(st, uc->context_x[ 6]);
-  st->print(" x7="); print_location(st, uc->context_x[ 7]);
-  st->print(" x8="); print_location(st, uc->context_x[ 8]);
-  st->print(" x9="); print_location(st, uc->context_x[ 9]);
-  st->print("x10="); print_location(st, uc->context_x[10]);
-  st->print("x11="); print_location(st, uc->context_x[11]);
-  st->print("x12="); print_location(st, uc->context_x[12]);
-  st->print("x13="); print_location(st, uc->context_x[13]);
-  st->print("x14="); print_location(st, uc->context_x[14]);
-  st->print("x15="); print_location(st, uc->context_x[15]);
-  st->print("x16="); print_location(st, uc->context_x[16]);
-  st->print("x17="); print_location(st, uc->context_x[17]);
-  st->print("x18="); print_location(st, uc->context_x[18]);
-  st->print("x19="); print_location(st, uc->context_x[19]);
-  st->print("x20="); print_location(st, uc->context_x[20]);
-  st->print("x21="); print_location(st, uc->context_x[21]);
-  st->print("x22="); print_location(st, uc->context_x[22]);
-  st->print("x23="); print_location(st, uc->context_x[23]);
-  st->print("x24="); print_location(st, uc->context_x[24]);
-  st->print("x25="); print_location(st, uc->context_x[25]);
-  st->print("x26="); print_location(st, uc->context_x[26]);
-  st->print("x27="); print_location(st, uc->context_x[27]);
-  st->print("x28="); print_location(st, uc->context_x[28]);
-
-  st->cr();
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    switch (n) {
+    case 29:
+      st->print(" fp="); print_location(st, uc->context_fp);
+      break;
+    case 30:
+      st->print(" lr="); print_location(st, uc->context_lr);
+      break;
+    case 31:
+      st->print(" sp="); print_location(st, uc->context_sp);
+      break;
+    default:
+      st->print("x%-2d=",n); print_location(st, uc->context_x[n]);
+      break;
+    }
+    ++n;
+  }
 }
 
 void os::setup_fpu() {
@@ -542,9 +515,11 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+#ifdef __APPLE__
 void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
+#endif
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;
@@ -552,7 +527,32 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    // We don't use StubRoutines::aarch64::spin_wait stub in order to
+    // avoid a costly call to os::current_thread_enable_wx() on MacOS.
+    // We should return 1 if SpinPause is implemented, and since there
+    // will be always a sequence of instructions, SpinPause will always return 1.
+    switch (VM_Version::spin_wait_desc().inst()) {
+    case SpinWait::NONE:
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
+      break;
+    case SpinWait::ISB:
+      asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
+      break;
+    case SpinWait::SB:
+      assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+      asm volatile(".inst 0xd50330ff" : : : "memory");
+      break;
+#ifdef ASSERT
+    default:
+      ShouldNotReachHere();
+#endif
+    }
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {

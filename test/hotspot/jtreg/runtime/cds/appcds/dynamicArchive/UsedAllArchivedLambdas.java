@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,11 @@ public class UsedAllArchivedLambdas extends DynamicArchiveTestBase {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
             use_whitebox_jar,
+            "-Xlog:aot=debug",
             "-Xlog:cds=debug",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                output.shouldContain("Used all archived lambda proxy classes for: UsedAllArchivedLambdasApp run()Ljava/lang/Runnable;")
+                output.shouldContain("Used all dynamic archived lambda proxy classes for: UsedAllArchivedLambdasApp run()Ljava/lang/Runnable;")
                       .shouldHaveExitValue(0);
             });
     }

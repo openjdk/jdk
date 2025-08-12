@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 # make sure that is called using bash.
 
 # Get an absolute path to this script, since that determines the top-level directory.
-this_script_dir=`dirname $0`
-this_script_dir=`cd $this_script_dir > /dev/null && pwd`
+source_path="$(dirname ${0})"
+this_script_dir="$(cd -- "${source_path}" > /dev/null && pwd)"
+if test -z "${this_script_dir}"; then
+  echo "Error: Could not determine location of configure script"
+  exit 1
+fi
 
 # Delegate to wrapper, forcing wrapper to believe $0 is this script by using -c.
 # This trick is needed to get autoconf to co-operate properly.
 # The ${-:+-$-} construction passes on bash options.
-bash ${-:+-$-} -c ". $this_script_dir/make/autoconf/configure" $this_script_dir/configure CHECKME $this_script_dir "$@"
+bash ${-:+-$-} -c ". \"${this_script_dir}/make/autoconf/configure\"" "${this_script_dir}/configure" CHECKME "${this_script_dir}" "$@"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,123 @@
  */
 
 /* @test
- * @bug 8227609
+ * @bug 8227609 8233451
  * @summary Test of InputStream and OutputStream created by java.nio.file.Files
- * @library ..
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED InputStreamTest
  */
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.channels.ClosedChannelException;
-import java.nio.file.*;
-import static java.nio.file.Files.*;
-import static java.nio.file.LinkOption.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
-import java.util.*;
+import java.io.OutputStream;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.nio.channels.ClosedChannelException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import jdk.test.lib.Platform;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InputStreamTest {
 
-    public static void main(String[] args) throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
-        try {
-            testSkip(dir);
-        } finally {
-            TestUtil.removeAll(dir);
+    private static final String PIPE = "pipe";
+    private static final Path PIPE_PATH = Path.of(PIPE);
+    private static final String SENTENCE =
+        "Tout est permis mais rien n’est possible";
+
+    private static Path TMPDIR;
+
+    private static class mkfifo {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            ValueLayout.JAVA_INT,
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_SHORT
+        );
+
+        public static final MemorySegment ADDR;
+        static {
+            Linker linker = Linker.nativeLinker();
+            SymbolLookup stdlib = linker.defaultLookup();
+            ADDR = stdlib.find("mkfifo").orElseThrow();
         }
+
+        public static final MethodHandle HANDLE =
+            Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int mkfifo(MemorySegment x0, short x1) {
+        var mh$ = mkfifo.HANDLE;
+        try {
+            return (int)mh$.invokeExact(x0, x1);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static Thread createWriteThread() {
+        Thread t = new Thread(
+            new Runnable() {
+                public void run() {
+                    try (FileOutputStream fos = new FileOutputStream(PIPE);) {
+                        fos.write(SENTENCE.getBytes());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        );
+        t.start();
+        return t;
+    }
+
+    @BeforeAll
+    static void before() throws InterruptedException, IOException {
+        TMPDIR = TestUtil.createTemporaryDirectory();
+
+        if (Platform.isWindows())
+            return;
+
+        Files.deleteIfExists(PIPE_PATH);
+        try (var newArena = Arena.ofConfined()) {
+            var addr = newArena.allocateFrom(PIPE);
+            short mode = 0666;
+            assertEquals(0, mkfifo(addr, mode));
+        }
+        if (Files.notExists(PIPE_PATH))
+            throw new RuntimeException("Failed to create " + PIPE);
+    }
+
+    @AfterAll
+    static void after() throws IOException {
+        TestUtil.removeAll(TMPDIR);
+
+        if (Platform.isWindows())
+            return;
+
+        Files.deleteIfExists(PIPE_PATH);
     }
 
     /**
      * Tests Files.newInputStream(Path).skip().
      */
-    static void testSkip(Path tmpdir) throws IOException {
-        Path file = createFile(tmpdir.resolve("foo"));
+    @Test
+    void skip() throws IOException {
+        Path file = Files.createFile(TMPDIR.resolve("foo"));
         try (OutputStream out = Files.newOutputStream(file)) {
             final int size = 512;
             byte[] blah = new byte[size];
@@ -123,8 +209,87 @@ public class InputStreamTest {
         }
     }
 
-    static void assertTrue(boolean okay) {
-        if (!okay)
-            throw new RuntimeException("Assertion Failed");
+    /**
+     * Tests that Files.newInputStream(Path).available() does not throw
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void availableStdin() throws IOException {
+        Path stdin = Path.of("/dev", "stdin");
+        if (Files.exists(stdin)) {
+            try (InputStream s = Files.newInputStream(stdin);) {
+                s.available();
+            }
+        }
+    }
+
+    /**
+     * Tests that Files.newInputStream(Path).skip(0) does not throw
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void skipStdin() throws IOException {
+        Path stdin = Path.of("/dev", "stdin");
+        if (Files.exists(stdin)) {
+            try (InputStream s = Files.newInputStream(stdin);) {
+                s.skip(0);
+            }
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readAllBytes().
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readAllBytes() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            String s = new String(in.readAllBytes());
+            System.out.println(s);
+            assertEquals(SENTENCE, s);
+        } finally {
+            t.join();
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readNBytes(byte[],int,int).
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readNBytesNoOverride() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            final int offset = 11;
+            final int length = 17;
+            assert length <= SENTENCE.length();
+            byte[] b = new byte[offset + length];
+            int n = in.readNBytes(b, offset, length);
+            String s = new String(b, offset, length);
+            System.out.println(s);
+            assertEquals(SENTENCE.substring(0, length), s);
+        } finally {
+            t.join();
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readNBytes(int).
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readNBytesOverride() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            final int length = 17;
+            assert length <= SENTENCE.length();
+            byte[] b = in.readNBytes(length);
+            String s = new String(b);
+            System.out.println(s);
+            assertEquals(SENTENCE.substring(0, length), s);
+        } finally {
+            t.join();
+        }
     }
 }

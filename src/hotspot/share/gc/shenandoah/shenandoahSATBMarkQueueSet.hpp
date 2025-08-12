@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP
 
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 

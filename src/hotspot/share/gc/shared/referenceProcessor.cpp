@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -67,9 +66,6 @@ void ReferenceProcessor::init_statics() {
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
   }
-  guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
-            RefDiscoveryPolicy == ReferentBasedDiscovery,
-            "Unrecognized RefDiscoveryPolicy");
 }
 
 void ReferenceProcessor::enable_discovery() {
@@ -178,11 +174,12 @@ size_t ReferenceProcessor::total_count(DiscoveredList lists[]) const {
 #ifdef ASSERT
 void ReferenceProcessor::verify_total_count_zero(DiscoveredList lists[], const char* type) {
   size_t count = total_count(lists);
-  assert(count == 0, "%ss must be empty but has " SIZE_FORMAT " elements", type, count);
+  assert(count == 0, "%ss must be empty but has %zu elements", type, count);
 }
 #endif
 
 ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefProcProxyTask& proxy_task,
+                                                                          WorkerThreads* workers,
                                                                           ReferenceProcessorPhaseTimes& phase_times) {
 
   double start_time = os::elapsedTime();
@@ -201,17 +198,17 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   {
     RefProcTotalPhaseTimesTracker tt(SoftWeakFinalRefsPhase, &phase_times);
-    process_soft_weak_final_refs(proxy_task, phase_times);
+    process_soft_weak_final_refs(proxy_task, workers, phase_times);
   }
 
   {
     RefProcTotalPhaseTimesTracker tt(KeepAliveFinalRefsPhase, &phase_times);
-    process_final_keep_alive(proxy_task, phase_times);
+    process_final_keep_alive(proxy_task, workers, phase_times);
   }
 
   {
     RefProcTotalPhaseTimesTracker tt(PhantomRefsPhase, &phase_times);
-    process_phantom_refs(proxy_task, phase_times);
+    process_phantom_refs(proxy_task, workers, phase_times);
   }
 
   phase_times.set_total_time_ms((os::elapsedTime() - start_time) * 1000);
@@ -368,7 +365,7 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
     refs_list.clear();
   }
 
-  log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
+  log_develop_trace(gc, ref)(" Dropped %zu active Refs out of %zu"
                              " Refs in discovered list " PTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
   return iter.removed();
@@ -562,10 +559,10 @@ void ReferenceProcessor::log_reflist(const char* prefix, DiscoveredList list[], 
   LogStream ls(lt);
   ls.print("%s", prefix);
   for (uint i = 0; i < num_active_queues; i++) {
-    ls.print(SIZE_FORMAT " ", list[i].length());
+    ls.print("%zu ", list[i].length());
     total += list[i].length();
   }
-  ls.print_cr("(" SIZE_FORMAT ")", total);
+  ls.print_cr("(%zu)", total);
 }
 
 #ifndef PRODUCT
@@ -577,7 +574,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint num
   log_reflist("", ref_lists, num_active_queues);
 #ifdef ASSERT
   for (uint i = num_active_queues; i < _max_num_queues; i++) {
-    assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
+    assert(ref_lists[i].length() == 0, "%zu unexpected References in %u",
            ref_lists[i].length(), i);
   }
 #endif
@@ -623,8 +620,7 @@ void ReferenceProcessor::maybe_balance_queues(DiscoveredList refs_lists[]) {
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
 // queues[0, 1, ..., _num_q-1] because only the first _num_q
 // corresponding to the active workers will be processed.
-void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
-{
+void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[]) {
   // calculate total length
   size_t total_refs = 0;
   log_develop_trace(gc, ref)("Balance ref_lists ");
@@ -637,60 +633,60 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   size_t avg_refs = total_refs / _num_queues + 1;
   uint to_idx = 0;
   for (uint from_idx = 0; from_idx < _max_num_queues; from_idx++) {
-    bool move_all = false;
+    size_t from_len = ref_lists[from_idx].length();
+
+    size_t remaining_to_move;
     if (from_idx >= _num_queues) {
-      move_all = ref_lists[from_idx].length() > 0;
+      // Move all
+      remaining_to_move = from_len;
+    } else {
+      // Move those above avg_refs
+      remaining_to_move = from_len > avg_refs
+                        ? from_len - avg_refs
+                        : 0;
     }
-    while ((ref_lists[from_idx].length() > avg_refs) ||
-           move_all) {
+
+    while (remaining_to_move > 0) {
       assert(to_idx < _num_queues, "Sanity Check!");
-      if (ref_lists[to_idx].length() < avg_refs) {
-        // move superfluous refs
-        size_t refs_to_move;
-        // Move all the Ref's if the from queue will not be processed.
-        if (move_all) {
-          refs_to_move = MIN2(ref_lists[from_idx].length(),
-                              avg_refs - ref_lists[to_idx].length());
-        } else {
-          refs_to_move = MIN2(ref_lists[from_idx].length() - avg_refs,
-                              avg_refs - ref_lists[to_idx].length());
-        }
 
-        assert(refs_to_move > 0, "otherwise the code below will fail");
-
-        oop move_head = ref_lists[from_idx].head();
-        oop move_tail = move_head;
-        oop new_head  = move_head;
-        // find an element to split the list on
-        for (size_t j = 0; j < refs_to_move; ++j) {
-          move_tail = new_head;
-          new_head = java_lang_ref_Reference::discovered(new_head);
-        }
-
-        // Add the chain to the to list.
-        if (ref_lists[to_idx].head() == nullptr) {
-          // to list is empty. Make a loop at the end.
-          java_lang_ref_Reference::set_discovered_raw(move_tail, move_tail);
-        } else {
-          java_lang_ref_Reference::set_discovered_raw(move_tail, ref_lists[to_idx].head());
-        }
-        ref_lists[to_idx].set_head(move_head);
-        ref_lists[to_idx].inc_length(refs_to_move);
-
-        // Remove the chain from the from list.
-        if (move_tail == new_head) {
-          // We found the end of the from list.
-          ref_lists[from_idx].set_head(nullptr);
-        } else {
-          ref_lists[from_idx].set_head(new_head);
-        }
-        ref_lists[from_idx].dec_length(refs_to_move);
-        if (ref_lists[from_idx].length() == 0) {
-          break;
-        }
-      } else {
-        to_idx = (to_idx + 1) % _num_queues;
+      size_t to_len = ref_lists[to_idx].length();
+      if (to_len >= avg_refs) {
+        // this list is full enough; move on to next
+        to_idx++;
+        continue;
       }
+      size_t refs_to_move = MIN2(remaining_to_move, avg_refs - to_len);
+      assert(refs_to_move > 0, "otherwise the code below will fail");
+
+      oop move_head = ref_lists[from_idx].head();
+      oop move_tail = move_head;
+      oop new_head  = move_head;
+      // find an element to split the list on
+      for (size_t j = 0; j < refs_to_move; ++j) {
+        move_tail = new_head;
+        new_head = java_lang_ref_Reference::discovered(new_head);
+      }
+
+      // Add the chain to the to list.
+      if (ref_lists[to_idx].head() == nullptr) {
+        // to list is empty. Make a loop at the end.
+        java_lang_ref_Reference::set_discovered_raw(move_tail, move_tail);
+      } else {
+        java_lang_ref_Reference::set_discovered_raw(move_tail, ref_lists[to_idx].head());
+      }
+      ref_lists[to_idx].set_head(move_head);
+      ref_lists[to_idx].inc_length(refs_to_move);
+
+      // Remove the chain from the from list.
+      if (move_tail == new_head) {
+        // We found the end of the from list.
+        ref_lists[from_idx].set_head(nullptr);
+      } else {
+        ref_lists[from_idx].set_head(new_head);
+      }
+      ref_lists[from_idx].dec_length(refs_to_move);
+
+      remaining_to_move -= refs_to_move;
     }
   }
 #ifdef ASSERT
@@ -703,7 +699,7 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 #endif
 }
 
-void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive) {
+void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_task, WorkerThreads* workers, bool marks_oops_alive) {
   log_debug(gc, ref)("ReferenceProcessor::execute queues: %d, %s, marks_oops_alive: %s",
                      num_queues(),
                      processing_is_mt() ? "RefProcThreadModel::Multi" : "RefProcThreadModel::Single",
@@ -711,7 +707,6 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (processing_is_mt()) {
-    WorkerThreads* workers = Universe::heap()->safepoint_workers();
     assert(workers != nullptr, "can not dispatch multi threaded without workers");
     assert(workers->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
@@ -724,7 +719,12 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
   }
 }
 
+static uint num_active_workers(WorkerThreads* workers) {
+  return workers != nullptr ? workers->active_workers() : 1;
+}
+
 void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
+                                                      WorkerThreads* workers,
                                                       ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_soft_refs = phase_times.ref_discovered(REF_SOFT);
@@ -737,7 +737,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, SoftWeakFinalRefsPhase, num_total_refs);
+  RefProcMTDegreeAdjuster a(this, SoftWeakFinalRefsPhase, num_active_workers(workers), num_total_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
@@ -751,7 +751,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
   log_reflist("SoftWeakFinalRefsPhase Final before", _discoveredFinalRefs, _max_num_queues);
 
   RefProcSoftWeakFinalPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, false);
+  run_task(phase_task, proxy_task, workers, false);
 
   verify_total_count_zero(_discoveredSoftRefs, "SoftReference");
   verify_total_count_zero(_discoveredWeakRefs, "WeakReference");
@@ -759,6 +759,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
 }
 
 void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
+                                                  WorkerThreads* workers,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
@@ -768,7 +769,7 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, KeepAliveFinalRefsPhase, num_final_refs);
+  RefProcMTDegreeAdjuster a(this, KeepAliveFinalRefsPhase, num_active_workers(workers), num_final_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
@@ -777,12 +778,13 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
 
   // Traverse referents of final references and keep them and followers alive.
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, true);
+  run_task(phase_task, proxy_task, workers, true);
 
   verify_total_count_zero(_discoveredFinalRefs, "FinalReference");
 }
 
 void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
+                                              WorkerThreads* workers,
                                               ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_phantom_refs = phase_times.ref_discovered(REF_PHANTOM);
@@ -792,7 +794,7 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, PhantomRefsPhase, num_phantom_refs);
+  RefProcMTDegreeAdjuster a(this, PhantomRefsPhase, num_active_workers(workers), num_phantom_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(PhantomRefsPhase, &phase_times);
@@ -802,7 +804,7 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
   RefProcPhantomPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, false);
+  run_task(phase_task, proxy_task, workers, false);
 
   verify_total_count_zero(_discoveredPhantomRefs, "PhantomReference");
 }
@@ -921,32 +923,16 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
   return _is_subject_to_discovery->do_object_b(obj);
 }
 
-// We mention two of several possible choices here:
-// #0: if the reference object is not in the "originating generation"
-//     (or part of the heap being collected, indicated by our "span")
-//     we don't treat it specially (i.e. we scan it as we would
-//     a normal oop, treating its references as strong references).
-//     This means that references can't be discovered unless their
-//     referent is also in the same span. This is the simplest,
-//     most "local" and most conservative approach, albeit one
-//     that may cause weak references to be enqueued least promptly.
-//     We call this choice the "ReferenceBasedDiscovery" policy.
-// #1: the reference object may be in any generation (span), but if
-//     the referent is in the generation (span) being currently collected
-//     then we can discover the reference object, provided
-//     the object has not already been discovered by
-//     a different concurrently running discoverer (as may be the
-//     case, for instance, if the reference object is in G1 old gen and
-//     the referent in G1 young gen), and provided the processing
-//     of this reference object by the current collector will
-//     appear atomically to every other discoverer in the system.
-//     (Thus, for instance, a concurrent discoverer may not
-//     discover references in other generations even if the
-//     referent is in its own generation). This policy may,
-//     in certain cases, enqueue references somewhat sooner than
-//     might Policy #0 above, but at marginally increased cost
-//     and complexity in processing these references.
-//     We call this choice the "ReferentBasedDiscovery" policy.
+// Reference discovery policy:
+//   if the reference object is not in the "originating generation"
+//   (or part of the heap being collected, indicated by our "span")
+//   we don't treat it specially (i.e. we scan it as we would
+//   a normal oop, treating its references as strong references).
+//   This means that references can't be discovered unless their
+//   referent is also in the same span. This is the simplest,
+//   most "local" and most conservative approach, albeit one
+//   that may cause weak references to be enqueued least promptly.
+//   We call this choice the "ReferenceBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
@@ -958,8 +944,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;
   }
 
-  if (RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-      !is_subject_to_discovery(obj)) {
+  if (!is_subject_to_discovery(obj)) {
     // Reference is not in the originating generation;
     // don't treat it specially (i.e. we want to scan it as a normal
     // object with strong references).
@@ -997,36 +982,14 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
-    if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-      // assumes that an object is not processed twice;
-      // if it's been already discovered it must be on another
-      // generation's discovered list; so we won't discover it.
-      return false;
-    } else {
-      assert(RefDiscoveryPolicy == ReferenceBasedDiscovery,
-             "Unrecognized policy");
-      // Check assumption that an object is not potentially
-      // discovered twice except by concurrent collectors that potentially
-      // trace the same Reference object twice.
-      assert(UseG1GC, "Only possible with a concurrent marking collector");
-      return true;
-    }
-  }
 
-  if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-    verify_referent(obj);
-    // Discover if and only if EITHER:
-    // .. reference is in our span, OR
-    // .. we are a stw discoverer and referent is in our span
-    if (is_subject_to_discovery(obj) ||
-        (discovery_is_stw() &&
-         is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
-    } else {
-      return false;
-    }
-  } else {
-    assert(RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-           is_subject_to_discovery(obj), "code inconsistency");
+    // Encountering an already-discovered non-strong ref because G1 can restart
+    // concurrent marking on marking-stack overflow. Must continue to treat
+    // this non-strong ref as discovered to avoid keeping the referent
+    // unnecessarily alive.
+    assert(UseG1GC, "inv");
+    assert(_discovery_is_concurrent, "inv");
+    return true;
   }
 
   // Get the right type of discovered queue head.
@@ -1137,7 +1100,7 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
   }
 
   if (iter.processed() > 0) {
-    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " PTR_FORMAT,
+    log_develop_trace(gc, ref)(" Dropped %zu Refs out of %zu Refs in discovered list " PTR_FORMAT,
                                iter.removed(), iter.processed(), p2i(&refs_list));
   }
   return false;
@@ -1180,10 +1143,11 @@ bool RefProcMTDegreeAdjuster::use_max_threads(RefProcPhases phase) const {
 
 RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  RefProcPhases phase,
+                                                 uint num_active_workers,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  uint workers = ergo_proc_thread_count(ref_count, _rp->num_queues(), phase);
+  uint workers = ergo_proc_thread_count(ref_count, num_active_workers, phase);
   _rp->set_active_mt_degree(workers);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8028504
  * @summary javac generates LocalVariableTable even with -g:none
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g:none DontGenerateLVTForGNoneOpTest.java
  * @run main DontGenerateLVTForGNoneOpTest
  */
@@ -35,10 +34,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 public class DontGenerateLVTForGNoneOpTest {
 
@@ -52,11 +49,11 @@ public class DontGenerateLVTForGNoneOpTest {
     }
 
     void checkClassFile(final File cfile) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
-        for (Method method : classFile.methods) {
-            Code_attribute code = (Code_attribute)method.attributes.get(Attribute.Code);
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
+        for (MethodModel method : classFile.methods()) {
+            CodeAttribute code = method.findAttribute(Attributes.code()).orElse(null);
             if (code != null) {
-                if (code.attributes.get(Attribute.LocalVariableTable) != null) {
+                if (code.findAttribute(Attributes.localVariableTable()).orElse(null) != null) {
                     throw new AssertionError("LVT shouldn't be generated for g:none");
                 }
             }

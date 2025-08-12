@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,14 @@ package jdk.jfr.consumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.EventFileStream;
-import jdk.jfr.internal.consumer.FileAccess;
 
 /**
  * Represents a stream of events.
@@ -113,18 +108,10 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if a stream can't be opened, or an I/O error occurs
      *         when trying to access the repository
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have
-     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
-    @SuppressWarnings("removal")
     public static EventStream openRepository() throws IOException {
-        Utils.checkAccessFlightRecorder();
         return new EventDirectoryStream(
-            AccessController.getContext(),
             null,
-            SecuritySupport.PRIVILEGED,
             null,
             Collections.emptyList(),
             false
@@ -145,19 +132,11 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if a stream can't be opened, or an I/O error occurs
      *         when trying to access the repository
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkRead} method denies read access to the directory, or
-     *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.requireNonNull(directory, "directory");
-        @SuppressWarnings("removal")
-        AccessControlContext acc = AccessController.getContext();
         return new EventDirectoryStream(
-            acc,
             directory,
-            FileAccess.UNPRIVILEGED,
             null,
             Collections.emptyList(),
             true
@@ -177,14 +156,10 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if the file can't be opened, or an I/O error occurs
      *         during reading
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkRead} method denies read access to the file
      */
-    @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
         Objects.requireNonNull(file, "file");
-        return new EventFileStream(AccessController.getContext(), file);
+        return new EventFileStream(file);
     }
 
     /**

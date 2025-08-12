@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@ package gc.g1;
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
- *   -XX:+G1VerifyHeapRegionCodeRoots
- *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
+ *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   -XX:+G1VerifyBitmaps
  *   gc.g1.TestVerificationInConcurrentCycle
  */
@@ -54,8 +53,7 @@ package gc.g1;
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
- *   -XX:+G1VerifyHeapRegionCodeRoots
- *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
+ *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   gc.g1.TestVerificationInConcurrentCycle
  */
 

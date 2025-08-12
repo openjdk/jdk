@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueStack.hpp"
@@ -37,7 +36,7 @@ class PrintValueVisitor: public ValueVisitor {
 };
 
 void Canonicalizer::set_canonical(Value x) {
-  assert(x != NULL, "value must exist");
+  assert(x != nullptr, "value must exist");
   // Note: we can not currently substitute root nodes which show up in
   // the instruction stream (because the instruction list is embedded
   // in the instructions).
@@ -89,9 +88,9 @@ void Canonicalizer::do_Op2(Op2* x) {
         { jint a = x->x()->type()->as_IntConstant()->value();
           jint b = x->y()->type()->as_IntConstant()->value();
           switch (x->op()) {
-            case Bytecodes::_iadd: set_constant(a + b); return;
-            case Bytecodes::_isub: set_constant(a - b); return;
-            case Bytecodes::_imul: set_constant(a * b); return;
+            case Bytecodes::_iadd: set_constant(java_add(a, b)); return;
+            case Bytecodes::_isub: set_constant(java_subtract(a, b)); return;
+            case Bytecodes::_imul: set_constant(java_multiply(a, b)); return;
             case Bytecodes::_idiv:
               if (b != 0) {
                 if (a == min_jint && b == -1) {
@@ -123,9 +122,9 @@ void Canonicalizer::do_Op2(Op2* x) {
         { jlong a = x->x()->type()->as_LongConstant()->value();
           jlong b = x->y()->type()->as_LongConstant()->value();
           switch (x->op()) {
-            case Bytecodes::_ladd: set_constant(a + b); return;
-            case Bytecodes::_lsub: set_constant(a - b); return;
-            case Bytecodes::_lmul: set_constant(a * b); return;
+            case Bytecodes::_ladd: set_constant(java_add(a, b)); return;
+            case Bytecodes::_lsub: set_constant(java_subtract(a, b)); return;
+            case Bytecodes::_lmul: set_constant(java_multiply(a, b)); return;
             case Bytecodes::_ldiv:
               if (b != 0) {
                 set_constant(SharedRuntime::ldiv(b, a));
@@ -200,11 +199,11 @@ void Canonicalizer::do_LoadField      (LoadField*       x) {}
 // GraphBuilder. This is the only block that has not BlockEnd yet.
 static bool in_current_block(Value v) {
   int max_distance = 4;
-  while (max_distance > 0 && v != NULL && v->as_BlockEnd() == NULL) {
+  while (max_distance > 0 && v != nullptr && v->as_BlockEnd() == nullptr) {
     v = v->next();
     max_distance--;
   }
-  return v == NULL;
+  return v == nullptr;
 }
 
 void Canonicalizer::do_StoreField     (StoreField*      x) {
@@ -213,7 +212,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
   // are packed to their natural size.
   Convert* conv = x->value()->as_Convert();
   if (conv) {
-    Value value = NULL;
+    Value value = nullptr;
     BasicType type = x->field()->type()->basic_type();
     switch (conv->op()) {
     case Bytecodes::_i2b: if (type == T_BYTE)  value = conv->value(); break;
@@ -222,7 +221,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
     default             : break;
     }
     // limit this optimization to current block
-    if (value != NULL && in_current_block(conv)) {
+    if (value != nullptr && in_current_block(conv)) {
       set_canonical(new StoreField(x->obj(), x->offset(), x->field(), value, x->is_static(),
                                    x->state_before(), x->needs_patching()));
       return;
@@ -236,31 +235,31 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
   Constant*  ct;
   LoadField* lf;
 
-  if ((na = x->array()->as_NewArray()) != NULL) {
+  if ((na = x->array()->as_NewArray()) != nullptr) {
     // New arrays might have the known length.
     // Do not use the Constant itself, but create a new Constant
     // with same value Otherwise a Constant is live over multiple
     // blocks without being registered in a state array.
     Constant* length;
     NewMultiArray* nma;
-    if (na->length() != NULL &&
-        (length = na->length()->as_Constant()) != NULL) {
-      assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
+    if (na->length() != nullptr &&
+        (length = na->length()->as_Constant()) != nullptr) {
+      assert(length->type()->as_IntConstant() != nullptr, "array length must be integer");
       set_constant(length->type()->as_IntConstant()->value());
-    } else if ((nma = x->array()->as_NewMultiArray()) != NULL &&
-               (length = nma->dims()->at(0)->as_Constant()) != NULL) {
-      assert(length->type()->as_IntConstant() != NULL, "array length must be integer");
+    } else if ((nma = x->array()->as_NewMultiArray()) != nullptr &&
+               (length = nma->dims()->at(0)->as_Constant()) != nullptr) {
+      assert(length->type()->as_IntConstant() != nullptr, "array length must be integer");
       set_constant(length->type()->as_IntConstant()->value());
     }
 
-  } else if ((ct = x->array()->as_Constant()) != NULL) {
+  } else if ((ct = x->array()->as_Constant()) != nullptr) {
     // Constant arrays have constant lengths.
     ArrayConstant* cnst = ct->type()->as_ArrayConstant();
-    if (cnst != NULL) {
+    if (cnst != nullptr) {
       set_constant(cnst->value()->length());
     }
 
-  } else if ((lf = x->array()->as_LoadField()) != NULL) {
+  } else if ((lf = x->array()->as_LoadField()) != nullptr) {
     ciField* field = lf->field();
     if (field->is_static_constant()) {
       // Constant field loads are usually folded during parsing.
@@ -278,10 +277,10 @@ void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
   StableArrayConstant* array = x->array()->type()->as_StableArrayConstant();
   IntConstant* index = x->index()->type()->as_IntConstant();
 
-  assert(array == NULL || FoldStableValues, "not enabled");
+  assert(array == nullptr || FoldStableValues, "not enabled");
 
   // Constant fold loads from stable arrays.
-  if (!x->mismatched() && array != NULL && index != NULL) {
+  if (!x->mismatched() && array != nullptr && index != nullptr) {
     jint idx = index->value();
     if (idx < 0 || idx >= array->value()->length()) {
       // Leave the load as is. The range check will handle it.
@@ -292,7 +291,7 @@ void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
     if (!field_val.is_null_or_zero()) {
       jint dimension = array->dimension();
       assert(dimension <= array->value()->array_type()->dimension(), "inconsistent info");
-      ValueType* value = NULL;
+      ValueType* value = nullptr;
       if (dimension > 1) {
         // Preserve information about the dimension for the element.
         assert(field_val.as_object()->is_array(), "not an array");
@@ -312,7 +311,7 @@ void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
   // are packed to their natural size.
   Convert* conv = x->value()->as_Convert();
   if (conv) {
-    Value value = NULL;
+    Value value = nullptr;
     BasicType type = x->elt_type();
     switch (conv->op()) {
     case Bytecodes::_i2b: if (type == T_BYTE)  value = conv->value(); break;
@@ -321,7 +320,7 @@ void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
     default             : break;
     }
     // limit this optimization to current block
-    if (value != NULL && in_current_block(conv)) {
+    if (value != nullptr && in_current_block(conv)) {
       set_canonical(new StoreIndexed(x->array(), x->index(), x->length(),
                                      x->elt_type(), value, x->state_before(),
                                      x->check_boolean()));
@@ -335,9 +334,9 @@ void Canonicalizer::do_NegateOp(NegateOp* x) {
   ValueType* t = x->x()->type();
   if (t->is_constant()) {
     switch (t->tag()) {
-      case intTag   : set_constant(-t->as_IntConstant   ()->value()); return;
-      case longTag  : set_constant(-t->as_LongConstant  ()->value()); return;
-      case floatTag : set_constant(-t->as_FloatConstant ()->value()); return;
+      case intTag   : set_constant(java_negate(t->as_IntConstant()->value())); return;
+      case longTag  : set_constant(java_negate(t->as_LongConstant()->value())); return;
+      case floatTag : set_constant(-t->as_FloatConstant()->value()); return;
       case doubleTag: set_constant(-t->as_DoubleConstant()->value()); return;
       default       : ShouldNotReachHere();
     }
@@ -469,9 +468,11 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
-  // Caution: do not use do_Op2(x) here for now since
-  //          we map the condition to the op for now!
-  move_const_to_right(x);
+  // Currently, Canonicalizer is only used by GraphBuilder,
+  // and IfOp is not created by GraphBuilder but only later
+  // when eliminating conditional expressions with CE_Eliminator,
+  // so this method will not be called.
+  ShouldNotReachHere();
 }
 
 
@@ -479,7 +480,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
   switch (x->id()) {
   case vmIntrinsics::_floatToRawIntBits   : {
     FloatConstant* c = x->argument_at(0)->type()->as_FloatConstant();
-    if (c != NULL) {
+    if (c != nullptr) {
       JavaValue v;
       v.set_jfloat(c->value());
       set_constant(v.get_jint());
@@ -488,7 +489,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
   }
   case vmIntrinsics::_intBitsToFloat      : {
     IntConstant* c = x->argument_at(0)->type()->as_IntConstant();
-    if (c != NULL) {
+    if (c != nullptr) {
       JavaValue v;
       v.set_jint(c->value());
       set_constant(v.get_jfloat());
@@ -497,7 +498,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
   }
   case vmIntrinsics::_doubleToRawLongBits : {
     DoubleConstant* c = x->argument_at(0)->type()->as_DoubleConstant();
-    if (c != NULL) {
+    if (c != nullptr) {
       JavaValue v;
       v.set_jdouble(c->value());
       set_constant(v.get_jlong());
@@ -506,7 +507,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
   }
   case vmIntrinsics::_longBitsToDouble    : {
     LongConstant* c = x->argument_at(0)->type()->as_LongConstant();
-    if (c != NULL) {
+    if (c != nullptr) {
       JavaValue v;
       v.set_jlong(c->value());
       set_constant(v.get_jdouble());
@@ -517,12 +518,12 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     assert(x->number_of_arguments() == 2, "wrong type");
 
     InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != NULL && !c->value()->is_null_object()) {
-      // ciInstance::java_mirror_type() returns non-NULL only for Java mirrors
+    if (c != nullptr && !c->value()->is_null_object()) {
+      // ciInstance::java_mirror_type() returns non-null only for Java mirrors
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
-        // an InstantOf instruction
+        // an InstanceOf instruction
         InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
         set_canonical(i);
         // and try to canonicalize even further
@@ -531,33 +532,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
         assert(t->is_primitive_type(), "should be a primitive type");
         // cls.isInstance(obj) always returns false for primitive classes
         set_constant(0);
-      }
-    }
-    break;
-  }
-  case vmIntrinsics::_isPrimitive        : {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Class.isPrimitive is known on constant classes:
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != NULL && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      set_constant(t->is_primitive_type());
-    }
-    break;
-  }
-  case vmIntrinsics::_getModifiers: {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Optimize for Foo.class.getModifier()
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != NULL && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      if (t->is_klass()) {
-        set_constant(t->as_klass()->modifier_flags());
-      } else {
-        assert(t->is_primitive_type(), "should be a primitive type");
-        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
       }
     }
     break;
@@ -640,7 +614,7 @@ void Canonicalizer::do_Convert        (Convert*         x) {
 }
 
 void Canonicalizer::do_NullCheck      (NullCheck*       x) {
-  if (x->obj()->as_NewArray() != NULL || x->obj()->as_NewInstance() != NULL) {
+  if (x->obj()->as_NewArray() != nullptr || x->obj()->as_NewInstance() != nullptr) {
     set_canonical(x->obj());
   } else {
     Constant* con = x->obj()->as_Constant();
@@ -666,10 +640,10 @@ void Canonicalizer::do_CheckCast      (CheckCast*       x) {
   if (x->klass()->is_loaded()) {
     Value obj = x->obj();
     ciType* klass = obj->exact_type();
-    if (klass == NULL) {
+    if (klass == nullptr) {
       klass = obj->declared_type();
     }
-    if (klass != NULL && klass->is_loaded()) {
+    if (klass != nullptr && klass->is_loaded()) {
       bool is_interface = klass->is_instance_klass() &&
                           klass->as_instance_klass()->is_interface();
       // Interface casts can't be statically optimized away since verifier doesn't
@@ -689,7 +663,7 @@ void Canonicalizer::do_InstanceOf     (InstanceOf*      x) {
   if (x->klass()->is_loaded()) {
     Value obj = x->obj();
     ciType* exact = obj->exact_type();
-    if (exact != NULL && exact->is_loaded() && (obj->as_NewInstance() || obj->as_NewArray())) {
+    if (exact != nullptr && exact->is_loaded() && (obj->as_NewInstance() || obj->as_NewArray())) {
       set_constant(exact->is_subtype_of(x->klass()) ? 1 : 0);
       return;
     }
@@ -737,7 +711,7 @@ void Canonicalizer::do_If(If* x) {
 
   if (l == r && !lt->is_float_kind()) {
     // pattern: If (a cond a) => simplify to Goto
-    BlockBegin* sux = NULL;
+    BlockBegin* sux = nullptr;
     switch (x->cond()) {
     case If::eql: sux = x->sux_for(true);  break;
     case If::neq: sux = x->sux_for(false); break;
@@ -753,20 +727,20 @@ void Canonicalizer::do_If(If* x) {
   }
 
   if (lt->is_constant() && rt->is_constant()) {
-    if (x->x()->as_Constant() != NULL) {
+    if (x->x()->as_Constant() != nullptr) {
       // pattern: If (lc cond rc) => simplify to: Goto
       BlockBegin* sux = x->x()->as_Constant()->compare(x->cond(), x->y(),
                                                        x->sux_for(true),
                                                        x->sux_for(false));
-      if (sux != NULL) {
+      if (sux != nullptr) {
         // If is a safepoint then the debug information should come from the state_before of the If.
         set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
       }
     }
-  } else if (rt->as_IntConstant() != NULL) {
+  } else if (rt->as_IntConstant() != nullptr) {
     // pattern: If (l cond rc) => investigate further
     const jint rc = rt->as_IntConstant()->value();
-    if (l->as_CompareOp() != NULL) {
+    if (l->as_CompareOp() != nullptr) {
       // pattern: If ((a cmp b) cond rc) => simplify to: If (x cond y) or: Goto
       CompareOp* cmp = l->as_CompareOp();
       bool unordered_is_less = cmp->op() == Bytecodes::_fcmpl || cmp->op() == Bytecodes::_dcmpl;
@@ -784,8 +758,8 @@ void Canonicalizer::do_If(If* x) {
         // two successors differ and two successors are the same => simplify to: If (x cmp y)
         // determine new condition & successors
         If::Condition cond = If::eql;
-        BlockBegin* tsux = NULL;
-        BlockBegin* fsux = NULL;
+        BlockBegin* tsux = nullptr;
+        BlockBegin* fsux = nullptr;
              if (lss_sux == eql_sux) { cond = If::leq; tsux = lss_sux; fsux = gtr_sux; }
         else if (lss_sux == gtr_sux) { cond = If::neq; tsux = lss_sux; fsux = eql_sux; }
         else if (eql_sux == gtr_sux) { cond = If::geq; tsux = eql_sux; fsux = lss_sux; }
@@ -842,9 +816,18 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
-    for (int i = 0; i < x->length(); i++) {
-      if (v == x->key_at(i)) {
-        sux = x->sux_at(i);
+    int low = 0;
+    int high = x->length() - 1;
+    while (low <= high) {
+      int mid = low + ((high - low) >> 1);
+      int key = x->key_at(mid);
+      if (key == v) {
+        sux = x->sux_at(mid);
+        break;
+      } else if (key > v) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
@@ -857,7 +840,6 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
 void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
 void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
 void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -72,6 +71,11 @@ bool frame::upcall_stub_frame_is_first() const {
   return false;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
+}
+
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
@@ -82,7 +86,6 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
   return get_interpreterState()->monitor_base();
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return (BasicObjectLock*) get_interpreterState()->stack_base();
 }
@@ -121,10 +124,10 @@ bool frame::safe_for_sender(JavaThread *thread) {
 bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   // These are hacks to keep us out of trouble.
@@ -392,9 +395,9 @@ void ZeroFrame::identify_vp_word(int       frame_index,
       (BasicObjectLock *) monitor_base - 1 - index);
     intptr_t offset = (intptr_t) addr - monitor;
 
-    if (offset == BasicObjectLock::obj_offset_in_bytes())
+    if (offset == in_bytes(BasicObjectLock::obj_offset()))
       snprintf(fieldbuf, buflen, "monitor[%d]->_obj", index);
-    else if (offset ==  BasicObjectLock::lock_offset_in_bytes())
+    else if (offset == in_bytes(BasicObjectLock::lock_offset()))
       snprintf(fieldbuf, buflen, "monitor[%d]->_lock", index);
 
     return;

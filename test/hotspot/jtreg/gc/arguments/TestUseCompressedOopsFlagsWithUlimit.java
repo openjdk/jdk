@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ package gc.arguments;
  * @library /test/lib
  * @library /
  * @requires vm.bits == "64"
+ * @comment ulimit clashes with the memory requirements of ASAN
+ * @requires !vm.asan
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @requires vm.opt.UseCompressedOops == null
@@ -54,14 +56,18 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     args.add("-XX:+PrintFlagsFinal");
+
+    // Avoid issues with libjvmci failing to reserve
+    // a large virtual address space for its heap
+    args.add("-Xint");
+
     args.add("-version");
 
     // Convert bytes to kbytes for ulimit -v
     var ulimit_prefix = "ulimit -v " + (ulimit / 1024);
 
-    String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(args.toArray(String[]::new)));
-    ProcessBuilder pb = new ProcessBuilder("sh", "-c", ulimit_prefix + ";" + cmd);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(args));
+    OutputAnalyzer output = ProcessTools.executeProcess("sh", "-c", ulimit_prefix + ";" + cmd);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
 

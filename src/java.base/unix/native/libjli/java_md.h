@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,16 @@ int UnsetEnv(char *name);
 char *FindExecName(char *program);
 const char *SetExecname(char **argv);
 const char *GetExecName();
-static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
+static jboolean GetJVMPath(const char *jdkroot, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
-static jboolean GetJREPath(char *path, jint pathsize, jboolean speculative);
+static jboolean GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative);
+
+/* Reports a system error message to stderr, including errno */
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessageSys(const char * message, ...);
 
 #if defined(_AIX)
+jboolean GetApplicationHomeFromLibpath(char *buf, jint bufsize);
 #include "java_md_aix.h"
 #endif
 

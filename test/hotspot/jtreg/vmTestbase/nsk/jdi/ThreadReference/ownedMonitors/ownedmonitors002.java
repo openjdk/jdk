@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,10 @@ public class ownedmonitors002 {
     private int tot_res = Consts.TEST_PASSED;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -88,38 +91,34 @@ public class ownedmonitors002 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
+        try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
-        int num = 0;
-        thrRef.suspend();
-        while(!thrRef.isSuspended()) {
-            num++;
-            if (num > ATTEMPTS) {
-                log.complain("TEST FAILURE: Unable to suspend debuggee thread after "
-                    + ATTEMPTS + " attempts");
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
                 tot_res = Consts.TEST_FAILED;
                 return quitDebuggee();
             }
-            log.display("Waiting for debuggee thread suspension ...");
-            try {
+
+            int num = 0;
+            thrRef.suspend();
+            while(!thrRef.isSuspended()) {
+                num++;
+                if (num > ATTEMPTS) {
+                    log.complain("TEST FAILURE: Unable to suspend debuggee thread after "
+                                 + ATTEMPTS + " attempts");
+                    tot_res = Consts.TEST_FAILED;
+                    return quitDebuggee();
+                }
+                log.display("Waiting for debuggee thread suspension ...");
                 Thread.currentThread().sleep(DELAY);
-            } catch(InterruptedException ie) {
-                ie.printStackTrace();
-                log.complain("TEST FAILURE: caught: " + ie);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
             }
-        }
 
 // Check the tested assersion
-        try {
             List mons = thrRef.ownedMonitors();
             if (vm.canGetOwnedMonitorInfo()) {
                 log.display("CHECK PASSED: got a List of monitors owned by the thread,"

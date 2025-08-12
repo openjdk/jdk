@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.io;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.misc.InternalLock;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 
@@ -50,6 +49,11 @@ import jdk.internal.util.ArraysSupport;
  * reread before new bytes are  taken from
  * the contained input stream.
  *
+ * @apiNote
+ * Once wrapped in a {@code BufferedInputStream}, the underlying
+ * {@code InputStream} should not be used directly nor wrapped with
+ * another stream.
+ *
  * @author  Arthur van Hoff
  * @since   1.0
  */
@@ -57,9 +61,11 @@ public class BufferedInputStream extends FilterInputStream {
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
+    private static final byte[] EMPTY = new byte[0];
+
     /**
      * As this class is used early during bootstrap, it's motivated to use
-     * Unsafe.compareAndSetObject instead of AtomicReferenceFieldUpdater
+     * Unsafe.compareAndSetReference instead of AtomicReferenceFieldUpdater
      * (or VarHandles) to reduce dependencies and improve startup time.
      */
     private static final Unsafe U = Unsafe.getUnsafe();
@@ -67,8 +73,8 @@ public class BufferedInputStream extends FilterInputStream {
     private static final long BUF_OFFSET
             = U.objectFieldOffset(BufferedInputStream.class, "buf");
 
-    // initialized to null when BufferedInputStream is sub-classed
-    private final InternalLock lock;
+    // initial buffer size (DEFAULT_BUFFER_SIZE or size specified to constructor)
+    private final int initialSize;
 
     /**
      * The internal buffer array where the data is stored. When necessary,
@@ -166,14 +172,40 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Check to make sure that buffer has not been nulled out due to
-     * close; if not return it;
+     * Returns the internal buffer, optionally allocating it if empty.
+     * @param allocateIfEmpty true to allocate if empty
+     * @throws IOException if the stream is closed (buf is null)
+     */
+    private byte[] getBufIfOpen(boolean allocateIfEmpty) throws IOException {
+        byte[] buffer = buf;
+        if (allocateIfEmpty && buffer == EMPTY) {
+            buffer = new byte[initialSize];
+            if (!U.compareAndSetReference(this, BUF_OFFSET, EMPTY, buffer)) {
+                // re-read buf
+                buffer = buf;
+            }
+        }
+        if (buffer == null) {
+            throw new IOException("Stream closed");
+        }
+        return buffer;
+    }
+
+    /**
+     * Returns the internal buffer, allocating it if empty.
+     * @throws IOException if the stream is closed (buf is null)
      */
     private byte[] getBufIfOpen() throws IOException {
-        byte[] buffer = buf;
-        if (buffer == null)
+        return getBufIfOpen(true);
+    }
+
+    /**
+     * Throws IOException if the stream is closed (buf is null).
+     */
+    private void ensureOpen() throws IOException {
+        if (buf == null) {
             throw new IOException("Stream closed");
-        return buffer;
+        }
     }
 
     /**
@@ -205,20 +237,19 @@ public class BufferedInputStream extends FilterInputStream {
         if (size <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
-        buf = new byte[size];
-
-        // use monitors when BufferedInputStream is sub-classed
+        initialSize = size;
         if (getClass() == BufferedInputStream.class) {
-            lock = InternalLock.newLockOrNull();
+            // lazily create buffer when not subclassed
+            buf = EMPTY;
         } else {
-            lock = null;
+            buf = new byte[size];
         }
     }
 
     /**
      * Fills the buffer with more data, taking into account
      * shuffling and other tricks for dealing with marks.
-     * Assumes that it is being called by a locked method.
+     * Assumes that it is being called by a synchronized method.
      * This method also assumes that all data has already been read in,
      * hence pos > count.
      */
@@ -272,22 +303,7 @@ public class BufferedInputStream extends FilterInputStream {
      *                          or an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
-    public int read() throws IOException {
-        if (lock != null) {
-            lock.lock();
-            try {
-                return implRead();
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implRead();
-            }
-        }
-    }
-
-    private int implRead() throws IOException {
+    public synchronized int read() throws IOException {
         if (pos >= count) {
             fill();
             if (pos >= count)
@@ -307,7 +323,8 @@ public class BufferedInputStream extends FilterInputStream {
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
-            if (len >= getBufIfOpen().length && markpos == -1) {
+            int size = Math.max(getBufIfOpen(false).length, initialSize);
+            if (len >= size && markpos == -1) {
                 return getInIfOpen().read(b, off, len);
             }
             fill();
@@ -358,23 +375,8 @@ public class BufferedInputStream extends FilterInputStream {
      *                          or an I/O error occurs.
      * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
-    public int read(byte[] b, int off, int len) throws IOException {
-        if (lock != null) {
-            lock.lock();
-            try {
-                return implRead(b, off, len);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implRead(b, off, len);
-            }
-        }
-    }
-
-    private int implRead(byte[] b, int off, int len) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
+        ensureOpen();
         if ((off | len | (off + len) | (b.length - (off + len))) < 0) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -405,23 +407,8 @@ public class BufferedInputStream extends FilterInputStream {
      *                      {@code in.skip(n)} throws an IOException,
      *                      or an I/O error occurs.
      */
-    public long skip(long n) throws IOException {
-        if (lock != null) {
-            lock.lock();
-            try {
-                return implSkip(n);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implSkip(n);
-            }
-        }
-    }
-
-    private long implSkip(long n) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+    public synchronized long skip(long n) throws IOException {
+        ensureOpen();
         if (n <= 0) {
             return 0;
         }
@@ -461,22 +448,7 @@ public class BufferedInputStream extends FilterInputStream {
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
      */
-    public int available() throws IOException {
-        if (lock != null) {
-            lock.lock();
-            try {
-                return implAvailable();
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implAvailable();
-            }
-        }
-    }
-
-    private int implAvailable() throws IOException {
+    public synchronized int available() throws IOException {
         int n = count - pos;
         int avail = getInIfOpen().available();
         return n > (Integer.MAX_VALUE - avail)
@@ -492,22 +464,7 @@ public class BufferedInputStream extends FilterInputStream {
      *                      the mark position becomes invalid.
      * @see     java.io.BufferedInputStream#reset()
      */
-    public void mark(int readlimit) {
-        if (lock != null) {
-            lock.lock();
-            try {
-                implMark(readlimit);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                implMark(readlimit);
-            }
-        }
-    }
-
-    private void implMark(int readlimit) {
+    public synchronized void mark(int readlimit) {
         marklimit = readlimit;
         markpos = pos;
     }
@@ -528,23 +485,8 @@ public class BufferedInputStream extends FilterInputStream {
      *                  method, or an I/O error occurs.
      * @see        java.io.BufferedInputStream#mark(int)
      */
-    public void reset() throws IOException {
-        if (lock != null) {
-            lock.lock();
-            try {
-                implReset();
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                implReset();
-            }
-        }
-    }
-
-    private void implReset() throws IOException {
-        getBufIfOpen(); // Cause exception if closed
+    public synchronized void reset() throws IOException {
+        ensureOpen();
         if (markpos < 0)
             throw new IOException("Resetting to invalid mark");
         pos = markpos;
@@ -589,29 +531,18 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     @Override
-    public long transferTo(OutputStream out) throws IOException {
+    public synchronized long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
-        if (lock != null) {
-            lock.lock();
-            try {
-                return implTransferTo(out);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implTransferTo(out);
-            }
-        }
-    }
-
-    private long implTransferTo(OutputStream out) throws IOException {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                // Prevent poisoning and leaking of buf
-                byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
-                out.write(buffer);
+                if (isTrusted(out)) {
+                    out.write(getBufIfOpen(), pos, avail);
+                } else {
+                    // Prevent poisoning and leaking of buf
+                    byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
+                    out.write(buffer);
+                }
                 pos = count;
             }
             try {
@@ -622,6 +553,24 @@ public class BufferedInputStream extends FilterInputStream {
         } else {
             return super.transferTo(out);
         }
+    }
+
+    /**
+     * Returns true if this class satisfies the following conditions:
+     * <ul>
+     * <li>does not retain a reference to the {@code byte[]}</li>
+     * <li>does not leak a reference to the {@code byte[]} to non-trusted classes</li>
+     * <li>does not modify the contents of the {@code byte[]}</li>
+     * <li>{@code write()} method does not read the contents outside of the offset/length bounds</li>
+     * </ul>
+     *
+     * @return true if this class is trusted
+     */
+    private static boolean isTrusted(OutputStream os) {
+        var clazz = os.getClass();
+        return clazz == ByteArrayOutputStream.class
+                || clazz == FileOutputStream.class
+                || clazz == PipedOutputStream.class;
     }
 
 }

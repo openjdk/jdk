@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import jdk.test.lib.Utils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.BindException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -180,22 +179,19 @@ public class RmiRegistrySslTest {
             initTestEnvironment();
 
             List<String> command = new ArrayList<>();
-            Collections.addAll(command, Utils.getTestJavaOpts());
             command.add("-Dtest.src=" + TEST_SRC);
             command.add("-Dtest.rmi.port=" + port);
             command.addAll(Arrays.asList(args));
-            command.add("-cp");
-            command.add(TEST_CLASS_PATH);
             command.add(className);
 
-            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(command.toArray(new String[command.size()]));
+            ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
 
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
 
             System.out.println("test output:");
             System.out.println(output.getOutput());
 
-            if (!output.getOutput().contains("Exception thrown by the agent : " +
+            if (!output.getOutput().contains("Exception thrown by the agent: " +
                     "java.rmi.server.ExportException: Port already in use")) {
                 return output.getExitValue();
             }

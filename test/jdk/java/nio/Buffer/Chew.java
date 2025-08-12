@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Ensure that direct memory can be unreserved
  *          as the reserving thread sleeps
  *
- * @run main/othervm -mx16M Chew
+ * @run main/othervm -Xmx16M Chew
  */
 
 import java.nio.*;

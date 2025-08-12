@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,25 +32,33 @@ import java.io.Serial;
  * lays out a container's components in a rectangular grid.
  * The container is divided into equal-sized rectangles,
  * and one component is placed in each rectangle.
- * For example, the following is an applet that lays out six buttons
+ * For example, the following is a window that lays out six buttons
  * into three rows and two columns:
  *
- * <hr><blockquote>
- * <pre>
- * import java.awt.*;
- * import java.applet.Applet;
- * public class ButtonGrid extends Applet {
- *     public void init() {
- *         setLayout(new GridLayout(3,2));
- *         add(new Button("1"));
- *         add(new Button("2"));
- *         add(new Button("3"));
- *         add(new Button("4"));
- *         add(new Button("5"));
- *         add(new Button("6"));
+ * {@snippet lang='java':
+ * import java.awt.Button;
+ * import java.awt.EventQueue;
+ * import java.awt.Frame;
+ * import java.awt.GridLayout;
+ *
+ * public class GridLayoutExample {
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("GridLayout");
+ *             frame.setLayout(new GridLayout(3, 2));
+ *             frame.add(new Button("1"));
+ *             frame.add(new Button("2"));
+ *             frame.add(new Button("3"));
+ *             frame.add(new Button("4"));
+ *             frame.add(new Button("5"));
+ *             frame.add(new Button("6"));
+ *             frame.setSize(200, 200);
+ *             frame.setVisible(true);
+ *         });
  *     }
  * }
- * </pre></blockquote><hr>
+ * }
  * <p>
  * If the container's {@code ComponentOrientation} property is horizontal
  * and left-to-right, the above example produces the output shown in Figure 1.
@@ -59,13 +67,13 @@ import java.io.Serial;
  *
  * <div style="margin:0 auto;width:600px;text-align:center;font-weight:bold">
  *   <div style="float:left">
- *     <p><img SRC="doc-files/GridLayout-1.gif"
+ *     <p><img SRC="doc-files/GridLayout-1.png"
  *        alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 1 then 2.
  *        Row 2 shows buttons 3 then 4. Row 3 shows buttons 5 then 6.">
  *     <p>Figure 1: Horizontal, Left-to-Right
  *   </div>
  *   <div style="float:right">
- *     <p><img SRC="doc-files/GridLayout-2.gif"
+ *     <p><img SRC="doc-files/GridLayout-2.png"
  *        alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 2 then 1.
  *        Row 2 shows buttons 4 then 3. Row 3 shows buttons 6 then 5.">
  *     <p>Figure 2: Horizontal, Right-to-Left
@@ -234,7 +242,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
 
     /**
      * Sets the number of columns in this layout to the specified value.
-     * Setting the number of columns has no affect on the layout
+     * Setting the number of columns has no effect on the layout
      * if the number of rows specified by a constructor or by
      * the {@code setRows} method is non-zero. In that case, the number
      * of columns displayed in the layout is determined by the total
@@ -435,10 +443,10 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
             nrows = (ncomponents + ncols - 1) / ncols;
         }
         // 4370316. To position components in the center we should:
-        // 1. get an amount of extra space within Container
+        // 1. get the amount of extra space within Container
         // 2. incorporate half of that value to the left/top position
-        // Note that we use trancating division for widthOnComponent
-        // The reminder goes to extraWidthAvailable
+        // Note that we use truncating division for widthOnComponent
+        // The remainder goes to extraWidthAvailable
         int totalGapsWidth = (ncols - 1) * hgap;
         int widthWOInsets = parent.width - (insets.left + insets.right);
         int widthOnComponent = (widthWOInsets - totalGapsWidth) / ncols;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ class MemoryPool : public CHeapObj<mtInternal> {
   SensorInfo*      _usage_sensor;
   SensorInfo*      _gc_usage_sensor;
 
-  volatile OopHandle _memory_pool_obj;
+  OopHandle _memory_pool_obj;
+  volatile bool _memory_pool_obj_initialized;
 
   void add_manager(MemoryManager* mgr);
 

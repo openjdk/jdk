@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="ElementKindVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see ElementKindVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see ElementKindVisitor6
  * @see ElementKindVisitor8
  * @see ElementKindVisitor9
@@ -88,12 +88,12 @@ public class ElementKindVisitor7<R, P> extends ElementKindVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementKindVisitor6}
+     * @param p {@inheritDoc ElementKindVisitor6}
      * @return  the result of {@code defaultAction}
      */
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,33 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.ch.Poller;
-import sun.security.action.GetPropertyAction;
 
 /**
- * This class consists exclusively of static methods to support debugging and
- * monitoring of threads.
+ * This class consists exclusively of static methods to support groupings of threads.
  */
 public class ThreadContainers {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
+    // true if all threads are tracked
+    private static final boolean TRACK_ALL_THREADS;
+
+    // the root container
+    private static final RootContainer ROOT_CONTAINER;
+
     // the set of thread containers registered with this class
     private static final Set<WeakReference<ThreadContainer>> CONTAINER_REGISTRY = ConcurrentHashMap.newKeySet();
     private static final ReferenceQueue<Object> QUEUE = new ReferenceQueue<>();
+
+    static {
+        String s = System.getProperty("jdk.trackAllThreads");
+        if (s == null || s.isEmpty() || Boolean.parseBoolean(s)) {
+            TRACK_ALL_THREADS = true;
+            ROOT_CONTAINER = new RootContainer.TrackingRootContainer();
+        } else {
+            TRACK_ALL_THREADS = false;
+            ROOT_CONTAINER = new RootContainer.CountingRootContainer();
+        }
+    }
 
     private ThreadContainers() { }
 
@@ -60,12 +74,19 @@ public class ThreadContainers {
     }
 
     /**
+     * Returns true if all threads are tracked.
+     */
+    public static boolean trackAllThreads() {
+        return TRACK_ALL_THREADS;
+    }
+
+    /**
      * Registers a thread container to be tracked this class, returning a key
      * that is used to remove it from the registry.
      */
     public static Object registerContainer(ThreadContainer container) {
         expungeStaleEntries();
-        var ref = new WeakReference<>(container);
+        var ref = new WeakReference<>(container, QUEUE);
         CONTAINER_REGISTRY.add(ref);
         return ref;
     }
@@ -83,7 +104,7 @@ public class ThreadContainers {
      * Returns the root thread container.
      */
     public static ThreadContainer root() {
-        return RootContainer.INSTANCE;
+        return ROOT_CONTAINER;
     }
 
     /**
@@ -183,20 +204,10 @@ public class ThreadContainers {
     }
 
     /**
-     * Root container that "contains" all platform threads not started in a
-     * container plus some (or all) virtual threads that are started directly
-     * with the Thread API.
+     * Root container that "contains" all platform threads not started in a container.
+     * It may include all virtual threads started directly with the Thread API.
      */
-    private static abstract class RootContainer extends ThreadContainer {
-        static final RootContainer INSTANCE;
-        static {
-            String s = GetPropertyAction.privilegedGetProperty("jdk.trackAllThreads");
-            if (s != null && (s.isEmpty() || Boolean.parseBoolean(s))) {
-                INSTANCE = new TrackingRootContainer();
-            } else {
-                INSTANCE = new CountingRootContainer();
-            }
-        }
+    private abstract static class RootContainer extends ThreadContainer {
         protected RootContainer() {
             super(true);
         }
@@ -205,12 +216,16 @@ public class ThreadContainers {
             return null;
         }
         @Override
-        public String toString() {
+        public String name() {
             return "<root>";
         }
         @Override
         public StackableScope previous() {
             return null;
+        }
+        @Override
+        public String toString() {
+            return name();
         }
 
         /**
@@ -270,11 +285,7 @@ public class ThreadContainers {
             }
             @Override
             public Stream<Thread> threads() {
-                // virtual threads in this container that are those blocked on I/O.
-                Stream<Thread> blockedVirtualThreads = Poller.blockedThreads()
-                        .filter(t -> t.isVirtual()
-                                && JLA.threadContainer(t) == this);
-                return Stream.concat(platformThreads(), blockedVirtualThreads);
+                return platformThreads();
             }
         }
     }

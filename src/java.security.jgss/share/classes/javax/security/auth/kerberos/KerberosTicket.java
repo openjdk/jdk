@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,7 @@ import sun.security.util.HexDumpEncoder;
  * directly communicating with the KDC. During the commit phase of the JAAS
  * authentication process, the JAAS login module should instantiate this
  * class and store the instance in the private credential set of a
- * {@link javax.security.auth.Subject Subject}.<p>
- *
- * It might be necessary for the application to be granted a
- * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access a {@code KerberosTicket}
- * instance from a {@code Subject}. This permission is not needed when the
- * application depends on the default JGSS Kerberos mechanism to access the
- * {@code KerberosTicket}. In that case, however, the application will need an
- * appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
+ * {@link javax.security.auth.Subject Subject}.
  * <p>
  * Note that this class is applicable to both ticket granting tickets and
  * other regular service tickets. A ticket granting ticket is just a
@@ -71,7 +62,6 @@ import sun.security.util.HexDumpEncoder;
  * all tickets after logout.
  *
  * @see javax.security.auth.Subject
- * @see javax.security.auth.PrivateCredentialPermission
  * @see javax.security.auth.login.LoginContext
  * @see org.ietf.jgss.GSSCredential
  * @see org.ietf.jgss.GSSManager
@@ -197,7 +187,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
     private InetAddress[] clientAddresses;
 
     /**
-     * Evidence ticket if proxy_impersonator. This field can be accessed
+     * @serial Evidence ticket if proxy_impersonator. This field can be accessed
      * by KerberosSecrets. It's serialized.
      */
     KerberosTicket proxy = null;
@@ -716,11 +706,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Returns a hash code for this {@code KerberosTicket}.
-     *
-     * @return a hash code for this {@code KerberosTicket}.
+     * {@return a hash code for this {@code KerberosTicket}}
      * @since 1.6
      */
+    @Override
     public int hashCode() {
         int result = 17;
         if (isDestroyed()) {
@@ -768,6 +757,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * false otherwise.
      * @since 1.6
      */
+    @Override
     public boolean equals(Object other) {
 
         if (other == this) {
@@ -792,39 +782,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
             return false;
         }
 
-        // authTime may be null
-        if (authTime == null) {
-            if (otherTicket.getAuthTime() != null) {
-                return false;
-            }
-        } else {
-            if (!authTime.equals(otherTicket.getAuthTime())) {
-                return false;
-            }
-        }
-
-        // startTime may be null
-        if (startTime == null) {
-            if (otherTicket.getStartTime() != null) {
-                return false;
-            }
-        } else {
-            if (!startTime.equals(otherTicket.getStartTime())) {
-                return false;
-            }
-        }
-
-        if (renewTill == null) {
-            if (otherTicket.getRenewTill() != null) {
-                return false;
-            }
-        } else {
-            if (!renewTill.equals(otherTicket.getRenewTill())) {
-                return false;
-            }
-        }
-
-        return Objects.equals(proxy, otherTicket.proxy);
+        return Objects.equals(authTime, otherTicket.getAuthTime())
+                && Objects.equals(startTime, otherTicket.getStartTime())
+                && Objects.equals(renewTill, otherTicket.getRenewTill())
+                && Objects.equals(proxy, otherTicket.proxy);
     }
 
     /**

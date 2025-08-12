@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package javax.crypto.spec;
 import jdk.internal.access.SharedSecrets;
 
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.MessageDigest;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -60,7 +63,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @serial
      */
-    private final byte[] key;
+    private byte[] key;
 
     /**
      * The name of the algorithm associated with this key.
@@ -88,20 +91,21 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @param key the key material of the secret key. The contents of
      * the array are copied to protect against subsequent modification.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, String algorithm) {
-        if (key == null || algorithm == null) {
-            throw new IllegalArgumentException("Missing argument");
-        }
-        if (key.length == 0) {
-            throw new IllegalArgumentException("Empty key");
+        String errMsg = doSanityCheck(key, algorithm);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
         this.key = key.clone();
         this.algorithm = algorithm;
@@ -109,16 +113,16 @@ public class SecretKeySpec implements KeySpec, SecretKey {
 
     /**
      * Constructs a secret key from the given byte array, using the first
-     * <code>len</code> bytes of <code>key</code>, starting at
-     * <code>offset</code> inclusive.
+     * {@code len} bytes of {@code key}, starting at
+     * {@code offset} inclusive.
      *
      * <p> The bytes that constitute the secret key are
-     * those between <code>key[offset]</code> and
-     * <code>key[offset+len-1]</code> inclusive.
+     * those between {@code key[offset]} and
+     * {@code key[offset+len-1]} inclusive.
      *
      * <p>This constructor does not check if the given bytes indeed specify a
      * secret key of the specified algorithm. For example, if the algorithm is
-     * DES, this constructor does not check if <code>key</code> is 8 bytes
+     * DES, this constructor does not check if {@code key} is 8 bytes
      * long, and also does not check for weak or semi-weak keys.
      * In order for those checks to be performed, an algorithm-specific key
      * specification class (in this case:
@@ -126,23 +130,25 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * must be used.
      *
      * @param key the key material of the secret key. The first
-     * <code>len</code> bytes of the array beginning at
-     * <code>offset</code> inclusive are copied to protect
+     * {@code len} bytes of the array beginning at
+     * {@code offset} inclusive are copied to protect
      * against subsequent modification.
-     * @param offset the offset in <code>key</code> where the key material
+     * @param offset the offset in {@code key} where the key material
      * starts.
      * @param len the length of the key material.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
-     * @exception IllegalArgumentException if <code>algorithm</code>
-     * is null or <code>key</code> is null, empty, or too short,
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
+     * @exception IllegalArgumentException if {@code algorithm}
+     * is {@code null} or {@code key} is {@code null}, empty, or too short,
      * i.e. {@code key.length-offset<len}.
-     * @exception ArrayIndexOutOfBoundsException is thrown if
-     * <code>offset</code> or <code>len</code> index bytes outside the
-     * <code>key</code>.
+     * @exception ArrayIndexOutOfBoundsException if
+     * {@code offset} or {@code len} are negative.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, int offset, int len, String algorithm) {
         if (key == null || algorithm == null) {
@@ -198,11 +204,9 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-        for (int i = 1; i < this.key.length; i++) {
-            retval += this.key[i] * i;
-        }
+        int retval = Arrays.hashCode(key);
         if (this.algorithm.equalsIgnoreCase("TripleDES"))
             return retval ^ "desede".hashCode();
         else
@@ -220,14 +224,15 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @return true if the objects are considered equal, false if
      * <code>obj</code> is null or otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof SecretKey))
+        if (!(obj instanceof SecretKey that))
             return false;
 
-        String thatAlg = ((SecretKey)obj).getAlgorithm();
+        String thatAlg = that.getAlgorithm();
         if (!(thatAlg.equalsIgnoreCase(this.algorithm))) {
             if ((!(thatAlg.equalsIgnoreCase("DESede"))
                  || !(this.algorithm.equalsIgnoreCase("TripleDES")))
@@ -236,7 +241,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
             return false;
         }
 
-        byte[] thatKey = ((SecretKey)obj).getEncoded();
+        byte[] thatKey = that.getEncoded();
         try {
             return MessageDigest.isEqual(this.key, thatKey);
         } finally {
@@ -251,5 +256,35 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      */
     void clear() {
         Arrays.fill(key, (byte)0);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        String errMsg = doSanityCheck(key, algorithm);
+        if (errMsg != null) {
+            throw new InvalidObjectException(errMsg);
+        }
+        byte[] temp = key;
+        this.key = temp.clone();
+        Arrays.fill(temp, (byte) 0);
+    }
+
+    private static String doSanityCheck(byte[] key, String algorithm) {
+        String errMsg = null;
+        if (key == null || algorithm == null) {
+            errMsg = "Missing argument";
+        } else if (key.length == 0) {
+            errMsg = "Empty key";
+        }
+        return errMsg;
     }
 }

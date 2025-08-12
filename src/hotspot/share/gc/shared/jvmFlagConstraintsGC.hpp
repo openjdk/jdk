@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,16 @@
  * an appropriate error value.
  */
 #define SHARED_GC_CONSTRAINTS(f)                               \
- f(uint,   ParallelGCThreadsConstraintFunc)                    \
  f(size_t, YoungPLABSizeConstraintFunc)                        \
  f(size_t, OldPLABSizeConstraintFunc)                          \
  f(uintx,  MinHeapFreeRatioConstraintFunc)                     \
  f(uintx,  MaxHeapFreeRatioConstraintFunc)                     \
  f(intx,   SoftRefLRUPolicyMSPerMBConstraintFunc)              \
  f(size_t, MarkStackSizeConstraintFunc)                        \
- f(uintx,  MinMetaspaceFreeRatioConstraintFunc)                \
- f(uintx,  MaxMetaspaceFreeRatioConstraintFunc)                \
- f(uintx,  InitialTenuringThresholdConstraintFunc)             \
- f(uintx,  MaxTenuringThresholdConstraintFunc)                 \
+ f(uint,   MinMetaspaceFreeRatioConstraintFunc)                \
+ f(uint,   MaxMetaspaceFreeRatioConstraintFunc)                \
+ f(uint,   InitialTenuringThresholdConstraintFunc)             \
+ f(uint,   MaxTenuringThresholdConstraintFunc)                 \
                                                                \
  f(uintx,  MaxGCPauseMillisConstraintFunc)                     \
  f(uintx,  GCPauseIntervalMillisConstraintFunc)                \

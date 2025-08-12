@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psPromotionLAB.hpp"
@@ -46,7 +45,7 @@ void PSPromotionLAB::initialize(MemRegion lab) {
   // We can be initialized to a zero size!
   if (free() > 0) {
     if (ZapUnusedHeapArea) {
-      debug_only(Copy::fill_to_words(top(), free()/HeapWordSize, badHeapWord));
+      DEBUG_ONLY(Copy::fill_to_words(top(), free()/HeapWordSize, badHeapWord));
     }
 
     // NOTE! We need to allow space for a filler object.
@@ -115,7 +114,8 @@ void PSOldPromotionLAB::flush() {
 
   assert(_start_array != nullptr, "Sanity");
 
-  _start_array->allocate_block(obj);
+  // filler obj
+  _start_array->update_for_block(obj, obj + cast_to_oop(obj)->size());
 }
 
 #ifdef ASSERT
@@ -132,17 +132,11 @@ bool PSYoungPromotionLAB::lab_is_valid(MemRegion lab) {
 }
 
 bool PSOldPromotionLAB::lab_is_valid(MemRegion lab) {
-  assert(_start_array->covered_region().contains(lab), "Sanity");
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   MemRegion used = old_gen->object_space()->used_region();
 
-  if (used.contains(lab)) {
-    return true;
-  }
-
-  return false;
+  return used.contains(lab);
 }
 
 #endif /* ASSERT */

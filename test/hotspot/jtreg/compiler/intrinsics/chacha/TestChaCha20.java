@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  * @bug 8247645
  * @summary ChaCha20 Intrinsics
  * @library /test/lib
+ * @requires (vm.cpu.features ~= ".*avx512.*" | vm.cpu.features ~= ".*avx2.*" | vm.cpu.features ~= ".*avx.*") |
+ *           (os.arch=="aarch64" & vm.cpu.features ~= ".*simd.*") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @build   compiler.intrinsics.chacha.ExerciseChaCha20
  *          jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -97,8 +100,14 @@ public class TestChaCha20 {
                 System.out.println("Setting up ASIMD worker");
                 configs.add(new ArrayList());
             }
+        } else if (Platform.isRISCV64()) {
+            // Riscv64 intrinsics require the vector instructions
+            if (containsFuzzy(cpuFeatures, "rvv")) {
+                System.out.println("Setting up vector worker");
+                configs.add(List.of());
+            }
         } else {
-            // We only have ChaCha20 intrinsics on x64 and aarch64
+            // We only have ChaCha20 intrinsics on x64, aarch64 and riscv64
             // currently.  If the platform is neither of these then
             // the ChaCha20 known answer tests in
             // com/sun/crypto/provider/Cipher are sufficient.
@@ -127,7 +136,7 @@ public class TestChaCha20 {
             for (String className : classNames) {
                 // Start a new job
                 {
-                    ProcessBuilder pb = ProcessTools.createTestJvm(
+                    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                             mix(c, "-Xmx256m", className));
                     Process p = pb.start();
                     OutputAnalyzer oa = new OutputAnalyzer(p);

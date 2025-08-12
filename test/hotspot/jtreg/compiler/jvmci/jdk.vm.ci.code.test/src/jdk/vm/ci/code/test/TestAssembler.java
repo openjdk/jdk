@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,27 @@ public abstract class TestAssembler {
         this.curStackSlot = initialFrameSize;
     }
 
+    public class Bookmark implements AutoCloseable {
+        private final int registerMark = nextRegister;
+        private final int codePos = code.position();
+        private final int dataPos = data.position();
+
+        @Override
+        public void close() {
+            nextRegister = registerMark;
+            code.data.position(codePos);
+            data.data.position(dataPos);
+        }
+    }
+
+    /**
+     * Enters a scope in which the current register, code and data emitting state
+     * is restored upon leaving the scope.
+     */
+    public Bookmark bookmark() {
+        return new Bookmark();
+    }
+
     public ValueKind<?> getValueKind(JavaKind kind) {
         return new TestValueKind(codeCache.getTarget().arch.getPlatformKind(kind));
     }
@@ -296,6 +317,18 @@ public abstract class TestAssembler {
         dataPatches.add(new DataPatch(data.position(), ref));
     }
 
+    /**
+     * Emits the 32 bit constant `c` into the data section.
+     */
+    public DataSectionReference emitDataItem(int c) {
+        DataSectionReference ref = new DataSectionReference();
+        ref.setOffset(data.position());
+
+        recordDataPatchInCode(ref);
+        data.emitInt(c);
+        return ref;
+    }
+
     public DataSectionReference emitDataItem(HotSpotConstant c) {
         DataSectionReference ref = new DataSectionReference();
         ref.setOffset(data.position());
@@ -318,9 +351,53 @@ public abstract class TestAssembler {
         DataPatch[] finishedDataPatches = dataPatches.toArray(new DataPatch[0]);
         int dataSectionAlignment = 8; // CodeBuffer::SECT_CONSTS code section alignment
         return new HotSpotCompiledNmethod(method.getName(), finishedCode, finishedCode.length, finishedSites, new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], finishedData, dataSectionAlignment,
-                        finishedDataPatches, false, frameSize, deoptRescue, method, 0, id, 0L, false);
+                        finishedDataPatches, false, frameSize, deoptRescue, method, -1, id, 0L, false);
     }
 
+    /**
+     * @param n Number of bits that should be set to 1. Must be between 0 and 32 (inclusive).
+     * @return A number with n bits set to 1.
+     */
+    public static int getNbitNumberInt(int n) {
+        assert n >= 0 && n <= 32 : "0 <= n <= 32; instead: " + n;
+        if (n < 32) {
+            return (1 << n) - 1;
+        } else {
+            return 0xFFFFFFFF;
+        }
+    }
+
+    public static boolean isSignedNbit(int n, int value) {
+        assert n > 0 && n < 32 : n;
+        int min = -(1 << (n - 1));
+        int max = (1 << (n - 1)) - 1;
+        return value >= min && value <= max;
+    }
+
+    public static boolean isUnsignedNbit(int n, int value) {
+        assert n > 0 && n < 32 : n;
+        return 32 - Integer.numberOfLeadingZeros(value) <= n;
+    }
+
+    /**
+     * Determines if `x` is in the range of signed byte values.
+     */
+    public static boolean isByte(int x) {
+        return (byte) x == x;
+    }
+
+    /**
+     * Determines if `l` is in the range of signed int values.
+     */
+    public static boolean isInt(long l) {
+        return (int) l == l;
+    }
+
+    public static void check(boolean condition, String errorMessage, Object... args) {
+        if (!condition) {
+            throw new AssertionError(errorMessage.formatted(args));
+        }
+    }
     protected static class Buffer {
 
         private ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.nativeOrder());

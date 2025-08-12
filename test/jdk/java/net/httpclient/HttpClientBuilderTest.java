@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -47,6 +48,8 @@ import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.time.Duration.*;
@@ -54,7 +57,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8209137
+ * @bug 8209137 8326233
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -72,17 +75,19 @@ public class HttpClientBuilderTest {
         List<HttpClient> clients = List.of(HttpClient.newHttpClient(),
                                            HttpClient.newBuilder().build());
 
-        for (HttpClient client : clients) {
+        for (HttpClient c : clients) {
             // Empty optionals and defaults
-            assertFalse(client.authenticator().isPresent());
-            assertFalse(client.cookieHandler().isPresent());
-            assertFalse(client.connectTimeout().isPresent());
-            assertFalse(client.executor().isPresent());
-            assertFalse(client.proxy().isPresent());
-            assertTrue(client.sslParameters() != null);
-            assertTrue(client.followRedirects().equals(HttpClient.Redirect.NEVER));
-            assertTrue(client.sslContext() == SSLContext.getDefault());
-            assertTrue(client.version().equals(HttpClient.Version.HTTP_2));
+            try (var client = c) {
+                assertFalse(client.authenticator().isPresent());
+                assertFalse(client.cookieHandler().isPresent());
+                assertFalse(client.connectTimeout().isPresent());
+                assertFalse(client.executor().isPresent());
+                assertFalse(client.proxy().isPresent());
+                assertTrue(client.sslParameters() != null);
+                assertTrue(client.followRedirects().equals(HttpClient.Redirect.NEVER));
+                assertTrue(client.sslContext() == SSLContext.getDefault());
+                assertTrue(client.version().equals(HttpClient.Version.HTTP_2));
+            }
         }
     }
 
@@ -102,19 +107,45 @@ public class HttpClientBuilderTest {
 
     static class TestAuthenticator extends Authenticator { }
 
+    static class Closer implements AutoCloseable {
+        final HttpClient.Builder builder;
+        HttpClient client;
+        Closer(HttpClient.Builder builder) {
+            this.builder = Objects.requireNonNull(builder);
+        }
+        HttpClient build() {
+            if (client != null) client.close();
+            return client = builder.build();
+        }
+        @Override
+        public void close() {
+            if (client != null) client.close();
+        }
+    }
+
+    static Closer closeable(HttpClient.Builder builder) {
+        return new Closer(builder);
+    }
+
     @Test
     public void testAuthenticator() {
         HttpClient.Builder builder = HttpClient.newBuilder();
         Authenticator a = new TestAuthenticator();
         builder.authenticator(a);
-        assertTrue(builder.build().authenticator().get() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().authenticator().get() == a);
+        }
         Authenticator b = new TestAuthenticator();
         builder.authenticator(b);
-        assertTrue(builder.build().authenticator().get() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().authenticator().get() == b);
+        }
         assertThrows(NPE, () -> builder.authenticator(null));
         Authenticator c = new TestAuthenticator();
         builder.authenticator(c);
-        assertTrue(builder.build().authenticator().get() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().authenticator().get() == c);
+        }
     }
 
     @Test
@@ -122,14 +153,20 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         CookieHandler a = new CookieManager();
         builder.cookieHandler(a);
-        assertTrue(builder.build().cookieHandler().get() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().cookieHandler().get() == a);
+        }
         CookieHandler b = new CookieManager();
         builder.cookieHandler(b);
-        assertTrue(builder.build().cookieHandler().get() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().cookieHandler().get() == b);
+        }
         assertThrows(NPE, () -> builder.cookieHandler(null));
         CookieManager c = new CookieManager();
         builder.cookieHandler(c);
-        assertTrue(builder.build().cookieHandler().get() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().cookieHandler().get() == c);
+        }
     }
 
     @Test
@@ -137,14 +174,20 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         Duration a = Duration.ofSeconds(5);
         builder.connectTimeout(a);
-        assertTrue(builder.build().connectTimeout().get() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().connectTimeout().get() == a);
+        }
         Duration b = Duration.ofMinutes(1);
         builder.connectTimeout(b);
-        assertTrue(builder.build().connectTimeout().get() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().connectTimeout().get() == b);
+        }
         assertThrows(NPE, () -> builder.cookieHandler(null));
         Duration c = Duration.ofHours(100);
         builder.connectTimeout(c);
-        assertTrue(builder.build().connectTimeout().get() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().connectTimeout().get() == c);
+        }
 
         assertThrows(IAE, () -> builder.connectTimeout(ZERO));
         assertThrows(IAE, () -> builder.connectTimeout(ofSeconds(0)));
@@ -153,7 +196,7 @@ public class HttpClientBuilderTest {
     }
 
     static class TestExecutor implements Executor {
-        public void execute(Runnable r) { }
+        public void execute(Runnable r) { r.run();}
     }
 
     @Test
@@ -161,14 +204,20 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         TestExecutor a = new TestExecutor();
         builder.executor(a);
-        assertTrue(builder.build().executor().get() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().executor().get() == a);
+        }
         TestExecutor b = new TestExecutor();
         builder.executor(b);
-        assertTrue(builder.build().executor().get() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().executor().get() == b);
+        }
         assertThrows(NPE, () -> builder.executor(null));
         TestExecutor c = new TestExecutor();
         builder.executor(c);
-        assertTrue(builder.build().executor().get() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().executor().get() == c);
+        }
     }
 
     @Test
@@ -176,14 +225,20 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         ProxySelector a = ProxySelector.of(null);
         builder.proxy(a);
-        assertTrue(builder.build().proxy().get() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().proxy().get() == a);
+        }
         ProxySelector b = ProxySelector.of(InetSocketAddress.createUnresolved("foo", 80));
         builder.proxy(b);
-        assertTrue(builder.build().proxy().get() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().proxy().get() == b);
+        }
         assertThrows(NPE, () -> builder.proxy(null));
         ProxySelector c = ProxySelector.of(InetSocketAddress.createUnresolved("bar", 80));
         builder.proxy(c);
-        assertTrue(builder.build().proxy().get() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().proxy().get() == c);
+        }
     }
 
     @Test
@@ -193,19 +248,57 @@ public class HttpClientBuilderTest {
         a.setCipherSuites(new String[] { "A" });
         builder.sslParameters(a);
         a.setCipherSuites(new String[] { "Z" });
-        assertTrue(builder.build().sslParameters() != (a));
-        assertTrue(builder.build().sslParameters().getCipherSuites()[0].equals("A"));
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters() != (a));
+        }
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getCipherSuites()[0].equals("A"));
+        }
         SSLParameters b = new SSLParameters();
         b.setEnableRetransmissions(true);
         builder.sslParameters(b);
-        assertTrue(builder.build().sslParameters() != b);
-        assertTrue(builder.build().sslParameters().getEnableRetransmissions());
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters() != b);
+        }
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getEnableRetransmissions());
+        }
         assertThrows(NPE, () -> builder.sslParameters(null));
         SSLParameters c = new SSLParameters();
         c.setProtocols(new String[] { "C" });
         builder.sslParameters(c);
         c.setProtocols(new String[] { "D" });
-        assertTrue(builder.build().sslParameters().getProtocols()[0].equals("C"));
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getProtocols()[0].equals("C"));
+        }
+        // test defaults for needClientAuth and wantClientAuth
+        builder.sslParameters(new SSLParameters());
+        try (var closer = closeable(builder)) {
+            assertFalse(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be false");
+            assertFalse(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be false");
+        }
+        // needClientAuth = true and thus wantClientAuth = false
+        SSLParameters needClientAuthParams = new SSLParameters();
+        needClientAuthParams.setNeedClientAuth(true);
+        builder.sslParameters(needClientAuthParams);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be true");
+            assertFalse(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be false");
+        }
+        // wantClientAuth = true and thus needClientAuth = false
+        SSLParameters wantClientAuthParams = new SSLParameters();
+        wantClientAuthParams.setWantClientAuth(true);
+        builder.sslParameters(wantClientAuthParams);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be true");
+            assertFalse(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be false");
+        }
     }
 
     @Test
@@ -213,40 +306,60 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         SSLContext a = (new SimpleSSLContext()).get();
         builder.sslContext(a);
-        assertTrue(builder.build().sslContext() == a);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslContext() == a);
+        }
         SSLContext b = (new SimpleSSLContext()).get();
         builder.sslContext(b);
-        assertTrue(builder.build().sslContext() == b);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslContext() == b);
+        }
         assertThrows(NPE, () -> builder.sslContext(null));
         SSLContext c = (new SimpleSSLContext()).get();
         builder.sslContext(c);
-        assertTrue(builder.build().sslContext() == c);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslContext() == c);
+        }
     }
 
     @Test
     public void testFollowRedirects() {
         HttpClient.Builder builder = HttpClient.newBuilder();
         builder.followRedirects(Redirect.ALWAYS);
-        assertTrue(builder.build().followRedirects() == Redirect.ALWAYS);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().followRedirects() == Redirect.ALWAYS);
+        }
         builder.followRedirects(Redirect.NEVER);
-        assertTrue(builder.build().followRedirects() == Redirect.NEVER);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().followRedirects() == Redirect.NEVER);
+        }
         assertThrows(NPE, () -> builder.followRedirects(null));
         builder.followRedirects(Redirect.NORMAL);
-        assertTrue(builder.build().followRedirects() == Redirect.NORMAL);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().followRedirects() == Redirect.NORMAL);
+        }
     }
 
     @Test
     public void testVersion() {
         HttpClient.Builder builder = HttpClient.newBuilder();
         builder.version(Version.HTTP_2);
-        assertTrue(builder.build().version() == Version.HTTP_2);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_2);
+        }
         builder.version(Version.HTTP_1_1);
-        assertTrue(builder.build().version() == Version.HTTP_1_1);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_1_1);
+        }
         assertThrows(NPE, () -> builder.version(null));
         builder.version(Version.HTTP_2);
-        assertTrue(builder.build().version() == Version.HTTP_2);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_2);
+        }
         builder.version(Version.HTTP_1_1);
-        assertTrue(builder.build().version() == Version.HTTP_1_1);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_1_1);
+        }
     }
 
     @Test
@@ -258,9 +371,9 @@ public class HttpClientBuilderTest {
         assertThrows(IAE, () -> builder.priority(500));
 
         builder.priority(1);
-        builder.build();
+        try (var httpClient = builder.build()) {}
         builder.priority(256);
-        builder.build();
+        try (var httpClient = builder.build()) {}
     }
 
     /**
@@ -352,27 +465,28 @@ public class HttpClientBuilderTest {
 
     @Test
     static void testHttpClientSendArgs() throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder(uri).build();
 
-        assertThrows(NPE, () -> client.send(null, BodyHandlers.discarding()));
-        assertThrows(NPE, () -> client.send(request, null));
-        assertThrows(NPE, () -> client.send(null, null));
+            assertThrows(NPE, () -> client.send(null, BodyHandlers.discarding()));
+            assertThrows(NPE, () -> client.send(request, null));
+            assertThrows(NPE, () -> client.send(null, null));
 
-        assertThrows(NPE, () -> client.sendAsync(null, BodyHandlers.discarding()));
-        assertThrows(NPE, () -> client.sendAsync(request, null));
-        assertThrows(NPE, () -> client.sendAsync(null, null));
+            assertThrows(NPE, () -> client.sendAsync(null, BodyHandlers.discarding()));
+            assertThrows(NPE, () -> client.sendAsync(request, null));
+            assertThrows(NPE, () -> client.sendAsync(null, null));
 
-        assertThrows(NPE, () -> client.sendAsync(null, BodyHandlers.discarding(), null));
-        assertThrows(NPE, () -> client.sendAsync(request, null, null));
-        assertThrows(NPE, () -> client.sendAsync(null, null, null));
+            assertThrows(NPE, () -> client.sendAsync(null, BodyHandlers.discarding(), null));
+            assertThrows(NPE, () -> client.sendAsync(request, null, null));
+            assertThrows(NPE, () -> client.sendAsync(null, null, null));
 
-        // CONNECT is disallowed in the implementation, since it is used for
-        // tunneling, and is handled separately for security checks.
-        HttpRequest connectRequest = new HttpConnectRequest();
-        assertThrows(IAE, () -> client.send(connectRequest, BodyHandlers.discarding()));
-        assertThrows(IAE, () -> client.sendAsync(connectRequest, BodyHandlers.discarding()));
-        assertThrows(IAE, () -> client.sendAsync(connectRequest, BodyHandlers.discarding(), null));
+            // CONNECT is disallowed in the implementation, since it is used for
+            // tunneling, and is handled separately for security checks.
+            HttpRequest connectRequest = new HttpConnectRequest();
+            assertThrows(IAE, () -> client.send(connectRequest, BodyHandlers.discarding()));
+            assertThrows(IAE, () -> client.sendAsync(connectRequest, BodyHandlers.discarding()));
+            assertThrows(IAE, () -> client.sendAsync(connectRequest, BodyHandlers.discarding(), null));
+        }
     }
 
     static class HttpConnectRequest extends HttpRequest {
@@ -392,6 +506,109 @@ public class HttpClientBuilderTest {
         //  @implSpec The default implementation of this method throws
         // {@code UnsupportedOperationException}.
         assertThrows(UOE, () -> (new MockHttpClient()).newWebSocketBuilder());
+    }
+
+    @Test
+    static void testDefaultShutdown() throws Exception {
+        try (HttpClient client = new MockHttpClient()) {
+            client.shutdown(); // does nothing
+        }
+    }
+
+    @Test
+    static void testDefaultShutdownNow() throws Exception {
+        try (HttpClient client = new MockHttpClient()) {
+            client.shutdownNow(); // calls shutdown, doesn't wait
+        }
+
+        AtomicInteger shutdownCalled = new AtomicInteger();
+        HttpClient mock = new MockHttpClient() {
+            @Override
+            public void shutdown() {
+                super.shutdown();
+                shutdownCalled.incrementAndGet();
+            }
+        };
+        try (HttpClient client = mock) {
+            client.shutdownNow();  // calls shutdown, doesn't wait
+        }
+
+        // once from shutdownNow(), and once from close()
+        assertEquals(shutdownCalled.get(), 2);
+    }
+
+    @Test
+    static void testDefaultIsTerminated() throws Exception {
+        try (HttpClient client = new MockHttpClient()) {
+            assertFalse(client.isTerminated());
+        }
+    }
+
+    @Test
+    static void testDefaultAwaitTermination() throws Exception {
+        try (HttpClient client = new MockHttpClient()) {
+            assertTrue(client.awaitTermination(Duration.ofDays(1)));
+        }
+        try (HttpClient client = new MockHttpClient()) {
+            assertThrows(NullPointerException.class,
+                    () -> client.awaitTermination(null));
+        }
+    }
+
+    @Test
+    static void testDefaultClose() {
+        AtomicInteger shutdownCalled = new AtomicInteger();
+        AtomicInteger awaitTerminationCalled = new AtomicInteger();
+        AtomicInteger shutdownNowCalled = new AtomicInteger();
+        HttpClient mock = new MockHttpClient() {
+            @Override
+            public void shutdown() {
+                super.shutdown();
+                shutdownCalled.incrementAndGet();
+            }
+            @Override
+            public void shutdownNow() {
+                super.shutdownNow();
+                shutdownNowCalled.incrementAndGet();
+            }
+
+            @Override
+            public boolean awaitTermination(Duration duration) throws InterruptedException {
+                int count = awaitTerminationCalled.incrementAndGet();
+                if (count == 1) return false;
+                if (count == 2) return true;
+                if (count == 3) {
+                    Thread.currentThread().interrupt();
+                    throw new InterruptedException();
+                }
+                return super.awaitTermination(duration);
+            }
+        };
+
+        // first time around:
+        //   close()
+        //      shutdown() 0->1
+        //      awaitTermination() 0->1 -> false
+        //      awaitTermination() 1->2 -> true
+        try (HttpClient client = mock) { }
+        assertEquals(shutdownCalled.get(), 1); // called by close()
+        assertEquals(shutdownNowCalled.get(), 0); // not called
+        assertEquals(awaitTerminationCalled.get(), 2); // called by close() twice
+        assertFalse(Thread.currentThread().isInterrupted());
+
+        // second time around:
+        //   close()
+        //      shutdown() 1->2
+        //      awaitTermination() 2->3 -> interrupt, throws
+        //      shutdownNow() 0->1
+        //         calls shutdown() 2->3
+        //      awaitTermination() 3->4 -> true
+        try (HttpClient client = mock) { }
+        assertEquals(shutdownCalled.get(), 3); // called by close() and shutdownNow()
+        assertEquals(shutdownNowCalled.get(), 1); // called by close() due to interrupt
+        assertEquals(awaitTerminationCalled.get(), 4); // called by close twice
+        assertTrue(Thread.currentThread().isInterrupted());
+        assertTrue(Thread.interrupted());
     }
 
     static class MockHttpClient extends HttpClient {

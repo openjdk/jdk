@@ -14,8 +14,6 @@ Africa/Ndjamena WAT
 Africa/Sao_Tome GMT
 Africa/Tripoli EET
 Africa/Tunis CET CEST
-Africa/Windhoek CAT WAT
-America/Adak HST HDT
 America/Anchorage AKST AKDT
 America/Bahia_Banderas CST CDT
 America/Barbados AST ADT
@@ -92,7 +90,6 @@ America/Vancouver PST PDT
 America/Whitehorse MST
 America/Winnipeg CST CDT
 America/Yakutat AKST AKDT
-America/Yellowknife MST MDT
 Antarctica/Macquarie AEST AEDT
 Asia/Beirut EET EEST
 Asia/Famagusta EET EEST
@@ -109,8 +106,6 @@ Asia/Makassar WITA
 Asia/Manila PST PDT
 Asia/Nicosia EET EEST
 Asia/Pontianak WIB
-Asia/Pyongyang KST
-Asia/Seoul KST KDT
 Asia/Shanghai CST CDT
 Asia/Taipei CST CDT
 Asia/Tokyo JST JDT
@@ -127,11 +122,6 @@ Australia/Lindeman AEST AEDT
 Australia/Melbourne AEST AEDT
 Australia/Perth AWST AWDT
 Australia/Sydney AEST AEDT
-CET CET CEST
-CST6CDT CST CDT
-EET EET EEST
-EST EST
-EST5EDT EST EDT
 Europe/Andorra CET CEST
 Europe/Athens EET EEST
 Europe/Belgrade CET CEST
@@ -144,6 +134,7 @@ Europe/Dublin IST/GMT IST/GMT
 Europe/Gibraltar CET CEST
 Europe/Helsinki EET EEST
 Europe/Kaliningrad EET
+Europe/Kirov MSK
 Europe/Kyiv EET EEST
 Europe/Lisbon WET WEST
 Europe/London GMT/BST GMT/BST
@@ -160,15 +151,10 @@ Europe/Tallinn EET EEST
 Europe/Tirane CET CEST
 Europe/Vienna CET CEST
 Europe/Vilnius EET EEST
+Europe/Volgograd MSK
 Europe/Warsaw CET CEST
 Europe/Zurich CET CEST
-HST HST
-MET MET MEST
-MST MST
-MST7MDT MST MDT
-PST8PDT PST PDT
 Pacific/Auckland NZST NZDT
 Pacific/Guam ChST
 Pacific/Honolulu HST
 Pacific/Pago_Pago SST
-WET WET WEST

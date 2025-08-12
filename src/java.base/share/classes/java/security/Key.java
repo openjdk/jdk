@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,10 @@ package java.security;
  * Security Appendix</a>
  * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @see PublicKey
  * @see PrivateKey
  * @see KeyPair
@@ -111,19 +115,18 @@ public interface Key extends java.io.Serializable {
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
    long serialVersionUID = 6603384152749567654L;
 
     /**
      * Returns the standard algorithm name for this key. For
-     * example, "DSA" would indicate that this key is a DSA key.
-     * See the key related sections (KeyFactory, KeyGenerator,
-     * KeyPairGenerator, and SecretKeyFactory) in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html">
+     * example, "RSA" would indicate that this key is an RSA key.
+     * See the Key Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#key-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard key algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the name of the algorithm associated with this key.
      */
     String getAlgorithm();

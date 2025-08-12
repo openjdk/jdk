@@ -355,6 +355,13 @@ public abstract class PathFileObject implements JavaFileObject {
     abstract PathFileObject getSibling(String basename);
 
     /**
+     * Returns whether this file object represents a file in a JAR archive.
+     */
+    boolean isJarFile() {
+        return this instanceof JarFileObject;
+    }
+
+    /**
      * Return the Path for this object.
      * @return the Path for this object.
      * @see StandardJavaFileManager#asPath
@@ -448,7 +455,9 @@ public abstract class PathFileObject implements JavaFileObject {
         fileManager.updateLastUsedTime();
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
-        return Files.newOutputStream(path);
+        OutputStream output = Files.newOutputStream(path);
+        fileManager.newOutputToPath(path);
+        return output;
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -483,7 +492,9 @@ public abstract class PathFileObject implements JavaFileObject {
         fileManager.updateLastUsedTime();
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
-        return new OutputStreamWriter(Files.newOutputStream(path), fileManager.getEncodingName());
+        Writer writer = new OutputStreamWriter(Files.newOutputStream(path), fileManager.getEncodingName());
+        fileManager.newOutputToPath(path);
+        return writer;
     }
 
     @Override @DefinedBy(Api.COMPILER)

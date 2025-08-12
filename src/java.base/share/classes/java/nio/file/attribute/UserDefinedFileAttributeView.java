@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,6 @@ import java.io.IOException;
  * intended for use where the size of an attribute value is larger than {@link
  * Integer#MAX_VALUE}.
  *
- * <p> User-defined attributes may be used in some implementations to store
- * security related attributes so consequently, in the case of the default
- * provider at least, all methods that access user-defined attributes require the
- * {@code RuntimePermission("accessUserDefinedAttributes")} permission when a
- * security manager is installed.
- *
  * <p> The {@link java.nio.file.FileStore#supportsFileAttributeView
  * supportsFileAttributeView} method may be used to test if a specific {@link
  * java.nio.file.FileStore FileStore} supports the storage of user-defined
@@ -86,12 +80,6 @@ public interface UserDefinedFileAttributeView
      *
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link
-     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
-     *          or its {@link SecurityManager#checkRead(String) checkRead} method
-     *          denies read access to the file.
      */
     List<String> list() throws IOException;
 
@@ -107,12 +95,6 @@ public interface UserDefinedFileAttributeView
      *          If the size of the attribute is larger than {@link Integer#MAX_VALUE}
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link
-     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
-     *          or its {@link SecurityManager#checkRead(String) checkRead} method
-     *          denies read access to the file.
      */
     int size(String name) throws IOException;
 
@@ -131,15 +113,15 @@ public interface UserDefinedFileAttributeView
      * <p> <b>Usage Example:</b>
      * Suppose we want to read a file's MIME type that is stored as a user-defined
      * attribute with the name "{@code user.mimetype}".
-     * <pre>
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    String name = "user.mimetype";
-     *    ByteBuffer buf = ByteBuffer.allocate(view.size(name));
-     *    view.read(name, buf);
-     *    buf.flip();
-     *    String value = Charset.defaultCharset().decode(buf).toString();
-     * </pre>
+     * {@snippet lang=java :
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     String name = "user.mimetype";
+     *     ByteBuffer buf = ByteBuffer.allocate(view.size(name));
+     *     view.read(name, buf);
+     *     buf.flip();
+     *     String value = Charset.defaultCharset().decode(buf).toString();
+     * }
      *
      * @param   name
      *          The attribute name
@@ -153,12 +135,6 @@ public interface UserDefinedFileAttributeView
      * @throws  IOException
      *          If an I/O error occurs or there is insufficient space in the
      *          destination buffer for the attribute value
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link
-     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
-     *          or its {@link SecurityManager#checkRead(String) checkRead} method
-     *          denies read access to the file.
      *
      * @see #size
      */
@@ -188,11 +164,11 @@ public interface UserDefinedFileAttributeView
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to write a file's MIME type as a user-defined attribute:
-     * <pre>
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
-     * </pre>
+     * {@snippet lang=java :
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
+     * }
      *
      * @param   name
      *          The attribute name
@@ -203,12 +179,6 @@ public interface UserDefinedFileAttributeView
      *
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link
-     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file.
      */
     int write(String name, ByteBuffer src) throws IOException;
 
@@ -220,12 +190,6 @@ public interface UserDefinedFileAttributeView
      *
      * @throws  IOException
      *          If an I/O error occurs or the attribute does not exist
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link
-     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file.
      */
     void delete(String name) throws IOException;
 }

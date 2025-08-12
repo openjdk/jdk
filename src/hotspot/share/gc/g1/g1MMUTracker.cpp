@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"
@@ -115,13 +114,13 @@ void G1MMUTracker::add_pause(double start, double end) {
 //                       GC events               /  pause_time
 //                 /     |     \     \          | /  /
 // -------------[----]-[---]--[--]---[---]------|[--]-----> Time
-//              |         |                     |
-//              |         |                     |
-//              |<- limit |                     |
-//              |         |<- balance_timestamp |
-//              |         ^                     |
-//              |                               |
-//              |<--------  _time_slice  ------>|
+//              |         |                         |
+//              |         |                         |
+//              |<- limit |                         |
+//              |         |<- balance_timestamp     |
+//              |         ^                         |
+//              |                                   |
+//              |<--------  _time_slice   --------->|
 //
 // The MMU constraint requires that we can spend up to `max_gc_time()` on GC
 // pauses inside a window of `_time_slice` length. Therefore, we have a GC
@@ -134,9 +133,9 @@ void G1MMUTracker::add_pause(double start, double end) {
 // time inside [balance_timestamp, current_timestamp] is equal to the budget.
 // Next, return `balance_timestamp - limit`.
 //
-// When there are no enough GC events, i.e. we have a surplus buget, a new GC
+// When there are not enough GC events, i.e. we have a surplus budget, a new GC
 // pause can start right away, so return 0.
-double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
+double G1MMUTracker::when_sec(double current_timestamp, double pause_time) const {
   assert(pause_time > 0.0, "precondition");
 
   // If the pause is over the maximum, just assume that it's the maximum.
@@ -147,8 +146,8 @@ double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   double limit = current_timestamp + pause_time - _time_slice;
   // Iterate from newest to oldest.
   for (int i = 0; i < _no_entries; ++i) {
-    int index = trim_index(_head_index + i);
-    G1MMUTrackerElem *elem = &_array[index];
+    int index = trim_index(_head_index - i);
+    const G1MMUTrackerElem *elem = &_array[index];
     // Outside the window.
     if (elem->end_time() <= limit) {
       break;

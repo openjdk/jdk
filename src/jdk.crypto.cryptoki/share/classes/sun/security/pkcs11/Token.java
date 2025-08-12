@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   1.5
  */
 final class Token implements Serializable {
+    public enum CTSVariant {CS1, CS2, CS3}
 
     // need to be serializable to allow SecureRandom to be serialized
     @Serial
@@ -64,6 +65,8 @@ final class Token implements Serializable {
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
+
+    final transient CTSVariant ctsVariant;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
@@ -146,6 +149,7 @@ final class Token implements Serializable {
         config = provider.config;
         tokenInfo = p11.C_GetTokenInfo(provider.slotID);
         writeProtected = (tokenInfo.flags & CKF_WRITE_PROTECTED) != 0;
+        ctsVariant = getCTSVariant();
         // create session manager and open a test session
         SessionManager sessionManager;
         try {
@@ -412,6 +416,19 @@ final class Token implements Serializable {
         return result;
     }
 
+    private CTSVariant getCTSVariant() {
+        CTSVariant ctsVariant = config.getCTSVariant();
+        if (ctsVariant != null) {
+            return ctsVariant;
+        }
+        // 'cipherTextStealingVariant' needs an explicit value for the
+        // CKM_AES_CTS mechanism to be enabled. In the case of NSS we know
+        // that this value is 'CS1', so we can set it for the user. See:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=373108#c7
+        // https://github.com/nss-dev/nss/blob/NSS_3_99_RTM/lib/freebl/cts.c#L65
+        return P11Util.isNSS(this) ? CTSVariant.CS1 : null;
+    }
+
     private synchronized byte[] getTokenId() {
         if (tokenId == null) {
             SecureRandom random = JCAUtil.getSecureRandom();
@@ -428,11 +445,28 @@ final class Token implements Serializable {
     // is relatively small
     private static final List<Reference<Token>> serializedTokens = new ArrayList<>();
 
+    @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
         if (!isValid()) {
-            throw new NotSerializableException("Token has been removed");
+            throw new InvalidObjectException("Token has been removed");
         }
         return new TokenRep(this);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "Tokens are not directly deserializable");
     }
 
     // serialized representation of a token
@@ -449,6 +483,7 @@ final class Token implements Serializable {
             tokenId = token.getTokenId();
         }
 
+        @java.io.Serial
         private Object readResolve() throws ObjectStreamException {
             for (Reference<Token> tokenRef : serializedTokens) {
                 Token token = tokenRef.get();
@@ -458,7 +493,7 @@ final class Token implements Serializable {
                     }
                 }
             }
-            throw new NotSerializableException("Could not find token");
+            throw new InvalidObjectException("Could not find token");
         }
     }
 

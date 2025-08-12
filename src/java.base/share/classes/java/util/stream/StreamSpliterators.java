@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,11 @@ class StreamSpliterators {
                 c |= (spliterator.characteristics() & (Spliterator.SIZED | Spliterator.SUBSIZED));
             }
 
+            // It's not allowed for a Spliterator to report SORTED if not also ORDERED
+            if ((c & Spliterator.SORTED) != 0 && (c & Spliterator.ORDERED) == 0) {
+                c &= ~(Spliterator.SORTED);
+            }
+
             return c;
         }
 
@@ -307,7 +312,7 @@ class StreamSpliterators {
                 Objects.requireNonNull(consumer);
                 init();
 
-                ph.wrapAndCopyInto((Sink<P_OUT>) consumer::accept, spliterator);
+                ph.wrapAndCopyInto(consumer::accept, spliterator);
                 finished = true;
             }
             else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.RAW_CONSTANT;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_NARROW_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_VECTOR;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_CALL;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_DATA_PATCH;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_EXCEPTION_HANDLER;
@@ -61,6 +62,11 @@ import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_SAFEPOINT;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_NARROW_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_VECTOR;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_NARROW_OOP;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_OOP;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_VECTOR;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID2;
 
@@ -171,9 +177,15 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         REGISTER_PRIMITIVE,
         REGISTER_OOP,
         REGISTER_NARROW_OOP,
+        REGISTER_VECTOR,
         STACK_SLOT_PRIMITIVE,
         STACK_SLOT_OOP,
         STACK_SLOT_NARROW_OOP,
+        STACK_SLOT_VECTOR,
+        STACK_SLOT4_PRIMITIVE,
+        STACK_SLOT4_OOP,
+        STACK_SLOT4_NARROW_OOP,
+        STACK_SLOT4_VECTOR,
         VIRTUAL_OBJECT_ID,
         VIRTUAL_OBJECT_ID2,
         NULL_CONSTANT,
@@ -453,8 +465,12 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         rawWriteU2(name, value);
     }
 
+    private static boolean isS2(int value) {
+        return value >= Short.MIN_VALUE && value <= Short.MAX_VALUE;
+    }
+
     private void writeS2(String name, int value) {
-        if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+        if (!isS2(value)) {
             throw error("value not an s2: " + value);
         }
         rawWriteU2(name, value);
@@ -559,6 +575,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeInt("entryBCI", nmethod.entryBCI);
             writeLong("compileState", nmethod.compileState);
             writeBoolean("hasUnsafeAccess", nmethod.hasUnsafeAccess);
+            writeBoolean("hasScopedAccess", nmethod.hasScopedAccess());
             writeInt("id", nmethod.id);
         }
 
@@ -576,7 +593,8 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         writeInt("targetCodeSize", code.targetCodeSize);
         writeInt("totalFrameSize", code.totalFrameSize);
         if (isSet(flags, HAS_DEOPT_RESCUE_SLOT)) {
-            writeS2("offset", deoptRescueSlot.getRawOffset());
+            int offset = deoptRescueSlot.getRawOffset();
+            writeInt("offset", offset);
             writeBoolean("addRawFrameSize", deoptRescueSlot.getRawAddFrameSize());
         }
         writeInt("dataSectionSize", code.dataSection.length);
@@ -1029,6 +1047,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         return oopValue.getPlatformKind() != runtime.getHostJVMCIBackend().getTarget().arch.getWordKind();
     }
 
+    private boolean isVector(Value value) {
+        return value.getPlatformKind().getVectorLength() > 1;
+    }
+
     private void writeJavaValue(JavaValue value, JavaKind kind) {
         if (value == Value.ILLEGAL) {
             writeTag(ILLEGAL);
@@ -1039,14 +1061,40 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeTag(NULL_CONSTANT);
         } else if (value instanceof RegisterValue) {
             RegisterValue reg = (RegisterValue) value;
-            Tag tag = kind == JavaKind.Object ? (isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP) : REGISTER_PRIMITIVE;
+            Tag tag;
+            if (kind == JavaKind.Object) {
+                if (isVector(reg)) {
+                    tag = REGISTER_VECTOR;
+                } else {
+                    tag = isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP;
+                }
+            } else {
+                tag = REGISTER_PRIMITIVE;
+            }
             writeTag(tag);
             writeRegister(reg.getRegister());
         } else if (value instanceof StackSlot) {
             StackSlot slot = (StackSlot) value;
-            Tag tag = kind == JavaKind.Object ? (isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP) : STACK_SLOT_PRIMITIVE;
+            Tag tag;
+            int offset = slot.getRawOffset();
+            boolean s2 = isS2(offset);
+            if (kind == JavaKind.Object) {
+                if (isVector(slot)) {
+                    tag = s2 ? STACK_SLOT_VECTOR : STACK_SLOT4_VECTOR;
+                } else if (isNarrowOop(slot)) {
+                    tag = s2 ? STACK_SLOT_NARROW_OOP : STACK_SLOT4_NARROW_OOP;
+                } else {
+                    tag = s2 ? STACK_SLOT_OOP : STACK_SLOT4_OOP;
+                }
+            } else {
+                tag = s2 ? STACK_SLOT_PRIMITIVE : STACK_SLOT4_PRIMITIVE;
+            }
             writeTag(tag);
-            writeS2("offset", slot.getRawOffset());
+            if (s2) {
+                writeS2("offset", slot.getRawOffset());
+            } else {
+                writeInt("offset4", slot.getRawOffset());
+            }
             writeBoolean("addRawFrameSize", slot.getRawAddFrameSize());
         } else if (value instanceof VirtualObject) {
             VirtualObject vo = (VirtualObject) value;

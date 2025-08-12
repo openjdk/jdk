@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ class JfrDCmd : public DCmd {
   JfrDCmd(outputStream* output, bool heap, int num_arguments);
   virtual const char* javaClass() const = 0;
   void invoke(JfrJavaArguments& method, TRAPS) const;
+  void print_java_help(const char* help_method) const;
  public:
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
@@ -57,10 +58,6 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
   }
   static const char* impact() {
     return "Medium: Depending on the settings for a recording, the impact can range from low to high.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
   }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdStart";
@@ -83,10 +80,6 @@ class JfrDumpFlightRecordingDCmd : public JfrDCmd {
   static const char* impact() {
     return "Low";
   }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
-  }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdDump";
   }
@@ -107,10 +100,6 @@ class JfrCheckFlightRecordingDCmd : public JfrDCmd {
   }
   static const char* impact() {
     return "Low";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
   }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdCheck";
@@ -133,15 +122,53 @@ class JfrStopFlightRecordingDCmd : public JfrDCmd {
   static const char* impact() {
     return "Low";
   }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
-  }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdStop";
   }
   static int num_arguments() {
     return 2;
+  }
+};
+
+class JfrViewFlightRecordingDCmd : public JfrDCmd {
+ public:
+  JfrViewFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
+
+  static const char* name() {
+    return "JFR.view";
+  }
+  static const char* description() {
+    return "Display event data in predefined views";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdView";
+  }
+  static int num_arguments() {
+    return 7;
+  }
+};
+
+class JfrQueryFlightRecordingDCmd : public JfrDCmd {
+ public:
+  JfrQueryFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
+
+  static const char* name() {
+    return "JFR.query";
+  }
+  static const char* description() {
+    return "Query and display event data in a tabular form";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdQuery";
+  }
+  static int num_arguments() {
+    return 5;
   }
 };
 
@@ -157,6 +184,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<MemorySizeArgument> _memory_size;
   DCmdArgument<MemorySizeArgument> _max_chunk_size;
   DCmdArgument<bool>  _sample_threads;
+  DCmdArgument<bool>  _preserve_repository;
   bool _verbose;
 
  public:
@@ -173,11 +201,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   static const char* impact() {
     return "Low";
   }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
+  static int num_arguments() { return 10; }
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };

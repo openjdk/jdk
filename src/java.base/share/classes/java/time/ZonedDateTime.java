@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,8 @@ import java.time.zone.ZoneRules;
 import java.util.List;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date-time with a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03T10:15:30+01:00 Europe/Paris}.
@@ -172,15 +174,15 @@ public final class ZonedDateTime
     private static final long serialVersionUID = -6260982410461394882L;
 
     /**
-     * The local date-time.
+     * @serial The local date-time.
      */
     private final LocalDateTime dateTime;
     /**
-     * The offset from UTC/Greenwich.
+     * @serial The offset from UTC/Greenwich.
      */
     private final ZoneOffset offset;
     /**
-     * The time-zone.
+     * @serial The time-zone.
      */
     private final ZoneId zone;
 
@@ -2214,11 +2216,20 @@ public final class ZonedDateTime
      */
     @Override  // override for Javadoc
     public String toString() {
-        String str = dateTime.toString() + offset.toString();
+        var offsetStr = offset.toString();
+        var zoneStr = (String) null;
+        int length = 29 + offsetStr.length();
         if (offset != zone) {
-            str += '[' + zone.toString() + ']';
+            zoneStr = zone.toString();
+            length += zoneStr.length() + 2;
         }
-        return str;
+        var buf = new StringBuilder(length);
+        DateTimeHelper.formatTo(buf, dateTime);
+        buf.append(offsetStr);
+        if (zoneStr != null) {
+            buf.append('[').append(zoneStr).append(']');
+        }
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
@@ -38,9 +37,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void Block_Array::grow( uint i ) {
-  assert(i >= Max(), "must be an overflow");
-  debug_only(_limit = i+1);
+void Block_Array::grow(uint i) {
+  assert(i >= Max(), "Should have been checked before, use maybe_grow?");
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
@@ -178,10 +177,11 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock()) {
     end_idx--;
   }
 
@@ -374,6 +374,7 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
 , _regalloc(nullptr)
 , _scheduling_for_pressure(false)
@@ -394,7 +395,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != nullptr, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
+  if (C->failing()) {
+    return;
+  }
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
@@ -622,8 +626,8 @@ static bool no_flip_branch(Block *b) {
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   int end_idx = b->end_idx();
   NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
-  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
-  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out());
   assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
   assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
 
@@ -1348,6 +1352,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -1417,7 +1424,7 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
@@ -1603,7 +1610,8 @@ void PhaseBlockLayout::find_edges() {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
           int from_pct = (int) ((100 * freq) / b->_freq);
-          int to_pct = (int) ((100 * freq) / target->_freq);
+          float f_to_pct = (100 * freq) / target->_freq;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }
@@ -1764,21 +1772,20 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
 
 // Order the sequence of the traces in some desirable way
 void PhaseBlockLayout::reorder_traces(int count) {
-  ResourceArea *area = Thread::current()->resource_area();
-  Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
+  Trace** new_traces = NEW_RESOURCE_ARRAY(Trace*, count);
   Block_List worklist;
   int new_count = 0;
 
   // Compact the traces.
   for (int i = 0; i < count; i++) {
-    Trace *tr = traces[i];
+    Trace* tr = traces[i];
     if (tr != nullptr) {
       new_traces[new_count++] = tr;
     }
   }
 
   // The entry block should be first on the new trace list.
-  Trace *tr = trace(_cfg.get_root_block());
+  Trace* tr = trace(_cfg.get_root_block());
   assert(tr == new_traces[0], "entry trace misplaced");
 
   // Sort the new trace list by frequency
@@ -1787,7 +1794,7 @@ void PhaseBlockLayout::reorder_traces(int count) {
   // Collect all blocks from existing Traces
   _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
-    Trace *tr = new_traces[i];
+    Trace* tr = new_traces[i];
     if (tr != nullptr) {
       // push blocks onto the CFG list
       for (Block* b = tr->first_block(); b != nullptr; b = tr->next(b)) {
@@ -1802,16 +1809,15 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
 : Phase(BlockLayout)
 , _cfg(cfg) {
   ResourceMark rm;
-  ResourceArea *area = Thread::current()->resource_area();
 
   // List of traces
   int size = _cfg.number_of_blocks() + 1;
-  traces = NEW_ARENA_ARRAY(area, Trace *, size);
+  traces = NEW_RESOURCE_ARRAY(Trace*, size);
   memset(traces, 0, size*sizeof(Trace*));
-  next = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(next,   0, size*sizeof(Block *));
-  prev = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(prev  , 0, size*sizeof(Block *));
+  next = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(next,   0, size*sizeof(Block*));
+  prev = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(prev  , 0, size*sizeof(Block*));
 
   // List of edges
   edges = new GrowableArray<CFGEdge*>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,68 +21,45 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodData.hpp"
-#include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
-#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/growableArray.hpp"
 
-ZNMethodDataOops* ZNMethodDataOops::create(const GrowableArray<oop*>& immediates, bool has_non_immediates) {
-  return ::new (AttachedArray::alloc(immediates.length())) ZNMethodDataOops(immediates, has_non_immediates);
-}
-
-void ZNMethodDataOops::destroy(ZNMethodDataOops* oops) {
-  AttachedArray::free(oops);
-}
-
-ZNMethodDataOops::ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates) :
-    _immediates(immediates.length()),
-    _has_non_immediates(has_non_immediates) {
-  // Save all immediate oops
-  for (size_t i = 0; i < immediates_count(); i++) {
-    immediates_begin()[i] = immediates.at(int(i));
-  }
-}
-
-size_t ZNMethodDataOops::immediates_count() const {
-  return _immediates.length();
-}
-
-oop** ZNMethodDataOops::immediates_begin() const {
-  return _immediates(this);
-}
-
-oop** ZNMethodDataOops::immediates_end() const {
-  return immediates_begin() + immediates_count();
-}
-
-bool ZNMethodDataOops::has_non_immediates() const {
-  return _has_non_immediates;
-}
-
-ZNMethodData::ZNMethodData() :
-    _lock(),
-    _oops(NULL) {}
-
-ZNMethodData::~ZNMethodData() {
-  ZNMethodDataOops::destroy(_oops);
-}
+ZNMethodData::ZNMethodData()
+  : _lock(),
+    _ic_lock(),
+    _barriers(),
+    _immediate_oops(),
+    _has_non_immediate_oops(false) {}
 
 ZReentrantLock* ZNMethodData::lock() {
   return &_lock;
 }
 
-ZNMethodDataOops* ZNMethodData::oops() const {
-  return Atomic::load_acquire(&_oops);
+ZReentrantLock* ZNMethodData::ic_lock() {
+  return &_ic_lock;
 }
 
-ZNMethodDataOops* ZNMethodData::swap_oops(ZNMethodDataOops* new_oops) {
+const ZArray<ZNMethodDataBarrier>* ZNMethodData::barriers() const {
+  assert(_lock.is_owned(), "Should be owned");
+  return &_barriers;
+}
+
+const ZArray<oop*>* ZNMethodData::immediate_oops() const {
+  assert(_lock.is_owned(), "Should be owned");
+  return &_immediate_oops;
+}
+
+bool ZNMethodData::has_non_immediate_oops() const {
+  assert(_lock.is_owned(), "Should be owned");
+  return _has_non_immediate_oops;
+}
+
+void ZNMethodData::swap(ZArray<ZNMethodDataBarrier>* barriers,
+                        ZArray<oop*>* immediate_oops,
+                        bool has_non_immediate_oops) {
   ZLocker<ZReentrantLock> locker(&_lock);
-  ZNMethodDataOops* const old_oops = _oops;
-  _oops = new_oops;
-  return old_oops;
+  _barriers.swap(barriers);
+  _immediate_oops.swap(immediate_oops);
+  _has_non_immediate_oops = has_non_immediate_oops;
 }

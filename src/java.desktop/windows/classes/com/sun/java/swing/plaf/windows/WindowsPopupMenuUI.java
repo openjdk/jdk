@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import javax.swing.plaf.basic.BasicPopupMenuUI;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
+import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 
 import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
@@ -56,7 +57,7 @@ import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
  *
  * @author Igor Kushnirskiy
  */
-public class WindowsPopupMenuUI extends BasicPopupMenuUI {
+public final class WindowsPopupMenuUI extends BasicPopupMenuUI {
 
     static MnemonicListener mnemonicListener = null;
     static final Object GUTTER_OFFSET_KEY =
@@ -66,6 +67,7 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
         return new WindowsPopupMenuUI();
     }
 
+    @Override
     public void installListeners() {
         super.installListeners();
         if (! UIManager.getBoolean("Button.showMnemonics") &&
@@ -87,25 +89,27 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
      * @return Popup that will show the JPopupMenu
      * @since 1.4
      */
+    @Override
     public Popup getPopup(JPopupMenu popupMenu, int x, int y) {
         PopupFactory popupFactory = PopupFactory.getSharedInstance();
         return popupFactory.getPopup(popupMenu.getInvoker(), popupMenu, x, y);
     }
 
-    static class MnemonicListener implements ChangeListener {
+    static final class MnemonicListener implements ChangeListener {
         JRootPane repaintRoot = null;
 
+        @Override
         public void stateChanged(ChangeEvent ev) {
             MenuSelectionManager msm = (MenuSelectionManager)ev.getSource();
             MenuElement[] path = msm.getSelectedPath();
             if (path.length == 0) {
-                if(!WindowsLookAndFeel.isMnemonicHidden()) {
+                if (!MnemonicHandler.isMnemonicHidden()) {
                     // menu was canceled -- hide mnemonics
-                    WindowsLookAndFeel.setMnemonicHidden(true);
+                    MnemonicHandler.setMnemonicHidden(true);
                     if (repaintRoot != null) {
                         Window win =
                             SwingUtilities.getWindowAncestor(repaintRoot);
-                        WindowsGraphicsUtils.repaintMnemonicsInWindow(win);
+                        MnemonicHandler.repaintMnemonicsInWindow(win);
                     }
                 }
                 repaintRoot = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test TestCodeCacheConfig
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -50,7 +50,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestCodeCacheConfig {
     private final static String EVENT_NAME = EventNames.CodeCacheConfiguration;
 
-    private static final long CodeCacheExpectedSize = WhiteBox.getWhiteBox().getUintxVMFlag("ReservedCodeCacheSize");
+    private static final long CodeCacheExpectedSize = WhiteBox.getWhiteBox().getSizeTVMFlag("ReservedCodeCacheSize");
 
     public static void main(String[] args) throws Exception {
         Recording recording = new Recording();
@@ -60,7 +60,7 @@ public class TestCodeCacheConfig {
 
         List<RecordedEvent> events = Events.fromRecording(recording);
         Events.hasEvents(events);
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
         long initialSize = (long) event.getValue("initialSize");
         long reservedSize = (long) event.getValue("reservedSize");
         long nonNMethodSize = (long) event.getValue("nonNMethodSize");

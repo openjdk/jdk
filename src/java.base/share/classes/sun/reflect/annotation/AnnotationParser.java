@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Supplier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import jdk.internal.reflect.ConstantPool;
 
 import sun.reflect.generics.parser.SignatureParser;
@@ -83,14 +82,14 @@ public class AnnotationParser {
      * Like {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
-     * This method is only used to parse select meta annotations in the construction
+     * This method is used to parse select meta annotations in the construction
      * phase of {@link AnnotationType} instances to prevent infinite recursion.
      *
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
     @SafeVarargs
     @SuppressWarnings("varargs") // selectAnnotationClasses is used safely
-    static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
+    public static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
@@ -124,7 +123,7 @@ public class AnnotationParser {
                 if (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &&
                     result.put(klass, a) != null) {
                         throw new AnnotationFormatError(
-                            "Duplicate annotation for class: "+klass+": " + a);
+                            "Duplicate annotation " + klass + " in " + container);
             }
         }
         }
@@ -292,16 +291,12 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member {@literal ->} value map.
      */
-    @SuppressWarnings("removal")
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)
     {
-        return AccessController.doPrivileged(new PrivilegedAction<Annotation>() {
-            public Annotation run() {
-                return (Annotation) Proxy.newProxyInstance(
-                    type.getClassLoader(), new Class<?>[] { type },
-                    new AnnotationInvocationHandler(type, memberValues));
-            }});
+        return (Annotation) Proxy.newProxyInstance(
+                type.getClassLoader(), new Class<?>[] { type },
+                new AnnotationInvocationHandler(type, memberValues));
     }
 
     /**
@@ -336,6 +331,8 @@ public class AnnotationParser {
                                           ByteBuffer buf,
                                           ConstantPool constPool,
                                           Class<?> container) {
+        // Note that VMSupport.encodeAnnotation (used by JVMCI) may need to
+        // be updated if new annotation member types are added.
         Object result = null;
         int tag = buf.get();
         switch(tag) {
@@ -443,9 +440,8 @@ public class AnnotationParser {
     }
     static Class<?> toClass(Type o) {
         if (o instanceof GenericArrayType gat)
-            return Array.newInstance(toClass(gat.getGenericComponentType()), 0)
-                .getClass();
-        return (Class)o;
+            return toClass(gat.getGenericComponentType()).arrayType();
+        return (Class<?>) o;
     }
 
     /**

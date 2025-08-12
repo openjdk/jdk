@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.Label;
-
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeKind;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedCodeBuilder
         extends NonterminalCodeBuilder
@@ -59,7 +60,7 @@ public final class ChainedCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 }

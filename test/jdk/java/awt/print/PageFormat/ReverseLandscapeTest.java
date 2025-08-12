@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4254954
  * @summary PageFormat would fail on solaris when setting orientation
  */

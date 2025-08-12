@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,10 @@
  */
 package org.openjdk.bench.java.lang.foreign.points.support;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import org.openjdk.bench.java.lang.foreign.CLayouts;
 
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
@@ -53,11 +48,11 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
-                loaderLibs.find("distance").get(),
+                loaderLibs.findOrThrow("distance"),
                 FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-                loaderLibs.find("distance_ptrs").get(),
+                loaderLibs.findOrThrow("distance_ptrs"),
                 FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
     }
@@ -66,26 +61,26 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
     private final MemorySegment segment;
 
     public PanamaPoint(int x, int y) {
-        this.arena = Arena.openConfined();
-        this.segment = MemorySegment.allocateNative(LAYOUT, arena.scope());
+        this.arena = Arena.ofConfined();
+        this.segment = arena.allocate(LAYOUT);
         setX(x);
         setY(y);
     }
 
     public void setX(int x) {
-        VH_x.set(segment, x);
+        VH_x.set(segment, 0L, x);
     }
 
     public int getX() {
-        return (int) VH_x.get(segment);
+        return (int) VH_x.get(segment, 0L);
     }
 
     public void setY(int y) {
-        VH_y.set(segment, y);
+        VH_y.set(segment, 0L, y);
     }
 
     public int getY() {
-        return (int) VH_y.get(segment);
+        return (int) VH_y.get(segment, 0L);
     }
 
     public double distanceTo(PanamaPoint other) {

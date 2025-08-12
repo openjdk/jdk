@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,18 +95,18 @@ inline void post_membar(atomic_memory_order order) {
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
@@ -131,8 +131,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
@@ -246,53 +246,30 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // specified otherwise (see atomic.hpp).
 
   // Using 32 bit internally.
-  volatile int *dest_base = (volatile int*)((uintptr_t)dest & ~3);
-
-#ifdef VM_LITTLE_ENDIAN
-  const unsigned int shift_amount        = ((uintptr_t)dest & 3) * 8;
-#else
-  const unsigned int shift_amount        = ((~(uintptr_t)dest) & 3) * 8;
-#endif
-  const unsigned int masked_compare_val  = ((unsigned int)(unsigned char)compare_value),
-                     masked_exchange_val = ((unsigned int)(unsigned char)exchange_value),
-                     xor_value           = (masked_compare_val ^ masked_exchange_val) << shift_amount;
-
-  unsigned int old_value, value32;
-
+  unsigned int old_value, loaded_value;
   pre_membar(order);
 
   __asm__ __volatile__ (
-    /* simple guard */
-    "   lbz     %[old_value], 0(%[dest])                  \n"
-    "   cmpw    %[masked_compare_val], %[old_value]       \n"
-    "   bne-    2f                                        \n"
     /* atomic loop */
     "1:                                                   \n"
-    "   lwarx   %[value32], 0, %[dest_base]               \n"
+    "   lbarx   %[old_value], 0, %[dest]                  \n"
     /* extract byte and compare */
-    "   srd     %[old_value], %[value32], %[shift_amount] \n"
-    "   clrldi  %[old_value], %[old_value], 56            \n"
-    "   cmpw    %[masked_compare_val], %[old_value]       \n"
+    "   cmpw    %[compare_value], %[old_value]            \n"
     "   bne-    2f                                        \n"
     /* replace byte and try to store */
-    "   xor     %[value32], %[xor_value], %[value32]      \n"
-    "   stwcx.  %[value32], 0, %[dest_base]               \n"
+    "   stbcx.  %[exchange_value], 0, %[dest]             \n"
     "   bne-    1b                                        \n"
     /* exit */
     "2:                                                   \n"
     /* out */
     : [old_value]           "=&r"   (old_value),
-      [value32]             "=&r"   (value32),
-                            "=m"    (*dest),
-                            "=m"    (*dest_base)
+      [loaded_value]        "=&r"   (loaded_value),
+                            "=m"    (*dest)
     /* in */
-    : [dest]                "b"     (dest),
-      [dest_base]           "b"     (dest_base),
-      [shift_amount]        "r"     (shift_amount),
-      [masked_compare_val]  "r"     (masked_compare_val),
-      [xor_value]           "r"     (xor_value),
-                            "m"     (*dest),
-                            "m"     (*dest_base)
+    : [dest]            "b"     (dest),
+      [compare_value]   "r"     (compare_value),
+      [exchange_value]  "r"     (exchange_value),
+                        "m"     (*dest)
     /* clobber */
     : "cc",
       "memory"

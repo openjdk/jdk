@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,6 +208,7 @@ public:
   void print(outputStream* st = tty);
 
 #if INCLUDE_CDS_JAVA_HEAP
+  bool should_be_archived() const;
   void iterate_symbols(MetaspaceClosure* closure);
   PackageEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
@@ -225,12 +226,7 @@ public:
   }
   void set_defined_by_cds_in_class_path(int idx) {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    int old_val = 0;
-    int new_val = 0;
-    do {
-      old_val = Atomic::load(&_defined_by_cds_in_class_path);
-      new_val = old_val | ((int)1 << idx);
-    } while (Atomic::cmpxchg(&_defined_by_cds_in_class_path, old_val, new_val) != old_val);
+    Atomic::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
   }
 };
 

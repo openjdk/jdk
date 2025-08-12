@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -32,7 +31,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/arrayKlass.inline.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -51,7 +50,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
 
   ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();
 
-  TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
+  TypeArrayKlass* ak = TypeArrayKlass::allocate_klass(null_loader_data, type, sym, CHECK_NULL);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
   complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
@@ -66,13 +65,17 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   return ak;
 }
 
-TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
+TypeArrayKlass* TypeArrayKlass::allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
   assert(TypeArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
 
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
+}
+
+u2 TypeArrayKlass::compute_modifier_flags() const {
+  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 
 TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {
@@ -98,7 +101,7 @@ oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
   // For typeArrays this is only called for the last dimension
   assert(rank == 1, "just checking");
   int length = *last_size;
-  return allocate(length, THREAD);
+  return allocate_instance(length, THREAD);
 }
 
 
@@ -170,65 +173,9 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
   ArrayAccess<ARRAYCOPY_ATOMIC>::arraycopy<void>(s, src_offset, d, dst_offset, (size_t)length << l2es);
 }
 
-// create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
-  int dim = dimension();
-  assert(dim <= n, "check order of chain");
-    if (dim == n)
-      return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-
-    ResourceMark rm;
-    JavaThread *jt = THREAD;
-    {
-      // Atomic create higher dimension and link into list
-      MutexLocker mu(THREAD, MultiArray_lock);
-
-      if (higher_dimension() == nullptr) {
-        Klass* oak = ObjArrayKlass::allocate_objArray_klass(
-              class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* h_ak = ObjArrayKlass::cast(oak);
-        h_ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(h_ak);
-        assert(h_ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
-    }
-  }
-
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
-  THREAD->check_possible_safepoint();
-  return h_ak->array_klass(n, THREAD);
-}
-
-// return existing klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_or_null(int n) {
-  int dim = dimension();
-  assert(dim <= n, "check order of chain");
-    if (dim == n)
-      return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-    return nullptr;
-  }
-
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
-  return h_ak->array_klass_or_null(n);
-}
-
-Klass* TypeArrayKlass::array_klass(TRAPS) {
-  return array_klass(dimension() +  1, THREAD);
-}
-
-Klass* TypeArrayKlass::array_klass_or_null() {
-  return array_klass_or_null(dimension() +  1);
-}
-
 size_t TypeArrayKlass::oop_size(oop obj) const {
-  assert(obj->is_typeArray(),"must be a type array");
+  // In this assert, we cannot safely access the Klass* with compact headers.
+  assert(UseCompactObjectHeaders || obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   return t->object_size(this);
 }
@@ -275,8 +222,6 @@ void TypeArrayKlass::print_value_on(outputStream* st) const {
   }
   st->print("}");
 }
-
-#ifndef PRODUCT
 
 static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
@@ -341,8 +286,11 @@ static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
 
 void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
-  typeArrayOop ta = typeArrayOop(obj);
-  int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
+  oop_print_elements_on(typeArrayOop(obj), st);
+}
+
+void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
+  int print_len = MIN2(ta->length(), MaxElementPrintSize);
   switch (element_type()) {
     case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
     case T_CHAR:    print_char_array(ta, print_len, st);    break;
@@ -359,8 +307,6 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }
 }
-
-#endif // PRODUCT
 
 const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();

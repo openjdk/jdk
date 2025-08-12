@@ -44,7 +44,7 @@ import sun.java2d.SurfaceData;
  * (BufImgSurfaceData) that will be used until the accelerated
  * SurfaceData can be restored.
  */
-public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
+public final class X11VolatileSurfaceManager extends VolatileSurfaceManager {
 
     private boolean accelerationEnabled;
 
@@ -73,6 +73,7 @@ public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
         }
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -80,6 +81,7 @@ public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
     /**
      * Create a pixmap-based SurfaceData object
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
 
@@ -103,6 +105,7 @@ public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
         return sData;
     }
 
+    @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
         // REMIND: we might be too paranoid here, requiring that
         // the GC be exactly the same as the original one.  The

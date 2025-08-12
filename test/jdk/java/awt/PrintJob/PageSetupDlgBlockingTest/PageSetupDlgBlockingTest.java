@@ -25,7 +25,7 @@
   @test
   @bug 4507585
   @summary Native modal dialog shouldn't block event dispatching when called on EventDispatchThread.
-  @author tav@sparc.spb.su: area=awt.PrintJob
+  @key printer
   @run main/manual=yesno PageSetupDlgBlockingTest
 
 */
@@ -34,7 +34,6 @@ import java.awt.*;
 import java.awt.print.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.applet.*;
 
 public class PageSetupDlgBlockingTest extends Panel {
     public static Frame frame = new TestFrame("Test Frame");

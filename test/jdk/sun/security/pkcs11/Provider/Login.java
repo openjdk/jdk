@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
  * @bug 4850423
  * @summary login facilities for hardware tokens
  * @library /test/lib ..
- * @run testng/othervm -Djava.security.manager=allow Login
+ * @run testng/othervm Login
  */
 
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -54,8 +56,11 @@ public class Login extends PKCS11Test {
 
     @Test
     public void testLogin() throws Exception {
-        String[] args = new String[]{ "sm", "Login.policy"};
-        main(new Login(), args);
+        try {
+            main(new Login(), new String[0]);
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     public void main(Provider p) throws Exception {

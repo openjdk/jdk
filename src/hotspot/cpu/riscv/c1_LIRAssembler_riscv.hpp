@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -62,22 +62,19 @@ private:
   void caswu(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = NULL);
-
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // See emit_static_call_stub for detail
-    // CompiledStaticCall::to_interp_stub_size() (14) + CompiledStaticCall::to_trampoline_stub_size() (1 + 3 + address)
-    _call_stub_size = 14 * NativeInstruction::instruction_size +
-                      (NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size),
+    // call stub: CompiledDirectCall::to_interp_stub_size() +
+    //            CompiledDirectCall::to_trampoline_stub_size()
+    _call_stub_size = 11 * MacroAssembler::instruction_size +
+                      1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
-    // verify_not_null_oop + far_call + should_not_reach_here + invalidate_registers(DEBUG_ONLY)
-    _exception_handler_size = DEBUG_ONLY(584) NOT_DEBUG(548), // or smaller
+    _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(32), // or smaller
     // See emit_deopt_handler for detail
-    // auipc (1) + far_jump (6 or 2)
-    _deopt_handler_size = 1 * NativeInstruction::instruction_size +
-                          6 * NativeInstruction::instruction_size // or smaller
+    // auipc (1) + far_jump (2)
+    _deopt_handler_size = 1 * MacroAssembler::instruction_size +
+                          2 * MacroAssembler::instruction_size
   };
 
   void check_conflict(ciKlass* exact_klass, intptr_t current_klass, Register tmp,
@@ -99,15 +96,11 @@ private:
                                   Register k_RInfo, Register klass_RInfo,
                                   Label* failure_target, Label* success_target);
   void profile_object(ciMethodData* md, ciProfileData* data, Register obj,
-                      Register klass_RInfo, Label* obj_is_null);
+                      Register k_RInfo, Register klass_RInfo, Label* obj_is_null);
   void typecheck_loaded(LIR_OpTypeCheck* op, ciKlass* k, Register k_RInfo);
 
   // emit_opTypeCheck sub functions
   void typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile);
-
-  void type_profile(Register obj, ciMethodData* md, Register klass_RInfo, Register k_RInfo,
-                    ciProfileData* data, Label* success, Label* failure,
-                    Label& profile_cast_success, Label& profile_cast_failure);
 
   void lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, Register Rtmp1,
                            Label* success_target, Label* failure_target);

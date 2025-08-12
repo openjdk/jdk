@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZVALUE_HPP
 #define SHARE_GC_Z_ZVALUE_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -38,7 +39,7 @@ private:
   static uintptr_t _end;
 
 public:
-  static const size_t offset = 4 * K;
+  static const size_t Offset = 4 * K;
 
   static uintptr_t alloc(size_t size);
 };
@@ -75,8 +76,12 @@ public:
 // Value
 //
 
+struct ZValueIdTagType {};
+
 template <typename S, typename T>
 class ZValue : public CHeapObj<mtGC> {
+  friend class VMStructs;
+
 private:
   const uintptr_t _addr;
 
@@ -85,6 +90,8 @@ private:
 public:
   ZValue();
   ZValue(const T& value);
+  template <typename... Args>
+  ZValue(ZValueIdTagType, Args&&... args);
 
   const T* addr(uint32_t value_id = S::id()) const;
   T* addr(uint32_t value_id = S::id());
@@ -94,6 +101,8 @@ public:
 
   void set(const T& value, uint32_t value_id = S::id());
   void set_all(const T& value);
+
+  uint32_t count() const;
 };
 
 template <typename T> using ZContended = ZValue<ZContendedStorage, T>;
@@ -105,16 +114,23 @@ template <typename T> using ZPerWorker = ZValue<ZPerWorkerStorage, T>;
 // Iterator
 //
 
+template<typename S, typename T>
+class ZValueConstIterator;
+
 template <typename S, typename T>
 class ZValueIterator {
+  friend class ZValueConstIterator<S, T>;
+
 private:
   ZValue<S, T>* const _value;
   uint32_t            _value_id;
 
 public:
   ZValueIterator(ZValue<S, T>* value);
+  ZValueIterator(const ZValueIterator&) = default;
 
   bool next(T** value);
+  bool next(T** value, uint32_t* value_id);
 };
 
 template <typename T> using ZPerCPUIterator = ZValueIterator<ZPerCPUStorage, T>;
@@ -129,6 +145,8 @@ private:
 
 public:
   ZValueConstIterator(const ZValue<S, T>* value);
+  ZValueConstIterator(const ZValueIterator<S, T>& other);
+  ZValueConstIterator(const ZValueConstIterator&) = default;
 
   bool next(const T** value);
 };

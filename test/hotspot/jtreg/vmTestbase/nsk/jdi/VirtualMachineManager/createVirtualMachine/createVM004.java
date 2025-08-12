@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,10 @@ public class createVM004 {
     }
 
     public static void main (String argv[]) {
-        int result = run(argv, System.out);
-        System.exit(result + STATUS_TEMP);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -139,7 +141,7 @@ public class createVM004 {
 
         String targetJava = argsHandler.getLaunchExecPath()
                                     + " " + argsHandler.getLaunchOptions();
-        String commandToRun = targetJava + " -Xdebug -Xrunjdwp:transport=dt_socket,address=" +
+        String commandToRun = targetJava + " -Xrunjdwp:transport=dt_socket,address=" +
             testTransportServiceListenKey.address() + " " + targetVMClassName;
 
         Binder binder = new Binder(argsHandler, logHandler);
@@ -152,7 +154,7 @@ public class createVM004 {
             logOnVerbose(infoLogPrefixHead + "PROCESS is being created:");
             logOnVerbose(infoLogPrefix + "Command to run: " + commandToRun);
 
-            debugee = binder.startLocalDebugee(commandToRun);
+            debugee = binder.startDebugee(commandToRun);
             debugee.redirectOutput(logHandler);
             processToRun = debugee.getProcess();
 

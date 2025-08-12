@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
@@ -223,7 +222,7 @@ int RetTableEntry::_init_nof_jsrs = 5;
 
 RetTableEntry::RetTableEntry(int target, RetTableEntry *next) {
   _target_bci = target;
-  _jsrs = new GrowableArray<intptr_t>(_init_nof_jsrs);
+  _jsrs = new GrowableArray<int>(_init_nof_jsrs);
   _next = next;
 }
 
@@ -436,12 +435,12 @@ void GenerateOopMap::mark_bbheaders_and_count_gc_points() {
      /* We will also mark successors of jsr's as basic block headers. */
     switch (bytecode) {
       case Bytecodes::_jsr:
-        assert(!fellThrough, "should not happen");
-        bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
-        break;
       case Bytecodes::_jsr_w:
         assert(!fellThrough, "should not happen");
-        bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
+        // If this is the last bytecode, there is no successor to mark
+        if (bci + Bytecodes::length_for(bytecode) < method()->code_size()) {
+          bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
+        }
         break;
       default:
         break;
@@ -502,7 +501,10 @@ void GenerateOopMap::mark_reachable_code() {
           case Bytecodes::_jsr:
           case Bytecodes::_jsr_w:
             assert(!fell_through, "should not happen");
-            reachable_basicblock(this, bci + Bytecodes::length_for(bytecode), &change);
+            // If this is the last bytecode, there is no successor to mark
+            if (bci + Bytecodes::length_for(bytecode) < method()->code_size()) {
+              reachable_basicblock(this, bci + Bytecodes::length_for(bytecode), &change);
+            }
             break;
           default:
             break;
@@ -586,9 +588,6 @@ bool GenerateOopMap::jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, int *
     case Bytecodes::_jsr:
       assert(bcs->is_wide()==false, "sanity check");
       (*jmpFct)(this, bcs->dest(), data);
-
-
-
       break;
     case Bytecodes::_jsr_w:
       (*jmpFct)(this, bcs->dest_w(), data);
@@ -660,7 +659,7 @@ void GenerateOopMap::restore_state(BasicBlock *bb)
 }
 
 int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
- int bbNum = bb - _basic_blocks + 1;
+ intptr_t bbNum = bb - _basic_blocks + 1;
  if (bbNum == _bb_count)
     return method()->code_size();
 
@@ -1280,7 +1279,6 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 }
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
-  ResourceMark rm;
   LogStream ls(Log(monitormismatch)::info());
   ls.print("Monitor mismatch in method ");
   method()->print_short_name(&ls);
@@ -1318,9 +1316,9 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokedynamic:
     case Bytecodes::_invokeinterface: {
-      int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
+      int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
-      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
+      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
       int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
       Symbol* signature     = cp->symbol_at(signatureIdx);
       os->print("%s", signature->as_C_string());
@@ -1597,16 +1595,16 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_getstatic:         do_field(true,   true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putstatic:         do_field(false,  true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_getfield:          do_field(true,   false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putfield:          do_field(false,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
 
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
@@ -1931,10 +1929,10 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
   return idx;
 }
 
-void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
+void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytecodes::Code bc) {
   // Dig up signature for field in constant pool
   ConstantPool* cp     = method()->constants();
-  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
+  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx, bc);
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
   Symbol* signature      = cp->symbol_at(signatureIdx);
 
@@ -1957,10 +1955,10 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   pp(in, out);
 }
 
-void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci) {
+void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
   ConstantPool* cp  = _method->constants();
-  Symbol* signature   = cp->signature_ref_at(idx);
+  Symbol* signature   = cp->signature_ref_at(idx, bc);
 
   // Parse method signature
   CellTypeState out[4];
@@ -2029,7 +2027,7 @@ void GenerateOopMap::ret_jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, i
     int target_bci = rtEnt->jsrs(i);
     // Make sure a jrtRet does not set the changed bit for dead basicblock.
     BasicBlock* jsr_bb    = get_basic_block_containing(target_bci - 1);
-    debug_only(BasicBlock* target_bb = &jsr_bb[1];)
+    DEBUG_ONLY(BasicBlock* target_bb = &jsr_bb[1];)
     assert(target_bb  == get_basic_block_at(target_bci), "wrong calc. of successor basicblock");
     bool alive = jsr_bb->is_alive();
     if (TraceNewOopMapGeneration) {
@@ -2057,7 +2055,7 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("---------------------------");
   tty->print_cr ("  Total : %3.3f sec.", GenerateOopMap::_total_oopmap_time.seconds());
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
-  GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
+  (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
 
 //
@@ -2101,7 +2099,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _report_result  = false;
   _report_result_for_send = false;
   _new_var_map    = nullptr;
-  _ret_adr_tos    = new GrowableArray<intptr_t>(5);  // 5 seems like a good number;
+  _ret_adr_tos    = new GrowableArray<int>(5);  // 5 seems like a good number;
   _did_rewriting  = false;
   _did_relocation = false;
 
@@ -2401,16 +2399,16 @@ bool GenerateOopMap::rewrite_load_or_store(BytecodeStream *bcs, Bytecodes::Code 
   // Patch either directly in Method* or in temp. buffer
   if (newIlen == 1) {
     assert(varNo < 4, "varNo too large");
-    *bcp = bc0 + varNo;
+    *bcp = (u1)(bc0 + varNo);
   } else if (newIlen == 2) {
     assert(varNo < 256, "2-byte index needed!");
     *(bcp + 0) = bcN;
-    *(bcp + 1) = varNo;
+    *(bcp + 1) = (u1)varNo;
   } else {
     assert(newIlen == 4, "Wrong instruction length");
     *(bcp + 0) = Bytecodes::_wide;
     *(bcp + 1) = bcN;
-    Bytes::put_Java_u2(bcp+2, varNo);
+    Bytes::put_Java_u2(bcp+2, (u2)varNo);
   }
 
   if (newIlen != ilen) {

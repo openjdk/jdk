@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
 #include "logTestFixture.hpp"
@@ -70,33 +70,32 @@ LOG_LEVEL_LIST
   }
 
   void test_asynclog_drop_messages() {
-    auto writer = AsyncLogWriter::instance();
-    if (writer != nullptr) {
-      const size_t sz = 2000;
+    const size_t sz = AsyncLogBufferSize / 2;
+    const char* str = "a lot of log...";
+    const size_t str_size = strlen(str);
 
-      // shrink async buffer.
-      AsyncLogWriter::BufferUpdater saver(1024);
-      LogMessage(logging) lm;
+    test_asynclog_ls(); // roughly 200 bytes.
+    LogMessage(logging) lm;
 
-      // write more messages than its capacity in burst
-      for (size_t i = 0; i < sz; ++i) {
-        lm.debug("a lot of log...");
-      }
-      lm.flush();
+    // write more messages than its capacity in burst
+    for (size_t i = 0; i < (sz / str_size); ++i) {
+      lm.debug("%s", str);
     }
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.flush();
   }
 
   // stdout/stderr support
   bool write_to_file(const std::string& output) {
     FILE* f = os::fopen(TestLogFileName, "w");
 
-    if (f != NULL) {
+    if (f != nullptr) {
       size_t sz = output.size();
       size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
-
-      if (written == sz * sizeof(char)) {
-        return fclose(f) == 0;
-      }
+      return fclose(f) == 0 && sz == written;
     }
 
     return false;
@@ -148,7 +147,7 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   ResourceMark rm;
   LogMessageBuffer buffer;
   const char* strs[MULTI_LINES + 1];
-  strs[MULTI_LINES] = NULL;
+  strs[MULTI_LINES] = nullptr;
   for (int i = 0; i < MULTI_LINES; ++i) {
     stringStream ss;
     ss.print_cr("nonbreakable log message line-%02d", i);
@@ -176,10 +175,10 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   const uintptr_t mask = (uintptr_t)(sizeof(void*) - 1);
   bool res;
 
-  res = buffer->push_back(output, Default, "a log line");
+  res = buffer->push_back(output, Default, "a log line", strlen("a log line"));
   EXPECT_TRUE(res) << "first message should succeed.";
   line++;
-  res = buffer->push_back(output, Default, "yet another");
+  res = buffer->push_back(output, Default, "yet another", strlen("yet another"));
   EXPECT_TRUE(res) << "second message should succeed.";
   line++;
 
@@ -204,7 +203,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   written = e->output()->write_blocking(e->decorations(), e->message());
   EXPECT_GT(written, 0);
 
-  while (buffer->push_back(output, Default, "0123456789abcdef")) {
+  while (buffer->push_back(output, Default, "0123456789abcdef", strlen("0123456789abcdef"))) {
     line++;
   }
 
@@ -246,49 +245,92 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
+  if (AsyncLogWriter::instance() == nullptr) return;
+  if (LogConfiguration::async_mode() != LogConfiguration::AsyncMode::Drop) {
+    FAIL() << "This test must be run in drop mode if async UL is activated";
+    return;
+  }
+
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
+  bool messages_dropped = file_contains_substring(TestLogFileName, "messages dropped due to async logging");
+  if (!messages_dropped) {
+    stringStream content;
+    FILE* fp = os::fopen(TestLogFileName, "r");
+    assert(fp != nullptr, "error opening file %s: %s", TestLogFileName, os::strerror(errno));
+    {
+      ResourceMark rm;
+      char* line = read_line(fp);
+      while (line != nullptr) {
+        ResourceMark rm;
+        content.print_raw(line);
+        line = read_line(fp);
+      }
+    }
 
-  AsyncLogWriter::flush();
-  if (AsyncLogWriter::instance() != nullptr) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    // The thread is null and deattached.
+    // That means that UL degrades to synchronous logging for this thread, which means that no messages can be dropped.
+    EXPECT_NE(nullptr, Thread::current_or_null()) << "Thread was null";
+    EXPECT_TRUE(messages_dropped) << "Log file content:\n" << content.freeze();
   }
 }
 
 TEST_VM_F(AsyncLogTest, stdoutOutput) {
   testing::internal::CaptureStdout();
-  set_log_config("stdout", "logging=debug");
 
-  test_asynclog_ls();
-  test_asynclog_drop_messages();
+  if (!set_log_config("stdout", "logging=debug")) {
+    return;
+  }
 
-  AsyncLogWriter::flush();
-  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStdout()));
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
+  if (async) {
+    test_asynclog_drop_messages();
+    AsyncLogWriter::flush();
+  } else {
+    test_asynclog_ls();
+  }
+
+  fflush(nullptr);
+  if (!write_to_file(testing::internal::GetCapturedStdout())) {
+    return;
+  }
 
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
+  if (async) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }
 
 TEST_VM_F(AsyncLogTest, stderrOutput) {
   testing::internal::CaptureStderr();
-  set_log_config("stderr", "logging=debug");
 
-  test_asynclog_ls();
-  test_asynclog_drop_messages();
+  if (!set_log_config("stderr", "logging=debug")) {
+    return;
+  }
 
-  AsyncLogWriter::flush();
-  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStderr()));
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
+  if (async) {
+    test_asynclog_drop_messages();
+    AsyncLogWriter::flush();
+  } else {
+    test_asynclog_ls();
+  }
+
+  fflush(nullptr);
+  if (!write_to_file(testing::internal::GetCapturedStderr())) {
+    return;
+  }
 
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
+  if (async) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }

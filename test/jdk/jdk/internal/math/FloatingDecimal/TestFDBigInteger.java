@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 
 import java.math.BigInteger;
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
 import jdk.internal.math.FDBigInteger;
 
 /**
  * @test
- * @bug 7032154
- * @summary unit testys of FDBigInteger
+ * @bug 7032154 8342693
+ * @summary unit tests of FDBigInteger
  * @modules java.base/jdk.internal.math
  * @author Dmitry Nadezhin
  */
@@ -52,7 +52,7 @@ public class TestFDBigInteger {
     }
 
     private static FDBigInteger mutable(String hex, int offset) {
-        char[] chars = new BigInteger(hex, 16).toString().toCharArray();
+        byte[] chars = new BigInteger(hex, 16).toString().getBytes(StandardCharsets.US_ASCII);
         return new FDBigInteger(0, chars, 0, chars.length).multByPow52(0, offset * 32);
     }
 

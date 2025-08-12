@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -39,8 +39,8 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jfieldID actual_fid = NULL;
-static jfieldID fids[4] = { NULL, NULL, NULL, NULL };
+static jfieldID actual_fid = nullptr;
+static jfieldID fids[4] = { nullptr, nullptr, nullptr, nullptr };
 
 void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method,
@@ -66,12 +66,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -133,7 +133,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw004_getReady(JNIEnv *env, jclass cls) 
     fids[2] = env->GetFieldID(cls, "fld2", "I");
     fids[3] = env->GetFieldID(cls, "fld3", "I");
     for (i = 0; i < sizeof(fids) / sizeof(jfieldID); i++) {
-        if (fids[i] == NULL) {
+        if (fids[i] == nullptr) {
             printf("Unable to set field access watch on fld%" PRIuPTR ", fieldID=0", i);
         } else {
             if (printdump == JNI_TRUE) {
@@ -149,7 +149,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw004_getReady(JNIEnv *env, jclass cls) 
         }
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FIELD_ACCESS, NULL);
+        JVMTI_EVENT_FIELD_ACCESS, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetEventNotificationMode) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -168,7 +168,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw004_check(JNIEnv *env,
         printf("Field %d: thrown field ID expected=0x%p, actual=0x%p\n",
                ind, fids[ind], actual_fid);
     }
-    actual_fid = NULL;
+    actual_fid = nullptr;
 }
 
 JNIEXPORT jint JNICALL

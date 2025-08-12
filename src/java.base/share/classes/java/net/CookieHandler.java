@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.net;
 import java.util.Map;
 import java.util.List;
 import java.io.IOException;
-import sun.security.util.SecurityConstants;
 
 /**
  * A CookieHandler object provides a callback mechanism to hook up a
@@ -46,6 +45,7 @@ import sun.security.util.SecurityConstants;
  * href="http://www.ietf.org/rfc/rfc2965.txt"><i>RFC&nbsp;2965: HTTP
  * State Management Mechanism</i></a>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
  * @author Yingxian Wang
  * @since 1.5
  */
@@ -69,17 +69,9 @@ public abstract class CookieHandler {
      *
      * @return the system-wide cookie handler; A null return means
      *        there is no system-wide cookie handler currently set.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getCookieHandler")}
      * @see #setDefault(CookieHandler)
      */
     public static synchronized CookieHandler getDefault() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.GET_COOKIEHANDLER_PERMISSION);
-        }
         return cookieHandler;
     }
 
@@ -90,17 +82,9 @@ public abstract class CookieHandler {
      *
      * @param cHandler The HTTP cookie handler, or
      *       {@code null} to unset.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setCookieHandler")}
      * @see #getDefault()
      */
     public static synchronized void setDefault(CookieHandler cHandler) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.SET_COOKIEHANDLER_PERMISSION);
-        }
         cookieHandler = cHandler;
     }
 
@@ -123,7 +107,7 @@ public abstract class CookieHandler {
      *
      * @param uri a {@code URI} representing the intended use for the
      *            cookies
-     * @param requestHeaders - a Map from request header
+     * @param requestHeaders a Map from request header
      *            field names to lists of field values representing
      *            the current request headers
      * @return an immutable map from state management headers, with

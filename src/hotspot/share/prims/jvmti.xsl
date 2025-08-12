@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1586,7 +1586,7 @@ typedef struct {
   </xsl:if>
   <xsl:apply-templates select="." mode="paramlink"/>
   <xsl:text> is </xsl:text>
-  <code>NULL</code>
+  a null pointer
   <xsl:text>.</xsl:text>
 </xsl:template>
 

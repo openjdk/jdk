@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 
-bool ZArguments::is_os_supported() const {
+bool ZArguments::is_os_supported() {
   return ZSyscall::is_supported();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.tools.keytool;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.*;
@@ -39,8 +40,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
-
-
+import java.security.spec.ECParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
@@ -59,21 +60,16 @@ import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
 
+import jdk.internal.util.StaticProperty;
+
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
-import sun.security.util.ConstraintsParameters;
-import sun.security.util.ECKeySizeParameterSpec;
-import sun.security.util.KeyUtil;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.provider.X509Factory;
 import sun.security.provider.certpath.ssl.SSLServerCertStore;
-import sun.security.util.KnownOIDs;
-import sun.security.util.Password;
-import sun.security.util.SecurityProperties;
-import sun.security.util.SecurityProviderConstants;
-import sun.security.util.SignatureUtil;
+
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -82,15 +78,12 @@ import javax.crypto.spec.PBEKeySpec;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.tools.PathList;
-import sun.security.util.DerValue;
-import sun.security.util.Pem;
 import sun.security.validator.Validator;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
 import static sun.security.tools.keytool.Main.Command.*;
 import static sun.security.tools.keytool.Main.Option.*;
-import sun.security.util.DisabledAlgorithmConstraints;
 
 /**
  * This tool manages keystores.
@@ -398,33 +391,45 @@ public final class Main {
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle(
-            "sun.security.tools.keytool.Resources");
+            "sun.security.tools.keytool.resources.keytool");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case-insensitive string comparisons
         collator.setStrength(Collator.PRIMARY);
     }
 
-    private Main() { }
-
     public static void main(String[] args) throws Exception {
         Main kt = new Main();
-        kt.run(args, System.out);
+        int exitCode = kt.run(args, System.out);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
     }
 
-    private void run(String[] args, PrintStream out) throws Exception {
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    public int run(String[] args, PrintStream out) throws Exception {
         try {
-            args = parseArgs(args);
+            parseArgs(args);
             if (command != null) {
                 doCommands(out);
             }
+        } catch (ExitException ee) {
+            return ee.errorCode;
         } catch (Exception e) {
             System.out.println(rb.getString("keytool.error.") + e);
             if (verbose) {
                 e.printStackTrace(System.out);
             }
             if (!debug) {
-                System.exit(1);
+                return 1;
             } else {
                 throw e;
             }
@@ -441,6 +446,7 @@ public final class Main {
                 ksStream.close();
             }
         }
+        return 0;
     }
 
     /**
@@ -968,9 +974,9 @@ public final class Main {
             // if certProtectionAlgorithm and macAlgorithm are both NONE.
             if (storetype.equalsIgnoreCase("pkcs12")) {
                 isPasswordlessKeyStore =
-                        "NONE".equals(SecurityProperties.privilegedGetOverridable(
+                        "NONE".equals(SecurityProperties.getOverridableProperty(
                                 "keystore.pkcs12.certProtectionAlgorithm"))
-                        && "NONE".equals(SecurityProperties.privilegedGetOverridable(
+                        && "NONE".equals(SecurityProperties.getOverridableProperty(
                                 "keystore.pkcs12.macAlgorithm"));
             }
 
@@ -1119,7 +1125,6 @@ public final class Main {
             }
         }
 
-        KeyStore cakstore = buildTrustedCerts();
         // -trustcacerts can be specified on -importcert, -printcert or -printcrl.
         // Reset it so that warnings on CA cert will remain for other command.
         if (command != IMPORTCERT && command != PRINTCERT
@@ -1128,6 +1133,7 @@ public final class Main {
         }
 
         if (trustcacerts) {
+            KeyStore cakstore = buildTrustedCerts();
             if (cakstore != null) {
                 caks = cakstore;
             } else {
@@ -1470,7 +1476,7 @@ public final class Main {
         info.setVersion(new CertificateVersion(CertificateVersion.V3));
         info.setIssuer(issuer);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = stdinAwareReader(in);
         boolean canRead = false;
         StringBuilder sb = new StringBuilder();
         while (true) {
@@ -1597,9 +1603,12 @@ public final class Main {
                 new X509CRLImpl.TBSCertList(owner, firstDate, lastDate, badCerts),
                 privateKey, sigAlgName);
         if (rfc) {
-            out.println("-----BEGIN X509 CRL-----");
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
-            out.println("-----END X509 CRL-----");
+            out.print("-----BEGIN X509 CRL-----");
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
+            out.print("\r\n");
+            out.print("-----END X509 CRL-----");
+            out.print("\r\n");
         } else {
             out.write(crl.getEncodedInternal());
         }
@@ -1773,7 +1782,8 @@ public final class Main {
      */
     private char[] promptForCredential() throws Exception {
         // Handle password supplied via stdin
-        if (System.console() == null) {
+        Console console = System.console();
+        if (console == null || !console.isTerminal()) {
             char[] importPass = Password.readPassword(System.in);
             passwords.add(importPass);
             return importPass;
@@ -2018,20 +2028,18 @@ public final class Main {
         Object[] source;
         if (signerAlias != null) {
             form = new MessageFormat(rb.getString
-                    ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
+                    ("Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.days.for"));
             source = new Object[]{
-                    groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    KeyUtil.fullDisplayAlgName(privKey),
+                    fullDisplayKeyName(privKey),
                     newCert.getSigAlgName(),
                     signerAlias,
                     validity,
                     x500Name};
         } else {
             form = new MessageFormat(rb.getString
-                    ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
+                    ("Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.days.for"));
             source = new Object[]{
-                    groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    KeyUtil.fullDisplayAlgName(privKey),
+                    fullDisplayKeyName(privKey),
                     newCert.getSigAlgName(),
                     validity,
                     x500Name};
@@ -2054,6 +2062,38 @@ public final class Main {
         checkWeakConstraint(rb.getString("the.generated.certificate"),
                 finalChain);
         keyStore.setKeyEntry(alias, privKey, keyPass, finalChain);
+    }
+
+    /**
+     * Returns the full display name of the given key object. Could be
+     * - "X25519", if its getParams() is NamedParameterSpec
+     * - "EC (secp256r1)", if it's an EC key
+     * - "1024-bit RSA", other known keys
+     * - plain algorithm name, otherwise
+     *
+     * Note: the same method appears in keytool and jarsigner which uses
+     * same resource string defined in their own properties file.
+     *
+     * @param key the key object, cannot be null
+     * @return the full name
+     */
+    private static String fullDisplayKeyName(Key key) {
+        var alg = key.getAlgorithm();
+        if (key instanceof AsymmetricKey ak) {
+            var params = ak.getParams();
+            if (params instanceof NamedParameterSpec nps) {
+                return nps.getName(); // directly return
+            } else if (params instanceof ECParameterSpec eps) {
+                var nc = CurveDB.lookup(eps);
+                if (nc != null) {
+                    alg += " (" + nc.getNameAndAliases()[0] + ")"; // append name
+                }
+            }
+        }
+        var size = KeyUtil.getKeySize(key);
+        return size >= 0
+                ? String.format(rb.getString("size.bit.alg"), size, alg)
+                : alg;
     }
 
     private String ecGroupNameForSize(int size) throws Exception {
@@ -2771,9 +2811,12 @@ public final class Main {
             throws Exception {
         X509CRL xcrl = (X509CRL)crl;
         if (rfc) {
-            out.println("-----BEGIN X509 CRL-----");
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(xcrl.getEncoded()));
-            out.println("-----END X509 CRL-----");
+            out.print("-----BEGIN X509 CRL-----");
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(xcrl.getEncoded()));
+            out.print("\r\n");
+            out.print("-----END X509 CRL-----");
+            out.print("\r\n");
         } else {
             String s;
             if (crl instanceof X509CRLImpl x509crl) {
@@ -2788,7 +2831,7 @@ public final class Main {
     private void doPrintCertReq(InputStream in, PrintStream out)
             throws Exception {
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = stdinAwareReader(in);
         StringBuilder sb = new StringBuilder();
         boolean started = false;
         while (true) {
@@ -3493,8 +3536,7 @@ public final class Main {
         } else {
             System.err.print(rb.getString("Enter.alias.name."));
         }
-        return (new BufferedReader(new InputStreamReader(
-                                        System.in))).readLine();
+        return stdinAwareReader(System.in).readLine();
     }
 
     /**
@@ -3504,8 +3546,14 @@ public final class Main {
      */
     private String inputStringFromStdin(String prompt) throws Exception {
         System.err.print(prompt);
-        return (new BufferedReader(new InputStreamReader(
-                                        System.in))).readLine();
+        return stdinAwareReader(System.in).readLine();
+    }
+
+    private static BufferedReader stdinAwareReader(InputStream in) {
+        InputStreamReader reader = in == System.in
+                ? new InputStreamReader(in, Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset()))
+                : new InputStreamReader(in);
+        return new BufferedReader(reader);
     }
 
     /**
@@ -3578,22 +3626,17 @@ public final class Main {
 
     private String withWeakConstraint(Key key,
             CertPathConstraintsParameters cpcp) {
-        int kLen = KeyUtil.getKeySize(key);
-        String displayAlg = KeyUtil.fullDisplayAlgName(key);
+        String displayAlg = fullDisplayKeyName(key);
         try {
             DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.disabled"), kLen, displayAlg);
+            return String.format(rb.getString("key.bit.disabled"), displayAlg);
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
-            if (kLen >= 0) {
-                return String.format(rb.getString("key.bit"), kLen, displayAlg);
-            } else {
-                return String.format(rb.getString("unknown.size.1"), displayAlg);
-            }
+            return String.format(rb.getString("key.bit"), displayAlg);
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.weak"), kLen, displayAlg);
+            return String.format(rb.getString("key.bit.weak"), displayAlg);
         }
     }
 
@@ -3697,7 +3740,7 @@ public final class Main {
      */
     private X500Name getX500Name() throws IOException {
         BufferedReader in;
-        in = new BufferedReader(new InputStreamReader(System.in));
+        in = stdinAwareReader(System.in);
         String commonName = "Unknown";
         String organizationalUnit = "Unknown";
         String organization = "Unknown";
@@ -3787,9 +3830,12 @@ public final class Main {
         throws IOException, CertificateException
     {
         if (rfc) {
-            out.println(X509Factory.BEGIN_CERT);
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(cert.getEncoded()));
-            out.println(X509Factory.END_CERT);
+            out.print(X509Factory.BEGIN_CERT);
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(cert.getEncoded()));
+            out.print("\r\n");
+            out.print(X509Factory.END_CERT);
+            out.print("\r\n");
         } else {
             out.write(cert.getEncoded()); // binary
         }
@@ -4200,8 +4246,7 @@ public final class Main {
             }
             System.err.print(prompt);
             System.err.flush();
-            reply = (new BufferedReader(new InputStreamReader
-                                        (System.in))).readLine();
+            reply = stdinAwareReader(System.in).readLine();
             if (reply == null ||
                 collator.compare(reply, "") == 0 ||
                 collator.compare(reply, rb.getString("n")) == 0 ||
@@ -4954,14 +4999,12 @@ public final class Main {
                 } catch (CertPathValidatorException e) {
                     weakWarnings.add(String.format(
                             rb.getString("whose.key.weak"), label,
-                            String.format(rb.getString("key.bit"),
-                            KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
+                            String.format(rb.getString("key.bit"), fullDisplayKeyName(key))));
                 }
             } catch (CertPathValidatorException e) {
                 weakWarnings.add(String.format(
                         rb.getString("whose.key.disabled"), label,
-                        String.format(rb.getString("key.bit"),
-                        KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
+                        String.format(rb.getString("key.bit"), fullDisplayKeyName(key))));
             }
         }
     }
@@ -4981,13 +5024,11 @@ public final class Main {
             if (!DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.disabled"), label,
-                    String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
+                    String.format(rb.getString("key.bit"), fullDisplayKeyName(key))));
             } else if (!LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.weak"), label,
-                    String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
+                    String.format(rb.getString("key.bit"), fullDisplayKeyName(key))));
             }
         }
     }
@@ -5052,7 +5093,7 @@ public final class Main {
                 weakWarnings.add(String.format(
                         rb.getString("key.size.weak"), label,
                         String.format(rb.getString("key.bit"),
-                        KeyUtil.getKeySize(secKey), secKeyAlg)));
+                        fullDisplayKeyName(secKey))));
             } else {
                 weakWarnings.add(String.format(
                         rb.getString("key.algorithm.weak"), label, secKeyAlg));
@@ -5247,7 +5288,7 @@ public final class Main {
         if (debug) {
             throw new RuntimeException("NO BIG ERROR, SORRY");
         } else {
-            System.exit(1);
+            throw new ExitException(1);
         }
     }
 
@@ -5315,13 +5356,15 @@ class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object obj) {
         return
-            other instanceof Pair &&
-            Objects.equals(fst, ((Pair)other).fst) &&
-            Objects.equals(snd, ((Pair)other).snd);
+            obj instanceof Pair<?, ?> other &&
+            Objects.equals(fst, other.fst) &&
+            Objects.equals(snd, other.snd);
     }
 
+    @Override
     public int hashCode() {
         if (fst == null) return (snd == null) ? 0 : snd.hashCode() + 1;
         else if (snd == null) return fst.hashCode() + 2;

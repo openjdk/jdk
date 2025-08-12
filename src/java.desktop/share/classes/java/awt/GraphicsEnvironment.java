@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,9 @@
  * questions.
  */
 
-
 package java.awt;
 
 import java.awt.image.BufferedImage;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Locale;
 
 import sun.awt.PlatformGraphicsInfo;
@@ -36,7 +33,6 @@ import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.java2d.HeadlessGraphicsEnvironment;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.security.action.GetPropertyAction;
 
 /**
  *
@@ -139,20 +135,16 @@ public abstract class GraphicsEnvironment {
      * @return the value of the property "java.awt.headless"
      * @since 1.4
      */
-    @SuppressWarnings("removal")
     private static boolean getHeadlessProperty() {
         if (headless == null) {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                String nm = System.getProperty("java.awt.headless");
+            String nm = System.getProperty("java.awt.headless");
 
-                if (nm == null) {
-                    headless = defaultHeadless =
-                        PlatformGraphicsInfo.getDefaultHeadlessProperty();
-                } else {
-                    headless = Boolean.valueOf(nm);
-                }
-                return null;
-            });
+            if (nm == null) {
+                headless = defaultHeadless =
+                    PlatformGraphicsInfo.getDefaultHeadlessProperty();
+            } else {
+                headless = Boolean.valueOf(nm);
+            }
         }
         return headless;
     }
@@ -300,8 +292,7 @@ public abstract class GraphicsEnvironment {
      * be used in constructing new {@code Font}s by name or family name,
      * and is enumerated by {@link #getAvailableFontFamilyNames} and
      * {@link #getAllFonts} within the execution context of this
-     * application or applet. This means applets cannot register fonts in
-     * a way that they are visible to other applets.
+     * application.
      * <p>
      * Reasons that this method might not register the font and therefore
      * return {@code false} are:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.security.action.GetPropertyAction;
 
 class FileDispatcherImpl extends FileDispatcher {
     private static final int MAP_INVALID = -1;
@@ -99,6 +98,14 @@ class FileDispatcherImpl extends FileDispatcher {
 
     long size(FileDescriptor fd) throws IOException {
         return size0(fd);
+    }
+
+    int available(FileDescriptor fd) throws IOException {
+        return available0(fd);
+    }
+
+    boolean isOther(FileDescriptor fd) throws IOException {
+        return isOther0(fd);
     }
 
     int lock(FileDescriptor fd, boolean blocking, long pos, long size,
@@ -181,8 +188,8 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     static boolean isFastFileTransferRequested() {
-        String fileTransferProp = GetPropertyAction
-                .privilegedGetProperty("jdk.nio.enableFastFileTransfer", "false");
+        String fileTransferProp =
+                System.getProperty("jdk.nio.enableFastFileTransfer", "false");
         return fileTransferProp.isEmpty() ? true : Boolean.parseBoolean(fileTransferProp);
     }
 
@@ -222,6 +229,10 @@ class FileDispatcherImpl extends FileDispatcher {
         throws IOException;
 
     static native long size0(FileDescriptor fd) throws IOException;
+
+    static native int available0(FileDescriptor fd) throws IOException;
+
+    static native boolean isOther0(FileDescriptor fd) throws IOException;
 
     static native int lock0(FileDescriptor fd, boolean blocking, long pos,
                             long size, boolean shared) throws IOException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +122,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive) throws Exception {
+                     boolean interactive, Size size) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -141,7 +144,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
                 enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
             } else {
-                Size size = null;
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {
@@ -153,10 +155,20 @@ class ConsoleIOContext extends IOContext {
             setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
-            terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).build();
+            //on platforms which are known to be fully supported by
+            //the FFMTerminalProvider, do not permit the ExecTerminalProvider:
+            boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
+                                        !OSUtils.IS_LINUX &&
+                                        !OSUtils.IS_OSX;
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -830,7 +842,8 @@ class ConsoleIOContext extends IOContext {
     @Override
     public void beforeUserCode() {
         synchronized (this) {
-            inputBytes = null;
+            pendingBytes = null;
+            pendingLineCharacters = null;
         }
         input.setState(State.BUFFER);
     }
@@ -961,33 +974,119 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
-    private byte[] inputBytes;
-    private int inputBytesPointer;
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
+    private char[] pendingLineCharacters;
+    private int pendingLineCharactersPointer;
+    private byte[] pendingBytes;
+    private int pendingBytesPointer;
 
     @Override
     public synchronized int readUserInput() throws IOException {
-        while (inputBytes == null || inputBytes.length <= inputBytesPointer) {
-            History prevHistory = in.getHistory();
-            boolean prevDisableCr = Display.DISABLE_CR;
-            Parser prevParser = in.getParser();
-
-            try {
-                in.setParser((line, cursor, context) -> new ArgumentLine(line, cursor));
-                input.setState(State.WAIT);
-                Display.DISABLE_CR = true;
-                in.setHistory(userInputHistory);
-                inputBytes = (in.readLine("") + System.getProperty("line.separator")).getBytes();
-                inputBytesPointer = 0;
-            } catch (UserInterruptException ex) {
-                throw new InterruptedIOException();
-            } finally {
-                in.setParser(prevParser);
-                in.setHistory(prevHistory);
-                input.setState(State.BUFFER);
-                Display.DISABLE_CR = prevDisableCr;
+        if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
+            int userCharInput = readUserInputChar();
+            if (userCharInput == (-1)) {
+                return -1;
             }
+            char userChar = (char) userCharInput;
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                int lowSurrogateInput = readUserInputChar();
+                if (lowSurrogateInput == (-1)) {
+                    //end of input, ignore at this stage
+                } else if (Character.isLowSurrogate((char) lowSurrogateInput)) {
+                    dataToConvert.append((char) lowSurrogateInput);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLineCharactersPointer--;
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
+            pendingBytesPointer = 0;
         }
-        return inputBytes[inputBytesPointer++];
+        return pendingBytes[pendingBytesPointer++];
+    }
+
+    @Override
+    public synchronized int readUserInputChar() throws IOException {
+        if (pendingLineCharacters != null && pendingLineCharacters.length == 0) {
+            return -1;
+        }
+        while (pendingLineCharacters == null || pendingLineCharacters.length <= pendingLineCharactersPointer) {
+            String readLine = doReadUserLine("", null);
+            if (readLine == null) {
+                pendingLineCharacters = new char[0];
+                return -1;
+            } else {
+                pendingLineCharacters = (readLine + System.getProperty("line.separator")).toCharArray();
+            }
+            pendingLineCharactersPointer = 0;
+        }
+        return pendingLineCharacters[pendingLineCharactersPointer++];
+    }
+
+    @Override
+    public synchronized String readUserLine(String prompt) throws IOException {
+        //TODO: correct behavior w.r.t. pre-read stuff?
+        if (pendingLineCharacters != null && pendingLineCharacters.length > pendingLineCharactersPointer) {
+            String result = new String(pendingLineCharacters,
+                                       pendingLineCharactersPointer,
+                                       pendingLineCharacters.length - pendingLineCharactersPointer);
+            pendingLineCharacters = null;
+            return result;
+        }
+        return doReadUserLine(prompt, null);
+    }
+
+    @Override
+    public String readUserLine() throws IOException {
+        return readUserLine("");
+    }
+
+    private synchronized String doReadUserLine(String prompt, Character mask) throws IOException {
+        History prevHistory = in.getHistory();
+        boolean prevDisableCr = Display.DISABLE_CR;
+        Parser prevParser = in.getParser();
+
+        try {
+            in.setParser((line, cursor, context) -> new ArgumentLine(line, cursor));
+            input.setState(State.WAIT);
+            Display.DISABLE_CR = true;
+            in.setHistory(userInputHistory);
+            return in.readLine(prompt.replace("%", "%%"), mask);
+        } catch (UserInterruptException ex) {
+            throw new InterruptedIOException();
+        } catch (EndOfFileException ex) {
+            return null; // Signal that Ctrl+D or similar happened
+        } finally {
+            in.setParser(prevParser);
+            in.setHistory(prevHistory);
+            input.setState(State.BUFFER);
+            Display.DISABLE_CR = prevDisableCr;
+        }
+    }
+
+    public char[] readPassword(String prompt) throws IOException {
+        //TODO: correct behavior w.r.t. pre-read stuff?
+        String line = doReadUserLine(prompt, '\0');
+        if (line == null) {
+            return null;
+        }
+        return line.toCharArray();
+    }
+
+    @Override
+    public Charset charset() {
+        return in.getTerminal().encoding();
+    }
+
+    @Override
+    public Writer userOutput() {
+        return in.getTerminal().writer();
     }
 
     private int countPendingOpenBraces(String code) {
@@ -1269,6 +1368,7 @@ class ConsoleIOContext extends IOContext {
 
     private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
+        protected static final int DEFAULT_WIDTH = 80;
         protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
@@ -1277,9 +1377,9 @@ class ConsoleIOContext extends IOContext {
         public ProgrammaticInTerminal(InputStream input, OutputStream output,
                                        boolean interactive, Size size) throws Exception {
             this(input, output, interactive ? "ansi" : "dumb",
-                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size : new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT),
                  size != null ? size
-                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                              : interactive ? new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
                                             : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
@@ -1323,7 +1423,7 @@ class ConsoleIOContext extends IOContext {
             } catch (Throwable ex) {
                 // ignore
             }
-            return new Size(80, h);
+            return new Size(DEFAULT_WIDTH, h);
         }
         public TestTerminal(InputStream input, OutputStream output) throws Exception {
             this(input, output, computeSize());
@@ -1331,6 +1431,14 @@ class ConsoleIOContext extends IOContext {
         private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
             super(input, output, "ansi", size, size);
         }
+
+        @Override
+        public Attributes enterRawMode() {
+            Attributes res = super.enterRawMode();
+            res.setControlChar(ControlChar.VEOF, 4);
+            return res;
+        }
+
     }
 
     private static final class CompletionState {

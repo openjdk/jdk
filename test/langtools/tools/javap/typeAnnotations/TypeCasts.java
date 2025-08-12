@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,15 @@
  * questions.
  */
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.io.*;
-import com.sun.tools.classfile.*;
 
 /*
  * @test
  * @bug 6843077
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class TypeCasts {
@@ -41,9 +41,9 @@ public class TypeCasts {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassFile cf = ClassFile.read(classFile);
-        for (Method m: cf.methods) {
-            test(cf, m);
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
 
         countAnnotations();
@@ -53,34 +53,34 @@ public class TypeCasts {
         System.out.println("PASSED");
     }
 
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+    void test(MethodModel mm) {
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
 
-    // test the result of Attributes.getIndex according to expectations
+    // test the result of MethodModel.findAttribute according to expectations
     // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        Attribute attr = null;
-        Code_attribute cAttr = null;
+    <T extends Attribute<T>> void test(MethodModel mm, AttributeMapper<T> attr_name) {
+        Attribute<T> attr;
+        CodeAttribute cAttr;
 
-        int index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-        if(index!= -1) {
-            attr = m.attributes.get(index);
-            assert attr instanceof Code_attribute;
-            cAttr = (Code_attribute)attr;
-            index = cAttr.attributes.getIndex(cf.constant_pool, name);
-            if(index!= -1) {
-                attr = cAttr.attributes.get(index);
-                assert attr instanceof RuntimeTypeAnnotations_attribute;
-                RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-                all += tAttr.annotations.length;
-                if (visible)
-                    visibles += tAttr.annotations.length;
-                else
-                    invisibles += tAttr.annotations.length;
-               }
+        cAttr = mm.findAttribute(Attributes.code()).orElse(null);
+        if (cAttr != null) {
+            attr = cAttr.findAttribute(attr_name).orElse(null);
+            if (attr != null) {
+                switch (attr) {
+                    case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                        all += tAttr.annotations().size();
+                        visibles += tAttr.annotations().size();
+                    }
+                    case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                        all += tAttr.annotations().size();
+                        invisibles += tAttr.annotations().size();
+                    }
+                    default -> throw new AssertionError();
+                }
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,16 @@ public class ParameterBlock implements Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = -7577115551785240750L;
 
-    /** A Vector of sources, stored as arbitrary Objects. */
+    /**
+     * A Vector of sources, stored as arbitrary Objects.
+     * @serial
+     */
     protected Vector<Object> sources = new Vector<Object>();
 
-    /** A Vector of non-source parameters, stored as arbitrary Objects. */
+    /**
+     * A Vector of non-source parameters, stored as arbitrary Objects.
+     * @serial
+     */
     protected Vector<Object> parameters = new Vector<Object>();
 
     /** A dummy constructor. */

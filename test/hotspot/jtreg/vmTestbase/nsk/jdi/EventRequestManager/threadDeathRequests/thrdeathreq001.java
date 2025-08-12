@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,10 @@ public class thrdeathreq001 {
     private volatile int tot_res = PASSED;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -168,8 +171,8 @@ public class thrdeathreq001 {
     }
 
     private int quitDebuggee() {
+        pipe.println(COMMAND_QUIT);
         if (elThread != null) {
-            elThread.isConnected = false;
             try {
                 if (elThread.isAlive())
                     elThread.join();
@@ -180,7 +183,6 @@ public class thrdeathreq001 {
             }
         }
 
-        pipe.println(COMMAND_QUIT);
         debuggee.waitFor();
         int debStat = debuggee.getStatus();
         if (debStat != (JCK_STATUS_BASE + PASSED)) {
@@ -195,30 +197,24 @@ public class thrdeathreq001 {
     }
 
     class EventListener extends Thread {
-        public volatile boolean isConnected = true;
 
         public void run() {
             try {
+                boolean isConnected = true;
                 do {
                     EventSet eventSet = vm.eventQueue().remove(1000);
                     if (eventSet != null) { // there is not a timeout
                         EventIterator it = eventSet.eventIterator();
                         while (it.hasNext()) {
                             Event event = it.nextEvent();
-                            if (event instanceof VMDeathEvent) {
-                                tot_res = FAILED;
+                            if (event instanceof VMDeathEvent || event instanceof VMDisconnectEvent) {
+                                log.display("EventListener: got " + event);
                                 isConnected = false;
-                                log.complain("TEST FAILED: unexpected VMDeathEvent");
-                            } else if (event instanceof VMDisconnectEvent) {
-                                tot_res = FAILED;
-                                isConnected = false;
-                                log.complain("TEST FAILED: unexpected VMDisconnectEvent");
-                            } else
+                            } else {
                                 log.display("EventListener: following JDI event occured: "
                                     + event.toString());
-                        }
-                        if (isConnected) {
-                            eventSet.resume();
+                                eventSet.resume();
+                            }
                         }
                     }
                 } while (isConnected);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,15 +23,16 @@
  *
  */
 
+#ifndef OS_AIX_DECODER_AIX_HPP
+#define OS_AIX_DECODER_AIX_HPP
+
 #include "utilities/decoder.hpp"
 #include "porting_aix.hpp"
 
 // Provide simple AIXDecoder which enables decoding of C frames in VM.
 class AIXDecoder: public AbstractDecoder {
  public:
-  AIXDecoder() {
-    _decoder_status = no_error;
-  }
+  AIXDecoder() : AbstractDecoder(no_error) {}
   virtual ~AIXDecoder() {}
 
   virtual bool demangle(const char* symbol, char* buf, int buflen) { return false; } // use AixSymbols::get_function_name to demangle
@@ -46,3 +47,4 @@ class AIXDecoder: public AbstractDecoder {
 
 };
 
+#endif // OS_AIX_DECODER_AIX_HPP

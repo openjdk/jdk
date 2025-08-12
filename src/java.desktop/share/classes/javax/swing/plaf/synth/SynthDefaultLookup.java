@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 package javax.swing.plaf.synth;
 
 import sun.swing.DefaultLookup;
+
 import javax.swing.JComponent;
+import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
 /**
@@ -35,6 +37,12 @@ import javax.swing.plaf.ComponentUI;
  */
 class SynthDefaultLookup extends DefaultLookup {
     public Object getDefault(JComponent c, ComponentUI ui, String key) {
+        if (ui instanceof SynthOptionPaneUI) {
+            Object value = super.getDefault(c, ui, key);
+            if (value != null) {
+                return value;
+            }
+        }
         if (!(ui instanceof SynthUI)) {
             Object value = super.getDefault(c, ui, key);
             return value;

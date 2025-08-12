@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/matcher.hpp"
@@ -121,6 +120,10 @@ const TypePtr *ProjNode::adr_type() const {
   if (bottom_type() == Type::MEMORY) {
     // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
     Node* ctrl = in(0);
+    if (ctrl->Opcode() == Op_Tuple) {
+      // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+      ctrl = ctrl->in(_con);
+    }
     if (ctrl == nullptr)  return nullptr; // node is dead
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
@@ -164,6 +167,15 @@ void ProjNode::check_con() const {
   assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
+//------------------------------Identity---------------------------------------
+Node* ProjNode::Identity(PhaseGVN* phase) {
+  if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
+    // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+    return in(0)->in(_con);
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* ProjNode::Value(PhaseGVN* phase) const {
   if (in(0) == nullptr) return Type::TOP;
@@ -184,9 +196,9 @@ uint ProjNode::ideal_reg() const {
 //-------------------------------is_uncommon_trap_proj----------------------------
 // Return uncommon trap call node if proj is for "proj->[region->..]call_uct"
 // null otherwise
-CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason reason) {
-  int path_limit = 10;
-  Node* out = this;
+CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason reason) const {
+  const int path_limit = 10;
+  const Node* out = this;
   for (int ct = 0; ct < path_limit; ct++) {
     out = out->unique_ctrl_out_or_null();
     if (out == nullptr)
@@ -213,31 +225,14 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
 //                                                 |
 //                                                 V
 //                                             other_proj->[region->..]call_uct"
-// null otherwise
-// "must_reason_predicate" means the uct reason must be Reason_predicate
-CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason) {
-  Node *in0 = in(0);
-  if (!in0->is_If()) return nullptr;
-  // Variation of a dead If node.
-  if (in0->outcnt() < 2)  return nullptr;
-  IfNode* iff = in0->as_If();
-
-  // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
-  if (reason != Deoptimization::Reason_none) {
-    if (iff->in(1)->Opcode() != Op_Conv2B ||
-       iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
-      return nullptr;
-    }
+// or null otherwise.
+CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason) const {
+  Node* iff = in(0);
+  if (!iff->is_If() || iff->outcnt() < 2) {
+    // Not a projection of an If or variation of a dead If node.
+    return nullptr;
   }
-
-  ProjNode* other_proj = iff->proj_out(1-_con);
-  CallStaticJavaNode* call = other_proj->is_uncommon_trap_proj(reason);
-  if (call != nullptr) {
-    assert(reason == Deoptimization::Reason_none ||
-           Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");
-    return call;
-  }
-  return nullptr;
+  return other_if_proj()->is_uncommon_trap_proj(reason);
 }
 
 ProjNode* ProjNode::other_if_proj() const {

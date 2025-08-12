@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4869575 6361766
+ * @key printer
  * @summary Setting orientation in the page format does not have any effect on the printout. To test 6361766, the application must exit.
  * @run main/manual MediaInPrintable
  */

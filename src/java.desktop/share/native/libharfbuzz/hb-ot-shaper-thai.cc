@@ -98,9 +98,9 @@ static hb_codepoint_t
 thai_pua_shape (hb_codepoint_t u, thai_action_t action, hb_font_t *font)
 {
   struct thai_pua_mapping_t {
-    hb_codepoint_t u;
-    hb_codepoint_t win_pua;
-    hb_codepoint_t mac_pua;
+    uint16_t u;
+    uint16_t win_pua;
+    uint16_t mac_pua;
   } const *pua_mappings = nullptr;
   static const thai_pua_mapping_t SD_mappings[] = {
     {0x0E48u, 0xF70Au, 0xF88Bu}, /* MAI EK */
@@ -360,7 +360,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
     {
       /* Since we decomposed, and NIKHAHIT is combining, merge clusters with the
        * previous cluster. */
-      if (start && buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES)
+      if (start)
         buffer->merge_out_clusters (start - 1, end);
     }
   }
@@ -379,12 +379,12 @@ const hb_ot_shaper_t _hb_ot_shaper_thai =
   nullptr, /* data_destroy */
   preprocess_text_thai,
   nullptr, /* postprocess_glyphs */
-  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   nullptr, /* decompose */
   nullptr, /* compose */
   nullptr, /* setup_masks */
-  HB_TAG_NONE, /* gpos_tag */
   nullptr, /* reorder_marks */
+  HB_TAG_NONE, /* gpos_tag */
+  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   false,/* fallback_position */
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ static jint INTFLD = 333;
 static jlong LONGFLD = 444;
 #define STRFLD "completely new String field"
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 #ifdef STATIC_BUILD
@@ -99,7 +99,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_makeRedefinition(JNIEnv *env,
     jvmtiClassDefinition classDef;
     int no_results = 0;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -111,7 +111,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_makeRedefinition(JNIEnv *env,
 /* fill the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -146,11 +146,11 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
     jint intFld;
     jlong longFld;
     jstring stringObj;
-    const char *strFld = NULL;
+    const char *strFld = nullptr;
 
 /* get value of new instance field "intComplNewFld" */
     fid = env->GetFieldID(redefCls, "intComplNewFld", "I");
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("%s: Failed to get the field ID for the field \"intComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
@@ -159,7 +159,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
 
 /* get value of new instance field "longComplNewFld" */
     fid = env->GetFieldID(redefCls, "longComplNewFld", "J");
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("%s: Failed to get the field ID for the field \"longComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
@@ -168,7 +168,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
 
 /* get value of new instance field "stringComplNewFld" */
     fid = env->GetFieldID(redefCls, "stringComplNewFld", "Ljava/lang/String;");
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("%s: Failed to get the field ID for the field \"stringComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;

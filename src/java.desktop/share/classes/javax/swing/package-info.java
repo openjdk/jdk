@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@
  * developers are not impacted by the restriction.
  * <p>
  * Where the impact lies, however, is in constructing and showing a Swing
- * application. Calls to an application's {@code main} method, or methods in
- * {@code Applet}, are not invoked on the event dispatching thread. As such,
+ * application. Calls to an application's {@code main} method,
+ * are not invoked on the event dispatching thread. As such,
  * care must be taken to transfer control to the event dispatching thread when
- * constructing and showing an application or applet. The preferred way to
+ * constructing and showing an application. The preferred way to
  * transfer control and begin working with Swing is to use {@code invokeLater}.
  * The {@code invokeLater} method schedules a {@code Runnable} to be processed
  * on the event dispatching thread. The following two examples work equally well
@@ -149,5 +149,7 @@
  * </ul>
  *
  * @serial exclude
+ *
+ * @since 1.2
  */
 package javax.swing;

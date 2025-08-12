@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import java.util.List;
  * representing roles not retrieved from a relation due to a problem
  * encountered when trying to access (read or write) the roles.
  *
+ * <p>It is not permitted to add objects to a {@code RoleUnresolvedList} that are
+ * not instances of {@code RoleUnresolved}.  This will produce an {@code IllegalArgumentException}
+ * when calling methods in this class, or when using {@code listIterator} and {@code add} or {@code set}.</p>
+ *
  * @since 1.5
  */
 /* We cannot extend ArrayList<RoleUnresolved> because our legacy
@@ -53,9 +57,6 @@ import java.util.List;
        for (RoleUnresolved r : roleUnresolvedList.asList())
 */
 public class RoleUnresolvedList extends ArrayList<Object> {
-
-    private transient boolean typeSafe;
-    private transient boolean tainted;
 
     /* Serial version */
     private static final long serialVersionUID = 4054902803091433324L;
@@ -121,26 +122,13 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * @return a {@code List<RoleUnresolved>} whose contents
      * reflect the contents of this {@code RoleUnresolvedList}.
      *
-     * <p>If this method has ever been called on a given
-     * {@code RoleUnresolvedList} instance, a subsequent attempt to add
-     * an object to that instance which is not a {@code RoleUnresolved}
-     * will fail with an {@code IllegalArgumentException}. For compatibility
-     * reasons, a {@code RoleUnresolvedList} on which this method has never
-     * been called does allow objects other than {@code RoleUnresolved}s to
-     * be added.</p>
-     *
      * @throws IllegalArgumentException if this {@code RoleUnresolvedList}
      * contains an element that is not a {@code RoleUnresolved}.
      *
      * @since 1.6
      */
-    @SuppressWarnings("unchecked")
     public List<RoleUnresolved> asList() {
-        if (!typeSafe) {
-            if (tainted)
-                checkTypeSafe(this);
-            typeSafe = true;
-        }
+        checkTypeSafe(this);
         return Util.cast(this);
     }
 
@@ -151,7 +139,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
     /**
      * Adds the RoleUnresolved specified as the last element of the list.
      *
-     * @param role - the unresolved role to be added.
+     * @param role the unresolved role to be added.
      *
      * @exception IllegalArgumentException  if the unresolved role is null.
      */
@@ -159,8 +147,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         throws IllegalArgumentException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
         super.add(role);
     }
@@ -171,9 +158,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * Elements with an index greater than or equal to the current position are
      * shifted up.
      *
-     * @param index - The position in the list where the new
+     * @param index The position in the list where the new
      * RoleUnresolved object is to be inserted.
-     * @param role - The RoleUnresolved object to be inserted.
+     * @param role The RoleUnresolved object to be inserted.
      *
      * @exception IllegalArgumentException  if the unresolved role is null.
      * @exception IndexOutOfBoundsException if index is out of range
@@ -185,10 +172,8 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                IndexOutOfBoundsException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
         super.add(index, role);
     }
 
@@ -197,8 +182,8 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * specified.
      * The previous element at that position is discarded.
      *
-     * @param index - The position specified.
-     * @param role - The value to which the unresolved role element
+     * @param index The position specified.
+     * @param role The value to which the unresolved role element
      * should be set.
      *
      * @exception IllegalArgumentException   if the unresolved role is null.
@@ -211,10 +196,8 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                 IndexOutOfBoundsException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
         super.set(index, role);
      }
 
@@ -223,7 +206,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * of the list, in the order in which they are returned by the Iterator of
      * the RoleUnresolvedList specified.
      *
-     * @param roleList - Elements to be inserted into the list
+     * @param roleList Elements to be inserted into the list
      * (can be null).
      *
      * @return true if this list changed as a result of the call.
@@ -237,7 +220,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (roleList == null) {
             return true;
         }
-
         return (super.addAll(roleList));
     }
 
@@ -246,9 +228,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * this list, starting at the specified position, in the order in which
      * they are returned by the Iterator of the RoleUnresolvedList specified.
      *
-     * @param index - Position at which to insert the first element from the
+     * @param index Position at which to insert the first element from the
      * RoleUnresolvedList specified.
-     * @param roleList - Elements to be inserted into the list.
+     * @param roleList Elements to be inserted into the list.
      *
      * @return true if this list changed as a result of the call.
      *
@@ -262,10 +244,8 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                IndexOutOfBoundsException {
 
         if (roleList == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
         return (super.addAll(index, roleList));
     }
 
@@ -275,48 +255,53 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * ever been called on this instance.
      */
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code o} is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean add(Object o) {
-        if (!tainted)
-            tainted = isTainted(o);
-        if (typeSafe)
-            checkTypeSafe(o);
+        checkTypeSafe(o);
         return super.add(o);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code element} is not a {@code RoleUnresolved}.
+     */
     @Override
     public void add(int index, Object element) {
-        if (!tainted)
-            tainted = isTainted(element);
-        if (typeSafe)
-            checkTypeSafe(element);
+        checkTypeSafe(element);
         super.add(index, element);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code c} contains a member that is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean addAll(Collection<?> c) {
-        if (!tainted)
-            tainted = isTainted(c);
-        if (typeSafe)
-            checkTypeSafe(c);
+        checkTypeSafe(c);
         return super.addAll(c);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code c} contains a member that is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean addAll(int index, Collection<?> c) {
-        if (!tainted)
-            tainted = isTainted(c);
-        if (typeSafe)
-            checkTypeSafe(c);
+        checkTypeSafe(c);
         return super.addAll(index, c);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code element} is not a {@code RoleUnresolved}.
+     */
     @Override
     public Object set(int index, Object element) {
-        if (!tainted)
-            tainted = isTainted(element);
-        if (typeSafe)
-            checkTypeSafe(element);
+        checkTypeSafe(element);
         return super.set(index, element);
     }
 
@@ -342,29 +327,5 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         } catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    /**
-     * Returns true if o is a non-RoleUnresolved object.
-     */
-    private static boolean isTainted(Object o) {
-        try {
-            checkTypeSafe(o);
-        } catch (IllegalArgumentException e) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if c contains any non-RoleUnresolved objects.
-     */
-    private static boolean isTainted(Collection<?> c) {
-        try {
-            checkTypeSafe(c);
-        } catch (IllegalArgumentException e) {
-            return true;
-        }
-        return false;
     }
 }

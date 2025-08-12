@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,43 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Function;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Script;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryElementKind;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Base class for generating a summary page that lists elements with a common characteristic,
  * such as deprecated elements, preview elements, and so on.
+ *
+ * Note: the use of "Summary" in this context is distinct from the use of "summary" in the
+ * context of {@link AbstractMemberWriter#buildSummary(Content)}.
+ *
+ * @param <B> a builder, to determine the elements to be included in the summary
  */
 public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
+
+    final protected String ID_OTHER = "other";
+    final protected String ID_ALL   = "all";
 
     protected String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -102,95 +115,121 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
+     * {@return the page mode to use}
+     */
+    protected abstract PageMode getPageMode();
+
+    /**
+     * {@return the page descrition, for the {@code <meta>} element}
+     */
+    protected abstract String getDescription();
+
+    /**
+     * {@return the heading for the page}
+     */
+    protected abstract Content getHeadContent();
+
+    /**
+     * {@return the title for the page}
+     */
+    protected abstract String getTitleKey();
+
+    /**
      * Generate the API summary.
      *
-     * @param pageMode page mode to use
-     * @param description page description
-     * @param headContent page heading content
-     * @param titleKey page title resource key
      * @throws DocFileIOException if there is a problem writing the summary list
      */
-    protected void generateSummaryListFile(PageMode pageMode, String description,
-                                           Content headContent, String titleKey)
-            throws DocFileIOException {
-        HtmlTree body = getHeader(pageMode, titleKey);
+    @Override
+    public void buildPage() throws DocFileIOException {
+        HtmlTree body = getHeader(getPageMode(), getTitleKey());
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
-        content.add(HtmlTree.DIV(HtmlStyle.header, heading));
+                HtmlStyles.title, getHeadContent());
+        content.add(HtmlTree.DIV(HtmlStyles.header, heading));
         addContentSelectors(content);
-        content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
-        content.add(getContentsList());
-        addExtraSection(content);
-        for (SummaryElementKind kind : SummaryElementKind.values()) {
-            if (builder.hasDocumentation(kind)) {
-                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
-                            getHeadingKey(kind), getHeaderKey(kind), content);
-            }
+        if (showContentsList()) {
+            content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
+            content.add(HtmlTree.UL(HtmlStyles.contentsList, getIndexLinks(), Function.identity()));
         }
+        addSummaries(content);
         bodyContents.addMainContent(content);
         // The script below enables checkboxes in the page and invokes their click handler
         // to restore any previous state when the page is loaded via back/forward button.
         bodyContents.addMainContent(new Script("""
-                document.addEventListener("DOMContentLoaded", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                document.addEventListener("DOMContentLoaded", (e) => {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.disabled = false;
                             c.onclick();
                         });
                     });
                 window.addEventListener("load", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.onclick();
                         });
                     });
                 """).asContent());
         bodyContents.setFooter(getFooter());
         body.add(bodyContents);
-        printHtmlDocument(null, description, body);
+        printHtmlDocument(null, getDescription(), body);
     }
 
     /**
-     * Add the index link.
+     * Returns a list item containing a link for the table of contents.
      *
      * @param id the id for the link
      * @param headingKey the key for the heading content
-     * @param content the content to which the index link will be added
+     * @return a list item containing an index link
      */
-    protected void addIndexLink(HtmlId id, String headingKey, Content content) {
+    protected Content getIndexLink(HtmlId id, String headingKey) {
         // The "contents-" + id value is used in JavaScript code to toggle visibility of the link.
-        var li = HtmlTree.LI(links.createLink(id,
+        return HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
-        content.add(li);
     }
 
     /**
-     * Get the contents list.
-     *
-     * @return the contents list
+     * {@return {@code true} if the contents list should be generated, {@code false} if not}
      */
-    public Content getContentsList() {
-        var ul= HtmlTree.UL(HtmlStyle.contentsList);
-        addExtraIndexLink(ul);
+    protected boolean showContentsList() {
+        return true;
+    }
+
+    /**
+     * {@return a list of list items containing the links for the table of contents}
+     */
+    protected List<Content> getIndexLinks() {
+        var list = new ArrayList<Content>();
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
-                addIndexLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind), ul);
+                list.add(getIndexLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind)));
             }
         }
-        return ul;
+        return list;
     }
 
     /**
+     * {@return the header for the API Summary listing}
      * @param pageMode page mode to use
      * @param titleKey page title resource key
-     * {@return the header for the API Summary listing}
      */
     public HtmlTree getHeader(PageMode pageMode, String titleKey) {
         String title = resources.getText(titleKey);
         HtmlTree body = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(pageMode));
         return body;
+    }
+
+    /**
+     * Add all API summary tables to the main content of the page.
+     *
+     * @param content the content to add the API summary tables to
+     */
+    protected void addSummaries(Content content) {
+        for (SummaryElementKind kind : SummaryElementKind.values()) {
+            if (builder.hasDocumentation(kind)) {
+                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
+                        getHeadingKey(kind), getHeaderKey(kind), content);
+            }
+        }
     }
 
     /**
@@ -205,10 +244,10 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     protected void addSummaryAPI(SortedSet<Element> apiList, HtmlId id,
                                  String headingKey, String headerKey,
                                  Content content) {
-        if (apiList.size() > 0) {
+        if (!apiList.isEmpty()) {
             TableHeader tableHeader = getTableHeader(headerKey);
 
-            var table = new Table<Element>(HtmlStyle.summaryTable)
+            var table = new Table<Element>(HtmlStyles.summaryTable)
                     .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
@@ -237,7 +276,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 }
             }
             // note: singleton list
-            content.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
+            content.add(HtmlTree.UL(HtmlStyles.blockList, HtmlTree.LI(table)));
         }
     }
 
@@ -251,13 +290,15 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     protected Content getSummaryLink(Element e) {
+        // TODO: notable that these do not go through the writerFactory
+        //       also maybe notable that annotation type members are not handled as such
         AbstractMemberWriter writer = switch (e.getKind()) {
             case INTERFACE, CLASS, ENUM,
-                 ANNOTATION_TYPE, RECORD -> new NestedClassWriterImpl(this);
-            case FIELD -> new FieldWriterImpl(this);
-            case METHOD -> new MethodWriterImpl(this);
-            case CONSTRUCTOR -> new ConstructorWriterImpl(this);
-            case ENUM_CONSTANT -> new EnumConstantWriterImpl(this);
+                 ANNOTATION_TYPE, RECORD -> new NestedClassWriter(this);
+            case FIELD -> new FieldWriter(this);
+            case METHOD -> new MethodWriter(this);
+            case CONSTRUCTOR -> new ConstructorWriter(this);
+            case ENUM_CONSTANT -> new EnumConstantWriter(this);
             case RECORD_COMPONENT ->
                 throw new AssertionError("Record components are not supported by SummaryListWriter!");
             default ->
@@ -267,37 +308,42 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Add an extra optional section to the content.
+     * Create a checkbox input element and associated label for selecting content on
+     * a summary page.
      *
-     * @param target the content to which the section should be added
+     * @param label The label
+     * @param id the id of the selected content
+     * @param htmlPrefix the prefix for the HTML id
+     * @return a content object containing the checkbox input
      */
-    protected void addExtraSection(Content target) {
+    protected Content getCheckbox(Content label, String id, String htmlPrefix) {
+        String htmlId = htmlPrefix + id;
+        return HtmlTree.LABEL(htmlId,
+                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of(htmlId))
+                                .put(HtmlAttr.CHECKED, "")
+                                .put(HtmlAttr.ONCLICK,
+                                        "toggleGlobal(this, '" + id + "', 3)"))
+                .add(HtmlTree.SPAN(label));
     }
 
     /**
-     * Add an extra optional index link.
-     *
-     * @param target the content to which the link should be added
-     */
-    protected void addExtraIndexLink(Content target) {
-    }
-
-    /**
-     * Subclasses allow the user to show or hide parts of the content in the page.
-     * This method should be used to add the UI to select the visible page content.
+     * Allow Subclasses to add a content selector UI such as a row of radio buttons
+     * near the top of the page. This method does not add anything.
      *
      * @param target the content to which the UI should be added
      */
-    protected abstract void addContentSelectors(Content target);
+    protected void addContentSelectors(Content target) {}
 
     /**
-     * Some subclasses of this class display an extra column in their element tables.
-     * This methods allows them to return the content to show for {@code element}.
+     * Allow subclasses to add an extra table column for an element.
+     * Return {@code null} for no extra content.
      *
      * @param element the element
      * @return content for extra content or null
      */
-    protected abstract Content getExtraContent(Element element);
+    protected Content getExtraContent(Element element) {
+        return null;
+    }
 
     /**
      * Gets the table header to use for a table with the first column identified by {@code headerKey}.
@@ -317,7 +363,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      * @return the styles to use for table columns
      */
     protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colLast };
     }
 
     /**
@@ -331,10 +377,11 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Allow subclasses to add extra tabs to the element tables.
+     * Allow subclasses to add extra tabs to the element tables. This method does not
+     * add any tabs.
      *
      * @param table the element table
      * @param headingKey the key for the caption (default tab)
      */
-    protected abstract void addTableTabs(Table<Element> table, String headingKey);
+    protected void addTableTabs(Table<Element> table, String headingKey) {}
 }

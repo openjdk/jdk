@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,4 @@
 #
 class name jdk/net/ExtendedSocketOptions
 field name IP_DONTFRAGMENT descriptor Ljava/net/SocketOption; flags 19 signature Ljava/net/SocketOption<Ljava/lang/Boolean;>;
-
-class name jdk/net/NetworkPermission
-header extends java/security/BasicPermission flags 31
 

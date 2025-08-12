@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "-agentlib:agentonunload001=-waittime=5",
                 nsk.jvmti.Agent_OnUnload.agentonunload001.class.getName());
         oa.shouldHaveExitValue(95);

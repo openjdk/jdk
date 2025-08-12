@@ -24,7 +24,8 @@
 /**
  * @test 8200301 8201194
  * @summary deduplicate lambda methods with the same body, target type, and captured state
- * @modules jdk.jdeps/com.sun.tools.classfile jdk.compiler/com.sun.tools.javac.api
+ * @modules
+ *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.comp
  *     jdk.compiler/com.sun.tools.javac.file jdk.compiler/com.sun.tools.javac.main
  *     jdk.compiler/com.sun.tools.javac.tree jdk.compiler/com.sun.tools.javac.util
@@ -40,15 +41,16 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute.BootstrapMethodSpecifier;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.MethodHandleEntry;
 import com.sun.tools.javac.api.ClientCodeWrapper.Trusted;
+import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.TreeDiffer;
 import com.sun.tools.javac.comp.TreeHasher;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -62,6 +64,7 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -101,8 +104,11 @@ public class DeduplicationTest {
                                 "-source", System.getProperty("java.specification.version")),
                         null,
                         fileManager.getJavaFileObjects(file));
+
+        Context context = ((JavacTaskImpl)task).getContext();
+        Types types = Types.instance(context);
         Map<JCLambda, JCLambda> dedupedLambdas = new LinkedHashMap<>();
-        task.addTaskListener(new TreeDiffHashTaskListener(dedupedLambdas));
+        task.addTaskListener(new TreeDiffHashTaskListener(dedupedLambdas, types));
         Iterable<? extends JavaFileObject> generated = task.generate();
         if (!diagnosticListener.unexpected.isEmpty()) {
             throw new AssertionError(
@@ -136,22 +142,23 @@ public class DeduplicationTest {
         // lambdas.
         Set<String> bootstrapMethodNames = new TreeSet<>();
         for (JavaFileObject output : generated) {
-            ClassFile cf;
+            ClassModel cm;
             try (InputStream input = output.openInputStream()) {
-                cf = ClassFile.read(input);
+                cm = ClassFile.of().parse(input.readAllBytes());
             }
-            if (cf.getName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
+            if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R") ||
+                cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$1C") ||
+                cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$2C")) {
                 continue;
             }
-            BootstrapMethods_attribute bsm =
-                    (BootstrapMethods_attribute) cf.getAttribute(Attribute.BootstrapMethods);
-            for (BootstrapMethodSpecifier b : bsm.bootstrap_method_specifiers) {
-                bootstrapMethodNames.add(
-                        ((CONSTANT_MethodHandle_info)
-                                        cf.constant_pool.get(b.bootstrap_arguments[1]))
-                                .getCPRefInfo()
-                                .getNameAndTypeInfo()
-                                .getName());
+            BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
+            for (BootstrapMethodEntry b : bsm.bootstrapMethods()) {
+                if (b.bootstrapMethod().asSymbol().methodName().equals("metafactory")) {
+                    bootstrapMethodNames.add(
+                            ((MethodHandleEntry) b.arguments().get(1))
+                                    .reference()
+                                    .name().stringValue());
+                }
             }
         }
         Set<String> deduplicatedNames =
@@ -250,9 +257,11 @@ public class DeduplicationTest {
          * deduplicated to.
          */
         private final Map<JCLambda, JCLambda> dedupedLambdas;
+        private final Types types;
 
-        public TreeDiffHashTaskListener(Map<JCLambda, JCLambda> dedupedLambdas) {
+        public TreeDiffHashTaskListener(Map<JCLambda, JCLambda> dedupedLambdas, Types types) {
             this.dedupedLambdas = dedupedLambdas;
+            this.types = types;
         }
 
         @Override
@@ -263,31 +272,26 @@ public class DeduplicationTest {
             // Scan the compilation for calls to a varargs method named 'group', whose arguments
             // are a group of lambdas that are equivalent to each other, but distinct from all
             // lambdas in the compilation unit outside of that group.
-            List<List<JCLambda>> lambdaGroups = new ArrayList<>();
+            List<List<JCLambda>> lambdaEqualsGroups = new ArrayList<>();
+            List<List<JCLambda>> lambdaNotEqualsGroups = new ArrayList<>();
+
             new TreeScanner() {
                 @Override
                 public void visitApply(JCMethodInvocation tree) {
-                    if (tree.getMethodSelect().getTag() == Tag.IDENT
-                            && ((JCIdent) tree.getMethodSelect())
-                                    .getName()
-                                    .contentEquals("group")) {
-                        List<JCLambda> xs = new ArrayList<>();
-                        for (JCExpression arg : tree.getArguments()) {
-                            if (arg instanceof JCTypeCast) {
-                                arg = ((JCTypeCast) arg).getExpression();
-                            }
-                            xs.add((JCLambda) arg);
-                        }
-                        lambdaGroups.add(xs);
+                    if (isMethodWithName(tree, "groupEquals")) {
+                        addToGroup(tree, lambdaEqualsGroups);
+                    } else if (isMethodWithName(tree, "groupNotEquals")) {
+                        addToGroup(tree, lambdaNotEqualsGroups);
                     }
                     super.visitApply(tree);
                 }
             }.scan((JCCompilationUnit) e.getCompilationUnit());
-            for (int i = 0; i < lambdaGroups.size(); i++) {
-                List<JCLambda> curr = lambdaGroups.get(i);
-                JCLambda first = null;
+
+            for (int i = 0; i < lambdaEqualsGroups.size(); i++) {
+                List<JCLambda> curr = lambdaEqualsGroups.get(i);
                 // Assert that all pairwise combinations of lambdas in the group are equal, and
                 // hash to the same value.
+                JCLambda first = null;
                 for (JCLambda lhs : curr) {
                     if (first == null) {
                         first = lhs;
@@ -295,18 +299,20 @@ public class DeduplicationTest {
                         dedupedLambdas.put(lhs, first);
                     }
                     for (JCLambda rhs : curr) {
-                        if (!new TreeDiffer(paramSymbols(lhs), paramSymbols(rhs))
-                                .scan(lhs.body, rhs.body)) {
-                            throw new AssertionError(
-                                    String.format(
-                                            "expected lambdas to be equal\n%s\n%s", lhs, rhs));
-                        }
-                        if (TreeHasher.hash(lhs, paramSymbols(lhs))
-                                != TreeHasher.hash(rhs, paramSymbols(rhs))) {
-                            throw new AssertionError(
-                                    String.format(
-                                            "expected lambdas to hash to the same value\n%s\n%s",
-                                            lhs, rhs));
+                        if (rhs != lhs) {
+                            if (!new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
+                                    .scan(lhs.body, rhs.body)) {
+                                throw new AssertionError(
+                                        String.format(
+                                                "expected lambdas to be equal\n%s\n%s", lhs, rhs));
+                            }
+                            if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
+                                    != TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
+                                throw new AssertionError(
+                                        String.format(
+                                                "expected lambdas to hash to the same value\n%s\n%s",
+                                                lhs, rhs));
+                            }
                         }
                     }
                 }
@@ -314,31 +320,61 @@ public class DeduplicationTest {
                 // or hash to the same value as lambda outside the group.
                 // (Note that the hash collisions won't result in correctness problems but could
                 // regress performs, and do not currently occurr for any of the test inputs.)
-                for (int j = 0; j < lambdaGroups.size(); j++) {
-                    if (i == j) {
-                        continue;
-                    }
-                    for (JCLambda lhs : curr) {
-                        for (JCLambda rhs : lambdaGroups.get(j)) {
-                            if (new TreeDiffer(paramSymbols(lhs), paramSymbols(rhs))
-                                    .scan(lhs.body, rhs.body)) {
-                                throw new AssertionError(
-                                        String.format(
-                                                "expected lambdas to not be equal\n%s\n%s",
-                                                lhs, rhs));
-                            }
-                            if (TreeHasher.hash(lhs, paramSymbols(lhs))
-                                    == TreeHasher.hash(rhs, paramSymbols(rhs))) {
-                                throw new AssertionError(
-                                        String.format(
-                                                "expected lambdas to hash to different values\n%s\n%s",
-                                                lhs, rhs));
-                            }
+                assertNotEqualsWithinGroup(lambdaEqualsGroups, i, curr, types);
+            }
+            lambdaEqualsGroups.clear();
+
+            // Assert that no lambdas in a not-equals group are equal to any lambdas inside that group,
+            // or hash to the same value as lambda inside the group.
+            for (int i = 0; i < lambdaNotEqualsGroups.size(); i++) {
+                List<JCLambda> curr = lambdaNotEqualsGroups.get(i);
+
+                assertNotEqualsWithinGroup(lambdaNotEqualsGroups, i, curr, types);
+            }
+            lambdaNotEqualsGroups.clear();
+        }
+
+        private void assertNotEqualsWithinGroup(List<List<JCLambda>> lambdaNotEqualsGroups, int i, List<JCLambda> curr, Types types) {
+            for (int j = 0; j < lambdaNotEqualsGroups.size(); j++) {
+                if (i == j) {
+                    continue;
+                }
+                for (JCLambda lhs : curr) {
+                    for (JCLambda rhs : lambdaNotEqualsGroups.get(j)) {
+                        if (new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
+                                .scan(lhs.body, rhs.body)) {
+                            throw new AssertionError(
+                                    String.format(
+                                            "expected lambdas to not be equal\n%s\n%s",
+                                            lhs, rhs));
+                        }
+                        if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
+                                == TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
+                            throw new AssertionError(
+                                    String.format(
+                                            "expected lambdas to hash to different values\n%s\n%s",
+                                            lhs, rhs));
                         }
                     }
                 }
             }
-            lambdaGroups.clear();
+        }
+
+        private boolean isMethodWithName(JCMethodInvocation tree, String markerMethodName) {
+            return tree.getMethodSelect().getTag() == Tag.IDENT && ((JCIdent) tree.getMethodSelect())
+                    .getName()
+                    .contentEquals(markerMethodName);
+        }
+
+        private void addToGroup(JCMethodInvocation tree, List<List<JCLambda>> groupToAdd) {
+            List<JCLambda> xs = new ArrayList<>();
+            for (JCExpression arg : tree.getArguments()) {
+                if (arg instanceof JCTypeCast) {
+                    arg = ((JCTypeCast) arg).getExpression();
+                }
+                xs.add((JCLambda) arg);
+            }
+            groupToAdd.add(xs);
         }
     }
 }

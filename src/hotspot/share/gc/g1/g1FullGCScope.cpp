@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/shared/gc_globals.hpp"
 
@@ -37,12 +36,10 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 }
 
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
-                             bool explicit_gc,
                              bool clear_soft,
                              bool do_maximal_compaction,
                              G1FullGCTracer* tracer) :
     _rm(),
-    _explicit_gc(explicit_gc),
     _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
@@ -54,12 +51,8 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
-                                 HeapRegion::GrainWords :
-                                 (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) { }
-
-bool G1FullGCScope::is_explicit_gc() {
-  return _explicit_gc;
-}
+                                 G1HeapRegion::GrainWords :
+                                 (1 - MarkSweepDeadRatio / 100.0) * G1HeapRegion::GrainWords) { }
 
 bool G1FullGCScope::should_clear_soft_refs() {
   return _soft_refs.should_clear();

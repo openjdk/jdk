@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
-#include "jni_tools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
+#include "jni_tools.hpp"
 
 extern "C" {
 
@@ -50,17 +50,17 @@ typedef struct {
     const char *desc;
 } frame_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jbyteArray classBytes;
-static jmethodID midRun = NULL;
-static jmethodID mid1 = NULL;
-static jmethodID mid2 = NULL;
-static jfieldID fid1 = NULL;
-static jfieldID fid2 = NULL;
+static jmethodID midRun = nullptr;
+static jmethodID mid1 = nullptr;
+static jmethodID mid2 = nullptr;
+static jfieldID fid1 = nullptr;
+static jfieldID fid2 = nullptr;
 static jint stepEventsExpected = 0;
 static jint bpEventsExpected = 0;
 static jint popEventsExpected = 0;
@@ -118,11 +118,11 @@ static frame_info frames[] = {
 void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
         jlocation loc, jint i) {
     jvmtiError err;
-    char *sigClass, *name = NULL, *sig = NULL, *generic;
+    char *sigClass, *name = nullptr, *sig = nullptr, *generic;
     const char *desc;
     jboolean is_obsolete;
-    jvmtiLineNumberEntry *lines = NULL;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLineNumberEntry *lines = nullptr;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint line = -1;
     jint entryCount = 0;
     jint varValue = -1;
@@ -144,10 +144,10 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
         result = STATUS_FAILED;
     }
 
-    if (sigClass == NULL || strcmp(sigClass, cls_exp) != 0) {
+    if (sigClass == nullptr || strcmp(sigClass, cls_exp) != 0) {
         printf("(%s) wrong class sig: \"%s\",", desc, sigClass);
         printf(" expected: \"%s\"\n", cls_exp);
-        if (sigClass != NULL) {
+        if (sigClass != nullptr) {
             jvmti_env->Deallocate((unsigned char *)sigClass);
         }
         result = STATUS_FAILED;
@@ -176,12 +176,12 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
                 (is_obsolete == JNI_TRUE) ? "unexpected" : "should be");
             result = STATUS_FAILED;
         }
-        if (name == NULL || strcmp(name, frames[i].name) != 0) {
+        if (name == nullptr || strcmp(name, frames[i].name) != 0) {
             printf("(%s) wrong method name: \"%s\",", desc, name);
             printf(" expected: \"%s\"\n", frames[i].name);
             result = STATUS_FAILED;
         }
-        if (sig == NULL || strcmp(sig, frames[i].sig) != 0) {
+        if (sig == nullptr || strcmp(sig, frames[i].sig) != 0) {
             printf("(%s) wrong method sig: \"%s\",", desc, sig);
             printf(" expected: \"%s\"\n", frames[i].sig);
             result = STATUS_FAILED;
@@ -195,7 +195,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
             result = STATUS_FAILED;
         }
 
-        if (lines != NULL && entryCount > 0) {
+        if (lines != nullptr && entryCount > 0) {
             for (k = 0; k < entryCount; k++) {
                 if (loc < lines[k].start_location) {
                     break;
@@ -223,7 +223,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
             result = STATUS_FAILED;
         }
 
-        if (table != NULL) {
+        if (table != nullptr) {
           for (k = 0; k < frames[i].count; k++) {
             for (j = 0; j < entryCount; j++) {
               if (strcmp(table[j].name, frames[i].vars[k].name) == 0 &&
@@ -272,19 +272,19 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid,
         }
     }
 
-    if (sigClass != NULL) {
+    if (sigClass != nullptr) {
         jvmti_env->Deallocate((unsigned char *)sigClass);
     }
-    if (name != NULL) {
+    if (name != nullptr) {
         jvmti_env->Deallocate((unsigned char *)name);
     }
-    if (sig != NULL) {
+    if (sig != nullptr) {
         jvmti_env->Deallocate((unsigned char *)sig);
     }
-    if (lines != NULL) {
+    if (lines != nullptr) {
         jvmti_env->Deallocate((unsigned char *)lines);
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (j = 0; j < entryCount; j++) {
             jvmti_env->Deallocate((unsigned char *)(table[j].name));
             jvmti_env->Deallocate((unsigned char *)(table[j].signature));
@@ -299,7 +299,7 @@ void redefine(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
 
     classDef.klass = cls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (printdump == JNI_TRUE) {
         printf(">>> about to call RedefineClasses %d\n", redefinesCount);
@@ -531,7 +531,7 @@ void JNICALL ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     if (caps.can_generate_frame_pop_events) {
         err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_FRAME_POP, NULL);
+            JVMTI_EVENT_FRAME_POP, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable FRAME_POP event: %s (%d)\n",
                    TranslateError(err), err);
@@ -596,12 +596,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -687,7 +687,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
         jclass clazz, jbyteArray bytes) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -700,24 +700,24 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
     classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
     midRun = env->GetMethodID(clazz, "run", "()V");
-    if (midRun == NULL) {
+    if (midRun == nullptr) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
     }
 
     mid1 = env->GetMethodID(clazz, "method1", "(I)V");
-    if (mid1 == NULL) {
+    if (mid1 == nullptr) {
         printf("Cannot find Method ID for method1\n");
         result = STATUS_FAILED;
     }
 
     mid2 = env->GetMethodID(clazz, "method2", "(I)V");
-    if (mid2 == NULL) {
+    if (mid2 == nullptr) {
         printf("Cannot find Method ID for method2\n");
         result = STATUS_FAILED;
     }
 
-    if (caps.can_generate_breakpoint_events && midRun != NULL) {
+    if (caps.can_generate_breakpoint_events && midRun != nullptr) {
         err = jvmti->SetBreakpoint(midRun, 0);
         if (err != JVMTI_ERROR_NONE) {
             printf("(SetBreakpoint) unexpected error: %s (%d)\n",
@@ -725,7 +725,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
             result = STATUS_FAILED;
         } else {
             err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_BREAKPOINT, NULL);
+                JVMTI_EVENT_BREAKPOINT, nullptr);
             if (err != JVMTI_ERROR_NONE) {
                 printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                        TranslateError(err), err);
@@ -737,12 +737,12 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
     }
 
     fid1 = env->GetStaticFieldID(clazz, "staticInt", "I");
-    if (fid1 == NULL) {
+    if (fid1 == nullptr) {
         printf("Cannot find Field ID for staticInt\n");
         result = STATUS_FAILED;
     }
 
-    if (caps.can_generate_field_modification_events && fid1 != NULL) {
+    if (caps.can_generate_field_modification_events && fid1 != nullptr) {
         err = jvmti->SetFieldModificationWatch(clazz, fid1);
         if (err != JVMTI_ERROR_NONE) {
             printf("(SetFieldModificationWatch) unexpected error: %s (%d)\n",
@@ -750,7 +750,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
             result = STATUS_FAILED;
         } else {
             err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_MODIFICATION, NULL);
+                JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
             if (err != JVMTI_ERROR_NONE) {
                 printf("Failed to enable FIELD_MODIFICATION event: %s (%d)\n",
                        TranslateError(err), err);
@@ -762,12 +762,12 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
     }
 
     fid2 = env->GetFieldID(clazz, "instanceInt", "I");
-    if (fid2 == NULL) {
+    if (fid2 == nullptr) {
         printf("Cannot find Field ID for instanceInt\n");
         result = STATUS_FAILED;
     }
 
-    if (caps.can_generate_field_access_events && fid2 != NULL) {
+    if (caps.can_generate_field_access_events && fid2 != nullptr) {
         err = jvmti->SetFieldAccessWatch(clazz, fid2);
         if (err != JVMTI_ERROR_NONE) {
             printf("(SetFieldAccessWatch) unexpected error: %s (%d)\n",
@@ -775,7 +775,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
             result = STATUS_FAILED;
         } else {
             err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_ACCESS, NULL);
+                JVMTI_EVENT_FIELD_ACCESS, nullptr);
             if (err != JVMTI_ERROR_NONE) {
                 printf("Failed to enable FIELD_ACCESS event: %s (%d)\n",
                        TranslateError(err), err);

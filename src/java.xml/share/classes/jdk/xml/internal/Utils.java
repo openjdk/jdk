@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,33 @@
 package jdk.xml.internal;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * General utility. Use JdkXmlUtils for XML processing related functions.
  */
 public class Utils {
+    // The debug flag
+    private static boolean debug = false;
+
+    /*
+     * The {@systemProperty jaxp.debug} property is supported by JAXP factories
+     * and used to print out information related to the configuration of factories
+     * and processors
+     */
+    static {
+        String val = System.getProperty("jaxp.debug");
+        // Allow simply setting the prop to turn on debug
+        debug = val != null && !"false".equals(val);
+    }
+
+    // print out debug information if jaxp.debug is enabled
+    public static void dPrint(Supplier<String> msgGen) {
+        if (debug) {
+            System.err.println("JAXP: " + msgGen.get());
+        }
+    }
+
     /**
      * Creates a new array with copies of the original array and additional items
      * appended to the end of it.

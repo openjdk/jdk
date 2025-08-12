@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1892,7 +1892,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
 
     /**
      * Sets the designated parameter to the given
-     * <code>java.lang.BigDecimal</code> value.  The driver converts this to
+     * <code>java.math.BigDecimal</code> value.  The driver converts this to
      * an SQL <code>NUMERIC</code> value when it sends it to the database.
      * <P>
      * The parameter value set by this method is stored internally and

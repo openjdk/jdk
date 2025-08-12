@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,6 +422,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
     /**
      * {@inheritDoc}
      * @throws DateTimeException {@inheritDoc}
+     * @throws UnsupportedTemporalTypeException {@inheritDoc}
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
@@ -440,6 +441,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
     /**
      * {@inheritDoc}
      * @throws DateTimeException {@inheritDoc}
+     * @throws UnsupportedTemporalTypeException {@inheritDoc}
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
@@ -458,6 +460,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
     /**
      * {@inheritDoc}
      * @throws DateTimeException {@inheritDoc}
+     * @throws UnsupportedTemporalTypeException {@inheritDoc}
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
@@ -569,7 +572,11 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison of this with the {@code other} values for the instant,
+     *          the local date-time, the zone ID, and the chronology, in order, returning the first non-zero result,
+     *          and otherwise returning zero
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     default int compareTo(ChronoZonedDateTime<?> other) {

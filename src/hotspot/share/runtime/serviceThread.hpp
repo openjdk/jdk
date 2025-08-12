@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ class ServiceThread : public JavaThread {
   static void enqueue_deferred_event(JvmtiDeferredEvent* event);
 
   // GC support
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  void nmethods_do(CodeBlobClosure* cf);
+  void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
+  void nmethods_do(NMethodClosure* cf);
 };
 
 #endif // SHARE_RUNTIME_SERVICETHREAD_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,21 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.Log;
 
 /**
  * jpackage type traits.
@@ -44,19 +52,23 @@ public enum PackageType {
             TKit.isLinux() ? "jdk.jpackage.internal.LinuxRpmBundler" : null),
     MAC_DMG(".dmg", TKit.isOSX() ? "jdk.jpackage.internal.MacDmgBundler" : null),
     MAC_PKG(".pkg", TKit.isOSX() ? "jdk.jpackage.internal.MacPkgBundler" : null),
-    IMAGE("app-image", null, null);
+    IMAGE;
+
+    PackageType() {
+        type  = "app-image";
+        suffix = null;
+        supported = true;
+        enabled = true;
+    }
 
     PackageType(String packageName, String bundleSuffix, String bundlerClass) {
-        name  = packageName;
-        suffix = bundleSuffix;
-        if (bundlerClass != null && !Inner.DISABLED_PACKAGERS.contains(getName())) {
-            supported = isBundlerSupported(bundlerClass);
-        } else {
-            supported = false;
-        }
+        type  = Objects.requireNonNull(packageName);
+        suffix = Objects.requireNonNull(bundleSuffix);
+        supported = Optional.ofNullable(bundlerClass).map(PackageType::isBundlerSupported).orElse(false);
+        enabled = supported && !Inner.DISABLED_PACKAGERS.contains(getType());
 
-        if (suffix != null && supported) {
-            TKit.trace(String.format("Bundler %s supported", getName()));
+        if (suffix != null && enabled) {
+            TKit.trace(String.format("Bundler %s enabled", getType()));
         }
     }
 
@@ -65,59 +77,90 @@ public enum PackageType {
     }
 
     void applyTo(JPackageCommand cmd) {
-        cmd.setArgumentValue("--type", getName());
+        cmd.setArgumentValue("--type", getType());
     }
 
     String getSuffix() {
-        return suffix;
+        return Optional.ofNullable(suffix).orElseThrow(UnsupportedOperationException::new);
     }
 
-    boolean isSupported() {
+    public boolean isSupported() {
         return supported;
     }
 
-    String getName() {
-        return name;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    static PackageType fromSuffix(String packageFilename) {
-        if (packageFilename != null) {
-            for (PackageType v : values()) {
-                if (packageFilename.endsWith(v.getSuffix())) {
-                    return v;
-                }
-            }
+    public String getType() {
+        return type;
+    }
+
+    public static RuntimeException throwSkippedExceptionIfNativePackagingUnavailable() {
+        if (NATIVE.stream().noneMatch(PackageType::isSupported)) {
+            TKit.throwSkippedException("None of the native packagers supported in this environment");
+        } else if (NATIVE.stream().noneMatch(PackageType::isEnabled)) {
+            TKit.throwSkippedException("All native packagers supported in this environment are disabled");
         }
         return null;
     }
 
-    private static boolean isBundlerSupported(String bundlerClass) {
+    private static boolean isBundlerSupportedImpl(String bundlerClass) {
         try {
-            Class clazz = Class.forName(bundlerClass);
+            Class<?> clazz = Class.forName(bundlerClass);
             Method supported = clazz.getMethod("supported", boolean.class);
             return ((Boolean) supported.invoke(
                     clazz.getConstructor().newInstance(), true));
         } catch (ClassNotFoundException | IllegalAccessException ex) {
         } catch (InstantiationException | NoSuchMethodException
                 | InvocationTargetException ex) {
-            Functional.rethrowUnchecked(ex);
+            rethrowUnchecked(ex);
         }
         return false;
     }
 
-    private final String name;
+    private static boolean isBundlerSupported(String bundlerClass) {
+        AtomicBoolean reply = new AtomicBoolean();
+        try {
+            // Capture jpackage's activity on configuring bundlers.
+            // Log configuration is thread-local.
+            // Call Log.setPrintWriter and Log.setVerbose in a separate
+            // thread to keep the main log configuration intact.
+            var thread = new Thread(() -> {
+                Log.setPrintWriter(new PrintWriter(System.out), new PrintWriter(System.err));
+                Log.setVerbose();
+                try {
+                    reply.set(isBundlerSupportedImpl(bundlerClass));
+                } finally {
+                    Log.flush();
+                }
+            });
+            thread.run();
+            thread.join();
+        } catch (InterruptedException ex) {
+            rethrowUnchecked(ex);
+        }
+        return reply.get();
+    }
+
+    private static Set<PackageType> orderedSet(PackageType... types) {
+        return new LinkedHashSet<>(List.of(types));
+    }
+
+    private final String type;
     private final String suffix;
+    private final boolean enabled;
     private final boolean supported;
 
-    public final static Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);
-    public final static Set<PackageType> WINDOWS = Set.of(WIN_EXE, WIN_MSI);
-    public final static Set<PackageType> MAC = Set.of(MAC_PKG, MAC_DMG);
-    public final static Set<PackageType> NATIVE = Stream.concat(
+    public static final Set<PackageType> LINUX = orderedSet(LINUX_DEB, LINUX_RPM);
+    public static final Set<PackageType> WINDOWS = orderedSet(WIN_MSI, WIN_EXE);
+    public static final Set<PackageType> MAC = orderedSet(MAC_DMG, MAC_PKG);
+    public static final Set<PackageType> NATIVE = Stream.concat(
             Stream.concat(LINUX.stream(), WINDOWS.stream()),
             MAC.stream()).collect(Collectors.toUnmodifiableSet());
 
-    private final static class Inner {
-        private final static Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
+    private static final class Inner {
+        private static final Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
                 TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
     }

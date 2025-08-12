@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import sun.util.logging.PlatformLogger;
  * <p>This map and its views have a predictable iteration order, namely the
  * order that keys were inserted into the map, as with {@link LinkedHashMap}.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Manifest
  * @since   1.2
@@ -446,6 +447,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * and will be UTF8-encoded when written to the output stream.  See the
      * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>
      * for more information about valid attribute names and values.
+     *
+     * @spec jar/jar.html JAR File Specification
      */
     public static class Name {
         private final String name;
@@ -712,9 +715,10 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                 // small footprint cost, but is likely to be quickly paid for by
                 // reducing allocation when reading and parsing typical manifests
 
-                // JDK internal attributes
+                // JDK specific attributes
                 addName(names, new Name("Add-Exports"));
                 addName(names, new Name("Add-Opens"));
+                addName(names, new Name("Enable-Native-Access"));
                 // LauncherHelper attributes
                 addName(names, new Name("Launcher-Agent-Class"));
                 addName(names, new Name("JavaFX-Application-Class"));
@@ -723,6 +727,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                 addName(names, new Name("Created-By"));
                 addName(names, new Name("SHA1-Digest"));
                 addName(names, new Name("SHA-256-Digest"));
+                addName(names, new Name("SHA-384-Digest"));
                 KNOWN_NAMES = Map.copyOf(names);
             } else {
                 // Even if KNOWN_NAMES was read from archive, we still need

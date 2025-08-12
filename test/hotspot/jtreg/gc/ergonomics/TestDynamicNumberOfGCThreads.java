@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,13 +53,8 @@ public class TestDynamicNumberOfGCThreads {
       testDynamicNumberOfGCThreads("UseParallelGC");
     }
 
-    if (GC.Shenandoah.isSupported()) {
-      noneGCSupported = false;
-      testDynamicNumberOfGCThreads("UseShenandoahGC");
-    }
-
     if (noneGCSupported) {
-      throw new SkippedException("Skipping test because none of G1/Parallel/Shenandoah is supported.");
+      throw new SkippedException("Skipping test because none of G1/Parallel is supported.");
     }
   }
 
@@ -73,16 +68,16 @@ public class TestDynamicNumberOfGCThreads {
     String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", GCTest.class.getName()};
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
-    verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(baseArgs);
+    verifyDynamicNumberOfGCThreads(output);
 
     // Turn on parallel reference processing
     String[] parRefProcArg = {"-XX:+ParallelRefProcEnabled", "-XX:-ShowMessageBoxOnError"};
     String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
     System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
     System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
-    pb_enabled = ProcessTools.createJavaProcessBuilder(parRefArgs);
-    verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
+    output = ProcessTools.executeLimitedTestJava(parRefArgs);
+    verifyDynamicNumberOfGCThreads(output);
   }
 
   static class GCTest {

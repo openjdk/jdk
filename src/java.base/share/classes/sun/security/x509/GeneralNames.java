@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class GeneralNames {
      * @param derVal the DerValue to construct the GeneralNames from.
      * @exception IOException on error.
      */
+    @SuppressWarnings("this-escape")
     public GeneralNames(DerValue derVal) throws IOException {
         this();
         if (derVal.tag != DerValue.tag_Sequence) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDiagnosticCommand.hpp"
 #include "memory/resourceArea.hpp"
@@ -43,17 +42,6 @@ LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_alloc
   _dcmdparser.add_dcmd_option(&_disable);
   _dcmdparser.add_dcmd_option(&_list);
   _dcmdparser.add_dcmd_option(&_rotate);
-}
-
-int LogDiagnosticCommand::num_arguments() {
-  ResourceMark rm;
-  LogDiagnosticCommand* dcmd = new LogDiagnosticCommand(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 void LogDiagnosticCommand::registerCommand() {

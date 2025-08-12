@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
             // A non-empty set of arguments occurs when the "runTest" argument
-            // is passed to the test via ProcessTools::executeTestJvm.
+            // is passed to the test via ProcessTools::executeTestJava.
             //
             // This is done because an OutputAnalyzer is unable to read
             // the output of the current running JVM, and must therefore create
@@ -71,7 +71,7 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
 
                 System.out.println("TESTING " + expectedTLSVersion);
                 var activeTLSProtocol = "-Djdk.tls.client.protocols=" + expectedTLSVersion;
-                var output = ProcessTools.executeTestJvm(
+                var output = ProcessTools.executeTestJava(
                         testSrc,
                         activeTLSProtocol,
                         javaxNetDebug,

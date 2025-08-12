@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
   string->byte_field_put(_coder_offset, coder);
-}
-
-void java_lang_String::set_value_raw(oop string, typeArrayOop buffer) {
-  string->obj_field_put_raw(_value_offset, buffer);
 }
 
 void java_lang_String::set_value(oop string, typeArrayOop buffer) {
@@ -224,6 +220,14 @@ inline oop java_lang_VirtualThread::vthread_scope() {
   return base->obj_field(static_vthread_scope_offset);
 }
 
+inline ObjectWaiter* java_lang_VirtualThread::objectWaiter(oop vthread) {
+  return (ObjectWaiter*)vthread->address_field(_objectWaiter_offset);
+}
+
+inline void java_lang_VirtualThread::set_objectWaiter(oop vthread, ObjectWaiter* value) {
+  vthread->address_field_put(_objectWaiter_offset, (address)value);
+}
+
 #if INCLUDE_JFR
 inline u2 java_lang_Thread::jfr_epoch(oop ref) {
   return ref->short_field(_jfr_epoch_offset);
@@ -259,10 +263,6 @@ inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
   return obj != nullptr && is_subclass(obj->klass());
 }
 
-inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
 inline bool java_lang_invoke_MemberName::is_instance(oop obj) {
   return obj != nullptr && obj->klass() == vmClasses::MemberName_klass();
 }
@@ -293,11 +293,13 @@ inline Klass* java_lang_Class::as_Klass(oop java_class) {
 
 inline bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
-  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  // assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   bool is_primitive = (java_class->metadata_field(_klass_offset) == nullptr);
 
 #ifdef ASSERT
-  if (is_primitive) {
+  // The heapwalker walks through Classes that have had their Klass pointers removed, so can't assert this.
+  // assert(is_primitive == java_class->bool_field(_is_primitive_offset), "must match what we told Java");
+  if (java_class->bool_field(_is_primitive_offset)) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
     assert(k == nullptr || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");
@@ -325,15 +327,15 @@ inline bool java_lang_Module::is_instance(oop obj) {
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
   // only store u2 for version, checking for overflow.
   if (version > USHRT_MAX || version < 0) version = USHRT_MAX;
-  assert((jushort)bci == bci, "bci should be short");
-  return build_int_from_shorts(version, bci);
+  assert((u2)bci == bci, "bci should be short");
+  return build_int_from_shorts((u2)version, (u2)bci);
 }
 
 inline int Backtrace::merge_mid_and_cpref(int mid, int cpref) {
   // only store u2 for mid and cpref, checking for overflow.
-  assert((jushort)mid == mid, "mid should be short");
-  assert((jushort)cpref == cpref, "cpref should be short");
-  return build_int_from_shorts(cpref, mid);
+  assert((u2)mid == mid, "mid should be short");
+  assert((u2)cpref == cpref, "cpref should be short");
+  return build_int_from_shorts((u2)cpref, (u2)mid);
 }
 
 inline int Backtrace::bci_at(unsigned int merged) {

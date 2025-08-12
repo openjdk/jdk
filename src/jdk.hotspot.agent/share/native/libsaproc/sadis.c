@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,6 @@
  */
 
 #ifdef _WINDOWS
-// Disable CRT security warning against _snprintf
-#pragma warning (disable : 4996)
-
-#define snprintf  _snprintf
-#define vsnprintf _vsnprintf
-
 #include <windows.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -72,6 +66,7 @@
 
 #include "jni_util.h"
 
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Class:     sun_jvm_hotspot_asm_Disassembler
@@ -82,18 +77,16 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
                                                                            jclass disclass,
                                                                            jstring libname_s) {
   uintptr_t func = 0;
-  const char *error_message = NULL;
   const char *libname = NULL;
 
 #ifdef _WINDOWS
-  char buffer[JVM_MAXPATHLEN];
   HINSTANCE hsdis_handle = (HINSTANCE) NULL;
 #else
   void* hsdis_handle = NULL;
 #endif
 
   libname = (*env)->GetStringUTFChars(env, libname_s, NULL);
-  if (libname == NULL || (*env)->ExceptionOccurred(env)) {
+  if (libname == NULL || (*env)->ExceptionCheck(env)) {
     return 0;
   }
 
@@ -104,8 +97,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
   if (func == 0) {
-    getLastErrorString(buffer, sizeof(buffer));
-    error_message = buffer;
+    JNU_ThrowByNameWithLastError(env, "sun/jvm/hotspot/debugger/DebuggerException", "GetProcAddress failed");
   }
 #else
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
@@ -113,24 +105,11 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
   }
   if (func == 0) {
-    error_message = dlerror();
+    JNU_ThrowByName(env, "sun/jvm/hotspot/debugger/DebuggerException", dlerror());
   }
 #endif
 
   (*env)->ReleaseStringUTFChars(env, libname_s, libname);
-
-  if (func == 0) {
-    /* Couldn't find entry point.  error_message should contain some
-     * platform dependent error message.
-     */
-    jstring s = JNU_NewStringPlatform(env, error_message);
-    if (s != NULL) {
-      jobject x = JNU_NewObjectByName(env, "sun/jvm/hotspot/debugger/DebuggerException", "(Ljava/lang/String;)V", s);
-      if (x != NULL) {
-        (*env)->Throw(env, x);
-      }
-    }
-  }
   return (jlong)func;
 }
 
@@ -161,13 +140,13 @@ static void* event_to_env(void* env_pv, const char* event, void* arg) {
   decode_env* denv = (decode_env*)env_pv;
   JNIEnv* env = denv->env;
   jstring event_string = (*env)->NewStringUTF(env, event);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     return NULL;
   }
 
   result = (*env)->CallLongMethod(env, denv->dis, denv->handle_event, denv->visitor,
                                   event_string, (jlong) (uintptr_t)arg);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
     return NULL;
@@ -198,11 +177,11 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   }
   if (raw != NULL) {
     jstring output = (*env)->NewStringUTF(env, raw);
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
       /* make sure that UTF allocation doesn't cause OOM */
       (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
     }
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
       /* ignore exceptions for now */
         (*env)->ExceptionClear(env);
     }
@@ -213,12 +192,12 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   va_end(ap);
 
   output = (*env)->NewStringUTF(env, denv->buffer);
-  if (!(*env)->ExceptionOccurred(env)) {
+  if (!(*env)->ExceptionCheck(env)) {
     /* make sure that UTF allocation doesn't cause OOM */
     (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
   }
 
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     /* ignore exceptions for now */
     (*env)->ExceptionClear(env);
   }
@@ -245,12 +224,12 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   decode_env denv;
 
   start = (*env)->GetByteArrayElements(env, code, NULL);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     return;
   }
   end = start + (*env)->GetArrayLength(env, code);
   options = (*env)->GetStringUTFChars(env, options_s, NULL);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     return;
   }
@@ -263,7 +242,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   /* find Disassembler.handleEvent callback */
   denv.handle_event = (*env)->GetMethodID(env, disclass, "handleEvent",
                                           "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;J)J");
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;
@@ -272,7 +251,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
   /* find Disassembler.rawPrint callback */
   denv.raw_print = (*env)->GetMethodID(env, disclass, "rawPrint",
                                        "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;)V");
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, options_s, options);
     return;

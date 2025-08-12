@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "sun_java2d_cmm_lcms_LCMS.h"
+#include "sun_java2d_cmm_lcms_LCMSImageLayout.h"
 #include "jni_util.h"
 #include "Trace.h"
 #include "Disposer.h"
@@ -45,21 +46,14 @@
 
 #define SigHead TagIdConst('h','e','a','d')
 
-#define DT_BYTE     0
-#define DT_SHORT    1
-#define DT_INT      2
-#define DT_DOUBLE   3
+#define DT_BYTE     sun_java2d_cmm_lcms_LCMSImageLayout_DT_BYTE
+#define DT_SHORT    sun_java2d_cmm_lcms_LCMSImageLayout_DT_SHORT
+#define DT_INT      sun_java2d_cmm_lcms_LCMSImageLayout_DT_INT
 
 /* Default temp profile list size */
 #define DF_ICC_BUF_SIZE 32
 
 #define ERR_MSG_SIZE 256
-
-#ifdef _MSC_VER
-# ifndef snprintf
-#       define snprintf  _snprintf
-# endif
-#endif
 
 typedef struct lcmsProfile_s {
     cmsHPROFILE pf;
@@ -75,14 +69,9 @@ JavaVM *javaVM;
 void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
                   const char *errorText) {
     JNIEnv *env;
-    char errMsg[ERR_MSG_SIZE];
+    char errMsg[ERR_MSG_SIZE] = {0};
 
-    int count = snprintf(errMsg, ERR_MSG_SIZE,
-                          "LCMS error %d: %s", errorCode, errorText);
-    if (count < 0 || count >= ERR_MSG_SIZE) {
-        count = ERR_MSG_SIZE - 1;
-    }
-    errMsg[count] = 0;
+    snprintf(errMsg, ERR_MSG_SIZE, "LCMS error %d: %s", errorCode, errorText);
 
     (*javaVM)->AttachCurrentThread(javaVM, (void**)&env, NULL);
     if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it before
@@ -188,8 +177,13 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         }
     }
 
+    cmsUInt32Number dwFlags = 0;
+    if (T_EXTRA(inFormatter) > 0 && T_EXTRA(outFormatter) > 0) {
+        dwFlags |= cmsFLAGS_COPY_ALPHA;
+    }
+
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
-        inFormatter, outFormatter, renderingIntent, cmsFLAGS_COPY_ALPHA);
+        inFormatter, outFormatter, renderingIntent, dwFlags);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 
@@ -478,8 +472,6 @@ static void *getILData(JNIEnv *env, jobject data, jint type) {
             return (*env)->GetShortArrayElements(env, data, 0);
         case DT_INT:
             return (*env)->GetIntArrayElements(env, data, 0);
-        case DT_DOUBLE:
-            return (*env)->GetDoubleArrayElements(env, data, 0);
         default:
             return NULL;
     }
@@ -496,9 +488,6 @@ static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data,
             break;
         case DT_INT:
             (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, mode);
-            break;
-        case DT_DOUBLE:
-            (*env)->ReleaseDoubleArrayElements(env, data, (jdouble *) pData, mode);
             break;
     }
 }

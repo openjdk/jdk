@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -32,8 +31,8 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 // ------------------------------------------------------------------
 
@@ -151,10 +150,10 @@ jmethodID JNIJVMCI::_HotSpotResolvedPrimitiveType_fromMetaspace_method;
 #define STATIC_INT_FIELD(className, name) FIELD(className, name, "I", true)
 #define STATIC_BOOLEAN_FIELD(className, name) FIELD(className, name, "Z", true)
 #ifdef PRODUCT
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 #else
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args) \
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName) \
   check_resolve_method(#hsCallType, k, vmSymbols::methodName##_name(), vmSymbols::signatureSymbolName(), CHECK);
 #define CONSTRUCTOR(className, signature) { \
   TempNewSymbol sig = SymbolTable::new_symbol(signature); \
@@ -254,7 +253,7 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint)
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jboolean)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
 /**
@@ -393,7 +392,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
 #define GET_JNI_CONSTRUCTOR(clazz, signature) \
   GET_JNI_METHOD(GetMethodID, JNIJVMCI::clazz::_constructor, clazz::_class, "<init>", signature) \
 
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args) \
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName) \
      GET_JNI_METHOD(jniGetMethod,                                        \
                     className::_##methodName##_method,                   \
                     className::clazz(),                                  \
@@ -406,6 +405,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
 extern "C" {
   void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
   jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
+  jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle);
 }
 
 // Dumps symbols for public <init>() and <init>(String) methods of
@@ -565,10 +565,12 @@ static void register_natives_for_class(JNIEnv* env, jclass clazz, const char* na
 void JNIJVMCI::register_natives(JNIEnv* env) {
   if (env != JavaThread::current()->jni_environment()) {
     JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"()V", FN_PTR(JVM_RegisterJVMCINatives) }};
-    JNINativeMethod JVMCI_nmethods[] = {{ CC"initializeRuntime",   CC"()Ljdk/vm/ci/runtime/JVMCIRuntime;", FN_PTR(JVM_GetJVMCIRuntime) }};
+    JNINativeMethod JVMCI_nmethods[] = {{ CC"initializeRuntime", CC"()Ljdk/vm/ci/runtime/JVMCIRuntime;", FN_PTR(JVM_GetJVMCIRuntime) }};
+    JNINativeMethod Services_nmethods[] = {{ CC"readSystemPropertiesInfo", CC"([I)J", FN_PTR(JVM_ReadSystemPropertiesInfo) }};
 
     register_natives_for_class(env, nullptr, "jdk/vm/ci/hotspot/CompilerToVM", CompilerToVM_nmethods, 1);
     register_natives_for_class(env, JVMCI::clazz(), "jdk/vm/ci/runtime/JVMCI", JVMCI_nmethods, 1);
+    register_natives_for_class(env, Services::clazz(), "jdk/vm/ci/services/Services", Services_nmethods, 1);
   }
 }
 
@@ -581,9 +583,9 @@ void JNIJVMCI::register_natives(JNIEnv* env) {
 #define EMPTY2(x,y)
 #define FIELD3(className, name, sig) FIELD2(className, name)
 #define FIELD2(className, name) \
-  jfieldID JNIJVMCI::className::_##name##_field_id = 0; \
+  jfieldID JNIJVMCI::className::_##name##_field_id = nullptr; \
   int HotSpotJVMCI::className::_##name##_offset = 0;
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
 // Generates the definitions of static fields used by the accessors. For example:
@@ -623,7 +625,7 @@ JVMCI_CLASSES_DO(EMPTY2, EMPTY0, FIELD2, FIELD2, FIELD2, FIELD2, FIELD2, FIELD3,
   void JNIJVMCI::className::check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset) {                 \
     assert(obj.is_non_null(), "null field access of %s.%s", #className, field_name);                                              \
     assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj));          \
-    assert(offset != 0, "must be valid offset");                                                                                  \
+    assert(offset != nullptr, "must be valid offset");                                                                            \
   }                                                                                                                               \
   jclass JNIJVMCI::className::_class = nullptr;
 
@@ -689,7 +691,7 @@ JVMCI_CLASSES_DO(EMPTY2, EMPTY0, FIELD2, FIELD2, FIELD2, FIELD2, FIELD2, FIELD3,
 
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint, Int, EMPTY_CAST)
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jboolean, Boolean, EMPTY_CAST)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args) \
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName) \
   jmethodID JNIJVMCI::className::_##methodName##_method;
 
 #define CONSTRUCTOR(className, signature) \

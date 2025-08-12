@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "waitBarrier_linux.hpp"
 #include <sys/syscall.h>
 #include <linux/futex.h>
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s: error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 // 32-bit RISC-V has no SYS_futex syscall.
 #ifdef RISCV32
@@ -45,7 +36,7 @@
   #endif
 #endif
 
-static int futex(volatile int *addr, int futex_op, int op_arg) {
+static long futex(volatile int *addr, int futex_op, int op_arg) {
   return syscall(SYS_futex, addr, futex_op, op_arg, nullptr, nullptr, 0);
 }
 
@@ -59,9 +50,9 @@ void LinuxWaitBarrier::arm(int barrier_tag) {
 void LinuxWaitBarrier::disarm() {
   assert(_futex_barrier != 0, "Should be armed/non-zero.");
   _futex_barrier = 0;
-  int s = futex(&_futex_barrier,
-                FUTEX_WAKE_PRIVATE,
-                INT_MAX /* wake a max of this many threads */);
+  long s = futex(&_futex_barrier,
+                 FUTEX_WAKE_PRIVATE,
+                 INT_MAX /* wake a max of this many threads */);
   guarantee_with_errno(s > -1, "futex FUTEX_WAKE failed");
 }
 
@@ -73,9 +64,9 @@ void LinuxWaitBarrier::wait(int barrier_tag) {
     return;
   }
   do {
-    int s = futex(&_futex_barrier,
-                  FUTEX_WAIT_PRIVATE,
-                  barrier_tag /* should be this tag */);
+    long s = futex(&_futex_barrier,
+                   FUTEX_WAIT_PRIVATE,
+                   barrier_tag /* should be this tag */);
     guarantee_with_errno((s == 0) ||
                          (s == -1 && errno == EAGAIN) ||
                          (s == -1 && errno == EINTR),

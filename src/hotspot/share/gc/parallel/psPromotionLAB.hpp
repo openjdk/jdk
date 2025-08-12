@@ -55,7 +55,7 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
   void set_end(HeapWord* value)    { _end = value; }
 
   // The shared initialize code invokes this.
-  debug_only(virtual bool lab_is_valid(MemRegion lab) { return false; });
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab) { return false; });
 
   PSPromotionLAB() : _top(nullptr), _bottom(nullptr), _end(nullptr), _state(zero_size) { }
 
@@ -95,7 +95,7 @@ class PSYoungPromotionLAB : public PSPromotionLAB {
   // Not MT safe
   inline HeapWord* allocate(size_t size);
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab);)
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab);)
 };
 
 class PSOldPromotionLAB : public PSPromotionLAB {
@@ -120,14 +120,14 @@ class PSOldPromotionLAB : public PSPromotionLAB {
       set_top(new_top);
       assert(is_object_aligned(obj) && is_object_aligned(new_top),
              "checking alignment");
-      _start_array->allocate_block(obj);
+      _start_array->update_for_block(obj, obj + size);
       return obj;
     }
 
     return nullptr;
   }
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab));
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab));
 };
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP

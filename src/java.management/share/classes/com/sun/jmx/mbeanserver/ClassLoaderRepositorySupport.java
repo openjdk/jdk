@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,15 @@ package com.sun.jmx.mbeanserver;
 
 
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.lang.System.Logger.Level;
-import javax.management.MBeanPermission;
 
 import javax.management.ObjectName;
 import javax.management.loading.PrivateClassLoader;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class keeps the list of Class Loaders registered in the MBean Server.
@@ -192,7 +189,6 @@ final class ClassLoaderRepositorySupport
                                final ClassLoader without,
                                final ClassLoader stop)
             throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         final int size = list.length;
         for(int i=0; i<size; i++) {
             try {
@@ -206,18 +202,6 @@ final class ClassLoaderRepositorySupport
                 if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
                     MBEANSERVER_LOGGER.log(Level.TRACE, "Trying loader = " + cl);
                 }
-                /* We used to have a special case for "instanceof
-                   MLet" here, where we invoked the method
-                   loadClass(className, null) to prevent infinite
-                   recursion.  But the rule whereby the MLet only
-                   consults loaders that precede it in the CLR (via
-                   loadClassBefore) means that the recursion can't
-                   happen, and the test here caused some legitimate
-                   classloading to fail.  For example, if you have
-                   dependencies C->D->E with loaders {E D C} in the
-                   CLR in that order, you would expect to be able to
-                   load C.  The problem is that while resolving D, CLR
-                   delegation is disabled, so it can't find E.  */
                 return Class.forName(className, false, cl);
             } catch (ClassNotFoundException e) {
                 // OK: continue with next class
@@ -292,20 +276,7 @@ final class ClassLoaderRepositorySupport
     }
 
     public final ClassLoader getClassLoader(ObjectName name) {
-        ClassLoader instance = loadersWithNames.get(name);
-        if (instance != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                Permission perm =
-                        new MBeanPermission(instance.getClass().getName(),
-                        null,
-                        name,
-                        "getClassLoader");
-                sm.checkPermission(perm);
-            }
-        }
-        return instance;
+        return loadersWithNames.get(name);
     }
 
 }

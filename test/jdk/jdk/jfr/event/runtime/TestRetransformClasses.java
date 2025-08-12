@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @summary Tests the RetransformClasses event by redefining a class in a Java
  *          agent
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules java.instrument
@@ -84,7 +84,7 @@ public class TestRetransformClasses {
     public static void main(String[] args) throws Throwable {
         List<RecordedEvent> events = RecordingFile.readAllEvents(DUMP_PATH);
         Asserts.assertEquals(events.size(), 1, "Expected one RetransformClasses event");
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
 
         System.out.println(event);
 

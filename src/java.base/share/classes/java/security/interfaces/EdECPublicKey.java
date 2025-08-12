@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.security.interfaces;
 
 import java.security.PublicKey;
 import java.security.spec.EdECPoint;
+import java.security.spec.NamedParameterSpec;
 
 /**
  * An interface for an elliptic curve public key as defined by
@@ -37,6 +38,8 @@ import java.security.spec.EdECPoint;
  * An Edwards-Curve public key is a point on the curve, which is represented using an
  * EdECPoint.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECPublicKey extends EdECKey, PublicKey {
@@ -47,4 +50,17 @@ public interface EdECPublicKey extends EdECKey, PublicKey {
      * @return the {@code EdECPoint} representing the public key.
      */
     EdECPoint getPoint();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     */
+    @Override
+    default NamedParameterSpec getParams() {
+        return null;
+    }
 }

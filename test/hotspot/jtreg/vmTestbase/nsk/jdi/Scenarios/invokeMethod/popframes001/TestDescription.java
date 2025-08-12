@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.Scenarios.invokeMethod.popframes001
  *        nsk.jdi.Scenarios.invokeMethod.popframes001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.Scenarios.invokeMethod.popframes001
  *      ./bin
  *      -verbose

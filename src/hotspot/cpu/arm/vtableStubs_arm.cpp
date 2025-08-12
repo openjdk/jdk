@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_arm.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/klass.inline.hpp"
@@ -89,7 +88,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   start_pc = __ pc();
   { // lookup virtual method
     int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-    int method_offset = vtableEntry::method_offset_in_bytes() + entry_offset;
+    int method_offset = in_bytes(vtableEntry::method_offset()) + entry_offset;
 
     assert ((method_offset & (wordSize - 1)) == 0, "offset should be aligned");
     int offset_mask = 0xfff;
@@ -160,7 +159,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(Rclass, R0);
 
   // Receiver subtype check against REFC.
-  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
+  __ ldr(Rintf, Address(Ricklass, CompiledICData::itable_refc_klass_offset()));
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              Rclass, Rintf, noreg,
                              // outputs: temp reg1, temp reg2
@@ -171,7 +170,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   start_pc = __ pc();
 
   // Get Method* and entry point for compiler
-  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
+  __ ldr(Rintf, Address(Ricklass, CompiledICData::itable_defc_klass_offset()));
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              Rclass, Rintf, itable_index,
                              // outputs: temp reg1, temp reg2, temp reg3

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 package com.sun.tools.javap;
 
 import java.io.PrintWriter;
-
-import com.sun.tools.classfile.AttributeException;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.DescriptorException;
+import java.lang.classfile.AccessFlags;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.lang.reflect.Modifier;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /*
  *  A writer similar to a PrintWriter but which does not hide exceptions.
@@ -41,6 +45,7 @@ import com.sun.tools.classfile.DescriptorException;
  *  deletion without notice.</b>
  */
 public class BasicWriter {
+
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
         out = context.get(PrintWriter.class);
@@ -49,12 +54,34 @@ public class BasicWriter {
             throw new AssertionError();
     }
 
+    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags, ClassFileFormatVersion cffv) {
+        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location(), cffv);
+    }
+
+    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
+        try {
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
+        } catch (IllegalArgumentException ex) {
+            mask &= location.flagsMask(cffv);
+            report("Access Flags: " + ex.getMessage());
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
+        }
+    }
+
     protected void print(String s) {
         lineWriter.print(s);
     }
 
     protected void print(Object o) {
         lineWriter.print(o == null ? null : o.toString());
+    }
+
+    protected void print(Supplier<Object> safeguardedCode) {
+        try {
+            print(safeguardedCode.get());
+        } catch (IllegalArgumentException e) {
+            print(report(e));
+        }
     }
 
     protected void println() {
@@ -71,6 +98,11 @@ public class BasicWriter {
         lineWriter.println();
     }
 
+    protected void println(Supplier<Object> safeguardedCode) {
+        print(safeguardedCode);
+        lineWriter.println();
+    }
+
     protected void indent(int delta) {
         lineWriter.indent(delta);
     }
@@ -83,23 +115,15 @@ public class BasicWriter {
         lineWriter.pendingNewline = b;
     }
 
-    protected String report(AttributeException e) {
+    protected String report(Exception e) {
         out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(ConstantPoolException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(DescriptorException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
+        errorReported = true;
         return "???";
     }
 
     protected String report(String msg) {
         out.println("Error: " + msg); // i18n?
+        errorReported = true;
         return "???";
     }
 
@@ -123,6 +147,7 @@ public class BasicWriter {
     private LineWriter lineWriter;
     private PrintWriter out;
     protected Messages messages;
+    protected boolean errorReported;
 
     private static class LineWriter {
         static LineWriter instance(Context context) {

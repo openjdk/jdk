@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -41,6 +39,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,11 +53,14 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.util.Abort;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -71,9 +73,12 @@ import com.sun.tools.javac.util.Options;
  * java.io.File or java.nio.file.Path.
  */
 public abstract class BaseFileManager implements JavaFileManager {
+
+    private static final byte[] EMPTY_ARRAY = new byte[0];
+
+    @SuppressWarnings("this-escape")
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
-        byteBufferCache = new ByteBufferCache();
         locations = createLocations();
     }
 
@@ -83,12 +88,17 @@ public abstract class BaseFileManager implements JavaFileManager {
      */
     public void setContext(Context context) {
         log = Log.instance(context);
+        lint = Lint.instance(context);
         options = Options.instance(context);
-        classLoaderClass = options.get("procloader");
 
-        // Avoid initializing Lint
-        boolean warn = options.isLintSet("path");
-        locations.update(log, warn, FSInfo.instance(context));
+        // Initialize locations
+        locations.update(log, lint, FSInfo.instance(context));
+
+        // Apply options
+        options.whenReady(this::applyOptions);
+    }
+
+    protected void applyOptions(Options options) {
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
@@ -128,9 +138,11 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     protected Options options;
 
-    protected String classLoaderClass;
+    protected Lint lint;
 
     protected final Locations locations;
+
+    private final HashSet<Path> outputFilesWritten = new HashSet<>();
 
     /**
      * A flag for clients to use to indicate that this file manager should
@@ -185,6 +197,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         // other than URLClassLoader.
 
         // 1: Allow client to specify the class to use via hidden option
+        String classLoaderClass = options.get("procloader");
         if (classLoaderClass != null) {
             try {
                 Class<? extends ClassLoader> loader =
@@ -229,6 +242,11 @@ public abstract class BaseFileManager implements JavaFileManager {
             @Override
             public boolean handleFileManagerOption(Option option, String value) {
                 return handleOption(option, value);
+            }
+
+            @Override
+            public void initialize() {
+                options.initialize();
             }
         };
 
@@ -392,56 +410,33 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     // <editor-fold defaultstate="collapsed" desc="ByteBuffers">
     /**
-     * Make a byte buffer from an input stream.
+     * Make a {@link ByteBuffer} from an input stream.
      * @param in the stream
      * @return a byte buffer containing the contents of the stream
      * @throws IOException if an error occurred while reading the stream
      */
-    public ByteBuffer makeByteBuffer(InputStream in)
-        throws IOException {
-        int limit = in.available();
-        if (limit < 1024) limit = 1024;
-        ByteBuffer result = byteBufferCache.get(limit);
-        int position = 0;
-        while (in.available() != 0) {
-            if (position >= limit)
-                // expand buffer
-                result = ByteBuffer.
-                    allocate(limit <<= 1).
-                    put(result.flip());
-            int count = in.read(result.array(),
-                position,
-                limit - position);
-            if (count < 0) break;
-            result.position(position += count);
+    public ByteBuffer makeByteBuffer(InputStream in) throws IOException {
+        byte[] array;
+        synchronized (this) {
+            if ((array = byteArrayCache) != null)
+                byteArrayCache = null;
+            else
+                array = EMPTY_ARRAY;
         }
-        return result.flip();
+        com.sun.tools.javac.util.ByteBuffer buf = new com.sun.tools.javac.util.ByteBuffer(array);
+        buf.appendStream(in);
+        return buf.asByteBuffer();
     }
 
-    public void recycleByteBuffer(ByteBuffer bb) {
-        byteBufferCache.put(bb);
-    }
-
-    /**
-     * A single-element cache of direct byte buffers.
-     */
-    private static class ByteBufferCache {
-        private ByteBuffer cached;
-        ByteBuffer get(int capacity) {
-            if (capacity < 20480) capacity = 20480;
-            ByteBuffer result =
-                (cached != null && cached.capacity() >= capacity)
-                ? cached.clear()
-                : ByteBuffer.allocate(capacity);
-            cached = null;
-            return result;
-        }
-        void put(ByteBuffer x) {
-            cached = x;
+    public void recycleByteBuffer(ByteBuffer buf) {
+        if (buf.hasArray()) {
+            synchronized (this) {
+                byteArrayCache = buf.array();
+            }
         }
     }
 
-    private final ByteBufferCache byteBufferCache;
+    private byte[] byteArrayCache;
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Content cache">
@@ -464,6 +459,10 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     public void flushCache(JavaFileObject file) {
         contentCache.remove(file);
+    }
+
+    public synchronized void resetOutputFilesWritten() {
+        outputFilesWritten.clear();
     }
 
     protected final Map<JavaFileObject, ContentCacheEntry> contentCache = new HashMap<>();
@@ -510,5 +509,30 @@ public abstract class BaseFileManager implements JavaFileManager {
         for (T t : it)
             Objects.requireNonNull(t);
         return it;
+    }
+
+// Output File Clash Detection
+
+    /** Record the fact that we have started writing to an output file.
+     */
+    // Note: individual files can be accessed concurrently, so we synchronize here
+    synchronized void newOutputToPath(Path path) throws IOException {
+
+        // Is output file clash detection enabled?
+        if (!lint.isEnabled(LintCategory.OUTPUT_FILE_CLASH))
+            return;
+
+        // Get the "canonical" version of the file's path; we are assuming
+        // here that two clashing files will resolve to the same real path.
+        Path realPath;
+        try {
+            realPath = path.toRealPath();
+        } catch (NoSuchFileException e) {
+            return;         // should never happen except on broken filesystems
+        }
+
+        // Check whether we've already opened this file for output
+        if (!outputFilesWritten.add(realPath))
+            log.warning(LintWarnings.OutputFileClash(path));
     }
 }

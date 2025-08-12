@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,23 @@ package jdk.internal.module;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.constant.ClassDesc;
 import java.lang.module.ModuleDescriptor.Version;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleHashInfo;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ModuleVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.commons.ModuleHashesAttribute;
-import jdk.internal.org.objectweb.asm.commons.ModuleResolutionAttribute;
-import jdk.internal.org.objectweb.asm.commons.ModuleTargetAttribute;
 
 /**
  * Utility class to extend a module-info.class with additional attributes.
@@ -148,90 +150,54 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public byte[] toByteArray() throws IOException {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-
-        ClassReader cr = new ClassReader(in);
-
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM7, cw) {
-            @Override
-            public ModuleVisitor visitModule(String name, int flags, String version) {
-                Version v = ModuleInfoExtender.this.version;
-                String vs = (v != null) ? v.toString() : version;
-                ModuleVisitor mv = super.visitModule(name, flags, vs);
-
-                // ModuleMainClass attribute
-                if (mainClass != null) {
-                    mv.visitMainClass(mainClass.replace('.', '/'));
-                }
-
-                // ModulePackages attribute
-                if (packages != null) {
-                    packages.stream()
-                            .sorted()
-                            .forEach(pn -> mv.visitPackage(pn.replace('.', '/')));
-                }
-
-                return new ModuleVisitor(Opcodes.ASM7, mv) {
-                    public void visitMainClass(String existingMainClass) {
-                        // skip main class if there is a new value
-                        if (mainClass == null) {
-                            super.visitMainClass(existingMainClass);
-                        }
-                    }
-                    public void visitPackage(String existingPackage) {
-                        // skip packages if there is a new set of packages
-                        if (packages == null) {
-                            super.visitPackage(existingPackage);
-                        }
-                    }
-                };
+        var cc = ClassFile.of();
+        var cm = cc.parse(in.readAllBytes());
+        Version v = ModuleInfoExtender.this.version;
+        return cc.transformClass(cm, ClassTransform.endHandler(clb -> {
+            // ModuleMainClass attribute
+            if (mainClass != null) {
+                clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mainClass)));
             }
-            @Override
-            public void visitAttribute(Attribute attr) {
-                String name = attr.type;
-                // drop existing attributes if there are replacements
-                if (name.equals(ClassFileConstants.MODULE_TARGET)
-                    && targetPlatform != null)
-                    return;
-                if (name.equals(ClassFileConstants.MODULE_RESOLUTION)
-                    && moduleResolution != null)
-                    return;
-                if (name.equals(ClassFileConstants.MODULE_HASHES)
-                    && hashes != null)
-                    return;
 
-                super.visitAttribute(attr);
-
+            // ModulePackages attribute
+            if (packages != null) {
+                List<PackageDesc> packageNames = packages.stream()
+                        .sorted()
+                        .map(PackageDesc::of)
+                        .toList();
+                clb.with(ModulePackagesAttribute.ofNames(packageNames));
             }
-        };
 
-        List<Attribute> attrs = new ArrayList<>();
-        attrs.add(new ModuleTargetAttribute());
-        attrs.add(new ModuleResolutionAttribute());
-        attrs.add(new ModuleHashesAttribute());
-        cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
-
-        // add ModuleTarget, ModuleResolution and ModuleHashes attributes
-        if (targetPlatform != null) {
-            cw.visitAttribute(new ModuleTargetAttribute(targetPlatform));
-        }
-        if (moduleResolution != null) {
-            int flags = moduleResolution.value();
-            cw.visitAttribute(new ModuleResolutionAttribute(flags));
-        }
-        if (hashes != null) {
-            String algorithm = hashes.algorithm();
-            List<String> names = new ArrayList<>();
-            List<byte[]> values = new ArrayList<>();
-            for (String name : hashes.names()) {
-                names.add(name);
-                values.add(hashes.hashFor(name));
+            // ModuleTarget, ModuleResolution and ModuleHashes attributes
+            if (targetPlatform != null) {
+                clb.with(ModuleTargetAttribute.of(targetPlatform));
             }
-            cw.visitAttribute(new ModuleHashesAttribute(algorithm, names, values));
-        }
-
-        return cw.toByteArray();
+            if (moduleResolution != null) {
+                clb.with(ModuleResolutionAttribute.of(moduleResolution.value()));
+            }
+            if (hashes != null) {
+                clb.with(ModuleHashesAttribute.of(
+                        hashes.algorithm(),
+                        hashes.hashes().entrySet().stream().map(he ->
+                                ModuleHashInfo.of(ModuleDesc.of(
+                                        he.getKey()),
+                                        he.getValue())).toList()));
+            }
+        }).andThen((clb, cle) -> {
+            if (v != null && cle instanceof ModuleAttribute ma) {
+                clb.with(ModuleAttribute.of(
+                        ma.moduleName(),
+                        ma.moduleFlagsMask(),
+                        clb.constantPool().utf8Entry(v.toString()),
+                        ma.requires(),
+                        ma.exports(),
+                        ma.opens(),
+                        ma.uses(),
+                        ma.provides()));
+            } else {
+                clb.accept(cle);
+            }
+        }));
     }
 
     /**

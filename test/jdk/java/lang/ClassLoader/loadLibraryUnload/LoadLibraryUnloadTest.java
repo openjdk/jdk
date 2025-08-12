@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,30 +38,14 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import java.lang.ProcessBuilder;
-import java.lang.Process;
-import java.io.File;
-import java.util.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 public class LoadLibraryUnloadTest {
 
     private static String testClassPath = System.getProperty("test.classes");
     private static String testLibraryPath = System.getProperty("test.nativepath");
-
-    private static Process runJavaCommand(String... command) throws Throwable {
-        String java = JDKToolFinder.getJDKTool("java");
-        List<String> commands = new ArrayList<>();
-        Collections.addAll(commands, java);
-        Collections.addAll(commands, command);
-        System.out.println("COMMAND: " + String.join(" ", commands));
-        return new ProcessBuilder(commands.toArray(new String[0]))
-                .redirectErrorStream(true)
-                .directory(new File(testClassPath))
-                .start();
-    }
 
     private final static long countLines(OutputAnalyzer output, String string) {
         return output.asLines()
@@ -78,12 +62,10 @@ public class LoadLibraryUnloadTest {
 
     public static void main(String[] args) throws Throwable {
 
-        Process process = runJavaCommand(
+        OutputAnalyzer outputAnalyzer = executeCommand(createTestJavaProcessBuilder(
                 "-Dtest.classes=" + testClassPath,
                 "-Djava.library.path=" + testLibraryPath,
-                "LoadLibraryUnload");
-
-        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
+                "LoadLibraryUnload"));
         dump(outputAnalyzer);
 
         Asserts.assertTrue(

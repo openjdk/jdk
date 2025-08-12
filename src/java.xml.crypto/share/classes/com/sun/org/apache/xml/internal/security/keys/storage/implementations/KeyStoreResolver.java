@@ -64,6 +64,7 @@ public class KeyStoreResolver extends StorageResolverSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     public Iterator<Certificate> getIterator() {
         return new KeyStoreIterator(this.keyStore);
     }
@@ -103,11 +104,13 @@ public class KeyStoreResolver extends StorageResolverSpi {
         }
 
         /** {@inheritDoc} */
+        @Override
         public boolean hasNext() {
             return this.i < this.certs.size();
         }
 
         /** {@inheritDoc} */
+        @Override
         public Certificate next() {
             if (hasNext()) {
                 return this.certs.get(this.i++);
@@ -119,6 +122,7 @@ public class KeyStoreResolver extends StorageResolverSpi {
         /**
          * Method remove
          */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Can't remove keys from KeyStore");
         }

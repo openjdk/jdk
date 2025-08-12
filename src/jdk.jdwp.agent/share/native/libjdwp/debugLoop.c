@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,9 @@ debugLoop_run(void)
     /* Initialize all statics */
     /* We may be starting a new connection after an error */
     cmdQueue = NULL;
-    cmdQueueLock = debugMonitorCreate("JDWP Command Queue Lock");
+    if (cmdQueueLock == NULL) {
+      cmdQueueLock = debugMonitorCreate("JDWP Command Queue Lock");
+    }
     transportError = JNI_FALSE;
 
     shouldListen = JNI_TRUE;
@@ -190,7 +192,6 @@ debugLoop_run(void)
      * be trying to send.
      */
     transport_close();
-    debugMonitorDestroy(cmdQueueLock);
 
     /* Reset for a new connection to this VM if it's still alive */
     if ( ! gdata->vmDead ) {

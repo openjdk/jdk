@@ -252,10 +252,9 @@ public class HeapMonitor {
 
       VMOption enableJVMCI = bean.getVMOption("EnableJVMCI");
       VMOption useJVMCICompiler = bean.getVMOption("UseJVMCICompiler");
-      String compiler = System.getProperty("jvmci.Compiler");
 
       checkLines = !(enableJVMCI.getValue().equals("true")
-          && useJVMCICompiler.getValue().equals("true") && compiler.equals("graal"));
+          && useJVMCICompiler.getValue().equals("true"));
     } catch (Exception e) {
       // NOP.
     }
@@ -277,6 +276,9 @@ public class HeapMonitor {
 
     if (diffPercentage >= acceptedErrorPercentage) {
       System.err.println("Unexpected high difference percentage: " + diffPercentage
+          + " due to the count being " + actual + " instead of " + expected);
+    } else {
+      System.out.println("OK difference percentage: " + diffPercentage
           + " due to the count being " + actual + " instead of " + expected);
     }
     return diffPercentage < acceptedErrorPercentage;

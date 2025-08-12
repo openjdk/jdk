@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.nio.channels;
+
+import jdk.internal.invoke.MhUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -338,9 +340,9 @@ public abstract class SelectionKey {
      * <p> An invocation of this method of the form {@code k.isReadable()}
      * behaves in exactly the same way as the expression
      *
-     * <blockquote><pre>{@code
-     * k.readyOps() & OP_READ != 0
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     k.readyOps() & OP_READ != 0
+     * }
      *
      * <p> If this key's channel does not support read operations then this
      * method always returns {@code false}.  </p>
@@ -361,9 +363,9 @@ public abstract class SelectionKey {
      * <p> An invocation of this method of the form {@code k.isWritable()}
      * behaves in exactly the same way as the expression
      *
-     * <blockquote><pre>{@code
-     * k.readyOps() & OP_WRITE != 0
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     k.readyOps() & OP_WRITE != 0
+     * }
      *
      * <p> If this key's channel does not support write operations then this
      * method always returns {@code false}.  </p>
@@ -385,9 +387,9 @@ public abstract class SelectionKey {
      * <p> An invocation of this method of the form {@code k.isConnectable()}
      * behaves in exactly the same way as the expression
      *
-     * <blockquote><pre>{@code
-     * k.readyOps() & OP_CONNECT != 0
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     k.readyOps() & OP_CONNECT != 0
+     * }
      *
      * <p> If this key's channel does not support socket-connect operations
      * then this method always returns {@code false}.  </p>
@@ -409,9 +411,9 @@ public abstract class SelectionKey {
      * <p> An invocation of this method of the form {@code k.isAcceptable()}
      * behaves in exactly the same way as the expression
      *
-     * <blockquote><pre>{@code
-     * k.readyOps() & OP_ACCEPT != 0
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     k.readyOps() & OP_ACCEPT != 0
+     * }
      *
      * <p> If this key's channel does not support socket-accept operations then
      * this method always returns {@code false}.  </p>
@@ -429,15 +431,9 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
-    private static final VarHandle ATTACHMENT;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            ATTACHMENT = l.findVarHandle(SelectionKey.class, "attachment", Object.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final VarHandle ATTACHMENT = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "attachment", Object.class);
+
     private volatile Object attachment;
 
     /**

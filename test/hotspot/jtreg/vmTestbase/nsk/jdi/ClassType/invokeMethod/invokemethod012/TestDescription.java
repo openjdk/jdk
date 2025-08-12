@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,10 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.invokeMethod.invokemethod012
  *        nsk.jdi.ClassType.invokeMethod.invokemethod012t
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ClassType.invokeMethod.invokemethod012
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

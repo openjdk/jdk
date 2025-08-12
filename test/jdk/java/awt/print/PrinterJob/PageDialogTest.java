@@ -24,6 +24,7 @@
 /*
    @test
    @bug 6302514
+   @key printer
    @run main/manual PageDialogTest
    @summary A toolkit modal dialog should not be blocked by Page/Print dialog.
 */

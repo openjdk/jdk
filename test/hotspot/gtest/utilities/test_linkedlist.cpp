@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 
  */
 
-#include "precompiled.hpp"
 #include "unittest.hpp"
 #include "utilities/linkedlist.hpp"
 
@@ -50,7 +49,7 @@ class Integer : public StackObj {
 static void check_list_values(const int* expected, const LinkedList<Integer>* list) {
   LinkedListNode<Integer>* head = list->head();
   int index = 0;
-  while (head != NULL) {
+  while (head != nullptr) {
     ASSERT_EQ(expected[index], head->peek()->value())
             << "Unexpected value at index " << index;
     head = head->next();
@@ -70,14 +69,14 @@ TEST(LinkedList, simple) {
   ASSERT_TRUE(!ll.is_empty()) << "Should not be empty";
 
   Integer* i = ll.find(six);
-  ASSERT_TRUE(i != NULL) << "Should find it";
+  ASSERT_TRUE(i != nullptr) << "Should find it";
   ASSERT_EQ(six.value(), i->value()) << "Should be 6";
 
   i = ll.find(three);
-  ASSERT_TRUE(i == NULL) << "Not in the list";
+  ASSERT_TRUE(i == nullptr) << "Not in the list";
 
   LinkedListNode<Integer>* node = ll.find_node(six);
-  ASSERT_TRUE(node != NULL) << "6 is in the list";
+  ASSERT_TRUE(node != nullptr) << "6 is in the list";
 
   ll.insert_after(three, node);
   ll.insert_before(one, node);
@@ -136,7 +135,7 @@ TEST(LinkedList, generic) {
 
   LinkedListIterator<Integer> it2(dummy.head());
   EXPECT_TRUE(it2.is_empty());
-  EXPECT_EQ(it2.next(), (Integer* )NULL);
+  EXPECT_EQ(it2.next(), (Integer* )nullptr);
 }
 
 TEST(LinkedList, algorithm) {
@@ -145,7 +144,7 @@ TEST(LinkedList, algorithm) {
   il.add(2);
   il.add(3);
   EXPECT_EQ(*il.find(1), 1);
-  EXPECT_EQ(il.find(404), (int* )NULL);
+  EXPECT_EQ(il.find(404), (int* )nullptr);
   EXPECT_TRUE(il.remove(1));
   EXPECT_FALSE(il.remove(404));
 
@@ -189,7 +188,7 @@ TEST(SortedLinkedList, simple) {
   }
 
   LinkedListNode<Integer>* node = sl.find_node(four);
-  ASSERT_TRUE(node != NULL) << "4 is in the list";
+  ASSERT_TRUE(node != nullptr) << "4 is in the list";
   sl.remove_before(node);
   sl.remove_after(node);
   int remains[] = {1, 2, 4, 6};

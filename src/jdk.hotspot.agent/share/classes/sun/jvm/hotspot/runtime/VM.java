@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 import sun.jvm.hotspot.code.*;
-import sun.jvm.hotspot.c1.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.interpreter.*;
@@ -120,13 +119,12 @@ public class VM {
   private static int   Flags_WAS_SET_ON_COMMAND_LINE;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
-  /** This is only present in a C1 build */
-  private Runtime1     runtime1;
   /** These constants come from globalDefinitions.hpp */
   private int          invocationEntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
   private int          reserveForAllocationPrefetch;
+  private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
   private Properties   sysProps;
@@ -138,16 +136,17 @@ public class VM {
   private Flag[] commandLineFlags;
   private Map<String, Flag> flagsMap;
 
-  private static Type intType;
-  private static Type uintType;
-  private static Type intxType;
-  private static Type uintxType;
-  private static Type sizetType;
-  private static Type uint64tType;
+  private static CIntegerType intType;
+  private static CIntegerType uintType;
+  private static CIntegerType intxType;
+  private static CIntegerType uintxType;
+  private static CIntegerType sizetType;
+  private static CIntegerType uint64tType;
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
   private Boolean compressedKlassPointersEnabled;
+  private Boolean compactObjectHeadersEnabled;
 
   // command line flags supplied to VM - see struct JVMFlag in jvmFlag.hpp
   public static final class Flag {
@@ -432,16 +431,28 @@ public class VM {
        vmRelease = CStringUtilities.getString(releaseAddr);
        Address vmInternalInfoAddr = vmVersion.getAddressField("_s_internal_vm_info_string").getValue();
        vmInternalInfo = CStringUtilities.getString(vmInternalInfoAddr);
-
-       Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
-       CIntegerType intType = (CIntegerType) db.lookupType("int");
-       CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
-       reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
     } catch (Exception exp) {
        throw new RuntimeException("can't determine target's VM version : " + exp.getMessage());
     }
 
     checkVMVersion(vmRelease);
+
+    // Initialize common primitive types
+    intType = (CIntegerType) db.lookupType("int");
+    uintType = (CIntegerType) db.lookupType("uint");
+    intxType = (CIntegerType) db.lookupType("intx");
+    uintxType = (CIntegerType) db.lookupType("uintx");
+    sizetType = (CIntegerType) db.lookupType("size_t");
+    uint64tType = (CIntegerType) db.lookupType("uint64_t");
+    boolType = (CIntegerType) db.lookupType("bool");
+
+    Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
+    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
+    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
+
+    Type collectedHeap = db.lookupType("CollectedHeap");
+    CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
+    labAlignmentReserve = (int)labAlignmentReserveField.getCInteger(sizetType);
 
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
 
@@ -465,7 +476,7 @@ public class VM {
         usingServerCompiler = false;
       } else {
         // Determine whether C2 is present
-        if (db.lookupType("Matcher", false) != null) {
+        if (db.lookupIntConstant("COMPILER2") != null) {
           usingServerCompiler = true;
         } else {
           usingClientCompiler = true;
@@ -492,14 +503,6 @@ public class VM {
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
     Flags_WAS_SET_ON_COMMAND_LINE = db.lookupIntConstant("JVMFlag::WAS_SET_ON_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
-
-    intType = db.lookupType("int");
-    uintType = db.lookupType("uint");
-    intxType = db.lookupType("intx");
-    uintxType = db.lookupType("uintx");
-    sizetType = db.lookupType("size_t");
-    uint64tType = db.lookupType("uint64_t");
-    boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
     if ((minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
@@ -727,16 +730,6 @@ public class VM {
     return (((int) high) << 16) | (((int) low) & 0xFFFF);
   }
 
-  /** Utility routine for building a long from two "unsigned" 32-bit
-      ints in <b>platform-dependent</b> order */
-  public long buildLongFromIntsPD(int oneHalf, int otherHalf) {
-    if (isBigEndian) {
-      return (((long) otherHalf) << 32) | (((long) oneHalf) & 0x00000000FFFFFFFFL);
-    } else{
-      return (((long) oneHalf) << 32) | (((long) otherHalf) & 0x00000000FFFFFFFFL);
-    }
-  }
-
   public TypeDataBase getTypeDataBase() {
     return db;
   }
@@ -870,17 +863,6 @@ public class VM {
     return codeCache;
   }
 
-  /** Should only be called for C1 builds */
-  public Runtime1 getRuntime1() {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(isClientCompiler(), "C1 builds only");
-    }
-    if (runtime1 == null) {
-      runtime1 = new Runtime1();
-    }
-    return runtime1;
-  }
-
   /** Test to see whether we're in debugging mode (NOTE: this really
       should not be tested by this code; currently only used in
       StackFrameStream) */
@@ -939,6 +921,10 @@ public class VM {
     return reserveForAllocationPrefetch;
   }
 
+  public int getLabAlignmentReserve() {
+    return labAlignmentReserve;
+  }
+
   public boolean isSharingEnabled() {
     if (sharingEnabled == null) {
         Address address = VM.getVM().getDebugger().lookup(null, "UseSharedSpaces");
@@ -968,6 +954,15 @@ public class VM {
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
     return compressedKlassPointersEnabled.booleanValue();
+  }
+
+  public boolean isCompactObjectHeadersEnabled() {
+    if (compactObjectHeadersEnabled == null) {
+        Flag flag = getCommandLineFlag("UseCompactObjectHeaders");
+        compactObjectHeadersEnabled = (flag == null) ? Boolean.FALSE:
+             (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+    }
+    return compactObjectHeadersEnabled.booleanValue();
   }
 
   public int getObjectAlignmentInBytes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -148,6 +148,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     jbyte* nativeKeyInfoArrayRaw = NULL;
     jbyte* nativeKeyInfoWrappedKeyArrayRaw = NULL;
     unsigned int sensitiveAttributePosition = (unsigned int)-1;
+    unsigned int valueLenAttributePosition = (unsigned int)-1;
     unsigned int i = 0U;
     unsigned long totalDataSize = 0UL, attributesCount = 0UL;
     unsigned long totalCkAttributesSize = 0UL, totalNativeKeyInfoArraySize = 0UL;
@@ -200,7 +201,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     ckpAttributes = (CK_ATTRIBUTE_PTR) calloc(
             CK_ATTRIBUTES_TEMPLATE_LENGTH, sizeof(CK_ATTRIBUTE));
     if (ckpAttributes == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     memcpy(ckpAttributes, ckpAttributesTemplate,
@@ -217,6 +218,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
             if ((ckpAttributes+i)->type == CKA_SENSITIVE) {
                  sensitiveAttributePosition = attributesCount;
                  TRACE0("DEBUG: GetNativeKeyInfo key is sensitive");
+            } else if ((ckpAttributes+i)->type == CKA_VALUE_LEN) {
+                valueLenAttributePosition = attributesCount;
             }
             attributesCount++;
         }
@@ -293,6 +296,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
             (CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes,
             attributesCount);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        goto cleanup;
+    }
+
+    if (class == CKO_SECRET_KEY && (valueLenAttributePosition != (unsigned int)-1) &&
+            *(CK_ULONG*)(((CK_ATTRIBUTE_PTR)(((CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes)
+                    +valueLenAttributePosition))->pValue) > 256UL) {
+        // NSS' NSC_UnwrapKey does not accept CKO_SECRET_KEY keys with length greater
+        // than 256 (MAX_KEY_LEN - pkcs11i.h). Handle these keys as non-extractable.
         goto cleanup;
     }
 
@@ -599,7 +610,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Generate
 
     ckpKeyHandles = (CK_OBJECT_HANDLE_PTR) calloc(2, sizeof(CK_OBJECT_HANDLE));
     if (ckpKeyHandles == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     ckpPublicKeyHandle = ckpKeyHandles;   /* first element of array is Public Key */
@@ -699,7 +710,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1WrapKey
         ckpWrappedKey = (CK_BYTE_PTR)
                 calloc(ckWrappedKeyLength, sizeof(CK_BYTE));
         if (ckpWrappedKey == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,17 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Change file permission for out-of-the-box management an do test used by
- * PasswordFilePermissionTest and SSLConfigFilePermissionTest tests
+ * Change file permission for out-of-the-box management, and test.
+ * Used by PasswordFilePermissionTest and SSLConfigFilePermissionTest tests.
  *
  * @author Taras Ledkov
  */
 public abstract class AbstractFilePermissionTest {
-    private final String TEST_CLASS_PATH = System.getProperty("test.class.path");
     protected final String TEST_CLASSES = System.getProperty("test.classes");
     protected final FileSystem FS = FileSystems.getDefault();
     private int MAX_GET_FREE_PORT_TRIES = 10;
@@ -140,13 +138,15 @@ public abstract class AbstractFilePermissionTest {
         perms_0700.add(PosixFilePermission.OWNER_EXECUTE);
         Files.setPosixFilePermissions(file2PermissionTest, perms_0700);
 
-        if (doTest() != 0) {
+        int e = doTest();
+        if (e != 0) {
+            System.out.println("FAILURE: expected exit code 0, got: " + e);
             ++failures;
         }
     }
 
     /**
-     * Test 1 - SSL config file is secure - VM should start
+     * Test 2 - SSL config file is NOT secure - VM should not start
      */
     private void test2() throws Exception {
         final Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file2PermissionTest);
@@ -154,7 +154,9 @@ public abstract class AbstractFilePermissionTest {
         perms.add(PosixFilePermission.OTHERS_EXECUTE);
         Files.setPosixFilePermissions(file2PermissionTest, perms);
 
-        if (doTest() == 0) {
+        int e = doTest();
+        if (e == 0) {
+            System.out.println("FAILURE: expected exit code non-zero, got: " + e);
             ++failures;
         }
     }
@@ -165,16 +167,11 @@ public abstract class AbstractFilePermissionTest {
             final String pp = "-Dcom.sun.management.jmxremote.port=" + jdk.test.lib.Utils.getFreePort();
 
             List<String> command = new ArrayList<>();
-            Collections.addAll(command, jdk.test.lib.Utils.getTestJavaOpts());
             command.add(mp);
             command.add(pp);
-            command.add("-cp");
-            command.add(TEST_CLASSES);
             command.add(className);
 
-
-            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    command.toArray(new String[command.size()]));
+            ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
 
             System.out.println("test cmdline: " + Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
@@ -182,13 +179,15 @@ public abstract class AbstractFilePermissionTest {
             System.out.println("test output:");
             System.out.println(output.getOutput());
 
-            if ((output.getExitValue() == 0)  ||
-                !output.getOutput().contains("Exception thrown by the agent : " +
-                        "java.rmi.server.ExportException: Port already in use")) {
-                return output.getExitValue();
+            if (output.getOutput().contains("Exception thrown by the agent: java.rmi.server.ExportException: Port already in use")) {
+                if (i < MAX_GET_FREE_PORT_TRIES - 1) {
+                    System.out.println("Retrying...");
+                    continue;
+                }
             }
+            // Fail on too many port failures, and all other startup failures.
+            return output.getExitValue();
         }
-
         return -1;
     }
 

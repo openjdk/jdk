@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8282160 8292755
+ * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8282160 8292755 8319532
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -372,6 +372,13 @@ public class ClassesTest extends KullaTesting {
                            }
                        }
                        """);
+    }
+
+    public void testNonSealed() {
+        assertAnalyze("non-sealed class C extends B {}int i;",
+                      "non-sealed class C extends B {}",
+                      "int i;",
+                      true);
     }
 
 }

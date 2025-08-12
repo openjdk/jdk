@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1GCCounters.hpp"
 
@@ -31,4 +30,3 @@ G1GCCounters::G1GCCounters(G1CollectedHeap* g1h) :
   _total_full_collections(g1h->total_full_collections()),
   _old_marking_cycles_started(g1h->old_marking_cycles_started())
 {}
-

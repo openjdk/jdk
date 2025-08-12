@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,62 +21,90 @@
  * questions.
  */
 
-/**
+import java.awt.Graphics;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.io.InputStream;
+import java.io.Reader;
+
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.SheetCollate;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
+
+/*
  * @test
  * @bug 6362683 8012381
  * @summary Collation should work.
+ * @key printer
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual Collate2DPrintingTest
  */
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-import javax.print.attribute.standard.*;
-import javax.print.attribute.*;
-import javax.print.*;
-import java.io.*;
-
-public class Collate2DPrintingTest
-    extends Frame implements Doc, Printable, ActionListener {
-
-        Button print2D = new Button("2D Print");
-        Button printMerlin = new Button("PrintService");
-        PrinterJob pj = PrinterJob.getPrinterJob();
-        PrintService defService = null;
+public class Collate2DPrintingTest implements Doc, Printable {
+    private static JComponent createTestUI() {
         HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
-
-    public Collate2DPrintingTest() {
-
-        Panel butPanel = new Panel();
-        butPanel.add(print2D);
-        butPanel.add(printMerlin);
-        print2D.addActionListener(this);
-        printMerlin.addActionListener(this);
-        addWindowListener (new WindowAdapter() {
-            public void windowClosing (WindowEvent e) {
-                dispose();
-            }
-        });
-        add("South", butPanel);
-
-        defService = PrintServiceLookup.lookupDefaultPrintService();
-        PrintService[] pservice;
-        if (defService == null) {
-            pservice = PrintServiceLookup.lookupPrintServices(null, null);
-            if (pservice.length == 0) {
-                throw new RuntimeException("No printer found.  TEST ABORTED");
-            }
-            defService = pservice[0];
-        }
+        PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
         prSet.add(SheetCollate.COLLATED);
         prSet.add(new Copies(2));
-        pj.setPrintable(Collate2DPrintingTest.this);
-        setSize(300, 200);
-        setVisible(true);
+
+        JButton print2D = new JButton("2D Print");
+        print2D.addActionListener((ae) -> {
+            try {
+                PrinterJob pj = PrinterJob.getPrinterJob();
+                pj.setPrintable(new Collate2DPrintingTest());
+                if (pj.printDialog(prSet)) {
+                    pj.print(prSet);
+                }
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(print2D, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
+        });
+
+        JButton printMerlin = new JButton("PrintService");
+        printMerlin.addActionListener((ae) -> {
+            try {
+                DocPrintJob pj = defService.createPrintJob();
+                pj.print(new Collate2DPrintingTest(), prSet);
+            } catch (PrintException ex) {
+                ex.printStackTrace();
+                String msg = "PrintException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(printMerlin, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
+        });
+
+        Box main = Box.createVerticalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createVerticalGlue());
+        main.add(print2D);
+        main.add(Box.createVerticalStrut(4));
+        main.add(printMerlin);
+        main.add(Box.createVerticalGlue());
+        return main;
     }
 
-
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex)
-          throws PrinterException {
+            throws PrinterException {
         g.drawString("Page: " + pageIndex, 100, 100);
         if (pageIndex == 2) {
             return Printable.NO_SUCH_PAGE;
@@ -85,168 +113,51 @@ public class Collate2DPrintingTest
         }
     }
 
-    public void actionPerformed (ActionEvent ae) {
-        try {
-            if (ae.getSource() == print2D) {
-                if (pj.printDialog(prSet)) {
-                    pj.print(prSet);
-                }
-            } else {
-                DocPrintJob pj = defService.createPrintJob();
-                pj.print(this, prSet);
-            }
-            System.out.println ("DONE");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
+    @Override
     public DocAttributeSet getAttributes() {
         return null;
     }
 
+    @Override
     public DocFlavor getDocFlavor() {
-        DocFlavor flavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
-        return flavor;
+        return DocFlavor.SERVICE_FORMATTED.PRINTABLE;
     }
 
+    @Override
     public Object getPrintData() {
         return this;
     }
 
+    @Override
     public Reader getReaderForText() {
         return null;
     }
 
+    @Override
     public InputStream getStreamForBytes() {
         return null;
     }
 
-  public static void main( String[] args) {
+    private static final String INSTRUCTIONS =
+            "Click on the '2D Print' button.\n" +
+            "Choose copies as '2' with 'Collated' checkbox and Print\n" +
+            "\n" +
+            "Click on the 'PrintService', should get a print from default printer\n" +
+            "\n" +
+            "If you get only one copy or non 'Collated' prints from any of the above cases, " +
+            "test failed";
 
-  String[] instructions =
-        {
-         "You must have a printer available to perform this test",
-         "The print result should be collated."
-       };
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
-     new Collate2DPrintingTest();
-  }
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .splitUI(Collate2DPrintingTest::createTestUI)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build()
+                .awaitAndCheck();
+    }
 }
-
-
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.setVisible(true);
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.setVisible(true);
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      setVisible(true);
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

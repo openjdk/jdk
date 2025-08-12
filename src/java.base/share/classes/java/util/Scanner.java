@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,34 @@
 
 package java.util;
 
-import java.io.*;
-import java.math.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.charset.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.CharBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.text.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
 import java.util.function.Consumer;
-import java.util.regex.*;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -61,12 +78,25 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>As another example, this code allows {@code long} types to be
+ * <p>This code allows {@code long} types to be
  * assigned from entries in a file {@code myNumbers}:
  * {@snippet :
  *      Scanner sc = new Scanner(new File("myNumbers"));
  *      while (sc.hasNextLong()) {
  *          long aLong = sc.nextLong();
+ *      }
+ * }
+ *
+ * <p>This code uses a {@code Scanner} to read lines from {@link System#in}. The
+ * {@code Scanner} uses the system property value of
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}. Specifying
+ * the charset explicitly is important when reading from {@code System.in}, as it
+ * may differ from the {@link Charset#defaultCharset() default charset} depending
+ * on the host environment or user configuration:
+ * {@snippet :
+ *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
+ *      while (sc.hasNextLine()) {
+ *          String aLine = sc.nextLine();
  *      }
  * }
  *
@@ -172,7 +202,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p>The localized formats are defined in terms of the following parameters,
  * which for a particular locale are taken from that locale's {@link
- * java.text.DecimalFormat DecimalFormat} object, {@code df}, and its and
+ * java.text.DecimalFormat DecimalFormat} object, {@code df}, and its
  * {@link java.text.DecimalFormatSymbols DecimalFormatSymbols} object,
  * {@code dfs}.
  *
@@ -317,13 +347,13 @@ public final class Scanner implements Iterator<String>, Closeable {
     private CharBuffer buf;
 
     // Size of internal character buffer
-    private static final int BUFFER_SIZE = 1024; // change to 1024;
+    private static final int BUFFER_SIZE = 1024;
 
     // The index into the buffer currently held by the Scanner
     private int position;
 
     // Internal matcher used for finding delimiters
-    private Matcher matcher;
+    private final Matcher matcher;
 
     // Pattern used to delimit tokens
     private Pattern delimPattern;
@@ -371,7 +401,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     private Locale locale = null;
 
     // A cache of the last few recently used Patterns
-    private PatternLRUCache patternCache = new PatternLRUCache(7);
+    private final PatternLRUCache patternCache = new PatternLRUCache(7);
 
     // A holder of the last IOException encountered
     private IOException lastException;
@@ -382,14 +412,14 @@ public final class Scanner implements Iterator<String>, Closeable {
     int modCount;
 
     // A pattern for java whitespace
-    private static Pattern WHITESPACE_PATTERN = Pattern.compile(
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile(
                                                 "\\p{javaWhitespace}+");
 
     // A pattern for any token
-    private static Pattern FIND_ANY_PATTERN = Pattern.compile("(?s).*");
+    private static final Pattern FIND_ANY_PATTERN = Pattern.compile("(?s).*");
 
     // A pattern for non-ASCII digits
-    private static Pattern NON_ASCII_DIGIT = Pattern.compile(
+    private static final Pattern NON_ASCII_DIGIT = Pattern.compile(
         "[\\p{javaDigit}&&[^0-9]]");
 
     // Fields and methods to support scanning primitive types
@@ -423,9 +453,9 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Fields and methods to match bytes, shorts, ints, and longs
      */
     private Pattern integerPattern;
-    private String digits = "0123456789abcdefghijklmnopqrstuvwxyz";
-    private String non0Digit = "[\\p{javaDigit}&&[^0]]";
-    private int SIMPLE_GROUP_INDEX = 5;
+    private static final String digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+    private static final String non0Digit = "[\\p{javaDigit}&&[^0]]";
+    private static final int SIMPLE_GROUP_INDEX = 5;
     private String buildIntegerPatternString() {
         String radixDigits = digits.substring(0, radix);
         // \\p{javaDigit} is not guaranteed to be appropriate
@@ -1827,7 +1857,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@code NoSuchElementException} by using a pattern that can
      * match nothing, e.g., {@code sc.skip("[ \t]*")}.
      *
-     * @param pattern a string specifying the pattern to skip over
+     * @param pattern the pattern to skip over
      * @return this scanner
      * @throws NoSuchElementException if the specified pattern is not found
      * @throws IllegalStateException if this scanner is closed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 /*
  * @test
  * @bug 6887895
- * @summary CONSTANT_Class_info getBaseName does not handle arrays of primitives correctly
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @summary test getting constantpool elements' basename through asInternalName() API
  */
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Paths;
 import java.util.*;
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class T6887895 {
     public static void main(String[] args) throws Exception {
@@ -42,23 +42,23 @@ public class T6887895 {
     void run() throws Exception {
         Set<String> found = new TreeSet<String>();
 
-        ClassFile cf = getClassFile("T6887895$Test.class");
-        for (CPInfo cpInfo: cf.constant_pool.entries()) {
-            if (cpInfo instanceof CONSTANT_Class_info) {
-                CONSTANT_Class_info info = (CONSTANT_Class_info) cpInfo;
-                String name = info.getName();
-                String baseName = info.getBaseName();
-                System.out.println("found: " + name + " " + baseName);
-                if (baseName != null)
-                    found.add(baseName);
+        ClassModel cm = getClassFile("T6887895$Test.class");
+        ConstantPool cp = cm.constantPool();
+        for (PoolEntry pe : cp) {
+            if (pe instanceof ClassEntry ce) {
+                String name = ce.asInternalName();
+                System.out.println("found: " + name);
+                if (ce.asSymbol().isClassOrInterface())
+                    found.add(name);
             }
         }
 
         String[] expectNames = {
-            "java/lang/Object",
-            "java/lang/String",
-            "T6887895",
-            "T6887895$Test"
+                "java/lang/Object",
+                "java/lang/String",
+                "T6887895",
+                "T6887895$Test",
+                "java/util/Objects",
         };
 
         Set<String> expect = new TreeSet<String>(Arrays.asList(expectNames));
@@ -69,14 +69,9 @@ public class T6887895 {
         }
     }
 
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
-        URL url = getClass().getResource(name);
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
-        }
+    ClassModel getClassFile(String name) throws IOException, URISyntaxException {
+        URL rsc = getClass().getResource(name);
+        return ClassFile.of().parse(Paths.get(rsc.toURI()));
     }
 
     class Test {

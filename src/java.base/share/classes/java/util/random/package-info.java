@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,7 @@
  * <p> The principal supporting class is {@link RandomGeneratorFactory}. This
  * can be used to generate multiple random number generators for a specific
  * algorithm. {@link RandomGeneratorFactory} also provides methods for
- * selecting random number generator algorithms. RandomGeneratorFactory
- * registers implementations of {@link RandomGenerator} interface using the
- * service provider API.
+ * selecting random number generator algorithms.
  *
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for
@@ -83,8 +81,8 @@
  * <blockquote>{@code import java.util.random.*;}</blockquote>
  *
  * Then one can choose a specific implementation by giving the name of a generator
- * algorithm to the static method {@link RandomGenerator#of}, in which case the
- * no-arguments constructor for that implementation is used:
+ * algorithm to the static method {@link RandomGenerator#of}, in which case
+ * a {@link RandomGenerator} is constructed without any seed value:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
  *
@@ -127,8 +125,8 @@
  *
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
- * <p> There are three groups of random number generator algorithm provided
- * in Java: the Legacy group, the LXM group, and the Xoroshiro/Xoshiro group.
+ * <p> Random number generator algorithms are organized in groups,
+ * as described {@linkplain java.util.random##algorithms below}.
  *
  * <p> The legacy group includes random number generators that existed
  * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
@@ -304,6 +302,13 @@
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
+ *  </tr>
+ *  <tr>
+ *      <th scope="row" style="text-align:left">SecureRandom</th>
+ *      <td style="text-align:left">Legacy</td>
+ *      <td style="text-align:left">BigInteger.ZERO</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
  *  </tr>
  *  <tr>
  *      <th scope="row" style="text-align:left">ThreadLocalRandom <sup>*</sup></th>
@@ -636,4 +641,3 @@
  * @since   17
  */
 package java.util.random;
-

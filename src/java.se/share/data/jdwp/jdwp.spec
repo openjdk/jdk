@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1145,9 +1145,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "By default, all threads in the target VM are resumed while "
         "the method is being invoked if they were previously "
-        "suspended by an event or by command. "
+        "suspended by an event or by a command. "
         "This is done to prevent the deadlocks "
-        "that will occur if any of the threads own monitors "
+        "that will occur if any of the threads own resources, such as monitors, "
         "that will be needed by the invoked method. It is possible that "
         "breakpoints or other events might occur during the invocation. "
         "Note, however, that this implicit resume acts exactly like "
@@ -1221,9 +1221,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "By default, all threads in the target VM are resumed while "
         "the method is being invoked if they were previously "
-        "suspended by an event or by command. "
+        "suspended by an event or by a command. "
         "This is done to prevent the deadlocks "
-        "that will occur if any of the threads own monitors "
+        "that will occur if any of the threads own resources, such as monitors, "
         "that will be needed by the invoked method. It is possible that "
         "breakpoints or other events might occur during the invocation. "
         "Note, however, that this implicit resume acts exactly like "
@@ -1321,7 +1321,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "the method is being invoked if they were previously "
         "suspended by an event or by a command. "
         "This is done to prevent the deadlocks "
-        "that will occur if any of the threads own monitors "
+        "that will occur if any of the threads own resources, such as monitors, "
         "that will be needed by the invoked method. It is possible that "
         "breakpoints or other events might occur during the invocation. "
         "Note, however, that this implicit resume acts exactly like "
@@ -1617,11 +1617,14 @@ JDWP "Java(tm) Debug Wire Protocol"
             (object object "The object ID")
         )
         (Reply
-            (threadObject owner "The monitor owner, or null if it is not currently owned.")
-            (int entryCount "The number of times the monitor has been entered.")
-            (Repeat waiters "The number of threads that are waiting for the monitor "
-                            "0 if there is no current owner"
-                (threadObject thread "A thread waiting for this monitor.")
+            (threadObject owner "The platform thread owning this monitor, or null "
+                                "if owned by a virtual thread or not owned.")
+            (int entryCount "The number of times the owning platform thread has entered the monitor, "
+                            "or 0 if owned by a virtual thread or not owned.")
+            (Repeat waiters "The total number of platform threads that are waiting to enter or re-enter "
+                            "the monitor, or waiting to be notified by the monitor, or 0 if "
+                            "only virtual threads are waiting or no threads are waiting."
+                (threadObject thread "A platform thread waiting for this monitor.")
             )
         )
         (ErrorSet
@@ -1662,7 +1665,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "the method is being invoked if they were previously "
         "suspended by an event or by a command. "
         "This is done to prevent the deadlocks "
-        "that will occur if any of the threads own monitors "
+        "that will occur if any of the threads own resources, such as monitors, "
         "that will be needed by the invoked method. It is possible that "
         "breakpoints or other events might occur during the invocation. "
         "Note, however, that this implicit resume acts exactly like "
@@ -1980,9 +1983,9 @@ JDWP "Java(tm) Debug Wire Protocol"
     )
     (Command CurrentContendedMonitor=9
         "Returns the object, if any, for which this thread is waiting. The "
-        "thread may be waiting to enter a monitor, or it may be waiting, via "
-        "the java.lang.Object.wait method, for another thread to invoke the "
-        "notify method. "
+        "thread may be waiting to enter the object's monitor, or in "
+        "java.lang.Object.wait waiting to re-enter the monitor after being "
+        "notified, interrupted, or timed-out."
         "The thread must be suspended, and the returned information is "
         "relevant only while the thread is suspended. "
         "Requires canGetCurrentContendedMonitor capability - see "
@@ -2004,10 +2007,11 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command Stop=10
         "Stops the thread with an asynchronous exception. "
         "<p>"
-        "The target VM may not support, or may only provide limited support, for "
-        "this command when the thread is a virtual thread. It may, for example, "
-        "only support this command when the virtual thread is suspended at a "
-        "breakpoint or singlestep event."
+        "This command may be used to send an asynchronous "
+        "exception to a virtual thread when it is suspended at an event. "
+        "An implementation may support sending an asynchronous exception "
+        "to a suspended virtual thread in other cases."
+
         (Out
             (threadObject thread "The thread object ID. ")
             (object throwable "Asynchronous exception. This object must "
@@ -2018,8 +2022,10 @@ JDWP "Java(tm) Debug Wire Protocol"
         (ErrorSet
             (Error INVALID_THREAD "The thread is null, not a valid thread, or the thread "
                                   "is not alive.")
-            (Error NOT_IMPLEMENTED "The thread is a virtual thread and the target "
-                                  "VM does not support the command on virtual threads.")
+            (Error THREAD_NOT_SUSPENDED "The thread is a virtual thread and was not suspended.")
+            (Error OPAQUE_FRAME   "The thread is a suspended virtual thread and the implementation "
+                                  "was unable to throw an asynchronous exception "
+                                  "from the thread's current frame.")
             (Error INVALID_OBJECT "If thread is not a known ID or the asynchronous "
                                   "exception has been garbage collected.")
             (Error VM_DEAD)
@@ -2101,10 +2107,10 @@ JDWP "Java(tm) Debug Wire Protocol"
         "command and resumption of thread execution, the "
         "state of the stack is undefined. "
         "<p>"
-        "The target VM may not support, or may only provide limited support, for "
-        "this command when the thread is a virtual thread. It may, for example, "
-        "only support this command when the virtual thread is suspended at a "
-        "breakpoint or singlestep event."
+        "This command may be used to force a return from the current frame "
+        "of a virtual thread when it is suspended at an event. "
+        "An implementation may support forcing a return from the current frame "
+        "of a suspended virtual thread in other cases."
         "<p>"
         "No further instructions are executed in the called "
         "method. Specifically, finally blocks are not executed. Note: "
@@ -2144,7 +2150,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error THREAD_NOT_SUSPENDED)
             (Error OPAQUE_FRAME      "Attempted to return early from a frame "
                                      "corresponding to a native method, "
-                                     "the thread is a virtual thread and the target "
+                                     "the thread is a suspended virtual thread and the target "
                                      "VM is unable to force its current frame to return, "
                                      "or the implementation is unable to provide this "
                                      "functionality on this frame.")
@@ -2156,12 +2162,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         )
     )
     (Command IsVirtual=15
-        "<b>IsVirtual is a preview API of the Java platform.</b> "
-        "<em>Preview features may be removed in a future release, or upgraded to "
-        "permanent features of the Java platform.</em> Since JDWP version 19."
-        "<p>"
         "Determine if a thread is a "
         "<a href=../../api/java.base/java/lang/Thread.html#virtual-threads>virtual thread</a>."
+        "<p>Since JDWP version 21."
         (Out
             (threadObject thread "The thread object ID.")
         )
@@ -2537,12 +2540,9 @@ JDWP "Java(tm) Debug Wire Protocol"
                         )
                     )
                     (Alt PlatformThreadsOnly=13
-                        "<b>PlatformThreadsOnly is a preview API of the Java platform.</b> "
-                        "<em>Preview features may be removed in a future release, or upgraded to "
-                        "permanent features of the Java platform.</em> Since JDWP version 19."
-                        "<p>"
                         "For thread start and thread end events, restrict the "
                         "events so they are only sent for platform threads."
+                        "<p>Since JDWP version 21."
                     )
 
                 )
@@ -2644,7 +2644,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "If the thread is a virtual thread then this command can be used to set "
         "the value of local variables in the top-most frame when the thread is "
-        "suspended at a breakpoint or single step event. The target VM may support "
+        "suspended at an event. The target VM may support "
         "setting local variables in other cases."
         (Out
             (threadObject thread "The frame's thread. ")
@@ -2662,7 +2662,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
-            (Error OPAQUE_FRAME      "The thread is a virtual thread and the target VM "
+            (Error OPAQUE_FRAME      "The thread is a suspended virtual thread and the target VM "
                                      "does not support setting the value of local "
                                      "variables in the frame.")
             (Error VM_DEAD)
@@ -2695,10 +2695,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<code>objectref</code> is added back as well. The Java virtual machine "
         "program counter is restored to the opcode of the invoke instruction."
         "<p>"
-        "The target VM may not support, or may only provide limited support, for this "
-        "command when the thread is a virtual thread. It may, for example, only support "
-        "this command when the virtual thread is suspended at a breakpoint or singlestep "
-        "event."
+        "This command may be used to pop frames of a virtual thread when "
+        "it is suspended at an event. An implementation may support popping "
+        "the frames of a suspended virtual thread in other cases."
         "<p>"
         "Since JDWP version 1.4. Requires canPopFrames capability - see "
         "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>."
@@ -2716,8 +2715,8 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error NO_MORE_FRAMES)
             (Error OPAQUE_FRAME      "If one or more of the frames to pop is a native "
                                      "method or its caller is a native method, or the "
-                                     "thread is a virtual thread and the implementation "
-                                     "is unable to pop the frames.")
+                                     "thread is a suspended virtual thread and the implementation "
+                                     "was unable to pop the frames.")
             (Error NOT_IMPLEMENTED)
             (Error VM_DEAD)
         )
@@ -2875,7 +2874,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "if not explicitly requested."
 
                      (int requestID
-                             "Request that generated event (or 0 if this "
+                             "Request that generated event, or 0 if this "
                              "event is automatically generated.")
                         (threadObject thread "Initial thread")
                     )
@@ -3172,7 +3171,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                                           "call stack.")
     (Constant OPAQUE_FRAME           =32  "Information about the frame is not available "
                                           "(e.g. native frame) or the target VM is unable "
-                                          "to perform an operation on the frame.")
+                                          "to perform an operation on the thread's current frame.")
     (Constant NOT_CURRENT_FRAME      =33  "Operation can only be performed on current frame.")
     (Constant TYPE_MISMATCH          =34  "The variable is not an appropriate type for "
                                           "the function used.")

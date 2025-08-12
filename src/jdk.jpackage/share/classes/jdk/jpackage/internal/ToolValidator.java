@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -45,7 +48,7 @@ public final class ToolValidator {
         this.toolPath = toolPath;
         args = new ArrayList<>();
 
-        if (Platform.getPlatform() == Platform.LINUX) {
+        if (OperatingSystem.isLinux()) {
             setCommandLine("--version");
         }
 
@@ -61,6 +64,10 @@ public final class ToolValidator {
     ToolValidator setMinimalVersion(Comparable<String> v) {
         minimalVersion = v;
         return this;
+    }
+
+    ToolValidator setMinimalVersion(DottedVersion v) {
+        return setMinimalVersion(t -> DottedVersion.compareComponents(v, DottedVersion.lazy(t)));
     }
 
     ToolValidator setVersionParser(Function<Stream<String>, String> v) {

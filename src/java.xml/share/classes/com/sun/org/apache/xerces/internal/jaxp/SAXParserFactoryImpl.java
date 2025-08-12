@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,6 @@
 package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -29,6 +28,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.JdkXmlConfig;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -41,6 +43,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
+ * @LastModified: May 2025
  */
 public class SAXParserFactoryImpl extends SAXParserFactory {
 
@@ -65,6 +68,16 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
      */
     private boolean fSecureProcess = true;
 
+    // Security Managers
+    XMLSecurityManager fSecurityManager;
+    XMLSecurityPropertyManager fSecurityPropertyMgr;
+
+    public SAXParserFactoryImpl() {
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+    }
+
     /**
      * Creates a new instance of <code>SAXParser</code> using the currently
      * configured factory parameters.
@@ -75,6 +88,8 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
     {
         SAXParser saxParserImpl;
         try {
+            // read system properties for compatibility
+            fSecurityManager.readSystemProperties();
             saxParserImpl = new SAXParserImpl(this, features, fSecureProcess);
         } catch (SAXException se) {
             // Translate to ParserConfigurationException
@@ -107,7 +122,6 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
      * Sets the particular feature in the underlying implementation of
      * org.xml.sax.XMLReader.
      */
-    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException, SAXNotRecognizedException,
                 SAXNotSupportedException {
@@ -116,12 +130,8 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
         }
         // If this is the secure processing feature, save it then return.
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            if (System.getSecurityManager() != null && (!value)) {
-                throw new ParserConfigurationException(
-                        SAXMessageFormatter.formatMessage(null,
-                        "jaxp-secureprocessing-feature", null));
-            }
             fSecureProcess = value;
+            fSecurityManager.setSecureProcessing(fSecureProcess);
             putInFeatures(name, value);
             return;
         }

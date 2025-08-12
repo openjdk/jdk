@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,39 @@ JNI_COCOA_ENTER(env);
     }];
 JNI_COCOA_EXIT(env);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_CClipboard
+ * Method:    writeFileObjects
+ * Signature: ([B)V
+*/
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_writeFileObjects
+(JNIEnv *env, jobject inObject, jbyteArray inBytes)
+{
+    CHECK_NULL(inBytes);
+
+JNI_COCOA_ENTER(env);
+    jint nBytes = (*env)->GetArrayLength(env, inBytes);
+    jbyte *rawBytes = (*env)->GetPrimitiveArrayCritical(env, inBytes, NULL);
+    CHECK_NULL(rawBytes);
+    NSMutableArray *formatArray = [NSMutableArray arrayWithCapacity:2];
+    int i = 0;
+    for (int j = 0; j < nBytes; j++) {
+        if (rawBytes[j] == 0) {
+            NSString *path = [NSString stringWithUTF8String:(const char*)(rawBytes + i)];
+            NSURL *fileURL = [NSURL fileURLWithPath:path];
+            [formatArray addObject:fileURL.absoluteURL];
+            i = j + 1;
+        }
+    }
+    (*env)->ReleasePrimitiveArrayCritical(env, inBytes, rawBytes, JNI_ABORT);
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
+        [[NSPasteboard generalPasteboard] writeObjects:formatArray];
+    }];
+JNI_COCOA_EXIT(env);
+}
+
 
 /*
  * Class:     sun_lwawt_macosx_CClipboard

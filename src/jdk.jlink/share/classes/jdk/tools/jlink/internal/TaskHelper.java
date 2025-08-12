@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.Collections;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
 import java.util.Comparator;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -55,7 +53,6 @@ import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
-import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
@@ -230,7 +227,6 @@ public final class TaskHelper {
         private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
-        private Path existingImage;
 
         // plugin to args maps. Each plugin may be used more than once in command line.
         // Each such occurrence results in a Map of arguments. So, there could be multiple
@@ -259,13 +255,6 @@ public final class TaskHelper {
                     throw newBadArgs("err.no.such.plugin", arg);
                 },
                 false, "--disable-plugin"));
-            mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
-                Path path = Paths.get(arg);
-                if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.image.must.exist", path);
-                }
-                existingImage = path.toAbsolutePath();
-            }, true, "--post-process-path"));
             mainOptions.add(new PluginOption(true,
                     (task, opt, arg) -> {
                         lastSorter = arg;
@@ -417,8 +406,9 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
-                    ) throws IOException, BadArgs {
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                      Platform targetPlatform)
+                throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
                     throw new IllegalArgumentException(PluginsResourceBundle.
@@ -465,7 +455,7 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output, launchers);
+                builder = new DefaultImageBuilder(output, launchers, targetPlatform);
             }
 
             return new Jlink.PluginsConfiguration(pluginsList,
@@ -545,18 +535,21 @@ public final class TaskHelper {
                     }
                     Option<?> opt = pluginOption == null ? option : pluginOption;
                     String param = null;
+                    boolean potentiallyGnuOption = false;
                     if (opt.hasArg) {
                         if (name.startsWith("--") && name.indexOf('=') > 0) {
                             param = name.substring(name.indexOf('=') + 1,
                                     name.length());
                         } else if (i + 1 < args.length) {
+                            potentiallyGnuOption = true;
                             param = args[++i];
                         }
-                        if (param == null || param.isEmpty()
-                                || (param.length() >= 2 && param.charAt(0) == '-'
-                                && param.charAt(1) == '-')) {
-                            throw new BadArgs("err.missing.arg", name).
-                                    showUsage(true);
+                        if (param == null || param.isEmpty()) {
+                            throw new BadArgs("err.missing.arg", name).showUsage(true);
+                        }
+                        if (potentiallyGnuOption && param.length() >= 2 &&
+                                param.charAt(0) == '-' && param.charAt(1) == '-') {
+                            throw new BadArgs("err.ambiguous.arg", name).showUsage(false);
                         }
                     }
                     if (pluginOption != null) {
@@ -591,7 +584,7 @@ public final class TaskHelper {
             return null;
         }
 
-        public void showHelp(String progName) {
+        public void showHelp(String progName, boolean linkableRuntimeEnabled) {
             log.println(bundleHelper.getMessage("main.usage", progName));
             Stream.concat(options.stream(), pluginOptions.mainOptions.stream())
                 .filter(option -> !option.isHidden())
@@ -601,6 +594,17 @@ public final class TaskHelper {
                 });
 
             log.println(bundleHelper.getMessage("main.command.files"));
+            // If the JDK build has the run-time image capability show it
+            // in the help output in human readable form.
+            String qualifier = null;
+            if (linkableRuntimeEnabled) {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.enabled");
+            } else {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.disabled");
+            }
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.sect.header"));
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.msg",
+                                                qualifier));
         }
 
         public void listPlugins() {
@@ -716,13 +720,10 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                 Platform targetPlatform)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, launchers);
-    }
-
-    public Path getExistingImage() {
-        return pluginOptions.existingImage;
+        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform);
     }
 
     public void showVersion(boolean full) {

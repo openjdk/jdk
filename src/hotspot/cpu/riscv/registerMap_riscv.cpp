@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/registerMap.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -34,10 +33,10 @@ address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
                        VectorRegister::max_slots_per_register;
     intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
     address base_location = location(base_reg, nullptr);
-    if (base_location != NULL) {
+    if (base_location != nullptr) {
       return base_location + offset_in_bytes;
     } else {
-      return NULL;
+      return nullptr;
     }
   } else {
     return location(base_reg->next(slot_idx), nullptr);

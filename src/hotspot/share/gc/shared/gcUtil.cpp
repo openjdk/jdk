@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcUtil.hpp"
 
 // Catch-all file for utility classes
@@ -86,10 +85,10 @@ void AdaptivePaddedAverage::sample(float new_sample) {
 
   // Now update the deviation and the padded average.
   float new_avg = average();
-  float new_dev = compute_adaptive_average(fabsd(new_sample - new_avg),
+  float new_dev = compute_adaptive_average(fabs(new_sample - new_avg),
                                            deviation());
   set_deviation(new_dev);
-  set_padded_average(new_avg + padding() * new_dev);
+  set_padded_average(new_avg + (float)padding() * new_dev);
   _last_sample = new_sample;
 }
 
@@ -100,12 +99,12 @@ void AdaptivePaddedNoZeroDevAverage::sample(float new_sample) {
   float new_avg = average();
   if (new_sample != 0) {
     // We only create a new deviation if the sample is non-zero
-    float new_dev = compute_adaptive_average(fabsd(new_sample - new_avg),
+    float new_dev = compute_adaptive_average(fabs(new_sample - new_avg),
                                              deviation());
 
     set_deviation(new_dev);
   }
-  set_padded_average(new_avg + padding() * deviation());
+  set_padded_average(new_avg + (float)padding() * deviation());
   _last_sample = new_sample;
 }
 
@@ -118,8 +117,8 @@ void LinearLeastSquareFit::update(double x, double y) {
   _sum_x_squared = _sum_x_squared + x * x;
   _sum_y = _sum_y + y;
   _sum_xy = _sum_xy + x * y;
-  _mean_x.sample(x);
-  _mean_y.sample(y);
+  _mean_x.sample((float)x);  // Used to track generation sizes so casting to float should
+  _mean_y.sample((float)y);  // not lose precision for valid samples.
   assert(_mean_x.count() == _mean_y.count(), "Incorrect count");
   if ( _mean_x.count() > 1 ) {
     double slope_denominator;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -83,7 +82,7 @@ static void report_handle_allocation_failure(AllocFailType alloc_failmode,
 }
 
 jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jobject res = nullptr;
   if (!obj.is_null()) {
@@ -105,7 +104,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
 }
 
 jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jweak res = nullptr;
   if (!obj.is_null()) {
@@ -199,13 +198,9 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     default:
       ShouldNotReachHere();
     }
-  } else {
+  } else if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
     // Not in global storage.  Might be a local handle.
-    if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
-      result = JNILocalRefType;
-    } else {
-      ShouldNotReachHere();
-    }
+    result = JNILocalRefType;
   }
   return result;
 }
@@ -255,7 +250,7 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  st->print_cr("JNI global refs: " SIZE_FORMAT ", weak refs: " SIZE_FORMAT,
+  st->print_cr("JNI global refs: %zu, weak refs: %zu",
                global_handles()->allocation_count(),
                weak_global_handles()->allocation_count());
   st->cr();
@@ -347,9 +342,9 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
   block->_next = nullptr;
   block->_pop_frame_link = nullptr;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
-  debug_only(block->_last = nullptr);
-  debug_only(block->_free_list = nullptr);
-  debug_only(block->_allocate_before_rebuild = -1);
+  DEBUG_ONLY(block->_last = nullptr);
+  DEBUG_ONLY(block->_free_list = nullptr);
+  DEBUG_ONLY(block->_allocate_before_rebuild = -1);
   return block;
 }
 
@@ -378,7 +373,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
       Atomic::dec(&_blocks_allocated);
-      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be nullptr");
+      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;
     }

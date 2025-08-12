@@ -57,17 +57,22 @@ import org.w3c.dom.Node;
  */
 public class Init {
 
-    /** The namespace for CONF file **/
+    /**
+     * The namespace for CONF file
+     **/
     public static final String CONF_NS = "http://www.xmlsecurity.org/NS/#configuration";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
-        com.sun.org.slf4j.internal.LoggerFactory.getLogger(Init.class);
+            com.sun.org.slf4j.internal.LoggerFactory.getLogger(Init.class);
 
-    /** Field alreadyInitialized */
+    /**
+     * Field alreadyInitialized
+     */
     private static boolean alreadyInitialized = false;
 
     /**
      * Method isInitialized
+     *
      * @return true if the library is already initialized.
      */
     public static final synchronized boolean isInitialized() {
@@ -76,35 +81,28 @@ public class Init {
 
     /**
      * Method init
-     *
      */
     public static synchronized void init() {
         if (alreadyInitialized) {
             return;
         }
-
-        @SuppressWarnings("removal")
-        InputStream is =    //NOPMD
-            AccessController.doPrivileged(
-                (PrivilegedAction<InputStream>)
-                    () -> {
-                        String cfile =
-                            System.getProperty("com.sun.org.apache.xml.internal.security.resource.config");
-                        if (cfile == null) {
-                            return null;
-                        }
-                        return getResourceAsStream(cfile, Init.class);
-                    }
-                );
-        if (is == null) {
-            dynamicInit();
-        } else {
-            fileInit(is);
-            try {
-                is.close();
-            } catch (IOException ex) {
-                LOG.warn(ex.getMessage());
+        PrivilegedAction<InputStream> action = () -> {
+            String cfile = System.getProperty("com.sun.org.apache.xml.internal.security.resource.config");
+            if (cfile == null) {
+                return null;
             }
+            return getResourceAsStream(cfile, Init.class);
+        };
+
+        try (@SuppressWarnings("removal")
+             InputStream is = AccessController.doPrivileged(action)) {
+            if (is == null) {
+                dynamicInit();
+            } else {
+                fileInit(is);
+            }
+        } catch (IOException ex) {
+            LOG.warn(ex.getMessage(), ex);
         }
 
         alreadyInitialized = true;
@@ -412,9 +410,11 @@ public class Init {
         }
         List<URL> ret = new ArrayList<>();
         Enumeration<URL> urls = new Enumeration<URL>() {
+            @Override
             public boolean hasMoreElements() {
                 return false;
             }
+            @Override
             public URL nextElement() {
                 return null;
             }

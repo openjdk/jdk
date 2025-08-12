@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -58,6 +59,7 @@ public class HelloClasslist {
 
     private static final Logger LOGGER = Logger.getLogger("Hello");
 
+    @SuppressWarnings("restricted")
     public static void main(String ... args) throws Throwable {
 
         FileSystems.getDefault();
@@ -132,12 +134,15 @@ public class HelloClasslist {
         String oldDate = String.format("%s%n",
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
+        StandardCharsets.US_ASCII.encode("");
+        StandardCharsets.UTF_8.encode("");
 
         // A selection of trivial and common reflection operations
         var instance = HelloClasslist.class.getConstructor().newInstance();
         HelloClasslist.class.getMethod("staticMethod_V").invoke(null);
         var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
         HelloClasslist.class.getField("field").get(instance);
+        MethodHandles.Lookup.ClassOption.class.getEnumConstants();
 
         // A selection of trivial and relatively common MH operations
         invoke(MethodHandles.identity(double.class), 1.0);
@@ -147,6 +152,20 @@ public class HelloClasslist {
         invoke(handle("staticMethod_V", MethodType.methodType(void.class)));
 
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
+
+        // Pull SwitchBootstraps and associated classes into the classlist
+        record A(int a) { }
+        record B(int b) { }
+        Object o = new A(4711);
+        int value = switch (o) {
+            case A a -> a.a;
+            case B b -> b.b;
+            default -> 17;
+        };
+        // record run-time methods
+        o.equals(new B(5));
+        o.hashCode();
+        LOGGER.log(Level.FINE, "Value: " + value);
 
         // The Striped64$Cell is loaded rarely only when there's a contention among
         // multiple threads performing LongAdder.increment(). This results in

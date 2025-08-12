@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -40,7 +40,7 @@ class JfrBasicHashtableEntry : public JfrCHeapObj {
   uintptr_t _hash;
 
  public:
-  JfrBasicHashtableEntry(uintptr_t hash, const T& data) : _next(NULL), _literal(data), _hash(hash) {}
+  JfrBasicHashtableEntry(uintptr_t hash, const T& data) : _next(nullptr), _literal(data), _hash(hash) {}
   uintptr_t hash() const { return _hash; }
   T literal() const { return _literal; }
   T* literal_addr() { return &_literal; }
@@ -77,7 +77,7 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
 
  protected:
   JfrBasicHashtable(uintptr_t table_size, size_t entry_size) :
-    _buckets(NULL), _table_size(table_size), _entry_size(entry_size), _number_of_entries(0) {
+    _buckets(nullptr), _table_size(table_size), _entry_size(entry_size), _number_of_entries(0) {
     _buckets = NEW_C_HEAP_ARRAY2(Bucket, table_size, mtTracing, CURRENT_PC);
     memset((void*)_buckets, 0, table_size * sizeof(Bucket));
   }
@@ -89,7 +89,7 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
   }
   size_t entry_size() const { return _entry_size; }
   void unlink_entry(TableEntry* entry) {
-    entry->set_next(NULL);
+    entry->set_next(nullptr);
     --_number_of_entries;
   }
   void free_buckets() {
@@ -100,7 +100,7 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
   uintptr_t table_size() const { return _table_size; }
   size_t number_of_entries() const { return _number_of_entries; }
   void add_entry(size_t index, TableEntry* entry) {
-    assert(entry != NULL, "invariant");
+    assert(entry != nullptr, "invariant");
     entry->set_next(bucket(index));
     _buckets[index].set_entry(entry);
     ++_number_of_entries;
@@ -115,7 +115,7 @@ class AscendingId : public JfrCHeapObj  {
   AscendingId() : _id(0) {}
   // callbacks
   void on_link(Entry* entry) {
-    assert(entry != NULL, "invariant");
+    assert(entry != nullptr, "invariant");
     assert(entry->id() == 0, "invariant");
     entry->set_id(++_id);
   }
@@ -158,14 +158,14 @@ class HashTableHost : public JfrBasicHashtable<T> {
   // lookup entry, will put if not found
   HashEntry& lookup_put(uintptr_t hash, const T& data) {
     HashEntry* entry = lookup_only(hash);
-    return entry == NULL ? put(hash, data) : *entry;
+    return entry == nullptr ? put(hash, data) : *entry;
   }
 
   HashEntry* lookup_only(uintptr_t hash);
 
   // id retrieval
   IdType id(uintptr_t hash, const T& data) {
-    assert(data != NULL, "invariant");
+    assert(data != nullptr, "invariant");
     const HashEntry& entry = lookup_put(hash, data);
     assert(entry.id() > 0, "invariant");
     return entry.id();
@@ -183,7 +183,7 @@ class HashTableHost : public JfrBasicHashtable<T> {
 
   // removal and deallocation
   void free_entry(HashEntry* entry) {
-    assert(entry != NULL, "invariant");
+    assert(entry != nullptr, "invariant");
     JfrBasicHashtable<T>::unlink_entry(entry);
     _callback->on_unlink(entry);
     delete entry;
@@ -194,7 +194,7 @@ class HashTableHost : public JfrBasicHashtable<T> {
   size_t index_for(uintptr_t hash) { return this->hash_to_index(hash); }
   HashEntry* new_entry(uintptr_t hash, const T& data);
   void add_entry(size_t index, HashEntry* new_entry) {
-    assert(new_entry != NULL, "invariant");
+    assert(new_entry != nullptr, "invariant");
     _callback->on_link(new_entry);
     assert(new_entry->id() > 0, "invariant");
     JfrBasicHashtable<T>::add_entry(index, new_entry);
@@ -203,7 +203,7 @@ class HashTableHost : public JfrBasicHashtable<T> {
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
 Entry<T, IdType>& HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::put(uintptr_t hash, const T& data) {
-  assert(lookup_only(hash) == NULL, "use lookup_put()");
+  assert(lookup_only(hash) == nullptr, "use lookup_put()");
   HashEntry* const entry = new_entry(hash, data);
   add_entry(index_for(hash), entry);
   return *entry;
@@ -212,13 +212,13 @@ Entry<T, IdType>& HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::put(uin
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
 Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::lookup_only(uintptr_t hash) {
   HashEntry* entry = (HashEntry*)this->bucket(index_for(hash));
-  while (entry != NULL) {
+  while (entry != nullptr) {
     if (entry->hash() == hash && _callback->on_equals(hash, entry)) {
       return entry;
     }
     entry = (HashEntry*)entry->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
@@ -226,7 +226,7 @@ template <typename Functor>
 void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::iterate_value(Functor& f) {
   for (size_t i = 0; i < this->table_size(); ++i) {
     const HashEntry* entry = (const HashEntry*)this->bucket(i);
-    while (entry != NULL) {
+    while (entry != nullptr) {
       if (!f(entry->value())) {
         break;
       }
@@ -240,7 +240,7 @@ template <typename Functor>
 void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::iterate_entry(Functor& f) {
   for (size_t i = 0; i < this->table_size(); ++i) {
     const HashEntry* entry = (const HashEntry*)this->bucket(i);
-    while (entry != NULL) {
+    while (entry != nullptr) {
       if (!f(entry)) {
         break;
       }
@@ -254,12 +254,12 @@ void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::clear_entries() {
   for (size_t i = 0; i < this->table_size(); ++i) {
     HashEntry** bucket = (HashEntry**)this->bucket_addr(i);
     HashEntry* entry = *bucket;
-    while (entry != NULL) {
+    while (entry != nullptr) {
       HashEntry* entry_to_remove = entry;
       entry = (HashEntry*)entry->next();
       this->free_entry(entry_to_remove);
     }
-    *bucket = NULL;
+    *bucket = nullptr;
   }
   assert(this->number_of_entries() == 0, "should have removed all entries");
 }
@@ -268,7 +268,7 @@ template <typename T, typename IdType, template <typename, typename> class Entry
 Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::new_entry(uintptr_t hash, const T& data) {
   assert(sizeof(HashEntry) == this->entry_size(), "invariant");
   HashEntry* const entry = new HashEntry(hash, data);
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(0 == entry->id(), "invariant");
   return entry;
 }

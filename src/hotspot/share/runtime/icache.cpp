@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,38 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
 // The flush stub function address
 AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = nullptr;
 
-void AbstractICache::initialize() {
+void AbstractICache::initialize(int phase) {
   // Making this stub must be FIRST use of assembler
   ResourceMark rm;
 
-  BufferBlob* b = BufferBlob::create("flush_icache_stub", ICache::stub_size);
+  const char* stub_name = nullptr;
+  switch (phase) {
+    case 1:
+      stub_name = "flush_icache_initial_stub";
+      break;
+    case 2:
+      stub_name = "flush_icache_final_stub";
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  BufferBlob* b = BufferBlob::create(stub_name, ICache::stub_size);
   if (b == nullptr) {
-    vm_exit_out_of_memory(ICache::stub_size, OOM_MALLOC_ERROR, "CodeCache: no space for flush_icache_stub");
+    vm_exit_out_of_memory(ICache::stub_size, OOM_MALLOC_ERROR, "CodeCache: no space for %s", stub_name);
   }
   CodeBuffer c(b);
 
-  ICacheStubGenerator g(&c);
+  ICacheStubGenerator g(stub_name, &c);
   g.generate_icache_flush(&_flush_icache_stub);
 
   // The first use of flush_icache_stub must apply it to itself.
@@ -96,7 +108,7 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
   }
   // Align start address to an icache line boundary and transform
   // nbytes to an icache line count.
-  const uint line_offset = mask_address_bits(start, ICache::line_size-1);
+  const uint line_offset = uintptr_t(start) & (ICache::line_size-1);
   if (line_offset != 0) {
     start -= line_offset;
     nbytes += line_offset;
@@ -107,5 +119,9 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 
 // For init.cpp
 void icache_init() {
-  ICache::initialize();
+  ICache::initialize(1);
+}
+
+void icache_init2() {
+  ICache::initialize(2);
 }

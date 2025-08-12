@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
@@ -39,17 +38,17 @@ TEST_VM(PlaceholderTable, supername) {
   ThreadInVMfromNative tivfn(THREAD);
 
   // Assert messages assume these symbols are unique, and the refcounts start at one.
-  TempNewSymbol A = SymbolTable::new_symbol("abc2_8_2023_class");
-  TempNewSymbol D = SymbolTable::new_symbol("def2_8_2023_class");
+  Symbol* A = SymbolTable::new_symbol("abc2_8_2023_class");
+  Symbol* D = SymbolTable::new_symbol("def2_8_2023_class");
   Symbol* super = SymbolTable::new_symbol("super2_8_2023_supername");
-  TempNewSymbol interf = SymbolTable::new_symbol("interface2_8_2023_supername");
+  Symbol* interf = SymbolTable::new_symbol("interface2_8_2023_supername");
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
 
   {
     MutexLocker ml(THREAD, SystemDictionary_lock);
 
-    PlaceholderTable::classloadAction super_action = PlaceholderTable::LOAD_SUPER;
+    PlaceholderTable::classloadAction super_action = PlaceholderTable::DETECT_CIRCULARITY;
     PlaceholderTable::classloadAction define_action = PlaceholderTable::DEFINE_CLASS;
 
     // DefineClass A and D
@@ -71,7 +70,7 @@ TEST_VM(PlaceholderTable, supername) {
 
     // Another thread comes in and finds A loading Super
     PlaceholderEntry* placeholder = PlaceholderTable::get_entry(A, loader_data);
-    SymbolHandle supername = placeholder->supername();
+    SymbolHandle supername = placeholder->next_klass_name();
 
     // Other thread is done before handle_parallel_super_load
     PlaceholderTable::find_and_remove(A, loader_data, super_action, THREAD);
@@ -86,7 +85,7 @@ TEST_VM(PlaceholderTable, supername) {
     // Refcount should be 3: one in table for class A, one in table for class D
     // and one locally with SymbolHandle keeping it alive
     placeholder = PlaceholderTable::get_entry(A, loader_data);
-    supername = placeholder->supername();
+    supername = placeholder->next_klass_name();
     EXPECT_EQ(super->refcount(), 3) << "super class name refcount should be 3";
 
     // Second thread's done too
@@ -110,4 +109,9 @@ TEST_VM(PlaceholderTable, supername) {
   EXPECT_EQ(A->refcount(), 1) << "first lass name refcount should be 1";
   EXPECT_EQ(D->refcount(), 1) << "second class name refcount should be 1";
   EXPECT_EQ(super->refcount(), 0) << "super class name refcount should be 0 - was unloaded.";
+
+  // clean up temporary symbols
+  A->decrement_refcount();
+  D->decrement_refcount();
+  interf->decrement_refcount();
 }

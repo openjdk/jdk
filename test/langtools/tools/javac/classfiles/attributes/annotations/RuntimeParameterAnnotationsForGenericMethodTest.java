@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8044411
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
  *          Checks that the attribute is generated for bridge method.
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
@@ -68,9 +67,9 @@ public class RuntimeParameterAnnotationsForGenericMethodTest extends RuntimePara
             // generate: public class Test extends java.util.ArrayList<Integer>
             TestCase testCase = new TestCase();
             TestCase.TestClassInfo clazz = testCase.addClassInfo("java.util.ArrayList<Integer>", ClassType.CLASS, "Test");
-            TestCase.TestParameterInfo parameter = clazz.addMethodInfo("add(java.lang.Integer)", "public").addParameter("Integer", "i");
+            TestCase.TestParameterInfo parameter = clazz.addMethodInfo("add(Integer)", "public").addParameter("Integer", "i");
             annotations.annotate(parameter);
-            TestCase.TestParameterInfo synParameter = clazz.addMethodInfo("add(java.lang.Object)", true, "public").addParameter("Object", "i");
+            TestCase.TestParameterInfo synParameter = clazz.addMethodInfo("add(Object)", true, "public").addParameter("Object", "i");
             annotations.annotate(synParameter);
             testCases.add(testCase);
         }

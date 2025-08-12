@@ -1,5 +1,0 @@
-grant {
-};
-
-grant principal javax.management.remote.JMXPrincipal "monitorRole" {
-};

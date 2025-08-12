@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
         jmethodID jm_Config_refresh = (*env)->GetStaticMethodID(env, jc_Config, "refresh", "()V");
         CHECK_NULL(jm_Config_refresh);
         (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
-        if ((*env)->ExceptionOccurred(env) != NULL) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
         if (createdFromAttach) {

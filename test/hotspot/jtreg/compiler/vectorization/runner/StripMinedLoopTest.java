@@ -36,7 +36,7 @@
  *                   -XX:LoopStripMiningIter=10
  *                   compiler.vectorization.runner.StripMinedLoopTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -60,7 +60,7 @@ public class StripMinedLoopTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] stripMinedVectorLoop() {
         int[] res = new int[SIZE];

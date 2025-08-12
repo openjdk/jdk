@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jfr/instrumentation/jfrResolution.hpp"
+#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -33,8 +32,16 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
+#include "jfr/support/jfrKlassExtension.hpp"
+#include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/support/methodtracer/jfrMethodTracer.hpp"
+#include "jfr/support/methodtracer/jfrTraceTagging.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
@@ -67,9 +74,23 @@ void Jfr::on_create_vm_3() {
 }
 
 void Jfr::on_unloading_classes() {
-  if (JfrRecorder::is_created()) {
+  if (JfrRecorder::is_created() || JfrRecorder::is_started_on_commandline()) {
     JfrCheckpointManager::on_unloading_classes();
   }
+}
+
+void Jfr::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) {
+  if (IS_EVENT_OR_HOST_KLASS(ik)) {
+    JfrEventClassTransformer::on_klass_creation(ik, parser, THREAD);
+    return;
+  }
+  if (JfrMethodTracer::in_use()) {
+    JfrMethodTracer::on_klass_creation(ik, parser, THREAD);
+  }
+}
+
+void Jfr::on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass) {
+  JfrTraceTagging::on_klass_redefinition(ik, scratch_klass);
 }
 
 bool Jfr::is_excluded(Thread* t) {
@@ -100,8 +121,16 @@ void Jfr::on_set_current_thread(JavaThread* jt, oop thread) {
   JfrThreadLocal::on_set_current_thread(jt, thread);
 }
 
+void Jfr::initialize_main_thread(JavaThread* jt) {
+  JfrThreadLocal::initialize_main_thread(jt);
+}
+
 void Jfr::on_resolution(const CallInfo& info, TRAPS) {
   JfrResolution::on_runtime_resolution(info, THREAD);
+}
+
+void Jfr::on_backpatching(const Method* callee_method, JavaThread* jt) {
+  JfrResolution::on_backpatching(callee_method, jt);
 }
 
 #ifdef COMPILER1
@@ -122,9 +151,9 @@ void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
 }
 #endif
 
-void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+void Jfr::on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown, bool halt) {
   if (!halt && JfrRecorder::is_recording()) {
-    JfrEmergencyDump::on_vm_shutdown(exception_handler);
+    JfrEmergencyDump::on_vm_shutdown(emit_old_object_samples, emit_event_shutdown);
   }
 }
 

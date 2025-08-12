@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +47,15 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
-import java.util.stream.Stream;
+import java.io.PrintStream;
+import java.time.Duration;
+import java.util.Optional;
+import jdk.jshell.JShellConsole;
+import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.remoteInputOutput;
+import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
 
 /**
  * The implementation of {@link jdk.jshell.spi.ExecutionControl} that the
@@ -65,6 +69,13 @@ import static jdk.jshell.execution.Util.remoteInputOutput;
  * @since 9
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
+
+    private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(1);
+    private static final List<String> FORWARD_SYSTEM_PROPERTIES = List.of(
+        "stderr.encoding",
+        "stdin.encoding",
+        "stdout.encoding"
+    );
 
     private VirtualMachine vm;
     private Process process;
@@ -91,24 +102,53 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    static ExecutionControl create(ExecutionEnv env, String remoteAgent,
-            boolean isLaunch, String host, int timeout) throws IOException {
+    static ExecutionControl create(ExecutionEnv env, Map<String, String> parameters, String remoteAgent, int timeout, JdiStarter starter) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
-            List<String> augmentedremoteVMOptions =
-                    Stream.concat(env.extraRemoteVMOptions().stream(),
-                                  //disable System.console():
-                                  List.of("-Djdk.console=java.base").stream())
-                          .toList();
+            Optional<JShellConsole> console = env.console();
+            String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
+            List<String> augmentedremoteVMOptions = new ArrayList<>();
+
+            //the stdin/out/err.encoding properties are always defined, and can be copied:
+            FORWARD_SYSTEM_PROPERTIES.forEach(
+                    prop -> augmentedremoteVMOptions.add("-D" + prop + "=" +
+                                                         System.getProperty(prop)));
+            augmentedremoteVMOptions.addAll(env.extraRemoteVMOptions());
+            augmentedremoteVMOptions.add("-Djdk.console=" + consoleModule);
+
+            ExecutionEnv augmentedEnv = new ExecutionEnv() {
+                @Override
+                public InputStream userIn() {
+                    return env.userIn();
+                }
+
+                @Override
+                public PrintStream userOut() {
+                    return env.userOut();
+                }
+
+                @Override
+                public PrintStream userErr() {
+                    return env.userErr();
+                }
+
+                @Override
+                public List<String> extraRemoteVMOptions() {
+                    return augmentedremoteVMOptions;
+                }
+
+                @Override
+                public void closeDown() {
+                    env.closeDown();
+                }
+            };
 
             // Set-up the JDI connection
-            JdiInitiator jdii = new JdiInitiator(port,
-                    augmentedremoteVMOptions, remoteAgent, isLaunch, host,
-                    timeout, Collections.emptyMap());
-            VirtualMachine vm = jdii.vm();
-            Process process = jdii.process();
+            TargetDescription target = starter.start(augmentedEnv, parameters, port);
+            VirtualMachine vm = target.vm();
+            Process process = target.process();
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
             Util.detectJdiExitEvent(vm, s -> {
@@ -127,6 +167,15 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             outputs.put("err", env.userErr());
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
+            if (console.isPresent()) {
+                if (!RemoteExecutionControl.class.getName().equals(remoteAgent)) {
+                    throw new IllegalArgumentException("JShellConsole is only supported for " +
+                                                       "the default remote agent!");
+                }
+                ConsoleOutputStream consoleOutput = new ConsoleOutputStream(console.get());
+                outputs.put("consoleInput", consoleOutput);
+                input.put("consoleOutput", consoleOutput.sinkInput);
+            }
             return remoteInputOutput(socket.getInputStream(), out, outputs, input,
                     (objIn, objOut) -> new JdiDefaultExecutionControl(env,
                                         objOut, objIn, vm, process, remoteAgent, deathListeners));
@@ -229,6 +278,20 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     @Override
     public void close() {
         super.close();
+
+        Process remoteProcess;
+
+        synchronized (this) {
+            remoteProcess = this.process;
+        }
+
+        if (remoteProcess != null) {
+            try {
+                remoteProcess.waitFor(SHUTDOWN_TIMEOUT);
+            } catch (InterruptedException ex) {
+                debug(ex, "waitFor remote");
+            }
+        }
         disposeVM();
     }
 
@@ -280,4 +343,31 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
         // Reserved for future logging
     }
 
+    /**
+     * Start an external process where the user's snippets can be run.
+     *
+     * @since 22
+     */
+    public interface JdiStarter {
+        /**
+         * Start the external process based on the given parameters. The external
+         * process should connect to the given {@code port} to communicate with the
+         * driving instance of JShell.
+         *
+         * @param env the execution context
+         * @param parameters additional execution parameters
+         * @param port the port to which the remote process should connect
+         * @return a description of the started external process
+         * @throws RuntimeException if the process cannot be started
+         * @throws Error if the process cannot be started
+         */
+        public TargetDescription start(ExecutionEnv env, Map<String, String> parameters, int port);
+
+        /**
+         * The description of a started external process.
+         * @param vm the JDI's {@code VirtualMachine}
+         * @param process the external {@code Process}
+         */
+        public record TargetDescription(VirtualMachine vm, Process process) {}
+    }
 }

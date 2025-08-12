@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 #ifndef SHARE_C1_C1_FRAMEMAP_HPP
 #define SHARE_C1_C1_FRAMEMAP_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -110,19 +109,19 @@ class FrameMap : public CompilationResourceObj {
 
   static Register cpu_rnr2reg (int rnr) {
     assert(_init_done, "tables not initialized");
-    debug_only(cpu_range_check(rnr);)
+    DEBUG_ONLY(cpu_range_check(rnr);)
     return _cpu_rnr2reg[rnr];
   }
 
   static int cpu_reg2rnr (Register reg) {
     assert(_init_done, "tables not initialized");
-    debug_only(cpu_range_check(reg->encoding());)
+    DEBUG_ONLY(cpu_range_check(reg->encoding());)
     return _cpu_reg2rnr[reg->encoding()];
   }
 
   static void map_register(int rnr, Register reg) {
-    debug_only(cpu_range_check(rnr);)
-    debug_only(cpu_range_check(reg->encoding());)
+    DEBUG_ONLY(cpu_range_check(rnr);)
+    DEBUG_ONLY(cpu_range_check(reg->encoding());)
     _cpu_rnr2reg[rnr] = reg;
     _cpu_reg2rnr[reg->encoding()] = rnr;
   }
@@ -226,7 +225,7 @@ class FrameMap : public CompilationResourceObj {
     return location_for_sp_offset(sp_offset_for_monitor_object(monitor_index), Location::oop, loc);
   }
   bool locations_for_slot  (int index, Location::Type loc_type,
-                            Location* loc, Location* second = NULL) const;
+                            Location* loc, Location* second = nullptr) const;
 
   VMReg slot_regname(int index) const {
     return sp_offset2vmreg(sp_offset_for_slot(index));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
  * @test
  * @bug 8029800
  * @summary String.toLowerCase()/toUpperCase is generally dangerous, check it is not used in langtools
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;
 import java.util.*;
 import javax.tools.*;
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class NoStringToLower {
     public static void main(String... args) throws Exception {
@@ -62,7 +61,8 @@ public class NoStringToLower {
                 "javax.lang.model",
                 "javax.tools",
                 "com.sun.source",
-                "com.sun.tools.classfile",
+                "java.lang.classfile",
+                "jdk.internal.classfile",
                 "com.sun.tools.doclint",
                 "com.sun.tools.javac",
                 "com.sun.tools.javah",
@@ -103,11 +103,10 @@ public class NoStringToLower {
      */
     void scan(JavaFileObject fo) throws IOException {
         try (InputStream in = fo.openInputStream()) {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Methodref) {
-                    CONSTANT_Methodref_info ref = (CONSTANT_Methodref_info) cpinfo;
-                    String methodDesc = ref.getClassInfo().getName() + "." + ref.getNameAndTypeInfo().getName() + ":" + ref.getNameAndTypeInfo().getType();
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            for (PoolEntry pe : cf.constantPool()) {
+                if (pe instanceof MethodRefEntry ref) {
+                    String methodDesc = ref.owner().name().stringValue() + "." + ref.name().stringValue() + ":" + ref.type().stringValue();
 
                     if ("java/lang/String.toLowerCase:()Ljava/lang/String;".equals(methodDesc)) {
                         error("found reference to String.toLowerCase() in: " + fo.getName());

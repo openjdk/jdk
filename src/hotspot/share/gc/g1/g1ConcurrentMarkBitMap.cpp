@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "memory/virtualspace.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 G1CMBitMap::G1CMBitMap() : MarkBitMap(), _listener() {
   _listener.set_bitmap(this);
@@ -42,6 +40,6 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
     return;
   }
   // We need to clear the bitmap on commit, removing any existing information.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * G1HeapRegion::GrainWords);
   _bm->clear_range(mr);
 }

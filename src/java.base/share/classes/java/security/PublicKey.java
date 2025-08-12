@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ package java.security;
  *
  */
 
-public interface PublicKey extends Key {
+public interface PublicKey extends AsymmetricKey {
     // Declare serialVersionUID to be compatible with JDK1.1
     /**
      * The class fingerprint that is set to indicate serialization
@@ -54,7 +54,6 @@ public interface PublicKey extends Key {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 7187392471159151072L;
 }

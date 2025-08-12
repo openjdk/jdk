@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +24,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
@@ -36,16 +37,39 @@ ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
 }
 
 size_t ShenandoahMarkBitMap::compute_size(size_t heap_size) {
-  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
+  return os::align_up_vm_allocation_granularity(heap_size / mark_distance());
 }
 
 size_t ShenandoahMarkBitMap::mark_distance() {
   return MinObjAlignmentInBytes * BitsPerByte / 2;
 }
 
+bool ShenandoahMarkBitMap::is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const {
+  // Similar to get_next_marked_addr(), without assertion.
+  // Round addr up to a possible object boundary to be safe.
+  if (start == end) {
+    return true;
+  }
+  size_t const addr_offset = address_to_index(align_up(start, HeapWordSize << LogMinObjAlignment));
+  size_t const limit_offset = address_to_index(end);
+  size_t const next_offset = get_next_one_offset(addr_offset, limit_offset);
+  HeapWord* result = index_to_address(next_offset);
+  return (result == end);
+}
+
+
 HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
                                                      const HeapWord* limit) const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeapRegion* r = heap->heap_region_containing(addr);
+  ShenandoahMarkingContext* ctx = heap->marking_context();
+  HeapWord* tams = ctx->top_at_mark_start(r);
   assert(limit != nullptr, "limit must not be null");
+  assert(limit <= r->top(), "limit must be less than top");
+  assert(addr <= tams, "addr must be less than TAMS");
+#endif
+
   // Round addr up to a possible object boundary to be safe.
   size_t const addr_offset = address_to_index(align_up(addr, HeapWordSize << LogMinObjAlignment));
   size_t const limit_offset = address_to_index(limit);
@@ -122,26 +146,26 @@ void ShenandoahMarkBitMap::clear_range_large(MemRegion mr) {
 
 #ifdef ASSERT
 void ShenandoahMarkBitMap::check_mark(HeapWord* addr) const {
-  assert(ShenandoahHeap::heap()->is_in(addr),
+  assert(ShenandoahHeap::heap()->is_in_reserved(addr),
          "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
          p2i(this), p2i(addr));
 }
 
 void ShenandoahMarkBitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif

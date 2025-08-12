@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ package sun.font;
  * char->glyph map caching for Type1 fonts. The ones that are used
  * in composites will be cached there.
  */
+
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
 
 public final class Type1GlyphMapper extends CharToGlyphMapper {
 
@@ -78,6 +81,9 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
     }
 
     public int charToGlyph(char ch) {
+        if (isIgnorableWhitespace(ch) || isDefaultIgnorable(ch)) { // raw = false
+            return INVISIBLE_GLYPH_ID;
+        }
         try {
             return scaler.getGlyphCode(ch);
         } catch (FontScalerException e) {
@@ -87,9 +93,22 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
     }
 
     public int charToGlyph(int ch) {
+        int glyph = charToGlyph(ch, false);
+        return glyph;
+    }
+
+    public int charToGlyphRaw(int ch) {
+        int glyph = charToGlyph(ch, true);
+        return glyph;
+    }
+
+    private int charToGlyph(int ch, boolean raw) {
         if (ch < 0 || ch > 0xffff) {
             return missingGlyph;
         } else {
+            if (isIgnorableWhitespace(ch) || (isDefaultIgnorable(ch) && !raw)) {
+                return INVISIBLE_GLYPH_ID;
+            }
             try {
                 return scaler.getGlyphCode((char)ch);
             } catch (FontScalerException e) {
@@ -115,7 +134,7 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
                     low <= LO_SURROGATE_END) {
                     code = (code - HI_SURROGATE_START) *
                         0x400 + low - LO_SURROGATE_START + 0x10000;
-                    glyphs[i + 1] = 0xFFFF; // invisible glyph
+                    glyphs[i + 1] = INVISIBLE_GLYPH_ID;
                 }
             }
             glyphs[i] = charToGlyph(code);

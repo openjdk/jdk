@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,12 @@
  */
 package sun.security.krb5.internal.ccache;
 
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.OperatingSystem;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.util.SecurityProperties;
 
 import java.nio.charset.StandardCharsets;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +52,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * CredentialsCache stores credentials(tickets, session keys, etc.) in a
@@ -64,17 +64,18 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  */
 
 public class FileCredentialsCache extends CredentialsCache
-    implements FileCCacheConstants {
+        implements FileCCacheConstants {
     public int version;
     public Tag tag; // optional
     public PrincipalName primaryPrincipal;
     private Vector<Credentials> credentialsList;
-    private static final boolean DEBUG = Krb5.DEBUG;
+
+    private final String localCacheName;
 
     public static synchronized FileCredentialsCache acquireInstance(
                 PrincipalName principal, String cache) {
         try {
-            FileCredentialsCache fcc = new FileCredentialsCache();
+            String cacheName;
             if (cache == null) {
                 cacheName = FileCredentialsCache.getDefaultCacheName();
             } else {
@@ -84,15 +85,16 @@ public class FileCredentialsCache extends CredentialsCache
                 // invalid cache name or the file doesn't exist
                 return null;
             }
+            FileCredentialsCache fcc = new FileCredentialsCache(cacheName);
             if (principal != null) {
                 fcc.primaryPrincipal = principal;
             }
-            fcc.load(cacheName);
+            fcc.load();
             return fcc;
         } catch (IOException | KrbException e) {
             // we don't handle it now, instead we return a null at the end.
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;
@@ -105,13 +107,13 @@ public class FileCredentialsCache extends CredentialsCache
     static synchronized FileCredentialsCache New(PrincipalName principal,
                                                 String name) {
         try {
-            FileCredentialsCache fcc = new FileCredentialsCache();
-            cacheName = FileCredentialsCache.checkValidation(name);
+            String cacheName = FileCredentialsCache.checkValidation(name);
             if (cacheName == null) {
-                // invalid cache name or the file doesn't exist
+                // invalid cache name
                 return null;
             }
-            fcc.init(principal, cacheName);
+            FileCredentialsCache fcc = new FileCredentialsCache(cacheName);
+            fcc.init(principal);
             return fcc;
         }
         catch (IOException | KrbException e) {
@@ -121,42 +123,42 @@ public class FileCredentialsCache extends CredentialsCache
 
     static synchronized FileCredentialsCache New(PrincipalName principal) {
         try {
-            FileCredentialsCache fcc = new FileCredentialsCache();
-            cacheName = FileCredentialsCache.getDefaultCacheName();
-            fcc.init(principal, cacheName);
+            String cacheName = FileCredentialsCache.getDefaultCacheName();
+            FileCredentialsCache fcc = new FileCredentialsCache(cacheName);
+            fcc.init(principal);
             return fcc;
         }
         catch (IOException | KrbException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;
     }
 
-    private FileCredentialsCache() {
+    private FileCredentialsCache(String cacheName) {
+        localCacheName = cacheName;
     }
 
-    boolean exists(String cache) {
-        File file = new File(cache);
-        return file.exists();
+    @Override
+    public String cacheName() {
+        return localCacheName;
     }
 
-    synchronized void init(PrincipalName principal, String name)
-        throws IOException, KrbException {
+    synchronized void init(PrincipalName principal)
+            throws IOException, KrbException {
         primaryPrincipal = principal;
-        try (FileOutputStream fos = new FileOutputStream(name);
+        try (FileOutputStream fos = new FileOutputStream(localCacheName);
              CCacheOutputStream cos = new CCacheOutputStream(fos)) {
             version = KRB5_FCC_FVNO_3;
             cos.writeHeader(primaryPrincipal, version);
         }
-        load(name);
+        load();
     }
 
-    synchronized void load(String name) throws IOException, KrbException {
-        PrincipalName p;
-        try (FileInputStream fis = new FileInputStream(name);
-             CCacheInputStream cis = new CCacheInputStream(fis)) {
+    synchronized void load() throws IOException, KrbException {
+        try (FileInputStream fis = new FileInputStream(localCacheName);
+                CCacheInputStream cis = new CCacheInputStream(fis)) {
             version = cis.readVersion();
             if (version == KRB5_FCC_FVNO_4) {
                 tag = cis.readTag();
@@ -166,14 +168,15 @@ public class FileCredentialsCache extends CredentialsCache
                     cis.setNativeByteOrder();
                 }
             }
-            p = cis.readPrincipal(version);
+            PrincipalName p = cis.readPrincipal(version);
 
             if (primaryPrincipal != null) {
                 if (!(primaryPrincipal.match(p))) {
                     throw new IOException("Primary principals don't match.");
                 }
-            } else
+            } else {
                 primaryPrincipal = p;
+            }
             credentialsList = new Vector<>();
             while (cis.available() > 0) {
                 Object cred = cis.readCred(version);
@@ -212,8 +215,8 @@ public class FileCredentialsCache extends CredentialsCache
                                      tmp.sname.getRealmString()))) {
                         matched = true;
                         if (c.endtime.getTime() >= tmp.endtime.getTime()) {
-                            if (DEBUG) {
-                                System.out.println(" >>> FileCredentialsCache "
+                            if (DEBUG != null) {
+                                DEBUG.println(" >>> FileCredentialsCache "
                                          +  "Ticket matched, overwrite "
                                          +  "the old one.");
                             }
@@ -223,8 +226,8 @@ public class FileCredentialsCache extends CredentialsCache
                     }
                 }
                 if (!matched) {
-                    if (DEBUG) {
-                        System.out.println(" >>> FileCredentialsCache Ticket "
+                    if (DEBUG != null) {
+                        DEBUG.println(" >>> FileCredentialsCache Ticket "
                                         +   "not exactly matched, "
                                         +   "add new one into cache.");
                     }
@@ -244,8 +247,8 @@ public class FileCredentialsCache extends CredentialsCache
      * Saves the credentials cache file to the disk.
      */
     public synchronized void save() throws IOException, Asn1Exception {
-        try (FileOutputStream fos = new FileOutputStream(cacheName);
-             CCacheOutputStream cos = new CCacheOutputStream(fos)) {
+        try (FileOutputStream fos = new FileOutputStream(localCacheName);
+                CCacheOutputStream cos = new CCacheOutputStream(fos)) {
             cos.writeHeader(primaryPrincipal, version);
             Credentials[] tmp;
             if ((tmp = getCredsList()) != null) {
@@ -348,22 +351,22 @@ public class FileCredentialsCache extends CredentialsCache
 
         CredentialsCache.ConfigEntry entry = getConfigEntry("proxy_impersonator");
         if (entry == null) {
-            if (DEBUG) {
-                System.out.println("get normal credential");
+            if (DEBUG != null) {
+                DEBUG.println("get normal credential");
             }
             return tgt;
         }
 
         boolean force;
-        String prop = SecurityProperties.privilegedGetOverridable(
+        String prop = SecurityProperties.getOverridableProperty(
                 "jdk.security.krb5.default.initiate.credential");
         if (prop == null) {
             prop = "always-impersonate";
         }
         switch (prop) {
             case "no-impersonate": // never try impersonation
-                if (DEBUG) {
-                    System.out.println("get normal credential");
+                if (DEBUG != null) {
+                    DEBUG.println("get normal credential");
                 }
                 return tgt;
             case "try-impersonate":
@@ -381,8 +384,8 @@ public class FileCredentialsCache extends CredentialsCache
             PrincipalName service = new PrincipalName(
                     new String(entry.getData(), StandardCharsets.UTF_8));
             if (!tgt.getClient().equals(service)) {
-                if (DEBUG) {
-                    System.out.println("proxy_impersonator does not match service name");
+                if (DEBUG != null) {
+                    DEBUG.println("proxy_impersonator does not match service name");
                 }
                 return force ? null : tgt;
             }
@@ -396,18 +399,18 @@ public class FileCredentialsCache extends CredentialsCache
                 }
             }
             if (proxy == null) {
-                if (DEBUG) {
-                    System.out.println("Cannot find evidence ticket in ccache");
+                if (DEBUG != null) {
+                    DEBUG.println("Cannot find evidence ticket in ccache");
                 }
                 return force ? null : tgt;
             }
-            if (DEBUG) {
-                System.out.println("Get proxied credential");
+            if (DEBUG != null) {
+                DEBUG.println("Get proxied credential");
             }
             return tgt.setProxy(proxy.setKrbCreds());
         } catch (KrbException e) {
-            if (DEBUG) {
-                System.out.println("Impersonation with ccache failed");
+            if (DEBUG != null) {
+                DEBUG.println("Impersonation with ccache failed");
             }
             return force ? null : tgt;
         }
@@ -447,26 +450,18 @@ public class FileCredentialsCache extends CredentialsCache
 
         // The env var can start with TYPE:, we only support FILE: here.
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
-        @SuppressWarnings("removal")
-        String name = java.security.AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> {
-                    String cache = System.getenv("KRB5CCNAME");
-                    if (cache != null &&
-                            (cache.length() >= 5) &&
-                            cache.regionMatches(true, 0, "FILE:", 0, 5)) {
-                        cache = cache.substring(5);
-                    }
-                    return cache;
-                });
+        String name = System.getenv("KRB5CCNAME");
+        if (name != null &&
+                (name.length() >= 5) &&
+                name.regionMatches(true, 0, "FILE:", 0, 5)) {
+            name = name.substring(5);
+        }
         if (name != null) {
-            if (DEBUG) {
-                System.out.println(">>>KinitOptions cache name is " + name);
+            if (DEBUG != null) {
+                DEBUG.println(">>>KinitOptions cache name is " + name);
             }
             return name;
         }
-
-        // get cache name from system.property
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
 
         /*
          * For Unix platforms we use the default cache name to be
@@ -479,19 +474,19 @@ public class FileCredentialsCache extends CredentialsCache
          * Windows.
          */
 
-        if (osname != null && !osname.startsWith("Windows")) {
+        if (!OperatingSystem.isWindows()) {
             long uid = jdk.internal.misc.VM.getuid();
             if (uid != -1) {
                 name = File.separator + "tmp" +
                         File.separator + stdCacheNameComponent + "_" + uid;
-                if (DEBUG) {
-                    System.out.println(">>>KinitOptions cache name is " +
+                if (DEBUG != null) {
+                    DEBUG.println(">>>KinitOptions cache name is " +
                             name);
                 }
                 return name;
             } else {
-                if (DEBUG) {
-                    System.out.println("Error in obtaining uid " +
+                if (DEBUG != null) {
+                    DEBUG.println("Error in obtaining uid " +
                                         "for Unix platforms " +
                                         "Using user's home directory");
                 }
@@ -500,12 +495,12 @@ public class FileCredentialsCache extends CredentialsCache
 
         // we did not get the uid;
 
-        String user_name = GetPropertyAction.privilegedGetProperty("user.name");
+        String user_name = System.getProperty("user.name");
 
-        String user_home = GetPropertyAction.privilegedGetProperty("user.home");
+        String user_home = System.getProperty("user.home");
 
         if (user_home == null) {
-            user_home = GetPropertyAction.privilegedGetProperty("user.dir");
+            user_home = System.getProperty("user.dir");
         }
 
         if (user_name != null) {
@@ -515,8 +510,8 @@ public class FileCredentialsCache extends CredentialsCache
             name = user_home + File.separator + stdCacheNameComponent;
         }
 
-        if (DEBUG) {
-            System.out.println(">>>KinitOptions cache name is " + name);
+        if (DEBUG != null) {
+            DEBUG.println(">>>KinitOptions cache name is " + name);
         }
 
         return name;
@@ -535,12 +530,10 @@ public class FileCredentialsCache extends CredentialsCache
                 // get absolute directory
                 File temp = new File(fCheck.getParent());
                 // test if the directory exists
-                if (!(temp.isDirectory()))
+                if (!(temp.isDirectory())) {
                     fullname = null;
-                temp = null;
+                }
             }
-            fCheck = null;
-
         } catch (IOException e) {
             fullname = null; // invalid name
         }
@@ -556,20 +549,14 @@ public class FileCredentialsCache extends CredentialsCache
         }
         final String[] command = v.toArray(new String[0]);
         try {
-
-            @SuppressWarnings("removal")
-            Process p =
-                java.security.AccessController.doPrivileged
-                ((PrivilegedAction<Process>) () -> {
-                    try {
-                        return (Runtime.getRuntime().exec(command));
-                    } catch (IOException e) {
-                        if (DEBUG) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }
-                });
+            Process p = null;
+            try {
+                p = Runtime.getRuntime().exec(command);
+            } catch (IOException e) {
+                if (DEBUG != null) {
+                    e.printStackTrace(DEBUG.getPrintStream());
+                }
+            }
             if (p == null) {
                 // exception occurred during executing the command
                 return null;
@@ -584,18 +571,20 @@ public class FileCredentialsCache extends CredentialsCache
                 while ((s1 = commandResult.readLine()) != null) {
                     if (s1.length() >= 11) {
                         if ((s1.substring(0, 11)).equalsIgnoreCase
-                            ("KRB5CCNAME=")) {
+                                ("KRB5CCNAME=")) {
                             s1 = s1.substring(11);
                             break;
                         }
                     }
                 }
-            } else     s1 = commandResult.readLine();
+            } else {
+                s1 = commandResult.readLine();
+            }
             commandResult.close();
             return s1;
         } catch (Exception e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;

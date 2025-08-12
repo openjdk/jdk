@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ import java.util.Objects;
  * }
  * </pre>
  *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @see MGF1ParameterSpec
  * @see AlgorithmParameterSpec
  * @see java.security.Signature
@@ -96,6 +98,8 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * The PSS parameter set with all default values.
+     * @spec https://www.rfc-editor.org/info/rfc8017
+     *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
      * @deprecated This field uses the default values defined in the PKCS #1
      *         standard. Some of these defaults are no longer recommended due
      *         to advances in cryptanalysis -- see the
@@ -118,13 +122,25 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * mask generation function, parameters for mask generation
      * function, salt length, and trailer field values.
      *
-     * @param mdName       the algorithm name of the hash function
-     * @param mgfName      the algorithm name of the mask generation function
+     * @param mdName       the algorithm name of the hash function. See the
+     *         PSSParameterSpec section of the
+     *         <a href=
+     *        "{@docRoot}/../specs/security/standard-names.html#pssparameterspec">
+     *         Java Security Standard Algorithm Names Specification</a>
+     *         for information about standard names for the hash function.
+     * @param mgfName      the algorithm name of the mask generation function.
+     *         See the PSSParameterSpec section of the
+     *         <a href=
+     *        "{@docRoot}/../specs/security/standard-names.html#pssparameterspec">
+     *         Java Security Standard Algorithm Names Specification</a>
+     *         for information about standard names for the mask generation
+     *         function.
      * @param mgfSpec      the parameters for the mask generation function.
      *         If null is specified, null will be returned by
      *         getMGFParameters().
      * @param saltLen      the length of salt in bytes
      * @param trailerField the value of the trailer field
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
      * @throws    IllegalArgumentException if {@code saltLen} or
@@ -159,6 +175,8 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * @param saltLen the length of salt in bytes
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
+     * @spec https://www.rfc-editor.org/info/rfc8017
+     *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
      * @deprecated This constructor uses the default values defined in
      *         the PKCS #1 standard except for the salt length. Some of these
      *         defaults are no longer recommended due to advances in

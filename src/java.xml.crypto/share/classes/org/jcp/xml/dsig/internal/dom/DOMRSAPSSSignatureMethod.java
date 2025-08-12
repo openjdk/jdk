@@ -21,29 +21,38 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
-import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
-
 import java.io.IOException;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
+import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
+
 import org.jcp.xml.dsig.internal.SignerOutputStream;
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA.SignatureRSASSAPSS.DigestAlgorithm;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
 /**
  * DOM-based abstract implementation of SignatureMethod for RSA-PSS.
@@ -51,6 +60,7 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMethod {
 
     private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
+    private static final String DOM_SIGNATURE_RANDOM = "jdk.xmldsig.SecureRandom";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMRSAPSSSignatureMethod.class);
@@ -125,10 +135,12 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
     }
 
+    @Override
     public final AlgorithmParameterSpec getParameterSpec() {
         return params;
     }
 
+    @Override
     void marshalParams(Element parent, String prefix)
         throws MarshalException
     {
@@ -203,6 +215,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         }
     }
 
+    @Override
     SignatureMethodParameterSpec unmarshalParams(Element paramsElem)
         throws MarshalException
     {
@@ -250,6 +263,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         return DEFAULT_PSS_SPEC;
     }
 
+    @Override
     boolean verify(Key key, SignedInfo si, byte[] sig,
                    XMLValidateContext context)
         throws InvalidKeyException, SignatureException, XMLSignatureException
@@ -291,6 +305,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         }
     }
 
+    @Override
     byte[] sign(Key key, SignedInfo si, XMLSignContext context)
         throws InvalidKeyException, XMLSignatureException
     {
@@ -311,14 +326,18 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
                 throw new XMLSignatureException(nsae);
             }
         }
-        signature.initSign((PrivateKey)key);
+        SecureRandom sr = (SecureRandom)context.getProperty(DOM_SIGNATURE_RANDOM);
+        if (sr != null) {
+            signature.initSign((PrivateKey) key, sr);
+        } else {
+            signature.initSign((PrivateKey) key);
+        }
         try {
             signature.setParameter(spec);
         } catch (InvalidAlgorithmParameterException e) {
             throw new XMLSignatureException(e);
         }
         LOG.debug("Signature provider: {}", signature.getProvider());
-        LOG.debug("Signing with key: {}", key);
         LOG.debug("JCA Algorithm: {}", getJCAAlgorithm());
 
         try (SignerOutputStream outputStream = new SignerOutputStream(signature)) {

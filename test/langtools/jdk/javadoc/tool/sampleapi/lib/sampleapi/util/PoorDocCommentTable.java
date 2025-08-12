@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 package sampleapi.util;
 
 import java.util.HashMap;
+
+import javax.lang.model.util.Elements.DocCommentKind;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
@@ -50,6 +52,15 @@ public class PoorDocCommentTable implements DocCommentTable {
 
     public Comment getComment(JCTree tree) {
         return table.get(tree);
+    }
+
+    public DocCommentKind getCommentKind(JCTree tree) {
+        Comment c = getComment(tree);
+        return c == null ? null : switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> DocCommentKind.TRADITIONAL;
+            case JAVADOC_LINE -> DocCommentKind.END_OF_LINE;
+            default -> throw new IllegalStateException(c.getStyle().toString());
+        };
     }
 
     public String getCommentText(JCTree tree) {

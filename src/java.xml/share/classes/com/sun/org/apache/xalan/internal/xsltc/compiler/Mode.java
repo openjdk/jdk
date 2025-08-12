@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,7 +63,7 @@ import java.util.Set;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author G. Todd Miller
- * @LastModified: Sep 2021
+ * @LastModified: Nov 2023
  */
 final class Mode implements Constants {
 
@@ -841,7 +841,7 @@ final class Mode implements Constants {
                 elemPrio = elemTest.getPriority();
                 elemPos  = elemTest.getPosition();
             }
-            if (elemPrio == Double.NaN || elemPrio < nodePrio ||
+            if (Double.isNaN(elemPrio) || elemPrio < nodePrio ||
                 (elemPrio == nodePrio && elemPos < nodePos))
             {
                 ihElem = _childNodeTestSeq.compile(classGen, methodGen, ihLoop);
@@ -856,7 +856,7 @@ final class Mode implements Constants {
                 textPrio = textTest.getPriority();
                 textPos  = textTest.getPosition();
             }
-            if (textPrio == Double.NaN || textPrio < nodePrio ||
+            if (Double.isNaN(textPrio) || textPrio < nodePrio ||
                 (textPrio == nodePrio && textPos < nodePos))
             {
                 ihText = _childNodeTestSeq.compile(classGen, methodGen, ihLoop);
@@ -1181,7 +1181,7 @@ final class Mode implements Constants {
                 elemPos  = elemTest.getPosition();
             }
 
-            if (elemPrio == Double.NaN || elemPrio < nodePrio ||
+            if (Double.isNaN(elemPrio) || elemPrio < nodePrio ||
                 (elemPrio == nodePrio && elemPos < nodePos))
             {
                 ihElem = _childNodeTestSeq.compile(classGen, methodGen, ihLoop);
@@ -1197,7 +1197,7 @@ final class Mode implements Constants {
                 textPos  = textTest.getPosition();
             }
 
-            if (textPrio == Double.NaN || textPrio < nodePrio ||
+            if (Double.isNaN(textPrio) || textPrio < nodePrio ||
                 (textPrio == nodePrio && textPos < nodePos))
             {
                 ihText = _childNodeTestSeq.compile(classGen, methodGen, ihLoop);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main jdk.jfr.startupargs.TestStartName
@@ -45,7 +45,7 @@ public class TestStartName {
     }
 
     private static void testName(String recordingName, boolean validName) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:StartFlightRecording:name=" + recordingName, TestName.class.getName(), recordingName);
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
 

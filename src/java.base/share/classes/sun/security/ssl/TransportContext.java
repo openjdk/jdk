@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,8 +46,6 @@ final class TransportContext implements ConnectionContext {
 
     // registered plaintext consumers
     final Map<Byte, SSLConsumer>    consumers;
-    @SuppressWarnings("removal")
-    final AccessControlContext      acc;
 
     final SSLContextImpl            sslContext;
     final SSLConfiguration          sslConfig;
@@ -134,7 +129,6 @@ final class TransportContext implements ConnectionContext {
                 inputRecord, outputRecord, false);
     }
 
-    @SuppressWarnings("removal")
     private TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             SSLConfiguration sslConfig, InputRecord inputRecord,
             OutputRecord outputRecord, boolean isUnsureMode) {
@@ -154,8 +148,12 @@ final class TransportContext implements ConnectionContext {
         this.clientVerifyData = emptyByteArray;
         this.serverVerifyData = emptyByteArray;
 
-        this.acc = AccessController.getContext();
         this.consumers = new HashMap<>();
+
+        if (inputRecord instanceof DTLSInputRecord dtlsInputRecord) {
+            dtlsInputRecord.setTransportContext(this);
+            dtlsInputRecord.setSSLContext(this.sslContext);
+        }
     }
 
     // Dispatch plaintext to a specific consumer.
@@ -219,7 +217,14 @@ final class TransportContext implements ConnectionContext {
             throw new IllegalStateException("Client/Server mode not yet set.");
         }
 
-        if (outputRecord.isClosed() || inputRecord.isClosed() || isBroken) {
+        // The threshold for allowing the method to continue processing
+        // depends on whether we are doing a key update or kickstarting
+        // a handshake.  In the former case, we only require the write-side
+        // to be open where a handshake would require a full duplex connection.
+        boolean isNotUsable = outputRecord.writeCipher.atKeyLimit() ?
+            (outputRecord.isClosed() || isBroken) :
+            (outputRecord.isClosed() || inputRecord.isClosed() || isBroken);
+        if (isNotUsable) {
             if (closeReason != null) {
                 throw new SSLException(
                         "Cannot kickstart, the connection is broken or closed",
@@ -247,7 +252,7 @@ final class TransportContext implements ConnectionContext {
         //
         // Need no kickstart message on server side unless the connection
         // has been established.
-        if(isNegotiated || sslConfig.isClientMode) {
+        if (isNegotiated || sslConfig.isClientMode) {
            handshakeContext.kickstart();
         }
     }
@@ -665,34 +670,22 @@ final class TransportContext implements ConnectionContext {
     // A separate thread is allocated to deliver handshake completion
     // events.
     private static class NotifyHandshake implements Runnable {
-        @SuppressWarnings("removal")
-        private final Set<Map.Entry<HandshakeCompletedListener,
-                AccessControlContext>> targets;         // who gets notified
+        private final Set<HandshakeCompletedListener>
+                                       targets;         // who gets notified
         private final HandshakeCompletedEvent event;    // the notification
 
         NotifyHandshake(
-                @SuppressWarnings("removal")
-                Map<HandshakeCompletedListener,AccessControlContext> listeners,
+                Set<HandshakeCompletedListener> listeners,
                 HandshakeCompletedEvent event) {
-            this.targets = new HashSet<>(listeners.entrySet());     // clone
+            this.targets = new HashSet<>(listeners);     // clone
             this.event = event;
         }
 
-        @SuppressWarnings("removal")
         @Override
         public void run() {
             // Don't need to synchronize, as it only runs in one thread.
-            for (Map.Entry<HandshakeCompletedListener,
-                    AccessControlContext> entry : targets) {
-                final HandshakeCompletedListener listener = entry.getKey();
-                AccessControlContext acc = entry.getValue();
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        listener.handshakeCompleted(event);
-                        return null;
-                    }
-                }, acc);
+            for (HandshakeCompletedListener listener : targets) {
+                listener.handshakeCompleted(event);
             }
         }
     }

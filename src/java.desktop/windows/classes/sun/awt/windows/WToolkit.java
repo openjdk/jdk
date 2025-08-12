@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,6 @@ import java.awt.peer.TrayIconPeer;
 import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
@@ -125,7 +123,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAutoShutdown;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
@@ -168,17 +165,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
      */
     private static native void initIDs();
     private static boolean loaded = false;
-    @SuppressWarnings("removal")
+
+    @SuppressWarnings("restricted")
     public static void loadLibraries() {
         if (!loaded) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        System.loadLibrary("awt");
-                        return null;
-                    }
-                });
+            System.loadLibrary("awt");
             loaded = true;
         }
     }
@@ -195,70 +186,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
-    /*
-     * NOTE: The following embedded*() methods are non-public API intended
-     * for internal use only.  The methods are unsupported and could go
-     * away in future releases.
-     *
-     * New hook functions for using the AWT as an embedded service. These
-     * functions replace the global C function AwtInit() which was previously
-     * exported by awt.dll.
-     *
-     * When used as an embedded service, the AWT does NOT have its own
-     * message pump. It instead relies on the parent application to provide
-     * this functionality. embeddedInit() assumes that the thread on which it
-     * is called is the message pumping thread. Violating this assumption
-     * will lead to undefined behavior.
-     *
-     * embeddedInit must be called before the WToolkit() constructor.
-     * embeddedDispose should be called before the application terminates the
-     * Java VM. It is currently unsafe to reinitialize the toolkit again
-     * after it has been disposed. Instead, awt.dll must be reloaded and the
-     * class loader which loaded WToolkit must be finalized before it is
-     * safe to reuse AWT. Dynamic reusability may be added to the toolkit in
-     * the future.
-     */
-
-    /**
-     * Initializes the Toolkit for use in an embedded environment.
-     *
-     * @return true if the initialization succeeded; false if it failed.
-     *         The function will fail if the Toolkit was already initialized.
-     * @since 1.3
-     */
-    public static native boolean embeddedInit();
-
-    /**
-     * Disposes the Toolkit in an embedded environment. This method should
-     * not be called on exit unless the Toolkit was constructed with
-     * embeddedInit.
-     *
-     * @return true if the disposal succeeded; false if it failed. The
-     *         function will fail if the calling thread is not the same
-     *         thread which called embeddedInit(), or if the Toolkit was
-     *         already disposed.
-     * @since 1.3
-     */
-    public static native boolean embeddedDispose();
-
-    /**
-     * To be called after processing the event queue by users of the above
-     * embeddedInit() function.  The reason for this additional call is that
-     * there are some operations performed during idle time in the AwtToolkit
-     * event loop which should also be performed during idle time in any
-     * other native event loop.  Failure to do so could result in
-     * deadlocks.
-     *
-     * This method was added at the last minute of the jdk1.4 release
-     * to work around a specific customer problem.  As with the above
-     * embedded*() class, this method is non-public and should not be
-     * used by external applications.
-     *
-     * See bug #4526587 for more information.
-     */
-    public native void embeddedEventLoopIdleProcessing();
-
-    static class ToolkitDisposer implements sun.java2d.DisposerRecord {
+    static final class ToolkitDisposer implements sun.java2d.DisposerRecord {
         @Override
         public void dispose() {
             WToolkit.postDispose();
@@ -271,7 +199,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static native boolean startToolkitThread(Runnable thread, ThreadGroup rootThreadGroup);
 
-    @SuppressWarnings("removal")
     public WToolkit() {
         // Startup toolkit threads
         if (PerformanceLogger.loggingEnabled()) {
@@ -288,16 +215,12 @@ public final class WToolkit extends SunToolkit implements Runnable {
         AWTAutoShutdown.notifyToolkitThreadBusy();
 
         // Find a root TG and attach toolkit thread to it
-        ThreadGroup rootTG = AccessController.doPrivileged(
-                (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
+        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
         if (!startToolkitThread(this, rootTG)) {
             final String name = "AWT-Windows";
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
-                toolkitThread.setDaemon(true);
-                toolkitThread.start();
-                return null;
-            });
+            Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
+            toolkitThread.setDaemon(true);
+            toolkitThread.start();
         }
 
         try {
@@ -314,36 +237,25 @@ public final class WToolkit extends SunToolkit implements Runnable {
         // by the native system though.
         setDynamicLayout(true);
         final String extraButtons = "sun.awt.enableExtraMouseButtons";
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            areExtraMouseButtonsEnabled =
-                 Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
-            //set system property if not yet assigned
-            System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
-            return null;
-        });
+        areExtraMouseButtonsEnabled =
+             Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
+        //set system property if not yet assigned
+        System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
-    @SuppressWarnings("removal")
     private void registerShutdownHook() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread shutdown = new Thread(
-                    ThreadGroupUtils.getRootThreadGroup(), this::shutdown,
-                    "ToolkitShutdown", 0, false);
-            shutdown.setContextClassLoader(null);
-            Runtime.getRuntime().addShutdownHook(shutdown);
-            return null;
-        });
-     }
+        Thread shutdown = new Thread(
+                ThreadGroupUtils.getRootThreadGroup(), this::shutdown,
+                "ToolkitShutdown", 0, false);
+        shutdown.setContextClassLoader(null);
+        Runtime.getRuntime().addShutdownHook(shutdown);
+    }
 
-    @SuppressWarnings("removal")
     @Override
     public void run() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread.currentThread().setContextClassLoader(null);
-            Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-            return null;
-        });
+        Thread.currentThread().setContextClassLoader(null);
+        Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
 
         boolean startPump = init();
 
@@ -681,22 +593,20 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public FontPeer getFontPeer(String name, int style) {
-        FontPeer retval = null;
         String lcName = name.toLowerCase();
         if (null != cacheFontPeer) {
-            retval = cacheFontPeer.get(lcName + style);
-            if (null != retval) {
-                return retval;
+            FontPeer cachedVal = cacheFontPeer.get(lcName + style);
+            if (null != cachedVal) {
+                return cachedVal;
             }
         }
-        retval = new WFontPeer(name, style);
-        if (retval != null) {
-            if (null == cacheFontPeer) {
-                cacheFontPeer = new Hashtable<>(5, 0.9f);
-            }
-            if (null != cacheFontPeer) {
-                cacheFontPeer.put(lcName + style, retval);
-            }
+
+        FontPeer retval = new WFontPeer(name, style);
+        if (null == cacheFontPeer) {
+            cacheFontPeer = new Hashtable<>(5, 0.9f);
+        }
+        if (null != cacheFontPeer) {
+            cacheFontPeer.put(lcName + style, retval);
         }
         return retval;
     }
@@ -765,11 +675,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-        }
         synchronized (this) {
             if (clipboard == null) {
                 clipboard = new WClipboard();

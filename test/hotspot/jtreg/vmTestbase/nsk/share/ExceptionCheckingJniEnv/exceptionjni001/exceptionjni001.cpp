@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,9 +33,9 @@
 // methods.
 static bool is_error_called;
 static const char* const null_return_expected_message_start =
-    "JNI method GetFieldID : Return is NULL from exceptionjni001.cpp : ";
+    "JNI method GetFieldID : Return is null from exceptionjni001.cpp : ";
 static const char* const null_file_expected_message_start =
-    "JNI method GetFieldID : Return is NULL from Unknown File : ";
+    "JNI method GetFieldID : Return is null from Unknown File : ";
 
 // Used by the ErrorCheckerMessage and the tests to determine test success.
 static long expected_line_number;
@@ -52,11 +52,11 @@ static bool CheckMessage(JNIEnv* env, const char* message, const char* expected_
 
   size_t len = strlen(expected_message);
 
-  char* end_ptr = NULL;
+  char* end_ptr = nullptr;
   long actual_line = strtol(message + len, &end_ptr, 0);
 
-  if (end_ptr == NULL || *end_ptr != '\0') {
-    fprintf(stderr, "end_ptr == NULL or *end_ptr terminating from %s\n", message);
+  if (end_ptr == nullptr || *end_ptr != '\0') {
+    fprintf(stderr, "end_ptr == null or *end_ptr terminating from %s\n", message);
     return false;
   }
 
@@ -101,7 +101,7 @@ static bool checkFailureMessageEmptyFile(JNIEnv* env, jclass cls) {
 
   expected_message_start = null_file_expected_message_start;
   expected_line_number = __LINE__ + 1;
-  ec_jni->GetFieldID(cls, "whatever", "does not matter", __LINE__, NULL);
+  ec_jni->GetFieldID(cls, "whatever", "does not matter", __LINE__, nullptr);
 
   return is_error_called && error_message_ok;
 }

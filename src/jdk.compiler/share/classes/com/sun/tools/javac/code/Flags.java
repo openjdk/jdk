@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class Flags {
     public static final int ACC_VARARGS  = 0x0080;
     public static final int ACC_MODULE   = 0x8000;
 
-    /*****************************************
+    /* ***************************************
      * Internal compiler flags (no bits in the lower 16).
      *****************************************/
 
@@ -122,6 +122,10 @@ public class Flags {
      *  has an initializer part.
      */
     public static final int HASINIT          = 1<<18;
+
+    /** Class is an implicitly declared top level class.
+     */
+    public static final int IMPLICIT_CLASS    = 1<<19;
 
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
@@ -246,7 +250,7 @@ public class Flags {
     /**
      * Flag that marks either a default method or an interface containing default methods.
      */
-    public static final long DEFAULT = 1L<<43;
+    public static final long DEFAULT = 1L<<43; // part of ExtendedStandardFlags, cannot be reused
 
     /**
      * Flag that marks class as auxiliary, ie a non-public class following
@@ -275,13 +279,19 @@ public class Flags {
     public static final long THROWS = 1L<<47;
 
     /**
-     * Currently available: Bit 48.
+     * Flag to indicate sealed class/interface declaration.
      */
+    public static final long SEALED = 1L<<48; // part of ExtendedStandardFlags, cannot be reused
 
     /**
      * Flag that marks a synthetic method body for a lambda expression
      */
-    public static final long LAMBDA_METHOD = 1L<<49;
+    public static final long LAMBDA_METHOD = 1L<<49; //MethodSymbols only
+
+    /**
+     * Flag that marks a synthetic local capture field in a local/anon class
+     */
+    public static final long LOCAL_CAPTURE_FIELD = 1L<<49; //VarSymbols only
 
     /**
      * Flag to control recursion in TransTypes
@@ -381,17 +391,27 @@ public class Flags {
     public static final int GENERATED_MEMBER = 1<<24; // MethodSymbols and VarSymbols
 
     /**
-     * Flag to indicate sealed class/interface declaration.
+     * Flag to indicate restricted method declaration.
      */
-    public static final long SEALED = 1L<<62; // ClassSymbols
+    public static final long RESTRICTED = 1L<<62; // MethodSymbols
+
+    /**
+     * Flag to indicate parameters that require identity.
+     */
+    public static final long REQUIRES_IDENTITY = 1L<<62; // VarSymbols (parameters)
+
+    /**
+     * Flag to indicate type annotations have been queued for field initializers.
+     */
+    public static final long FIELD_INIT_TYPE_ANNOTATIONS_QUEUED = 1L<<53; // VarSymbols
 
     /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
-    public static final long NON_SEALED = 1L<<63; // ClassSymbols
+    public static final long NON_SEALED = 1L<<63;  // part of ExtendedStandardFlags, cannot be reused
 
     /**
-     * Describe modifier flags as they migh appear in source code, i.e.,
+     * Describe modifier flags as they might appear in source code, i.e.,
      * separated by spaces and in the order suggested by JLS 8.1.1.
      */
     public static String toSource(long flags) {
@@ -419,6 +439,7 @@ public class Flags {
         RecordMethodFlags                 = AccessFlags | ABSTRACT | STATIC |
                                             SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
+        //NOTE: flags in ExtendedStandardFlags cannot be overlayed across Symbol kinds:
         ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
         ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
         ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
@@ -490,6 +511,7 @@ public class Flags {
         ANNOTATION(Flags.ANNOTATION),
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
+        IMPLICIT_CLASS(Flags.IMPLICIT_CLASS),
         BLOCK(Flags.BLOCK),
         FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),
@@ -525,7 +547,7 @@ public class Flags {
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
         HAS_RESOURCE(Flags.HAS_RESOURCE),
-        // Bit 48 is currently available
+        SEALED(Flags.SEALED),
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
@@ -534,7 +556,7 @@ public class Flags {
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),
         RECOVERABLE(Flags.RECOVERABLE),
-        SEALED(Flags.SEALED),
+        RESTRICTED(Flags.RESTRICTED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override
             public String toString() {

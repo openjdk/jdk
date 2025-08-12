@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,223 +21,118 @@
  * questions.
  */
 
-/**
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
+
+/*
  * @test InvalidPage.java
  * @bug 4671634 6506286
  * @summary Invalid page format can crash win32 JRE
- * @author prr
+ * @key printer
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual InvalidPage
  */
-
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-
-public class InvalidPage extends Frame implements Printable {
-
-  PrinterJob pJob;
-  PageFormat pf;
-
-  public InvalidPage() {
-    super ("Validate Page Test");
-    pJob = PrinterJob.getPrinterJob();
-    pf = pJob.defaultPage();
-    Paper p = pf.getPaper();
-    p.setImageableArea(0,0,p.getWidth(), p.getHeight());
-    pf.setPaper(p);
-    setLayout(new FlowLayout());
-    Panel panel = new Panel();
-    Button printButton = new Button ("Print");
-    printButton.addActionListener(new ActionListener() {
-                public void actionPerformed (ActionEvent e) {
-                    try {
-                         if (pJob.printDialog()) {
-                             pJob.setPrintable(InvalidPage.this, pf);
-                             pJob.print();
-                    }
-                    } catch (PrinterException pe ) {
-                    }
+public class InvalidPage implements Printable {
+    private static JComponent createTestUI() {
+        JButton b = new JButton("Print");
+        b.addActionListener((ae) -> {
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+                PageFormat pf = job.defaultPage();
+                Paper p = pf.getPaper();
+                p.setImageableArea(0, 0, p.getWidth(), p.getHeight());
+                pf.setPaper(p);
+                job.setPrintable(new InvalidPage(), pf);
+                if (job.printDialog()) {
+                    job.print();
                 }
-    });
-    panel.add (printButton);
-    add(panel);
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
+        });
 
-    addWindowListener (new WindowAdapter() {
-         public void windowClosing (WindowEvent e) {
-            dispose();
-            System.exit (0);
-         }
+        Box main = Box.createHorizontalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createHorizontalGlue());
+        main.add(b);
+        main.add(Box.createHorizontalGlue());
+        return main;
+    }
 
-      });
-      setSize (200, 200);
-      setVisible (true);
-  }
+    @Override
+    public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
+        if (pageIndex > 1) {
+            return Printable.NO_SUCH_PAGE;
+        }
 
-  public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
+        Graphics2D g2d = (Graphics2D) graphics;
+        g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+        g2d.drawString("ORIGIN", 30, 30);
+        g2d.drawString("X THIS WAY", 200, 50);
+        g2d.drawString("Y THIS WAY", 60, 200);
+        g2d.drawRect(0, 0,
+                (int) pageFormat.getImageableWidth(),
+                (int) pageFormat.getImageableHeight());
+        if (pageIndex == 0) {
+            g2d.setColor(Color.black);
+        } else {
+            g2d.setColor(new Color(0, 0, 0, 128));
+        }
+        g2d.drawRect(1, 1,
+                (int) pageFormat.getImageableWidth() - 2,
+                (int) pageFormat.getImageableHeight() - 2);
+        g2d.drawLine(0, 0,
+                (int) pageFormat.getImageableWidth(),
+                (int) pageFormat.getImageableHeight());
+        g2d.drawLine((int) pageFormat.getImageableWidth(), 0,
+                0, (int) pageFormat.getImageableHeight());
 
-     if (pageIndex > 1) {
-        return Printable.NO_SUCH_PAGE;
-     }
+        return Printable.PAGE_EXISTS;
+    }
 
-     Graphics2D g2d = (Graphics2D)graphics;
+    private static final String INSTRUCTIONS =
+            " Press the print button, which brings up a print dialog.\n" +
+            " In the dialog select a printer and press the print button.\n\n" +
+            " Repeat for all the printers as you have installed\n" +
+            " On Solaris and Linux just one printer is sufficient.\n\n" +
+            " Collect the output and examine it, each print job has two pages\n" +
+            " of very similar output, except that the 2nd page of the job may\n" +
+            " appear in a different colour, and the output near the edge of\n" +
+            " the page may be clipped. This is OK. Hold up both pieces of paper\n" +
+            " to the light and confirm that the lines and text (where present)\n" +
+            " are positioned identically on both pages\n\n" +
+            " The test fails if the output from the two\n" +
+            " pages of a job is aligned differently";
 
-     g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-     g2d.drawString("ORIGIN", 30, 30);
-     g2d.drawString("X THIS WAY", 200, 50);
-     g2d.drawString("Y THIS WAY", 60 , 200);
-     g2d.drawRect(0,0,(int)pageFormat.getImageableWidth(),
-                      (int)pageFormat.getImageableHeight());
-     if (pageIndex == 0) {
-        g2d.setColor(Color.black);
-     } else {
-        g2d.setColor(new Color(0,0,0,128));
-     }
-     g2d.drawRect(1,1,(int)pageFormat.getImageableWidth()-2,
-                      (int)pageFormat.getImageableHeight()-2);
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
-     g2d.drawLine(0,0,
-                  (int)pageFormat.getImageableWidth(),
-                  (int)pageFormat.getImageableHeight());
-     g2d.drawLine((int)pageFormat.getImageableWidth(),0,
-                   0,(int)pageFormat.getImageableHeight());
-     return  Printable.PAGE_EXISTS;
-  }
-
-  public static void main( String[] args) {
-  String[] instructions =
-        {
-         "You must have a printer available to perform this test",
-         "Press the print button, which brings up a print dialog and",
-         "in the dialog select a printer and press the print button",
-         "in the dialog. Repeat for as many printers as you have installed",
-         "On solaris and linux just one printer is sufficient",
-         "Collect the output and examine it, each print job has two pages",
-         "of very similar output, except that the 2nd page of the job may",
-         "appear in a different colour, and the output near the edge of",
-         "the page may be clipped. This is OK. Hold up both pieces of paper",
-         "to the light and confirm that the lines and text (where present)",
-         "are positioned identically on both pages",
-         "The test fails if the JRE crashes, or if the output from the two",
-         "pages of a job is aligned differently"
-       };
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
-
-     new InvalidPage();
-  }
-
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
+                .splitUI(InvalidPage::createTestUI)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build()
+                .awaitAndCheck();
+    }
 }
-
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

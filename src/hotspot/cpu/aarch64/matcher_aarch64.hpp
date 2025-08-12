@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = true;
 
-  static const bool supports_scalable_vector() {
+  static bool supports_scalable_vector() {
     return UseSVE > 0;
   }
 
@@ -94,12 +94,12 @@
 
   static bool const_oop_prefer_decode() {
     // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-    return CompressedOops::base() == NULL;
+    return CompressedOops::base() == nullptr;
   }
 
   static bool const_klass_prefer_decode() {
     // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-    return CompressedKlassPointers::base() == NULL;
+    return CompressedKlassPointers::base() == nullptr;
   }
 
   // Is it better to copy float constants, or load them directly from
@@ -114,9 +114,6 @@
   // and move it piece-by-piece.  Only happens when passing doubles into
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
-
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
 
   // Are floats converted to double when stored to stack during
   // deoptimization?
@@ -133,6 +130,11 @@
     return true;
   }
 
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    return false;
+  }
+
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return false;
@@ -144,13 +146,12 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    // Not supported on SVE yet.
-    return !UseSVE;
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return UseSVE > 0;
   }
 
@@ -194,4 +195,13 @@
     }
   }
 
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
+  }
+
+  // Is FEAT_FP16 supported for this CPU?
+  static bool is_feat_fp16_supported() {
+    return (VM_Version::supports_fphp() && VM_Version::supports_asimdhp());
+  }
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

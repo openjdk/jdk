@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,23 @@
 #include "interpreter/bytecode.hpp"
 
 #include "oops/cpCache.inline.hpp"
+#include "prims/methodHandles.hpp"
 
-inline bool Bytecode_invoke::has_appendix() { return cpcache_entry()->has_appendix(); }
+inline bool Bytecode_invoke::has_appendix() {
+  if (invoke_code() == Bytecodes::_invokedynamic) {
+    return resolved_indy_entry()->has_appendix();
+  } else {
+    return resolved_method_entry()->has_appendix();
+  }
+}
+
+inline bool Bytecode_invoke::has_member_arg() const {
+  // NOTE: We could resolve the call and use the resolved adapter method here, but this function
+  // is used by deoptimization, where resolving could lead to problems, so we avoid that here
+  // by doing things symbolically.
+  //
+  // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
+  return !is_invokedynamic() && MethodHandles::has_member_arg(klass(), name());
+}
 
 #endif // SHARE_INTERPRETER_BYTECODE_INLINE_HPP

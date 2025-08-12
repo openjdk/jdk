@@ -35,12 +35,16 @@
 
 package java.util.concurrent.atomic;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 
 /**
  * A package-local class holding common representation and mechanics
@@ -138,15 +142,8 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
-        private static final VarHandle VALUE;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                VALUE = l.findVarHandle(Cell.class, "value", long.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle VALUE = MhUtil.findVarHandle(
+                MethodHandles.lookup(), "value", long.class);
     }
 
     /** Number of CPUS, to place bound on table size */
@@ -193,24 +190,18 @@ abstract class Striped64 extends Number {
     }
 
     /**
-     * Returns the probe value for the current thread.
-     * Duplicated from ThreadLocalRandom because of packaging restrictions.
+     * Returns the ThreadLocalRandom probe value for the current carrier thread.
      */
     static final int getProbe() {
-        return (int) THREAD_PROBE.get(Thread.currentThread());
+        return TLR.getThreadLocalRandomProbe();
     }
 
     /**
      * Pseudo-randomly advances and records the given probe value for the
-     * given thread.
-     * Duplicated from ThreadLocalRandom because of packaging restrictions.
+     * given carrier thread.
      */
     static final int advanceProbe(int probe) {
-        probe ^= probe << 13;   // xorshift
-        probe ^= probe >>> 17;
-        probe ^= probe << 5;
-        THREAD_PROBE.set(Thread.currentThread(), probe);
-        return probe;
+        return TLR.advanceThreadLocalRandomProbe(probe);
     }
 
     /**
@@ -376,32 +367,17 @@ abstract class Striped64 extends Number {
         }
     }
 
+    private static final JavaUtilConcurrentTLRAccess TLR =
+        SharedSecrets.getJavaUtilConcurrentTLRAccess();
+
     // VarHandle mechanics
     private static final VarHandle BASE;
     private static final VarHandle CELLSBUSY;
-    private static final VarHandle THREAD_PROBE;
     static {
-        try {
-            MethodHandles.Lookup l1 = MethodHandles.lookup();
-            BASE = l1.findVarHandle(Striped64.class,
-                    "base", long.class);
-            CELLSBUSY = l1.findVarHandle(Striped64.class,
-                    "cellsBusy", int.class);
-            @SuppressWarnings("removal")
-            MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<>() {
-                        public MethodHandles.Lookup run() {
-                            try {
-                                return MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
-                            } catch (ReflectiveOperationException e) {
-                                throw new ExceptionInInitializerError(e);
-                            }
-                        }});
-            THREAD_PROBE = l2.findVarHandle(Thread.class,
-                    "threadLocalRandomProbe", int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l1 = MethodHandles.lookup();
+
+        BASE = MhUtil.findVarHandle(l1, "base", long.class);
+        CELLSBUSY = MhUtil.findVarHandle(l1, "cellsBusy", int.class);
     }
 
 }

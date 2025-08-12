@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,19 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
+class CompileTrainingData;
 class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
+
+enum class InliningResult { SUCCESS, FAILURE };
+
+inline InliningResult inlining_result_of(bool success) {
+  return success ? InliningResult::SUCCESS : InliningResult::FAILURE;
+}
 
 // CompileTask
 //
@@ -74,8 +82,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
  private:
-  static CompileTask*  _task_free_list;
-  Monitor*             _lock;
+  static int           _active_tasks;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -95,34 +102,25 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
-  bool                 _is_free;
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
-  Method*              _hot_method;   // which method actually triggered this task
-  jobject              _hot_method_holder;
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  CompileTrainingData* _training_data;
+  size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
-  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
-    // May hold MethodCompileQueue_lock
-    _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
-  }
-
-  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-                  const methodHandle& hot_method, int hot_count,
-                  CompileTask::CompileReason compile_reason, bool is_blocking);
-
-  static CompileTask* allocate();
-  static void         free(CompileTask* task);
+  CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+              int hot_count, CompileReason compile_reason, bool is_blocking);
+  ~CompileTask();
+  static void wait_for_no_active_tasks();
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
-  Method*      hot_method() const                { return _hot_method; }
   int          osr_bci() const                   { return _osr_bci; }
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
@@ -165,8 +163,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 #endif
 
-  Monitor*     lock() const                      { return _lock; }
-
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
   void         mark_started(jlong time)          { _time_started = time; }
@@ -174,7 +170,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
-  AbstractCompiler* compiler();
+  CompileReason compile_reason()                 { return _compile_reason; }
+
+  AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }
@@ -184,13 +182,17 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_next(CompileTask* next)       { _next = next; }
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
-  bool         is_free() const                   { return _is_free; }
-  void         set_is_free(bool val)             { _is_free = val; }
   bool         is_unloaded() const;
+
+  CompileTrainingData* training_data() const      { return _training_data; }
+  void set_training_data(CompileTrainingData* td) { _training_data = td;   }
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
+
+  void         set_arena_bytes(size_t s)         { _arena_bytes = s; }
+  size_t       arena_bytes() const               { return _arena_bytes; }
 
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
@@ -208,6 +210,9 @@ public:
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
 
+  /**
+   * @deprecated Please rely on Compile::inline_printer. Do not directly write inlining information to tty.
+   */
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
 
   void         print_tty();
@@ -225,11 +230,15 @@ public:
 
   bool         check_break_at_flags();
 
-  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
-  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
-    print_inlining_inner(tty, method, inline_level, bci, msg);
+  static void print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci);
+  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inline_inner_method_info(outputStream* st, ciMethod* method);
+  static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
+
+  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
+    print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }
-  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
+  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
 };
 
 #endif // SHARE_COMPILER_COMPILETASK_HPP

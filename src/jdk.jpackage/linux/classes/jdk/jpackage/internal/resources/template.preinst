@@ -14,12 +14,13 @@ set -e
 # the debian-policy package
 
 package_type=deb
+COMMON_SCRIPTS
 LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     install|upgrade)
 if [ -n "$2" ]; then
-  true; LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
+  :; LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
 fi
     ;;
 

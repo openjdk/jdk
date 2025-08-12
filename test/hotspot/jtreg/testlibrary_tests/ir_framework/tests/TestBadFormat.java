@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class TestBadFormat {
         expectTestFormatException(BadWarmup.class);
         expectTestFormatException(BadBaseTests.class);
         expectTestFormatException(BadRunTests.class);
+        expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
@@ -205,57 +206,57 @@ class BadArgumentsAnnotation {
     public void checkNoArgAnnotation2() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch(int a, int b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch2() {}
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     public void notBoolean(boolean a) {}
 
     @Test
-    @Arguments(Argument.NUMBER_MINUS_42)
+    @Arguments(values = Argument.NUMBER_MINUS_42)
     public void notBoolean2(boolean a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void notNumber(int a) {}
 
     @Test
-    @Arguments(Argument.FALSE)
+    @Arguments(values = Argument.FALSE)
     public void notNumber2(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
     public void notNumber3(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
     public void notNumber4(int a) {}
 
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
     public void notNumber5(boolean a, int b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
     public void notNumber6(int a, boolean b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.MIN, Argument.MAX})
+    @Arguments(values = {Argument.MIN, Argument.MAX})
     public void notNumber7(boolean a, boolean b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void missingDefaultConstructor(ClassNoDefaultConstructor a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithRun(Object o1, Object o2) {
     }
 
@@ -265,7 +266,7 @@ class BadArgumentsAnnotation {
     }
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithCheck(Object o1, Object o2) {
     }
 
@@ -282,11 +283,11 @@ class BadOverloadedMethod {
     public void sameName() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(boolean a) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(double a) {}
 }
 
@@ -488,21 +489,21 @@ class BadWarmup {
 
 class BadBaseTests {
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public TestInfo cannotUseTestInfoAsParameterOrReturn(TestInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public RunInfo cannotUseRunInfoAsParameterOrReturn(RunInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public AbstractInfo cannotUseAbstractInfoAsParameterOrReturn(AbstractInfo info) {
         return null;
@@ -531,7 +532,7 @@ class BadRunTests {
     public void noTestExists() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argTest(int x) {}
 
     @FailCount(0) // Combined with argTest()
@@ -578,7 +579,7 @@ class BadRunTests {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Run(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(RunInfo info) {}
 
@@ -621,6 +622,74 @@ class BadRunTests {
     @FailCount(0)
     @Run(test = {"testInvalidReuse2", "testInvalidReuse3"})
     public void runInvalidReuse2() {}
+}
+
+class BadSetupTest {
+    // ----------- Bad Combinations of Annotations -----------------
+    @Setup
+    @Test
+    public Object[] badSetupTestAnnotation() {
+      return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    public void testForBadSetupCheckAnnotation() {}
+
+    @Setup
+    @Check(test = "testForBadSetupCheckAnnotation")
+    public void badSetupCheckAnnotation() {}
+
+    @Setup
+    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void badSetupArgumentsAnnotation(int a, int b) {}
+
+    @NoFail
+    @Test
+    public void testForBadSetupRunAnnotation() {}
+
+    @Setup
+    @Run(test = "testForBadSetupRunAnnotation")
+    public void badSetupRunAnnotation() {}
+
+    // ----------- Useless but ok: Setup Without Test Method -----
+    @NoFail
+    @Setup
+    public void setupWithNoTest() {}
+
+    // ----------- Bad: Test where Setup Method does not exist ---
+    @Test
+    @Arguments(setup = "nonExistingMethod")
+    public void testWithNonExistingMethod() {}
+
+    // ----------- Bad Arguments Annotation ----------------------
+    @NoFail
+    @Setup
+    public Object[] setupForTestSetupAndValues() {
+        return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupForTestSetupAndValues",
+               values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void testSetupAndValues(int a, int b) {}
+
+    // ----------- Overloaded Setup Method ----------------------
+    @NoFail
+    @Setup
+    Object[] setupOverloaded() {
+        return new Object[]{3, 2, 1};
+    }
+
+    @Setup
+    Object[] setupOverloaded(SetupInfo info) {
+        return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    @Arguments(setup = "setupOverloaded")
+    void testOverloaded(int a, int b, int c) {}
 }
 
 class BadCheckTest {
@@ -702,7 +771,7 @@ class BadCheckTest {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Check(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
@@ -999,7 +1068,7 @@ class BadIRAnnotationsAfterTestVM {
     public void missingCountString() {}
 
     @Test
-    @FailCount(45)
+    @FailCount(51)
     @IR(counts = {IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE, IRNode.STORE, IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", IRNode.STORE})
@@ -1025,6 +1094,12 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE, " > 3.0"})
     @IR(counts = {IRNode.STORE, " > a3"})
     @IR(counts = {IRNode.STORE, " > 0x1"})
+    @IR(counts = {IRNode.STORE, "!= 1000"})
+    @IR(counts = {IRNode.STORE, "< 0"})
+    @IR(counts = {IRNode.STORE, "< 1"})
+    @IR(counts = {IRNode.STORE, "<= 0"})
+    @IR(counts = {IRNode.STORE, "> -1"})
+    @IR(counts = {IRNode.STORE, ">= 0"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "<"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!3"})
@@ -1046,6 +1121,27 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
     public void wrongCountString() {}
+
+    @Test
+    @FailCount(8)
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min()", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type)", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,max_int", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,-3", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, xxx)", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, min(max_for_type, max_for_type))", "> 0"})
+    public int[] badVectorNodeSize() {
+        int[] a = new int[1024*8];
+        for (int i = 0; i < a.length; i++) {
+            a[i]++;
+        }
+        return a;
+    }
 }
 
 class BadIRNodeForPhase {
@@ -1067,15 +1163,17 @@ class BadIRNodeForPhase {
     public void duplicatedPhase() {}
 
     @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @FailCount(6)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
     public void alloc() {}
 
     @Test
@@ -1096,18 +1194,18 @@ class BadIRNodeForPhase {
 
     @Test
     @FailCount(6)
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.FINAL_CODE)
     public void vector() {}
 
     @Test

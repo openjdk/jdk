@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
+#include "utilities/checkedCast.hpp"
 
 #include <signal.h>
 #include <sys/socket.h>
@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 #ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
+#define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
 #endif
 
 // The attach mechanism on AIX  uses a UNIX domain socket. An attach listener
@@ -73,16 +73,7 @@ class AixAttachListener: AllStatic {
 
   static bool _atexit_registered;
 
-  // reads a request from the given connected socket
-  static AixAttachOperation* read_request(int s);
-
  public:
-  enum {
-    ATTACH_PROTOCOL_VER = 1                     // protocol version
-  };
-  enum {
-    ATTACH_ERROR_BADVERSION     = 101           // error codes
-  };
 
   static void set_path(char* path) {
     if (path == nullptr) {
@@ -107,25 +98,65 @@ class AixAttachListener: AllStatic {
   static void set_shutdown(bool shutdown) { _shutdown = shutdown; }
   static bool is_shutdown()     { return _shutdown; }
 
-  // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
-
   static AixAttachOperation* dequeue();
+};
+
+class SocketChannel : public AttachOperation::RequestReader, public AttachOperation::ReplyWriter {
+private:
+  int _socket;
+public:
+  SocketChannel(int socket) : _socket(socket) {}
+  ~SocketChannel() {
+    close();
+  }
+
+  bool opened() const {
+    return _socket != -1;
+  }
+
+  void close() {
+    if (opened()) {
+      // SHUT_RDWR is not available
+      ::shutdown(_socket, 2);
+      ::close(_socket);
+      _socket = -1;
+    }
+  }
+
+  // RequestReader
+  int read(void* buffer, int size) override {
+    ssize_t n;
+    RESTARTABLE(::read(_socket, buffer, (size_t)size), n);
+    return checked_cast<int>(n);
+  }
+
+  // ReplyWriter
+  int write(const void* buffer, int size) override {
+    ssize_t n;
+    RESTARTABLE(::write(_socket, buffer, size), n);
+    return checked_cast<int>(n);
+  }
+
+  void flush() override {
+  }
 };
 
 class AixAttachOperation: public AttachOperation {
  private:
   // the connection to the client
-  int _socket;
+  SocketChannel _socket_channel;
 
  public:
-  void complete(jint res, bufferedStream* st);
+  AixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {}
 
-  void set_socket(int s)                                { _socket = s; }
-  int socket() const                                    { return _socket; }
+  void complete(jint res, bufferedStream* st) override;
 
-  AixAttachOperation(char* name) : AttachOperation(name) {
-    set_socket(-1);
+  ReplyWriter* get_reply_writer() override {
+    return &_socket_channel;
+  }
+
+  bool read_request() {
+    return _socket_channel.read_request(this, &_socket_channel);
   }
 };
 
@@ -136,34 +167,6 @@ volatile int AixAttachListener::_listener = -1;
 bool AixAttachListener::_atexit_registered = false;
 // Shutdown marker to prevent accept blocking during clean-up
 volatile bool AixAttachListener::_shutdown = false;
-
-// Supporting class to help split a buffer into individual components
-class ArgumentIterator : public StackObj {
- private:
-  char* _pos;
-  char* _end;
- public:
-  ArgumentIterator(char* arg_buffer, size_t arg_size) {
-    _pos = arg_buffer;
-    _end = _pos + arg_size - 1;
-  }
-  char* next() {
-    if (*_pos == '\0') {
-      // advance the iterator if possible (null arguments)
-      if (_pos < _end) {
-        _pos += 1;
-      }
-      return nullptr;
-    }
-    char* res = _pos;
-    char* next_pos = strchr(_pos, '\0');
-    if (next_pos < _end)  {
-      next_pos++;
-    }
-    _pos = next_pos;
-    return res;
-  }
-};
 
 // On AIX if sockets block until all data has been transmitted
 // successfully in some communication domains a socket "close" may
@@ -227,7 +230,6 @@ int AixAttachListener::init() {
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
-  // We must call bind with the actual socketaddr length. This is obligatory for AS400.
   int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
   if (res == -1) {
     ::close(listener);
@@ -258,106 +260,6 @@ int AixAttachListener::init() {
 
   return 0;
 }
-
-// Given a socket that is connected to a peer we read the request and
-// create an AttachOperation. As the socket is blocking there is potential
-// for a denial-of-service if the peer does not response. However this happens
-// after the peer credentials have been checked and in the worst case it just
-// means that the attach listener thread is blocked.
-//
-AixAttachOperation* AixAttachListener::read_request(int s) {
-  char ver_str[8];
-  os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
-
-  // The request is a sequence of strings so we first figure out the
-  // expected count and the maximum possible length of the request.
-  // The request is:
-  //   <ver>0<cmd>0<arg>0<arg>0<arg>0
-  // where <ver> is the protocol version (1), <cmd> is the command
-  // name ("load", "datadump", ...), and <arg> is an argument
-  int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
-    AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
-
-  char buf[max_len];
-  int str_count = 0;
-
-  // Read until all (expected) strings have been read, the buffer is
-  // full, or EOF.
-
-  int off = 0;
-  int left = max_len;
-
-  do {
-    int n;
-    // Don't block on interrupts because this will
-    // hang in the clean-up when shutting down.
-    n = read(s, buf+off, left);
-    assert(n <= left, "buffer was too small, impossible!");
-    buf[max_len - 1] = '\0';
-    if (n == -1) {
-      return nullptr;      // reset by peer or other error
-    }
-    if (n == 0) {
-      break;
-    }
-    for (int i=0; i<n; i++) {
-      if (buf[off+i] == 0) {
-        // EOS found
-        str_count++;
-
-        // The first string is <ver> so check it now to
-        // check for protocol mismatch
-        if (str_count == 1) {
-          if ((strlen(buf) != strlen(ver_str)) ||
-              (atoi(buf) != ATTACH_PROTOCOL_VER)) {
-            char msg[32];
-            os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
-            write_fully(s, msg, strlen(msg));
-            return nullptr;
-          }
-        }
-      }
-    }
-    off += n;
-    left -= n;
-  } while (left > 0 && str_count < expected_str_count);
-
-  if (str_count != expected_str_count) {
-    return nullptr;        // incomplete request
-  }
-
-  // parse request
-
-  ArgumentIterator args(buf, (max_len)-left);
-
-  // version already checked
-  char* v = args.next();
-
-  char* name = args.next();
-  if (name == nullptr || strlen(name) > AttachOperation::name_length_max) {
-    return nullptr;
-  }
-
-  AixAttachOperation* op = new AixAttachOperation(name);
-
-  for (int i=0; i<AttachOperation::arg_count_max; i++) {
-    char* arg = args.next();
-    if (arg == nullptr) {
-      op->set_arg(i, nullptr);
-    } else {
-      if (strlen(arg) > AttachOperation::arg_length_max) {
-        delete op;
-        return nullptr;
-      }
-      op->set_arg(i, arg);
-    }
-  }
-
-  op->set_socket(s);
-  return op;
-}
-
 
 // Dequeue an operation
 //
@@ -403,29 +305,14 @@ AixAttachOperation* AixAttachListener::dequeue() {
     }
 
     // peer credential look okay so we read the request
-    AixAttachOperation* op = read_request(s);
-    if (op == nullptr) {
-      ::close(s);
+    AixAttachOperation* op = new AixAttachOperation(s);
+    if (!op->read_request()) {
+      delete op;
       continue;
     } else {
       return op;
     }
   }
-}
-
-// write the given buffer to the socket
-int AixAttachListener::write_fully(int s, char* buf, int len) {
-  do {
-    int n = ::write(s, buf, len);
-    if (n == -1) {
-      if (errno != EINTR) return -1;
-    } else {
-      buf += n;
-      len -= n;
-    }
-  }
-  while (len > 0);
-  return 0;
 }
 
 // Complete an operation by sending the operation result and any result
@@ -437,24 +324,6 @@ int AixAttachListener::write_fully(int s, char* buf, int len) {
 // socket could be made non-blocking and a timeout could be used.
 
 void AixAttachOperation::complete(jint result, bufferedStream* st) {
-  JavaThread* thread = JavaThread::current();
-  ThreadBlockInVM tbivm(thread);
-
-  // write operation result
-  char msg[32];
-  os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  int rc = AixAttachListener::write_fully(this->socket(), msg, strlen(msg));
-
-  // write any result data
-  if (rc == 0) {
-    // Shutdown the socket in the cleanup function to enable more than
-    // one agent attach in a sequence (see comments to listener_cleanup()).
-    AixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
-  }
-
-  // done
-  ::close(this->socket());
-
   delete this;
 }
 
@@ -477,14 +346,14 @@ AttachOperation* AttachListener::dequeue() {
 
 void AttachListener::vm_start() {
   char fn[UNIX_PATH_MAX];
-  struct stat64 st;
+  struct stat st;
   int ret;
 
   int n = snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
            os::get_temp_directory(), os::current_process_id());
   assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
 
-  RESTARTABLE(::stat64(fn, &st), ret);
+  RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
     ret = ::unlink(fn);
     if (ret == -1) {
@@ -494,6 +363,7 @@ void AttachListener::vm_start() {
 }
 
 int AttachListener::pd_init() {
+  AttachListener::set_supported_version(ATTACH_API_V2);
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
@@ -504,8 +374,8 @@ int AttachListener::pd_init() {
 
 bool AttachListener::check_socket_file() {
   int ret;
-  struct stat64 st;
-  ret = stat64(AixAttachListener::path(), &st);
+  struct stat st;
+  ret = stat(AixAttachListener::path(), &st);
   if (ret == -1) { // need to restart attach listener.
     log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
                       AixAttachListener::path());
@@ -544,14 +414,14 @@ bool AttachListener::is_init_trigger() {
   }
   char fn[PATH_MAX + 1];
   int ret;
-  struct stat64 st;
+  struct stat st;
   os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
-  RESTARTABLE(::stat64(fn, &st), ret);
+  RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
              os::get_temp_directory(), os::current_process_id());
-    RESTARTABLE(::stat64(fn, &st), ret);
+    RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);
     }
@@ -577,15 +447,6 @@ void AttachListener::abort() {
 
 void AttachListener::pd_data_dump() {
   os::signal_notify(SIGQUIT);
-}
-
-AttachOperationFunctionInfo* AttachListener::pd_find_operation(const char* n) {
-  return nullptr;
-}
-
-jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
-  out->print_cr("flag '%s' cannot be changed", op->arg(0));
-  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {

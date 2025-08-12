@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
@@ -232,7 +231,7 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
  */
 static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const char* fmt, va_list args) {
   FILE*f;
-  int n;
+  ssize_t n;
   char buf[2048];
 
   if ((f = os::fopen(procfile, "r")) == nullptr) {
@@ -382,12 +381,12 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
   } else if (tdiff < (udiff + kdiff)) {
     tdiff = udiff + kdiff;
   }
-  *pkernelLoad = (kdiff / (double)tdiff);
+  *pkernelLoad = ((double)kdiff / (double)tdiff);
   // BUG9044876, normalize return values to sane values
   *pkernelLoad = MAX2<double>(*pkernelLoad, 0.0);
   *pkernelLoad = MIN2<double>(*pkernelLoad, 1.0);
 
-  user_load = (udiff / (double)tdiff);
+  user_load = ((double)udiff / (double)tdiff);
   user_load = MAX2<double>(user_load, 0.0);
   user_load = MIN2<double>(user_load, 1.0);
 
@@ -430,7 +429,10 @@ static int get_boot_time(uint64_t* time) {
 }
 
 static int perf_context_switch_rate(double* rate) {
+  PRAGMA_DIAG_PUSH
+  PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
   static pthread_mutex_t contextSwitchLock = PTHREAD_MUTEX_INITIALIZER;
+  PRAGMA_DIAG_POP
   static uint64_t      bootTime;
   static uint64_t      lastTimeNanos;
   static uint64_t      lastSwitches;
@@ -473,7 +475,7 @@ static int perf_context_switch_rate(double* rate) {
     if (d == 0) {
       *rate = lastRate;
     } else if (get_noof_context_switches(&sw) == 0) {
-      *rate      = ( (double)(sw - lastSwitches) / d ) * 1000;
+      *rate      = ( (double)(sw - lastSwitches) / (double)d ) * 1000;
       lastRate     = *rate;
       lastSwitches = sw;
       if (bootTime != 0) {
@@ -786,7 +788,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
+  return os::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {
@@ -847,7 +849,7 @@ SystemProcessInterface::SystemProcesses::ProcessIterator::ProcessIterator() {
 bool SystemProcessInterface::SystemProcesses::ProcessIterator::initialize() {
   _dir = os::opendir("/proc");
   _entry = nullptr;
-  _valid = true;
+  _valid = _dir != nullptr; // May be null if /proc is not accessible.
   next_process();
 
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public class MemoryUtil {
             (pool.isUsageThresholdSupported() ? pool.getUsageThreshold() : -1));
         System.out.println(INDENT + "ThresholdCount: " +
             (pool.isUsageThresholdSupported() ? pool.getUsageThresholdCount() : -1));
+        System.out.println(INDENT + "CollectionThresholdCount: " +
+            (pool.isCollectionUsageThresholdSupported() ? pool.getCollectionUsageThresholdCount() : -1));
         System.out.print(INDENT + "Manager = [");
         String[] mgrs = pool.getMemoryManagerNames();
         for (int i = 0; i < mgrs.length; i++) {

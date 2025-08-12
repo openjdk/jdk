@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6574117
+ * @key printer
  * @summary Verify no NPE testing service support of SheetCollate
  * @run main CollateAttr
  */

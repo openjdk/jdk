@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class TestWBDeflateIdleMonitors {
     static final int N_TRIES = 5;     // number of times to try deflation
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -61,12 +61,11 @@ public class TestWBDeflateIdleMonitors {
         static WhiteBox wb = WhiteBox.getWhiteBox();
         public static Object obj;
 
-        public static void main(String args[]) {
+        public static void main(String args[]) throws Exception {
             obj = new Object();
             synchronized (obj) {
-                // HotSpot implementation detail: asking for the hash code
-                // when the object is locked causes monitor inflation.
-                if (obj.hashCode() == 0xBAD) System.out.println("!");
+                // The current implementation of notify-wait requires inflation.
+                obj.wait(1);
                 Asserts.assertEQ(wb.isMonitorInflated(obj), true,
                                  "Monitor should be inflated.");
             }

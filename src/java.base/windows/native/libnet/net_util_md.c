@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,29 +101,21 @@ static struct {
     { WSA_OPERATION_ABORTED,    0,      "Overlapped operation aborted" },
 };
 
-/*
- * Initialize Windows Sockets API support
- */
-BOOL WINAPI
-DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+static void at_exit_callback(void)
+{
+    WSACleanup();
+}
+
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+NET_PlatformInit()
 {
     WSADATA wsadata;
 
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
-                return FALSE;
-            }
-            break;
+    atexit(at_exit_callback);
 
-        case DLL_PROCESS_DETACH:
-            WSACleanup();
-            break;
-
-        default:
-            break;
-    }
-    return TRUE;
+    return WSAStartup(MAKEWORD(2,2), &wsadata);
 }
 
 /*
@@ -143,7 +135,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     /*
      * If exception already throw then don't overwrite it.
      */
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -187,7 +179,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     if (excP == NULL) {
         excP = "SocketException";
     }
-    sprintf(exc, "%s%s", JNU_JAVANETPKG, excP);
+    snprintf(exc, sizeof(exc), "%s%s", JNU_JAVANETPKG, excP);
     JNU_ThrowByName(env, exc, fullMsg);
 }
 
@@ -224,75 +216,6 @@ jint reuseport_supported(int ipv6_available)
     /* SO_REUSEPORT is not supported on Windows */
     return JNI_FALSE;
 }
-
-/* call NET_MapSocketOptionV6 for the IPv6 fd only
- * and NET_MapSocketOption for the IPv4 fd
- */
-JNIEXPORT int JNICALL
-NET_MapSocketOptionV6(jint cmd, int *level, int *optname) {
-
-    switch (cmd) {
-        case java_net_SocketOptions_IP_MULTICAST_IF:
-        case java_net_SocketOptions_IP_MULTICAST_IF2:
-            *level = IPPROTO_IPV6;
-            *optname = IPV6_MULTICAST_IF;
-            return 0;
-
-        case java_net_SocketOptions_IP_MULTICAST_LOOP:
-            *level = IPPROTO_IPV6;
-            *optname = IPV6_MULTICAST_LOOP;
-            return 0;
-    }
-    return NET_MapSocketOption (cmd, level, optname);
-}
-
-/*
- * Map the Java level socket option to the platform specific
- * level and option name.
- */
-
-JNIEXPORT int JNICALL
-NET_MapSocketOption(jint cmd, int *level, int *optname) {
-
-    typedef struct {
-        jint cmd;
-        int level;
-        int optname;
-    } sockopts;
-
-    static sockopts opts[] = {
-        { java_net_SocketOptions_TCP_NODELAY,   IPPROTO_TCP,    TCP_NODELAY },
-        { java_net_SocketOptions_SO_OOBINLINE,  SOL_SOCKET,     SO_OOBINLINE },
-        { java_net_SocketOptions_SO_LINGER,     SOL_SOCKET,     SO_LINGER },
-        { java_net_SocketOptions_SO_SNDBUF,     SOL_SOCKET,     SO_SNDBUF },
-        { java_net_SocketOptions_SO_RCVBUF,     SOL_SOCKET,     SO_RCVBUF },
-        { java_net_SocketOptions_SO_KEEPALIVE,  SOL_SOCKET,     SO_KEEPALIVE },
-        { java_net_SocketOptions_SO_REUSEADDR,  SOL_SOCKET,     SO_REUSEADDR },
-        { java_net_SocketOptions_SO_BROADCAST,  SOL_SOCKET,     SO_BROADCAST },
-        { java_net_SocketOptions_IP_MULTICAST_IF,   IPPROTO_IP, IP_MULTICAST_IF },
-        { java_net_SocketOptions_IP_MULTICAST_LOOP, IPPROTO_IP, IP_MULTICAST_LOOP },
-        { java_net_SocketOptions_IP_TOS,            IPPROTO_IP, IP_TOS },
-
-    };
-
-
-    int i;
-
-    /*
-     * Map the Java level option to the native level
-     */
-    for (i=0; i<(int)(sizeof(opts) / sizeof(opts[0])); i++) {
-        if (cmd == opts[i].cmd) {
-            *level = opts[i].level;
-            *optname = opts[i].optname;
-            return 0;
-        }
-    }
-
-    /* not found */
-    return -1;
-}
-
 
 /*
  * Wrapper for setsockopt dealing with Windows specific issues :-
@@ -392,19 +315,8 @@ NET_GetSockOpt(int s, int level, int optname, void *optval,
     return rv;
 }
 
-JNIEXPORT int JNICALL
-NET_SocketAvailable(int s, int *pbytes) {
-    u_long arg;
-    if (ioctlsocket((SOCKET)s, FIONREAD, &arg) == SOCKET_ERROR) {
-        return -1;
-    } else {
-        *pbytes = (int) arg;
-        return 0;
-    }
-}
-
 /*
- * Sets SO_ECLUSIVEADDRUSE if SO_REUSEADDR is not already set.
+ * Sets SO_EXCLUSIVEADDRUSE if SO_REUSEADDR is not already set.
  */
 void setExclusiveBind(int fd) {
     int parg = 0;

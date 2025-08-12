@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.MenuBar;
-import java.security.AccessController;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -38,21 +37,17 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuBarUI;
 
 import sun.lwawt.macosx.LWCToolkit;
-import sun.security.action.GetBooleanAction;
 
 // MenuBar implementation for Mac L&F
-@SuppressWarnings("removal")
-public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
+@SuppressWarnings("restricted")
+public final class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
 
     static {
-        java.security.AccessController.doPrivileged(
-                (java.security.PrivilegedAction<Void>) () -> {
-            System.loadLibrary("osxui");
-            return null;
-        });
+        System.loadLibrary("osxui");
     }
 
     // Utilities
+    @Override
     public void uninstallUI(final JComponent c) {
         if (fScreenMenuBar != null) {
             final JFrame frame = (JFrame)(c.getTopLevelAncestor());
@@ -71,12 +66,14 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
 
     // [3320390] -- If the screen menu bar is in use, don't register keyboard actions that
     // show the menus when F10 is pressed.
+    @Override
     protected void installKeyboardActions() {
         if (!useScreenMenuBar) {
             super.installKeyboardActions();
         }
     }
 
+    @Override
     protected void uninstallKeyboardActions() {
         if (!useScreenMenuBar) {
             super.uninstallKeyboardActions();
@@ -84,10 +81,12 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     }
 
     // Paint Methods
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         AquaMenuPainter.instance().paintMenuBarBackground(g, c.getWidth(), c.getHeight(), c);
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (isScreenMenuBar((JMenuBar)c)) {
             if (setScreenMenuBar((JFrame)(c.getTopLevelAncestor()))) {
@@ -117,6 +116,7 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
         return true;
     }
 
+    @Override
     public ScreenMenuBar getScreenMenuBar() {
         // Lazy init of member variables means we should use a synchronized block.
         synchronized(this) {
@@ -151,7 +151,6 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     public static boolean getScreenMenuBarProperty() {
         // Do not allow AWT to set the screen menu bar if it's embedded in another UI toolkit
         if (LWCToolkit.isEmbedded()) return false;
-        return AccessController.doPrivileged(new GetBooleanAction(
-                AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar"));
+        return Boolean.getBoolean(AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
     }
 }

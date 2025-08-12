@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -99,14 +98,14 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   Register r = jni_arg.is_register() ? jni_arg.as_register() : R11_scratch1;
 
   // The handle for a receiver will never be null.
-  bool do_NULL_check = offset() != 0 || is_static();
+  bool do_null_check = offset() != 0 || is_static();
 
   Label do_null;
-  if (do_NULL_check) {
+  if (do_null_check) {
     __ ld(R0, locals_j_arg_at(offset()));
-    __ cmpdi(CCR0, R0, 0);
+    __ cmpdi(CR0, R0, 0);
     __ li(r, 0);
-    __ beq(CCR0, do_null);
+    __ beq(CR0, do_null);
   }
   __ addir(r, locals_j_arg_at(offset()));
   __ bind(do_null);

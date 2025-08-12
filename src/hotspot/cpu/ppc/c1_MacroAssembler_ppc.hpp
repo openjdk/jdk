@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,14 +80,14 @@
     Register t1,                       // temp register
     Register t2,                       // temp register
     Register t3,                       // temp register
-    int      hdr_size,                 // object header size in words
+    int      base_offset_in_bytes,     // elements offset in bytes
     int      elt_size,                 // element size in bytes
     Register klass,                    // object klass
-    Label&   slow_case                 // continuation point if fast allocation fails
+    Label&   slow_case,                // continuation point if fast allocation fails
+    bool     zero_array                // zero the allocated array or not
   );
 
-  void null_check(Register r, Label *Lnull = NULL);
+  void null_check(Register r, Label *Lnull = nullptr);
 
-  address call_c_with_frame_resize(address dest, int frame_resize);
 
 #endif // CPU_PPC_C1_MACROASSEMBLER_PPC_HPP

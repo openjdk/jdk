@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,16 +202,10 @@ public abstract class ColorModel implements Transparency{
      * that the name of the library is "awt".  -br.
      */
     private static boolean loaded = false;
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     static void loadLibraries() {
         if (!loaded) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("awt");
-                        return null;
-                    }
-                });
+            System.loadLibrary("awt");
             loaded = true;
         }
     }
@@ -833,7 +827,7 @@ public abstract class ColorModel implements Transparency{
      *  {@code inData} is not large enough to hold a pixel value
      *  for this {@code ColorModel}
      * @throws UnsupportedOperationException if this
-     *  {@code tranferType} is not supported by this
+     *  {@code transferType} is not supported by this
      *  {@code ColorModel}
      */
     public int getAlpha(Object inData) {

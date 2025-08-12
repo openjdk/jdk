@@ -64,7 +64,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
   JNIEnv *env;
 
   res = jvm->GetEnv((void **) &env, JNI_VERSION_9);
-  if (res != JNI_OK || env == NULL) {
+  if (res != JNI_OK || env == nullptr) {
     fprintf(stderr, "Error: GetEnv call failed(%d)!\n", res);
     return JNI_ERR;
   }
@@ -79,7 +79,7 @@ Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   printf("Agent_OnLoad started\n");
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -257,9 +257,9 @@ Java_IterateHeapWithEscapeAnalysisEnabled_countAndTagInstancesOfClass(JNIEnv *en
 
   if (env->IsSameObject(method, method_IterateOverReachableObjects)) {
     method_found = JNI_TRUE;
-    err = jvmti->IterateOverReachableObjects(NULL /*jvmtiHeapRootCallback*/,
+    err = jvmti->IterateOverReachableObjects(nullptr /*jvmtiHeapRootCallback*/,
                                              __stackReferenceCallback,
-                                             NULL /* jvmtiObjectReferenceCallback */,
+                                             nullptr /* jvmtiObjectReferenceCallback */,
                                              &data);
     if (err != JVMTI_ERROR_NONE) {
       ShowErrorMessage(jvmti, err,
@@ -294,8 +294,8 @@ Java_IterateHeapWithEscapeAnalysisEnabled_countAndTagInstancesOfClass(JNIEnv *en
     method_found = JNI_TRUE;
     callbacks.heap_reference_callback = __jvmtiHeapReferenceCallback;
     err = jvmti->FollowReferences(0 /* filter nothing */,
-                                  NULL /* no class filter */,
-                                  NULL /* no initial object, follow roots */,
+                                  nullptr /* no class filter */,
+                                  nullptr /* no initial object, follow roots */,
                                   &callbacks,
                                   &data);
     if (err != JVMTI_ERROR_NONE) {
@@ -308,7 +308,7 @@ Java_IterateHeapWithEscapeAnalysisEnabled_countAndTagInstancesOfClass(JNIEnv *en
     method_found = JNI_TRUE;
     callbacks.heap_iteration_callback = __jvmtiHeapIterationCallback;
     err = jvmti->IterateThroughHeap(0 /* filter nothing */,
-                                    NULL /* no class filter */,
+                                    nullptr /* no class filter */,
                                     &callbacks,
                                     &data);
     if (err != JVMTI_ERROR_NONE) {

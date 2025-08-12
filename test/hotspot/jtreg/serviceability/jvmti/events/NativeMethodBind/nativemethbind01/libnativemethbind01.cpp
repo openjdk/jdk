@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -49,7 +49,7 @@ static const char *CLASS_SIG =
     "Lnativemethbind01$TestedClass;";
 
 static volatile jint result = PASSED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jrawMonitorID counter_lock;
 
@@ -76,7 +76,7 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
     return;
   }
 
-  err = jvmti->GetMethodName(method, &methNam, &methSig, NULL);
+  err = jvmti->GetMethodName(method, &methNam, &methSig, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     result = STATUS_FAILED;
     LOG("TEST FAILED: unable to get method name during NativeMethodBind callback\n\n");
@@ -118,7 +118,7 @@ anotherNativeMethod(JNIEnv *jni, jobject obj) {
 /* dummy method used only to provoke NativeMethodBind event */
 JNIEXPORT void JNICALL
 Java_nativemethbind01_nativeMethod(JNIEnv *jni, jobject obj, jboolean registerNative) {
-  jclass testedCls = NULL;
+  jclass testedCls = nullptr;
   JNINativeMethod meth;
 
   LOG("Inside the nativeMethod()\n");
@@ -126,7 +126,7 @@ Java_nativemethbind01_nativeMethod(JNIEnv *jni, jobject obj, jboolean registerNa
   if (registerNative == JNI_TRUE) {
     LOG("Finding class \"%s\" ...\n", CLASS_SIG);
     testedCls = jni->FindClass(CLASS_SIG);
-    if (testedCls == NULL) {
+    if (testedCls == nullptr) {
       result = STATUS_FAILED;
       COMPLAIN("TEST FAILURE: unable to find class \"%s\"\n\n", CLASS_SIG);
       return;
@@ -168,7 +168,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -203,7 +203,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr);
   if (err != JVMTI_ERROR_NONE){
       return JNI_ERR;
   }

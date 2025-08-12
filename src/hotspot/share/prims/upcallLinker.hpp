@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,19 @@ class JavaThread;
 
 class UpcallLinker {
 private:
-  static void handle_uncaught_exception(oop exception);
   static JavaThread* maybe_attach_and_get_thread();
 
   static JavaThread* on_entry(UpcallStub::FrameData* context);
   static void on_exit(UpcallStub::FrameData* context);
 public:
-  static address make_upcall_stub(jobject mh, Method* entry,
-                                  BasicType* in_sig_bt, int total_in_args,
+  static address make_upcall_stub(jobject mh, Symbol* signature,
                                   BasicType* out_sig_bt, int total_out_args,
                                   BasicType ret_type,
                                   jobject jabi, jobject jconv,
                                   bool needs_return_buffer, int ret_buf_size);
+
+  // public for stubGenerator
+  static void handle_uncaught_exception(oop exception);
 };
 
 #endif // SHARE_VM_PRIMS_UPCALLLINKER_HPP

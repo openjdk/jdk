@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
@@ -58,7 +60,9 @@ class LogFileStreamOutput;
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
   friend class AsyncLogTest_logBuffer_vm_Test;
-  class AsyncLogLocker;
+  class Locker;
+  class ProducerLocker;
+  class ConsumerLocker;
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
@@ -66,13 +70,13 @@ class AsyncLogWriter : public NonJavaThread {
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 
-  // Messsage is the envelop of a log line and its associative data.
+  // Messsage is the envelope of a log line and its associative data.
   // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
   // within a buffer.
   //
   // Example layout:
   // ---------------------------------------------
-  // |_output|_decorations|"a log line", |pad| <- pointer aligned.
+  // |_output|_decorations|"a log line", |pad| <- Message aligned.
   // |_output|_decorations|"yet another",|pad|
   // ...
   // |nullptr|_decorations|"",|pad| <- flush token
@@ -84,16 +88,16 @@ class AsyncLogWriter : public NonJavaThread {
     LogFileStreamOutput* const _output;
     const LogDecorations _decorations;
    public:
-    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
+    // msglen excludes NUL-byte
+    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msglen)
       : _output(output), _decorations(decorations) {
       assert(msg != nullptr, "c-str message can not be null!");
-      PRAGMA_STRINGOP_OVERFLOW_IGNORED
-      strcpy(reinterpret_cast<char* >(this+1), msg);
+      memcpy(reinterpret_cast<char* >(this+1), msg, msglen + 1);
     }
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
     static constexpr size_t calc_size(size_t message_len) {
-      return align_up(sizeof(Message) + message_len + 1, sizeof(void*));
+      return align_up(sizeof(Message) + message_len + 1, alignof(Message));
     }
 
     size_t size() const {
@@ -114,6 +118,8 @@ class AsyncLogWriter : public NonJavaThread {
    public:
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
       _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
+      // Ensure _pos is Message-aligned
+      _pos = align_up(_buf, alignof(Message)) - _buf;
       assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
     }
 
@@ -122,9 +128,12 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     void push_flush_token();
-    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
+    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msg_len);
 
-    void reset() { _pos = 0; }
+    void reset() {
+      // Ensure _pos is Message-aligned
+      _pos = align_up(_buf, alignof(Message)) - _buf;
+    }
 
     class Iterator {
       const Buffer& _buf;
@@ -153,8 +162,13 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
-  PlatformMonitor _lock;
+  // Producers take both locks in the order producer lock and then consumer lock.
+  // The consumer protects the buffers and performs all communication between producer and consumer via wait/notify.
+  // This allows a producer to await progress from the consumer thread (by only releasing the producer lock)), whilst preventing all other producers from progressing.
+  PlatformMonitor _producer_lock;
+  PlatformMonitor _consumer_lock;
   bool _data_available;
+  // _initialized is set to true if the constructor succeeds
   volatile bool _initialized;
   AsyncLogMap<AnyObj::C_HEAP> _stats;
 
@@ -162,17 +176,22 @@ class AsyncLogWriter : public NonJavaThread {
   Buffer* _buffer;
   Buffer* _buffer_staging;
 
+  // Stalled message
+  // Stalling is implemented by the producer writing to _stalled_message, notifying the consumer lock and releasing it.
+  // The consumer will then write all of the current buffers' content and then write the stalled message, at the end notifying the consumer lock and releasing it for the
+  // owning producer thread of the stalled message. This thread will finally release both locks in order, allowing for other producers to continue.
+  volatile Message* _stalled_message;
+
   static const LogDecorations& None;
 
   AsyncLogWriter();
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
-  void write();
+  bool write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
-    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
+    log_debug(logging, thread)("starting AsyncLog Thread tid = %zd", os::current_thread_id());
   }
-  const char* name() const override { return "AsyncLog Thread"; }
   const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {
     st->print("\"%s\" ", name());
@@ -180,23 +199,17 @@ class AsyncLogWriter : public NonJavaThread {
     st->cr();
   }
 
-  // for testing-only
-  class BufferUpdater {
-    Buffer* _buf1;
-    Buffer* _buf2;
+  static bool is_enqueue_allowed();
 
-   public:
-    BufferUpdater(size_t newsize);
-    ~BufferUpdater();
-  };
-
- public:
-  void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
-  void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
+public:
+  static bool enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
+  static bool enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   static AsyncLogWriter* instance();
   static void initialize();
   static void flush();
+
+  const char* name() const override { return "AsyncLog Thread"; }
 };
 
 #endif // SHARE_LOGGING_LOGASYNCWRITER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean RMIAltAuthTest
  * @run build RMIAltAuthTest SimpleStandard SimpleStandardMBean
- * @run main RMIAltAuthTest
+ *
+ * @run main/othervm RMIAltAuthTest
  */
 
 import java.io.File;
@@ -71,8 +72,8 @@ public class RMIAltAuthTest {
             //
             System.out.println("Start RMI registry...");
             Registry reg = null;
-            int port = 5800;
-            while (port++ < 6000) {
+            int port = 5820;
+            while (port++ < 5840) {
                 try {
                     reg = LocateRegistry.createRegistry(port);
                     System.out.println("RMI registry running on port " + port);
@@ -91,12 +92,6 @@ public class RMIAltAuthTest {
             //
             System.out.println("Create the MBean server");
             MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-            // Register the ClassPathClassLoaderMBean
-            //
-            System.out.println("Create ClassPathClassLoader MBean");
-            ObjectName cpcl =
-                new ObjectName("ClassLoader:name=ClassPathClassLoader");
-            mbs.createMBean("javax.management.loading.MLet", cpcl);
             // Register the SimpleStandardMBean
             //
             System.out.println("Create SimpleStandard MBean");

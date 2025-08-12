@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package nsk.jvmti.ClearFieldAccessWatch;
+
+import jdk.test.lib.thread.TestThreadFactory;
 
 import java.io.PrintStream;
 
@@ -58,7 +60,7 @@ public class clrfldw001 {
     public static int run(String argv[], PrintStream ref) {
         clrfldw001 t = new clrfldw001();
         clrfldw001a t_a = new clrfldw001a();
-        clrfldw001b t_b = new clrfldw001b();
+        Thread t_b = TestThreadFactory.newThread(new clrfldw001b());
         for (int i = 0; i < 5; i++) {
             setWatch(i);
         }
@@ -91,7 +93,7 @@ class clrfldw001a {
     int fld = 2;
 }
 
-class clrfldw001b extends Thread {
+class clrfldw001b implements Runnable {
     float fld4 = 6.0f;
     public void run() {
         clrfldw001.clearWatch(4);

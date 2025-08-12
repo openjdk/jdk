@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@
                  """
                      <dl class="notes">
                      <dt>Type Parameters:</dt>
-                     <dd><code>T</code> - the throwable</dd>
+                     <dd><span id="m()-type-param-T"><code>T</code> - the throwable</span></dd>
                      <dt>Throws:</dt>
                      <dd><code>T</code> - if a specific error occurs</dd>
                      <dd><code>java.lang.Exception</code> - if an exception occurs</dd>

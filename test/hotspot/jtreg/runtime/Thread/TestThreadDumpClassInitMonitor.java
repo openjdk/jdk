@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public class TestThreadDumpClassInitMonitor {
     // so use getTestJDKTool() instead of getCompileJDKTool() or even
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
+    // jstack output may be lengthy, disable streaming output to avoid deadlocks
+    final static String DISABLE_STREAMING_OUTPUT = "-J-Djdk.attach.allowStreamingOutput=false";
     final static String PID = "" + ProcessHandle.current().pid();
 
     final static Thread current = Thread.currentThread();
@@ -60,8 +62,7 @@ public class TestThreadDumpClassInitMonitor {
      */
     final static String TEST_THREAD = "TestThread";
     final static String TEST_THREAD_ENTRY = "\"" + TEST_THREAD;
-    // final static String IN_OBJECT_WAIT = "in Object.wait()";
-    final static String IN_CONVAR_WAIT = "waiting on condition";
+    final static String IN_OBJECT_WAIT = "in Object.wait()";
     final static String THREAD_STATE = "java.lang.Thread.State: RUNNABLE";
     final static String THREAD_INFO = "Thread:"; // the details are not important
     final static String JAVATHREAD_STATE = "JavaThread state: _thread_blocked";
@@ -112,7 +113,7 @@ public class TestThreadDumpClassInitMonitor {
 
             // Now run jstack
             try {
-                ProcessBuilder pb = new ProcessBuilder(JSTACK, PID);
+                ProcessBuilder pb = new ProcessBuilder(JSTACK, DISABLE_STREAMING_OUTPUT, PID);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
                 stackDump = output.asLines();
@@ -140,7 +141,7 @@ public class TestThreadDumpClassInitMonitor {
                         continue;
                     }
                     foundLines++;
-                    if (!line.contains(IN_CONVAR_WAIT)) {
+                    if (!line.contains(IN_OBJECT_WAIT)) {
                         throw new Error("Unexpected initial stack line: " + line);
                     }
                     continue;

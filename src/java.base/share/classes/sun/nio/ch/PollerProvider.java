@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,63 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.util.ServiceConfigurationError;
-import sun.security.action.GetPropertyAction;
 
+/**
+ * Provider class for Poller implementations.
+ */
 abstract class PollerProvider {
+    private static final PollerProvider INSTANCE = new DefaultPollerProvider();
+
     PollerProvider() { }
 
     /**
-     * Returns true if threads should register file descriptors directly,
-     * false to queue registrations to an updater thread.
-     *
-     * The default implementation returns false.
+     * Returns the system-wide PollerProvider.
      */
-    boolean useDirectRegister() {
-        return false;
+    static PollerProvider provider() {
+        return INSTANCE;
+    }
+
+    /**
+     * Returns the default poller mode.
+     * @implSpec The default implementation uses system threads.
+     */
+    Poller.Mode defaultPollerMode() {
+        return Poller.Mode.SYSTEM_THREADS;
+    }
+
+    /**
+     * Default number of read pollers for the given mode. The count must be a power of 2.
+     * @implSpec The default implementation returns 1.
+     */
+    int defaultReadPollers(Poller.Mode mode) {
+        return 1;
+    }
+
+    /**
+     * Default number of write pollers for the given mode. The count must be a power of 2.
+     * @implSpec The default implementation returns 1.
+     */
+    int defaultWritePollers(Poller.Mode mode) {
+        return 1;
+    }
+
+    /**
+     * Maps a file descriptor to an index from 0 to {@code toIndex}.
+     * @implSpec The default implementation is good for Unix file descriptors.
+     */
+    int fdValToIndex(int fdVal, int toIndex) {
+        return fdVal & (toIndex - 1);
     }
 
     /**
      * Creates a Poller for read ops.
+     * @param subPoller true to create a sub-poller
      */
-    abstract Poller readPoller() throws IOException;
+    abstract Poller readPoller(boolean subPoller) throws IOException;
 
     /**
      * Creates a Poller for write ops.
+     * @param subPoller true to create a sub-poller
      */
-    abstract Poller writePoller() throws IOException;
-
-    /**
-     * Creates the PollerProvider.
-     */
-    static PollerProvider provider() {
-        String cn = GetPropertyAction.privilegedGetProperty("jdk.PollerProvider");
-        if (cn != null) {
-            try {
-                Class<?> clazz = Class.forName(cn, true, ClassLoader.getSystemClassLoader());
-                return (PollerProvider) clazz.getConstructor().newInstance();
-            } catch (Exception e) {
-                throw new ServiceConfigurationError(null, e);
-            }
-        } else {
-            return new DefaultPollerProvider();
-        }
-    }
+    abstract Poller writePoller(boolean subPoller) throws IOException;
 }

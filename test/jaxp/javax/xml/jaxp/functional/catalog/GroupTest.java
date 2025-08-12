@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,16 @@ import static catalog.ResolutionChecker.checkUriResolution;
 import javax.xml.catalog.CatalogResolver;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.GroupTest
  * @run testng/othervm catalog.GroupTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          and some of the entries are enclosed by group entries.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class GroupTest {
 
     private static final String CATALOG_GROUP = "group.xml";

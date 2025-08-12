@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_MACHNODE_HPP
 #define SHARE_OPTO_MACHNODE_HPP
 
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/matcher.hpp"
@@ -34,7 +35,6 @@
 #include "utilities/growableArray.hpp"
 
 class BufferBlob;
-class CodeBuffer;
 class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
@@ -54,7 +54,6 @@ class MachSpillCopyNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
-class RTMLockingCounters;
 class State;
 
 //---------------------------MachOper------------------------------------------
@@ -135,6 +134,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(S390)
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorRegister(reg(ra_, node));
+  }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+ }
+#endif
 #if defined(AARCH64)
   PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
     return ::as_PRegister(reg(ra_, node));
@@ -149,6 +156,7 @@ public:
   virtual jdouble constantD() const;
   virtual jfloat  constantF() const;
   virtual jlong   constantL() const;
+  virtual jshort  constantH() const;
   virtual TypeOopPtr *oop() const;
   virtual int  ccode() const;
   // A zero, default, indicates this value is not needed.
@@ -229,9 +237,8 @@ public:
   uint8_t barrier_data() const { return _barrier; }
   void set_barrier_data(uint8_t data) { _barrier = data; }
 
-  // Copy inputs and operands to new node of instruction.
+  // Copy index, inputs, and operands to a new version of the instruction.
   // Called from cisc_version() and short_branch_version().
-  // !!!! The method's body is defined in ad_<arch>.cpp file.
   void fill_new_machnode(MachNode *n) const;
 
   // Return an equivalent instruction using memory for cisc_operand position
@@ -285,8 +292,8 @@ public:
   MachOper **_opnds;
   uint16_t num_opnds() const { return _num_opnds; }
 
-  // Emit bytes into cbuf
-  virtual void  emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  // Emit bytes using C2_MacroAssembler
+  virtual void  emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   // Expand node after register allocation.
   // Node is replaced by several nodes in the postalloc expand phase.
   // Corresponding methods are generated for nodes if they specify
@@ -379,6 +386,13 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+
+  // Whether this node is expanded during code emission into a sequence of
+  // instructions and the first instruction can perform an implicit null check.
+  virtual bool is_late_expanded_null_check_candidate() const {
+    return false;
+  }
+
   void set_removed() { add_flag(Flag_is_removed_by_peephole); }
   bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 
@@ -422,7 +436,7 @@ public:
 class MachBreakpointNode : public MachIdealNode {
 public:
   MachBreakpointNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 #ifndef PRODUCT
@@ -448,7 +462,7 @@ public:
   virtual bool requires_postalloc_expand() const;
   virtual void postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);
 
-  virtual void emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const;
+  virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
   virtual uint size(PhaseRegAlloc* ra_) const;
 
   static const RegMask& static_out_RegMask() { return _out_RegMask; }
@@ -492,6 +506,7 @@ public:
   int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
   // Unchecked version to avoid assertions in debug output.
   int  constant_offset_unchecked() const;
+  virtual uint size_of() const { return sizeof(MachConstantNode); }
 };
 
 //------------------------------MachUEPNode-----------------------------------
@@ -499,7 +514,7 @@ public:
 class MachUEPNode : public MachIdealNode {
 public:
   MachUEPNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 #ifndef PRODUCT
@@ -513,7 +528,7 @@ public:
 class MachPrologNode : public MachIdealNode {
 public:
   MachPrologNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
 
@@ -526,17 +541,15 @@ public:
 //------------------------------MachEpilogNode--------------------------------
 // Machine function Epilog Node
 class MachEpilogNode : public MachIdealNode {
+private:
+  bool _do_polling;
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
-
-private:
-  bool _do_polling;
-
-public:
+  virtual uint size_of() const { return sizeof(MachEpilogNode); }
   bool do_polling() const { return _do_polling; }
 
 #ifndef PRODUCT
@@ -553,13 +566,14 @@ private:
 public:
   MachNopNode( ) : _count(1) {}
   MachNopNode( int count ) : _count(count) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
   virtual const class Type *bottom_type() const { return Type::CONTROL; }
 
   virtual int ideal_Opcode() const { return Op_Con; } // bogus; see output.cpp
   virtual const Pipeline *pipeline() const;
+  virtual uint size_of() const { return sizeof(MachNopNode); }
 #ifndef PRODUCT
   virtual const char *Name() const { return "Nop"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -611,9 +625,9 @@ public:
   virtual const class Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const { return _type->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
-  uint implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
+  uint implementation( C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 
@@ -676,7 +690,7 @@ public:
   virtual const class Type *bottom_type() const { return in(1)->bottom_type(); }
   virtual uint ideal_reg() const { return bottom_type()->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
   virtual const char *Name() const { return "MachMerge"; }
@@ -716,7 +730,7 @@ public:
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual void label_set(Label* label, uint block_num);
   virtual void save_label(Label** label, uint* block_num);
   virtual void negate() { }
@@ -787,6 +801,7 @@ public:
   MachJumpNode() : MachConstantNode() {
     init_class_id(Class_MachJump);
   }
+  virtual uint size_of() const { return sizeof(MachJumpNode); }
 };
 
 //------------------------------MachGotoNode-----------------------------------
@@ -803,8 +818,6 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
-  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
 };
 
@@ -871,6 +884,10 @@ public:
     assert(verify_jvms(jvms), "jvms must match");
     return in(_jvmadj + jvms->monitor_box_offset(idx));
   }
+  Node* scalarized_obj(const JVMState* jvms, uint idx) const {
+    assert(verify_jvms(jvms), "jvms must match");
+    return in(_jvmadj + jvms->scloff() + idx);
+  }
   void  set_local(const JVMState* jvms, uint idx, Node *c) {
     assert(verify_jvms(jvms), "jvms must match");
     set_req(_jvmadj + jvms->locoff() + idx, c);
@@ -883,6 +900,7 @@ public:
     assert(verify_jvms(jvms), "jvms must match");
     set_req(_jvmadj + jvms->monoff() + idx, c);
   }
+  virtual uint size_of() const { return sizeof(MachSafePointNode); }
 };
 
 //------------------------------MachCallNode----------------------------------
@@ -898,9 +916,9 @@ public:
   float        _cnt;          // Estimate of number of times called
   bool         _guaranteed_safepoint; // Do we need to observe safepoint?
 
-  const TypeFunc* tf()        const { return _tf; }
-  const address entry_point() const { return _entry_point; }
-  const float   cnt()         const { return _cnt; }
+  const TypeFunc* tf()  const { return _tf; }
+  address entry_point() const { return _entry_point; }
+  float   cnt()         const { return _cnt; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
   void set_entry_point(address p)       { _entry_point = p; }
@@ -947,13 +965,13 @@ public:
 
   virtual const RegMask &in_RegMask(uint) const;
 
-  int resolved_method_index(CodeBuffer &cbuf) const {
+  int resolved_method_index(C2_MacroAssembler *masm) const {
     if (_override_symbolic_info) {
       // Attach corresponding Method* to the call site, so VM can use it during resolution
       // instead of querying symbolic info from bytecode.
       assert(_method != nullptr, "method should be set");
       assert(_method->constant_encoding()->is_method(), "should point to a Method");
-      return cbuf.oop_recorder()->find_index(_method->constant_encoding());
+      return masm->code()->oop_recorder()->find_index(_method->constant_encoding());
     }
     return 0; // Use symbolic info from bytecode (resolved_method is null).
   }
@@ -997,6 +1015,7 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+  virtual uint size_of() const { return sizeof(MachCallDynamicJavaNode); }
 };
 
 //------------------------------MachCallRuntimeNode----------------------------
@@ -1030,6 +1049,7 @@ public:
   bool _reachable;
   const char* _halt_reason;
   virtual JVMState* jvms() const;
+  virtual uint size_of() const { return sizeof(MachHaltNode); }
   bool is_reachable() const {
     return _reachable;
   }
@@ -1058,7 +1078,7 @@ private:
 public:
   virtual const RegMask &out_RegMask() const { return *_opnds[0]->in_RegMask(0); }
   virtual uint rule() const { return 9999999; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 
   MachTempNode(MachOper* oper) {
     init_class_id(Class_MachTemp);
@@ -1088,7 +1108,7 @@ public:
 
   uint _block_num;
 
-  labelOper() : _label(0), _block_num(0) {}
+  labelOper() : _label(nullptr), _block_num(0) {}
 
   labelOper(Label* label, uint block_num) : _label(label), _block_num(block_num) {}
 

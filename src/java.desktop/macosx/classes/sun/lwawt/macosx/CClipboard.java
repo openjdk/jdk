@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,11 @@ final class CClipboard extends SunClipboard {
 
             try {
                 byte[] bytes = DataTransferer.getInstance().translateTransferable(contents, flavor, format);
-                setData(bytes, format);
+                if (DataFlavor.javaFileListFlavor.equals(flavor)) {
+                    writeFileObjects(bytes);
+                } else {
+                    setData(bytes, format);
+                }
             } catch (IOException e) {
                 // Fix 4696186: don't print exception if data with
                 // javaJVMLocalObjectMimeType failed to serialize.
@@ -127,6 +131,7 @@ final class CClipboard extends SunClipboard {
 
     private native void declareTypes(long[] formats, SunClipboard newOwner);
     private native void setData(byte[] data, long format);
+    private native void writeFileObjects(byte[] data);
 
     void checkPasteboardAndNotify() {
         if (checkPasteboardWithoutNotification()) {

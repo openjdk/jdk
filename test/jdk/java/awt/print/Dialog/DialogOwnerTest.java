@@ -23,6 +23,7 @@
 
 /* @test
    @bug 8203796
+   @key printer
    @run main/manual DialogOwnerTest
    @summary Test DialogOwner API
 */

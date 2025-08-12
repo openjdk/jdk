@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
-
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     permits ChainedCodeBuilder, BlockCodeBuilderImpl {
@@ -38,10 +35,12 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
 
     public NonterminalCodeBuilder(CodeBuilder parent) {
         this.parent = parent;
-        this.terminal = switch (parent) {
-            case NonterminalCodeBuilder cb -> cb.terminal;
-            case TerminalCodeBuilder cb -> cb;
-        };
+        this.terminal = findTerminal(parent);
+    }
+
+    static TerminalCodeBuilder findTerminal(CodeBuilder cob) {
+        return cob instanceof NonterminalCodeBuilder ncb ?
+                ncb.terminal : (TerminalCodeBuilder) cob;
     }
 
     @Override
@@ -57,11 +56,6 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     @Override
     public ConstantPoolBuilder constantPool() {
         return terminal.constantPool();
-    }
-
-    @Override
-    public Optional<CodeModel> original() {
-        return terminal.original();
     }
 
     @Override

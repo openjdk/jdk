@@ -67,6 +67,8 @@ package org.w3c.dom;
  * 1.0 and XML Schema, the normalization is performed after entity reference
  * are expanded.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface EntityReference extends Node {
 }

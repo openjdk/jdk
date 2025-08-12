@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,15 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase
  * @build LocalVariableTestBase
  * @compile -g LocalVariableTableTest.java
  * @run main LocalVariableTableTest
  */
 
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
+import java.lang.classfile.attribute.*;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -74,11 +74,11 @@ public class LocalVariableTableTest extends LocalVariableTestBase {
     }
 
     @Override
-    protected List<VariableTable> getVariableTables(Code_attribute codeAttribute) {
-        return Stream.of(codeAttribute.attributes.attrs)
-                .filter(at -> at instanceof LocalVariableTable_attribute)
-                .map(at -> (LocalVariableTable_attribute) at)
-                .map((t) -> new LocalVariableTable(t)).collect(toList());
+    protected List<VariableTable> getVariableTables(CodeAttribute codeAttribute) {
+        return codeAttribute.attributes().stream()
+                .filter(at -> at instanceof LocalVariableTableAttribute)
+                .map(at -> (LocalVariableTableAttribute) at)
+                .map(LocalVariableTable::new).collect(toList());
     }
 
     @ExpectedLocals(name = "l", type = "J")
@@ -185,58 +185,58 @@ public class LocalVariableTableTest extends LocalVariableTestBase {
 
     class LocalVariableTable implements VariableTable {
 
-        final LocalVariableTable_attribute att;
+        final LocalVariableTableAttribute att;
 
-        public LocalVariableTable(LocalVariableTable_attribute att) {
+        public LocalVariableTable(LocalVariableTableAttribute att) {
             this.att = att;
         }
 
         @Override
         public int localVariableTableLength() {
-            return att.local_variable_table_length;
+            return att.localVariables().size();
         }
 
         @Override
         public List<Entry> entries() {
-            return Stream.of(att.local_variable_table).map(LocalVariableTableEntry::new).collect(toList());
+            return att.localVariables().stream().map(LocalVariableTableEntry::new).collect(toList());
         }
 
         @Override
         public int attributeLength() {
-            return att.attribute_length;
+            return ((BoundAttribute<?>) att).payloadLen();
         }
 
         private class LocalVariableTableEntry implements Entry {
 
-            final LocalVariableTable_attribute.Entry entry;
+            final LocalVariableInfo entry;
 
-            private LocalVariableTableEntry(LocalVariableTable_attribute.Entry entry) {
+            private LocalVariableTableEntry(LocalVariableInfo entry) {
                 this.entry = entry;
             }
 
             @Override
             public int index() {
-                return entry.index;
+                return entry.slot();
             }
 
             @Override
             public int startPC() {
-                return entry.start_pc;
+                return entry.startPc();
             }
 
             @Override
             public int length() {
-                return entry.length;
+                return entry.length();
             }
 
             @Override
             public String name() {
-                return getString(entry.name_index);
+                return entry.name().stringValue();
             }
 
             @Override
             public String type() {
-                return getString(entry.descriptor_index);
+                return entry.type().stringValue();
             }
 
             @Override

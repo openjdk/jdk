@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -743,19 +743,6 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
         resizingColumn = aColumn;
     }
 
-    /**
-     * See <code>readObject</code> and <code>writeObject</code> in
-     * <code>JComponent</code> for more
-     * information about serialization in Swing.
-     */
-    @Serial
-    private void writeObject(ObjectOutputStream s) throws IOException {
-        s.defaultWriteObject();
-        if ((ui != null) && (getUIClassID().equals(uiClassID))) {
-            ui.installUI(this);
-        }
-    }
-
     private int getWidthInRightToLeft() {
         if ((table != null) &&
             (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
@@ -964,7 +951,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private AccessibleContext getCurrentAccessibleContext() {
                 TableColumnModel tcm = table.getColumnModel();
                 if (tcm != null) {
-                    // Fixes 4772355 - ArrayOutOfBoundsException in
+                    // Fixes 4772355 - ArrayIndexOutOfBoundsException in
                     // JTableHeader
                     if (column < 0 || column >= tcm.getColumnCount()) {
                         return null;
@@ -992,7 +979,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private Component getCurrentComponent() {
                 TableColumnModel tcm = table.getColumnModel();
                 if (tcm != null) {
-                    // Fixes 4772355 - ArrayOutOfBoundsException in
+                    // Fixes 4772355 - ArrayIndexOutOfBoundsException in
                     // JTableHeader
                     if (column < 0 || column >= tcm.getColumnCount()) {
                         return null;
@@ -1373,9 +1360,12 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             }
 
             public Point getLocationOnScreen() {
-                if (parent != null) {
+                if (parent != null && parent.isShowing()) {
                     Point parentLocation = parent.getLocationOnScreen();
                     Point componentLocation = getLocation();
+                    if (parentLocation == null || componentLocation == null) {
+                        return null;
+                    }
                     componentLocation.translate(parentLocation.x, parentLocation.y);
                     return componentLocation;
                 } else {

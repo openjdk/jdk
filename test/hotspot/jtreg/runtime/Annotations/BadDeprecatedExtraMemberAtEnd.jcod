@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/* Based on source:
+ *
+ * public class DeprecatedMethod {
+ *   @Deprecated(forRemoval=true, since="now")
+ *   public static void m() {}
+ * }
+ *
+ * We add an extra junk member at the end.
+ */
+
+class BadDeprecatedExtraMemberAtEnd {
+  0xCAFEBABE;
+  0; // minor version
+  65; // version
+  [21] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1     at 0x0A
+    class #4; // #2     at 0x0F
+    NameAndType #5 #6; // #3     at 0x12
+    Utf8 "java/lang/Object"; // #4     at 0x17
+    Utf8 "<init>"; // #5     at 0x2A
+    Utf8 "()V"; // #6     at 0x33
+    class #8; // #7     at 0x39
+    Utf8 "BadDeprecatedExtraMemberAtEnd"; // #8     at 0x3C
+    Utf8 "Code"; // #9     at 0x4F
+    Utf8 "LineNumberTable"; // #10     at 0x56
+    Utf8 "m"; // #11     at 0x68
+    Utf8 "Deprecated"; // #12     at 0x6C
+    Utf8 "RuntimeVisibleAnnotations"; // #13     at 0x79
+    Utf8 "Ljava/lang/Deprecated;"; // #14     at 0x95
+    Utf8 "forRemoval"; // #15     at 0xAE
+    int 0x00000001; // #16     at 0xBB
+    Utf8 "since"; // #17     at 0xC0
+    Utf8 "now"; // #18     at 0xC8
+    Utf8 "SourceFile"; // #19     at 0xCE
+    Utf8 "BadDeprecatedExtraMemberAtEnd.java"; // #20     at 0xDB
+  } // Constant Pool
+
+  0x0021; // access [ ACC_PUBLIC ACC_SUPER ]
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [0] { // Interfaces
+  } // Interfaces
+
+  [0] { // Fields
+  } // Fields
+
+  [2] { // Methods
+    {  // method at 0xFF
+      0x0001; // access
+      #5; // name_index       : <init>
+      #6; // descriptor_index : ()V
+      [1] { // Attributes
+        Attr(#9, 29) { // Code at 0x0107
+          1; // max_stack
+          1; // max_locals
+          Bytes[5]{
+            0x2AB70001B1;
+          }
+          [0] { // Traps
+          } // end Traps
+          [1] { // Attributes
+            Attr(#10, 6) { // LineNumberTable at 0x011E
+              [1] { // line_number_table
+                0  1; //  at 0x012A
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method at 0x012A
+      0x0009; // access
+      #11; // name_index       : m
+      #6; // descriptor_index : ()V
+      [3] { // Attributes
+        Attr(#9, 25) { // Code at 0x0132
+          0; // max_stack
+          0; // max_locals
+          Bytes[1]{
+            0xB1;
+          }
+          [0] { // Traps
+          } // end Traps
+          [1] { // Attributes
+            Attr(#10, 6) { // LineNumberTable at 0x0145
+              [1] { // line_number_table
+                0  4; //  at 0x0151
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+        ;
+        Attr(#12, 0) { // Deprecated at 0x0151
+        } // end Deprecated
+        ;
+        Attr(#13, 21) { // RuntimeVisibleAnnotations at 0x0157 (length changed from 16 to 21)
+          [1] { // annotations
+            {  //  annotation
+              #14;
+              [3] { // element_value_pairs <= extra pair added
+                {  //  element value pair
+                  #15;
+                  {  //  element_value
+                    'Z';
+                    #16;
+                  }  //  element_value
+                }  //  element value pair
+                ;
+                {  //  element value pair
+                  #17;
+                  {  //  element_value
+                    's';
+                    #18;
+                  }  //  element_value
+                }  //  element value pair
+                ;
+                {  //  Extra element value pair: now=true
+                  #18;
+                  {  //  element_value
+                    'Z';
+                    #16;
+                  }  //  element_value
+                }  //  element value pair
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+      } // Attributes
+    }
+  } // Methods
+
+  [1] { // Attributes
+    Attr(#19, 2) { // SourceFile at 0x016F
+      #20;
+    } // end SourceFile
+  } // Attributes
+} // end class BadDeprecatedExtraMemberAtEnd

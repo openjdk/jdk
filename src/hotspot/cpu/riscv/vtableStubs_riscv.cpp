@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "assembler_riscv.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_riscv.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -52,22 +51,22 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
-  address   start_pc = NULL;
+  address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
@@ -122,7 +121,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ beqz(xmethod, L);
     __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
     __ bnez(t0, L);
-    __ stop("Vtable entry is NULL");
+    __ stop("Vtable entry is null");
     __ bind(L);
   }
 #endif // PRODUCT
@@ -131,8 +130,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   masm->flush();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
@@ -144,21 +143,28 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
   // Count unused bytes in instruction sequences of variable size.
   // We add them to the computed buffer size in order to avoid
   // overflow in subsequently generated stubs.
-  address   start_pc = NULL;
+  address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
+
+  // Real entry arguments:
+  //  t0: CompiledICData
+  //  j_rarg0: Receiver
+  // Make sure the move of CompiledICData from t0 to t1 is the frist thing that happens.
+  // Otherwise we risk clobber t0 as it is used as scratch.
+  __ mv(t1, t0);
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
@@ -170,23 +176,23 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // get receiver (need to skip return address on top of stack)
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
-  // Entry arguments:
-  //  t1: CompiledICHolder
+  // Arguments from this point:
+  //  t1 (moved from t0): CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = x18;
-  const Register holder_klass_reg   = x19; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = xmethod; // resolved interface klass (REFC)
+  const Register holder_klass_reg   = x19; // declaring interface klass (DEFC)
+  const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;
-  const Register icholder_reg       = t1;
+  const Register icdata_reg         = t1;
 
   Label L_no_such_interface;
 
-  __ ld(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
-  __ ld(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+  __ ld(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ ld(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   start_pc = __ pc();
 
@@ -195,28 +201,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, j_rarg0);
 
   // Receiver subtype check against REFC.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             temp_reg2, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             xmethod, temp_reg,
-                             L_no_such_interface);
-
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
+  __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, xmethod,
+                                  temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 256;
-  const ptrdiff_t codesize = typecheckSize + lookupSize;
+  const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
@@ -235,8 +226,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.
@@ -244,7 +235,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We force resolving of the call site by jumping to the "handle
   // wrong method" stub, and so let the interpreter runtime do all the
   // dirty work.
-  assert(SharedRuntime::get_handle_wrong_method_stub() != NULL, "check initialization order");
+  assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
   masm->flush();

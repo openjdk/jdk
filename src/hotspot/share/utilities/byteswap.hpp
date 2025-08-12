@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cstddef>
@@ -63,7 +64,7 @@ struct ByteswapFallbackImpl;
 template <typename T>
 struct ByteswapFallbackImpl<T, 2> {
   inline constexpr uint16_t operator()(uint16_t x) const {
-    return (((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
+    return checked_cast<uint16_t>(((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
   }
 };
 
@@ -88,7 +89,7 @@ struct ByteswapFallbackImpl<T, 8> {
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
 #if defined(__clang__) || defined(ASSERT)
 

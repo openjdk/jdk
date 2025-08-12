@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -43,9 +43,13 @@ import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
 import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
-import javax.xml.stream.XMLInputFactory;
+import javax.xml.XMLConstants;
 import javax.xml.stream.events.XMLEvent;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty.State;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager.Limit;
 
 
 /**
@@ -67,7 +71,7 @@ import jdk.xml.internal.SecuritySupport;
  * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
  * related to property SupportDTD.
  * @author Joe Wang, Sun Microsystems
- * @LastModified: Sep 2017
+ * @LastModified: Feb 2025
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{
@@ -258,15 +262,10 @@ public class XMLDocumentScannerImpl
         setScannerState(XMLEvent.START_DOCUMENT);
     } // setInputSource(XMLInputSource)
 
-
-
     /**return the state of the scanner */
     public int getScannetState(){
         return fScannerState ;
     }
-
-
-
 
     public void reset(PropertyManager propertyManager) {
         super.reset(propertyManager);
@@ -276,10 +275,17 @@ public class XMLDocumentScannerImpl
         fDoctypeSystemId = null;
         fSeenDoctypeDecl = false;
         fNamespaceContext.reset();
-        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD)).booleanValue();
+
+        // Check the DTD setting
+        checkDTDSetting();
 
         // xerces features
-        fLoadExternalDTD = !((Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD)).booleanValue();
+        fLoadExternalDTD = !((Boolean)propertyManager.getProperty(
+                Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD));
+
+        fUseCatalog = (Boolean)propertyManager.getProperty(XMLConstants.USE_CATALOG);
+        fCatalogFile = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_FILES);
+
         setScannerState(XMLEvent.START_DOCUMENT);
         setDriver(fXMLDeclDriver);
         fSeenInternalSubset = false;
@@ -320,10 +326,14 @@ public class XMLDocumentScannerImpl
         fSeenDoctypeDecl = false;
         fExternalSubsetSource = null;
 
+        // Check the DTD setting
+        checkDTDSetting();
+
         // xerces features
         fLoadExternalDTD = componentManager.getFeature(LOAD_EXTERNAL_DTD, true);
-        fDisallowDoctype = componentManager.getFeature(DISALLOW_DOCTYPE_DECL_FEATURE, false);
 
+        fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG, true);
+        fCatalogFile = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_FILES);
         fNamespaces = componentManager.getFeature(NAMESPACES, true);
 
         fSeenInternalSubset = false;
@@ -355,6 +365,26 @@ public class XMLDocumentScannerImpl
 
     } // reset(XMLComponentManager)
 
+    /**
+     * Checks the DTD settings. Uses the JDK property {@code jdk.xml.dtd.support}
+     * in all cases except:
+     *      if the Xerces property is set
+     *      if the StAX property is set
+     */
+    private void checkDTDSetting() {
+        fDisallowDoctype = fSecurityManager.is(Limit.DTD, JdkConstants.DENY);
+        fSupportDTD = !fSecurityManager.is(Limit.DTD, JdkConstants.IGNORE);
+        fDTDErrorCode = "JDK_DTD_DENY";
+
+        if (fSecurityManager.getState(Limit.XERCES_DISALLOW_DTD) == State.APIPROPERTY
+                || fSecurityManager.getState(Limit.XERCES_DISALLOW_DTD) == State.LEGACY_APIPROPERTY) {
+            fDisallowDoctype = fSecurityManager.is(Limit.XERCES_DISALLOW_DTD);
+            fDTDErrorCode = "DoctypeNotAllowed";
+        } else if (fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == State.APIPROPERTY
+                || fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == State.LEGACY_APIPROPERTY) {
+            fSupportDTD = fSecurityManager.is(Limit.STAX_SUPPORT_DTD);
+        }
+    }
 
     /**
      * Returns a list of feature identifiers that are recognized by
@@ -895,7 +925,7 @@ public class XMLDocumentScannerImpl
 
                     case SCANNER_STATE_DOCTYPE: {
                         if (fDisallowDoctype) {
-                            reportFatalError("DoctypeNotAllowed", null);
+                            reportFatalError(fDTDErrorCode, null);
                         }
 
                         if (fSeenDoctypeDecl) {
@@ -1195,7 +1225,6 @@ public class XMLDocumentScannerImpl
             }
             // premature end of file
             catch (EOFException e) {
-                e.printStackTrace();
                 reportFatalError("PrematureEOF", null);
                 return false;
                 //throw e;

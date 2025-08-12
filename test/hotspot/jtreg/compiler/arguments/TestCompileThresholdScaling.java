@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestCompileThresholdScaling {
     }
 
     static void checkCompileThresholdScaling(double value, boolean fail) throws Throwable {
-        OutputAnalyzer out = ProcessTools.executeTestJvm("-XX:CompileThresholdScaling=" + value, "--version");
+        OutputAnalyzer out = ProcessTools.executeTestJava("-XX:CompileThresholdScaling=" + value, "--version");
         out.shouldHaveExitValue(0);
         String output = out.getOutput();
 

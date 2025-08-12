@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ extern "C" {
         */
 
         char buf[1024];
-        sprintf(buf, "WinAccessBridge: %s", s);
+        snprintf(buf, sizeof(buf), "WinAccessBridge: %s", s);
         OutputDebugString(buf);
     }
 
@@ -2773,7 +2773,7 @@ WinAccessBridge::getAccessibleTextItems(long vmID,
     if (destABWindow != (HWND) 0) {
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {
             memcpy(textItems, &(pkg->rTextItemsInfo), sizeof(AccessibleTextItemsInfo));
-            if (pkg->rTextItemsInfo.letter != '/0') {
+            if (pkg->rTextItemsInfo.letter != '\0') {
                 return TRUE;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
@@ -33,7 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
-#include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
 
@@ -81,7 +81,7 @@ void vmSymbols::initialize() {
   assert(SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
   assert(vmIntrinsics::FLAG_LIMIT <= (1 << vmIntrinsics::log2_FLAG_LIMIT), "must fit in this bitfield");
 
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     const char* string = &vm_symbol_bodies[0];
     for (auto index : EnumRange<vmSymbolID>{}) {
       Symbol* sym = SymbolTable::new_permanent_symbol(string);
@@ -205,13 +205,13 @@ void vmSymbols::metaspace_pointers_do(MetaspaceClosure *closure) {
 }
 
 void vmSymbols::serialize(SerializeClosure* soc) {
-  soc->do_region((u_char*)&Symbol::_vm_symbols[FIRST_SID],
+  soc->do_ptrs((void**)&Symbol::_vm_symbols[FIRST_SID],
                  (SID_LIMIT - FIRST_SID) * sizeof(Symbol::_vm_symbols[0]));
-  soc->do_region((u_char*)_type_signatures, sizeof(_type_signatures));
+  soc->do_ptrs((void**)_type_signatures, sizeof(_type_signatures));
 }
 
 #ifndef PRODUCT
-static int find_sid_calls, find_sid_probes;
+static uint find_sid_calls, find_sid_probes;
 // (Typical counts are calls=7000 and probes=17000.)
 #endif
 

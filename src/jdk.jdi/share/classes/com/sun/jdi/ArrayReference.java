@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,8 @@ public interface ArrayReference extends ObjectReference {
      * See JLS section 5.2 for more information on assignment
      * compatibility.
      *
-     * @param value the new value
      * @param index the index of the component to set
+     * @param value the new value
      * @throws java.lang.IndexOutOfBoundsException if
      * <CODE><I>index</I></CODE> is outside the range of this array,
      * that is, if either of the following are true:

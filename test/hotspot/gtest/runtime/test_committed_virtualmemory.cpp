@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "runtime/thread.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
@@ -32,26 +32,21 @@
 class CommittedVirtualMemoryTest {
 public:
   static void test() {
-#ifndef _AIX
-    // See JDK-8202772: temporarily disabled.
     Thread* thr = Thread::current();
     address stack_end = thr->stack_end();
     size_t  stack_size = thr->stack_size();
 
     MemTracker::record_thread_stack(stack_end, stack_size);
 
-    VirtualMemoryTracker::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
+    VirtualMemoryTracker::Instance::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
 
     // snapshot current stack usage
-    VirtualMemoryTracker::snapshot_thread_stacks();
+    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
-    ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(stack_end, stack_size));
-    ASSERT_TRUE(rmr != NULL);
+    ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
+    ASSERT_TRUE(rmr_found.is_valid());
+    ASSERT_EQ(rmr_found.base(), stack_end);
 
-    ASSERT_EQ(rmr->base(), stack_end);
-    ASSERT_EQ(rmr->size(), stack_size);
-
-    CommittedRegionIterator iter = rmr->iterate_committed_regions();
     int i = 0;
     address i_addr = (address)&i;
     bool found_i_addr = false;
@@ -59,25 +54,23 @@ public:
     // stack grows downward
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
-
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
-      if (region->base() + region->size() == stack_top) {
-        ASSERT_TRUE(region->size() <= stack_size);
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
+      if (cmr.base() + cmr.size() == stack_top) {
+        EXPECT_TRUE(cmr.size() <= stack_size);
         found_stack_top = true;
       }
-
-      if(i_addr < stack_top && i_addr >= region->base()) {
+      if(i_addr < stack_top && i_addr >= cmr.base()) {
         found_i_addr = true;
       }
-
       i++;
-    }
+      return true;
+    });
+
 
     // stack and guard pages may be contiguous as one region
     ASSERT_TRUE(i >= 1);
-    ASSERT_TRUE(found_stack_top);
     ASSERT_TRUE(found_i_addr);
-#endif // !_AIX
+    ASSERT_TRUE(found_stack_top);
   }
 
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {
@@ -95,37 +88,33 @@ public:
   static void test_committed_region_impl(size_t num_pages, size_t touch_pages, int* page_num) {
     const size_t page_sz = os::vm_page_size();
     const size_t size = num_pages * page_sz;
-    char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
+    char* base = os::reserve_memory(size, mtThreadStack);
     bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
-    ASSERT_NE(base, (char*)NULL);
+    ASSERT_NE(base, (char*)nullptr);
     for (index = 0; index < touch_pages; index ++) {
       char* touch_addr = base + page_sz * page_num[index];
       *touch_addr = 'a';
     }
 
-    address frame = (address)0x1235;
-    NativeCallStack stack(&frame, 1);
-    VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
-
     // trigger the test
-    VirtualMemoryTracker::snapshot_thread_stacks();
+    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
-    ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr != NULL);
+    ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    ASSERT_TRUE(rmr_found.is_valid());
+    ASSERT_EQ(rmr_found.base(), (address)base);
+
 
     bool precise_tracking_supported = false;
-    CommittedRegionIterator iter = rmr->iterate_committed_regions();
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
-      if (region->size() == size) {
-        // platforms that do not support precise tracking.
-        ASSERT_TRUE(iter.next() == NULL);
-        break;
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
+      if (cmr.size() == size) {
+        return false;
       } else {
         precise_tracking_supported = true;
-        check_covered_pages(region->base(), region->size(), (address)base, touch_pages, page_num);
+        check_covered_pages(cmr.base(), cmr.size(), (address)base, touch_pages, page_num);
       }
-    }
+      return true;
+    });
 
     if (precise_tracking_supported) {
       // All touched pages should be committed
@@ -135,11 +124,10 @@ public:
     }
 
     // Cleanup
-    os::free_memory(base, size, page_sz);
-    VirtualMemoryTracker::remove_released_region((address)base, size);
-
-    rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr == NULL);
+    os::disclaim_memory(base, size);
+    VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
+    rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    ASSERT_TRUE(!rmr_found.is_valid());
   }
 
   static void test_committed_region() {
@@ -163,8 +151,8 @@ public:
     const size_t page_sz = os::vm_page_size();
     const size_t num_pages = 4;
     const size_t size = num_pages * page_sz;
-    char* base = os::reserve_memory(size, !ExecMem, mtTest);
-    ASSERT_NE(base, (char*)NULL);
+    char* base = os::reserve_memory(size, mtTest);
+    ASSERT_NE(base, (char*)nullptr);
     result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);
@@ -199,10 +187,45 @@ public:
 
     os::release_memory(base, size);
   }
+
+  static void test_committed_in_range(size_t num_pages, size_t pages_to_touch) {
+    bool result;
+    size_t committed_size;
+    address committed_start;
+    size_t index;
+
+    const size_t page_sz = os::vm_page_size();
+    const size_t size = num_pages * page_sz;
+
+    char* base = os::reserve_memory(size, mtTest);
+    ASSERT_NE(base, (char*)nullptr);
+
+    result = os::commit_memory(base, size, !ExecMem);
+    ASSERT_TRUE(result);
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_FALSE(result);
+
+    // Touch pages
+    for (index = 0; index < pages_to_touch; index ++) {
+      base[index * page_sz] = 'a';
+    }
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(pages_to_touch * page_sz, committed_size);
+    ASSERT_EQ(committed_start, (address)base);
+
+    os::uncommit_memory(base, size, false);
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_FALSE(result);
+
+    os::release_memory(base, size);
+  }
 };
 
-TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
-
+TEST_VM(NMTCommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   //  This tests the VM-global NMT facility. The test must *not* modify global state,
   //  since that interferes with other tests!
   // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
@@ -217,3 +240,10 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   }
 
 }
+
+#if !defined(_WINDOWS) && !defined(_AIX)
+TEST_VM(NMTCommittedVirtualMemory, test_committed_in_range){
+  CommittedVirtualMemoryTest::test_committed_in_range(1024, 1024);
+  CommittedVirtualMemoryTest::test_committed_in_range(2, 1);
+}
+#endif

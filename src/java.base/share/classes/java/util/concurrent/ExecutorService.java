@@ -56,7 +56,9 @@ import java.util.List;
  *
  * <p>Method {@code submit} extends base method {@link
  * Executor#execute(Runnable)} by creating and returning a {@link Future}
- * that can be used to cancel execution and/or wait for completion.
+ * that can be used to cancel execution and/or wait for completion;
+ * also reporting exceptions that would otherwise be uncaught
+ * using method {@code execute}.
  * Methods {@code invokeAny} and {@code invokeAll} perform the most
  * commonly useful forms of bulk execution, executing a collection of
  * tasks and then waiting for at least one, or all, to
@@ -156,14 +158,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
-     *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     void shutdown();
 
@@ -182,13 +176,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * task that fails to respond to interrupts may never terminate.
      *
      * @return list of tasks that never commenced execution
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     List<Runnable> shutdownNow();
 
@@ -397,13 +384,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * The default implementation invokes {@code shutdown()} and waits for tasks
      * to complete execution with {@code awaitTermination}.
      *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      * @since 19
      */
     @Override

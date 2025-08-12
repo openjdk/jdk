@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class RedefineBasicTest {
         "jdk/test/lib/compiler/InMemoryJavaCompiler",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1",
-        "jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject"
+        "jdk/test/lib/compiler/InMemoryJavaCompiler$SourceFile",
+        "jdk/test/lib/compiler/InMemoryJavaCompiler$ClassFile"
     };
 
     public static void main(String[] args) throws Exception {

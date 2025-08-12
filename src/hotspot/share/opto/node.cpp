@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "libadt/vectset.hpp"
@@ -55,7 +55,7 @@ class PhaseGVN;
 const uint Node::NotAMachineReg = 0xffff0000;
 
 #ifndef PRODUCT
-extern int nodes_created;
+extern uint nodes_created;
 #endif
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -68,30 +68,17 @@ extern int nodes_created;
 // Set a breakpoint here to identify where a particular node index is built.
 void Node::verify_construction() {
   _debug_orig = nullptr;
-  int old_debug_idx = Compile::debug_idx();
-  int new_debug_idx = old_debug_idx + 1;
-  if (new_debug_idx > 0) {
-    // Arrange that the lowest five decimal digits of _debug_idx
-    // will repeat those of _idx. In case this is somehow pathological,
-    // we continue to assign negative numbers (!) consecutively.
-    const int mod = 100000;
-    int bump = (int)(_idx - new_debug_idx) % mod;
-    if (bump < 0) {
-      bump += mod;
-    }
-    assert(bump >= 0 && bump < mod, "");
-    new_debug_idx += bump;
-  }
-  Compile::set_debug_idx(new_debug_idx);
-  set_debug_idx(new_debug_idx);
+  // The decimal digits of _debug_idx are <compile_id> followed by 10 digits of <_idx>
   Compile* C = Compile::current();
   assert(C->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
+  uint64_t new_debug_idx = (uint64_t)C->compile_id() * 10000000000 + _idx;
+  set_debug_idx(new_debug_idx);
   if (!C->phase_optimize_finished()) {
     // Only check assert during parsing and optimization phase. Skip it while generating code.
     assert(C->live_nodes() <= C->max_node_limit(), "Live Node limit exceeded limit");
   }
-  if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (int)_idx == BreakAtNode)) {
-    tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d", _idx, _debug_idx);
+  if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (uint64_t)_idx == BreakAtNode)) {
+    tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT, _idx, _debug_idx);
     BREAKPOINT;
   }
 #if OPTO_DU_ITERATOR_ASSERT
@@ -335,7 +322,7 @@ Node::Node(uint req)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
     _in = nullptr;
@@ -354,7 +341,7 @@ Node::Node(Node *n0)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
@@ -367,7 +354,7 @@ Node::Node(Node *n0, Node *n1)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -382,7 +369,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -399,7 +386,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -418,7 +405,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -440,7 +427,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -464,7 +451,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -502,7 +489,7 @@ Node *Node::clone() const {
   n->_outcnt = 0;
   n->_outmax = 0;
   // Unlock this guy, since he is not in any hash table.
-  debug_only(n->_hash_lock = 0);
+  DEBUG_ONLY(n->_hash_lock = 0);
   // Walk the old node's input list to duplicate its edges
   uint i;
   for( i = 0; i < len(); i++ ) {
@@ -521,20 +508,28 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
-  if (n->is_reduction()) {
-    // Do not copy reduction information. This must be explicitly set by the calling code.
-    n->remove_flag(Node::Flag_is_reduction);
+  if (for_merge_stores_igvn()) {
+    // Don't add cloned node to Compile::_for_merge_stores_igvn list automatically.
+    // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
+    n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
   }
+  if (n->is_ParsePredicate()) {
+    C->add_parse_predicate(n->as_ParsePredicate());
+  }
+  if (n->is_OpaqueTemplateAssertionPredicate()) {
+    C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
+  }
+
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
-  debug_only( n->verify_construction() );
+  DEBUG_ONLY( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
   // impossible to break on the clone's moment of creation.
-  //debug_only( n->set_debug_idx( debug_idx() ) );
+  //DEBUG_ONLY( n->set_debug_idx( debug_idx() ) );
 
   C->copy_node_notes_to(n, (Node*) this);
 
@@ -560,10 +555,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-
-      C->print_inlining_assert_ready();
-      C->print_inlining_move_to(cg);
-      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {
@@ -623,11 +614,17 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (Opcode() == Op_Opaque4) {
-    compile->remove_skeleton_predicate_opaq(this);
+  if (is_OpaqueTemplateAssertionPredicate()) {
+    compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
+  }
+  if (is_ParsePredicate()) {
+    compile->remove_parse_predicate(as_ParsePredicate());
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (for_merge_stores_igvn()) {
+    compile->remove_from_merge_stores_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -678,55 +675,45 @@ void Node::destruct(PhaseValues* phase) {
   }
 }
 
-//------------------------------grow-------------------------------------------
-// Grow the input array, making space for more edges
-void Node::grow(uint len) {
+// Resize input or output array to grow it to the next larger power-of-2 bigger
+// than len.
+void Node::resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing) {
   Arena* arena = Compile::current()->node_arena();
-  uint new_max = _max;
-  if( new_max == 0 ) {
-    _max = 4;
-    _in = (Node**)arena->Amalloc(4*sizeof(Node*));
-    Node** to = _in;
-    to[0] = nullptr;
-    to[1] = nullptr;
-    to[2] = nullptr;
-    to[3] = nullptr;
+  uint new_max = max_size;
+  if (new_max == 0) {
+    max_size = 4;
+    array = (Node**)arena->Amalloc(4 * sizeof(Node*));
+    if (needs_clearing) {
+      array[0] = nullptr;
+      array[1] = nullptr;
+      array[2] = nullptr;
+      array[3] = nullptr;
+    }
     return;
   }
   new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  _in = (Node**)arena->Arealloc(_in, _max*sizeof(Node*), new_max*sizeof(Node*));
-  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // null all new space
-  _max = new_max;               // Record new max length
+  assert(needs_clearing || (array != nullptr && array != NO_OUT_ARRAY), "out must have sensible value");
+  array = (Node**)arena->Arealloc(array, max_size * sizeof(Node*), new_max * sizeof(Node*));
+  if (needs_clearing) {
+    Copy::zero_to_bytes(&array[max_size], (new_max - max_size) * sizeof(Node*)); // null all new space
+  }
+  max_size = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
-  assert(_max == new_max && _max > len, "int width of _max is too small");
+  assert(max_size > len, "int width of _max or _outmax is too small");
+}
+
+//------------------------------grow-------------------------------------------
+// Grow the input array, making space for more edges
+void Node::grow(uint len) {
+  resize_array(_in, _max, len, true);
 }
 
 //-----------------------------out_grow----------------------------------------
 // Grow the input array, making space for more edges
-void Node::out_grow( uint len ) {
+void Node::out_grow(uint len) {
   assert(!is_top(), "cannot grow a top node's out array");
-  Arena* arena = Compile::current()->node_arena();
-  uint new_max = _outmax;
-  if( new_max == 0 ) {
-    _outmax = 4;
-    _out = (Node **)arena->Amalloc(4*sizeof(Node*));
-    return;
-  }
-  new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  assert(_out != nullptr && _out != NO_OUT_ARRAY, "out must have sensible value");
-  _out = (Node**)arena->Arealloc(_out,_outmax*sizeof(Node*),new_max*sizeof(Node*));
-  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // null all new space
-  _outmax = new_max;               // Record new max length
-  // This assertion makes sure that Node::_max is wide enough to
-  // represent the numerical value of new_max.
-  assert(_outmax == new_max && _outmax > len, "int width of _outmax is too small");
+  resize_array(_out, _outmax, len, false);
 }
 
 #ifdef ASSERT
@@ -955,7 +942,7 @@ void Node::disconnect_inputs(Compile* C) {
 #endif
 
   // Node::destruct requires all out edges be deleted first
-  // debug_only(destruct();)   // no reuse benefit expected
+  // DEBUG_ONLY(destruct();)   // no reuse benefit expected
   C->record_dead_node(_idx);
 }
 
@@ -1102,8 +1089,8 @@ juint Node::max_flags() {
 // Print as assembly
 void Node::format( PhaseRegAlloc *, outputStream *st ) const {}
 //------------------------------emit-------------------------------------------
-// Emit bytes starting at parameter 'ptr'.
-void Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+// Emit bytes using C2_MacroAssembler
+void Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 //------------------------------size-------------------------------------------
 // Size of instruction in bytes
 uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
@@ -1111,7 +1098,7 @@ uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
 //------------------------------CFG Construction-------------------------------
 // Nodes that end basic blocks, e.g. IfTrue/IfFalse, JumpProjNode, Root,
 // Goto and Return.
-const Node *Node::is_block_proj() const { return 0; }
+const Node *Node::is_block_proj() const { return nullptr; }
 
 // Minimum guaranteed type
 const Type *Node::bottom_type() const { return Type::BOTTOM; }
@@ -1259,7 +1246,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-bool Node::dominates(Node* sub, Node_List &nlist) {
+Node::DomResult Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1279,12 +1266,15 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   // will either exit through the loop head, or give up.
   // (If we get confused, break out and return a conservative 'false'.)
   while (sub != nullptr) {
-    if (sub->is_top())  break; // Conservative answer for dead code.
+    if (sub->is_top()) {
+      // Conservative answer for dead code.
+      return DomResult::EncounteredDeadCode;
+    }
     if (sub == dom) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
-        return true;
+        return DomResult::Dominate;
       } else if (met_dom) {
         break;          // already met before: walk in a cycle
       } else {
@@ -1298,7 +1288,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
       // Success if we met 'dom' along a path to Start or Root.
       // We assume there are no alternative paths that avoid 'dom'.
       // (This assumption is up to the caller to ensure!)
-      return met_dom;
+      return met_dom ? DomResult::Dominate : DomResult::NotDominate;
     }
     Node* up = sub->in(0);
     // Normalize simple pass-through regions and projections:
@@ -1310,7 +1300,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
     } else if (sub == up && sub->is_Region() && sub->req() == 2) {
       // Take in(1) path on the way up to 'dom' for regions with only one input
       up = sub->in(1);
-    } else if (sub == up && sub->is_Region() && sub->req() == 3) {
+    } else if (sub == up && sub->is_Region()) {
       // Try both paths for Regions with 2 input paths (it may be a loop head).
       // It could give conservative 'false' answer without information
       // which region's input is the entry path.
@@ -1329,7 +1319,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
         if (visited == sub) {
           if (visited_twice_already) {
             // Visited 2 paths, but still stuck in loop body.  Give up.
-            return false;
+            return DomResult::NotDominate;
           }
           // The Region node was visited before only once.
           // (We will repush with the low bit set, below.)
@@ -1372,8 +1362,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   }
 
   // Did not meet Root or Start node in pred. chain.
-  // Conservative answer for dead code.
-  return false;
+  return DomResult::NotDominate;
 }
 
 //------------------------------remove_dead_region-----------------------------
@@ -1464,6 +1453,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
+          } else if (dead->is_data_proj_of_pure_function(n)) {
+            igvn->_worklist.push(n);
           } else {
             BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
@@ -1603,6 +1594,13 @@ jfloat Node::getf() const {
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
 }
 
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
+}
+
 #ifndef PRODUCT
 
 // Call this from debugger:
@@ -1642,7 +1640,7 @@ void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only
 }
 
 // BFS traverse from start, return node with idx
-Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
+static Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
   ResourceMark rm;
   Node* result = nullptr;
   auto callback = [&] (Node* n) {
@@ -1658,11 +1656,11 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
   return result;
 }
 
-int node_idx_cmp(const Node** n1, const Node** n2) {
+static int node_idx_cmp(const Node** n1, const Node** n2) {
   return (*n1)->_idx - (*n2)->_idx;
 }
 
-void find_nodes_by_name(Node* start, const char* name) {
+static void find_nodes_by_name(Node* start, const char* name) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -1677,7 +1675,7 @@ void find_nodes_by_name(Node* start, const char* name) {
   }
 }
 
-void find_nodes_by_dump(Node* start, const char* pattern) {
+static void find_nodes_by_dump(Node* start, const char* pattern) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -1776,8 +1774,8 @@ Node* Node::find(const int idx, bool only_ctrl) {
 
 class PrintBFS {
 public:
-  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options)
-  : _start(start), _max_distance(max_distance), _target(target), _options(options),
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, const frame* fr)
+    : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st), _frame(fr),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
   void run();
@@ -1797,6 +1795,8 @@ private:
   const int _max_distance;
   const Node* _target;
   const char* _options;
+  outputStream* _output;
+  const frame* _frame;
 
   // options
   bool _traverse_inputs = false;
@@ -1836,7 +1836,9 @@ private:
   bool _print_blocks = false;
   bool _print_old = false;
   bool _dump_only = false;
-  static void print_options_help(bool print_examples);
+  bool _print_igv = false;
+
+  void print_options_help(bool print_examples);
   bool parse_options();
 
 public:
@@ -1853,9 +1855,9 @@ private:
 
   // node info
   static Node* old_node(const Node* n); // mach node -> prior IR node
-  static void print_node_idx(const Node* n); // to tty
-  static void print_block_id(const Block* b); // to tty
-  static void print_node_block(const Node* n); // to tty: _pre_order, head idx, _idom, _dom_depth
+  void print_node_idx(const Node* n);
+  void print_block_id(const Block* b);
+  void print_node_block(const Node* n); // _pre_order, head idx, _idom, _dom_depth
 
   // traversal data structures
   GrowableArray<const Node*> _worklist; // BFS queue
@@ -1920,7 +1922,7 @@ void PrintBFS::run() {
 // set up configuration for BFS and print
 bool PrintBFS::configure() {
   if (_max_distance < 0) {
-    tty->print("dump_bfs: max_distance must be non-negative!\n");
+    _output->print_cr("dump_bfs: max_distance must be non-negative!");
     return false;
   }
   return parse_options();
@@ -1958,7 +1960,7 @@ void PrintBFS::select() {
     select_all();
   } else {
     if (find_info(_target) == nullptr) {
-      tty->print("Could not find target in BFS.\n");
+      _output->print_cr("Could not find target in BFS.");
       return;
     }
     if (_all_paths) {
@@ -2053,97 +2055,108 @@ void PrintBFS::print() {
       const Node* n = _print_list.at(i);
       print_node(n);
     }
+    if (_print_igv) {
+      Compile* C = Compile::current();
+      C->init_igv();
+      C->igv_print_graph_to_network(nullptr, _print_list, _frame);
+    }
   } else {
-    tty->print("No nodes to print.\n");
+    _output->print_cr("No nodes to print.");
   }
 }
 
 void PrintBFS::print_options_help(bool print_examples) {
-  tty->print("Usage: node->dump_bfs(int max_distance, Node* target, char* options)\n");
-  tty->print("\n");
-  tty->print("Use cases:\n");
-  tty->print("  BFS traversal: no target required\n");
-  tty->print("  shortest path: set target\n");
-  tty->print("  all paths: set target and put 'A' in options\n");
-  tty->print("  detect loop: subcase of all paths, have start==target\n");
-  tty->print("\n");
-  tty->print("Arguments:\n");
-  tty->print("  this/start: staring point of BFS\n");
-  tty->print("  target:\n");
-  tty->print("    if null: simple BFS\n");
-  tty->print("    else: shortest path or all paths between this/start and target\n");
-  tty->print("  options:\n");
-  tty->print("    if null: same as \"cdmox@B\"\n");
-  tty->print("    else: use combination of following characters\n");
-  tty->print("      h: display this help info\n");
-  tty->print("      H: display this help info, with examples\n");
-  tty->print("      +: traverse in-edges (on if neither + nor -)\n");
-  tty->print("      -: traverse out-edges\n");
-  tty->print("      c: visit control nodes\n");
-  tty->print("      d: visit data nodes\n");
-  tty->print("      m: visit memory nodes\n");
-  tty->print("      o: visit other nodes\n");
-  tty->print("      x: visit mixed nodes\n");
-  tty->print("      C: boundary control nodes\n");
-  tty->print("      D: boundary data nodes\n");
-  tty->print("      M: boundary memory nodes\n");
-  tty->print("      O: boundary other nodes\n");
-  tty->print("      X: boundary mixed nodes\n");
-  tty->print("      #: display node category in color (not supported in all terminals)\n");
-  tty->print("      S: sort displayed nodes by node idx\n");
-  tty->print("      A: all paths (not just shortest path to target)\n");
-  tty->print("      @: print old nodes - before matching (if available)\n");
-  tty->print("      B: print scheduling blocks (if available)\n");
-  tty->print("      $: dump only, no header, no other columns\n");
-  tty->print("\n");
-  tty->print("recursively follow edges to nodes with permitted visit types,\n");
-  tty->print("on the boundary additionally display nodes allowed in boundary types\n");
-  tty->print("Note: the categories can be overlapping. For example a mixed node\n");
-  tty->print("      can contain control and memory output. Some from the other\n");
-  tty->print("      category are also control (Halt, Return, etc).\n");
-  tty->print("\n");
-  tty->print("output columns:\n");
-  tty->print("  dist:  BFS distance to this/start\n");
-  tty->print("  apd:   all paths distance (d_start + d_target)\n");
-  tty->print("  block: block identifier, based on _pre_order\n");
-  tty->print("  head:  first node in block\n");
-  tty->print("  idom:  head node of idom block\n");
-  tty->print("  depth: depth of block (_dom_depth)\n");
-  tty->print("  old:   old IR node - before matching\n");
-  tty->print("  dump:  node->dump()\n");
-  tty->print("\n");
-  tty->print("Note: if none of the \"cmdxo\" characters are in the options string\n");
-  tty->print("      then we set all of them.\n");
-  tty->print("      This allows for short strings like \"#\" for colored input traversal\n");
-  tty->print("      or \"-#\" for colored output traversal.\n");
+  _output->print_cr("Usage: node->dump_bfs(int max_distance, Node* target, char* options)");
+  _output->print_cr("");
+  _output->print_cr("Use cases:");
+  _output->print_cr("  BFS traversal: no target required");
+  _output->print_cr("  shortest path: set target");
+  _output->print_cr("  all paths: set target and put 'A' in options");
+  _output->print_cr("  detect loop: subcase of all paths, have start==target");
+  _output->print_cr("");
+  _output->print_cr("Arguments:");
+  _output->print_cr("  this/start: staring point of BFS");
+  _output->print_cr("  target:");
+  _output->print_cr("    if null: simple BFS");
+  _output->print_cr("    else: shortest path or all paths between this/start and target");
+  _output->print_cr("  options:");
+  _output->print_cr("    if null: same as \"cdmox@B\"");
+  _output->print_cr("    else: use combination of following characters");
+  _output->print_cr("      h: display this help info");
+  _output->print_cr("      H: display this help info, with examples");
+  _output->print_cr("      +: traverse in-edges (on if neither + nor -)");
+  _output->print_cr("      -: traverse out-edges");
+  _output->print_cr("      c: visit control nodes");
+  _output->print_cr("      d: visit data nodes");
+  _output->print_cr("      m: visit memory nodes");
+  _output->print_cr("      o: visit other nodes");
+  _output->print_cr("      x: visit mixed nodes");
+  _output->print_cr("      C: boundary control nodes");
+  _output->print_cr("      D: boundary data nodes");
+  _output->print_cr("      M: boundary memory nodes");
+  _output->print_cr("      O: boundary other nodes");
+  _output->print_cr("      X: boundary mixed nodes");
+  _output->print_cr("      #: display node category in color (not supported in all terminals)");
+  _output->print_cr("      S: sort displayed nodes by node idx");
+  _output->print_cr("      A: all paths (not just shortest path to target)");
+  _output->print_cr("      @: print old nodes - before matching (if available)");
+  _output->print_cr("      B: print scheduling blocks (if available)");
+  _output->print_cr("      $: dump only, no header, no other columns");
+  _output->print_cr("      !: show nodes on IGV (sent over network stream)");
+  _output->print_cr("        (use preferably with dump_bfs(int, Node*, char*, void*, void*, void*)");
+  _output->print_cr("         to produce a C2 stack trace along with the graph dump, see examples below)");
+  _output->print_cr("");
+  _output->print_cr("recursively follow edges to nodes with permitted visit types,");
+  _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
+  _output->print_cr("Note: the categories can be overlapping. For example a mixed node");
+  _output->print_cr("      can contain control and memory output. Some from the other");
+  _output->print_cr("      category are also control (Halt, Return, etc).");
+  _output->print_cr("");
+  _output->print_cr("output columns:");
+  _output->print_cr("  dist:  BFS distance to this/start");
+  _output->print_cr("  apd:   all paths distance (d_outputart + d_target)");
+  _output->print_cr("  block: block identifier, based on _pre_order");
+  _output->print_cr("  head:  first node in block");
+  _output->print_cr("  idom:  head node of idom block");
+  _output->print_cr("  depth: depth of block (_dom_depth)");
+  _output->print_cr("  old:   old IR node - before matching");
+  _output->print_cr("  dump:  node->dump()");
+  _output->print_cr("");
+  _output->print_cr("Note: if none of the \"cmdxo\" characters are in the options string");
+  _output->print_cr("      then we set all of them.");
+  _output->print_cr("      This allows for short strings like \"#\" for colored input traversal");
+  _output->print_cr("      or \"-#\" for colored output traversal.");
   if (print_examples) {
-    tty->print("\n");
-    tty->print("Examples:\n");
-    tty->print("  if->dump_bfs(10, 0, \"+cxo\")\n");
-    tty->print("    starting at some if node, traverse inputs recursively\n");
-    tty->print("    only along control (mixed and other can also be control)\n");
-    tty->print("  phi->dump_bfs(5, 0, \"-dxo\")\n");
-    tty->print("    starting at phi node, traverse outputs recursively\n");
-    tty->print("    only along data (mixed and other can also have data flow)\n");
-    tty->print("  find_node(385)->dump_bfs(3, 0, \"cdmox+#@B\")\n");
-    tty->print("    find inputs of node 385, up to 3 nodes up (+)\n");
-    tty->print("    traverse all nodes (cdmox), use colors (#)\n");
-    tty->print("    display old nodes and blocks, if they exist\n");
-    tty->print("    useful call to start with\n");
-    tty->print("  find_node(102)->dump_bfs(10, 0, \"dCDMOX-\")\n");
-    tty->print("    find non-data dependencies of a data node\n");
-    tty->print("    follow data node outputs until we find another category\n");
-    tty->print("    node as the boundary\n");
-    tty->print("  x->dump_bfs(10, y, 0)\n");
-    tty->print("    find shortest path from x to y, along any edge or node\n");
-    tty->print("    will not find a path if it is longer than 10\n");
-    tty->print("    useful to find how x and y are related\n");
-    tty->print("  find_node(741)->dump_bfs(20, find_node(746), \"c+\")\n");
-    tty->print("    find shortest control path between two nodes\n");
-    tty->print("  find_node(741)->dump_bfs(8, find_node(746), \"cdmox+A\")\n");
-    tty->print("    find all paths (A) between two nodes of length at most 8\n");
-    tty->print("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")\n");
-    tty->print("    find all control loops for this node\n");
+    _output->print_cr("");
+    _output->print_cr("Examples:");
+    _output->print_cr("  if->dump_bfs(10, 0, \"+cxo\")");
+    _output->print_cr("    starting at some if node, traverse inputs recursively");
+    _output->print_cr("    only along control (mixed and other can also be control)");
+    _output->print_cr("  phi->dump_bfs(5, 0, \"-dxo\")");
+    _output->print_cr("    starting at phi node, traverse outputs recursively");
+    _output->print_cr("    only along data (mixed and other can also have data flow)");
+    _output->print_cr("  find_node(385)->dump_bfs(3, 0, \"cdmox+#@B\")");
+    _output->print_cr("    find inputs of node 385, up to 3 nodes up (+)");
+    _output->print_cr("    traverse all nodes (cdmox), use colors (#)");
+    _output->print_cr("    display old nodes and blocks, if they exist");
+    _output->print_cr("    useful call to start with");
+    _output->print_cr("  find_node(102)->dump_bfs(10, 0, \"dCDMOX-\")");
+    _output->print_cr("    find non-data dependencies of a data node");
+    _output->print_cr("    follow data node outputs until we find another category");
+    _output->print_cr("    node as the boundary");
+    _output->print_cr("  x->dump_bfs(10, y, 0)");
+    _output->print_cr("    find shortest path from x to y, along any edge or node");
+    _output->print_cr("    will not find a path if it is longer than 10");
+    _output->print_cr("    useful to find how x and y are related");
+    _output->print_cr("  find_node(741)->dump_bfs(20, find_node(746), \"c+\")");
+    _output->print_cr("    find shortest control path between two nodes");
+    _output->print_cr("  find_node(741)->dump_bfs(8, find_node(746), \"cdmox+A\")");
+    _output->print_cr("    find all paths (A) between two nodes of length at most 8");
+    _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")");
+    _output->print_cr("    find all control loops for this node");
+    _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A!\", $sp, $fp, $pc)");
+    _output->print_cr("    same as above, but printing the resulting subgraph");
+    _output->print_cr("    along with a C2 stack trace on IGV");
   }
 }
 
@@ -2208,6 +2221,9 @@ bool PrintBFS::parse_options() {
       case '$':
         _dump_only = true;
         break;
+      case '!':
+        _print_igv = true;
+        break;
       case 'h':
         print_options_help(false);
         return false;
@@ -2215,8 +2231,8 @@ bool PrintBFS::parse_options() {
         print_options_help(true);
         return false;
       default:
-        tty->print_cr("dump_bfs: Unrecognized option \'%c\'", _options[i]);
-        tty->print_cr("for help, run: find_node(0)->dump_bfs(0,0,\"H\")");
+        _output->print_cr("dump_bfs: Unrecognized option \'%c\'", _options[i]);
+        _output->print_cr("for help, run: find_node(0)->dump_bfs(0,0,\"H\")");
         return false;
     }
   }
@@ -2295,14 +2311,14 @@ void PrintBFS::print_node_idx(const Node* n) {
   } else {
     os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
-  tty->print("%6s", buf);
+  _output->print("%6s", buf);
 }
 
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
   os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
-  tty->print("%7s", buf);
+  _output->print("%7s", buf);
 }
 
 void PrintBFS::print_node_block(const Node* n) {
@@ -2311,19 +2327,19 @@ void PrintBFS::print_node_block(const Node* n) {
              ? C->cfg()->get_block_for_node(n)
              : nullptr; // guard against old nodes
   if (b == nullptr) {
-    tty->print("      _"); // Block
-    tty->print("     _");  // head
-    tty->print("     _");  // idom
-    tty->print("      _"); // depth
+    _output->print("      _"); // Block
+    _output->print("     _");  // head
+    _output->print("     _");  // idom
+    _output->print("      _"); // depth
   } else {
     print_block_id(b);
     print_node_idx(b->head());
     if (b->_idom) {
       print_node_idx(b->_idom->head());
     } else {
-      tty->print("     _"); // idom
+      _output->print("     _"); // idom
     }
-    tty->print("%6d ", b->_dom_depth);
+    _output->print("%6d ", b->_dom_depth);
   }
 }
 
@@ -2353,39 +2369,39 @@ void PrintBFS::print_header() const {
   if (_dump_only) {
     return; // no header in dump only mode
   }
-  tty->print("dist");                         // distance
+  _output->print("dist");                         // distance
   if (_all_paths) {
-    tty->print(" apd");                       // all paths distance
+    _output->print(" apd");                       // all paths distance
   }
   if (_print_blocks) {
-    tty->print(" [block  head  idom depth]"); // block
+    _output->print(" [block  head  idom depth]"); // block
   }
   if (_print_old) {
-    tty->print("   old");                     // old node
+    _output->print("   old");                     // old node
   }
-  tty->print(" dump\n");                      // node dump
-  tty->print("---------------------------------------------\n");
+  _output->print(" dump\n");                      // node dump
+  _output->print_cr("---------------------------------------------");
 }
 
 void PrintBFS::print_node(const Node* n) {
   if (_dump_only) {
-    n->dump("\n", false, tty, &_dcc);
+    n->dump("\n", false, _output, &_dcc);
     return;
   }
-  tty->print("%4d", find_info(n)->distance());// distance
+  _output->print("%4d", find_info(n)->distance());// distance
   if (_all_paths) {
     Info* info = find_info(n);
     int apd = info->distance() + info->distance_from_target();
-    tty->print("%4d", apd);                   // all paths distance
+    _output->print("%4d", apd);                   // all paths distance
   }
   if (_print_blocks) {
-    print_node_block(n);                      // block
+    print_node_block(n);                          // block
   }
   if (_print_old) {
-    print_node_idx(old_node(n));              // old node
+    print_node_idx(old_node(n));                  // old node
   }
-  tty->print(" ");
-  n->dump("\n", false, tty, &_dcc);           // node dump
+  _output->print(" ");
+  n->dump("\n", false, _output, &_dcc);           // node dump
 }
 
 //------------------------------dump_bfs--------------------------------------
@@ -2395,13 +2411,25 @@ void PrintBFS::print_node(const Node* n) {
 // To find all options, run:
 //   find_node(0)->dump_bfs(0,0,"H")
 void Node::dump_bfs(const int max_distance, Node* target, const char* options) const {
-  PrintBFS bfs(this, max_distance, target, options);
+  dump_bfs(max_distance, target, options, tty);
+}
+
+// Used to dump to stream.
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, const frame* fr) const {
+  PrintBFS bfs(this, max_distance, target, options, st, fr);
   bfs.run();
 }
 
 // Call this from debugger, with default arguments
 void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
+}
+
+// Call this from debugger, with stack handling register arguments for IGV dumps.
+// Example: p find_node(741)->dump_bfs(7, find_node(741), "c+A!", $sp, $fp, $pc).
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const {
+  frame fr(sp, fp, pc);
+  dump_bfs(max_distance, target, options, tty, &fr);
 }
 
 // -----------------------------dump_idx---------------------------------------
@@ -2413,9 +2441,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2497,8 +2525,8 @@ void Node::set_debug_orig(Node* orig) {
   if (not_a_node(orig))  orig = nullptr;
   int trip = 10;
   while (orig != nullptr) {
-    if (orig->debug_idx() == BreakAtNode || (int)orig->_idx == BreakAtNode) {
-      tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d orig._idx=%d orig._debug_idx=%d",
+    if (orig->debug_idx() == BreakAtNode || (uintx)orig->_idx == BreakAtNode) {
+      tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT " orig._idx=%d orig._debug_idx=" UINT64_FORMAT,
                     this->_idx, this->debug_idx(), orig->_idx, orig->debug_idx());
       BREAKPOINT;
     }
@@ -2530,7 +2558,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
 
   if (is_disconnected(this)) {
 #ifdef ASSERT
-    st->print("  [%d]",debug_idx());
+    st->print("  [" UINT64_FORMAT "]", debug_idx());
     dump_orig(st);
 #endif
     st->cr();
@@ -2539,14 +2567,14 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   }
 
   if (C->clone_map().value(_idx) != 0) {
-    C->clone_map().dump(_idx);
+    C->clone_map().dump(_idx, st);
   }
   // Dump node-specific info
   dump_spec(st);
 #ifdef ASSERT
   // Dump the non-reset _debug_idx
   if (Verbose && WizardMode) {
-    st->print("  [%d]",debug_idx());
+    st->print("  [" UINT64_FORMAT "]", debug_idx());
   }
 #endif
 
@@ -2770,6 +2798,7 @@ const RegMask &Node::in_RegMask(uint) const {
 }
 
 void Node_Array::grow(uint i) {
+  assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
@@ -2882,6 +2911,15 @@ void Node::ensure_control_or_add_prec(Node* c) {
   }
 }
 
+void Node::add_prec_from(Node* n) {
+  for (uint i = n->req(); i < n->len(); i++) {
+    Node* prec = n->in(i);
+    if (prec != nullptr) {
+      add_prec(prec);
+    }
+  }
+}
+
 bool Node::is_dead_loop_safe() const {
   if (is_Phi()) {
     return true;
@@ -2903,6 +2941,18 @@ bool Node::is_dead_loop_safe() const {
     return true;
   }
   return false;
+}
+
+bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
+                                                      Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+// `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
+// but we already have and need maybe_pure_function in all the call sites, so
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
+// while it takes more thinking to realize that a locally computed in(0) must be equal to
+// the local in the caller.
+bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
 }
 
 //=============================================================================
@@ -3015,7 +3065,7 @@ uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
 bool TypeNode::cmp(const Node& n) const {
-  return !Type::cmp(_type, ((TypeNode&)n)._type);
+  return Type::equals(_type, n.as_Type()->_type);
 }
 const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
@@ -3024,3 +3074,78 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
+
+void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+  Node* c = ctrl_use->in(j);
+  if (igvn->type(c) != Type::TOP) {
+    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+    create_halt_path(igvn, c, loop, phase_str);
+  }
+}
+
+// This Type node is dead. It could be because the type that it captures and the type of the node computed from its
+// inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
+// be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
+// flow construct must guard the Type node (an If node usually). When the Type node becomes dead, the guard usually
+// constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
+// doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
+// paths. The dead paths are then replaced by a Halt node.
+void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+  Unique_Node_List wq;
+  wq.push(this);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      if (u->is_CFG()) {
+        assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
+        make_path_dead(igvn, loop, u, 0, phase_str);
+      } else if (u->is_Phi()) {
+        Node* r = u->in(0);
+        assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
+        if (r->is_Region()) {
+          for (uint j = 1; j < u->req(); ++j) {
+            if (u->in(j) == n && r->in(j) != nullptr) {
+              make_path_dead(igvn, loop, r, j, phase_str);
+            }
+          }
+        }
+      } else {
+        wq.push(u);
+      }
+    }
+  }
+}
+
+void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+  Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(frame);
+  } else {
+    loop->register_new_node(frame, igvn->C->start());
+  }
+
+  stringStream ss;
+  ss.print("dead path discovered by TypeNode during %s", phase_str);
+
+  Node* halt = new HaltNode(c, frame, ss.as_string(igvn->C->comp_arena()));
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(halt);
+  } else {
+    loop->register_control(halt, loop->ltree_root(), c);
+  }
+  igvn->add_input_to(igvn->C->root(), halt);
+}
+
+Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    Node* top = igvn->C->top();
+    ResourceMark rm;
+    make_paths_from_here_dead(igvn, nullptr, "igvn");
+    return top;
+  }
+
+  return Node::Ideal(phase, can_reshape);
+}
+

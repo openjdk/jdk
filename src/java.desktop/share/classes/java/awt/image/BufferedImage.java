@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
@@ -800,26 +798,16 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((raster instanceof ByteComponentRaster) &&
     }
 
-    @SuppressWarnings("removal")
     private static boolean isStandard(ColorModel cm, WritableRaster wr) {
         final Class<? extends ColorModel> cmClass = cm.getClass();
         final Class<? extends WritableRaster> wrClass = wr.getClass();
         final Class<? extends SampleModel> smClass = wr.getSampleModel().getClass();
 
-        final PrivilegedAction<Boolean> checkClassLoadersAction =
-                new PrivilegedAction<Boolean>()
-        {
+        final ClassLoader std = System.class.getClassLoader();
 
-            @Override
-            public Boolean run() {
-                final ClassLoader std = System.class.getClassLoader();
-
-                return (cmClass.getClassLoader() == std) &&
-                        (smClass.getClassLoader() == std) &&
-                        (wrClass.getClassLoader() == std);
-            }
-        };
-        return AccessController.doPrivileged(checkClassLoadersAction);
+        return (cmClass.getClassLoader() == std) &&
+                (smClass.getClassLoader() == std) &&
+                (wrClass.getClassLoader() == std);
     }
 
     /**
@@ -899,7 +887,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -933,7 +921,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1003,7 +991,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1033,7 +1021,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1509,37 +1497,19 @@ public class BufferedImage extends java.awt.Image
      * @see #getData(Rectangle)
     */
     public void setData(Raster r) {
-        int width = r.getWidth();
-        int height = r.getHeight();
-        int startX = r.getMinX();
-        int startY = r.getMinY();
-
-        int[] tdata = null;
-
-        // Clip to the current Raster
-        Rectangle rclip = new Rectangle(startX, startY, width, height);
-        Rectangle bclip = new Rectangle(0, 0, raster.width, raster.height);
-        Rectangle intersect = rclip.intersection(bclip);
-        if (intersect.isEmpty()) {
-            return;
-        }
-        width = intersect.width;
-        height = intersect.height;
-        startX = intersect.x;
-        startY = intersect.y;
-
-        // remind use get/setDataElements for speed if Rasters are
-        // compatible
-        for (int i = startY; i < startY+height; i++)  {
-            tdata = r.getPixels(startX,i,width,1,tdata);
-            raster.setPixels(startX,i,width,1, tdata);
-        }
+        raster.setRect(r);
     }
 
 
   /**
    * Adds a tile observer.  If the observer is already present,
    * it receives multiple notifications.
+   * <p>
+   * This method ignores its parameters and does nothing,
+   * since {@code BufferedImage} is always checked out
+   * for writing and cannot be made read-only,
+   * so there can never be events to dispatch.
+   *
    * @param to the specified {@link TileObserver}
    */
     public void addTileObserver (TileObserver to) {
@@ -1549,6 +1519,10 @@ public class BufferedImage extends java.awt.Image
    * Removes a tile observer.  If the observer was not registered,
    * nothing happens.  If the observer was registered for multiple
    * notifications, it is now registered for one fewer notification.
+   * <p>
+   * This method ignores the given observer,
+   * since {@link #addTileObserver(TileObserver)} adds none.
+   *
    * @param to the specified {@code TileObserver}.
    */
     public void removeTileObserver (TileObserver to) {
@@ -1556,13 +1530,18 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns whether or not a tile is currently checked out for writing.
+     * The only tile in a {@code BufferedImage} is at (0,0) and it is always
+     * writable, so calling this method with (0,0) will always return
+     * {@code true}, and any other coordinate will cause an exception
+     * to be thrown.
+     *
      * @param tileX the x index of the tile.
      * @param tileY the y index of the tile.
      * @return {@code true} if the tile specified by the specified
      *          indices is checked out for writing; {@code false}
      *          otherwise.
-     * @throws ArrayIndexOutOfBoundsException if both
-     *          {@code tileX} and {@code tileY} are not equal
+     * @throws IllegalArgumentException if either
+     *          {@code tileX} or {@code tileY} is not equal
      *          to 0
      */
     public boolean isTileWritable (int tileX, int tileY) {
@@ -1576,13 +1555,23 @@ public class BufferedImage extends java.awt.Image
      * Returns an array of {@link Point} objects indicating which tiles
      * are checked out for writing.  Returns {@code null} if none are
      * checked out.
+     * <p>
+     * Since a {@code BufferedImage} consists of a single tile,
+     * and that tile is always checked out for writing,
+     * this method returns an array of one point.
+     * Further, the offset shall be consistent with
+     * {@link #getMinTileX()} and {@link #getMinTileY()},
+     * which are always (0,0) in {@code BufferedImage}.
+     * That will always be the coordinates of the single
+     * returned {@code Point}.
+     *
      * @return a {@code Point} array that indicates the tiles that
      *          are checked out for writing, or {@code null} if no
      *          tiles are checked out for writing.
      */
     public Point[] getWritableTileIndices() {
         Point[] p = new Point[1];
-        p[0] = new Point(0, 0);
+        p[0] = new Point();         // Default to (0,0).
 
         return p;
     }
@@ -1604,6 +1593,12 @@ public class BufferedImage extends java.awt.Image
    * Checks out a tile for writing.  All registered
    * {@code TileObservers} are notified when a tile goes from having
    * no writers to having one writer.
+   * <p>
+   * This method unconditionally returns the
+   * {@linkplain #getRaster() single tile} without checking
+   * the passed values. No listeners are notified since the
+   * returned tile is always checked out for writing.
+   *
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
    * @return a {@code WritableRaster} that is the tile, indicated by
@@ -1621,6 +1616,11 @@ public class BufferedImage extends java.awt.Image
    * to undefined results.  All registered {@code TileObservers}
    * are notified when a tile goes from having one writer to having no
    * writers.
+   * <p>
+   * This method immediately returns without checking the passed values.
+   * No listeners are notified since the {@linkplain #getRaster() single tile}
+   * is always checked out for writing.
+   *
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
    */

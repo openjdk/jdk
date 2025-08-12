@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363 8182765 8223364
-             8242056 8261976 8223358
+             8242056 8261976 8223358 8313204
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @library  ../../lib
@@ -52,11 +52,11 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
-                    <li>Summary:&nbsp;</li>
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>""",
                 """
-                    <li>Detail:&nbsp;</li>
-                    <li><a href="#field-detail">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-detail" tabindex="0">Field Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#DEFAULT_NAME" tabindex="0">DEFAULT_NAME</a></li>""",
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
@@ -66,24 +66,24 @@ public class TestAnnotationTypes extends JavadocTester {
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
                     span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">DEFAULT_NAME</span></div>
                     """);
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    <ul class="sub-nav-list">
-                    <li>Summary:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-required-element-summary">Required</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-optional-element-summary">Optional</a></li>
-                    </ul>""",
-                """
-                    <ul class="sub-nav-list">
-                    <li>Detail:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-element-detail">Element</a></li>
-                    </ul>""");
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#annotation-interface-required-element-summary" tabindex="0">Required Element Summary</a></li>
+                    <li><a href="#annotation-interface-optional-element-summary" tabindex="0">Optional Element Summary</a></li>
+                    <li><a href="#annotation-interface-element-detail" tabindex="0">Element Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#value()" tabindex="0">value</a></li>
+                    <li><a href="#optional()" tabindex="0">optional</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
@@ -132,17 +132,21 @@ public class TestAnnotationTypes extends JavadocTester {
                     <li>
                     <section class="detail" id="value()">
                     <h3>value</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>
+                    </div>
                     </section>
                     </li>
                     <li>
                     <section class="detail" id="optional()">
                     <h3>optional</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">optional</span></div>
                     <dl class="notes">
                     <dt>Default:</dt>
                     <dd><code>""</code></dd>
                     </dl>
+                    </div>
                     </section>
                     </li>
                     </ul>
@@ -184,5 +188,23 @@ public class TestAnnotationTypes extends JavadocTester {
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
                     <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationTypeField.html#line-31">AnnotationTypeField</a></span></div>""");
+    }
+
+    @Test
+    public void testSectionOrdering() {
+        javadoc("-d", "out-3",
+                "-linksource",
+                "--no-platform-links",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOrder("pkg/AnnotationTypeField.html",
+                "<ul class=\"summary-list\">",
+                "<section class=\"field-summary\" id=\"field-summary\">",
+                "<section class=\"member-summary\" id=\"annotation-interface-optional-element-summary\">",
+                "<ul class=\"details-list\">",
+                "<section class=\"field-details\" id=\"field-detail\">",
+                "<section class=\"detail\" id=\"DEFAULT_NAME\">");
     }
 }

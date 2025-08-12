@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347 8347989
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -52,6 +52,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -73,6 +74,14 @@ import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import java.util.Objects;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.ElementFilter;
+import javax.tools.JavaFileObject;
 
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -89,6 +98,8 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testLocalRecordAnnotation();
         new TestGetScopeResult().testRuleCases();
         new TestGetScopeResult().testNestedSwitchExpression();
+        new TestGetScopeResult().testModuleImportScope();
+        new TestGetScopeResult().testClassTypeSetInEnterGetScope();
     }
 
     public void run() throws IOException {
@@ -148,7 +159,7 @@ public class TestGetScopeResult {
                multipleCandidates2);
 
         String[] implicitExplicitConflict1 = {
-            ":t",
+            "<error>:t",
             "s:java.lang.String",
             "super:java.lang.Object",
             "this:Test"
@@ -159,7 +170,7 @@ public class TestGetScopeResult {
 
         String[] implicitExplicitConflict2 = {
             "s:none",
-            ":t",
+            "<error>:t",
             "super:java.lang.Object",
             "this:Test"
         };
@@ -169,7 +180,7 @@ public class TestGetScopeResult {
 
         String[] noFunctionInterface = {
             "s:none",
-            ":t",
+            "<error>:t",
             "super:java.lang.Object",
             "this:Test"
         };
@@ -823,6 +834,138 @@ public class TestGetScopeResult {
         }
     }
 
+    void testModuleImportScope() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          import module java.compiler;
+                          import java.util.*;
+                          import java.lang.System;
+                          class Test {
+                          }
+                          """;
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            JavaFileObject input =
+                    SimpleJavaFileObject.forSource(URI.create("myfo:///Test.java"), code);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                List.of(input),
+                                                ctx);
+            CompilationUnitTree cut = t.parse().iterator().next();
+            t.analyze();
+
+            TreePath topLevelClass = new TreePath(new TreePath(cut), cut.getTypeDecls().get(0));
+            Scope scope = Trees.instance(t).getScope(topLevelClass);
+
+            if (scope.getEnclosingClass() == null) {
+                throw new AssertionError("Expected an enclosing class.");
+            }
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "java.lang.System");
+            asssertScopeContainsTypeWithFQN(scope, "Test");
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "java.util.List");
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "javax.tools.ToolProvider");
+
+            if (scope.getEnclosingScope() != null) {
+                throw new AssertionError("Did not expect an enclosing scope.");
+            }
+        }
+    }
+
+    //JDK-8347989
+    void testClassTypeSetInEnterGetScope() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          import java.util.*;
+                          class Test<T extends Test&CharSequence> extends ArrayList
+                                                                  implements List {
+                              private int test(boolean b) {
+                                  int v = b ? test(!b) : 0;
+                                  return v;
+                              }
+                          }
+                          """;
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            JavaFileObject input =
+                    SimpleJavaFileObject.forSource(URI.create("myfo:///Test.java"), code);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                List.of(input),
+                                                ctx);
+            Trees trees = Trees.instance(t);
+            List<List<String>> actual = new ArrayList<>();
+
+            t.addTaskListener(new TaskListener() {
+                @Override
+                public void finished(TaskEvent e) {
+                    if (e.getKind() != TaskEvent.Kind.ENTER) {
+                        return ;
+                    }
+
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitClass(ClassTree node, Void p) {
+                            TypeMirror type = trees.getTypeMirror(getCurrentPath());
+                            if (type == null) {
+                                throw new AssertionError("Expected class type 'Test', but got: null");
+                            }
+                            assertEquals(TypeKind.DECLARED, type.getKind());
+                            DeclaredType decl = (DeclaredType) type;
+                            TypeVariable tvar = (TypeVariable) decl.getTypeArguments().get(0);
+                            assertEquals("T", tvar.asElement().getSimpleName().toString());
+                            assertEquals("Test&java.lang.CharSequence", tvar.getUpperBound().toString());
+                            TypeElement clazz = (TypeElement) decl.asElement();
+                            assertEquals("java.util.ArrayList", clazz.getSuperclass().toString().toString());
+                            assertEquals("java.util.List", clazz.getInterfaces().toString().toString());
+                            return super.visitClass(node, p);
+                        }
+                        @Override
+                        public Void visitReturn(ReturnTree rt, Void p) {
+                            Scope scope = trees.getScope(getCurrentPath());
+                            actual.add(dumpScope(scope));
+                            return super.visitReturn(rt, p);
+                        }
+                    }.scan(e.getCompilationUnit(), null);
+                }
+            });
+
+            t.analyze();
+
+            List<List<String>> expected =
+                    List.of(List.of("v:int",
+                                    "b:boolean",
+                                    "super:java.util.ArrayList",
+                                    "this:Test<T>",
+                                    "T:T"
+                                ));
+
+            if (!expected.equals(actual)) {
+                throw new AssertionError("Unexpected Scope content: " + actual);
+            }
+        }
+    }
+
     private List<String> dumpScope(Scope scope) {
         List<String> content = new ArrayList<>();
         while (scope.getEnclosingClass() != null) {
@@ -832,5 +975,24 @@ public class TestGetScopeResult {
             scope = scope.getEnclosingScope();
         }
         return content;
+    }
+
+    private void asssertScopeContainsTypeWithFQN(Scope scope, String fqn) {
+        for (TypeElement type : ElementFilter.typesIn(scope.getLocalElements())) {
+            if (type.getQualifiedName().contentEquals(fqn)) {
+                return ;
+            }
+        }
+
+        throw new AssertionError("Expected to find: " + fqn +
+                                 " in: " + scope.getLocalElements() +
+                                 ", but it is missing.");
+    }
+
+    private void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected: '" + expected + "', " +
+                                     "but got: '" + actual + "'");
+        }
     }
 }

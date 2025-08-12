@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,11 +75,11 @@ public class DeadListenerTest {
         RMIConnectorServer cs = new RMIConnectorServer(url, null, rmiServer, mbs);
         cs.start();
         JMXServiceURL addr = cs.getAddress();
-        assertTrue("No connections in new connector server", rmiServer.connections.isEmpty());
+        assertTrue("Expected no connections in new connector server", rmiServer.connections.isEmpty());
 
         JMXConnector cc = JMXConnectorFactory.connect(addr);
         MBeanServerConnection mbsc = cc.getMBeanServerConnection();
-        assertTrue("One connection on server after client connect", rmiServer.connections.size() == 1);
+        assertTrue("Expected one connection on server after client connect", rmiServer.connections.size() == 1);
         RMIConnectionImpl connection = rmiServer.connections.get(0);
         Method getServerNotifFwdM = RMIConnectionImpl.class.getDeclaredMethod("getServerNotifFwd");
         getServerNotifFwdM.setAccessible(true);
@@ -88,7 +88,7 @@ public class DeadListenerTest {
         listenerMapF.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<ObjectName, Set<?>> listenerMap = (Map<ObjectName, Set<?>>) listenerMapF.get(serverNotifForwarder);
-        assertTrue("Server listenerMap initially empty", mapWithoutKey(listenerMap, delegateName).isEmpty());
+        assertTrue("Expected server listenerMap initially empty", mapWithoutKey(listenerMap, delegateName).isEmpty());
 
         final AtomicInteger count1Val = new AtomicInteger();
         CountListener count1 = new CountListener(count1Val);
@@ -104,12 +104,12 @@ public class DeadListenerTest {
         WeakReference<CountListener> count2Ref = new WeakReference<>(count2);
         count2 = null;
 
-        assertTrue("One entry in listenerMap for two listeners on same MBean", mapWithoutKey(listenerMap, delegateName).size() == 1);
+        assertTrue("Expected one entry in listenerMap for two listeners on same MBean", mapWithoutKey(listenerMap, delegateName).size() == 1);
         Set<?> set = listenerMap.get(name);
-        assertTrue("Set in listenerMap for MBean has two elements", set != null && set.size() == 2);
+        assertTrue("Expected Set in listenerMap for MBean to have two elements", set != null && set.size() == 2);
 
-        assertTrue("Initial value of count1 == 0", count1Val.get() == 0);
-        assertTrue("Initial value of count2 == 0", count2Val.get() == 0);
+        assertTrue("Initial value of count1 should be 0", count1Val.get() == 0);
+        assertTrue("Initial value of count2 should be 0", count2Val.get() == 0);
 
         Notification notif = new Notification("type", name, 0);
 
@@ -119,8 +119,8 @@ public class DeadListenerTest {
         while ((count1Val.get() != 1 || count2Val.get() != 1) ) {
             Thread.sleep(20);
         }
-        assertTrue("New value of count1 == 1", count1Val.get() == 1);
-        assertTrue("Initial value of count2 == 1", count2Val.get() == 1);
+        assertTrue("Value of count1 expected 1, got " + count1Val.get(), count1Val.get() == 1);
+        assertTrue("Value of count2 expected 1, got " + count2Val.get(), count2Val.get() == 1);
 
         // Make sure that removing a nonexistent listener from an existent MBean produces ListenerNotFoundException
         CountListener count3 = new CountListener();
@@ -146,8 +146,8 @@ public class DeadListenerTest {
         mbean.sendNotification(notif);
         Thread.sleep(200);
 
-        assertTrue("New value of count1 == 1", count1Val.get() == 1);
-        assertTrue("Initial value of count2 == 1", count2Val.get() == 1);
+        assertTrue("Value of count1 expected 1, got " + count1Val.get(), count1Val.get() == 1);
+        assertTrue("Value of count2 expected 1, got " + count2Val.get(), count2Val.get() == 1);
 
         // wait for the listener cleanup to take place upon processing notifications
         int countdown = 50; // waiting max. 5 secs

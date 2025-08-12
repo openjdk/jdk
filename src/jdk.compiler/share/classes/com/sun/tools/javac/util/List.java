@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     /** Construct a list consisting of given elements.
      */
-    @SuppressWarnings({"varargs", "unchecked"})
+    @SuppressWarnings("unchecked")
     public static <A> List<A> of(A x1, A x2, A x3, A... rest) {
         return new List<>(x1, new List<>(x2, new List<>(x3, from(rest))));
     }
@@ -419,6 +419,9 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     @SuppressWarnings("unchecked")
     public <Z> List<Z> map(Function<A, Z> mapper) {
+        if (isEmpty()) {
+            return (List<Z>)this;
+        }
         boolean changed = false;
         ListBuffer<Z> buf = new ListBuffer<>();
         for (A a : this) {
@@ -438,27 +441,10 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    private static final Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
-            public boolean hasNext() {
-                return false;
-            }
-            public Object next() {
-                throw new java.util.NoSuchElementException();
-            }
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-
-    @SuppressWarnings("unchecked")
-    private static <A> Iterator<A> emptyIterator() {
-        return (Iterator<A>)EMPTYITERATOR;
-    }
-
     @Override
     public Iterator<A> iterator() {
         if (tail == null)
-            return emptyIterator();
+            return Iterators.emptyIterator();
         return new Iterator<A>() {
             List<A> elems = List.this;
             public boolean hasNext() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test TestGetStackTraceId
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
@@ -39,7 +39,6 @@ public class TestGetStackTraceId {
 
     public static void main(String... args) {
         FlightRecorder.getFlightRecorder();
-        JVM jvm = JVM.getJVM();
 
         long id10 = getStackIdOfDepth(10);
         assertValid(id10);
@@ -49,11 +48,11 @@ public class TestGetStackTraceId {
 
         Asserts.assertNotEquals(id5, id10, "Different stack depth must return different stack trace ids");
 
-        assertMaxSkip(jvm);
+        assertMaxSkip();
     }
 
-    private static void assertMaxSkip(JVM jvm) {
-        Asserts.assertEquals(jvm.getStackTraceId(Integer.MAX_VALUE), 0L, "Insane skip level "
+    private static void assertMaxSkip() {
+        Asserts.assertEquals(JVM.getStackTraceId(Integer.MAX_VALUE, -1), 0L, "Insane skip level "
                 + Integer.MAX_VALUE + " should not return a valid stack trace id");
     }
 
@@ -65,6 +64,6 @@ public class TestGetStackTraceId {
         if (depth > 0) {
             return getStackIdOfDepth(depth - 1);
         }
-        return JVM.getJVM().getStackTraceId(0);
+        return JVM.getStackTraceId(0, -1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * returning true are then bound to the class, and next time a receiver of same
  * type is encountered, the linking is delegated to those linkers only, speeding
  * up dispatch.
+ * @since 9
  */
 public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker {
     // Using a separate static class instance so there's no strong reference from the class value back to the composite

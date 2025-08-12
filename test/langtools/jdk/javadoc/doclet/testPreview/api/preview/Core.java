@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,13 @@ package preview;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.javac.PreviewFeature.Feature;
 
+/**
+ * Preview feature. Links: {@link CoreRecord}, {@link CoreRecord core record},
+ * {@linkplain CoreRecord}, {@linkplain CoreRecord core record}.
+ *
+ * @see CoreRecord
+ * @see CoreRecord core record
+ */
 @PreviewFeature(feature=Feature.TEST)
 public class Core {
 }

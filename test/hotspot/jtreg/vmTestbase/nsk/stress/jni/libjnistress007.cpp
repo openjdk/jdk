@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <jni.h>
 #include <stdio.h>
-#include "jnihelper.h"
+#include "jnihelper.hpp"
 
 extern "C" {
 
@@ -32,7 +32,7 @@ Java_nsk_stress_jni_JNIter007_incCount (JNIEnv *env, jobject jobj, jstring name)
   jclass clazz;
   jfieldID fld;
   jint value;
-  const char *str = env->GetStringUTFChars(name, 0); CE
+  const char *str = env->GetStringUTFChars(name, nullptr); CE
 
   CHECK(env->MonitorEnter(jobj));
   clazz = env->GetObjectClass(jobj); CE

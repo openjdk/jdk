@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -122,7 +122,8 @@ import jdk.internal.javac.PreviewFeature;
  * the originating object, and vice versa. Changing the file's length via the
  * file channel will change the length seen via the originating object, and vice
  * versa.  Changing the file's content by writing bytes will change the content
- * seen by the originating object, and vice versa.
+ * seen by the originating object, and vice versa. Closing the channel will
+ * close the originating object.
  *
  * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
@@ -288,14 +289,6 @@ public abstract class FileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      *
      * @since   1.7
      */
@@ -308,7 +301,7 @@ public abstract class FileChannel
         return provider.newFileChannel(path, options, attrs);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
+    @SuppressWarnings("rawtypes") // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
@@ -316,9 +309,10 @@ public abstract class FileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,FileAttribute[])" :
+     *     fc.open(file, opts, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a set of the options specified in the {@code
      * options} array.
      *
@@ -343,14 +337,6 @@ public abstract class FileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      *
      * @since   1.7
      */
@@ -633,10 +619,10 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then no bytes are
-     * transferred.  If the target channel has a position then bytes are
-     * written starting at that position and then the position is incremented
-     * by the number of bytes written.
+     * position is greater than or equal to the file's current size then no
+     * bytes are transferred.  If the target channel has a position then bytes
+     * are written starting at that position and then the position
+     * is incremented by the number of bytes written.
      *
      * <p> This method is potentially much more efficient than a simple loop
      * that reads from this channel and writes to the target channel.  Many
@@ -701,8 +687,10 @@ public abstract class FileChannel
      * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the source channel has a position then bytes are read
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  If the source channel has a position then bytes are read
      * starting at that position and then the position is incremented by the
      * number of bytes read.
      *
@@ -715,7 +703,7 @@ public abstract class FileChannel
      *         The source channel
      *
      * @param  position
-     *         The position within the file at which the transfer is to begin;
+     *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
      * @param  count
@@ -761,7 +749,8 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than or equal to the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are
+     * read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -806,9 +795,10 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then the file will be
-     * grown to accommodate the new bytes; the values of any bytes between the
-     * previous end-of-file and the newly-written bytes are unspecified.  </p>
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  </p>
      *
      * <p> If the file is open in <a href="#append-mode">append mode</a>, then
      * the effect of invoking this method is unspecified.
@@ -1000,11 +990,15 @@ public abstract class FileChannel
 
     /**
      * Maps a region of this channel's file into a new mapped memory segment,
-     * with the given offset, size and memory session.
+     * with the given offset, size and arena.
      * The {@linkplain MemorySegment#address() address} of the returned memory
      * segment is the starting address of the mapped off-heap region backing
      * the segment.
-     *
+     * <p>
+     * The lifetime of the returned segment is controlled by the provided arena.
+     * For instance, if the provided arena is a closeable arena,
+     * the returned segment will be unmapped when the provided closeable arena
+     * is {@linkplain Arena#close() closed}.
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
      * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
@@ -1035,55 +1029,52 @@ public abstract class FileChannel
      *          The file mapping mode, see
      *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
      *          the mapping mode might affect the behavior of the returned
-     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *          memory mapped segment (see {@link MemorySegment#force()})
      *
      * @param   offset
      *          The offset (expressed in bytes) within the file at which the
-     *          mapped segment is to start.
+     *          mapped segment is to start
      *
      * @param   size
      *          The size (in bytes) of the mapped memory backing the memory
-     *          segment.
+     *          segment
      *
-     * @param   session
-     *          The segment memory session.
+     * @param   arena
+     *          The segment arena
      *
-     * @return  A new mapped memory segment.
+     * @return  A new mapped memory segment
      *
      * @throws  IllegalArgumentException
      *          If {@code offset < 0}, {@code size < 0} or
-     *          {@code offset + size} overflows the range of {@code long}.
+     *          {@code offset + size} overflows the range of {@code long}
      *
      * @throws  IllegalStateException
-     *          If the {@code session} is not
-     *          {@linkplain SegmentScope#isAlive() alive}.
+     *          If {@code arena.isAlive() == false}
      *
      * @throws  WrongThreadException
-     *          If this method is called from a thread other than the thread
-     *          {@linkplain SegmentScope#isAccessibleBy(Thread) owning} the
-     *          {@code session}.
+     *          If {@code arena} is a confined scoped arena, and this method is called
+     *          from a thread {@code T}, other than the scoped arena's owner thread
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
      *          an implementation specific map mode requiring read access,
-     *          but this channel was not opened for reading.
+     *          but this channel was not opened for reading
      *
      * @throws  NonWritableChannelException
      *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
      *          map mode requiring write access, but this channel was not
-     *          opened for both reading and writing.
+     *          opened for both reading and writing
      *
      * @throws  IOException
-     *          If some other I/O error occurs.
+     *          If some other I/O error occurs
      *
      * @throws  UnsupportedOperationException
-     *          If an unsupported map mode is specified.
+     *          If an unsupported map mode is specified
      *
-     * @since   19
+     * @since   22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size, SegmentScope session)
+    public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
         throws IOException
     {
         throw new UnsupportedOperationException();
@@ -1194,8 +1185,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     fc.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock
      *
@@ -1318,8 +1311,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     fc.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired

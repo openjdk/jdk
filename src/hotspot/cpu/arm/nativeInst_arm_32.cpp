@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/oop.inline.hpp"
@@ -162,7 +160,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
     unsigned int hi = (unsigned int)(x >> 16);
     this->set_encoding((this->encoding() & 0xfff0f000) | (lo & 0xf000) << 4 | (lo & 0xfff));
     next->set_encoding((next->encoding() & 0xfff0f000) | (hi & 0xf000) << 4 | (hi & 0xfff));
-  } else if (oop_addr == nullptr & metadata_addr == nullptr) {
+  } else if (oop_addr == nullptr && metadata_addr == nullptr) {
     // A static ldr_literal (without oop or metadata relocation)
     assert(is_ldr_literal(), "must be");
     int offset = ldr_offset();
@@ -284,16 +282,6 @@ void NativeMovConstReg::set_pc_relative_offset(address addr, address pc) {
   }
 }
 
-void RawNativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-}
-
-void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
-  int *a = (int *)verified_entry;
-  a[0] = not_entrant_illegal_instruction; // always illegal
-  ICache::invalidate_range((address)&a[0], sizeof a[0]);
-}
-
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   int offset = (int)(entry - code_pos - 8);
   assert(offset < 0x2000000 && offset > -0x2000000, "encoding constraint");
@@ -339,10 +327,6 @@ NativeCall* rawNativeCall_before(address return_address) {
 
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
-}
-
-void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
 }
 
 void NativeDeoptInstruction::verify() {

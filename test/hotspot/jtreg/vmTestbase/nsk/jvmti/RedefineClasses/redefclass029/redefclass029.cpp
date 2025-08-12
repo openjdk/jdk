@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "native_thread.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "native_thread.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -49,7 +49,7 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
     JVMTI_EVENT_COMPILED_METHOD_UNLOAD
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 static volatile int fire = 0; /* CompiledMethodLoad received for hotspot method */
 static jmethodID hsMethodID; /* hotspot method ID */
@@ -99,7 +99,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
     char *sig;
 
     NSK_DISPLAY0("CompiledMethodLoad event received for:\n");
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -132,7 +132,7 @@ CompiledMethodUnload(jvmtiEnv* jvmti_env, jmethodID method,
 
     NSK_DISPLAY0("CompiledMethodUnload event received\n");
     // Check for the case that the class has been unloaded
-    err = jvmti_env->GetMethodName(method, &name, &sig, NULL);
+    err = jvmti_env->GetMethodName(method, &name, &sig, nullptr);
     if (err == JVMTI_ERROR_NONE) {
         NSK_DISPLAY3("for: \tmethod: name=\"%s\" signature=\"%s\"\n\tnative address=0x%p\n",
           name, sig, code_addr);
@@ -187,7 +187,7 @@ agentProc(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg) {
         nsk_jvmti_resumeSync();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(decl_cls, &cls_sig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(decl_cls, &cls_sig, nullptr))) {
         nsk_jvmti_setFailStatus();
         nsk_jvmti_resumeSync();
         return;
@@ -248,7 +248,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add required capabilities */
@@ -268,12 +268,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     NSK_DISPLAY0("setting event callbacks done\nenabling events ...\n");
     if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT,
-            eventsList, NULL))
+            eventsList, nullptr))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 
     /* register agent proc */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

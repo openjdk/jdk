@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.test.whitebox.code.BlobType;
 /**
  * @test TestCodeCacheFull
  * @requires vm.hasJFR
+ * @requires vm.opt.UseCodeCacheFlushing == null | vm.opt.UseCodeCacheFlushing == true
  *
  * @library /test/lib
  * @modules jdk.jfr
@@ -67,7 +68,7 @@ public class TestCodeCacheFull {
 
         List<RecordedEvent> events = Events.fromRecording(r);
         Events.hasEvents(events);
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
 
         String codeBlobType = Events.assertField(event, "codeBlobType").notNull().getValue();
         BlobType blobType = blobTypeFromName(codeBlobType);

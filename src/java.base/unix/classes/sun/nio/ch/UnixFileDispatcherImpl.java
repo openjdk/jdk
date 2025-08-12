@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,14 @@ class UnixFileDispatcherImpl extends FileDispatcher {
 
     long size(FileDescriptor fd) throws IOException {
         return size0(fd);
+    }
+
+    int available(FileDescriptor fd) throws IOException {
+        return available0(fd);
+    }
+
+    boolean isOther(FileDescriptor fd) throws IOException {
+        return isOther0(fd);
     }
 
     int lock(FileDescriptor fd, boolean blocking, long pos, long size,
@@ -195,6 +203,10 @@ class UnixFileDispatcherImpl extends FileDispatcher {
         throws IOException;
 
     static native long size0(FileDescriptor fd) throws IOException;
+
+    static native int available0(FileDescriptor fd) throws IOException;
+
+    static native boolean isOther0(FileDescriptor fd) throws IOException;
 
     static native int lock0(FileDescriptor fd, boolean blocking, long pos,
                             long size, boolean shared) throws IOException;

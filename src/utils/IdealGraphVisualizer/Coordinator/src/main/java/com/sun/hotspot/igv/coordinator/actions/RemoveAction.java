@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.coordinator.FolderNode;
 import javax.swing.Action;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
@@ -37,6 +38,11 @@ import org.openide.util.actions.NodeAction;
  */
 public final class RemoveAction extends NodeAction {
 
+    public RemoveAction() {
+        putValue(Action.SHORT_DESCRIPTION, getName());
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
     @Override
     protected void performAction(Node[] activatedNodes) {
         for (Node n : activatedNodes) {
@@ -45,10 +51,6 @@ public final class RemoveAction extends NodeAction {
                 removeCookie.remove();
             }
         }
-    }
-
-    public RemoveAction() {
-        putValue(Action.SHORT_DESCRIPTION, getName());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,9 @@ struct JfrCheckpointContext {
 };
 
 class JfrCheckpointWriter : public JfrCheckpointWriterBase {
+  friend class JfrAddRefCountedBlob;
   friend class JfrCheckpointManager;
+  friend class JfrDeprecationManager;
   friend class JfrSerializerRegistration;
   friend class JfrTypeManager;
  private:
@@ -67,10 +69,10 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   u4 count() const;
   void set_count(u4 count);
   void increment();
-  const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = NULL);
+  const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = nullptr);
   void release();
-  JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
-public:
+ public:
+  JfrCheckpointWriter(bool previous_epoch, Thread* thread, bool header = true, JfrCheckpointType type = GENERIC);
   JfrCheckpointWriter(bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   ~JfrCheckpointWriter();
@@ -81,8 +83,8 @@ public:
   const JfrCheckpointContext context() const;
   void set_context(const JfrCheckpointContext ctx);
   bool has_data() const;
-  JfrBlobHandle copy(const JfrCheckpointContext* ctx = NULL);
-  JfrBlobHandle move(const JfrCheckpointContext* ctx = NULL);
+  JfrBlobHandle copy(const JfrCheckpointContext* ctx = nullptr);
+  JfrBlobHandle move(const JfrCheckpointContext* ctx = nullptr);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_JFRCHECKPOINTWRITER_HPP

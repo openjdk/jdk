@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,17 +23,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.aarch64.windows;
 
-import jdk.internal.foreign.abi.aarch64.CallArranger;
-import jdk.internal.foreign.abi.aarch64.TypeClass;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.VMStorage;
+import jdk.internal.foreign.abi.aarch64.CallArranger;
+import jdk.internal.foreign.abi.aarch64.TypeClass;
 
 import java.lang.foreign.MemoryLayout;
 
-import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.abiFor;
 
 /**
  * AArch64 CallArranger specialized for Windows ABI.
@@ -52,7 +53,7 @@ public class WindowsAArch64CallArranger extends CallArranger {
     //
     // Although the AAPCS64 says r0-7 and v0-7 are all valid return
     // registers, it's not possible to generate a C function that uses
-    // r2-7 and v4-7 so they are omitted here.
+    // r2-7 and v4-7 so, they are omitted here.
     private static final ABIDescriptor WindowsAArch64AbiDescriptor = abiFor(
         new VMStorage[] { r0, r1, r2, r3, r4, r5, r6, r7, INDIRECT_RESULT},
         new VMStorage[] { v0, v1, v2, v3, v4, v5, v6, v7 },

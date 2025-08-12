@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Launcher as service packaging test
- * @library ../helpers
- * @key jpackagePlatformPackage
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile ServiceTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @key jpackagePlatformPackage
+ * @compile -Xlint:all -Werror ServiceTest.java
+ * @run main/othervm/timeout=360 -Xmx512m
+ *  jdk.jpackage.test.Main
  *  --jpt-run=ServiceTest
  */
 public class ServiceTest {

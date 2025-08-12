@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package apple.laf;
 
-import java.security.AccessController;
-
 import apple.laf.JRSUIConstants.Hit;
 import apple.laf.JRSUIConstants.ScrollBarPart;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
-import sun.security.action.GetPropertyAction;
 
 public final class JRSUIUtils {
 
@@ -69,8 +66,7 @@ public final class JRSUIUtils {
             final int majorVersion, final int minorVersion, final boolean inclusive,
             final boolean matchBelow, final boolean matchAbove) {
         // split the "x.y.z" version number
-        @SuppressWarnings("removal")
-        String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
+        String osVersion = System.getProperty("os.version");
         String[] fragments = osVersion.split("\\.");
 
         if (fragments.length < 2) return false;
@@ -94,7 +90,7 @@ public final class JRSUIUtils {
         return false;
     }
 
-    public static class TabbedPane {
+    public static final class TabbedPane {
         public static boolean useLegacyTabs() {
             return isLeopard;
         }
@@ -103,19 +99,19 @@ public final class JRSUIUtils {
         }
     }
 
-    public static class InternalFrame {
+    public static final class InternalFrame {
         public static boolean shouldUseLegacyBorderMetrics() {
             return isSnowLeopardOrBelow;
         }
     }
 
-    public static class Tree {
+    public static final class Tree {
         public static boolean useLegacyTreeKnobs() {
             return isLeopard;
         }
     }
 
-    public static class ScrollBar {
+    public static final class ScrollBar {
         private static native boolean shouldUseScrollToClick();
 
         public static boolean useScrollToClick() {
@@ -141,13 +137,13 @@ public final class JRSUIUtils {
         }
     }
 
-    public static class Images {
+    public static final class Images {
         public static boolean shouldUseLegacySecurityUIPath() {
             return isSnowLeopardOrBelow;
         }
     }
 
-    public static class HitDetection {
+    public static final class HitDetection {
         public static Hit getHitForPoint(final JRSUIControl control,
                                          final int x, final int y, final int w,
                                          final int h, final int hitX,

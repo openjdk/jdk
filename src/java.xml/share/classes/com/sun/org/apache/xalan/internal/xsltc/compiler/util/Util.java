@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,13 +29,13 @@ import jdk.xml.internal.SecuritySupport;
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
- * @LastModified: Sep 2017
+ * @LastModified: Nov 2024
  */
 public final class Util {
     private static char filesep;
 
     static {
-        String temp = SecuritySupport.getSystemProperty("file.separator", "/");
+        String temp = System.getProperty("file.separator", "/");
         filesep = temp.charAt(0);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,9 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
- * @enablePreview
  * @run main/othervm jdk.jfr.event.runtime.TestThreadSleepEvent
  */
 public class TestThreadSleepEvent {
@@ -57,13 +56,7 @@ public class TestThreadSleepEvent {
             recording.enable(EVENT_NAME).withoutThreshold().withStackTrace();
             recording.start();
             Thread.sleep(SLEEP_TIME_MS);
-            Thread virtualThread  = Thread.ofVirtual().start(() -> {
-                try {
-                    Thread.sleep(SLEEP_TIME_MS);
-                } catch (InterruptedException ie) {
-                    throw new RuntimeException(ie);
-                }
-            });
+            Thread virtualThread = Thread.ofVirtual().start(TestThreadSleepEvent::virtualSleep);
             virtualThread.join();
             recording.stop();
 
@@ -75,14 +68,24 @@ public class TestThreadSleepEvent {
                 System.out.println(event.getStackTrace());
                 if (event.getThread().getJavaThreadId() == Thread.currentThread().getId()) {
                     threadCount--;
+                    Events.assertTopFrame(event, TestThreadSleepEvent.class, "main");
                     Events.assertDuration(event, "time", Duration.ofMillis(SLEEP_TIME_MS));
                 }
                 if (event.getThread().getJavaThreadId() == virtualThread.getId()) {
                     threadCount--;
+                    Events.assertTopFrame(event, TestThreadSleepEvent.class, "virtualSleep");
                     Events.assertDuration(event, "time", Duration.ofMillis(SLEEP_TIME_MS));
                 }
             }
             Asserts.assertEquals(threadCount, 0, "Could not find all expected events");
+        }
+    }
+
+    private static void virtualSleep() {
+        try {
+            Thread.sleep(SLEEP_TIME_MS);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
         }
     }
 }

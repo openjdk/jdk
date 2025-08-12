@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.RecurseThread;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedFullStackTrace
@@ -151,7 +151,7 @@ public class TestRecordedFullStackTrace {
             boolean isTruncateExpected = expectedDepth > MAX_DEPTH;
             Asserts.assertEquals(isTruncated, isTruncateExpected, "Wrong value for isTruncated. Expected:" + isTruncateExpected);
 
-            String firstMethod = frames.get(frames.size() - 1).getMethod().getName();
+            String firstMethod = frames.getLast().getMethod().getName();
             boolean isFullTrace = "run".equals(firstMethod);
             String msg = String.format("Wrong values for isTruncated=%b, isFullTrace=%b", isTruncated, isFullTrace);
             Asserts.assertTrue(isTruncated != isFullTrace, msg);

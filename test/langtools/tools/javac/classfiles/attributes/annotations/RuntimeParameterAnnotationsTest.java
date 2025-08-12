@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 8044411
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
@@ -85,7 +84,7 @@ public class RuntimeParameterAnnotationsTest extends RuntimeParameterAnnotations
      * @param mods an array of modifiers
      */
     private void initMethod(TestAnnotationInfos annotations, TestCase.TestClassInfo clazz, String methodName, String...mods) {
-        String methodDescriptor = methodName + "(int, double, java.lang.String)";
+        String methodDescriptor = methodName + "(int,double,String)";
         TestCase.TestMethodInfo method = clazz.addMethodInfo(methodDescriptor, mods);
         TestCase.TestParameterInfo p1 = method.addParameter("int", "a");
         annotations.annotate(p1);

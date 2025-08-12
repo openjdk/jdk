@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -32,11 +31,14 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
-#ifdef _LP64
   enum Intel_specific_constants {
     instruction_code        = 0x81,
     instruction_size        = 8,
@@ -44,71 +46,47 @@ public:
     instruction_rex_prefix  = Assembler::REX | Assembler::REX_B,
     instruction_modrm       = 0x7f  // [r15 + offset]
   };
-#else
-  enum Intel_specific_constants {
-    instruction_code        = 0x81,
-    instruction_size        = 7,
-    imm_offset              = 2,
-    instruction_modrm       = 0x3f  // [rdi]
-  };
-#endif
 
   address instruction_address() const { return addr_at(0); }
   address immediate_address() const { return addr_at(imm_offset); }
 
   jint get_immediate() const { return int_at(imm_offset); }
   void set_immediate(jint imm) { set_int_at(imm_offset, imm); }
-  void verify() const;
+  bool check_barrier(err_msg& msg) const;
+  void verify() const {
+#ifdef ASSERT
+    err_msg msg("%s", "");
+    assert(check_barrier(msg), "%s", msg.buffer());
+#endif
+  }
 };
 
-#ifdef _LP64
-void NativeNMethodCmpBarrier::verify() const {
+bool NativeNMethodCmpBarrier::check_barrier(err_msg& msg) const {
+  // Only require 4 byte alignment
   if (((uintptr_t) instruction_address()) & 0x3) {
-    fatal("Not properly aligned");
+    msg.print("Addr: " INTPTR_FORMAT " not properly aligned", p2i(instruction_address()));
+    return false;
   }
 
   int prefix = ubyte_at(0);
   if (prefix != instruction_rex_prefix) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Prefix: 0x%x", p2i(instruction_address()),
-        prefix);
-    fatal("not a cmp barrier");
+    msg.print("Addr: " INTPTR_FORMAT " Code: 0x%x expected 0x%x", p2i(instruction_address()), prefix, instruction_rex_prefix);
+    return false;
   }
 
   int inst = ubyte_at(1);
   if (inst != instruction_code) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
-        inst);
-    fatal("not a cmp barrier");
+    msg.print("Addr: " INTPTR_FORMAT " Code: 0x%x expected 0x%x", p2i(instruction_address()), inst, instruction_code);
+    return false;
   }
 
   int modrm = ubyte_at(2);
   if (modrm != instruction_modrm) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " mod/rm: 0x%x", p2i(instruction_address()),
-        modrm);
-    fatal("not a cmp barrier");
+    msg.print("Addr: " INTPTR_FORMAT " Code: 0x%x expected mod/rm 0x%x", p2i(instruction_address()), modrm, instruction_modrm);
+    return false;
   }
+  return true;
 }
-#else
-void NativeNMethodCmpBarrier::verify() const {
-  if (((uintptr_t) instruction_address()) & 0x3) {
-    fatal("Not properly aligned");
-  }
-
-  int inst = ubyte_at(0);
-  if (inst != instruction_code) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
-        inst);
-    fatal("not a cmp barrier");
-  }
-
-  int modrm = ubyte_at(1);
-  if (modrm != instruction_modrm) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " mod/rm: 0x%x", p2i(instruction_address()),
-        modrm);
-    fatal("not a cmp barrier");
-  }
-}
-#endif // _LP64
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   /*
@@ -157,22 +135,27 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-static const int entry_barrier_offset(nmethod* nm) {
-#ifdef _LP64
+static int entry_barrier_offset(nmethod* nm) {
   if (nm->is_compiled_by_c2()) {
     return -14;
   } else {
     return -15;
   }
-#else
-  return -18;
-#endif
 }
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+  address barrier_address;
+#if INCLUDE_JVMCI
+  if (nm->is_compiled_by_jvmci()) {
+    barrier_address = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
+  } else
+#endif
+    {
+      barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+    }
+
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  barrier->verify();
   return barrier;
 }
 
@@ -193,3 +176,11 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   return cmp->get_immediate();
 }
+
+
+#if INCLUDE_JVMCI
+bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
+  NativeNMethodCmpBarrier* barrier = native_nmethod_barrier(nm);
+  return barrier->check_barrier(msg);
+}
+#endif

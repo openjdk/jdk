@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.Position;
 
 import java.nio.CharBuffer;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
@@ -79,8 +79,7 @@ public class JavadocTokenizer extends JavaTokenizer {
 
     @Override
     protected Comment processComment(int pos, int endPos, CommentStyle style) {
-        char[] buf = getRawCharacters(pos, endPos);
-        return new JavadocComment(style, fac, buf, pos);
+        return new JavadocComment(style, this, pos, endPos);
     }
 
     /**
@@ -88,13 +87,6 @@ public class JavadocTokenizer extends JavaTokenizer {
      * of a Javadoc comment.
      */
     protected static class JavadocComment extends BasicComment {
-        /**
-         * Pattern used to detect a well formed @deprecated tag in a Javadoc
-         * comment.
-         */
-        private static final Pattern DEPRECATED_PATTERN =
-            Pattern.compile("(?sm).*^\\s*@deprecated( |$).*");
-
         /**
          * The relevant portion of the comment that is of interest to Javadoc.
          * Produced by invoking scanDocComment.
@@ -104,7 +96,12 @@ public class JavadocTokenizer extends JavaTokenizer {
         /**
          * StringBuilder used to extract the relevant portion of the Javadoc comment.
          */
-        private final StringBuilder sb;
+        private StringBuilder sb;
+
+        /**
+         * Indicates if newline is required.
+         */
+        private boolean firstLine = true;
 
         /**
          * Map used to map the extracted Javadoc comment's character positions back to
@@ -112,45 +109,39 @@ public class JavadocTokenizer extends JavaTokenizer {
          */
         OffsetMap offsetMap = new OffsetMap();
 
-        JavadocComment(CommentStyle cs, ScannerFactory sf, char[] array, int offset) {
-            super( cs, sf, array, offset);
+        JavadocComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
+            super(cs, reader, pos, endPos);
             this.sb = new StringBuilder();
         }
 
         /**
-         * Add a character to the extraction buffer.
+         * Add current character or code point from line to the extraction buffer.
          *
-         * @param ch  character to add.
+         * @param line line reader
          */
-        protected void put(char ch) {
-            offsetMap.add(sb.length(), offsetPosition());
-            sb.append(ch);
-        }
-
-        /**
-         * Add a code point to the extraction buffer.
-         *
-         * @param codePoint  code point to add.
-         */
-        protected void putCodePoint(int codePoint) {
-            offsetMap.add(sb.length(), offsetPosition());
-            sb.appendCodePoint(codePoint);
-        }
-
-        /**
-         * Add current character or code point to the extraction buffer.
-         */
-        protected void put() {
-            if (isSurrogate()) {
-                putCodePoint(getCodepoint());
+        protected void putLine(UnicodeReader line) {
+            if (firstLine) {
+                firstLine = false;
             } else {
-                put(get());
+                sb.append('\n');
+                offsetMap.add(sb.length(), line.position());
+            }
+            while (line.isAvailable()) {
+                offsetMap.add(sb.length(), line.position());
+
+                if (line.isSurrogate()) {
+                    sb.appendCodePoint(line.getCodepoint());
+                } else {
+                    sb.append(line.get());
+                }
+
+                line.next();
             }
         }
 
         @Override
         public String getText() {
-            if (!scanned && cs == CommentStyle.JAVADOC) {
+            if (!scanned) {
                 scanDocComment();
             }
             return docComment;
@@ -171,105 +162,18 @@ public class JavadocTokenizer extends JavaTokenizer {
 
         @Override
         protected void scanDocComment() {
-             try {
-                 boolean firstLine = true;
-
-                 // Skip over /*
-                 accept("/*");
-
-                 // Consume any number of stars
-                 skip('*');
-
-                 // Is the comment in the form /**/, /***/, /****/, etc. ?
-                 if (is('/')) {
-                     docComment = "";
-                     return;
-                 }
-
-                 // Skip line terminator on the first line of the comment.
-                 if (isOneOf('\n', '\r')) {
-                     accept('\r');
-                     accept('\n');
-                     firstLine = false;
-                 }
-
-             outerLoop:
-                 // The outerLoop processes the doc comment, looping once
-                 // for each line.  For each line, it first strips off
-                 // whitespace, then it consumes any stars, then it
-                 // puts the rest of the line into the extraction buffer.
-                 while (isAvailable()) {
-                     int begin_pos = position();
-                     // Consume  whitespace from the beginning of each line.
-                     skipWhitespace();
-                     // Are there stars here?  If so, consume them all
-                     // and check for the end of comment.
-                     if (is('*')) {
-                         // skip all of the stars
-                         skip('*');
-
-                         // check for the closing slash.
-                         if (accept('/')) {
-                             // We're done with the Javadoc comment
-                             break outerLoop;
-                         }
-                     } else if (!firstLine) {
-                         // The current line does not begin with a '*' so we will
-                         // treat it as comment
-                         reset(begin_pos);
-                     }
-
-                 textLoop:
-                     // The textLoop processes the rest of the characters
-                     // on the line, adding them to the extraction buffer.
-                     while (isAvailable()) {
-                         if (accept("*/")) {
-                             // This is the end of the comment, return
-                             // the contents of the extraction buffer.
-                             break outerLoop;
-                         } else if (isOneOf('\n', '\r')) {
-                             // We've seen a newline.  Add it to our
-                             // buffer and break out of this loop,
-                             // starting fresh on a new line.
-                             put('\n');
-                             accept('\r');
-                             accept('\n');
-                             break textLoop;
-                         } else if (is('\f')){
-                             next();
-                             break textLoop; // treat as end of line
-
-                         } else {
-                             // Add the character to our buffer.
-                             put();
-                             next();
-                         }
-                     } // end textLoop
-                     firstLine = false;
-                 } // end outerLoop
-
-                 // If extraction buffer is not empty.
-                 if (sb.length() > 0) {
-                     // Remove trailing asterisks.
-                     int i = sb.length() - 1;
-                     while (i > -1 && sb.charAt(i) == '*') {
-                         i--;
-                     }
-                     sb.setLength(i + 1) ;
-
-                     // Store the text of the doc comment
-                    docComment = sb.toString();
-                 } else {
-                    docComment = "";
-                }
+            try {
+                super.scanDocComment();
             } finally {
-                scanned = true;
-
-                // Check if comment contains @deprecated comment.
-                if (docComment != null && DEPRECATED_PATTERN.matcher(docComment).matches()) {
-                    deprecatedFlag = true;
-                }
+                docComment = sb.toString();
+                sb = null;
+                offsetMap.trim();
             }
+        }
+
+        @Override
+        public Comment stripIndent() {
+            return StrippedComment.of(this);
         }
     }
 
@@ -403,14 +307,22 @@ public class JavadocTokenizer extends JavaTokenizer {
 
             while (need > grow) {
                 grow <<= 1;
+                // Handle overflow.
+                if (grow <= 0) {
+                    throw new IndexOutOfBoundsException();
+                }
             }
 
-            // Handle overflow.
-            if (grow < map.length) {
-                throw new IndexOutOfBoundsException();
-            } else if (grow != map.length) {
+            if (grow != map.length) {
                 map = Arrays.copyOf(map, grow);
             }
+        }
+
+        /**
+         * Reduce map to minimum size.
+         */
+        void trim() {
+            map = Arrays.copyOf(map, size);
         }
 
         /**
@@ -448,4 +360,154 @@ public class JavadocTokenizer extends JavaTokenizer {
             return map[startScaled + POS_OFFSET] + (pos - map[startScaled + SB_OFFSET]);
         }
     }
+
+    /**
+     * A Comment derived from a JavadocComment with leading whitespace removed from all lines.
+     * A new OffsetMap is used in combination with the OffsetMap of the original comment to
+     * translate comment locations to positions in the source file.
+     *
+     * Note: This class assumes new lines are encoded as {@code '\n'}, which is the case
+     * for comments created by {@code JavadocTokenizer}.
+     */
+    static class StrippedComment implements Comment {
+        String text;
+        final OffsetMap strippedMap;
+        final OffsetMap sourceMap;
+        // Copy these fields to not hold a reference to the original comment with its text
+        final JCDiagnostic.DiagnosticPosition diagPos;
+        final CommentStyle style;
+        final boolean deprecated;
+
+        /**
+         * Returns a stripped version of the comment, or the comment itself if there is no
+         * whitespace that can be stripped.
+         *
+         * @param comment the original comment
+         * @return stripped or original comment
+         */
+        static Comment of(JavadocComment comment) {
+            if (comment.getStyle() != CommentStyle.JAVADOC_BLOCK) {
+                return comment;
+            }
+            int indent = getIndent(comment);
+            return indent > 0 ? new StrippedComment(comment, indent) : comment;
+        }
+
+        private StrippedComment(JavadocComment comment, int indent) {
+            this.diagPos = comment.getPos();
+            this.style = comment.getStyle();
+            this.deprecated = comment.isDeprecated();
+            this.strippedMap = new OffsetMap();
+            this.sourceMap = comment.offsetMap;
+            stripComment(comment, indent);
+        }
+
+        /**
+         * Determines the number of leading whitespace characters that can be removed from
+         * all non-blank lines of the original comment.
+         *
+         * @param comment the original comment
+         * @return number of leading whitespace characters that can be reomved
+         */
+        static int getIndent(Comment comment) {
+            String txt = comment.getText();
+            int len = txt.length();
+            int indent = Integer.MAX_VALUE;
+
+            for (int i = 0; i < len; ) {
+                int next;
+                boolean inIndent = true;
+                for (next = i; next < len && txt.charAt(next) != '\n'; next++) {
+                    if (inIndent && !Character.isWhitespace(txt.charAt(next))) {
+                        indent = Math.min(indent, next - i);
+                        inIndent = false;
+                    }
+                }
+                i = next + 1;
+            }
+
+            return indent == Integer.MAX_VALUE ? 0 : indent;
+        }
+
+        /**
+         * Strips {@code indent} whitespace characters from every line of the original comment
+         * and initializes an OffsetMap to translate positions to the original comment's OffsetMap.
+         * This method does not distinguish between blank and non-blank lines except for the fact
+         * that blank lines are not required to contain the number of leading whitespace indicated
+         * by {@indent}.
+         *
+         * @param comment the original comment
+         * @param indent number of whitespace characters to remove from each non-blank line
+         */
+        private void stripComment(JavadocComment comment, int indent) {
+            String txt = comment.getText();
+            int len = txt.length();
+            StringBuilder sb = new StringBuilder(len);
+
+            for (int i = 0; i < len; ) {
+                int startOfLine = i;
+                // Advance till start of stripped line, or \n if line is blank
+                while (startOfLine < len
+                        && startOfLine < i + indent
+                        && txt.charAt(startOfLine) != '\n') {
+                    assert(Character.isWhitespace(txt.charAt(startOfLine)));
+                    startOfLine++;
+                }
+                if (startOfLine == len) {
+                    break;
+                }
+
+                // Copy stripped line (terminated by \n or end of input)
+                i = startOfLine + 1;
+                while (i < len && txt.charAt(i - 1) != '\n') {
+                    i++;
+                }
+                // Add new offset if necessary
+                strippedMap.add(sb.length(), startOfLine);
+                sb.append(txt, startOfLine, i);
+            }
+
+            text = sb.toString();
+            strippedMap.trim();
+        }
+
+        @Override
+        public String getText() {
+            return text;
+        }
+
+        @Override
+        public Comment stripIndent() {
+            return this;
+        }
+
+        @Override
+        public int getSourcePos(int pos) {
+            if (pos == Position.NOPOS) {
+                return Position.NOPOS;
+            }
+
+            if (pos < 0 || pos > text.length()) {
+                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
+            }
+
+            return sourceMap.getSourcePos(strippedMap.getSourcePos(pos));
+        }
+
+        @Override
+        public JCDiagnostic.DiagnosticPosition getPos() {
+            return diagPos;
+        }
+
+        @Override
+        public CommentStyle getStyle() {
+            return style;
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+    }
+
 }

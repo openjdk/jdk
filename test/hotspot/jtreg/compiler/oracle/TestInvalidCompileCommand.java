@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +52,7 @@ public class TestInvalidCompileCommand {
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,VectorizeDebug,3",
+            "-XX:CompileCommand=option,Test::test,MemStat,3",
             "-version"
         },
         {
@@ -71,7 +72,7 @@ public class TestInvalidCompileCommand {
             "Missing type 'intx' before option 'RepeatCompilation'"
         },
         {
-            "Missing type 'uintx' before option 'VectorizeDebug'"
+            "Missing type 'uintx' before option 'MemStat'"
         },
         {
             "Missing type 'ccstrlist' before option 'ControlIntrinsic'"
@@ -82,7 +83,7 @@ public class TestInvalidCompileCommand {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {
@@ -90,7 +91,7 @@ public class TestInvalidCompileCommand {
         }
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
-        out.shouldHaveExitValue(0);
+        out.shouldHaveExitValue(1);
     }
 
     public static void main(String[] args) throws Exception {

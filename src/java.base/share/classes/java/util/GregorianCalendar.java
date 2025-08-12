@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,9 +354,9 @@ public class GregorianCalendar extends Calendar {
      * accurate.
      */
 
-//////////////////
+//----------------
 // Class Variables
-//////////////////
+//----------------
 
     /**
      * Value of the {@code ERA} field indicating
@@ -513,9 +513,9 @@ public class GregorianCalendar extends Calendar {
     // The default value of gregorianCutover.
     static final long DEFAULT_GREGORIAN_CUTOVER = -12219292800000L;
 
-/////////////////////
+//-------------------
 // Instance Variables
-/////////////////////
+//-------------------
 
     /**
      * The point at which the Gregorian calendar rules are used, measured in
@@ -579,15 +579,16 @@ public class GregorianCalendar extends Calendar {
      */
     private transient int[] originalFields;
 
-///////////////
+//-------------
 // Constructors
-///////////////
+//-------------
 
     /**
      * Constructs a default {@code GregorianCalendar} using the current time
      * in the default time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar() {
         this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         setZoneShared(true);
@@ -599,6 +600,7 @@ public class GregorianCalendar extends Calendar {
      * {@link Locale.Category#FORMAT FORMAT} locale.
      *
      * @param zone the given time zone.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public GregorianCalendar(TimeZone zone) {
         this(zone, Locale.getDefault(Locale.Category.FORMAT));
@@ -609,7 +611,9 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the given locale.
      *
      * @param aLocale the given locale.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(Locale aLocale) {
         this(TimeZone.getDefaultRef(), aLocale);
         setZoneShared(true);
@@ -621,7 +625,9 @@ public class GregorianCalendar extends Calendar {
      *
      * @param zone the given time zone.
      * @param aLocale the given locale.
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
         gdate = gcal.newCalendarDate(zone);
@@ -637,6 +643,7 @@ public class GregorianCalendar extends Calendar {
      * Month value is 0-based. e.g., 0 for January.
      * @param dayOfMonth the value used to set the {@code DAY_OF_MONTH} calendar field in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth) {
         this(year, month, dayOfMonth, 0, 0, 0, 0);
     }
@@ -654,6 +661,7 @@ public class GregorianCalendar extends Calendar {
      * @param minute the value used to set the {@code MINUTE} calendar field
      * in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth, int hourOfDay,
                              int minute) {
         this(year, month, dayOfMonth, hourOfDay, minute, 0, 0);
@@ -674,6 +682,7 @@ public class GregorianCalendar extends Calendar {
      * @param second the value used to set the {@code SECOND} calendar field
      * in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth, int hourOfDay,
                              int minute, int second) {
         this(year, month, dayOfMonth, hourOfDay, minute, second, 0);
@@ -739,9 +748,9 @@ public class GregorianCalendar extends Calendar {
         gdate = gcal.newCalendarDate(getZone());
     }
 
-/////////////////
+//---------------
 // Public methods
-/////////////////
+//---------------
 
     /**
      * Sets the {@code GregorianCalendar} change date. This is the point when the switch
@@ -823,7 +832,10 @@ public class GregorianCalendar extends Calendar {
         }
 
         if (year > gregorianCutoverYear) {
-            return (year%100 != 0) || (year%400 == 0); // Gregorian
+            // A multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+            // So for a year that's divisible by 4, checking that it's also divisible by 16
+            // is sufficient to determine it must be a leap year.
+            return (year & 15) == 0 || (year % 100 != 0); // Gregorian
         }
         if (year < gregorianCutoverYearJulian) {
             return true; // Julian
@@ -837,7 +849,7 @@ public class GregorianCalendar extends Calendar {
         } else {
             gregorian = year == gregorianCutoverYear;
         }
-        return gregorian ? (year%100 != 0) || (year%400 == 0) : true;
+        return !gregorian || (year & 15) == 0 || (year % 100 != 0);
     }
 
     /**
@@ -1307,7 +1319,15 @@ public class GregorianCalendar extends Calendar {
                             woy = min;
                         }
                     }
-                    set(field, getRolledValue(woy, amount, min, max));
+                    int newWeekOfYear = getRolledValue(woy, amount, min, max);
+                    // Final check to ensure that the first week has the
+                    // current DAY_OF_WEEK. Only make a check for
+                    // rolling up into week 1, as the existing checks
+                    // sufficiently handle rolling down into week 1.
+                    if (newWeekOfYear == 1 && isInvalidWeek1() && amount > 0) {
+                        newWeekOfYear++;
+                    }
+                    set(field, newWeekOfYear);
                     return;
                 }
 
@@ -2234,9 +2254,9 @@ public class GregorianCalendar extends Calendar {
         return gc.getActualMaximum(WEEK_OF_YEAR);
     }
 
-/////////////////////////////
+//---------------------------
 // Time => Fields computation
-/////////////////////////////
+//---------------------------
 
     /**
      * The fixed date corresponding to gdate. If the value is
@@ -2970,6 +2990,54 @@ public class GregorianCalendar extends Calendar {
     private boolean isCutoverYear(int normalizedYear) {
         int cutoverYear = (calsys == gcal) ? gregorianCutoverYear : gregorianCutoverYearJulian;
         return normalizedYear == cutoverYear;
+    }
+
+    /**
+     * {@return {@code true} if the first week of the current year is minimum
+     * and the {@code DAY_OF_WEEK} does not exist in that week}
+     *
+     * This method is used to check the validity of a {@code WEEK_OF_YEAR} and
+     * {@code DAY_OF_WEEK} combo when WEEK_OF_YEAR is rolled to a value of 1.
+     * This prevents other methods from calling complete() with an invalid combo.
+     */
+    private boolean isInvalidWeek1() {
+        // Calculate the DAY_OF_WEEK for Jan 1 of the current YEAR
+        long jan1Fd =  gcal.getFixedDate(internalGet(YEAR), 1, 1, null);
+        int jan1Dow = BaseCalendar.getDayOfWeekFromFixedDate(jan1Fd);
+        // Calculate how many days are in the first week
+        int daysInFirstWeek;
+        if (getFirstDayOfWeek() <= jan1Dow) {
+            // Add wrap around days
+            daysInFirstWeek = 7 - jan1Dow + getFirstDayOfWeek();
+        } else {
+            daysInFirstWeek = getFirstDayOfWeek() - jan1Dow;
+        }
+        // Calculate the end day of the first week
+        int endDow = getFirstDayOfWeek() - 1 == 0
+                ? 7 : getFirstDayOfWeek() - 1;
+        // If the week is a valid minimum, check if the DAY_OF_WEEK does not exist
+        return daysInFirstWeek >= getMinimalDaysInFirstWeek() &&
+                !dayInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, endDow);
+    }
+
+    /**
+     * Given the first day and last day of a week, this method determines
+     * if the specified day exists in the minimum week.
+     * This method expects all parameters to be passed in as DAY_OF_WEEK values.
+     * For example, dayInMinWeek(4, 6, 3) returns false since Wednesday
+     * is not between the minimum week given by [Friday, Saturday,
+     * Sunday, Monday, Tuesday].
+     */
+    private boolean dayInMinWeek (int day, int startDay, int endDay) {
+        if (endDay >= startDay) {
+            // dayInMinWeek(6, 3, 5), check that 6 is
+            // between 3 4 5
+            return (day >= startDay && day <= endDay);
+        } else {
+            // dayInMinWeek(4, 6, 3), check that 4 is
+            // between 6 7 1 2 3
+            return (day >= startDay || day <= endDay);
+        }
     }
 
     /**

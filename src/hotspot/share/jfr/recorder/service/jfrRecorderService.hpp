@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ class JfrStorage;
 class JfrStringPool;
 
 class JfrRecorderService : public StackObj {
+  friend class JfrSafepointClearVMOperation;
+  friend class JfrSafepointWriteVMOperation;
  private:
   JfrCheckpointManager& _checkpoint_manager;
   JfrChunkWriter& _chunkwriter;
@@ -69,8 +71,8 @@ class JfrRecorderService : public StackObj {
   void rotate(int msgs);
   void flushpoint();
   void process_full_buffers();
-  void scavenge();
   void evaluate_chunk_size_for_rotation();
+  void emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
   static bool is_recording();
 };
 

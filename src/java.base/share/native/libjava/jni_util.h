@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define JNI_UTIL_H
 
 #include "jni.h"
+#include "jni_util_md.h"
 #include "jlong.h"
 
 #ifdef __cplusplus
@@ -92,13 +93,35 @@ JNU_ThrowByNameWithMessageAndLastError
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail);
 
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message);
+
 /* Convert between Java strings and i18n C strings */
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
+/* Convert between Java strings and i18n C strings
+ * Performs additional sanity checks on converted string
+ * such as presence of null characters which are not allowed.
+ * NULL may be returned with IllegalArgumentException pending
+ */
+JNIEXPORT const char *
+GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy);
+
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str);
 
+/* Convert between Java strings and i18n C strings
+ * Performs additional sanity checks on converted string
+ * such as presence of null characters which are not allowed.
+ * NULL may be returned with IllegalArgumentException pending
+ */
+JNIEXPORT const char * JNICALL
+JNU_GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy);
+
+/* Convert between Java strings and i18n C strings
+ * Deprecated: Use JNU_GetStringPlatformCharsStrict
+ */
 JNIEXPORT const char * JNICALL
 JNU_GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
@@ -333,11 +356,7 @@ JNIEXPORT void InitializeEncoding(JNIEnv *env, const char *name);
 
 void* getProcessHandle();
 
-void buildJniFunctionName(const char *sym, const char *cname,
-                          char *jniEntryName);
-
-JNIEXPORT size_t JNICALL
-getLastErrorString(char *buf, size_t len);
+jstring getLastErrorString(JNIEnv *env);
 
 JNIEXPORT int JNICALL
 getErrorString(int err, char *buf, size_t len);

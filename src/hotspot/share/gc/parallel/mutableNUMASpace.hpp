@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,19 +53,17 @@
  * bytes that can be moved during the adaptation phase.
  *   Chunks may contain pages from a wrong locality group. The page-scanner has
  * been introduced to address the problem. Remote pages typically appear due to
- * the memory shortage in the target locality group. Besides Solaris would
- * allocate a large page from the remote locality group even if there are small
- * local pages available. The page-scanner scans the pages right after the
- * collection and frees remote pages in hope that subsequent reallocation would
- * be more successful. This approach proved to be useful on systems with high
- * load where multiple processes are competing for the memory.
+ * the memory shortage in the target locality group. The page-scanner scans the pages
+ * right after the collection and frees remote pages in hope that subsequent
+ * reallocation would be more successful. This approach proved to be useful on systems
+ * with high load where multiple processes are competing for the memory.
  */
 
 class MutableNUMASpace : public MutableSpace {
   friend class VMStructs;
 
   class LGRPSpace : public CHeapObj<mtGC> {
-    int _lgrp_id;
+    uint _lgrp_id;
     MutableSpace* _space;
     AdaptiveWeightedAverage *_alloc_rate;
     bool _allocation_failed;
@@ -83,21 +81,14 @@ class MutableNUMASpace : public MutableSpace {
 
     SpaceStats _space_stats;
 
-    char* _last_page_scanned;
-    char* last_page_scanned()            { return _last_page_scanned; }
-    void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
+    LGRPSpace(uint l, size_t alignment) : _lgrp_id(l), _allocation_failed(false) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
     ~LGRPSpace() {
       delete _space;
       delete _alloc_rate;
-    }
-
-    static bool equals(void* lgrp_id_value, LGRPSpace* p) {
-      return *(int*)lgrp_id_value == p->lgrp_id();
     }
 
     // Report a failed allocation.
@@ -117,7 +108,7 @@ class MutableNUMASpace : public MutableSpace {
       alloc_rate()->sample(alloc_rate_sample);
     }
 
-    int lgrp_id() const                             { return _lgrp_id;             }
+    uint lgrp_id() const                            { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
     void clear_alloc_rate()                         { _alloc_rate->clear();        }
@@ -125,7 +116,6 @@ class MutableNUMASpace : public MutableSpace {
     void clear_space_stats()                        { _space_stats = SpaceStats(); }
 
     void accumulate_statistics(size_t page_size);
-    void scan_pages(size_t page_size, size_t page_count);
   };
 
   GrowableArray<LGRPSpace*>* _lgrp_spaces;
@@ -148,7 +138,7 @@ class MutableNUMASpace : public MutableSpace {
   size_t base_space_size() const                     { return _base_space_size;   }
 
   // Bias region towards the lgrp.
-  void bias_region(MemRegion mr, int lgrp_id);
+  void bias_region(MemRegion mr, uint lgrp_id);
 
   // Get current chunk size.
   size_t current_chunk_size(int i);
@@ -156,13 +146,13 @@ class MutableNUMASpace : public MutableSpace {
   size_t default_chunk_size();
   // Adapt the chunk size to follow the allocation rate.
   size_t adaptive_chunk_size(int i, size_t limit);
-  // Scan and free invalid pages.
-  void scan_pages(size_t page_count);
   // Return the bottom_region and the top_region. Align them to page_size() boundary.
   // |------------------new_region---------------------------------|
   // |----bottom_region--|---intersection---|------top_region------|
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
+
+  int lgrp_space_index(int lgrp_id) const;
 
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
@@ -181,18 +171,12 @@ public:
 
   virtual void clear(bool mangle_space);
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+
   virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
-  virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
-  virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
-  virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
-  virtual void set_top_for_allocations() PRODUCT_RETURN;
 
   virtual void ensure_parsability();
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
-
-  using MutableSpace::capacity_in_words;
 
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
@@ -202,7 +186,7 @@ public:
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();
 

@@ -25,6 +25,7 @@ struct Anchor
   {
     TRACE_SANITIZE (this);
     if (!u.format.sanitize (c)) return_trace (false);
+    hb_barrier ();
     switch (u.format) {
     case 1: return_trace (u.format1.sanitize (c));
     case 2: return_trace (u.format2.sanitize (c));
@@ -58,8 +59,7 @@ struct Anchor
         return_trace (bool (reinterpret_cast<Anchor *> (u.format1.copy (c->serializer))));
       }
       return_trace (bool (reinterpret_cast<Anchor *> (u.format2.copy (c->serializer))));
-    case 3: return_trace (bool (reinterpret_cast<Anchor *> (u.format3.copy (c->serializer,
-                                                                            c->plan->layout_variation_idx_map))));
+    case 3: return_trace (u.format3.subset (c));
     default:return_trace (false);
     }
   }

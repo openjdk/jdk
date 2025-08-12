@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import compiler.lib.ir_framework.driver.irmatching.parser.TestMethods;
  * This class holds the current state of the parsing of the hotspot_pid* file.
  */
 class State {
-    private final WriterThreads writerThreads;
-    private WriterThread writerThread;
     private final CompileQueueMessages compileQueueMessages;
     private final LoggedMethods loggedMethods;
     private LoggedMethod loggedMethod = LoggedMethod.DONT_CARE;
@@ -38,7 +36,6 @@ class State {
     public State(String testClassName, TestMethods testMethods) {
         this.compileQueueMessages = new CompileQueueMessages(testClassName, testMethods);
         this.loggedMethods = new LoggedMethods();
-        this.writerThreads = new WriterThreads();
     }
 
     public LoggedMethods loggedMethods() {
@@ -46,9 +43,7 @@ class State {
     }
 
     public void update(String line) {
-        if (WriterThread.isWriterThreadLine(line)) {
-            processWriterThreadLine(line);
-        } else if (compileQueueMessages.isTestMethodQueuedLine(line)) {
+        if (compileQueueMessages.isTestMethodQueuedLine(line)) {
             processCompileQueueLine(line);
         } else if (CompilePhaseBlock.isBlockStartLine(line)) {
             processBlockStartLine(line);
@@ -57,15 +52,6 @@ class State {
         } else {
             processNormalLine(line);
         }
-    }
-
-    private void processWriterThreadLine(String line) {
-        if (loggedMethod.hasActiveBlock()) {
-            // The current compile phase block was interrupted due to a safepoint. Save and restore later.
-            writerThread.saveLoggedMethod(loggedMethod);
-        }
-        writerThread = writerThreads.parse(line);
-        loggedMethod = writerThread.restoreLoggedMethod();
     }
 
     private void processCompileQueueLine(String line) {

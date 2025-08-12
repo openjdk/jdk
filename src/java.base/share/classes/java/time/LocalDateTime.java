@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date-time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03T10:15:30}.
@@ -158,11 +160,11 @@ public final class LocalDateTime
     private static final long serialVersionUID = 6207766400415563566L;
 
     /**
-     * The date part.
+     * @serial The date part.
      */
     private final LocalDate date;
     /**
-     * The time part.
+     * @serial The time part.
      */
     private final LocalTime time;
 
@@ -1807,7 +1809,11 @@ public final class LocalDateTime
      * chronology is also considered, see {@link ChronoLocalDateTime#compareTo}.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison of this local date-time with
+     *          the {@code other} local date-time and this chronology with the {@code other} chronology,
+     *          in order, returning the first non-zero result, and otherwise returning zero
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override  // override for Javadoc and performance
     public int compareTo(ChronoLocalDateTime<?> other) {
@@ -1961,8 +1967,11 @@ public final class LocalDateTime
      */
     @Override
     public String toString() {
-        return date.toString() + 'T' + time.toString();
+        var buf = new StringBuilder(29);
+        DateTimeHelper.formatTo(buf, this);
+        return buf.toString();
     }
+
 
     //-----------------------------------------------------------------------
     /**
@@ -2003,5 +2012,4 @@ public final class LocalDateTime
         LocalTime time = LocalTime.readExternal(in);
         return LocalDateTime.of(date, time);
     }
-
 }

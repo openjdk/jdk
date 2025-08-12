@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the package index page "index.html".
@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
 public class PackageIndexWriter extends AbstractOverviewIndexWriter {
 
     /**
-     * A Set of Packages to be documented.
+     * The Set of Packages to be documented.
      */
     protected SortedSet<PackageElement> packages;
 
@@ -54,24 +54,21 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
      * the order of groups specified by the user.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the path of the page to be generated
      * @see Group
      */
-    public PackageIndexWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public PackageIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.INDEX);
         packages = configuration.packages;
     }
 
-    /**
-     * Generate the package index page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem generating the package index page
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.INDEX;
-        PackageIndexWriter packgen = new PackageIndexWriter(configuration, filename);
-        packgen.buildOverviewIndexFile("doclet.Window_Overview_Summary", "package index");
+    @Override
+    public String getDescription() {
+        return "package index";
+    }
+
+    @Override
+    public String getTitleKey() {
+        return "doclet.Window_Overview_Summary";
     }
 
     /**
@@ -85,9 +82,9 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            var table = new Table<PackageElement>(HtmlStyle.summaryTable)
+            var table = new Table<PackageElement>(HtmlStyles.summaryTable)
                     .setHeader(getPackageTableHeader())
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)
                     .setDefaultTab(contents.getContent("doclet.All_Packages"));
 

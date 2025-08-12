@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.jfr.Recording;
 /**
  * @test
  * @summary Start a recording with custom settings
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
@@ -51,7 +51,7 @@ import jdk.jfr.Recording;
  *      jdk.jfr.startupargs.TestEventSettings multipleSettings
  *
  * @run main/othervm
- *      -XX:StartFlightRecording:class-loading=true,socket-threshold=100ms
+ *      -XX:StartFlightRecording:class-loading=true,locking-threshold=100ms
  *      jdk.jfr.startupargs.TestEventSettings jfcOptions
  */
 public class TestEventSettings {
@@ -70,7 +70,7 @@ public class TestEventSettings {
         }
         case "jfcOptions" -> {
             assertSetting("jdk.ClassDefine#enabled","true");
-            assertSetting("jdk.SocketRead#threshold", "100 ms");
+            assertSetting("jdk.JavaMonitorEnter#threshold", "100 ms");
         }
         default -> throw new Exception("Uknown tes " + subTest);
         }
@@ -84,7 +84,7 @@ public class TestEventSettings {
         if (rs.size() != 1) {
             throw new Exception("Expected only one recording");
         }
-        Map<String, String> currentSettings = rs.get(0).getSettings();
+        Map<String, String> currentSettings = rs.getFirst().getSettings();
         String s = currentSettings.get(key);
         if (!Objects.equals(s, value)) {
             System.out.println("Key:" + key);

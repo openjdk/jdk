@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,17 @@ import javax.security.auth.kerberos.KerberosKey;
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.GSSNameSpi;
 import sun.security.jgss.spi.GSSCredentialSpi;
-import sun.security.action.GetPropertyAction;
 import sun.security.jgss.krb5.Krb5NameElement;
 import sun.security.jgss.spnego.SpNegoCredElement;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.Iterator;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import sun.security.action.GetBooleanAction;
 import sun.security.util.ConsoleCallbackHandler;
+import sun.security.util.Debug;
 
 /**
  * The GSSUtilImplementation that knows how to work with the internals of
@@ -67,12 +63,12 @@ public class GSSUtil {
     public static final Oid NT_GSS_KRB5_PRINCIPAL =
                 GSSUtil.createOid("1.2.840.113554.1.2.2.1");
 
-    static final boolean DEBUG =
-            GetBooleanAction.privilegedGetProperty("sun.security.jgss.debug");
+    static final Debug DEBUG = Debug.of("jgss",
+            System.getProperty("sun.security.jgss.debug"));
 
     static void debug(String message) {
         assert(message != null);
-        System.out.println(message);
+        DEBUG.println(message);
     }
 
     // NOTE: this method is only for creating Oid objects with
@@ -82,7 +78,7 @@ public class GSSUtil {
         try {
             return new Oid(oidStr);
         } catch (GSSException e) {
-            if (DEBUG) {
+            if (DEBUG != null) {
                 debug("Ignored invalid OID: " + oidStr);
             }
             return null;
@@ -138,7 +134,7 @@ public class GSSUtil {
                 KerberosPrincipal krbPrinc = new KerberosPrincipal(krbName);
                 krb5Principals.add(krbPrinc);
             } catch (GSSException ge) {
-                if (DEBUG) {
+                if (DEBUG != null) {
                     debug("Skipped name " + name + " due to " + ge);
                 }
             }
@@ -151,7 +147,7 @@ public class GSSUtil {
         } else {
             privCredentials = new HashSet<>(); // empty Set
         }
-        if (DEBUG) {
+        if (DEBUG != null) {
             debug("Created Subject with the following");
             debug("principals=" + krb5Principals);
             debug("public creds=" + pubCredentials);
@@ -216,7 +212,7 @@ public class GSSUtil {
                 credentials.add(cred);
             } else {
                 // Ignore non-KerberosTicket and non-KerberosKey elements
-                if (DEBUG) {
+                if (DEBUG != null) {
                     debug("Skipped cred element: " + cred);
                 }
             }
@@ -268,8 +264,8 @@ public class GSSUtil {
      */
     public static boolean useSubjectCredsOnly(GSSCaller caller) {
 
-        String propValue = GetPropertyAction
-                .privilegedGetProperty("javax.security.auth.useSubjectCredsOnly");
+        String propValue =
+            System.getProperty("javax.security.auth.useSubjectCredsOnly");
 
         // Invalid values should be ignored and the default assumed.
         if (caller instanceof HttpCaller) {
@@ -290,11 +286,11 @@ public class GSSUtil {
      */
     public static boolean useMSInterop() {
         /*
-         * Don't use GetBooleanAction because the default value in the JRE
+         * Don't use Boolean.getBoolean() because the default value in the JRE
          * (when this is unset) has to treated as true.
          */
-        String propValue = GetPropertyAction
-                .privilegedGetProperty("sun.security.spnego.msinterop", "true");
+        String propValue =
+                System.getProperty("sun.security.spnego.msinterop", "true");
         /*
          * This property has to be explicitly set to "false". Invalid
          * values should be ignored and the default "true" assumed.
@@ -314,62 +310,47 @@ public class GSSUtil {
                           final Oid mech,
                           final boolean initiate,
                           final Class<? extends T> credCls) {
-        if (DEBUG) {
+        if (DEBUG != null) {
             debug("Search Subject for " + getMechStr(mech) +
                     (initiate ? " INIT" : " ACCEPT") + " cred (" +
                     (name == null ? "<<DEF>>" : name.toString()) + ", " +
                     credCls.getName() + ")");
         }
-        try {
-            @SuppressWarnings("removal")
-            Vector<T> creds =
-                AccessController.doPrivilegedWithCombiner
-                ((PrivilegedExceptionAction<Vector<T>>) () -> {
-                    Subject currSubj = Subject.current();
-                    Vector<T> result = null;
-                    if (currSubj != null) {
-                        result = new Vector<>();
-                        Iterator<GSSCredentialImpl> iterator =
-                            currSubj.getPrivateCredentials
-                            (GSSCredentialImpl.class).iterator();
-                        while (iterator.hasNext()) {
-                            GSSCredentialImpl cred = iterator.next();
-                            if (DEBUG) {
-                                debug("...Found cred" + cred);
-                            }
-                            try {
-                                GSSCredentialSpi ce =
-                                    cred.getElement(mech, initiate);
-                                if (DEBUG) {
-                                    debug("......Found element: " + ce);
-                                }
-                                if (ce.getClass().equals(credCls) &&
-                                    (name == null ||
-                                     name.equals((Object) ce.getName()))) {
-                                    result.add(credCls.cast(ce));
-                                } else {
-                                    if (DEBUG) {
-                                        debug("......Discard element");
-                                    }
-                                }
-                            } catch (GSSException ge) {
-                                if (DEBUG) {
-                                    debug("...Discard cred (" + ge + ")");
-                                }
-                            }
-                        }
-                    } else if (DEBUG) {
-                        debug("No Subject");
+        Vector<T> creds = null;
+        Subject currSubj = Subject.current();
+        if (currSubj != null) {
+            creds = new Vector<>();
+            Iterator<GSSCredentialImpl> iterator =
+                currSubj.getPrivateCredentials
+                (GSSCredentialImpl.class).iterator();
+            while (iterator.hasNext()) {
+                GSSCredentialImpl cred = iterator.next();
+                if (DEBUG != null) {
+                    debug("...Found cred" + cred);
+                }
+                try {
+                    GSSCredentialSpi ce = cred.getElement(mech, initiate);
+                    if (DEBUG != null) {
+                        debug("......Found element: " + ce);
                     }
-                    return result;
-                });
-            return creds;
-        } catch (PrivilegedActionException pae) {
-            if (DEBUG) {
-                debug("Unexpected exception when searching Subject:");
-                pae.printStackTrace();
+                    if (ce.getClass().equals(credCls) &&
+                        (name == null ||
+                         name.equals((Object) ce.getName()))) {
+                        creds.add(credCls.cast(ce));
+                    } else {
+                        if (DEBUG != null) {
+                            debug("......Discard element");
+                        }
+                    }
+                } catch (GSSException ge) {
+                    if (DEBUG != null) {
+                        debug("...Discard cred (" + ge + ")");
+                    }
+                }
             }
-            return null;
+        } else if (DEBUG != null) {
+            debug("No Subject");
         }
+        return creds;
     }
 }

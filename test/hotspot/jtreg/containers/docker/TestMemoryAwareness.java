@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8146115 8292083
  * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.platform
@@ -200,8 +200,8 @@ public class TestMemoryAwareness {
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue)
             // Either for cgroup v1: a_1) same as memory limit, or b_1) -2 on systems with swapaccount=0
             // Either for cgroup v2: a_2) 0, or b_2) -2 on systems with swapaccount=0
-            .shouldMatch("Memory and Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
-            .shouldNotMatch("Memory and Swap Limit is:.*" + neg2InUnsignedLong);
+            .shouldMatch("(Memory and )?Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
+            .shouldNotMatch("(Memory and )?Swap Limit is:.*" + neg2InUnsignedLong);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         setTargetNormal(boundTarget); // ConstantCallSite doesn't publish CallSite.target
         UNSAFE.storeStoreFence(); // barrier between target and isFrozen updates
     }
-
-    /**
-     * {@code CallSite} dependency context.
-     * JVM uses CallSite.context to store nmethod dependencies on the call site target.
-     */
-    private final MethodHandleNatives.CallSiteContext context = MethodHandleNatives.CallSiteContext.make(this);
 
     /**
      * Returns the type of this call site's target.
@@ -315,8 +309,8 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         try {
             Object binding = BootstrapMethodInvoker.invoke(
                     CallSite.class, bootstrapMethod, name, type, info, callerClass);
-            if (binding instanceof CallSite) {
-                site = (CallSite) binding;
+            if (binding instanceof CallSite cs) {
+                site = cs;
             } else {
                 // See the "Linking Exceptions" section for the invokedynamic
                 // instruction in JVMS 6.5.

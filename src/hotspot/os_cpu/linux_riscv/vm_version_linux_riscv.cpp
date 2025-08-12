@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +24,57 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
+#include "logging/log.hpp"
+#include "riscv_hwprobe.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
 #include <asm/hwcap.h>
+#include <ctype.h>
 #include <sys/auxv.h>
+#include <sys/prctl.h>
 
 #ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  (1 << ('I' - 'A'))
+#define HWCAP_ISA_I  nth_bit('I' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  (1 << ('M' - 'A'))
+#define HWCAP_ISA_M  nth_bit('M' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  (1 << ('A' - 'A'))
+#define HWCAP_ISA_A  nth_bit('A' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  (1 << ('F' - 'A'))
+#define HWCAP_ISA_F  nth_bit('F' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  (1 << ('D' - 'A'))
+#define HWCAP_ISA_D  nth_bit('D' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  (1 << ('C' - 'A'))
+#define HWCAP_ISA_C  nth_bit('C' - 'A')
+#endif
+
+#ifndef HWCAP_ISA_Q
+#define HWCAP_ISA_Q  nth_bit('Q' - 'A')
+#endif
+
+#ifndef HWCAP_ISA_H
+#define HWCAP_ISA_H  nth_bit('H' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  (1 << ('V' - 'A'))
+#define HWCAP_ISA_V  nth_bit('V' - 'A')
 #endif
 
 #define read_csr(csr)                                           \
 ({                                                              \
-        register unsigned long __v;                             \
+        unsigned long __v;                                      \
         __asm__ __volatile__ ("csrr %0, %1"                     \
                               : "=r" (__v)                      \
                               : "i" (csr)                       \
@@ -70,68 +82,234 @@
         __v;                                                    \
 })
 
-uint32_t VM_Version::get_current_vector_length() {
-  assert(_features & CPU_V, "should not call this");
+// prctl PR_RISCV_SET_ICACHE_FLUSH_CTX is from Linux 6.9
+#ifndef PR_RISCV_SET_ICACHE_FLUSH_CTX
+#define PR_RISCV_SET_ICACHE_FLUSH_CTX 71
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_ON
+#define PR_RISCV_CTX_SW_FENCEI_ON  0
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_OFF
+#define PR_RISCV_CTX_SW_FENCEI_OFF 1
+#endif
+#ifndef PR_RISCV_SCOPE_PER_PROCESS
+#define PR_RISCV_SCOPE_PER_PROCESS 0
+#endif
+#ifndef PR_RISCV_SCOPE_PER_THREAD
+#define PR_RISCV_SCOPE_PER_THREAD  1
+#endif
+
+uint32_t VM_Version::cpu_vector_length() {
+  assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
-VM_Version::VM_MODE VM_Version::get_satp_mode() {
-  if (!strcmp(_vm_mode, "sv39")) {
+void VM_Version::setup_cpu_available_features() {
+
+  assert(ext_I.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
+  assert(ext_M.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
+  assert(ext_A.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
+  assert(ext_F.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
+  assert(ext_D.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
+  assert(ext_C.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
+  assert(ext_Q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
+  assert(ext_H.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
+  assert(ext_V.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
+
+  if (!RiscvHwprobe::probe_features()) {
+    os_aux_features();
+  }
+
+  char* uarch = os_uarch_additional_features();
+  vendor_features();
+
+  char buf[1024] = {};
+  if (uarch != nullptr && strcmp(uarch, "") != 0) {
+    // Use at max half the buffer.
+    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
+  }
+  os::free((void*) uarch);
+
+  int features_offset = strnlen(buf, sizeof(buf));
+
+  strcat(buf, "rv64");
+  int i = 0;
+  while (_feature_list[i] != nullptr) {
+    if (_feature_list[i]->enabled()) {
+      // Change flag default
+      _feature_list[i]->update_flag();
+
+      // Feature will be disabled by update_flag() if flag
+      // is set to false by the user on the command line.
+      if (!_feature_list[i]->enabled()) {
+        continue;
+      }
+
+      log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
+             _feature_list[i]->pretty(),
+             _feature_list[i]->value());
+      // The feature string
+      if (_feature_list[i]->feature_string()) {
+        const char* tmp = _feature_list[i]->pretty();
+        if (strlen(tmp) == 1) {
+          // Feature string is expected to be in multi-character form
+          // like rvc, rvv, etc so that it will be easier to specify
+          // target feature string in tests.
+          strcat(buf, " rv");
+          strcat(buf, tmp);
+        } else {
+          // Feature string is expected to be lower case.
+          // Turn Zxxx into zxxx
+          char prebuf[3] = {};
+          assert(strlen(tmp) > 1, "Must be");
+          prebuf[0] = ' ';
+          prebuf[1] = (char)tolower(tmp[0]);
+          strcat(buf, prebuf);
+          strcat(buf, &tmp[1]);
+        }
+      }
+      // Feature bit
+      if (_feature_list[i]->feature_bit() != 0) {
+        _features |= _feature_list[i]->feature_bit();
+      }
+    }
+    i++;
+  }
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  if (UseCtxFencei) {
+    // Note that we can set this up only for effected threads
+    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
+    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
+    if (ret == 0) {
+      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+    } else {
+      FLAG_SET_ERGO(UseCtxFencei, false);
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
+    }
+  }
+
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = _cpu_info_string + features_offset;
+}
+
+void VM_Version::os_aux_features() {
+  uint64_t auxv = getauxval(AT_HWCAP);
+  for (int i = 0; _feature_list[i] != nullptr; i++) {
+    if (_feature_list[i]->feature_bit() == HWCAP_ISA_V) {
+      // Special case for V: some dev boards only support RVV version 0.7, while
+      // the OpenJDK only supports RVV version 1.0. These two versions are not
+      // compatible with each other. Given the V bit is set through HWCAP on
+      // some custom kernels, regardless of the version, it can lead to
+      // generating V instructions on boards that don't support RVV version 1.0
+      // (ex: Sipeed LicheePi), leading to a SIGILL.
+      // That is an acceptable workaround as only Linux Kernel v6.5+ supports V,
+      // and that version already support hwprobe anyway
+      continue;
+    }
+    if ((_feature_list[i]->feature_bit() & auxv) != 0) {
+      _feature_list[i]->enable_feature();
+    }
+  }
+}
+
+VM_Version::VM_MODE VM_Version::parse_satp_mode(const char* vm_mode) {
+  if (!strncmp(vm_mode, "sv39", sizeof "sv39" - 1)) {
     return VM_SV39;
-  } else if (!strcmp(_vm_mode, "sv48")) {
+  } else if (!strncmp(vm_mode, "sv48", sizeof "sv48" - 1)) {
     return VM_SV48;
-  } else if (!strcmp(_vm_mode, "sv57")) {
+  } else if (!strncmp(vm_mode, "sv57", sizeof "sv57" - 1)) {
     return VM_SV57;
-  } else if (!strcmp(_vm_mode, "sv64")) {
+  } else if (!strncmp(vm_mode, "sv64", sizeof "sv64" - 1)) {
     return VM_SV64;
   } else {
     return VM_MBARE;
   }
 }
 
-void VM_Version::get_os_cpu_info() {
+char* VM_Version::os_uarch_additional_features() {
+  char* ret = nullptr;
+  VM_MODE mode = VM_NOTSET;
 
-  uint64_t auxv = getauxval(AT_HWCAP);
+  FILE *f = fopen("/proc/cpuinfo", "r");
+  if (f == nullptr) {
+    return nullptr;
+  }
 
-  static_assert(CPU_I == HWCAP_ISA_I, "Flag CPU_I must follow Linux HWCAP");
-  static_assert(CPU_M == HWCAP_ISA_M, "Flag CPU_M must follow Linux HWCAP");
-  static_assert(CPU_A == HWCAP_ISA_A, "Flag CPU_A must follow Linux HWCAP");
-  static_assert(CPU_F == HWCAP_ISA_F, "Flag CPU_F must follow Linux HWCAP");
-  static_assert(CPU_D == HWCAP_ISA_D, "Flag CPU_D must follow Linux HWCAP");
-  static_assert(CPU_C == HWCAP_ISA_C, "Flag CPU_C must follow Linux HWCAP");
-  static_assert(CPU_V == HWCAP_ISA_V, "Flag CPU_V must follow Linux HWCAP");
-
-  // RISC-V has four bit-manipulation ISA-extensions: Zba/Zbb/Zbc/Zbs.
-  // Availability for those extensions could not be queried from HWCAP.
-  // TODO: Add proper detection for those extensions.
-  _features = auxv & (
-      HWCAP_ISA_I |
-      HWCAP_ISA_M |
-      HWCAP_ISA_A |
-      HWCAP_ISA_F |
-      HWCAP_ISA_D |
-      HWCAP_ISA_C |
-      HWCAP_ISA_V);
-
-  if (FILE *f = fopen("/proc/cpuinfo", "r")) {
-    char buf[512], *p;
-    while (fgets(buf, sizeof (buf), f) != nullptr) {
-      if ((p = strchr(buf, ':')) != nullptr) {
+  char buf[512], *p;
+  while (fgets(buf, sizeof (buf), f) != nullptr &&
+         (mode == VM_NOTSET || ret == nullptr)) {
+    if ((p = strchr(buf, ':')) != nullptr) {
+      if (mode == VM_NOTSET) {
         if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
-          if (_vm_mode[0] != '\0') {
-            continue;
-          }
-          char* vm_mode = os::strdup(p + 2);
-          vm_mode[strcspn(vm_mode, "\n")] = '\0';
-          _vm_mode = vm_mode;
-        } else if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
-          char* uarch = os::strdup(p + 2);
-          uarch[strcspn(uarch, "\n")] = '\0';
-          _uarch = uarch;
-          break;
+          mode = VM_Version::parse_satp_mode(p + 2);
+        }
+      }
+      if (ret == nullptr) {
+        if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
+          ret = os::strdup(p + 2);
+          ret[strcspn(ret, "\n")] = '\0';
         }
       }
     }
-    fclose(f);
+  }
+  if (mode == VM_NOTSET) {
+    mode = VM_MBARE;
+  }
+  fclose(f);
+  satp_mode.enable_feature(mode);
+  return ret;
+}
+
+void VM_Version::vendor_features() {
+  if (!mvendorid.enabled()) {
+    return;
+  }
+  switch (mvendorid.value()) {
+    case RIVOS:
+    rivos_features();
+    break;
+    default:
+    break;
+  }
+}
+
+void VM_Version::rivos_features() {
+  // Enable common features not dependent on marchid/mimpid.
+  ext_Zicbom.enable_feature();
+  ext_Zicboz.enable_feature();
+  ext_Zicbop.enable_feature();
+
+  // If we running on a pre-6.5 kernel
+  ext_Zba.enable_feature();
+  ext_Zbb.enable_feature();
+  ext_Zbs.enable_feature();
+
+  ext_Zcb.enable_feature();
+
+  ext_Zfh.enable_feature();
+
+  ext_Zicboz.enable_feature();
+  ext_Zicsr.enable_feature();
+  ext_Zifencei.enable_feature();
+  ext_Zic64b.enable_feature();
+  ext_Ztso.enable_feature();
+
+  ext_Zvfh.enable_feature();
+
+  unaligned_access.enable_feature(MISALIGNED_FAST);
+  satp_mode.enable_feature(VM_SV48);
+
+  // Features dependent on march/mimpid.
+  // I.e. march.value() and mimplid.value()
+  if (mimpid.value() > 0x100) {
+    ext_Zacas.enable_feature();
+    ext_Zihintpause.enable_feature();
   }
 }

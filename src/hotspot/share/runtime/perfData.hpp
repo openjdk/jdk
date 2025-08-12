@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
@@ -61,6 +62,9 @@ enum CounterNS {
   JAVA_THREADS,         // Threads System name spaces
   COM_THREADS,
   SUN_THREADS,
+  JAVA_THREADS_CPUTIME, // Thread CPU time name spaces
+  COM_THREADS_CPUTIME,
+  SUN_THREADS_CPUTIME,
   JAVA_PROPERTY,        // Java Property name spaces
   COM_PROPERTY,
   SUN_PROPERTY,
@@ -196,43 +200,10 @@ enum CounterNS {
  *   are not encouraged to access the string constant's value via this
  *   pointer at this time due to security concerns.
  *
- * Creating a performance counter in an arbitrary name space that holds a
- * value that is sampled by the StatSampler periodic task.
- *
- *    PerfDataManager::create_counter("foo.sampled", PerfData::U_Events,
- *                                    &my_jlong, CHECK);
- *
- *    In this example, the PerfData pointer can be ignored as the caller
- *    is relying on the StatSampler PeriodicTask to sample the given
- *    address at a regular interval. The interval is defined by the
- *    PerfDataSamplingInterval global variable, and is applied on
- *    a system wide basis, not on an per-counter basis.
- *
- * Creating a performance counter in an arbitrary name space that utilizes
- * a helper object to return a value to the StatSampler via the take_sample()
- * method.
- *
- *     class MyTimeSampler : public PerfLongSampleHelper {
- *       public:
- *         jlong take_sample() { return os::elapsed_counter(); }
- *     };
- *
- *     PerfDataManager::create_counter(SUN_RT, "helped",
- *                                     PerfData::U_Ticks,
- *                                     new MyTimeSampler(), CHECK);
- *
- *     In this example, a subtype of PerfLongSampleHelper is instantiated
- *     and its take_sample() method is overridden to perform whatever
- *     operation is necessary to generate the data sample. This method
- *     will be called by the StatSampler at a regular interval, defined
- *     by the PerfDataSamplingInterval global variable.
- *
- *     As before, PerfSampleHelper is an alias for PerfLongSampleHelper.
- *
  * For additional uses of PerfData subtypes, see the utility classes
  * PerfTraceTime and PerfTraceTimedEvent below.
  *
- * Always-on non-sampled counters can be created independent of
+ * Always-on counters can be created independent of
  * the UsePerfData flag. Counters will be created on the c-heap
  * if UsePerfData is false.
  *
@@ -241,10 +212,21 @@ enum CounterNS {
  * UsePerfData, a product flag set to true by default. This flag may
  * be removed from the product in the future.
  *
+ * There are possible shutdown races between counter uses and counter
+ * destruction code. Normal shutdown happens with taking VM_Exit safepoint
+ * operation, so in the vast majority of uses this is not an issue. On the
+ * paths where a concurrent access can still happen when VM is at safepoint,
+ * use the following pattern to coordinate with shutdown:
+ *
+ * {
+ *   GlobalCounter::CriticalSection cs(Thread::current());
+ *   if (PerfDataManager::has_PerfData()) {
+ *     <update-counter>
+ *   }
+ * }
  */
 class PerfData : public CHeapObj<mtInternal> {
 
-  friend class StatSampler;      // for access to protected void sample()
   friend class PerfDataManager;  // for access to protected destructor
   friend class VMStructs;
 
@@ -298,10 +280,6 @@ class PerfData : public CHeapObj<mtInternal> {
     // facilitate its use by external processes.
     void create_entry(BasicType dtype, size_t dsize, size_t dlen = 0);
 
-    // sample the data item given at creation time and write its value
-    // into the its corresponding PerfMemory location.
-    virtual void sample() = 0;
-
   public:
 
     // returns a boolean indicating the validity of this object.
@@ -319,7 +297,8 @@ class PerfData : public CHeapObj<mtInternal> {
     // PerfData memory region. This redundancy is maintained for
     // security reasons as the PerfMemory region may be in shared
     // memory.
-    const char* name() { return _name; }
+    const char* name() const { return _name; }
+    bool name_equals(const char* name) const;
 
     // returns the variability classification associated with this item
     Variability variability() { return _v; }
@@ -333,17 +312,6 @@ class PerfData : public CHeapObj<mtInternal> {
     // returns the address of the data portion of the item in the
     // PerfData memory region.
     inline void* get_address() { return _valuep; }
-};
-
-/*
- * PerfLongSampleHelper, and its alias PerfSamplerHelper, is a base class
- * for helper classes that rely upon the StatSampler periodic task to
- * invoke the take_sample() method and write the value returned to its
- * appropriate location in the PerfData memory region.
- */
-class PerfLongSampleHelper : public CHeapObj<mtInternal> {
-  public:
-    virtual jlong take_sample() = 0;
 };
 
 /*
@@ -373,10 +341,6 @@ class PerfLongConstant : public PerfLong {
 
   friend class PerfDataManager; // for access to protected constructor
 
-  private:
-    // hide sample() - no need to sample constants
-    void sample() { }
-
   protected:
 
     PerfLongConstant(CounterNS ns, const char* namep, Units u,
@@ -396,22 +360,11 @@ class PerfLongConstant : public PerfLong {
 class PerfLongVariant : public PerfLong {
 
   protected:
-    jlong* _sampled;
-    PerfLongSampleHelper* _sample_helper;
-
     PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
                     jlong initial_value=0)
                    : PerfLong(ns, namep, u, v) {
       if (is_valid()) *(jlong*)_valuep = initial_value;
     }
-
-    PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
-                    jlong* sampled);
-
-    PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
-                    PerfLongSampleHelper* sample_helper);
-
-    void sample();
 
   public:
     inline void inc() { (*(jlong*)_valuep)++; }
@@ -438,14 +391,6 @@ class PerfLongCounter : public PerfLongVariant {
                     jlong initial_value=0)
                    : PerfLongVariant(ns, namep, u, V_Monotonic,
                                      initial_value) { }
-
-    PerfLongCounter(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                  : PerfLongVariant(ns, namep, u, V_Monotonic, sampled) { }
-
-    PerfLongCounter(CounterNS ns, const char* namep, Units u,
-                    PerfLongSampleHelper* sample_helper)
-                   : PerfLongVariant(ns, namep, u, V_Monotonic,
-                                     sample_helper) { }
 };
 
 /*
@@ -463,14 +408,6 @@ class PerfLongVariable : public PerfLongVariant {
                      jlong initial_value=0)
                     : PerfLongVariant(ns, namep, u, V_Variable,
                                       initial_value) { }
-
-    PerfLongVariable(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                    : PerfLongVariant(ns, namep, u, V_Variable, sampled) { }
-
-    PerfLongVariable(CounterNS ns, const char* namep, Units u,
-                     PerfLongSampleHelper* sample_helper)
-                    : PerfLongVariant(ns, namep, u, V_Variable,
-                                      sample_helper) { }
 
   public:
     inline void set_value(jlong val) { (*(jlong*)_valuep) = val; }
@@ -514,11 +451,6 @@ class PerfStringConstant : public PerfString {
 
   friend class PerfDataManager; // for access to protected constructor
 
-  private:
-
-    // hide sample() - no need to sample constants
-    void sample() { }
-
   protected:
 
     // Restrict string constant lengths to be <= PerfMaxStringConstLength.
@@ -542,9 +474,6 @@ class PerfStringVariable : public PerfString {
   friend class PerfDataManager; // for access to protected constructor
 
   protected:
-
-    // sampling of string variables are not yet supported
-    void sample() { }
 
     PerfStringVariable(CounterNS ns, const char* namep, jint max_length,
                        const char* initial_value)
@@ -586,7 +515,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     PerfDataArray* _set;
 
     // method to search for a instrumentation object by name
-    static bool by_name(void* name, PerfData* pd);
+    static bool by_name(const char* name, PerfData* pd);
 
   protected:
     // we expose the implementation here to facilitate the clone
@@ -636,26 +565,23 @@ class PerfDataList : public CHeapObj<mtInternal> {
  * of the various PerfData types.
  */
 class PerfDataManager : AllStatic {
-
-  friend class StatSampler;   // for access to protected PerfDataList methods
-
   private:
     static PerfDataList* _all;
-    static PerfDataList* _sampled;
     static PerfDataList* _constants;
     static const char* _name_spaces[];
     static volatile bool _has_PerfData;
 
     // add a PerfData item to the list(s) of know PerfData objects
-    static void add_item(PerfData* p, bool sampled);
+    static void add_item(PerfData* p);
 
-  protected:
-
-    // return the list of all known PerfData items that are to be
-    // sampled by the StatSampler.
-    static PerfDataList* sampled();
-
+    static void create_system_property_instrumentation(TRAPS);
+    static void assert_system_property(const char* name, const char* value, TRAPS);
+    static void add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS);
+    static void add_property_constant(CounterNS name_space, const char* name, TRAPS);
+    static void add_optional_property_constant(CounterNS name_space, const char* name, TRAPS);
   public:
+    // Creates miscellaneous perfdata constants
+    static void create_misc_perfdata();
 
     // method to check for the existence of a PerfData item with
     // the given name.
@@ -740,22 +666,11 @@ class PerfDataManager : AllStatic {
       return create_long_variable(ns, name, u, (jlong)0, THREAD);
     };
 
-    static PerfLongVariable* create_long_variable(CounterNS ns,
-                                                  const char* name,
-                                                  PerfData::Units u,
-                                                  PerfLongSampleHelper* sh,
-                                                  TRAPS);
-
 
     // Counter Types
     static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
                                                 PerfData::Units u,
                                                 jlong ival, TRAPS);
-
-    static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
-                                                PerfData::Units u,
-                                                PerfLongSampleHelper* sh,
-                                                TRAPS);
 
 
     // these creation methods are provided for ease of use. These allow
@@ -776,25 +691,13 @@ class PerfDataManager : AllStatic {
       return create_long_variable(ns, name, u, (jlong)0, THREAD);
     }
 
-    static PerfVariable* create_variable(CounterNS ns, const char* name,
-                                         PerfData::Units u,
-                                         PerfSampleHelper* sh, TRAPS) {
-      return create_long_variable(ns, name, u, sh, THREAD);
-    }
-
     static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u, TRAPS) {
       return create_long_counter(ns, name, u, (jlong)0, THREAD);
     }
 
-    static PerfCounter* create_counter(CounterNS ns, const char* name,
-                                       PerfData::Units u,
-                                       PerfSampleHelper* sh, TRAPS) {
-      return create_long_counter(ns, name, u, sh, THREAD);
-    }
-
     static void destroy();
-    static bool has_PerfData() { return _has_PerfData; }
+    static bool has_PerfData() { return Atomic::load_acquire(&_has_PerfData); }
 };
 
 // Useful macros to create the performance counters
@@ -837,11 +740,20 @@ class PerfTraceTime : public StackObj {
 
   public:
     inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _t.start();
     }
 
-    ~PerfTraceTime();
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
+
+    ~PerfTraceTime() {
+      if (!UsePerfData || !_t.is_active()) { return; }
+      _t.stop();
+      _timerp->inc(_t.ticks());
+    }
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
@@ -870,7 +782,7 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
   public:
     inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _eventp->inc();
     }
 

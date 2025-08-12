@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,50 @@
 
 package javax.swing.plaf.metal;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Frame;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import javax.swing.plaf.*;
-import javax.swing.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.text.DefaultEditorKit;
-
-import java.awt.Color;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
-import java.security.AccessController;
+import javax.swing.ButtonModel;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.LayoutStyle;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicLookAndFeel;
+import javax.swing.text.DefaultEditorKit;
 
-import sun.awt.*;
-import sun.security.action.GetPropertyAction;
+import sun.awt.AppContext;
+import sun.awt.OSInfo;
+import sun.awt.SunToolkit;
 import sun.swing.DefaultLayoutStyle;
-import static javax.swing.UIDefaults.LazyValue;
-
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+
+import static javax.swing.UIDefaults.LazyValue;
 
 /**
  * The Java Look and Feel, otherwise known as Metal.
@@ -118,13 +141,9 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
-            @SuppressWarnings("removal")
-            OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
-            if (osType == OSInfo.OSType.WINDOWS) {
+            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
-                @SuppressWarnings("removal")
-                String systemFonts = AccessController.doPrivileged(
-                    new GetPropertyAction("swing.useSystemFontSettings"));
+                String systemFonts = System.getProperty("swing.useSystemFontSettings");
                 useSystemFonts = Boolean.parseBoolean(systemFonts);
             }
             checkedWindows = true;
@@ -784,6 +803,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                           "SPACE", "pressed",
                  "released SPACE", "released"
               }),
+            // Button default margin is (2, 14, 2, 14), defined in
+            // BasicLookAndFeel via "Button.margin" UI property.
 
             "CheckBox.disabledText", inactiveControlTextColor,
             "Checkbox.select", controlShadow,
@@ -1189,7 +1210,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -1197,7 +1218,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",
@@ -1637,9 +1658,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             else {
                 // Create the default theme. We prefer Ocean, but will
                 // use DefaultMetalTheme if told to.
-                @SuppressWarnings("removal")
-                String theme = AccessController.doPrivileged(
-                               new GetPropertyAction("swing.metalTheme"));
+                String theme = System.getProperty("swing.metalTheme");
                 if ("steel".equals(theme)) {
                     currentTheme = new DefaultMetalTheme();
                 }

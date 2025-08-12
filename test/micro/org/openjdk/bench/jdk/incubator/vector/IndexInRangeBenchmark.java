@@ -29,10 +29,10 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class IndexInRangeBenchmark {
     @Param({"7", "256", "259", "512"})
     private int size;
@@ -48,7 +48,7 @@ public class IndexInRangeBenchmark {
 
     @Setup(Level.Trial)
     public void Setup() {
-        mask = new boolean[512];
+        mask = new boolean[size + 64];
     }
 
     @Benchmark

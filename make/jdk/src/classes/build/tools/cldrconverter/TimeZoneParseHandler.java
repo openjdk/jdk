@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -37,6 +38,7 @@ import org.xml.sax.SAXException;
  */
 
 class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
+    private static final String PREF_PREFIX = "preferred:";
 
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
@@ -52,9 +54,15 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
         switch (qName) {
         case "type":
             if (!isIgnored(attributes) &&
-                    !attributes.getValue("deprecated").equals("true") &&
                     !attributes.getValue("description").equals("Metazone")) {
-                put(attributes.getValue("name"), attributes.getValue("alias"));
+                if (attributes.getValue("deprecated").equals("true")) {
+                    var preferred = attributes.getValue("preferred");
+                    if (preferred != null && !preferred.isEmpty()) {
+                        put(attributes.getValue("name"), PREF_PREFIX + preferred);
+                    }
+                } else {
+                    put(attributes.getValue("name"), attributes.getValue("alias"));
+                }
             }
             break;
         default:
@@ -62,5 +70,14 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
             pushContainer(qName, attributes);
             break;
         }
+    }
+
+    @Override
+    public void endDocument() throws SAXException {
+        var map = getData();
+        map.entrySet().stream()
+            .filter(e -> e.getValue().toString().startsWith(PREF_PREFIX))
+            .forEach(e -> map.put(e.getKey(),
+                map.get(e.getValue().toString().substring(PREF_PREFIX.length()))));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -28,9 +28,6 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
@@ -56,6 +53,9 @@ import javax.xml.stream.events.XMLEvent;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 
 /**
  *
@@ -74,7 +74,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: May 2021
+ * @LastModified: Apr 2025
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -326,6 +326,8 @@ public class XMLDocumentFragmentScannerImpl
     protected String fDeclaredEncoding =  null;
     /** Xerces Feature: Disallow doctype declaration. */
     protected boolean fDisallowDoctype = false;
+    // DTD Error Code
+    protected String fDTDErrorCode = null;
 
     /** Create entity reference nodes. */
     protected boolean fCreateEntityRefNodes = false;
@@ -340,6 +342,13 @@ public class XMLDocumentFragmentScannerImpl
      * of accessing external dtd or entity references
      */
     protected String fAccessExternalDTD = EXTERNAL_ACCESS_DEFAULT;
+
+    /**
+     * Properties to determine whether to use a user-specified Catalog:
+     * Feature USE_CATALOG, Resolve and Catalog File
+     */
+    protected boolean fUseCatalog = true;
+    protected String fCatalogFile;
 
     /**
      * standard uri conformant (strict uri).
@@ -792,7 +801,7 @@ public class XMLDocumentFragmentScannerImpl
         }
 
 
-                // Xerces properties
+        // Xerces properties
         if (propertyId.startsWith(Constants.XERCES_PROPERTY_PREFIX)) {
             String property = propertyId.substring(Constants.XERCES_PROPERTY_PREFIX.length());
             if (property.equals(Constants.ENTITY_MANAGER_PROPERTY)) {
@@ -1365,7 +1374,8 @@ public class XMLDocumentFragmentScannerImpl
                         fAttributes.getLength() > fElementAttributeLimit){
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                  "ElementAttributeLimit",
-                                                 new Object[]{rawname, fElementAttributeLimit },
+                                                 new Object[]{rawname, fElementAttributeLimit,
+                                                     XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT.systemProperty() },
                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR );
                 }
 
@@ -1876,7 +1886,7 @@ public class XMLDocumentFragmentScannerImpl
             reportFatalError("MaxElementDepthLimit", new Object[]{elementName,
                 fLimitAnalyzer.getTotalValue(Limit.MAX_ELEMENT_DEPTH_LIMIT),
                 fSecurityManager.getLimit(Limit.MAX_ELEMENT_DEPTH_LIMIT),
-                "maxElementDepth"});
+                Limit.MAX_ELEMENT_DEPTH_LIMIT.systemProperty()});
         }
     }
 

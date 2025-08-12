@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ import java.awt.image.LookupTable;
 import java.awt.image.RasterOp;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class provides a hook to access platform-specific
@@ -51,7 +49,7 @@ import java.security.PrivilegedAction;
  * (in which case our java code will be executed) or may throw
  * an exception.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings("restricted")
 public class ImagingLib {
 
     static boolean useLib = true;
@@ -90,22 +88,14 @@ public class ImagingLib {
 
     static {
 
-        PrivilegedAction<Boolean> doMlibInitialization =
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    String arch = System.getProperty("os.arch");
+        boolean success = false;
+        try {
+            System.loadLibrary("mlib_image");
+            success = init();
+        } catch (UnsatisfiedLinkError e) {
+        }
 
-                    try {
-                        System.loadLibrary("mlib_image");
-                    } catch (UnsatisfiedLinkError e) {
-                        return Boolean.FALSE;
-                    }
-                    boolean success = init();
-                    return Boolean.valueOf(success);
-                }
-            };
-
-        useLib = AccessController.doPrivileged(doMlibInitialization);
+        useLib = success;
 
         //
         // Cache the class references of the operations we know about

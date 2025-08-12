@@ -435,7 +435,7 @@ enum NumberType {
         this.rndFnc = rndFnc;
     }
 
-    public String getСType() {
+    public String getCType() {
         return cType;
     }
 
@@ -443,7 +443,7 @@ enum NumberType {
         return jType;
     }
 
-    public String getСConv() {
+    public String getCConv() {
         return cConv;
     }
 
@@ -792,9 +792,9 @@ class ParameterListGenerator {
 
             String randomVal = list.get(type).getFnc();
 
-            String ctype = list.get(type).getСType();
+            String ctype = list.get(type).getCType();
             String jtype = list.get(type).getJType();
-            String cconv = list.get(type).getСConv();
+            String cconv = list.get(type).getCConv();
             String jconv = list.get(type).getJConv();
 
             String varName = "p" + cnt;

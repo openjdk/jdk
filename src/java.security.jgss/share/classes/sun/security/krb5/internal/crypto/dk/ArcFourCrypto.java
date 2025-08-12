@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,6 @@ public class ArcFourCrypto extends DkCrypto {
             MessageDigest md = sun.security.provider.MD4.getInstance();
             md.update(passwd);
             digest = md.digest();
-        } catch (Exception e) {
-            return null;
         } finally {
             if (passwd != null) {
                 Arrays.fill(passwd, (byte)0);
@@ -140,7 +138,7 @@ public class ArcFourCrypto extends DkCrypto {
         int start, int len) throws GeneralSecurityException {
 
         if (debug) {
-            System.out.println("ARCFOUR: calculateChecksum with usage = " +
+            System.err.println("ARCFOUR: calculateChecksum with usage = " +
                                                 usage);
         }
 
@@ -258,7 +256,7 @@ public class ArcFourCrypto extends DkCrypto {
         }
 
         if (debug) {
-            System.out.println("ArcFour: ENCRYPT with key usage = " + usage);
+            System.err.println("ArcFour: ENCRYPT with key usage = " + usage);
         }
 
         // get the confounder
@@ -313,7 +311,7 @@ public class ArcFourCrypto extends DkCrypto {
         }
 
         if (debug) {
-            System.out.println("\nARCFOUR: encryptRaw with usage = " + usage);
+            System.err.println("\nARCFOUR: encryptRaw with usage = " + usage);
         }
 
         // Derive encryption key for data
@@ -352,7 +350,7 @@ public class ArcFourCrypto extends DkCrypto {
                                                 + usage);
         }
         if (debug) {
-            System.out.println("\nARCFOUR: DECRYPT using key usage = " + usage);
+            System.err.println("\nARCFOUR: DECRYPT using key usage = " + usage);
         }
 
         // compute K1
@@ -424,7 +422,7 @@ public class ArcFourCrypto extends DkCrypto {
                                                 + usage);
         }
         if (debug) {
-            System.out.println("\nARCFOUR: decryptRaw with usage = " + usage);
+            System.err.println("\nARCFOUR: decryptRaw with usage = " + usage);
         }
 
         // Derive encryption key for data

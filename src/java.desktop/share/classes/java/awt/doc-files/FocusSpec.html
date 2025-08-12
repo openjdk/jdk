@@ -5,7 +5,7 @@
   <title>The AWT Focus Subsystem</title>
 </head>
 <!--
- Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@
       across platforms.  This document has the following sections:
     <ul>
       <li><a href=#Overview>Overview of KeyboardFocusManager</a>
-      <li><a href=#BrowserContexts>KeyboardFocusManager and Browser Contexts</a>
       <li><a href=#KeyEventDispatcher>KeyEventDispatcher</a>
       <li><a href=#FocusEventAndWindowEvent>FocusEvent and WindowEvent</a>
       <li><a href=#EventDelivery>Event Delivery</a>
@@ -211,22 +210,6 @@
 
 <code>KeyboardFocusManager</code> is an abstract class. AWT provides a default
 implementation in the <code>DefaultKeyboardFocusManager</code> class.
-
-
-<a id="BrowserContexts"></a>
-<h2>KeyboardFocusManager and Browser Contexts</h2>
-<p>
-Some browsers partition applets in different code bases into separate
-contexts, and establish walls between these contexts. Each thread and
-each Component is associated with a particular context and cannot
-interfere with threads or access Components in other contexts. In such
-a scenario, there will be one KeyboardFocusManager per context. Other
-browsers place all applets into the same context, implying that there
-will be only a single, global KeyboardFocusManager for all
-applets. This behavior is implementation-dependent. Consult your
-browser's documentation for more information. No matter how many
-contexts there may be, however, there can never be more than one focus
-owner, focused Window, or active Window, per ClassLoader.
 
 
 <a id="KeyEventDispatcher"></a>
@@ -986,8 +969,6 @@ A <code>PropertyChangeListener</code> installed on the current
 the <code>KeyboardFocusManager</code>'s context, even though the
 focus owner, focused Window, active Window, and current focus cycle
 root comprise the global focus state shared by all contexts.
-We believe this is less intrusive than requiring client code to pass
-a security check before installing a <code>PropertyChangeListener</code>.
 <p>
 Component supports the following focus-related properties:
 
@@ -1194,26 +1175,6 @@ Developers are encouraged to use KeyEventDispatchers,
 KeyEventPostProcessors, FocusTraversalPolicies,
 VetoableChangeListeners, and other concepts discussed in this document
 before resorting to a full replacement of the <code>KeyboardFocusManager</code>.
-<p>
-First note that, because unhindered access to Components in other
-contexts represents a security hole, the SecurityManager must grant a
-new permission, "replaceKeyboardFocusManager", before client code is
-permitted to replace the <code>KeyboardFocusManager</code> with an arbitrary
-subclass instance. Because of the security check, replacing the
-<code>KeyboardFocusManager</code> is not an option for applications that will be
-deployed in environments with a SecurityManager, such as applets in a
-browser.
-<p>
-Once installed, a <code>KeyboardFocusManager</code> instance has
-access to the global focus state via a set of protected functions.
-The <code>KeyboardFocusManager</code> can only call these functions
-if it is installed in the calling thread's context. This ensures
-that malicious code cannot circumvent the security check in
-<code>KeyboardFocusManager.setCurrentFocusManager</code>.
-A <code>KeyboardFocusManager</code> should always work with
-the global focus state instead of the context focus state.
-Failure to do this will lead to incorrect behavior of the
-<code>KeyboardFocusManager</code>.
 <p>
 The primary responsibility of a <code>KeyboardFocusManager</code>
 is the dispatch of the following events:

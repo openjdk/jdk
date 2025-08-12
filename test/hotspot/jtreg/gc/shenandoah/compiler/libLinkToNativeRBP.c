@@ -21,11 +21,7 @@
  * questions.
  */
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+#include "export.h"
 
 EXPORT int foo() {
   return 0;

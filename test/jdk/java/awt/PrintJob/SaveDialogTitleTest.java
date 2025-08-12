@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4851363 8025988 8025990
+ * @key printer
  * @summary Tests the save to file dialog has a title.
  * @run main/manual=yesno/othervm SaveDialogTitleTest
  */

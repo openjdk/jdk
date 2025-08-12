@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ public class MetaspaceTestContext {
 
     HashSet<MetaspaceTestArena> arenaList = new HashSet<>();
 
-    long allocatedWords;
+    long allocatedBytes;
     long numAllocated;
-    long deallocatedWords;
+    long deallocatedBytes;
     long numDeallocated;
     long allocationFailures;
 
@@ -101,20 +101,20 @@ public class MetaspaceTestContext {
         }
     }
 
-    public long committedWords() {
+    public long committedBytes() {
         long l = 0;
         if (context != 0) {
             WhiteBox wb = WhiteBox.getWhiteBox();
-            l = wb.getTotalCommittedWordsInMetaspaceTestContext(context);
+            l = wb.getTotalCommittedBytesInMetaspaceTestContext(context);
         }
         return l;
     }
 
-    public long usedWords() {
+    public long usedBytes() {
         long l = 0;
         if (context != 0) {
             WhiteBox wb = WhiteBox.getWhiteBox();
-            l = wb.getTotalUsedWordsInMetaspaceTestContext(context);
+            l = wb.getTotalUsedBytesInMetaspaceTestContext(context);
         }
         return l;
     }
@@ -124,10 +124,10 @@ public class MetaspaceTestContext {
     }
 
     public void updateTotals() {
-        allocatedWords = deallocatedWords = numAllocated = numDeallocated = 0;
+        allocatedBytes = deallocatedBytes = numAllocated = numDeallocated = 0;
         for (MetaspaceTestArena a : arenaList) {
-            allocatedWords += a.allocatedWords;
-            deallocatedWords += a.deallocatedWords;
+            allocatedBytes += a.allocatedBytes;
+            deallocatedBytes += a.deallocatedBytes;
             numAllocated += a.numAllocated;
             numDeallocated += a.numDeallocated;
             allocationFailures += a.numAllocationFailures;
@@ -159,17 +159,17 @@ public class MetaspaceTestContext {
 
         updateTotals();
 
-        long usageMeasured = usedWords();
-        long committedMeasured = committedWords();
+        long usageMeasured = usedBytes();
+        long committedMeasured = committedBytes();
 
-        System.out.println("context used words " + usageMeasured + ", committed words " + committedMeasured
+        System.out.println("context used bytes " + usageMeasured + ", committed bytes " + committedMeasured
                 + ".");
 
         if (usageMeasured > committedMeasured) {
             throw new RuntimeException("Weirdness.");
         }
 
-        if (deallocatedWords > allocatedWords) {
+        if (deallocatedBytes > allocatedBytes) {
             throw new RuntimeException("Weirdness.");
         }
 
@@ -183,34 +183,28 @@ public class MetaspaceTestContext {
             }
         }
 
-        long expectedMinUsage = allocatedWords - deallocatedWords;
+        long expectedMinUsage = allocatedBytes - deallocatedBytes;
 
         if (usageMeasured < expectedMinUsage) {
             throw new RuntimeException("Usage too low: " + usageMeasured + " expected at least " + expectedMinUsage);
         }
 
-        long expectedMaxUsage = allocatedWords;
+        long expectedMaxUsage = allocatedBytes;
 
         // This is necessary a bit fuzzy, since Metaspace usage consists of:
         // - whatever we allocated
         // - deallocated blocks in fbl
         // - remains of retired chunks in fbl
-        // - overhead per allocation (padding for alignment, possibly allocation guards)
+        // - overhead per allocation (padding for alignment)
 
         // Overhead per allocation (see metaspaceArena.cpp, get_raw_allocation_word_size() )
         // Any allocation is 3 words least
-        expectedMaxUsage += (numAllocated * 3);
-        if (Settings.settings().usesAllocationGuards) {
-            // Guards need space.
-            expectedMaxUsage += (numAllocated * 2);
-            // Also, they disable the fbl, so deallocated still counts as used.
-            expectedMaxUsage += deallocatedWords;
-        }
+        expectedMaxUsage += (numAllocated * 3 * Settings.WORD_SIZE);
 
         // Lets add a overhead per arena. Each arena carries a free block list containing
         // deallocated/retired blocks. We do not know how much. In general, the free block list should not
         // accumulate a lot of memory but be drained in the course of allocating memory from the arena.
-        long overheadPerArena = 1024 * 1024 * numLiveArenas();
+        long overheadPerArena = 1024 * 1024 * numLiveArenas() * Settings.WORD_SIZE;
         expectedMaxUsage += overheadPerArena;
 
         if (expectedMaxUsage < usageMeasured) {
@@ -235,7 +229,7 @@ public class MetaspaceTestContext {
         // are stress tests,
         //
         long expectedMaxCommitted = usageMeasured;
-        expectedMaxCommitted += Settings.rootChunkWordSize;
+        expectedMaxCommitted += Settings.ROOT_CHUNK_WORD_SIZE * Settings.WORD_SIZE;
         expectedMaxCommitted *= 10.0;
 
         if (committedMeasured > expectedMaxCommitted) {
@@ -253,9 +247,9 @@ public class MetaspaceTestContext {
                 ", numArenasCreated=" + numArenasCreated +
                 ", numArenasDestroyed=" + numArenasDestroyed +
                 ", numLiveArenas=" + numLiveArenas() +
-                ", allocatedWords=" + allocatedWords +
+                ", allocatedBytes=" + allocatedBytes +
                 ", numAllocated=" + numAllocated +
-                ", deallocatedWords=" + deallocatedWords +
+                ", deallocatedBytes=" + deallocatedBytes +
                 ", numDeallocated=" + numDeallocated +
                 ", allocationFailures=" + allocationFailures +
                 '}';

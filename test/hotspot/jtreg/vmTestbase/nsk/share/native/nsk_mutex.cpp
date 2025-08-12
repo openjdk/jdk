@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 #include <stdlib.h>
-#include "nsk_mutex.h"
+#include "nsk_mutex.hpp"
 
 extern "C" {
 
@@ -35,7 +35,7 @@ MUTEX* MUTEX_create()
         MUTEX* mutex = (MUTEX*)malloc(sizeof(pthread_mutex_t));
         if (mutex)
         {
-                pthread_mutex_init((pthread_mutex_t*)mutex, NULL);
+                pthread_mutex_init((pthread_mutex_t*)mutex, nullptr);
         }
         return mutex;
 }

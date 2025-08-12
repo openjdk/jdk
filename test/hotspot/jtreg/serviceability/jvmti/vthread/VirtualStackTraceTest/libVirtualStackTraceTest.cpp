@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -40,21 +40,21 @@ Java_VirtualStackTraceTest_getStackTrace(JNIEnv* jni, jclass clazz) {
   jobject visibleFrames[MAX_COUNT];
   jvmtiFrameInfo frameInfo[MAX_COUNT];
 
-  err = jvmti->GetStackTrace(NULL, 0, MAX_COUNT, frameInfo, &count);
+  err = jvmti->GetStackTrace(nullptr, 0, MAX_COUNT, frameInfo, &count);
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetStackTrace call");
 
   for (int idx = 0; idx < count; idx++) {
-    jclass declaringClass = NULL;
-    char *clasSignature = NULL;
-    char *methodName = NULL;
+    jclass declaringClass = nullptr;
+    char *clasSignature = nullptr;
+    char *methodName = nullptr;
 
     err = jvmti->GetMethodDeclaringClass(frameInfo[idx].method, &declaringClass);
     check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodDeclaringClass call");
 
-    err = jvmti->GetClassSignature(declaringClass, &clasSignature, NULL);
+    err = jvmti->GetClassSignature(declaringClass, &clasSignature, nullptr);
     check_jvmti_status(jni, err, "event handler: error in JVMTI GetClassSignature call");
 
-    err = jvmti->GetMethodName(frameInfo[idx].method, &methodName, NULL, NULL);
+    err = jvmti->GetMethodName(frameInfo[idx].method, &methodName, nullptr, nullptr);
     check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
 
     if (strchr(clasSignature, '.')) {
@@ -66,11 +66,11 @@ Java_VirtualStackTraceTest_getStackTrace(JNIEnv* jni, jclass clazz) {
     jvmti->Deallocate(reinterpret_cast<unsigned char*>(methodName));
     jvmti->Deallocate(reinterpret_cast<unsigned char*>(clasSignature));
   }
-  jobjectArray methodNames = jni->NewObjectArray(count - skipped, jni->FindClass("java/lang/String"), NULL);
+  jobjectArray methodNames = jni->NewObjectArray(count - skipped, jni->FindClass("java/lang/String"), nullptr);
   for (int idx = 0; idx < count - skipped; idx++) {
     jni->SetObjectArrayElement(methodNames, idx, visibleFrames[idx]);
   }
-  print_stack_trace(jvmti, jni, NULL);
+  print_stack_trace(jvmti, jni, nullptr);
 
   return methodNames;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestParamTaglet extends JavadocTester {
                     </dl>""",
                 """
                     <dt>Type Parameters:</dt>
-                    <dd><code>T2</code> - type 2</dd>
+                    <dd><span id="genericMethod(T1,T2,T3)-type-param-T2"><code>T2</code> - type 2</span></dd>
                     <dt>Parameters:</dt>
                     <dd><code>t1</code> - param 1</dd>
                     <dd><code>t3</code> - param 3</dd>
@@ -92,7 +92,7 @@ public class TestParamTaglet extends JavadocTester {
         checkOutput("pkg/C.Nested.html", true,
                 """
                     <dt>Type Parameters:</dt>
-                    <dd><code>T1</code> - type 1</dd>
+                    <dd><span id="type-param-T1"><code>T1</code> - type 1</span></dd>
                     </dl>""");
     }
 }

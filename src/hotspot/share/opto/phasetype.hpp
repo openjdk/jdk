@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,49 +25,110 @@
 #ifndef SHARE_OPTO_PHASETYPE_HPP
 #define SHARE_OPTO_PHASETYPE_HPP
 
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/stringUtils.hpp"
+
 #define COMPILER_PHASES(flags) \
-  flags(BEFORE_STRINGOPTS,            "Before StringOpts") \
-  flags(AFTER_STRINGOPTS,             "After StringOpts") \
-  flags(BEFORE_REMOVEUSELESS,         "Before RemoveUseless") \
-  flags(AFTER_PARSING,                "After Parsing") \
-  flags(ITER_GVN1,                    "Iter GVN 1") \
-  flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
-  flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
-  flags(INCREMENTAL_INLINE,           "Incremental Inline") \
-  flags(INCREMENTAL_BOXING_INLINE,    "Incremental Boxing Inline") \
-  flags(EXPAND_VUNBOX,                "Expand VectorUnbox") \
-  flags(SCALARIZE_VBOX,               "Scalarize VectorBox") \
-  flags(INLINE_VECTOR_REBOX,          "Inline Vector Rebox Calls") \
-  flags(EXPAND_VBOX,                  "Expand VectorBox") \
-  flags(ELIMINATE_VBOX_ALLOC,         "Eliminate VectorBoxAllocate") \
-  flags(ITER_GVN_BEFORE_EA,           "Iter GVN before EA") \
-  flags(ITER_GVN_AFTER_VECTOR,        "Iter GVN after vector box elimination") \
-  flags(BEFORE_BEAUTIFY_LOOPS,        "Before beautify loops") \
-  flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
-  flags(BEFORE_CLOOPS,                "Before CountedLoop") \
-  flags(AFTER_CLOOPS,                 "After CountedLoop") \
-  flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
-  flags(AFTER_EA,                     "After Escape Analysis") \
-  flags(ITER_GVN_AFTER_EA,            "Iter GVN after EA") \
-  flags(ITER_GVN_AFTER_ELIMINATION,   "Iter GVN after eliminating allocations and locks") \
-  flags(PHASEIDEALLOOP1,              "PhaseIdealLoop 1") \
-  flags(PHASEIDEALLOOP2,              "PhaseIdealLoop 2") \
-  flags(PHASEIDEALLOOP3,              "PhaseIdealLoop 3") \
-  flags(CCP1,                         "PhaseCCP 1") \
-  flags(ITER_GVN2,                    "Iter GVN 2") \
-  flags(PHASEIDEALLOOP_ITERATIONS,    "PhaseIdealLoop iterations") \
-  flags(MACRO_EXPANSION,              "Macro expand") \
-  flags(BARRIER_EXPANSION,            "Barrier expand") \
-  flags(OPTIMIZE_FINISHED,            "Optimize finished") \
-  flags(BEFORE_MATCHING,              "Before matching") \
-  flags(MATCHING,                     "After matching") \
-  flags(GLOBAL_CODE_MOTION,           "Global code motion") \
-  flags(MACH_ANALYSIS,                "After mach analysis") \
-  flags(FINAL_CODE,                   "Final Code") \
-  flags(END,                          "End") \
-  flags(FAILURE,                      "Failure") \
-  flags(ALL,                          "All") \
-  flags(DEBUG,                        "Debug")
+  flags(BEFORE_STRINGOPTS,              "Before StringOpts") \
+  flags(AFTER_STRINGOPTS,               "After StringOpts") \
+  flags(BEFORE_REMOVEUSELESS,           "Before RemoveUseless") \
+  flags(AFTER_PARSING,                  "After Parsing") \
+  flags(BEFORE_ITER_GVN,                "Before Iter GVN") \
+  flags(ITER_GVN1,                      "Iter GVN 1") \
+  flags(AFTER_ITER_GVN_STEP,            "After Iter GVN Step") \
+  flags(AFTER_ITER_GVN,                 "After Iter GVN") \
+  flags(INCREMENTAL_INLINE_STEP,        "Incremental Inline Step") \
+  flags(INCREMENTAL_INLINE_CLEANUP,     "Incremental Inline Cleanup") \
+  flags(INCREMENTAL_INLINE,             "Incremental Inline") \
+  flags(INCREMENTAL_BOXING_INLINE,      "Incremental Boxing Inline") \
+  flags(EXPAND_VUNBOX,                  "Expand VectorUnbox") \
+  flags(SCALARIZE_VBOX,                 "Scalarize VectorBox") \
+  flags(INLINE_VECTOR_REBOX,            "Inline Vector Rebox Calls") \
+  flags(EXPAND_VBOX,                    "Expand VectorBox") \
+  flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
+  flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
+  flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
+  flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
+  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                       "After Escape Analysis") \
+  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
+  flags(BEFORE_BEAUTIFY_LOOPS,          "Before Beautify Loops") \
+  flags(AFTER_BEAUTIFY_LOOPS,           "After Beautify Loops") \
+  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                   "After CountedLoop") \
+  flags(BEFORE_SPLIT_IF,                "Before Split-If") \
+  flags(AFTER_SPLIT_IF,                 "After Split-If") \
+  flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
+  flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After Loop Predication RC") \
+  flags(BEFORE_PARTIAL_PEELING,         "Before Partial Peeling") \
+  flags(AFTER_PARTIAL_PEELING,          "After Partial Peeling") \
+  flags(BEFORE_LOOP_PEELING,            "Before Loop Peeling") \
+  flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
+  flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
+  flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_LOOP_MULTIVERSIONING,    "Before Loop Multiversioning") \
+  flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
+  flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
+  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after Eliminating Allocations and Locks") \
+  flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
+  flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
+  flags(BEFORE_POST_LOOP,               "Before Post Loop") \
+  flags(AFTER_POST_LOOP,                "After Post Loop") \
+  flags(BEFORE_REMOVE_EMPTY_LOOP,       "Before Remove Empty Loop") \
+  flags(AFTER_REMOVE_EMPTY_LOOP,        "After Remove Empty Loop") \
+  flags(BEFORE_ONE_ITERATION_LOOP,      "Before Replace One-Iteration Loop") \
+  flags(AFTER_ONE_ITERATION_LOOP,       "After Replace One-Iteration Loop") \
+  flags(BEFORE_DUPLICATE_LOOP_BACKEDGE, "Before Duplicate Loop Backedge") \
+  flags(AFTER_DUPLICATE_LOOP_BACKEDGE,  "After Duplicate Loop Backedge") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
+  flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
+  flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, after Adjusting Pre-loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, after Adding Speculative Runtime Checks") \
+  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, after Apply") \
+  flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
+  flags(CCP1,                           "PhaseCCP 1") \
+  flags(ITER_GVN2,                      "Iter GVN 2") \
+  flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(AFTER_LOOP_OPTS,                "After Loop Optimizations") \
+  flags(AFTER_MERGE_STORES,             "After Merge Stores") \
+  flags(AFTER_MACRO_ELIMINATION_STEP,   "After Macro Elimination Step") \
+  flags(AFTER_MACRO_ELIMINATION,        "After Macro Elimination") \
+  flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
+  flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
+  flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
+  flags(BARRIER_EXPANSION,              "Barrier Expand") \
+  flags(OPTIMIZE_FINISHED,              "Optimize Finished") \
+  flags(BEFORE_MATCHING,                "Before Matching") \
+  flags(MATCHING,                       "After Matching") \
+  flags(GLOBAL_CODE_MOTION,             "Global Code Motion") \
+  flags(INITIAL_LIVENESS,               "Initial Liveness") \
+  flags(LIVE_RANGE_STRETCHING,          "Live Range Stretching") \
+  flags(AGGRESSIVE_COALESCING,          "Aggressive Coalescing") \
+  flags(INITIAL_SPILLING,               "Initial Spilling") \
+  flags(CONSERVATIVE_COALESCING,        "Conservative Coalescing") \
+  flags(ITERATIVE_SPILLING,             "Iterative Spilling") \
+  flags(AFTER_ITERATIVE_SPILLING,       "After Iterative Spilling") \
+  flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation Copy Removal") \
+  flags(MERGE_MULTI_DEFS,               "Merge Multiple Definitions") \
+  flags(FIX_UP_SPILLS,                  "Fix up Spills") \
+  flags(REGISTER_ALLOCATION,            "Register Allocation") \
+  flags(BLOCK_ORDERING,                 "Block Ordering") \
+  flags(PEEPHOLE,                       "Peephole") \
+  flags(POSTALLOC_EXPAND,               "Post-allocation Expand") \
+  flags(MACH_ANALYSIS,                  "After Mach Analysis") \
+  flags(FINAL_CODE,                     "Final Code") \
+  flags(END,                            "End") \
+  flags(FAILURE,                        "Failure") \
+  flags(ALL,                            "All") \
+  flags(DEBUG,                          "Debug")
 
 #define table_entry(name, description) PHASE_##name,
 enum CompilerPhaseType {
@@ -97,9 +158,6 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
-  static uint64_t to_bitmask(CompilerPhaseType cpt) {
-    return (UINT64_C(1) << cpt);
-  }
 };
 
 static CompilerPhaseType find_phase(const char* str) {
@@ -111,55 +169,19 @@ static CompilerPhaseType find_phase(const char* str) {
   return PHASE_NONE;
 }
 
-class PhaseNameIter {
- private:
-  char* _token;
-  char* _saved_ptr;
-  char* _list;
-
- public:
-  PhaseNameIter(ccstrlist option) {
-    _list = (char*) canonicalize(option);
-    _saved_ptr = _list;
-    _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-  }
-
-  ~PhaseNameIter() {
-    FREE_C_HEAP_ARRAY(char, _list);
-  }
-
-  const char* operator*() const { return _token; }
-
-  PhaseNameIter& operator++() {
-    _token = strtok_r(nullptr, ",", &_saved_ptr);
-    return *this;
-  }
-
-  ccstrlist canonicalize(ccstrlist option_value) {
-    char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
-    int i = 0;
-    char current;
-    while ((current = option_value[i]) != '\0') {
-      if (current == '\n' || current == ' ') {
-        canonicalized_list[i] = ',';
-      } else {
-        canonicalized_list[i] = current;
-      }
-      i++;
-    }
-    canonicalized_list[i] = '\0';
-    return canonicalized_list;
-  }
-};
-
 class PhaseNameValidator {
  private:
+  CHeapBitMap _phase_name_set;
   bool _valid;
   char* _bad;
 
  public:
-  PhaseNameValidator(ccstrlist option, uint64_t& mask) : _valid(true), _bad(nullptr) {
-    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
+  PhaseNameValidator(ccstrlist option) :
+    _phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+    _valid(true),
+    _bad(nullptr)
+  {
+    for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
       if (PHASE_NONE == cpt) {
@@ -169,10 +191,10 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        mask = ~(UINT64_C(0));
+        _phase_name_set.set_range(0, PHASE_NUM_TYPES);
       } else {
-        assert(cpt < 64, "out of bounds");
-        mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
+        assert(cpt < PHASE_NUM_TYPES, "out of bounds");
+        _phase_name_set.set_bit(cpt);
       }
     }
   }
@@ -181,6 +203,11 @@ class PhaseNameValidator {
     if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
+  }
+
+  const BitMap& phase_name_set() const {
+    assert(is_valid(), "Use of invalid phase name set");
+    return _phase_name_set;
   }
 
   bool is_valid() const {

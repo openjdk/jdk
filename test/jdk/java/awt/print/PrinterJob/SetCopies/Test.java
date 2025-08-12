@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4694495
+ * @key printer
  * @summary Check that the dialog shows copies = 3.
  * @run main/manual Test
  */

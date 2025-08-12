@@ -32,6 +32,8 @@ import java.io.PrintWriter;
  * compiler, javac.
  * See the <a href="{@docRoot}/jdk.compiler/module-summary.html">{@code jdk.compiler}</a>
  * module for details on replacement APIs.
+ *
+ * @since 1.5
  */
 public class Main {
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
     }
 
     public void formatted(Format.Field attr, Object value, int start, int end,
-                          StringBuffer buffer) {
+                          Format.StringBuf buffer) {
         if (start != end) {
             if (start < size) {
                 // Adjust attributes of existing runs
@@ -93,7 +93,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
     }
 
     public void formatted(int fieldID, Format.Field attr, Object value,
-                          int start, int end, StringBuffer buffer) {
+                          int start, int end, Format.StringBuf buffer) {
         formatted(attr, value, start, end, buffer);
     }
 

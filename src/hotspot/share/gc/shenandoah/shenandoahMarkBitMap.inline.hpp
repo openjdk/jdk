@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 
@@ -205,4 +205,4 @@ inline void ShenandoahMarkBitMap::clear_range_of_words(idx_t beg, idx_t end) {
 }
 
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP

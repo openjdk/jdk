@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 4892913
  * @summary     Subject.getPrivateCredentials not thread-safe against changes to
  *              principals
- * @run main/othervm/policy=Synch2.policy Synch2
  */
 
 import java.util.Iterator;
@@ -37,7 +36,6 @@ import javax.security.auth.x500.X500Principal;
 public class Synch2 {
     static volatile boolean finished = false;
     public static void main(String[] args) {
-        System.setSecurityManager(new SecurityManager());
         Subject subject = new Subject();
         final Set principals = subject.getPrincipals();
         principals.add(new X500Principal("CN=Alice"));

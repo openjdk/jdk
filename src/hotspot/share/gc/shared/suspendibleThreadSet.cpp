@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/javaThread.hpp"
@@ -91,7 +90,6 @@ void SuspendibleThreadSet::yield_slow() {
 }
 
 void SuspendibleThreadSet::synchronize() {
-  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   if (ConcGCYieldTimeout > 0) {
     _suspend_all_start = os::elapsedTime();
   }
@@ -126,7 +124,6 @@ void SuspendibleThreadSet::synchronize() {
 }
 
 void SuspendibleThreadSet::desynchronize() {
-  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");

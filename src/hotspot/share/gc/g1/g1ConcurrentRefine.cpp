@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -39,6 +38,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <math.h>
 
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread(uint worker_id, bool initializing) {
@@ -58,56 +58,46 @@ G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thr
   return result;
 }
 
-G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl() :
+G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl(uint max_num_threads) :
   _cr(nullptr),
-  _threads(nullptr),
-  _max_num_threads(0)
+  _threads(max_num_threads)
 {}
 
 G1ConcurrentRefineThreadControl::~G1ConcurrentRefineThreadControl() {
-  if (_threads != nullptr) {
-    for (uint i = 0; i < _max_num_threads; i++) {
-      G1ConcurrentRefineThread* t = _threads[i];
-      if (t == nullptr) {
-#ifdef ASSERT
-        for (uint j = i + 1; j < _max_num_threads; ++j) {
-          assert(_threads[j] == nullptr, "invariant");
-        }
-#endif // ASSERT
-        break;
-      } else {
-        delete t;
-      }
-    }
-    FREE_C_HEAP_ARRAY(G1ConcurrentRefineThread*, _threads);
+  while (_threads.is_nonempty()) {
+    delete _threads.pop();
   }
 }
 
-jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint max_num_threads) {
-  assert(cr != NULL, "G1ConcurrentRefine must not be NULL");
+bool G1ConcurrentRefineThreadControl::ensure_threads_created(uint worker_id, bool initializing) {
+  assert(worker_id < max_num_threads(), "precondition");
+
+  while ((uint)_threads.length() <= worker_id) {
+    G1ConcurrentRefineThread* rt = create_refinement_thread(_threads.length(), initializing);
+    if (rt == nullptr) {
+      return false;
+    }
+    _threads.push(rt);
+  }
+
+  return true;
+}
+
+jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
+  assert(cr != nullptr, "G1ConcurrentRefine must not be null");
   _cr = cr;
-  _max_num_threads = max_num_threads;
 
-  if (max_num_threads > 0) {
-    _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, max_num_threads, mtGC);
-
-    _threads[0] = create_refinement_thread(0, true);
-    if (_threads[0] == nullptr) {
+  if (max_num_threads() > 0) {
+    _threads.push(create_refinement_thread(0, true));
+    if (_threads.at(0) == nullptr) {
       vm_shutdown_during_initialization("Could not allocate primary refinement thread");
       return JNI_ENOMEM;
     }
 
-    if (UseDynamicNumberOfGCThreads) {
-      for (uint i = 1; i < max_num_threads; ++i) {
-        _threads[i] = nullptr;
-      }
-    } else {
-      for (uint i = 1; i < max_num_threads; ++i) {
-        _threads[i] = create_refinement_thread(i, true);
-        if (_threads[i] == nullptr) {
-          vm_shutdown_during_initialization("Could not allocate refinement threads.");
-          return JNI_ENOMEM;
-        }
+    if (!UseDynamicNumberOfGCThreads) {
+      if (!ensure_threads_created(max_num_threads() - 1, true)) {
+        vm_shutdown_during_initialization("Could not allocate refinement threads");
+        return JNI_ENOMEM;
       }
     }
   }
@@ -117,38 +107,28 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
 
 #ifdef ASSERT
 void G1ConcurrentRefineThreadControl::assert_current_thread_is_primary_refinement_thread() const {
-  assert(_threads != nullptr, "No threads");
-  assert(Thread::current() == _threads[0], "Not primary thread");
+  assert(Thread::current() == _threads.at(0), "Not primary thread");
 }
 #endif // ASSERT
 
 bool G1ConcurrentRefineThreadControl::activate(uint worker_id) {
-  assert(worker_id < _max_num_threads, "precondition");
-  G1ConcurrentRefineThread* thread_to_activate = _threads[worker_id];
-  if (thread_to_activate == nullptr) {
-    thread_to_activate = create_refinement_thread(worker_id, false);
-    if (thread_to_activate == nullptr) {
-      return false;
-    }
-    _threads[worker_id] = thread_to_activate;
+  if (ensure_threads_created(worker_id, false)) {
+    _threads.at(worker_id)->activate();
+    return true;
   }
-  thread_to_activate->activate();
-  return true;
+
+  return false;
 }
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
-  for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != NULL) {
-      tc->do_thread(_threads[i]);
-    }
+  for (G1ConcurrentRefineThread* t : _threads) {
+    tc->do_thread(t);
   }
 }
 
 void G1ConcurrentRefineThreadControl::stop() {
-  for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != NULL) {
-      _threads[i]->stop();
-    }
+  for (G1ConcurrentRefineThread* t : _threads) {
+    t->stop();
   }
 }
 
@@ -170,12 +150,12 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1Policy* policy) :
   _last_adjust(),
   _needs_adjust(false),
   _threads_needed(policy, adjust_threads_period_ms()),
-  _thread_control(),
+  _thread_control(G1ConcRefinementThreads),
   _dcqs(G1BarrierSet::dirty_card_queue_set())
 {}
 
 jint G1ConcurrentRefine::initialize() {
-  return _thread_control.initialize(this, max_num_threads());
+  return _thread_control.initialize(this);
 }
 
 G1ConcurrentRefine* G1ConcurrentRefine::create(G1Policy* policy, jint* ecode) {
@@ -197,10 +177,6 @@ G1ConcurrentRefine::~G1ConcurrentRefine() {
 
 void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
   _thread_control.worker_threads_do(tc);
-}
-
-uint G1ConcurrentRefine::max_num_threads() {
-  return G1ConcRefinementThreads;
 }
 
 void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,
@@ -277,24 +253,23 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   }
 }
 
-class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
-  G1CollectionSet* _cset;
-  size_t _sampled_rs_length;
+class G1ConcurrentRefine::RemSetSamplingClosure : public G1HeapRegionClosure {
+  size_t _sampled_code_root_rs_length;
 
 public:
-  explicit RemSetSamplingClosure(G1CollectionSet* cset) :
-    _cset(cset), _sampled_rs_length(0) {}
+  RemSetSamplingClosure() :
+    _sampled_code_root_rs_length(0) {}
 
-  bool do_heap_region(HeapRegion* r) override {
-    size_t rs_length = r->rem_set()->occupied();
-    _sampled_rs_length += rs_length;
+  bool do_heap_region(G1HeapRegion* r) override {
+    G1HeapRegionRemSet* rem_set = r->rem_set();
+    _sampled_code_root_rs_length += rem_set->code_roots_list_length();
     return false;
   }
 
-  size_t sampled_rs_length() const { return _sampled_rs_length; }
+  size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-// Adjust the target length (in regions) of the young gen, based on the the
+// Adjust the target length (in regions) of the young gen, based on the
 // current length of the remembered sets.
 //
 // At the end of the GC G1 determines the length of the young gen based on
@@ -308,10 +283,15 @@ public:
 // gen size to keep pause time length goal.
 void G1ConcurrentRefine::adjust_young_list_target_length() {
   if (_policy->use_adaptive_young_list_length()) {
-    G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
-    RemSetSamplingClosure cl{cset};
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    G1CollectionSet* cset = g1h->collection_set();
+    RemSetSamplingClosure cl;
     cset->iterate(&cl);
-    _policy->revise_young_list_target_length(cl.sampled_rs_length());
+
+    size_t card_rs_length = g1h->young_regions_cardset()->occupied();
+
+    size_t sampled_code_root_rs_length = cl.sampled_code_root_rs_length();
+    _policy->revise_young_list_target_length(card_rs_length, sampled_code_root_rs_length);
   }
 }
 
@@ -338,7 +318,7 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
       size_t used_bytes = _policy->estimate_used_young_bytes_locked();
       Heap_lock->unlock();
       adjust_young_list_target_length();
-      size_t young_bytes = _policy->young_list_target_length() * HeapRegion::GrainBytes;
+      size_t young_bytes = _policy->young_list_target_length() * G1HeapRegion::GrainBytes;
       size_t available_bytes = young_bytes - MIN2(young_bytes, used_bytes);
       adjust_threads_wanted(available_bytes);
       _needs_adjust = false;

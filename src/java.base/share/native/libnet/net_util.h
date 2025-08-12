@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,14 +155,13 @@ int NET_IsEqual(jbyte* caddr1, jbyte* caddr2);
 
 int NET_IsZeroAddr(jbyte* caddr);
 
+int NET_PlatformInit();
+
 /* Socket operations
  *
  * These work just like the system calls, except that they may do some
  * platform-specific pre/post processing of the arguments and/or results.
  */
-
-JNIEXPORT int JNICALL
-NET_SocketAvailable(int fd, int *pbytes);
 
 JNIEXPORT int JNICALL
 NET_GetSockOpt(int fd, int level, int opt, void *result, int *len);
@@ -172,12 +171,6 @@ NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 
 JNIEXPORT int JNICALL
 NET_Bind(int fd, SOCKETADDRESS *sa, int len);
-
-JNIEXPORT int JNICALL
-NET_MapSocketOption(jint cmd, int *level, int *optname);
-
-JNIEXPORT int JNICALL
-NET_MapSocketOptionV6(jint cmd, int *level, int *optname);
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd);
@@ -189,5 +182,12 @@ jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 int lookupCharacteristicsToAddressFamily(int characteristics);
 
 int addressesInSystemOrder(int characteristics);
+
+/* return codes */
+#define ENH_INIT_ERROR -1  /* initialization error: check exceptions */
+#define ENH_DISABLED    0  /* enhanced exceptions disabled */
+#define ENH_ENABLED     1  /* enhanced exceptions enabled */
+
+int getEnhancedExceptionsAllowed(JNIEnv *env);
 
 #endif /* NET_UTILS_H */

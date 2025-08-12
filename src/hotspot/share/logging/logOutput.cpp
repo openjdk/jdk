@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -65,8 +64,8 @@ void LogOutput::add_to_config_string(const LogSelection& selection) {
 }
 
 
-static int tag_cmp(const void *a, const void *b) {
-  return static_cast<const LogTagType*>(a) - static_cast<const LogTagType*>(b);
+static int tag_cmp(const LogTagType *a, const LogTagType *b) {
+  return primitive_compare(a, b);
 }
 
 static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
@@ -74,7 +73,7 @@ static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
   while (tags[ntags] != LogTag::__NO_TAG) {
     ntags++;
   }
-  qsort(tags, ntags, sizeof(*tags), tag_cmp);
+  qsort(tags, ntags, sizeof(*tags), (_sort_Fn)tag_cmp);
 }
 
 static const size_t MaxSubsets = 1 << LogTag::MaxTags;
@@ -354,7 +353,9 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
       }
       break;
     }
-    pos = comma_pos + 1;
+    if (comma_pos != nullptr) {
+      pos = comma_pos + 1;
+    }
   } while (comma_pos != nullptr);
 
   os::free(opts);

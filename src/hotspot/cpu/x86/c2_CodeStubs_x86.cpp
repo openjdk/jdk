@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -35,7 +35,7 @@ int C2SafepointPollStub::max_size() const {
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -43,22 +43,8 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
 
   __ bind(entry());
   InternalAddress safepoint_pc(masm.pc() - masm.offset() + _safepoint_offset);
-#ifdef _LP64
   __ lea(rscratch1, safepoint_pc);
   __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
-#else
-  const Register tmp1 = rcx;
-  const Register tmp2 = rdx;
-  __ push(tmp1);
-  __ push(tmp2);
-
-  __ lea(tmp1, safepoint_pc);
-  __ get_thread(tmp2);
-  __ movptr(Address(tmp2, JavaThread::saved_exception_pc_offset()), tmp1);
-
-  __ pop(tmp2);
-  __ pop(tmp1);
-#endif
   __ jump(callback_addr);
 }
 
@@ -68,8 +54,29 @@ int C2EntryBarrierStub::max_size() const {
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
   __ jmp(continuation(), false /* maybe_short */);
+}
+
+int C2FastUnlockLightweightStub::max_size() const {
+  return 128;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+  assert(_t == rax, "must be");
+
+  { // Restore lock-stack and handle the unlock in runtime.
+
+    __ bind(_push_and_slow_path);
+#ifdef ASSERT
+    // The obj was only cleared in debug.
+    __ movl(_t, Address(_thread, JavaThread::lock_stack_top_offset()));
+    __ movptr(Address(_thread, _t), _obj);
+#endif
+    __ addl(Address(_thread, JavaThread::lock_stack_top_offset()), oopSize);
+    // addl will always result in ZF = 0 (no overflows).
+    __ jmp(slow_path_continuation());
+  }
 }
 
 #undef __

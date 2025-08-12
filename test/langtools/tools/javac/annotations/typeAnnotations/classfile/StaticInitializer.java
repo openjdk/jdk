@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 import java.lang.annotation.*;
 import java.util.ArrayList;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test
  * @bug 8136419 8200301
  * @summary test that type annotations on entities in static initializers are emitted to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -XDdeduplicateLambdas=false StaticInitializer.java
  * @run main StaticInitializer
  */
@@ -44,13 +43,13 @@ public class StaticInitializer extends ClassfileTestHelper {
         expected_tinvisibles = 4;
         expected_tvisibles = 0;
 
-        ClassFile cf = getClassFile("StaticInitializer$Test.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("StaticInitializer$Test.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m, true);
+        for (MethodModel mm: cm.methods()) {
+            test(mm, true);
         }
 
         countAnnotations();

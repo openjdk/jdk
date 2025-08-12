@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
  * @bug 8008762
  * @summary Type annotation on inner class in anonymous class
  *          shows up as regular annotation
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 
 public class T8008762 extends ClassfileTestHelper{
     public static void main(String[] args) throws Exception {
@@ -43,13 +42,13 @@ public class T8008762 extends ClassfileTestHelper{
         expected_tinvisibles = 0;
         expected_tvisibles = 4;
 
-        ClassFile cf = getClassFile("T8008762$Test$1$InnerAnon.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f, false);
+        ClassModel cm = getClassFile("T8008762$Test$1$InnerAnon.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm, false);
         }
-        for (Method m : cf.methods) {
-            test(cf, m, false);
+        for (MethodModel mm: cm.methods()) {
+            test(mm, false);
         }
         countAnnotations();
 

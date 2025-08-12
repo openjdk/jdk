@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -22,9 +22,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 
-
-/**
- *
+/*
  * NOTE for JLine: the default InputStreamReader that comes from the JRE
  * usually read more bytes than needed from the input stream, which
  * is not usable in a character per character model used in the terminal.
@@ -66,9 +64,10 @@ public class InputStreamReader extends Reader {
     public InputStreamReader(InputStream in) {
         super(in);
         this.in = in;
-        decoder = Charset.defaultCharset().newDecoder().onMalformedInput(
-                CodingErrorAction.REPLACE).onUnmappableCharacter(
-                CodingErrorAction.REPLACE);
+        decoder = Charset.defaultCharset()
+                .newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
         bytes.limit(0);
     }
 
@@ -87,20 +86,19 @@ public class InputStreamReader extends Reader {
      * @throws UnsupportedEncodingException
      *             if the encoding specified by {@code enc} cannot be found.
      */
-    public InputStreamReader(InputStream in, final String enc)
-            throws UnsupportedEncodingException {
+    public InputStreamReader(InputStream in, final String enc) throws UnsupportedEncodingException {
         super(in);
         if (enc == null) {
             throw new NullPointerException();
         }
         this.in = in;
         try {
-            decoder = Charset.forName(enc).newDecoder().onMalformedInput(
-                    CodingErrorAction.REPLACE).onUnmappableCharacter(
-                    CodingErrorAction.REPLACE);
+            decoder = Charset.forName(enc)
+                    .newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
         } catch (IllegalArgumentException e) {
-            throw (UnsupportedEncodingException)
-                    new UnsupportedEncodingException(enc).initCause(e);
+            throw (UnsupportedEncodingException) new UnsupportedEncodingException(enc).initCause(e);
         }
         bytes.limit(0);
     }
@@ -134,9 +132,9 @@ public class InputStreamReader extends Reader {
     public InputStreamReader(InputStream in, Charset charset) {
         super(in);
         this.in = in;
-        decoder = charset.newDecoder().onMalformedInput(
-                CodingErrorAction.REPLACE).onUnmappableCharacter(
-                CodingErrorAction.REPLACE);
+        decoder = charset.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
         bytes.limit(0);
     }
 
@@ -257,8 +255,7 @@ public class InputStreamReader extends Reader {
                 // fill the buffer if needed
                 if (needInput) {
                     try {
-                        if ((in.available() == 0)
-                            && (out.position() > offset)) {
+                        if ((in.available() == 0) && (out.position() > offset)) {
                             // we could return the result without blocking read
                             break;
                         }

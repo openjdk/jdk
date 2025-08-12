@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.settings.Settings;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -46,7 +46,6 @@ import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.awt.UndoRedo;
-import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
@@ -70,14 +69,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private final JPanel centerPanel;
     private final CardLayout cardLayout;
     private final Toolbar quickSearchToolbar;
+    private boolean useBoldDisplayName = false;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-
-    public EditorTopComponent(InputGraph graph) {
-        this(new DiagramViewModel(graph));
-    }
 
     public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
@@ -104,6 +100,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         };
 
         Action[] actionsWithSelection = new Action[]{
+                ColorAction.get(ColorAction.class),
                 ExtractAction.get(ExtractAction.class),
                 HideAction.get(HideAction.class),
                 null,
@@ -130,8 +127,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
         Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
-        if (group.getParent() instanceof GraphDocument) {
-            final GraphDocument doc = (GraphDocument) group.getParent();
+        if (group.getParent() instanceof GraphDocument doc) {
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
@@ -145,6 +141,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
         centerPanel.setLayout(cardLayout);
+        centerPanel.setOpaque(true);
         centerPanel.setBackground(Color.WHITE);
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
@@ -180,6 +177,16 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
+        JToggleButton freeInteractiveLayoutButton = new JToggleButton(new EnableFreeLayoutAction(this));
+        freeInteractiveLayoutButton.setSelected(diagramViewModel.getShowFreeInteractive());
+        layoutButtons.add(freeInteractiveLayoutButton);
+        toolBar.add(freeInteractiveLayoutButton);
+
+        JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
+        stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
+        layoutButtons.add(stableSeaLayoutButton);
+        toolBar.add(stableSeaLayoutButton);
+
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
         seaLayoutButton.setSelected(diagramViewModel.getShowSea());
         layoutButtons.add(seaLayoutButton);
@@ -199,7 +206,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
-        toolBar.add(new JToggleButton(new HideDuplicatesAction(diagramViewModel.getHideDuplicates())));
+        toolBar.add(new JToggleButton(new ShowLiveRangesAction(cfgLayoutAction, diagramViewModel.getShowLiveRanges())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -210,6 +217,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+
+        JToggleButton cutEdgesButton = new JToggleButton(CutEdgesAction.get(CutEdgesAction.class));
+        cutEdgesButton.setHideActionText(true);
+        toolBar.add(cutEdgesButton);
+
         JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
         globalSelectionButton.setHideActionText(true);
         toolBar.add(globalSelectionButton);
@@ -298,8 +310,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
             l.add(m.getSelectedTopComponent());
             l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
             for (TopComponent t : l) {
-                if (t instanceof EditorTopComponent) {
-                    EditorTopComponent etc = (EditorTopComponent) t;
+                if (t instanceof EditorTopComponent etc) {
                     if (etc.getModel().getGroup().getGraphs().contains(graph)) {
                         return etc;
                     }
@@ -309,29 +320,61 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         return null;
     }
 
+    public static void closeAllInstances() {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode mode : manager.getModes()) {
+            TopComponent[] openedTopComponents = manager.getOpenedTopComponents(mode);
+            for (TopComponent tc : openedTopComponents) {
+                if (tc instanceof EditorTopComponent etc) {
+                    etc.close();
+                }
+            }
+        }
+    }
+
     @Override
     public int getPersistenceType() {
         return TopComponent.PERSISTENCE_NEVER;
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getModel().getGroup();
-        if (!group.getParent().getElements().contains(group) ||
-            group.getGraphs().isEmpty()) {
-            close();
-        }
+        SwingUtilities.invokeLater(() -> {
+            Group group = getModel().getGroup();
+            if (!group.getParent().getElements().contains(group) ||
+                    group.getGraphs().isEmpty()) {
+                close();
+            }
+        });
     }
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
         scene.addSelectedNodes(nodes, showIfHidden);
     }
 
+    public void colorSelectedFigures(Color color) {
+        scene.colorSelectedFigures(color);
+    }
+
+    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
+        scene.addSelectedLiveRanges(liveRanges, showIfHidden);
+    }
+
+    public void addSelectedElements(Collection<InputNode> nodes,
+                                    Collection<InputLiveRange> liveRanges,
+                                    boolean showIfHidden) {
+        scene.addSelectedElements(nodes, liveRanges, showIfHidden);
+    }
+
     public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
 
-    public void clearSelectedNodes() {
-        scene.clearSelectedNodes();
+    public void centerSelectedLiveRanges() {
+        scene.centerSelectedLiveRanges();
+    }
+
+    public void clearSelectedElements() {
+        scene.clearSelectedElements();
     }
 
     public Rectangle getSceneBounds() {
@@ -373,8 +416,33 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     @Override
+    public void setDisplayName(String displayName) {
+        super.setDisplayName(displayName);
+        if (useBoldDisplayName) {
+            setHtmlDisplayName("<html><b>" + StringUtils.escapeHTML(getDisplayName()) + "</b>");
+        } else {
+            setHtmlDisplayName(getDisplayName());
+        }
+    }
+
+    private void setBoldDisplayName(boolean bold) {
+        useBoldDisplayName = bold;
+        setDisplayName(getDisplayName());
+    }
+
+    @Override
     protected void componentActivated() {
         super.componentActivated();
+        getModel().activateModel();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            for (TopComponent topComponent : manager.getOpenedTopComponents(m)) {
+                if (topComponent instanceof EditorTopComponent editor) {
+                    editor.setBoldDisplayName(false);
+                }
+            }
+        }
+        setBoldDisplayName(true);
         quickSearchToolbar.add(quickSearchPresenter);
         quickSearchPresenter.revalidate();
     }
@@ -390,19 +458,28 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     @Override
     public TopComponent cloneComponent() {
-        DiagramViewModel model = new DiagramViewModel(getModel().getFirstGraph());
-        if (getModel().getGraph().isDiffGraph()) {
-            model.setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
-        }
-        model.setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
-        model.setShowCFG(getModel().getShowCFG());
-        model.setShowSea(getModel().getShowSea());
-        model.setShowBlocks(getModel().getShowBlocks());
-        model.setShowNodeHull(getModel().getShowNodeHull());
-        model.setShowEmptyBlocks(getModel().getShowEmptyBlocks());
-        model.setHideDuplicates(getModel().getHideDuplicates());
+        DiagramViewModel model = new DiagramViewModel(getModel());
+        model.setGlobalSelection(false, false);
         EditorTopComponent etc = new EditorTopComponent(model);
+
+        Set<InputNode> selectedNodes = new HashSet<>();
+        for (Figure figure : getModel().getSelectedFigures()) {
+            selectedNodes.add(figure.getInputNode());
+        }
+        Set<InputLiveRange> selectedLiveRanges = new HashSet<>();
+        for (int liveRangeId : getModel().getSelectedLiveRanges()) {
+            selectedLiveRanges.add(getModel().getGraph().getLiveRange(liveRangeId));
+        }
+        etc.addSelectedElements(selectedNodes, selectedLiveRanges, false);
+        model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
+        model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();
+
+        int currentZoomLevel = scene.getZoomPercentage();
+        SwingUtilities.invokeLater(() -> {
+            etc.setZoomLevel(currentZoomLevel);
+            etc.centerSelectedNodes();
+        });
         return etc;
     }
 

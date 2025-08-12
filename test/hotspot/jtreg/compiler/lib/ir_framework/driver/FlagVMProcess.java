@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class FlagVMProcess {
     private void start() {
         try {
             // Run "flag" VM with White Box access to determine the test VM flags and if IR verification should be done.
-            oa = ProcessTools.executeTestJvm(cmds);
+            oa = ProcessTools.executeTestJava(cmds);
         } catch (Exception e) {
             throw new TestRunException("Failed to execute TestFramework flag VM", e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @bug 8242263
  * @requires vm.hasJFR
- * @key jfr
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=2 jdk.jfr.event.runtime.TestSyncOnValueBasedClassEvent
  */
@@ -77,7 +77,7 @@ public class TestSyncOnValueBasedClassEvent {
         List<String> classesFound = new ArrayList<String>();
         List<RecordedEvent> events = Events.fromRecording(recording);
         Events.hasEvents(events);
-        for (RecordedEvent event : Events.fromRecording(recording)) {
+        for (RecordedEvent event : events) {
             String className = Events.assertField(event, "valueBasedClass.name").notEmpty().getValue();
             RecordedThread jt = event.getThread();
             if (Thread.currentThread().getName().equals(jt.getJavaName())) {

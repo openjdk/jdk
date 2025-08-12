@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,20 @@
 
 #include "gc/g1/g1BiasedArray.hpp"
 
-// This table is used to store attribute values of all HeapRegions that need
+// This table is used to store attribute values of all heap regions that need
 // fast access during the full collection. In particular some parts of the
 // region type information is encoded in these per-region bytes. Value encoding
 // has been specifically chosen to make required accesses fast. In particular,
-// the table specifies whether a Full GC cycle should be compacting, skip
-// compacting, or skip marking (liveness analysis) a region.
+// the table specifies whether a Full GC cycle should be compacting or skip
+// compacting a region.
 // Reasons for not compacting a region:
-// (1) the HeapRegion itself has been pinned at the start of Full GC.
+// (1) the G1HeapRegion itself can not be moved during this phase of the full gc
+//     (e.g. Humongous regions).
 // (2) the occupancy of the region is too high to be considered eligible for compaction.
-// The only examples for skipping marking for regions are Closed Archive regions.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Compacting = 0;       // Region will be compacted.
   static const uint8_t SkipCompacting = 1;   // Region should not be compacted, but otherwise handled as usual.
-  static const uint8_t SkipMarking = 2;      // Region contents are not even marked through, but contain live objects.
-  static const uint8_t Free = 3;             // Regions is free.
+  static const uint8_t Free = 2;             // Region is free.
 
   static const uint8_t Invalid = 255;
 
@@ -56,14 +55,8 @@ public:
   void set_invalid(uint idx) { set_by_index(idx, Invalid); }
 
   void set_compacting(uint idx) { set_by_index(idx, Compacting); }
-  void set_skip_marking(uint idx) { set_by_index(idx, SkipMarking); }
   void set_skip_compacting(uint idx) { set_by_index(idx, SkipCompacting); }
   void set_free(uint idx) { set_by_index(idx, Free); }
-
-  bool is_skip_marking(HeapWord* obj) const {
-    assert(!is_free(obj), "Should not have objects in free regions.");
-    return get_by_address(obj) == SkipMarking;
-  }
 
   bool is_compacting(HeapWord* obj) const {
     assert(!is_free(obj), "Should not have objects in free regions.");
@@ -83,6 +76,8 @@ public:
   }
 
   void verify_is_compacting(uint idx) { assert(get_by_index(idx) == Compacting, "invariant"); }
+
+  void verify_is_skip_compacting(uint idx) { assert(get_by_index(idx) == SkipCompacting, "invariant"); }
 
   void verify_is_invalid(uint idx) { assert(get_by_index(idx) == Invalid, "invariant"); }
 };

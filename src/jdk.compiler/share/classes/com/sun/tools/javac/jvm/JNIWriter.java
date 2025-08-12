@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.tools.FileObject;
@@ -83,6 +84,12 @@ public class JNIWriter {
     /** Switch: check all nested classes of top level class
      */
     private boolean checkAll;
+
+    /**
+     * Mapping from output file name to class name, for all classes we've written.
+     * This is used to detect when two classes generate the same output file.
+     */
+    private final HashMap<String, String> filesWritten = new HashMap<>();
 
     /**
      * If true, class files will be written in module-specific subdirectories
@@ -183,9 +190,14 @@ public class JNIWriter {
         } else {
             outLocn = StandardLocation.NATIVE_HEADER_OUTPUT;
         }
-        FileObject outFile
-            = fileManager.getFileForOutput(outLocn,
-                "", className.replaceAll("[.$]", "_") + ".h", null);
+        String fileName = className.replaceAll("[.$]", "_") + ".h";
+        String prevName = filesWritten.put(fileName, className);
+        if (prevName != null) {
+            throw new IOException(String.format(
+              "native header file collision between %s and %s (both generate %s)",
+              prevName, className, fileName));
+        }
+        FileObject outFile = fileManager.getFileForOutput(outLocn, "", fileName, null);
         PrintWriter out = new PrintWriter(outFile.openWriter());
         try {
             write(out, c);
@@ -327,7 +339,6 @@ public class JNIWriter {
             }
         }
     }
-    @SuppressWarnings("fallthrough")
     protected final String jniType(Type t) {
         switch (t.getKind()) {
             case ARRAY: {
@@ -430,7 +441,6 @@ public class JNIWriter {
         JNI,
         SIGNATURE
     }
-    @SuppressWarnings("fallthrough")
     static String encode(CharSequence name, EncoderType mtype) {
         StringBuilder result = new StringBuilder(100);
         int length = name.length();

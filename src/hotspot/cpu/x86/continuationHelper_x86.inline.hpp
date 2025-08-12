@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,26 @@ static inline intptr_t** link_address(const frame& f) {
     : (intptr_t**)(f.unextended_sp() + f.cb()->frame_size() - frame::sender_sp_offset);
 }
 
+static inline void patch_return_pc_with_preempt_stub(frame& f) {
+  if (f.is_runtime_frame()) {
+    // Patch the pc of the now old last Java frame (we already set the anchor to enterSpecial)
+    // so that when target goes back to Java it will actually return to the preempt cleanup stub.
+    intptr_t* sp = f.sp();
+    sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
+  } else {
+    // The target will check for preemption once it returns to the interpreter
+    // or the native wrapper code and will manually jump to the preempt stub.
+    JavaThread *thread = JavaThread::current();
+    thread->set_preempt_alternate_return(StubRoutines::cont_preempt_stub());
+  }
+}
+
 inline int ContinuationHelper::frame_align_words(int size) {
-#ifdef _LP64
   return size & 1;
-#else
-  return 0;
-#endif
 }
 
 inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* sp) {
-#ifdef _LP64
-  sp = align_down(sp, frame::frame_alignment);
-#endif
-  return sp;
+  return align_down(sp, frame::frame_alignment);
 }
 
 template<typename FKind>
@@ -72,12 +79,12 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
   anchor->set_last_Java_fp(entry->entry_fp());
 }
 
-#ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   anchor->set_last_Java_fp(fp);
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
   address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
@@ -121,11 +128,12 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   // interpreter_frame_last_sp_offset, points to unextended_sp includes arguments in the frame
   // interpreter_frame_initial_sp_offset excludes expression stack slots
   int expression_stack_sz = expression_stack_size(f, mask);
-  intptr_t* res = *(intptr_t**)f.addr_at(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
+  intptr_t* res = (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
   assert(res == (intptr_t*)f.interpreter_frame_monitor_end() - expression_stack_sz, "");
   assert(res >= f.unextended_sp(),
     "res: " INTPTR_FORMAT " initial_sp: " INTPTR_FORMAT " last_sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " expression_stack_size: %d",
-    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at(frame::interpreter_frame_last_sp_offset), p2i(f.unextended_sp()), expression_stack_sz);
+    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at_relative_or_null(frame::interpreter_frame_last_sp_offset),
+    p2i(f.unextended_sp()), expression_stack_sz);
   return res;
 }
 

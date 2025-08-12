@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -921,17 +921,17 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             if (e.getSource() == list) {
                 return;
             }
-            if (!SwingUtilities.isLeftMouseButton(e) || !comboBox.isEnabled())
+            if (!SwingUtilities.isLeftMouseButton(e) || !comboBox.isEnabled() || !comboBox.isShowing())
                 return;
 
             if ( comboBox.isEditable() ) {
                 Component comp = comboBox.getEditor().getEditorComponent();
                 if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
-                    comp.requestFocus();
+                    comp.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
             }
             else if (comboBox.isRequestFocusEnabled()) {
-                comboBox.requestFocus();
+                comboBox.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
             togglePopup();
         }
@@ -1237,11 +1237,19 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         if ( comboBox.isEditable() ) {
             Component comp = comboBox.getEditor().getEditorComponent();
             if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
-                comp.requestFocus();
+                if (e != null) {
+                    comp.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+                } else {
+                    comp.requestFocus();
+                }
             }
         }
         else if (comboBox.isRequestFocusEnabled()) {
-            comboBox.requestFocus();
+            if (e != null) {
+                comboBox.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+            } else {
+                comboBox.requestFocus();
+            }
         }
     }
 

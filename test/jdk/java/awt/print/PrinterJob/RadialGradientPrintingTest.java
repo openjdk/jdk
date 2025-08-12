@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8162796
+ * @key printer
  * @summary  Verifies if RadialGradientPaint is printed in osx
  * @run main/manual RadialGradientPrintingTest
  */

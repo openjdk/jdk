@@ -132,6 +132,7 @@ public class XMLX509Digest extends Signature11ElementProxy implements XMLX509Dat
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_X509DIGEST;
     }

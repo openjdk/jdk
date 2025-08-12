@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6488219 6560738 7158350 8017469
+ * @key printer
  * @summary Test that text printed in Swing UI measures and looks OK.
  * @run main/manual=yesno PrintTextTest
  */

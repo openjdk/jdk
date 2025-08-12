@@ -46,6 +46,6 @@ public class NewSigAlg {
 
     static void test(String d, String e, String s) throws Exception {
         Asserts.assertEQ(s, SignerInfo.makeSigAlg(
-                AlgorithmId.get(d), AlgorithmId.get(s), false));
+                AlgorithmId.get(d), AlgorithmId.get(s)));
     }
 }

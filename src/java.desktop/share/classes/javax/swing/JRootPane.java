@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,15 @@ package javax.swing;
 
 import java.awt.*;
 import java.beans.*;
-import java.security.AccessController;
 import javax.accessibility.*;
 import javax.swing.plaf.RootPaneUI;
 import java.io.Serializable;
-
-import sun.security.action.GetBooleanAction;
 
 
 /**
  * A lightweight container used behind the scenes by
  * <code>JFrame</code>, <code>JDialog</code>, <code>JWindow</code>,
- * <code>JApplet</code>, and <code>JInternalFrame</code>.
+ * and <code>JInternalFrame</code>.
  * For task-oriented information on functionality provided by root panes
  * see <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/rootpane.html">How to Use Root Panes</a>,
  * a section in <em>The Java Tutorial</em>.
@@ -45,21 +42,18 @@ import sun.security.action.GetBooleanAction;
  * <p>
  * The following image shows the relationships between
  * the classes that use root panes.
- * <p style="text-align:center"><img src="doc-files/JRootPane-1.gif"
+ * <p style="text-align:center"><img src="doc-files/JRootPane-1.svg"
  * alt="The following text describes this graphic."
- * HEIGHT=484 WIDTH=629></p>
+ * HEIGHT=600 WIDTH=850></p>
  * The &quot;heavyweight&quot; components (those that delegate to a peer, or native
- * component on the host system) are shown with a darker, heavier box. The four
- * heavyweight JFC/Swing containers (<code>JFrame</code>, <code>JDialog</code>,
- * <code>JWindow</code>, and <code>JApplet</code>) are
- * shown in relation to the AWT classes they extend.
- * These four components are the
- * only heavyweight containers in the Swing library. The lightweight container
- * <code>JInternalFrame</code> is also shown.
- * All five of these JFC/Swing containers implement the
- * <code>RootPaneContainer</code> interface,
- * and they all delegate their operations to a
- * <code>JRootPane</code> (shown with a little "handle" on top).
+ * component on the host system) are shown with a heavier box. AWT components in red,
+ * Swing heavyweights in blue.
+ * The three heavyweight JFC/Swing containers ({@code JFrame}, {@code JDialog}, and
+ * {@code JWindow}) are shown in relation to the AWT classes they extend.
+ * These three components are the only heavyweight containers in the Swing library.
+ * The lightweight container {@code JInternalFrame} is also shown in green with thin outline.
+ * All four of these JFC/Swing containers implement the {@code RootPaneContainer} interface,
+ * and they all delegate their operations to a {@code JRootPane}.
  * <blockquote>
  * <b>Note:</b> The <code>JComponent</code> method <code>getRootPane</code>
  * can be used to obtain the <code>JRootPane</code> that contains
@@ -182,7 +176,6 @@ import sun.security.action.GetBooleanAction;
  * @see JWindow
  * @see JFrame
  * @see JDialog
- * @see JApplet
  * @see JInternalFrame
  * @see JComponent
  * @see BoxLayout
@@ -193,7 +186,6 @@ import sun.security.action.GetBooleanAction;
  * @author David Kloba
  * @since 1.2
  */
-/// PENDING(klobad) Who should be opaque in this component?
 @SuppressWarnings("serial")
 public class JRootPane extends JComponent implements Accessible {
 
@@ -203,19 +195,15 @@ public class JRootPane extends JComponent implements Accessible {
      * Whether or not we should dump the stack when true double buffering
      * is disabled. Default is false.
      */
-    @SuppressWarnings("removal")
     private static final boolean LOG_DISABLE_TRUE_DOUBLE_BUFFERING
-            = AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.logDoubleBufferingDisable"));
+            = Boolean.getBoolean("swing.logDoubleBufferingDisable");
 
     /**
      * Whether or not we should ignore requests to disable true double
      * buffering. Default is false.
      */
-    @SuppressWarnings("removal")
     private static final boolean IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING
-            = AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.ignoreDoubleBufferingDisable"));
+           = Boolean.getBoolean("swing.ignoreDoubleBufferingDisable");
 
     /**
      * Constant used for the windowDecorationStyle property. Indicates that

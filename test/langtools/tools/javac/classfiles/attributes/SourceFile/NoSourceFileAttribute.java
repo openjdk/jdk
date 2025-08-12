@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,14 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
  * @compile -g:none NoSourceFileAttribute.java
  * @run main NoSourceFileAttribute
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 
@@ -46,9 +45,9 @@ public class NoSourceFileAttribute extends TestBase {
         new NoSourceFileAttribute().test();
     }
 
-    public void test() throws IOException, ConstantPoolException {
+    public void test() throws IOException {
         assertNull(
-                ClassFile.read(getClassFile(NoSourceFileAttribute.class)).getAttribute(Attribute.SourceFile),
+                ClassFile.of().parse(getClassFile(NoSourceFileAttribute.class).toPath()).findAttribute(Attributes.sourceFile()).orElse(null),
                 "Classfile should have no SourceFile attribute when compiled without debug information.");
     }
 }

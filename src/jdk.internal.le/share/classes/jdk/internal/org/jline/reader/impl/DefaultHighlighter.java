@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -10,9 +10,9 @@ package jdk.internal.org.jline.reader.impl;
 
 import java.util.regex.Pattern;
 
+import jdk.internal.org.jline.reader.Highlighter;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReader.RegionType;
-import jdk.internal.org.jline.reader.Highlighter;
 import jdk.internal.org.jline.utils.AttributedString;
 import jdk.internal.org.jline.utils.AttributedStringBuilder;
 import jdk.internal.org.jline.utils.AttributedStyle;
@@ -38,6 +38,7 @@ public class DefaultHighlighter implements Highlighter {
         int underlineEnd = -1;
         int negativeStart = -1;
         int negativeEnd = -1;
+        boolean first = true;
         String search = reader.getSearchTerm();
         if (search != null && search.length() > 0) {
             underlineStart = buffer.indexOf(search);
@@ -57,13 +58,15 @@ public class DefaultHighlighter implements Highlighter {
                 while (negativeStart > 0 && reader.getBuffer().atChar(negativeStart - 1) != '\n') {
                     negativeStart--;
                 }
-                while (negativeEnd < reader.getBuffer().length() - 1 && reader.getBuffer().atChar(negativeEnd + 1) != '\n') {
+                while (negativeEnd < reader.getBuffer().length() - 1
+                        && reader.getBuffer().atChar(negativeEnd + 1) != '\n') {
                     negativeEnd++;
                 }
             }
         }
 
         AttributedStringBuilder sb = new AttributedStringBuilder();
+        commandStyle(reader, sb, true);
         for (int i = 0; i < buffer.length(); i++) {
             if (i == underlineStart) {
                 sb.style(AttributedStyle::underline);
@@ -76,6 +79,10 @@ public class DefaultHighlighter implements Highlighter {
             }
 
             char c = buffer.charAt(i);
+            if (first && Character.isSpaceChar(c)) {
+                first = false;
+                commandStyle(reader, sb, false);
+            }
             if (c == '\t' || c == '\n') {
                 sb.append(c);
             } else if (c < 32) {
@@ -105,4 +112,5 @@ public class DefaultHighlighter implements Highlighter {
         return sb.toAttributedString();
     }
 
+    protected void commandStyle(LineReader reader, AttributedStringBuilder sb, boolean enable) {}
 }

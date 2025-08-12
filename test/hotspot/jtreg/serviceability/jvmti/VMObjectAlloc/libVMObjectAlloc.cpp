@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,14 @@
 
 #include <string.h>
 #include "jvmti.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
+
+static jvmtiEnv *jvmti = nullptr;
+// JVMTI_ERROR_WRONG_PHASE guard
+static jrawMonitorID event_mon = nullptr;
+static bool is_vm_dead = false;
 
 static int number_of_allocation = 0;
 
@@ -35,19 +41,31 @@ VMObjectAlloc(jvmtiEnv *jvmti,
               jobject object,
               jclass cls,
               jlong size) {
-  char *signature = NULL;
-  jvmtiError err = jvmti->GetClassSignature(cls, &signature, NULL);
+  RawMonitorLocker locker(jvmti, jni, event_mon);
+  if (is_vm_dead) {
+    return;
+  }
+
+  char *signature = nullptr;
+  jvmtiError err = jvmti->GetClassSignature(cls, &signature, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     jni->FatalError("Failed during the GetClassSignature call");
   }
 
-  printf("VMObjectAlloc called for %s\n", signature);
+  LOG("VMObjectAlloc called for %s\n", signature);
 
   if (!strcmp(signature, "LVMObjectAllocTest;")) {
     number_of_allocation++;
   }
 }
 
+static void JNICALL
+VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
+  RawMonitorLocker locker(jvmti, jni, event_mon);
+
+  LOG("VMDeath\n");
+  is_vm_dead = true;
+}
 
 JNIEXPORT jint JNICALL
 Java_VMObjectAllocTest_getNumberOfAllocation(JNIEnv *env, jclass cls) {
@@ -56,7 +74,6 @@ Java_VMObjectAllocTest_getNumberOfAllocation(JNIEnv *env, jclass cls) {
 
 extern JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv *jvmti;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jvmtiCapabilities caps;
@@ -65,8 +82,15 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
+  err = jvmti->CreateRawMonitor("Event Monitor", &event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("Agent_OnLoad: CreateRawMonitor failed: %d\n", err);
+    return JNI_ERR;
+  }
+
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.VMObjectAlloc = &VMObjectAlloc;
+  callbacks.VMDeath = &VMDeath;
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_vm_object_alloc_events = 1;
 
@@ -80,7 +104,11 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC , NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC , nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    return JNI_ERR;
+  }
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

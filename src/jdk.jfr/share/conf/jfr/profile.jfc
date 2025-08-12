@@ -7,6 +7,11 @@
 
 <configuration version="2.0" label="Profiling" description="Low overhead configuration for profiling, typically around 2 % overhead." provider="Oracle">
 
+    <event name="jdk.ResidentSetSize">
+      <setting name="enabled">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.ThreadAllocationStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
@@ -90,10 +95,26 @@
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.JavaMonitorInflate">
-      <setting name="enabled">true</setting>
+    <event name="jdk.JavaMonitorNotify">
+      <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.JavaMonitorInflate">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.JavaMonitorDeflate">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.JavaMonitorStatistics">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
     </event>
 
     <event name="jdk.SyncOnValueBasedClass">
@@ -185,22 +206,42 @@
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
+    <event name="jdk.CPUTimeSample">
+      <setting name="enabled">false</setting>
+      <setting name="throttle">10ms</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.CPUTimeSamplesLost">
+      <setting name="enabled">true</setting>
+    </event>
+
+    <event name="jdk.MethodTrace">
+      <setting name="enabled">true</setting>
+      <setting name="filter" control="method-trace"></setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.MethodTiming">
+      <setting name="enabled">true</setting>
+      <setting name="filter" control="method-timing"></setting>
+      <setting name="period">endChunk</setting>
+    </event>
+
+    <event name="jdk.SafepointLatency">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="throttle">off</setting>
+    </event>
+
     <event name="jdk.SafepointBegin">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.SafepointStateSynchronization">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanup">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanupTask">
       <setting name="enabled">false</setting>
       <setting name="threshold">0 ms</setting>
     </event>
@@ -322,6 +363,16 @@
       <setting name="enabled">false</setting>
     </event>
 
+    <event name="jdk.GCHeapMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.GCHeapMemoryPoolUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.GCHeapSummary">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -422,6 +473,11 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.GCPhaseConcurrentLevel2">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.GCReferenceStatistics">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -503,6 +559,10 @@
     </event>
 
     <event name="jdk.ShenandoahHeapRegionStateChange">
+      <setting name="enabled" control="gc-enabled-high">false</setting>
+    </event>
+
+    <event name="jdk.ShenandoahEvacuationInformation">
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
@@ -643,12 +703,22 @@
       <setting name="period">5 s</setting>
     </event>
 
+    <event name="jdk.CompilerQueueUtilization">
+      <setting name="enabled">true</setting>
+      <setting name="period">5 s</setting>
+    </event>
+
     <event name="jdk.InitialEnvironmentVariable">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.PhysicalMemory">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.SwapSpace">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
     </event>
@@ -674,6 +744,18 @@
       <setting name="period">everyChunk</setting>
     </event>
 
+    <event name="jdk.NativeLibraryLoad">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.NativeLibraryUnload">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.ModuleRequire">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
@@ -687,36 +769,44 @@
     <event name="jdk.FileForce">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">10 ms</setting>
+      <setting name="threshold">10 ms</setting>
     </event>
 
     <event name="jdk.FileRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">10 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">300/s</setting>
     </event>
 
     <event name="jdk.FileWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">10 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">300/s</setting>
     </event>
 
     <event name="jdk.SocketRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-threshold">10 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">300/s</setting>
     </event>
 
     <event name="jdk.SocketWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-threshold">10 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">300/s</setting>
     </event>
 
     <event name="jdk.Deserialization">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.SerializationMisdeclaration">
+        <setting name="enabled">true</setting>
     </event>
 
     <event name="jdk.InitialSecurityProperty">
@@ -725,13 +815,13 @@
     </event>
 
     <event name="jdk.SecurityPropertyModification">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.SecurityProviderService">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.TLSHandshake">
@@ -740,18 +830,19 @@
     </event>
 
     <event name="jdk.X509Validation">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.X509Certificate">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.JavaExceptionThrow">
-      <setting name="enabled" control="enable-exceptions">false</setting>
+      <setting name="enabled" control="enable-exceptions">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="throttle" control="exceptions-throttle-rate">300/s</setting>
     </event>
 
     <event name="jdk.JavaErrorThrow">
@@ -787,6 +878,7 @@
 
     <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -826,7 +918,12 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.ZUnmap">
+    <event name="jdk.ZYoungGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZOldGarbageCollection">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
@@ -847,19 +944,26 @@
       <setting name="period">5 s</setting>
     </event>
 
-    <event name="jdk.GCLocker">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">100 ms</setting>
-      <setting name="stackTrace">true</setting>
-    </event>
-
     <event name="jdk.FinalizerStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
     </event>
 
+    <event name="jdk.JavaAgent">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
+    </event>
 
+    <event name="jdk.NativeAgent">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
+    </event>
 
+    <event name="jdk.DeprecatedInvocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="level">forRemoval</setting>
+    </event>
 
 
 
@@ -889,7 +993,7 @@
   carry the control attribute.
   -->
     <control>
-        <selection name="gc" default="detailed" label="Garbage Collector">
+      <selection name="gc" default="detailed" label="Garbage Collector">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>
         <option label="Detailed" name="detailed">detailed</option>
@@ -907,11 +1011,11 @@
       </condition>
 
       <condition name="gc-enabled-detailed" true="true" false="false">
-       <or>
+        <or>
           <test name="gc" operator="equal" value="detailed"/>
           <test name="gc" operator="equal" value="high"/>
           <test name="gc" operator="equal" value="all"/>
-       </or>
+        </or>
       </condition>
 
       <condition name="gc-enabled-high" true="true" false="false">
@@ -929,7 +1033,7 @@
         <option label="Off" name="off">0/s</option>
         <option label="Low" name="low">150/s</option>
         <option label="Medium" name="medium">300/s</option>
-	    <option label="High" name="high">1000/s</option>
+        <option label="High" name="high">1000/s</option>
         <option label="Maximum" name="maximum">1000000000/s</option>
       </selection>
 
@@ -1036,21 +1140,28 @@
         <test name="thread-dump" operator="equal" value="999 d"/>
       </condition>
 
-      <selection name="exceptions" default="errors" label="Exceptions">
+      <selection name="exceptions" default="throttled" label="Exceptions">
         <option label="Off" name="off">off</option>
-        <option label="Errors Only" name="errors">errors</option>
-        <option label="All Exceptions, including Errors" name="all">all</option>
+        <option label="Errors and 300 Exceptions Per Second" name="throttled">throttled</option>
+        <option label="Errors and All Exceptions" name="all">all</option>
       </selection>
 
       <condition name="enable-errors" true="true" false="false">
         <or>
-          <test name="exceptions" operator="equal" value="errors"/>
+          <test name="exceptions" operator="equal" value="throttled"/>
           <test name="exceptions" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="enable-exceptions" true="true" false="false">
-        <test name="exceptions" operator="equal" value="all"/>
+        <or>
+          <test name="exceptions" operator="equal" value="throttled"/>
+          <test name="exceptions" operator="equal" value="all"/>
+        </or>
+      </condition>
+
+      <condition name="exceptions-throttle-rate" true="off" false="300/s">
+         <test name="exceptions" operator="equal" value="all"/>
       </condition>
 
       <selection name="memory-leaks" default="stack-traces" label="Memory Leak Detection">
@@ -1077,12 +1188,13 @@
 
       <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">10 ms</text>
 
-      <text name="file-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
+      <text name="method-timing" label="Method Timing Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
-      <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
+      <text name="method-trace" label="Method Trace Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
-
     </control>
 
 </configuration>

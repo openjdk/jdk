@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import static com.sun.tools.jdeps.JdepsFilter.DEFAULT_FILTER;
 import static com.sun.tools.jdeps.Module.*;
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 import static java.util.stream.Collectors.*;
-
-import com.sun.tools.classfile.Dependency;
 
 import java.io.IOException;
 import java.io.PrintWriter;

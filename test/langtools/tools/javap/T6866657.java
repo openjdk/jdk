@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
  * @test
  * @bug 6866657
  * @summary add byteLength() method to primary classfile types
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
 
 import java.io.*;
-import java.util.*;
 import javax.tools.*;
 import com.sun.tools.javap.*;
 
@@ -60,7 +58,9 @@ public class T6866657
                 JavapTask t = new JavapTask(log, fileManager, null);
                 t.handleOptions(new String[] { "-sysinfo", className });
                 JavapTask.ClassFileInfo cfInfo = t.read(fo);
-                expectEqual(cfInfo.cf.byteLength(), cfInfo.size);
+                try (var in = fo.openInputStream()) {
+                    expectEqual(in.readAllBytes().length, cfInfo.size);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

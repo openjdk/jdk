@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
-  $(error You must include MakeBase.gmk prior to including TextFileProcessing.gmk)
-endif
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 # Helper function for SetupTextFileProcessing; adds a rule for a single file
 # to be processed.
@@ -80,47 +81,47 @@ endef
 SetupTextFileProcessing = $(NamedParamsMacroTemplate)
 define SetupTextFileProcessingBody
 
-  ifneq ($$($1_SOURCE_FILES),)
-    ifneq ($$($1_SOURCE_DIRS),)
+  ifneq ($$($1_SOURCE_FILES), )
+    ifneq ($$($1_SOURCE_DIRS), )
       $$(error Cannot use both SOURCE_FILES and SOURCE_DIRS (in $1))
     endif
-    ifneq ($$($1_EXCLUDE_FILES)$$($1_INCLUDE_FILES),)
+    ifneq ($$($1_EXCLUDE_FILES)$$($1_INCLUDE_FILES), )
       $$(error Cannot INCLUDE/EXCLUDE_FILES with SOURCE_FILES (in $1))
     endif
   else
-    ifeq ($$($1_SOURCE_DIRS),)
+    ifeq ($$($1_SOURCE_DIRS), )
       $$(error Must specify either SOURCE_FILES or SOURCE_DIRS (in $1))
     endif
     # Find all files in the source trees. Sort to remove duplicates.
     $$(foreach src, $$($1_SOURCE_DIRS), $$(if $$(wildcard $$(src)), , \
         $$(error SOURCE_DIRS contains missing directory $$(src) (in $1))))
-    ifneq ($$($1_SOURCE_BASE_DIR),)
+    ifneq ($$($1_SOURCE_BASE_DIR), )
       $$(foreach src, $$($1_SOURCE_DIRS), \
           $$(if $$(findstring $$($1_SOURCE_BASE_DIR), $$(src)), , \
           $$(error SOURCE_DIRS contains directory $$(src) outside \
               SOURCE_BASE_DIR $$($1_SOURCE_BASE_DIR) (in $1))))
     endif
     $1_SOURCE_FILES := $$(sort $$(call FindFiles,$$($1_SOURCE_DIRS)))
-    $1_EXCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
-    $1_INCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
-    $1_SOURCE_FILES := $$(filter-out $$($1_EXCLUDE_FILES),$$($1_SOURCE_FILES))
-    ifneq (,$$(strip $$($1_INCLUDE_FILES)))
-      $1_SOURCE_FILES := $$(filter $$($1_INCLUDE_FILES),$$($1_SOURCE_FILES))
+    $1_EXCLUDE_FILES := $$(foreach i, $$($1_SOURCE_DIRS), $$(addprefix $$i/, $$($1_EXCLUDE_FILES)))
+    $1_INCLUDE_FILES := $$(foreach i, $$($1_SOURCE_DIRS), $$(addprefix $$i/, $$($1_INCLUDE_FILES)))
+    $1_SOURCE_FILES := $$(filter-out $$($1_EXCLUDE_FILES), $$($1_SOURCE_FILES))
+    ifneq ($$(strip $$($1_INCLUDE_FILES)), )
+      $1_SOURCE_FILES := $$(filter $$($1_INCLUDE_FILES), $$($1_SOURCE_FILES))
     endif
-    ifeq (,$$($1_SOURCE_FILES))
+    ifeq ($$($1_SOURCE_FILES), )
       $$(info No sources found for $1 when looking inside the dirs $$($1_SRC))
     endif
   endif
 
-  ifneq ($$($1_REPLACEMENTS),)
+  ifneq ($$($1_REPLACEMENTS), )
     # We have a replacement request, prepare it for the recipe
-    ifneq ($$(findstring /,$$($1_REPLACEMENTS)),)
+    ifneq ($$(findstring /, $$($1_REPLACEMENTS)), )
       # Cannot use / as separator
-      ifneq ($$(findstring @,$$($1_REPLACEMENTS)),)
+      ifneq ($$(findstring @, $$($1_REPLACEMENTS)), )
         # Cannot use @ as separator
-        ifneq ($$(findstring |,$$($1_REPLACEMENTS)),)
+        ifneq ($$(findstring |, $$($1_REPLACEMENTS)), )
           # Cannot use | as separator
-          ifneq ($$(findstring !,$$($1_REPLACEMENTS)),)
+          ifneq ($$(findstring !, $$($1_REPLACEMENTS)), )
             # Cannot use ! as separator. Give up.
             $$(error No suitable sed separator can be found for $1. Tested /, @, | and !)
           else
@@ -161,7 +162,7 @@ define SetupTextFileProcessingBody
     $1_REPLACEMENTS_COMMAND_LINE := $(CAT)
   endif
 
-  ifneq ($$($1_INCLUDES),)
+  ifneq ($$($1_INCLUDES), )
     # We have a include request, prepare it for the recipe.
     # Convert an INCLUDE like this PATTERN_1 => file1 ; PATTERN_2 => file2 ;
     # into an awk script fragment like this:
@@ -190,7 +191,7 @@ define SetupTextFileProcessingBody
   # Reset target list before populating it
   $1 :=
 
-  ifneq ($$($1_OUTPUT_FILE),)
+  ifneq ($$($1_OUTPUT_FILE), )
     ifneq ($$(words $$($1_SOURCE_FILES)), 1)
       $$(error Cannot use OUTPUT_FILE for more than one source file (in $1))
     endif
@@ -199,12 +200,12 @@ define SetupTextFileProcessingBody
     $$(eval $$(call SetupSingleTextFileForProcessing,$1, $$($1_SOURCE_FILES), \
         $$(patsubst %/, %, $$(dir $$($1_OUTPUT_FILE))), $$(notdir $$($1_OUTPUT_FILE))))
   else
-    ifeq ($$($1_OUTPUT_DIR),)
+    ifeq ($$($1_OUTPUT_DIR), )
       $$(error Neither OUTPUT_FILE nor OUTPUT_DIR was specified (in $1))
     endif
 
     # Now call add_native_source for each source file we are going to process.
-    ifeq ($$($1_SOURCE_BASE_DIR),)
+    ifeq ($$($1_SOURCE_BASE_DIR), )
       # With no base dir specified, put all files in target dir, flattening any
       # hierarchies. Note that $1 is space sensitive and must disobey whitespace
       # rules.
@@ -222,3 +223,8 @@ define SetupTextFileProcessingBody
     endif
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

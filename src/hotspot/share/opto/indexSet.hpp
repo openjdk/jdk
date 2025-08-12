@@ -204,6 +204,8 @@ class IndexSet : public ResourceObj {
   // The number of top level array entries in use
   uint       _max_blocks;
 
+  Arena* _arena;
+
   // Our assertions need to know the maximum number allowed in the set
 #ifdef ASSERT
   uint       _max_elements;
@@ -252,10 +254,12 @@ class IndexSet : public ResourceObj {
 
   void clear() {
     _count = 0;
-    for (uint i = 0; i < _current_block_limit; i++) {
-      BitBlock *block = _blocks[i];
-      if (block != &_empty_block) {
-        free_block(i);
+    if (_blocks != nullptr) {
+      for (uint i = 0; i < _current_block_limit; i++) {
+        BitBlock* block = _blocks[i];
+        if (block != &_empty_block) {
+          free_block(i);
+        }
       }
     }
     _current_block_limit = 0;
@@ -266,6 +270,9 @@ class IndexSet : public ResourceObj {
   bool is_empty() const { return _count == 0; }
 
   bool member(uint element) const {
+    if (_blocks == nullptr) {
+      return false;
+    }
     return get_block_containing(element)->member(element);
   }
 
@@ -273,6 +280,7 @@ class IndexSet : public ResourceObj {
     if (element == 0) {
       return 0;
     }
+    initialize_if_needed();
     BitBlock *block = get_block_containing(element);
     if (block == &_empty_block) {
       block = alloc_block_containing(element);
@@ -285,6 +293,9 @@ class IndexSet : public ResourceObj {
   }
 
   bool remove(uint element) {
+    if (_blocks == nullptr) {
+      return false;
+    }
     BitBlock *block = get_block_containing(element);
     bool present = block->remove(element);
     if (present) {
@@ -319,6 +330,21 @@ class IndexSet : public ResourceObj {
   // from the static Arena member.
   void initialize(uint max_element, Arena *arena);
 
+  // Top level array of pointers to BitBlocks is allocated on first element addition to avoid wasting memory.
+  void initialize_if_needed() {
+    if (_blocks != nullptr) {
+      return;
+    }
+    if (_max_blocks <= preallocated_block_list_size) {
+      _blocks = _preallocated_block_list;
+    } else {
+      _blocks = (IndexSet::BitBlock**) _arena->AmallocWords(sizeof(IndexSet::BitBlock*) * _max_blocks);
+    }
+    for (uint i = 0; i < _max_blocks; i++) {
+      set_block(i, &_empty_block);
+    }
+  }
+
   // Exchange two sets
   void swap(IndexSet *set);
 
@@ -344,22 +370,22 @@ class IndexSet : public ResourceObj {
   // Sanity tests
   void verify() const;
 
-  static int _serial_count;
-  int        _serial_number;
+  static uint _serial_count;
+  uint        _serial_number;
 
   // Check to see if the serial number of the current set is the one we're tracing.
   // If it is, print a message.
   void check_watch(const char *operation, uint operand) const {
     if (IndexSetWatch != 0) {
-      if (IndexSetWatch == -1 || _serial_number == IndexSetWatch) {
-        tty->print_cr("IndexSet %d : %s ( %d )", _serial_number, operation, operand);
+      if (IndexSetWatch == -1 || (uintx)_serial_number == (uintx)IndexSetWatch) {
+        tty->print_cr("IndexSet %u : %s ( %d )", _serial_number, operation, operand);
       }
     }
   }
   void check_watch(const char *operation) const {
     if (IndexSetWatch != 0) {
-      if (IndexSetWatch == -1 || _serial_number == IndexSetWatch) {
-        tty->print_cr("IndexSet %d : %s", _serial_number, operation);
+      if (IndexSetWatch == -1 || (uintx)_serial_number == (uintx)IndexSetWatch) {
+        tty->print_cr("IndexSet %u : %s", _serial_number, operation);
       }
     }
   }

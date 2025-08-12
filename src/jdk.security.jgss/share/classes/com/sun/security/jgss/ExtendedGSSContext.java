@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,13 @@ import org.ietf.jgss.*;
  * The extended GSSContext interface for supporting additional
  * functionalities not defined by {@code org.ietf.jgss.GSSContext},
  * such as querying context-specific attributes.
+ *
+ * @since 1.7
  */
 public interface ExtendedGSSContext extends GSSContext {
 
     /**
      * Return the mechanism-specific attribute associated with {@code type}.
-     * <p>
-     * If there is a security manager, an {@link InquireSecContextPermission}
-     * with the name {@code type.mech} must be granted. Otherwise, this could
-     * result in a {@link SecurityException}.
      * <p>
      * Example:
      * <pre>
@@ -68,9 +66,6 @@ public interface ExtendedGSSContext extends GSSContext {
      *   security context is invalid,
      *   {@link GSSException#FAILURE GSSException.FAILURE} for other
      *   unspecified failures.
-     * @throws SecurityException if a security manager exists and a proper
-     *   {@link InquireSecContextPermission} is not granted.
-     * @see InquireSecContextPermission
      * @see InquireType
      */
     public Object inquireSecContext(InquireType type)

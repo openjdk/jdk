@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class G1CardSetConfiguration {
   uint _max_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_max_cards_in_howl_bitmap;
-  size_t _bitmap_hash_mask;
+  uint _bitmap_hash_mask;
   uint _log2_card_regions_per_heap_region;
   uint _log2_cards_per_card_region;
 
@@ -379,6 +379,8 @@ public:
   void clear();
 
   void reset_table_scanner();
+
+  void reset_table_scanner_for_groups();
 
   // Iterate over the container, calling a method on every card or card range contained
   // in the card container.

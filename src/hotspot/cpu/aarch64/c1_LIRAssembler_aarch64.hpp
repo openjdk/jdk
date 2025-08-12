@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,8 +33,6 @@ friend class ArrayCopyStub;
 
   int array_element_size(BasicType type) const;
 
-  void arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack);
-
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
   // bailout case the pointer won't be to unique storage.
@@ -60,8 +58,6 @@ friend class ArrayCopyStub;
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = NULL);
-
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];
   int tableswitch_count;
@@ -71,8 +67,8 @@ friend class ArrayCopyStub;
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // call stub: CompiledStaticCall::to_interp_stub_size() +
-    //            CompiledStaticCall::to_trampoline_stub_size()
+    // call stub: CompiledDirectCall::to_interp_stub_size() +
+    //            CompiledDirectCall::to_trampoline_stub_size()
     _call_stub_size = 13 * NativeInstruction::instruction_size,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = 7 * NativeInstruction::instruction_size

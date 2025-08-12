@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class DispatchTable {
   void       set_entry(int i, EntryPoint& entry);     // set    entry point for a given bytecode i
   address*   table_for(TosState state)          { return _table[state]; }
   address*   table_for()                        { return table_for((TosState)0); }
-  int        distance_from(address *table)      { return table - table_for(); }
+  int        distance_from(address *table)      { return (int)(table - table_for()); }
   int        distance_from(TosState state)      { return distance_from(table_for(state)); }
 
   // Comparison
@@ -88,7 +88,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   friend class InterpreterMacroAssembler;
   friend class TemplateInterpreterGenerator;
   friend class TemplateTable;
-  friend class CodeCacheExtensions;
   // friend class Interpreter;
  public:
 
@@ -110,6 +109,8 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address    _throw_exception_entry;
 
   static address    _throw_StackOverflowError_entry;
+
+  static address    _cont_resume_interpreter_adapter;
 
   static address    _remove_activation_entry;                   // continuation address if an exception is not handled by current frame
   static address    _remove_activation_preserving_args_entry;   // continuation address when current frame is being popped
@@ -153,6 +154,8 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address    throw_ArithmeticException_entry()           { return _throw_ArithmeticException_entry; }
   static address    throw_NullPointerException_entry()          { return _throw_NullPointerException_entry; }
   static address    throw_StackOverflowError_entry()            { return _throw_StackOverflowError_entry; }
+
+  static address    cont_resume_interpreter_adapter()           { return _cont_resume_interpreter_adapter; }
 
   // Code generation
 #ifndef PRODUCT

@@ -26,11 +26,12 @@
 package java.lang;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
-/** The CharacterData class encapsulates the large tables found in
+/** The CharacterDataLatin1 class encapsulates the large tables found in
     Java.lang.Character. */
 
-class CharacterDataLatin1 extends CharacterData {
+final class CharacterDataLatin1 extends CharacterData {
 
     /* The character properties are currently encoded into 32 bits in the following manner:
         1 bit   mirrored property
@@ -134,6 +135,30 @@ class CharacterDataLatin1 extends CharacterData {
         return ((props & $$maskIdentifierInfo) == $$valueIgnorable);
     }
 
+    boolean isEmoji(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmoji) != 0;
+    }
+
+    boolean isEmojiPresentation(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiPresentation) != 0;
+    }
+
+    boolean isEmojiModifier(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifier) != 0;
+    }
+
+    boolean isEmojiModifierBase(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifierBase) != 0;
+    }
+
+    boolean isEmojiComponent(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiComponent) != 0;
+    }
+
+    boolean isExtendedPictographic(int ch) {
+        return (getPropertiesEx(ch) & $$maskExtendedPictographic) != 0;
+    }
+
     int toLowerCase(int ch) {
         if (ch < 'A') { // Fast path for low code points
             return ch;
@@ -206,6 +231,7 @@ class CharacterDataLatin1 extends CharacterData {
     //
     // Analysis has shown that generating the whole array allows the JIT to generate
     // better code compared to a slimmed down array, such as one cutting off after 'z'
+    @Stable
     private static final byte[] DIGITS = new byte[] {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -290,6 +316,7 @@ class CharacterDataLatin1 extends CharacterData {
         return mapChar;
     }
 
+    @Stable
     static char[] sharpsMap = new char[] {'S', 'S'};
 
     char[] toUpperCaseCharArray(int ch) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Google Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +26,13 @@
  * @test
  * @bug 8190452
  * @summary javac should not add MethodParameters attributes to v51 and earlier class files
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @build LegacyOutputTest
  * @run main LegacyOutputTest
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.MethodParameters_attribute;
-import com.sun.tools.classfile.MethodParameters_attribute.Entry;
-import java.io.IOException;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -43,7 +41,6 @@ import java.util.List;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
@@ -72,13 +69,8 @@ public class LegacyOutputTest {
     List<String> getParameterNames(String release) throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaFileObject fileObject =
-                new SimpleJavaFileObject(URI.create("Test.java"), Kind.SOURCE) {
-                    @Override
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                            throws IOException {
-                        return "class Test { void f(int x, int y) {} }";
-                    }
-                };
+                SimpleJavaFileObject.forSource(URI.create("Test.java"),
+                                               "class Test { void f(int x, int y) {} }");
         CompilationTask task =
                 tool.getTask(
                         null,
@@ -90,23 +82,22 @@ public class LegacyOutputTest {
         if (!task.call()) {
             throw new AssertionError("compilation failed");
         }
-        ClassFile classFile = ClassFile.read(Paths.get("Test.class"));
-        Method method = getMethod(classFile, "f");
-        MethodParameters_attribute attribute =
-                (MethodParameters_attribute) method.attributes.get("MethodParameters");
+        ClassModel classFile = ClassFile.of().parse(Paths.get("Test.class"));
+        MethodModel method = getMethod(classFile, "f");
+        MethodParametersAttribute attribute = method.findAttribute(Attributes.methodParameters()).orElse(null);
         if (attribute == null) {
             return null;
         }
         List<String> parameterNames = new ArrayList<>();
-        for (Entry e : attribute.method_parameter_table) {
-            parameterNames.add(classFile.constant_pool.getUTF8Value(e.name_index));
+        for (MethodParameterInfo e : attribute.parameters()) {
+            parameterNames.add(e.name().orElseThrow().stringValue());
         }
         return parameterNames;
     }
 
-    private static Method getMethod(ClassFile classFile, String name) throws Exception {
-        for (Method method : classFile.methods) {
-            if (classFile.constant_pool.getUTF8Value(method.name_index).equals(name)) {
+    private static MethodModel getMethod(ClassModel classFile, String name) throws Exception {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(name)) {
                 return method;
             }
         }

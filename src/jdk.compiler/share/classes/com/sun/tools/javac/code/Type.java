@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.lang.model.type.*;
@@ -182,8 +183,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * @return the constant value attribute of this type
      */
     public Object constValue() {
-        return getMetadata(TypeMetadata.ConstantValue.class)
-                .map(ConstantValue::value).orElse(null);
+        return getMetadata(TypeMetadata.ConstantValue.class, ConstantValue::value, null);
     }
 
     /** Is this a constant type whose value is false?
@@ -340,7 +340,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * it should not be used outside this class.
      */
     protected Type typeNoMetadata() {
-        return metadata.isEmpty() ? this : baseType();
+        return metadata.isEmpty() ? this : stripMetadata();
     }
 
     /**
@@ -361,11 +361,22 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     /**
      * Get the type metadata of the given kind associated with this type (if any).
      */
-    public <M extends TypeMetadata> Optional<M> getMetadata(Class<M> metadataClass) {
-        return metadata.stream()
-                .filter(m -> metadataClass.isAssignableFrom(m.getClass()))
-                .map(metadataClass::cast)
-                .findFirst();
+    public <M extends TypeMetadata> M getMetadata(Class<M> metadataClass) {
+        return getMetadata(metadataClass, Function.identity(), null);
+    }
+
+    /**
+     * Get the type metadata of the given kind associated with this type (if any),
+     * and apply the provided mapping function.
+     */
+    @SuppressWarnings("unchecked")
+    public <M extends TypeMetadata, Z> Z getMetadata(Class<M> metadataClass, Function<M, Z> metadataFunc, Z defaultValue) {
+        for (TypeMetadata m : metadata) {
+            if (m.getClass() == metadataClass) {
+                return metadataFunc.apply((M)m);
+            }
+        }
+        return defaultValue;
     }
 
     /**
@@ -374,17 +385,20 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * an exception is thrown.
      */
     public Type addMetadata(TypeMetadata md) {
-        Assert.check(getMetadata(md.getClass()).isEmpty());
-        return cloneWithMetadata(metadata.append(md));
+        Assert.check(getMetadata(md.getClass()) == null);
+        return cloneWithMetadata(metadata.prepend(md));
     }
 
     /**
      * Create a new copy of this type but without the specified type metadata.
      */
     public Type dropMetadata(Class<? extends TypeMetadata> metadataClass) {
-        List<TypeMetadata> newMetadata = metadata.stream()
-                .filter(m -> !metadataClass.isAssignableFrom(m.getClass()))
-                .collect(List.collector());
+        List<TypeMetadata> newMetadata = List.nil();
+        for (TypeMetadata m : metadata) {
+            if (m.getClass() != metadataClass) {
+                newMetadata = newMetadata.prepend(m);
+            }
+        }
         return cloneWithMetadata(newMetadata);
     }
 
@@ -411,25 +425,42 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return accept(stripMetadata, null);
     }
     //where
+        /**
+         * Note: this visitor only needs to handle cases where
+         * 'contained' types can be annotated. These cases are
+         * described in JVMS 4.7.20.2 and are : classes (for type
+         * parameters and enclosing types), wildcards, and arrays.
+         */
         private static final TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
-                return super.visitClassType((ClassType)t.typeNoMetadata(), aVoid);
+                return super.visitClassType((ClassType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitArrayType(ArrayType t, Void aVoid) {
-                return super.visitArrayType((ArrayType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitTypeVar(TypeVar t, Void aVoid) {
-                return super.visitTypeVar((TypeVar)t.typeNoMetadata(), aVoid);
+                return super.visitArrayType((ArrayType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitWildcardType(WildcardType wt, Void aVoid) {
-                return super.visitWildcardType((WildcardType)wt.typeNoMetadata(), aVoid);
+                return super.visitWildcardType((WildcardType) dropMetadata(wt), aVoid);
+            }
+
+            @Override
+            public Type visitType(Type t, Void aVoid) {
+                return dropMetadata(t);
+            }
+
+            private static Type dropMetadata(Type t) {
+                if (t.getMetadata().isEmpty()) {
+                    return t;
+                }
+                Type baseType = t.baseType();
+                if (baseType.getMetadata().isEmpty()) {
+                    return baseType;
+                }
+                return baseType.cloneWithMetadata(List.nil());
             }
         };
 
@@ -442,27 +473,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     }
 
     public boolean isAnnotated() {
-        return getMetadata(TypeMetadata.Annotations.class).isPresent();
+        return getMetadata(TypeMetadata.Annotations.class) != null;
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
-        return getMetadata(TypeMetadata.Annotations.class)
-                .map(Annotations::annotations).orElse(List.nil());
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return null;
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-        @SuppressWarnings("unchecked")
-        A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
-        return tmp;
+        return getMetadata(TypeMetadata.Annotations.class, Annotations::annotations, List.nil());
     }
 
     /** Return the base types of a list of types.
@@ -483,7 +499,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (prefix) {
                 sb.append(" ");
             }
-            sb.append(getAnnotationMirrors());
+            sb.append(getAnnotationMirrors().toString(" "));
             sb.append(" ");
         }
     }
@@ -583,7 +599,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    /** Navigation methods, these will work for classes, type variables,
+    /* Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
 
@@ -647,6 +663,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
     public boolean isFinal() {
         return (tsym.flags() & FINAL) != 0;
+    }
+
+    public boolean isValueBased() {
+        return tsym != null && (tsym.flags_field & VALUE_BASED) != 0;
     }
 
     /**
@@ -1103,6 +1123,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                         s += String.valueOf(sym.hashCode());
                     return s;
                 } else if (longform) {
+                    sym.apiComplete();
                     return sym.getQualifiedName().toString();
                 } else {
                     return sym.name.toString();
@@ -1646,6 +1667,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
          */
         public Type lower;
 
+        @SuppressWarnings("this-escape")
         public TypeVar(Name name, Symbol owner, Type lower) {
             super(null, List.nil());
             Assert.checkNonNull(lower);
@@ -1658,6 +1680,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this(tsym, bound, lower, List.nil());
         }
 
+        @SuppressWarnings("this-escape")
         public TypeVar(TypeSymbol tsym, Type bound, Type lower,
                        List<TypeMetadata> metadata) {
             super(tsym, metadata);
@@ -1734,6 +1757,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         public WildcardType wildcard;
 
+        @SuppressWarnings("this-escape")
         public CapturedType(Name name,
                             Symbol owner,
                             Type upper,
@@ -1967,6 +1991,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return v.visitUndetVar(this, s);
         }
 
+        @SuppressWarnings("this-escape")
         public UndetVar(TypeVar origin, UndetVarListener listener, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
             super(UNDETVAR, origin);
@@ -2111,7 +2136,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             addBound(ib, bound, types, false);
         }
 
-        @SuppressWarnings("fallthrough")
         private void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             if (kind == Kind.CAPTURED && !update) {
                 //Captured inference variables bounds must not be updated during incorporation,
@@ -2316,7 +2340,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this.originalType = (originalType == null ? noType : originalType);
         }
 
-        private ErrorType(Type originalType, TypeSymbol tsym,
+        public ErrorType(Type originalType, TypeSymbol tsym,
                           List<TypeMetadata> metadata) {
             super(noType, List.nil(), null, metadata);
             this.tsym = tsym;
@@ -2371,10 +2395,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         public boolean isCompound()              { return false; }
         public boolean isInterface()             { return false; }
 
-        public List<Type> allparams()            { return List.nil(); }
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public List<Type> getTypeArguments()     { return List.nil(); }
-
         @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.ERROR;
@@ -2387,30 +2407,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitError(this, p);
-        }
-    }
-
-    public static class UnknownType extends Type {
-
-        public UnknownType() {
-            // Unknown is a synthesized internal type, so it cannot be
-            // annotated.
-            super(null, List.nil());
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return UNKNOWN;
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitUnknown(this, p);
-        }
-
-        @Override
-        public boolean isPartial() {
-            return true;
         }
     }
 

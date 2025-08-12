@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ public class PLABUtils {
     private final static String[] GC_TUNE_OPTIONS = {
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=1m",
-        "-XX:OldSize=64m",
         "-XX:-UseAdaptiveSizePolicy",
         "-XX:MaxTenuringThreshold=1",
         "-XX:-UseTLAB",
@@ -73,14 +72,12 @@ public class PLABUtils {
         if (options == null) {
             throw new IllegalArgumentException("Options cannot be null");
         }
-        List<String> executionOtions = new ArrayList<>(
-                Arrays.asList(Utils.getTestJavaOpts())
-        );
-        Collections.addAll(executionOtions, WB_DIAGNOSTIC_OPTIONS);
-        Collections.addAll(executionOtions, G1_PLAB_LOGGING_OPTIONS);
-        Collections.addAll(executionOtions, GC_TUNE_OPTIONS);
-        executionOtions.addAll(options);
-        return executionOtions;
+        List<String> executionOptions = new ArrayList<>();
+        Collections.addAll(executionOptions, WB_DIAGNOSTIC_OPTIONS);
+        Collections.addAll(executionOptions, G1_PLAB_LOGGING_OPTIONS);
+        Collections.addAll(executionOptions, GC_TUNE_OPTIONS);
+        executionOptions.addAll(options);
+        return executionOptions;
     }
 
     /**

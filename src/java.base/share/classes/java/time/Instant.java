@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,11 +252,11 @@ public final class Instant
     private static final long serialVersionUID = -665713676816604388L;
 
     /**
-     * The number of seconds from the epoch of 1970-01-01T00:00:00Z.
+     * @serial The number of seconds from the epoch of 1970-01-01T00:00:00Z.
      */
     private final long seconds;
     /**
-     * The number of nanoseconds, later along the time-line, from the seconds field.
+     * @serial The number of nanoseconds, later along the time-line, from the seconds field.
      * This is always positive, and never exceeds 999,999,999.
      */
     private final int nanos;
@@ -342,7 +342,6 @@ public final class Instant
      *
      * @param epochMilli  the number of milliseconds from 1970-01-01T00:00:00Z
      * @return an instant, not null
-     * @throws DateTimeException if the instant exceeds the maximum or minimum instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
         long secs = Math.floorDiv(epochMilli, 1000);
@@ -1163,6 +1162,30 @@ public final class Instant
         return unit.between(this, end);
     }
 
+    /**
+     * Calculates the {@code Duration} until another {@code Instant}.
+     * <p>
+     * The start and end points are {@code this} and the specified instant.
+     * The result will be negative if the end is before the start. Calling
+     * this method is equivalent to
+     * {@link Duration#between(Temporal, Temporal) Duration.between(this,
+     * endExclusive)}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param endExclusive the end {@code Instant}, exclusive, not null
+     * @return the {@code Duration} from this {@code Instant} until the
+     *      specified {@code endExclusive} {@code Instant}
+     * @see Duration#between(Temporal, Temporal)
+     * @since 23
+     */
+    public Duration until(Instant endExclusive) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
+        long secsDiff = Math.subtractExact(endExclusive.seconds, seconds);
+        int nanosDiff = endExclusive.nanos - nanos;
+        return Duration.ofSeconds(secsDiff, nanosDiff);
+    }
+
     private long nanosUntil(Instant end) {
         long secsDiff = Math.subtractExact(end.seconds, seconds);
         long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
@@ -1170,20 +1193,30 @@ public final class Instant
     }
 
     private long microsUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMicros = Math.multiplyExact(secsDiff, MICROS_PER_SECOND);
-        return Math.addExact(totalMicros, (end.nanos - nanos) / 1000);
+        long microsDiff = Math.multiplyExact(end.seconds - seconds, MICROS_PER_SECOND);
+        int nanosDiff = end.nanos - nanos;
+        if (microsDiff > 0 && nanosDiff < 0) {
+            return (microsDiff - 1_000_000) + (nanosDiff + 1_000_000_000) / 1_000;
+        } else if (microsDiff < 0 && nanosDiff > 0) {
+            return (microsDiff + 1_000_000) + (nanosDiff - 1_000_000_000) / 1_000;
+        }
+        return Math.addExact(microsDiff, nanosDiff / 1_000);
     }
 
     private long millisUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMillis = Math.multiplyExact(secsDiff, MILLIS_PER_SECOND);
-        return Math.addExact(totalMillis, (end.nanos - nanos) / 1000_000);
+        long millisDiff = Math.multiplyExact(end.seconds - seconds, MILLIS_PER_SECOND);
+        int nanosDiff = end.nanos - nanos;
+        if (millisDiff > 0 && nanosDiff < 0) {
+            return (millisDiff - 1_000) + (nanosDiff + 1_000_000_000) / 1_000_000;
+        } else if (millisDiff < 0 && nanosDiff > 0) {
+            return (millisDiff + 1_000) + (nanosDiff - 1_000_000_000) / 1_000_000;
+        }
+        return Math.addExact(millisDiff, nanosDiff / 1_000_000);
     }
 
     private long secondsUntil(Instant end) {
         long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long nanosDiff = end.nanos - nanos;
+        int nanosDiff = end.nanos - nanos;
         if (secsDiff > 0 && nanosDiff < 0) {
             secsDiff--;
         } else if (secsDiff < 0 && nanosDiff > 0) {
@@ -1263,8 +1296,11 @@ public final class Instant
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherInstant  the other instant to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this instant is before {@code otherInstant},
+     *          zero if they are equal, or greater than zero if this instant is after {@code otherInstant}
      * @throws NullPointerException if otherInstant is null
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(Instant otherInstant) {
@@ -1327,7 +1363,7 @@ public final class Instant
      */
     @Override
     public int hashCode() {
-        return ((int) (seconds ^ (seconds >>> 32))) + 51 * nanos;
+        return Long.hashCode(seconds) + 51 * nanos;
     }
 
     //-----------------------------------------------------------------------

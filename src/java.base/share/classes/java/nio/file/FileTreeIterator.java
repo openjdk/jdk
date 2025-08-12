@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.nio.file.FileTreeWalker.Event;
 /**
  * An {@code Iterator} to iterate over the nodes of a file tree.
  *
- * <pre>{@code
+ * {@snippet lang=java :
  *     try (FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options)) {
  *         while (iterator.hasNext()) {
  *             Event ev = iterator.next();
@@ -44,7 +44,7 @@ import java.nio.file.FileTreeWalker.Event;
  *             BasicFileAttributes attrs = ev.attributes();
  *         }
  *     }
- * }</pre>
+ * }
  */
 
 class FileTreeIterator implements Iterator<Event>, Closeable {
@@ -58,8 +58,6 @@ class FileTreeIterator implements Iterator<Event>, Closeable {
      *          if {@code maxDepth} is negative
      * @throws  IOException
      *          if an I/O errors occurs opening the starting file
-     * @throws  SecurityException
-     *          if the security manager denies access to the starting file
      * @throws  NullPointerException
      *          if {@code start} or {@code options} is {@code null} or
      *          the options array contains a {@code null} element

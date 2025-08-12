@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 
 package java.net;
+
+import java.util.Objects;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents a proxy setting, typically a type (http, socks) and
@@ -57,8 +61,8 @@ public class Proxy {
         SOCKS
     };
 
-    private Type type;
-    private SocketAddress sa;
+    private final Type type;
+    private final SocketAddress sa;
 
     /**
      * A proxy setting that represents a {@code DIRECT} connection,
@@ -91,8 +95,11 @@ public class Proxy {
      * incompatible
      */
     public Proxy(Type type, SocketAddress sa) {
-        if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress))
-            throw new IllegalArgumentException("type " + type + " is not compatible with address " + sa);
+        if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress)) {
+            throw new IllegalArgumentException(
+                formatMsg("type " + type + " is not compatible with address %s",
+                          filterNonSocketInfo(String.valueOf(sa))));
+        }
         this.type = type;
         this.sa = sa;
     }
@@ -145,23 +152,20 @@ public class Proxy {
      *          {@code false} otherwise.
      * @see java.net.InetSocketAddress#equals(java.lang.Object)
      */
+    @Override
     public final boolean equals(Object obj) {
         if (!(obj instanceof Proxy p))
             return false;
         if (p.type() == type()) {
-            if (address() == null) {
-                return (p.address() == null);
-            } else
-                return address().equals(p.address());
+            return Objects.equals(address(), p.address());
         }
         return false;
     }
 
     /**
-     * Returns a hashcode for this Proxy.
-     *
-     * @return  a hash code value for this Proxy.
+     * {@return a hash code value for this Proxy}
      */
+    @Override
     public final int hashCode() {
         if (address() == null)
             return type().hashCode();

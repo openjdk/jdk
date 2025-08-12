@@ -1,0 +1,2 @@
+MethodAmbiguityCrash1.java:20:20: compiler.err.non-static.cant.be.ref: kindname.method, op()
+1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
@@ -73,7 +74,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
-    HeadTail() : _head(NULL), _tail(NULL) {}
+    HeadTail() : _head(nullptr), _tail(nullptr) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
@@ -126,7 +127,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     };
 
     // The most recently created list, which might be for either the next or
-    // a previous safepoint, or might be NULL if the next list hasn't been
+    // a previous safepoint, or might be null if the next list hasn't been
     // created yet.  We only need one list because of the requirement that
     // threads calling add() must first ensure there are no paused buffers
     // from a previous safepoint.  There might be many list instances existing
@@ -134,7 +135,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     // and install the next list, and meanwhile there can be a thread dealing
     // with the previous list.
     PausedList* volatile _plist;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(PausedList*));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(PausedList*));
 
     NONCOPYABLE(PausedBuffers);
 
@@ -156,19 +157,19 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail take_all();
   };
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   // Upper bound on the number of cards in the completed and paused buffers.
   volatile size_t _num_cards;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(size_t));
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
   volatile size_t _mutator_refinement_threshold;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
   // NonblockingQueue has inner padding of one cache line.
   NonblockingQueue<BufferNode, &BufferNode::next_ptr> _completed;
   // Add a trailer padding after NonblockingQueue.
-  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_PADDING_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
   // PausedBuffers has inner padding, including trailer.
   PausedBuffers _paused;
@@ -194,7 +195,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Refine the cards in "node" from its index to buffer_size.
+  // Refine the cards in "node" from its index to buffer_capacity.
   // Stops processing if SuspendibleThreadSet::should_yield() is true.
   // Returns true if the entire buffer was processed, false if there
   // is a pending yield request.  The node's index is updated to exclude
@@ -211,10 +212,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Thread-safe attempt to remove and return the first buffer from
   // the _completed queue.
-  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // Returns null if the queue is empty, or if a concurrent push/append
   // interferes. It uses GlobalCounter critical section to avoid ABA problem.
   BufferNode* dequeue_completed_buffer();
-  // Remove and return a completed buffer from the list, or return NULL
+  // Remove and return a completed buffer from the list, or return null
   // if none available.
   BufferNode* get_completed_buffer();
 

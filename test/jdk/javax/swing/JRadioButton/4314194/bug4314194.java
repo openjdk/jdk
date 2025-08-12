@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,10 @@ public class bug4314194 {
                  UIManager.getInstalledLookAndFeels()) {
             if (laf.getClassName().contains("Motif")) {
                 System.out.println("Skipping Motif L&F as it is deprecated");
+                continue;
+            } else if (laf.getClassName().contains("GTK")) {
+                System.out.println("GTK doesn't support color setting explicitly" +
+                        " specified by user using UIManager property.");
                 continue;
             }
             System.out.println("Testing L&F: " + laf.getClassName());

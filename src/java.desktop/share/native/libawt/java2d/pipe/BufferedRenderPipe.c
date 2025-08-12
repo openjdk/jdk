@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@
 #include "SpanIterator.h"
 #include "Trace.h"
 
+#if defined(_AIX) && defined(open)
+#undef open
+#endif
+
 /* The "header" consists of a jint opcode and a jint span count value */
 #define INTS_PER_HEADER  2
 #define BYTES_PER_HEADER 8
@@ -55,9 +59,9 @@ Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans
     jint ipos;
     jboolean hasException;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "BufferedRenderPipe_fillSpans: bpos=%d limit=%d",
-                bpos, limit);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "BufferedRenderPipe_fillSpans: bpos=%d limit=%d",
+               bpos, limit);
 
     if (JNU_IsNull(env, rq)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

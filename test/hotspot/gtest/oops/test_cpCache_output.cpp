@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "precompiled.hpp"
+
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
@@ -42,25 +42,20 @@ TEST_VM(ConstantPoolCache, print_on) {
   klass->constants()->cache()->print_on(&ss);
 
   const char* output = ss.freeze();
-  // method entry test
-  ASSERT_TRUE(strstr(output, "this") != NULL) << "must have \"this\"";
-  ASSERT_TRUE(strstr(output, "bytecode 1:") != NULL) << "must have \"bytecode 1\"";
-  ASSERT_TRUE(strstr(output, "bytecode 2:") != NULL) << "must have \"bytecode 2\"";
-  ASSERT_TRUE(strstr(output, "cp index:") != NULL) << "must have constant pool index";
-  ASSERT_TRUE(strstr(output, "F1:") != NULL) << "must have F1 value";
-  ASSERT_TRUE(strstr(output, "F2:") != NULL) << "must have F2 value";
-  ASSERT_TRUE(strstr(output, "method:") != NULL) << "must have a method";
-  ASSERT_TRUE(strstr(output, "flag values:") != NULL) << "must have a flag";
-  ASSERT_TRUE(strstr(output, "tos:") != NULL) << "must have result type";
-  ASSERT_TRUE(strstr(output, "local signature:") != NULL) << "must have local signature flag";
-  ASSERT_TRUE(strstr(output, "has appendix:") != NULL) << "must have appendix flag";
-  ASSERT_TRUE(strstr(output, "forced virtual:") != NULL) << "must have forced virtual flag";
-  ASSERT_TRUE(strstr(output, "final:") != NULL) << "must have final flag";
-  ASSERT_TRUE(strstr(output, "virtual final:") != NULL) << "must have virtual final flag";
-  ASSERT_TRUE(strstr(output, "resolution failed:") != NULL) << "must have resolution failed flag";
-  ASSERT_TRUE(strstr(output, "num parameters:") != NULL) << "must have number of parameters";
+  static const char* const expected_strings[] = {
+    // Method entry tests:
+    "Klass:", "Method:", "CP Index:", "Resolved References Index:", "Table Index:",
+    "TOS:", "Number of Parameters:", "Is Virtual Final:", "Is Final", "Is Forced Virtual",
+    "Has Appendix:", "Has Local Signature", "Bytecode 1:", "Bytecode 2:",
 
-  // field entry test
-  ASSERT_TRUE(strstr(output, "volatile:") != NULL) << "must have volatile flag";
-  ASSERT_TRUE(strstr(output, "field index:") != NULL) << "must have field index";
+    // field entry test
+    "Offset:", "Field Index:", "CP Index:", "TOS:", "Is Final:", "Is Volatile:",
+    "Put Bytecode:", "Get Bytecode:",
+    nullptr
+  };
+
+  for (int i = 0; expected_strings[i] != nullptr; i++) {
+    ASSERT_THAT(output, testing::HasSubstr(expected_strings[i]));
+  }
+
 }

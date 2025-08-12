@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,29 +118,29 @@ public final class ZoneRules implements Serializable {
     private static final int LAST_CACHED_YEAR = 2100;
 
     /**
-     * The transitions between standard offsets (epoch seconds), sorted.
+     * @serial The transitions between standard offsets (epoch seconds), sorted.
      */
     private final long[] standardTransitions;
     /**
-     * The standard offsets.
+     * @serial The standard offsets.
      */
     private final ZoneOffset[] standardOffsets;
     /**
-     * The transitions between instants (epoch seconds), sorted.
+     * @serial The transitions between instants (epoch seconds), sorted.
      */
     private final long[] savingsInstantTransitions;
     /**
-     * The transitions between local date-times, sorted.
+     * @serial The transitions between local date-times, sorted.
      * This is a paired array, where the first entry is the start of the transition
      * and the second entry is the end of the transition.
      */
     private final LocalDateTime[] savingsLocalTransitions;
     /**
-     * The wall offsets.
+     * @serial The wall offsets.
      */
     private final ZoneOffset[] wallOffsets;
     /**
-     * The last rule.
+     * @serial The last rule.
      */
     private final ZoneOffsetTransitionRule[] lastRules;
     /**
@@ -828,9 +828,9 @@ public final class ZoneRules implements Serializable {
      * This default implementation compares the {@link #getOffset(java.time.Instant) actual}
      * and {@link #getStandardOffset(java.time.Instant) standard} offsets.
      *
-     * @param instant  the instant to find the offset information for, not null, but null
+     * @param instant  the instant to check the daylight savings for, not null, but null
      *  may be ignored if the rules have a single offset for all instants
-     * @return the standard offset, not null
+     * @return true if the specified instant is in daylight savings, false otherwise.
      */
     public boolean isDaylightSavings(Instant instant) {
         return (getStandardOffset(instant).equals(getOffset(instant)) == false);

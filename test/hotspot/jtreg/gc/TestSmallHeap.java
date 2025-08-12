@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,11 @@ public class TestSmallHeap {
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
         long minMaxHeap = 4 * 1024 * 1024;
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
             gc,
             "-Xmx" + minMaxHeap,
             "-XX:+PrintFlagsFinal",
             VerifyHeapSize.class.getName());
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
         expectedMaxHeap = Math.max(expectedMaxHeap, minMaxHeap);

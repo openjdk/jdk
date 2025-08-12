@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package sun.security.validator;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
@@ -53,6 +51,38 @@ enum CADistrustPolicy {
             }
             SymantecTLSPolicy.checkDistrust(chain);
         }
+    },
+
+    /**
+     * Distrust TLS Server certificates anchored by an Entrust root CA and
+     * issued after November 11, 2024. If enabled, this policy is currently
+     * enforced by the PKIX and SunX509 TrustManager implementations
+     * of the SunJSSE provider implementation.
+     */
+    ENTRUST_TLS {
+        void checkDistrust(String variant, X509Certificate[] chain)
+                           throws ValidatorException {
+            if (!variant.equals(Validator.VAR_TLS_SERVER)) {
+                return;
+            }
+            EntrustTLSPolicy.checkDistrust(chain);
+        }
+    },
+
+    /**
+     * Distrust TLS Server certificates anchored by a CAMERFIRMA root CA and
+     * issued after April 15, 2025. If enabled, this policy is currently
+     * enforced by the PKIX and SunX509 TrustManager implementations
+     * of the SunJSSE provider implementation.
+     */
+    CAMERFIRMA_TLS {
+        void checkDistrust(String variant, X509Certificate[] chain)
+                           throws ValidatorException {
+            if (!variant.equals(Validator.VAR_TLS_SERVER)) {
+                return;
+            }
+            CamerfirmaTLSPolicy.checkDistrust(chain);
+        }
     };
 
     /**
@@ -70,15 +100,8 @@ enum CADistrustPolicy {
     // The policies set in the jdk.security.caDistrustPolicies property.
     static final EnumSet<CADistrustPolicy> POLICIES = parseProperty();
     private static EnumSet<CADistrustPolicy> parseProperty() {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public String run() {
-                    return Security.getProperty(
-                        "jdk.security.caDistrustPolicies");
-                }
-            });
+        String property = Security.getProperty(
+                "jdk.security.caDistrustPolicies");
         EnumSet<CADistrustPolicy> set = EnumSet.noneOf(CADistrustPolicy.class);
         // if property is null or empty, the restrictions are not enforced
         if (property == null || property.isEmpty()) {

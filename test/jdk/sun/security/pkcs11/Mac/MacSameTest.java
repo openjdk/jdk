@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm MacSameTest
- * @run main/othervm -Djava.security.manager=allow MacSameTest sm
  * @key randomness
  */
 
@@ -37,12 +36,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 public class MacSameTest extends PKCS11Test {
 
@@ -69,14 +66,10 @@ public class MacSameTest extends PKCS11Test {
     public void main(Provider p) {
         List<String> algorithms = getSupportedAlgorithms("Mac", "Hmac", p);
         boolean success = true;
-        SecureRandom srdm = new SecureRandom();
 
         for (String alg : algorithms) {
             // first try w/ java secret key object
-            byte[] keyVal = new byte[KEY_SIZE];
-            srdm.nextBytes(keyVal);
-            SecretKey skey = new SecretKeySpec(keyVal, alg);
-
+            SecretKey skey = generateKey(alg, KEY_SIZE);
             try {
                 doTest(alg, skey, p);
             } catch (Exception e) {
@@ -86,6 +79,7 @@ public class MacSameTest extends PKCS11Test {
             }
 
             try {
+                // No KeyGenerator support for PBE
                 KeyGenerator kg = KeyGenerator.getInstance(alg, p);
                 kg.init(KEY_SIZE);
                 skey = kg.generateKey();

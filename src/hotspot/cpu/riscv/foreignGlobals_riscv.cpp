@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -42,6 +41,10 @@ bool ABIDescriptor::is_volatile_reg(Register reg) const {
 bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
   return _float_argument_registers.contains(reg)
          || _float_additional_volatile_registers.contains(reg);
+}
+
+bool ForeignGlobals::is_foreign_linker_supported() {
+  return true;
 }
 
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
@@ -159,20 +162,12 @@ static void move_fp(MacroAssembler* masm, int out_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Register tmp_reg = as_Register(tmp);
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
-
-    // replace any placeholders
-    if (from_reg.type() == StorageType::PLACEHOLDER) {
-      from_reg = locs.get(from_reg);
-    }
-    if (to_reg.type() == StorageType::PLACEHOLDER) {
-      to_reg = locs.get(to_reg);
-    }
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:

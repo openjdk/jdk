@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,6 @@ namespace std {
 #include "sizecalc.h"
 
 class awt_toolkit_shutdown {};
-
-// Disable "C++ Exception Specification ignored" warnings.
-// These warnings are generated because VC++ 5.0 allows, but does not enforce,
-// exception specifications. This #pragma can be safely removed when VC++
-// is updated to enforce exception specifications.
-#pragma warning(disable : 4290)
 
 #ifdef TRY
 #error Multiple definitions of TRY
@@ -88,14 +82,14 @@ ExceptionOccurred_Instead
 // These three functions throw std::bad_alloc in an out of memory condition
 // instead of returning 0. safe_Realloc will return 0 if memblock is not
 // NULL and size is 0. safe_Malloc and safe_Calloc will never return 0.
-void *safe_Malloc(size_t size) throw (std::bad_alloc);
-void *safe_Calloc(size_t num, size_t size) throw (std::bad_alloc);
-void *safe_Realloc(void *memblock, size_t size) throw (std::bad_alloc);
+void *safe_Malloc(size_t size);
+void *safe_Calloc(size_t num, size_t size);
+void *safe_Realloc(void *memblock, size_t size);
 
 // This function should be called instead of ExceptionOccurred. It throws
 // std::bad_alloc if a java.lang.OutOfMemoryError is currently pending
 // on the calling thread.
-jthrowable safe_ExceptionOccurred(JNIEnv *env) throw (std::bad_alloc);
+jthrowable safe_ExceptionOccurred(JNIEnv *env);
 
 // This function is called at the beginning of an entry point.
 // Entry points are functions which are declared:
@@ -111,7 +105,7 @@ void entry_point(void);
 void hang_if_shutdown(void);
 
 // This function throws awt_toolkit_shutdown if the Toolkit is not active
-void throw_if_shutdown(void) throw (awt_toolkit_shutdown);
+void throw_if_shutdown(void);
 
 // This function is called when a std::bad_alloc exception is caught
 void handle_bad_alloc(void);
@@ -120,14 +114,10 @@ void handle_bad_alloc(void);
 // #define OUTOFMEM_TEST
 
 #ifdef OUTOFMEM_TEST
-    void *safe_Malloc_outofmem(size_t size, const char *, int)
-        throw (std::bad_alloc);
-    void *safe_Calloc_outofmem(size_t num, size_t size, const char *, int)
-        throw (std::bad_alloc);
-    void *safe_Realloc_outofmem(void *memblock, size_t size, const char *, int)
-        throw (std::bad_alloc);
-    void * CDECL operator new(size_t size, const char *, int)
-        throw (std::bad_alloc);
+    void *safe_Malloc_outofmem(size_t size, const char *, int);
+    void *safe_Calloc_outofmem(size_t num, size_t size, const char *, int);
+    void *safe_Realloc_outofmem(void *memblock, size_t size, const char *, int);
+    void * operator new(size_t size, const char *, int);
 
     #define safe_Malloc(size) \
         safe_Malloc_outofmem(size, __FILE__, __LINE__)

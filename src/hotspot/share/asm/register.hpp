@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,67 +93,79 @@ template <class RegImpl> class ReverseRegSetIterator;
 // A set of registers
 template <class RegImpl>
 class AbstractRegSet {
-  uint32_t _bitset;
+#ifndef ARM
+  STATIC_ASSERT(RegImpl::number_of_registers <= 64);
+#endif
+  uint64_t _bitset;
 
-  AbstractRegSet(uint32_t bitset) : _bitset(bitset) { }
+  constexpr AbstractRegSet(uint64_t bitset) : _bitset(bitset) { }
+
+  static constexpr int max_size() {
+    return (int)(sizeof(_bitset) * BitsPerByte);
+  }
 
 public:
 
-  AbstractRegSet() : _bitset(0) { }
+  constexpr AbstractRegSet() : _bitset(0) { }
 
-  AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
+  constexpr AbstractRegSet(RegImpl r1)
+    : _bitset(r1->is_valid() ? size_t(1) << r1->encoding() : 0) {
+  }
 
-  AbstractRegSet operator+(const AbstractRegSet aSet) const {
+  constexpr AbstractRegSet operator+(const AbstractRegSet aSet) const {
     AbstractRegSet result(_bitset | aSet._bitset);
     return result;
   }
 
-  AbstractRegSet operator-(const AbstractRegSet aSet) const {
+  constexpr AbstractRegSet operator-(const AbstractRegSet aSet) const {
     AbstractRegSet result(_bitset & ~aSet._bitset);
     return result;
   }
 
-  AbstractRegSet &operator+=(const AbstractRegSet aSet) {
+  constexpr AbstractRegSet &operator+=(const AbstractRegSet aSet) {
     *this = *this + aSet;
     return *this;
   }
 
-  AbstractRegSet &operator-=(const AbstractRegSet aSet) {
+  constexpr AbstractRegSet &operator-=(const AbstractRegSet aSet) {
     *this = *this - aSet;
     return *this;
   }
 
-  static AbstractRegSet of(RegImpl r1) {
+  constexpr static AbstractRegSet of(RegImpl r1) {
     return AbstractRegSet(r1);
   }
 
-  static AbstractRegSet of(RegImpl r1, RegImpl r2) {
+  constexpr static AbstractRegSet of(RegImpl r1, RegImpl r2) {
     return of(r1) + r2;
   }
 
-  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3) {
+  constexpr static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3) {
     return of(r1, r2) + r3;
   }
 
-  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3, RegImpl r4) {
+  constexpr static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3, RegImpl r4) {
     return of(r1, r2, r3) + r4;
   }
 
-  static AbstractRegSet range(RegImpl start, RegImpl end) {
+  constexpr static AbstractRegSet range(RegImpl start, RegImpl end) {
     int start_enc = start->encoding();
     int   end_enc = end->encoding();
     assert(start_enc <= end_enc, "must be");
-    uint32_t bits = ~0;
+    size_t bits = ~(size_t)0;
     bits <<= start_enc;
-    bits <<= 31 - end_enc;
-    bits >>= 31 - end_enc;
+    bits <<= max_size() - 1 - end_enc;
+    bits >>= max_size() - 1 - end_enc;
 
     return AbstractRegSet(bits);
   }
 
-  uint size() const { return population_count(_bitset); }
+  constexpr bool contains(RegImpl reg) {
+    return (AbstractRegSet(reg).bits() & bits()) != 0;
+  }
 
-  uint32_t bits() const { return _bitset; }
+  constexpr uint size() const { return population_count(_bitset); }
+  constexpr uint64_t bits() const { return _bitset; }
 
 private:
 
@@ -184,6 +196,16 @@ public:
     return *this;
   }
 
+  RegSetIterator operator++(int) {
+    RegSetIterator r = *this;
+    ++(*this);
+    return r;
+  }
+
+  RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
+    _regs= mit._regs;
+    return *this;
+  }
   bool operator==(const RegSetIterator& rhs) const {
     return _regs.bits() == rhs._regs.bits();
   }
@@ -193,6 +215,10 @@ public:
 
   RegImpl operator*() {
     return _regs.first();
+  }
+
+  AbstractRegSet<RegImpl> remaining() const {
+    return _regs;
   }
 };
 
@@ -235,19 +261,44 @@ inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
 
 #include CPU_HEADER(register)
 
-// Debugging support
+// Debugging and assertion support
+
+template<typename R>
+constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register) {
+  return !allocated_regs.contains(first_register);
+}
 
 template<typename R, typename... Rx>
-inline void assert_different_registers(R first_register, Rx... more_registers) {
+constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register, Rx... more_registers) {
+  if (allocated_regs.contains(first_register)) {
+    return false;
+  }
+  return different_registers(allocated_regs + first_register, more_registers...);
+}
+
+template<typename R, typename... Rx>
+inline constexpr bool different_registers(R first_register, Rx... more_registers) {
+  return different_registers(AbstractRegSet<R>(first_register), more_registers...);
+}
+
+template<typename R, typename... Rx>
+inline void assert_different_registers_impl(const char* file, int line, R first_register, Rx... more_registers) {
 #ifdef ASSERT
-  const R regs[] = { first_register, more_registers... };
-  // Verify there are no equal entries.
-  for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
-    for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-      assert(regs[i] != regs[j], "Multiple uses of register: %s", regs[i]->name());
+  if (!different_registers(first_register, more_registers...)) {
+    const R regs[] = { first_register, more_registers... };
+    // Find a duplicate entry.
+    for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
+      for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
+        if (regs[i]->is_valid()) {
+          assert_with_file_and_line(regs[i] != regs[j], file, line, "regs[%zu] and regs[%zu] are both: %s",
+              i, j, regs[i]->name());
+        }
+      }
     }
   }
 #endif
 }
+
+#define assert_different_registers(...) assert_different_registers_impl(__FILE__, __LINE__, __VA_ARGS__)
 
 #endif // SHARE_ASM_REGISTER_HPP

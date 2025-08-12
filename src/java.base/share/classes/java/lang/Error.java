@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.lang;
+
+import jdk.internal.event.ThrowableTracer;
 
 /**
  * An {@code Error} is a subclass of {@code Throwable}
@@ -53,6 +55,9 @@ public class Error extends Throwable {
      */
     public Error() {
         super();
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), null);
+        }
     }
 
     /**
@@ -65,6 +70,9 @@ public class Error extends Throwable {
      */
     public Error(String message) {
         super(message);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 
     /**
@@ -83,6 +91,9 @@ public class Error extends Throwable {
      */
     public Error(String message, Throwable cause) {
         super(message, cause);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 
     /**
@@ -100,6 +111,9 @@ public class Error extends Throwable {
      */
     public Error(Throwable cause) {
         super(cause);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), null);
+        }
     }
 
     /**
@@ -121,5 +135,8 @@ public class Error extends Throwable {
                     boolean enableSuppression,
                     boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 }

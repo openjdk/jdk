@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
+
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
@@ -66,12 +67,10 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
         continue;
 
   #ifndef COMPILER2
-      COMPILER1_PRESENT(ShouldNotReachHere();)
   #if INCLUDE_JVMCI
-      if (UseJVMCICompiler) {
-        ShouldNotReachHere();
-      }
+      if (!EnableJVMCI)
   #endif
+        ShouldNotReachHere();
   #endif // !COMPILER2
 
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
@@ -84,15 +83,15 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
       }
       guarantee(loc != nullptr, "missing saved register");
       derived_pointer* derived_loc = (derived_pointer*)loc;
-      void** base_loc = (void**) fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+      derived_base* base_loc = (derived_base*) fr->oopmapreg_to_location(omv.content_reg(), reg_map);
 
       // Ignore nullptr oops and decoded null narrow oops which
       // equal to CompressedOops::base() when a narrow oop
       // implicit null check is used in compiled code.
       // The narrow_oop_base could be nullptr or be the address
       // of the page below heap depending on compressed oops mode.
-      if (base_loc != nullptr && !SkipNullValue::should_skip(*base_loc)) {
-        _derived_oop_fn->do_derived_oop((oop*)base_loc, derived_loc);
+      if (base_loc != nullptr && !SkipNullValue::should_skip((void*)*base_loc)) {
+        _derived_oop_fn->do_derived_oop(base_loc, derived_loc);
       }
     }
   }
@@ -113,7 +112,7 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
         if (reg_map->should_skip_missing())
           continue;
         VMReg reg = omv.reg();
-        tty->print_cr("missing saved register: reg: " INTPTR_FORMAT " %s loc: %p", reg->value(), reg->name(), loc);
+        tty->print_cr("missing saved register: reg: %d %s loc: %p", reg->value(), reg->name(), loc);
         fr->print_on(tty);
       }
 #endif

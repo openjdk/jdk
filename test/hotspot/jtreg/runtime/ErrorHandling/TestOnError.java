@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test using -XX:OnError=<cmd>
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @run driver TestOnError
  */
@@ -39,8 +40,11 @@ public class TestOnError {
 
     public static void main(String[] args) throws Exception {
         String msg = "Test Succeeded";
+        String msg1 = "OnError Test Message1";
+        String msg2 = "OnError Test Message2";
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        // Basic OnError test:
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:-CreateCoredumpOnCrash",
            "-XX:ErrorHandlerTest=14", // trigger potential SEGV
            "-XX:OnError=echo " + msg,
@@ -58,6 +62,30 @@ public class TestOnError {
            both get written to stdout.
         */
         output.stdoutShouldMatch("^" + msg); // match start of line only
+
+        // Test multiple OnError arguments:
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+           "-XX:-CreateCoredumpOnCrash",
+           "-XX:ErrorHandlerTest=14",
+           "-XX:OnError=echo " + msg1,
+           "-XX:OnError=echo " + msg2,
+           TestOnError.class.getName());
+
+        output = new OutputAnalyzer(pb.start());
+        output.stdoutShouldMatch("^" + msg1);
+        output.stdoutShouldMatch("^" + msg2);
+
+        // Test one argument with multiple commands using ; separator:
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+           "-XX:-CreateCoredumpOnCrash",
+           "-XX:ErrorHandlerTest=14",
+           "-XX:OnError=echo " + msg1 + ";echo " + msg2,
+           TestOnError.class.getName());
+
+        output = new OutputAnalyzer(pb.start());
+        output.stdoutShouldMatch("^" + msg1);
+        output.stdoutShouldMatch("^" + msg2);
+
         System.out.println("PASSED");
     }
 }

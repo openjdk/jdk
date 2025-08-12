@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,14 @@ abstract class CKey implements Key, Length {
 
     protected final String algorithm;
 
-    protected CKey(String algorithm, NativeHandles handles, int keyLength) {
+    private final boolean isPublic;
+
+    protected CKey(String algorithm, NativeHandles handles, int keyLength,
+            boolean isPublic) {
         this.algorithm = algorithm;
         this.handles = handles;
         this.keyLength = keyLength;
+        this.isPublic = isPublic;
     }
 
     // Native method to cleanup the key handle.
@@ -100,6 +104,18 @@ abstract class CKey implements Key, Length {
 
     public String getAlgorithm() {
         return algorithm;
+    }
+
+    public String toString() {
+        String typeStr;
+        if (handles.hCryptKey != 0) {
+            typeStr = getKeyType(handles.hCryptKey) + ", container=" +
+                    getContainerName(handles.hCryptProv);
+        } else {
+            typeStr = "CNG";
+        }
+        return algorithm + " " + (isPublic ? "PublicKey" : "PrivateKey") +
+                " [size=" + keyLength + " bits, type=" + typeStr + "]";
     }
 
     protected static native String getContainerName(long hCryptProv);

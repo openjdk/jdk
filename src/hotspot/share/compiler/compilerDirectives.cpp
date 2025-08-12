@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -32,6 +31,8 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
@@ -202,6 +203,25 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
   return this == directive->_c2_store;
 }
 
+bool DirectiveSet::should_collect_memstat() const {
+  // MemLimit requires the memory statistic to be active
+  return MemStatOption > 0 || MemLimitOption != 0;
+}
+
+bool DirectiveSet::should_print_memstat() const {
+  return MemStatOption == (uintx)MemStatAction::print;
+}
+
+size_t DirectiveSet::mem_limit() const {
+  return MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
+}
+
+bool DirectiveSet::should_crash_at_mem_limit() const {
+  // The sign encodes the action to be taken when reaching
+  // the memory limit (+ stop - crash)
+  return MemLimitOption < 0;
+}
+
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
 // - by ',' (if -XX:Control/DisableIntrinsic is used once when invoking the VM) or
 // - by '\n' (if -XX:Control/DisableIntrinsic is used multiple times when invoking the VM) or
@@ -278,12 +298,18 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :
+  _inlinematchers(nullptr),
+  _directive(d),
+  _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
+  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler)
+{
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
-  _ideal_phase_name_mask = 0;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
+#undef init_defaults_definition
   memset(_modified, 0, sizeof(_modified));
   _intrinsic_control_words.fill_in(/*default value*/TriBool());
 }
@@ -296,6 +322,12 @@ DirectiveSet::~DirectiveSet() {
     delete tmp;
     tmp = next;
   }
+
+#define free_string_flags(name, type, dvalue, cc_flag) if (_modified[name##Index]) os::free(const_cast<char*>(name##Option));
+  compilerdirectives_common_string_flags(free_string_flags)
+  compilerdirectives_c2_string_flags(free_string_flags)
+  compilerdirectives_c1_string_flags(free_string_flags)
+#undef free_string_flags
 }
 
 // A smart pointer of DirectiveSet. It uses Copy-on-Write strategy to avoid cloning.
@@ -395,23 +427,43 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     }
 
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
-#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommand::cc_flag != CompileCommand::Unknown && CompilerOracle::has_option_value(method, CompileCommand::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
+#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommandEnum::cc_flag != CompileCommandEnum::Unknown && CompilerOracle::has_option_value(method, CompileCommandEnum::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
+#undef init_default_cc
 
-    // Parse PrintIdealPhaseName and create an efficient lookup mask
 #ifndef PRODUCT
 #ifdef COMPILER2
-    if (!_modified[PrintIdealPhaseIndex]) {
+    if (!_modified[TraceAutoVectorizationIndex]) {
       // Parse ccstr and create mask
       ccstrlist option;
-      if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        uint64_t mask = 0;
-        PhaseNameValidator validator(option, mask);
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::TraceAutoVectorization, option)) {
+        TraceAutoVectorizationTagValidator validator(option, false);
         if (validator.is_valid()) {
-          assert(mask != 0, "Must be set");
-          set.cloned()->_ideal_phase_name_mask = mask;
+          set.cloned()->set_trace_auto_vectorization_tags(validator.tags());
+        }
+      }
+    }
+    if (!_modified[TraceMergeStoresIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::TraceMergeStores, option)) {
+        TraceMergeStores::TagValidator validator(option, false);
+        if (validator.is_valid()) {
+          set.cloned()->set_trace_merge_stores_tags(validator.tags());
+        }
+      }
+    }
+    // Parse PrintIdealPhaseName and create a lookup set
+    if (!_modified[PrintIdealPhaseIndex]) {
+      // Parse ccstr and create set
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::PrintIdealPhase, option)) {
+        PhaseNameValidator validator(option);
+        if (validator.is_valid()) {
+          assert(!validator.phase_name_set().is_empty(), "Phase name set must be non-empty");
+          set.cloned()->set_ideal_phase_name_set(validator.phase_name_set());
         }
       }
     }
@@ -423,7 +475,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     bool need_reset = true; // if Control/DisableIntrinsic redefined, only need to reset control_words once
 
     if (!_modified[ControlIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, CompileCommand::ControlIntrinsic, option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommandEnum::ControlIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value);
 
       if (need_reset) {
@@ -443,7 +495,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
 
     if (!_modified[DisableIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, CompileCommand::DisableIntrinsic, option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommandEnum::DisableIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value, true/*disable_all*/);
 
       if (need_reset) {
@@ -549,8 +601,7 @@ void DirectiveSet::print_inline(outputStream* st) {
   }
 }
 
-bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
+bool DirectiveSet::is_intrinsic_disabled(vmIntrinsics::ID id) {
   assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "invalid intrinsic_id!");
 
   TriBool b = _intrinsic_control_words[vmIntrinsics::as_int(id)];
@@ -578,12 +629,24 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
   }
 
   #define copy_members_definition(name, type, dvalue, cc_flag) set->name##Option = src->name##Option;
-    compilerdirectives_common_flags(copy_members_definition)
-    compilerdirectives_c2_flags(copy_members_definition)
-    compilerdirectives_c1_flags(copy_members_definition)
+    compilerdirectives_common_other_flags(copy_members_definition)
+    compilerdirectives_c2_other_flags(copy_members_definition)
+    compilerdirectives_c1_other_flags(copy_members_definition)
+  #undef copy_members_definition
+
+#define copy_string_members_definition(name, type, dvalue, cc_flag)          \
+  if (src->_modified[name##Index]) {                                         \
+    set->name##Option = os::strdup_check_oom(src->name##Option, mtCompiler); \
+  } else {                                                                   \
+    set->name##Option = src->name##Option;                                   \
+  }
+  compilerdirectives_common_string_flags(copy_string_members_definition)
+  compilerdirectives_c2_string_flags(copy_string_members_definition)
+  compilerdirectives_c1_string_flags(copy_string_members_definition)
+#undef copy_string_members_definition
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
-  set->_ideal_phase_name_mask = src->_ideal_phase_name_mask;
+  set->set_ideal_phase_name_set(src->_ideal_phase_name_set);
   return set;
 }
 
@@ -709,7 +772,7 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
       if (dir->is_default_directive() || dir->match(method)) {
         match = dir->get_for(comp);
         assert(match != nullptr, "Consistency");
-        if (match->EnableOption) {
+        if (match->EnableOption || dir->is_default_directive()) {
           // The directiveSet for this compile is also enabled -> success
           dir->inc_refcount();
           break;

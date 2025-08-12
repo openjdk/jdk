@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,42 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * @see ThreadMXBean#setThreadCpuTimeEnabled
      */
     public long[] getThreadUserTime(long[] ids);
+
+    /**
+     * Returns an approximation of the total amount of memory, in bytes, allocated
+     * in heap memory by all threads since the Java virtual machine started.
+     * The returned value is an approximation because some Java virtual machine
+     * implementations may use object allocation mechanisms that result in a
+     * delay between the time an object is allocated and the time its size is
+     * recorded.
+     *
+     * @implSpec The default implementation throws {@code UnsupportedOperationException}
+     * if the Java virtual machine implementation does not support thread
+     * memory allocation measurement, and otherwise acts as though thread
+     * memory allocation measurement is disabled.
+     *
+     * @return an approximation of the total memory allocated, in bytes, in
+     * heap memory since the Java virtual machine was started,
+     * if thread memory allocation measurement is enabled;
+     * {@code -1} otherwise.
+     *
+     * @throws UnsupportedOperationException if the Java virtual
+     *         machine implementation does not support thread memory allocation
+     *         measurement.
+     *
+     * @see #isThreadAllocatedMemorySupported
+     * @see #isThreadAllocatedMemoryEnabled
+     * @see #setThreadAllocatedMemoryEnabled
+     *
+     * @since 21
+     */
+    public default long getTotalThreadAllocatedBytes() {
+        if (!isThreadAllocatedMemorySupported()) {
+            throw new UnsupportedOperationException(
+                "Thread allocated memory measurement is not supported.");
+        }
+        return -1;
+    }
 
     /**
      * Returns an approximation of the total amount of memory, in bytes,
@@ -241,10 +277,6 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      *
      * @throws UnsupportedOperationException if the Java virtual
      *         machine does not support thread memory allocation measurement.
-     *
-     * @throws SecurityException if a security manager
-     *         exists and the caller does not have
-     *         ManagementPermission("control").
      *
      * @see #isThreadAllocatedMemorySupported
      */

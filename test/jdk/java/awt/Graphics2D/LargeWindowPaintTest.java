@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,23 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8240654
  * @summary Test painting a large window works
  * @key headful
  * @requires (os.family == "windows")
  * @requires vm.gc.Z
- * @run main/othervm -Dsun.java2d.uiScale=1 LargeWindowPaintTest
- * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
+ * @run main/othervm -XX:-UseZGC -Dsun.java2d.uiScale=1 LargeWindowPaintTest
+ * @run main/othervm -XX:-UseZGC -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
+ */
+
+/*
+ * @test id=Z
+ * @bug 8240654
+ * @summary Test painting a large window works
+ * @key headful
+ * @requires (os.family == "windows")
+ * @requires vm.gc.Z
  * @run main/othervm -XX:+UseZGC -Dsun.java2d.uiScale=1 LargeWindowPaintTest
  * @run main/othervm -XX:+UseZGC -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
  */

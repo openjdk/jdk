@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class OopStorage::ActiveArray {
 
 public:
   static ActiveArray* create(size_t size,
-                             MEMFLAGS memflags = mtGC,
+                             MemTag mem_tag = mtGC,
                              AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
   static void destroy(ActiveArray* ba);
 
@@ -184,7 +184,10 @@ public:
   void set_active_index(size_t index);
   static size_t active_index_safe(const Block* block); // Returns 0 if access fails.
 
-  // Returns null if ptr is not in a block or not allocated in that block.
+  // Return block of owner containing ptr, if ptr is a valid entry of owner.
+  // If ptr is not a valid entry of owner then returns either null or a "false
+  // positive" pointer; see allocation_status.
+  // precondition: ptr != nullptr
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
   oop* allocate();
@@ -196,6 +199,8 @@ public:
 
   template<typename F> bool iterate(F f);
   template<typename F> bool iterate(F f) const;
+
+  bool print_containing(const oop* addr, outputStream* st);
 }; // class Block
 
 inline OopStorage::Block* OopStorage::AllocationList::head() {

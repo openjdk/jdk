@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @library /test/lib
  * @run main/othervm B6296310
  * @run main/othervm -Djava.net.preferIPv6Addresses=true B6296310
- * @summary  REGRESSION: AppletClassLoader.getResourceAsStream() behaviour is wrong in some cases
+ * @summary Prevent NPE in HttpURLConnection.getInputStream0() when
+ *          content length is 0
  */
 
 import java.io.IOException;

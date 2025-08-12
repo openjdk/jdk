@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package sun.security.util;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.Locale;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class for debugging.
@@ -41,14 +41,12 @@ import sun.security.action.GetPropertyAction;
 public class Debug {
 
     private String prefix;
-
     private static String args;
 
     static {
-        args = GetPropertyAction.privilegedGetProperty("java.security.debug");
+        args = System.getProperty("java.security.debug");
 
-        String args2 = GetPropertyAction
-                .privilegedGetProperty("java.security.auth.debug");
+        String args2 = System.getProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;
@@ -58,18 +56,16 @@ public class Debug {
         }
 
         if (args != null) {
-            args = marshal(args);
+            args = args.toLowerCase(Locale.ENGLISH);
             if (args.equals("help")) {
                 Help();
             }
         }
     }
 
-    public static void Help()
-    {
+    public static void Help() {
         System.err.println();
         System.err.println("all           turn on all debugging");
-        System.err.println("access        print all checkPermission results");
         System.err.println("certpath      PKIX CertPathBuilder and");
         System.err.println("              CertPathValidator debugging");
         System.err.println("combiner      SubjectDomainCombiner debugging");
@@ -81,7 +77,7 @@ public class Debug {
         System.err.println("logincontext  login context results");
         System.err.println("jca           JCA engine class debugging");
         System.err.println("keystore      KeyStore debugging");
-        System.err.println("policy        loading and granting");
+        System.err.println("pcsc          Smartcard library debugging");
         System.err.println("provider      security provider debugging");
         System.err.println("pkcs11        PKCS11 session manager debugging");
         System.err.println("pkcs11keystore");
@@ -89,33 +85,16 @@ public class Debug {
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
-        System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
         System.err.println("x509          X.509 certificate debugging");
-        System.err.println();
-        System.err.println("The following can be used with access:");
-        System.err.println();
-        System.err.println("stack         include stack trace");
-        System.err.println("domain        dump all domains in context");
-        System.err.println("failure       before throwing exception, dump stack");
-        System.err.println("              and domain that didn't have permission");
-        System.err.println();
-        System.err.println("The following can be used with stack and domain:");
-        System.err.println();
-        System.err.println("permission=<classname>");
-        System.err.println("              only dump output if specified permission");
-        System.err.println("              is being checked");
-        System.err.println("codebase=<URL>");
-        System.err.println("              only dump output if specified codebase");
-        System.err.println("              is being checked");
         System.err.println();
         System.err.println("The following can be used with provider:");
         System.err.println();
         System.err.println("engine=<engines>");
         System.err.println("              only dump output for the specified list");
         System.err.println("              of JCA engines. Supported values:");
-        System.err.println("              Cipher, KeyAgreement, KeyGenerator,");
+        System.err.println("              Cipher, KDF, KeyAgreement, KeyGenerator,");
         System.err.println("              KeyPairGenerator, KeyStore, Mac,");
         System.err.println("              MessageDigest, SecureRandom, Signature.");
         System.err.println();
@@ -138,8 +117,7 @@ public class Debug {
      * option is set. Set the prefix to be the same as option.
      */
 
-    public static Debug getInstance(String option)
-    {
+    public static Debug getInstance(String option) {
         return getInstance(option, option);
     }
 
@@ -147,8 +125,7 @@ public class Debug {
      * Get a Debug object corresponding to whether or not the given
      * option is set. Set the prefix to prefix.
      */
-    public static Debug getInstance(String option, String prefix)
-    {
+    public static Debug getInstance(String option, String prefix) {
         if (isOn(option)) {
             Debug d = new Debug();
             d.prefix = prefix;
@@ -158,12 +135,48 @@ public class Debug {
         }
     }
 
+    private static String formatCaller() {
+        return StackWalker.getInstance().walk(s ->
+                s.dropWhile(f ->
+                    f.getClassName().startsWith("sun.security.util.Debug"))
+                        .map(f -> f.getFileName() + ":" + f.getLineNumber())
+                        .findFirst().orElse("unknown caller"));
+    }
+
+
+    /**
+     * Get a Debug object corresponding to the given option on the given
+     * property value.
+     * <p>
+     * Note: unlike other {@code getInstance} methods, this method does not
+     * use the {@code java.security.debug} system property.
+     * <p>
+     * Usually, this method is used by other individual area-specific debug
+     * settings. For example,
+     * {@snippet lang=java:
+     * Map<String, String> settings = loadLoginSettings();
+     * String property = settings.get("login");
+     * Debug debug = Debug.of("login", property);
+     * }
+     *
+     * @param prefix the debug option name
+     * @param property debug setting for this option
+     * @return a new Debug object if the property is true
+     */
+    public static Debug of(String prefix, String property) {
+        if (property != null && property.toLowerCase(Locale.ROOT).startsWith("true")) {
+            Debug d = new Debug();
+            d.prefix = prefix;
+            return d;
+        }
+        return null;
+    }
+
     /**
      * True if the system property "security.debug" contains the
      * string "option".
      */
-    public static boolean isOn(String option)
-    {
+    public static boolean isOn(String option) {
         if (args == null)
             return false;
         else {
@@ -186,18 +199,16 @@ public class Debug {
      * created from the call to getInstance.
      */
 
-    public void println(String message)
-    {
-        System.err.println(prefix + ": "+message);
+    public void println(String message) {
+        System.err.println(prefix + extraInfo() + ": " + message);
     }
 
     /**
      * print a message to stderr that is prefixed with the prefix
      * created from the call to getInstance and obj.
      */
-    public void println(Object obj, String message)
-    {
-        System.err.println(prefix + " [" + obj.getClass().getSimpleName() +
+    public void println(Object obj, String message) {
+        System.err.println(prefix + extraInfo() + " [" + obj.getClass().getSimpleName() +
                 "@" + System.identityHashCode(obj) + "]: "+message);
     }
 
@@ -205,18 +216,31 @@ public class Debug {
      * print a blank line to stderr that is prefixed with the prefix.
      */
 
-    public void println()
-    {
-        System.err.println(prefix + ":");
+    public void println() {
+        System.err.println(prefix + extraInfo() + ":");
     }
 
     /**
      * print a message to stderr that is prefixed with the prefix.
      */
 
-    public static void println(String prefix, String message)
-    {
-        System.err.println(prefix + ": "+message);
+    public void println(String prefix, String message) {
+        System.err.println(prefix + extraInfo() + ": " + message);
+    }
+
+    /**
+     * Include information containing:
+     * - hex value of threadId
+     * - the current thread name
+     * - timestamp string
+     * @return String with above metadata
+     */
+    private String extraInfo() {
+        return String.format("[0x%s|%s|%s|%s]",
+                Long.toHexString(Thread.currentThread().threadId()).toUpperCase(Locale.ROOT),
+                Thread.currentThread().getName(),
+                formatCaller(),
+                FormatHolder.DATE_TIME_FORMATTER.format(Instant.now()));
     }
 
     /**
@@ -262,69 +286,6 @@ public class Debug {
         return sb.toString();
     }
 
-    /**
-     * change a string into lower case except permission classes and URLs.
-     */
-    private static String marshal(String args) {
-        if (args != null) {
-            StringBuilder target = new StringBuilder();
-            StringBuilder source = new StringBuilder(args);
-
-            // obtain the "permission=<classname>" options
-            // the syntax of classname: IDENTIFIER.IDENTIFIER
-            // the regular express to match a class name:
-            // "[a-zA-Z_$][a-zA-Z0-9_$]*([.][a-zA-Z_$][a-zA-Z0-9_$]*)*"
-            String keyReg = "[Pp][Ee][Rr][Mm][Ii][Ss][Ss][Ii][Oo][Nn]=";
-            String keyStr = "permission=";
-            String reg = keyReg +
-                "[a-zA-Z_$][a-zA-Z0-9_$]*([.][a-zA-Z_$][a-zA-Z0-9_$]*)*";
-            Pattern pattern = Pattern.compile(reg);
-            Matcher matcher = pattern.matcher(source);
-            StringBuilder left = new StringBuilder();
-            while (matcher.find()) {
-                String matched = matcher.group();
-                target.append(matched.replaceFirst(keyReg, keyStr));
-                target.append("  ");
-
-                // delete the matched sequence
-                matcher.appendReplacement(left, "");
-            }
-            matcher.appendTail(left);
-            source = left;
-
-            // obtain the "codebase=<URL>" options
-            // the syntax of URL is too flexible, and here assumes that the
-            // URL contains no space, comma(','), and semicolon(';'). That
-            // also means those characters also could be used as separator
-            // after codebase option.
-            // However, the assumption is incorrect in some special situation
-            // when the URL contains comma or semicolon
-            keyReg = "[Cc][Oo][Dd][Ee][Bb][Aa][Ss][Ee]=";
-            keyStr = "codebase=";
-            reg = keyReg + "[^, ;]*";
-            pattern = Pattern.compile(reg);
-            matcher = pattern.matcher(source);
-            left = new StringBuilder();
-            while (matcher.find()) {
-                String matched = matcher.group();
-                target.append(matched.replaceFirst(keyReg, keyStr));
-                target.append("  ");
-
-                // delete the matched sequence
-                matcher.appendReplacement(left, "");
-            }
-            matcher.appendTail(left);
-            source = left;
-
-            // convert the rest to lower-case characters
-            target.append(source.toString().toLowerCase(Locale.ENGLISH));
-
-            return target.toString();
-        }
-
-        return null;
-    }
-
     public static String toString(byte[] b) {
         if (b == null) {
             return "(null)";
@@ -332,4 +293,15 @@ public class Debug {
         return HexFormat.ofDelimiter(":").formatHex(b);
     }
 
+    public static String toString(BigInteger b) {
+        return toString(b.toByteArray());
+    }
+
+    // Holder class to break cyclic dependency seen during build
+    private static class FormatHolder {
+        private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS";
+        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+                .ofPattern(PATTERN, Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
+    }
 }

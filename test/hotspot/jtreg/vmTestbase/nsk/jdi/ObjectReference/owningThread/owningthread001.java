@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ public class owningthread001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -103,7 +105,6 @@ public class owningthread001 {
     static VirtualMachine      vm  = null;
 
     ReferenceType     testedClass  = null;
-    ThreadReference   thread2      = null;
     ThreadReference   mainThread   = null;
 
     static int  testExitCode = PASSED;
@@ -148,6 +149,7 @@ public class owningthread001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -172,11 +174,7 @@ public class owningthread001 {
 
             int expresult = returnCode0;
 
-            String threadName = "testedThread";
-
-            List            allThreads   = null;
             List            monitors     = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
             ObjectReference objRef       = null;
 
@@ -185,7 +183,6 @@ public class owningthread001 {
 
                 log2("getting ThreadReference object");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedClass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -194,19 +191,7 @@ public class owningthread001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        mainThread = (ThreadReference) listIterator.next();
-                        if (mainThread.name().equals("main"))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO 'main' thread  ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                mainThread = debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread", "main");
             }
 
 

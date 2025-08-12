@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,23 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.AccessFlags;
-
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class BufferedMethodBuilder
-        implements TerminalMethodBuilder, MethodInfo {
+        implements TerminalMethodBuilder {
     private final List<MethodElement> elements;
     private final SplitConstantPool constantPool;
+    private final ClassFileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private AccessFlags flags;
@@ -53,32 +48,38 @@ public final class BufferedMethodBuilder
     private int[] parameterSlots;
 
     public BufferedMethodBuilder(SplitConstantPool constantPool,
+                                 ClassFileImpl context,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
+                                 int flags,
                                  MethodModel original) {
         this.elements = new ArrayList<>();
         this.constantPool = constantPool;
-        this.name = nameInfo;
-        this.desc = typeInfo;
-        this.flags = AccessFlags.ofMethod();
+        this.context = context;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.METHOD, flags);
         this.original = original;
     }
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        elements.add(element);
-        if (element instanceof AccessFlags f) this.flags = f;
+        elements.add(requireNonNull(element));
+        if (element instanceof AccessFlags f) this.flags = checkFlags(f);
         return this;
+    }
+
+    private AccessFlags checkFlags(AccessFlags updated) {
+        boolean wasStatic = updated.has(AccessFlag.STATIC);
+        boolean isStatic = flags.has(AccessFlag.STATIC);
+        if (wasStatic != isStatic)
+            throw new IllegalArgumentException("Cannot change ACC_STATIC flag of method");
+        return updated;
     }
 
     @Override
     public ConstantPoolBuilder constantPool() {
         return constantPool;
-    }
-
-    @Override
-    public Optional<MethodModel> original() {
-        return Optional.ofNullable(original);
     }
 
     @Override
@@ -92,6 +93,11 @@ public final class BufferedMethodBuilder
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        return Util.methodTypeSymbol(methodType());
+    }
+
+    @Override
     public int methodFlags() {
         return flags.flagsMask();
     }
@@ -99,27 +105,27 @@ public final class BufferedMethodBuilder
     @Override
     public int parameterSlot(int paramNo) {
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 
     @Override
     public MethodBuilder withCode(Consumer<? super CodeBuilder> handler) {
-        return with(new BufferedCodeBuilder(this, constantPool, null)
+        return with(new BufferedCodeBuilder(this, constantPool, context, null)
                             .run(handler)
                             .toModel());
     }
 
     @Override
     public MethodBuilder transformCode(CodeModel code, CodeTransform transform) {
-        BufferedCodeBuilder builder = new BufferedCodeBuilder(this, constantPool, code);
+        BufferedCodeBuilder builder = new BufferedCodeBuilder(this, constantPool, context, code);
         builder.transform(code, transform);
         return with(builder.toModel());
     }
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool, original);
+        return new BufferedCodeBuilder(this, constantPool, context, original);
     }
 
     public BufferedMethodBuilder run(Consumer<? super MethodBuilder> handler) {
@@ -135,7 +141,7 @@ public final class BufferedMethodBuilder
             extends AbstractUnboundModel<MethodElement>
             implements MethodModel, MethodInfo {
         public Model() {
-            super(elements);
+            super(BufferedMethodBuilder.this.elements);
         }
 
         @Override
@@ -145,7 +151,7 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<ClassModel> parent() {
-            return original().flatMap(MethodModel::parent);
+            return Optional.empty();
         }
 
         @Override
@@ -156,6 +162,11 @@ public final class BufferedMethodBuilder
         @Override
         public Utf8Entry methodType() {
             return desc;
+        }
+
+        @Override
+        public MethodTypeDesc methodTypeSymbol() {
+            return BufferedMethodBuilder.this.methodTypeSymbol();
         }
 
         @Override
@@ -170,24 +181,16 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<CodeModel> code() {
-            throw new UnsupportedOperationException("nyi");
+            return elements.stream().<CodeModel>mapMulti((e, sink) -> {
+                if (e instanceof CodeModel cm) {
+                    sink.accept(cm);
+                }
+            }).findFirst();
         }
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withMethod(methodName(), methodType(), methodFlags(), new Consumer<>() {
-                @Override
-                public void accept(MethodBuilder mb) {
-                    forEachElement(mb);
-                }
-            });
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, name, desc, methodFlags(), null);
-            elements.forEach(mb);
-            mb.writeTo(buf);
+            builder.withMethod(methodName(), methodType(), methodFlags(), Util.writingAll(this));
         }
 
         @Override

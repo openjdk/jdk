@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ public class BufferingSubscriber<T> implements TrustedSubscriber<T>
     private volatile DownstreamSubscription downstreamSubscription;
 
     /** Must be held when accessing the internal buffers. */
+    // using a monitor here is fine: no logging while holding it
     private final Object buffersLock = new Object();
     /** The internal buffers holding the buffered data. */
     private ArrayList<ByteBuffer> internalBuffers;

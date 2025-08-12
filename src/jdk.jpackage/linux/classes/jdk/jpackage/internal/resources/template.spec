@@ -30,9 +30,12 @@ Requires: PACKAGE_DEFAULT_DEPENDENCIES PACKAGE_CUSTOM_DEPENDENCIES
 #build time will substantially increase and it may require unpack200/system java to install
 %define __jar_repack %{nil}
 
-%define package_filelist %{_tmppath}/%{name}.files
-%define app_filelist %{_tmppath}/%{name}.app.files
-%define filesystem_filelist %{_tmppath}/%{name}.filesystem.files
+# on RHEL we got unwanted improved debugging enhancements
+%define _build_id_links none
+
+%define package_filelist %{_builddir}/%{name}.files
+%define app_filelist %{_builddir}/%{name}.app.files
+%define filesystem_filelist %{_builddir}/%{name}.filesystem.files
 
 %define default_filesystem / /opt /usr /usr/bin /usr/lib /usr/local /usr/local/bin /usr/local/lib
 
@@ -80,13 +83,15 @@ LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
 
 %pre
 package_type=rpm
+COMMON_SCRIPTS
 LAUNCHER_AS_SERVICE_SCRIPTS
-if [ "$1" = 2 ]; then
-  true; LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
+if [ "$1" -gt 1 ]; then
+  :; LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
 fi
 
 %preun
 package_type=rpm
+COMMON_SCRIPTS
 DESKTOP_SCRIPTS
 LAUNCHER_AS_SERVICE_SCRIPTS
 DESKTOP_COMMANDS_UNINSTALL

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /*
  * @test
- * @bug 4898484 6604496 8001284
+ * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphersNoPad
- * @run main/othervm -Djava.security.manager=allow TestSymmCiphersNoPad sm
  */
 
 import java.io.ByteArrayInputStream;
@@ -68,10 +67,12 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         new CI("AES/CBC/NoPadding", "AES", 4800),
         new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
         new CI("AES/CTR/NoPadding", "AES", 1600),
-        new CI("AES/CTR/NoPadding", "AES", 65)
+        new CI("AES/CTR/NoPadding", "AES", 65),
+        new CI("AES/CTS/NoPadding", "AES", 1600),
+        new CI("AES/CTS/NoPadding", "AES", 65),
     };
 
-    private static StringBuffer debugBuf;
+    private static final StringBuffer debugBuf = new StringBuffer();
 
     @Override
     public void main(Provider p) throws Exception {
@@ -87,7 +88,7 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation, p);
                     Cipher c2 = Cipher.getInstance(currTest.transformation,
-                                                   "SunJCE");
+                               System.getProperty("test.provider.name", "SunJCE"));
 
                     byte[] plainTxt = new byte[currTest.dataSize];
                     random.nextBytes(plainTxt);
@@ -111,9 +112,7 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
-            if (debugBuf != null) {
-                System.out.println(debugBuf.toString());
-            }
+            System.out.println(debugBuf);
             throw ex;
         }
     }
@@ -122,7 +121,6 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
                              AlgorithmParameters params,
                              byte[] in, byte[] answer) throws Exception {
         // test setup
-        debugBuf = new StringBuffer();
         cipher.init(mode, key, params);
         int outLen = cipher.getOutputSize(in.length);
         debugBuf.append("Estimated output size = " + outLen + "\n");
@@ -214,7 +212,7 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         }
         match(outBuf, answer);
 
-        debugBuf = null;
+        debugBuf.setLength(0);
     }
 
     private static void match(byte[] b1, byte[] b2) throws Exception {

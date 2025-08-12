@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
+include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
 
 ifeq ($(MODULE), )
   $(error MODULE must be set when calling CreateJmods.gmk)
 endif
-
-$(eval $(call IncludeCustomExtension, CreateJmods.gmk))
 
 ################################################################################
 
@@ -81,30 +80,16 @@ endif
 ifneq ($(CMDS_DIR), )
   DEPS += $(call FindFiles, $(CMDS_DIR))
   ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-    # For public debug symbols on Windows, we have to use stripped pdbs, rename them
-    # and filter out a few launcher pdbs where there's a lib that goes by the same name
+    # For public debug symbols on Windows, we have to use stripped pdbs and rename them
     rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
     CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
     FILES_CMDS := $(filter-out %.pdb, $(call FindFiles, $(CMDS_DIR))) \
-        $(filter-out %jimage.stripped.pdb %jpackage.stripped.pdb %java.stripped.pdb, \
-            $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR))))
+        $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR)))
     $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
         SRC := $(CMDS_DIR), \
         DEST := $(CMDS_DIR_FILTERED), \
         FILES := $(FILES_CMDS), \
         NAME_MACRO := rename_stripped, \
-    ))
-    DEPS += $(COPY_FILTERED_CMDS)
-    JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
-  else ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+full)
-    # For full debug symbols on Windows, we have to filter out a few launcher pdbs
-    # where there's a lib that goes by the same name
-    CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
-    $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
-        SRC := $(CMDS_DIR), \
-        DEST := $(CMDS_DIR_FILTERED), \
-        FILES := $(filter-out %jimage.pdb %jpackage.pdb %java.pdb, \
-            $(call FindFiles, $(CMDS_DIR))), \
     ))
     DEPS += $(COPY_FILTERED_CMDS)
     JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
@@ -196,9 +181,22 @@ else # not java.base
   endif
 endif
 
-# Set main class of jdk.httpserver module
-ifeq ($(MODULE), jdk.httpserver)
-    JMOD_FLAGS += --main-class sun.net.httpserver.simpleserver.Main
+################################################################################
+# Include module specific build settings
+
+THIS_SNIPPET := modules/$(MODULE)/Jmod.gmk
+
+ifneq ($(wildcard $(THIS_SNIPPET)), )
+  include MakeSnippetStart.gmk
+
+  include $(THIS_SNIPPET)
+
+  include MakeSnippetEnd.gmk
+endif
+
+# Set main class
+ifneq ($(JMOD_FLAGS_main_class), )
+  JMOD_FLAGS += $(JMOD_FLAGS_main_class)
 endif
 
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.
@@ -236,8 +234,21 @@ ifeq ($(INTERIM_JMOD), true)
   # Interim JMODs are not shipped anywhere, so there is no reason
   # to compress them at all.
   JMOD_FLAGS += --compress zip-0
+
+  JMOD_TARGET_OS := $(OPENJDK_BUILD_OS)
+  ifeq ($(JMOD_TARGET_OS), macosx)
+    JMOD_TARGET_OS := macos
+  endif
+
+  JMOD_TARGET_CPU := $(OPENJDK_BUILD_CPU)
+  ifeq ($(JMOD_TARGET_CPU), x86_64)
+    JMOD_TARGET_CPU := amd64
+  endif
+
+  JMOD_TARGET_PLATFORM := $(JMOD_TARGET_OS)-$(JMOD_TARGET_CPU)
 else
   JMOD_FLAGS += --compress $(JMOD_COMPRESS)
+  JMOD_TARGET_PLATFORM := $(OPENJDK_MODULE_TARGET_PLATFORM)
 endif
 
 # Create jmods in the support dir and then move them into place to keep the
@@ -249,7 +260,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     COMMAND := $(JMOD) $(JMOD_SMALL_FLAGS) create --module-version $(VERSION_SHORT) \
-        --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
+        --target-platform '$(JMOD_TARGET_PLATFORM)' \
         --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
         --date $(SOURCE_DATE_ISO_8601) \
         $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
@@ -260,6 +271,4 @@ TARGETS += $(create_$(JMOD_FILE))
 
 ################################################################################
 
-all: $(TARGETS)
-
-################################################################################
+include MakeFileEnd.gmk

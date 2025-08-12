@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,61 +98,7 @@ public interface ClassConstants
     public static final long JVM_ACC_ENUM         = 0x4000; /* field is declared as element of enum */
 
 
-    // from accessFlags.hpp - hotspot internal flags
-
-    // flags actually put in .class file
-    public static final long JVM_ACC_WRITTEN_FLAGS = 0x00007FFF;
-
-    // Method* flags
-    // monitorenter/monitorexit bytecodes match
-    public static final long JVM_ACC_MONITOR_MATCH = 0x10000000;
-    // Method contains monitorenter/monitorexit bytecodes
-    public static final long JVM_ACC_HAS_MONITOR_BYTECODES = 0x20000000;
-    // Method has loops
-    public static final long JVM_ACC_HAS_LOOPS             = 0x40000000;
-    // The loop flag has been initialized
-    public static final long JVM_ACC_LOOPS_FLAG_INIT       = (int)0x80000000;
-    // Queued for compilation
-    public static final long JVM_ACC_QUEUED                = 0x01000000;
-    // TEMPORARY: currently on stack replacement compilation is not built into the
-    // invocation counter machinery.  Until it is, we will keep track of methods which
-    // cannot be on stack replaced in the access flags.
-    public static final long JVM_ACC_NOT_OSR_COMPILABLE     = 0x08000000;
-    public static final long JVM_ACC_HAS_LINE_NUMBER_TABLE  = 0x00100000;
-    public static final long JVM_ACC_HAS_CHECKED_EXCEPTIONS = 0x00400000;
-    public static final long JVM_ACC_HAS_JSRS               = 0x00800000;
-    // RedefineClasses() has made method obsolete
-    public static final long JVM_ACC_IS_OBSOLETE            = 0x00010000;
-
-    // Klass* flags
-    // True if this class has miranda methods in it's vtable
-    public static final long JVM_ACC_HAS_MIRANDA_METHODS      = 0x10000000;
-    // True if klass has a vanilla default constructor
-    public static final long JVM_ACC_HAS_VANILLA_CONSTRUCTOR  = 0x20000000;
-    // True if klass has a non-empty finalize() method
-    public static final long JVM_ACC_HAS_FINALIZER            = 0x40000000;
-    // True if klass supports the Clonable interface
-    public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
-
-    // Method* flags
-    public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
-
-    // field flags
-    // Note: these flags must be defined in the low order 16 bits because
-    // InstanceKlass only stores a ushort worth of information from the
-    // AccessFlags value.
-    // field access is watched by JVMTI
-    public static final long JVM_ACC_FIELD_ACCESS_WATCHED         = 0x00002000;
-    // field modification is watched by JVMTI
-    public static final long JVM_ACC_FIELD_MODIFICATION_WATCHED   = 0x00008000;
-    // field has generic signature
-    public static final long JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE  = 0x00000800;
-
-    // flags accepted by set_field_flags
-    public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;
-
     // from jvm.h
-
     public static final long JVM_RECOGNIZED_CLASS_MODIFIERS   = (JVM_ACC_PUBLIC |
                                                                  JVM_ACC_FINAL |
                                                                  JVM_ACC_SUPER |

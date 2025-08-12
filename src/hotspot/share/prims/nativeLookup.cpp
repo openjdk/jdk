@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -37,6 +36,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
@@ -209,6 +209,7 @@ extern "C" {
   void JNICALL JVM_RegisterVectorSupportMethods(JNIEnv *env, jclass vsclass);
 #if INCLUDE_JVMCI
   jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
+  jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets);
   void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
 #endif
 }
@@ -228,6 +229,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", nullptr, FN_PTR(JVM_RegisterVectorSupportMethods)},
 #if INCLUDE_JVMCI
   { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            nullptr, FN_PTR(JVM_GetJVMCIRuntime)             },
+  { CC"Java_jdk_vm_ci_services_Services_readSystemPropertiesInfo", nullptr, FN_PTR(JVM_ReadSystemPropertiesInfo)    },
   { CC"Java_jdk_vm_ci_hotspot_CompilerToVM_registerNatives",       nullptr, FN_PTR(JVM_RegisterJVMCINatives)        },
 #endif
 #if INCLUDE_JFR
@@ -247,9 +249,9 @@ static address lookup_special_native(const char* jni_name) {
   return nullptr;
 }
 
-address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS) {
+address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, TRAPS) {
   address entry;
-  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
+  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size);
 
 
   // If the loader is null we have a system class, so we attempt a lookup in
@@ -270,24 +272,30 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
 
   // Otherwise call static method findNative in ClassLoader
   Klass*   klass = vmClasses::ClassLoader_klass();
-  Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
+  Handle jni_class(THREAD, method->method_holder()->java_mirror());
+  Handle jni_name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
+  Handle java_name_arg = java_lang_String::create_from_str(method->name()->as_C_string(), CHECK_NULL);
+
+  JavaCallArguments args;
+  args.push_oop(loader);
+  args.push_oop(jni_class);
+  args.push_oop(jni_name_arg);
+  args.push_oop(java_name_arg);
 
   JavaValue result(T_LONG);
   JavaCalls::call_static(&result,
                          klass,
                          vmSymbols::findNative_name(),
-                         vmSymbols::classloader_string_long_signature(),
-                         // Arguments
-                         loader,
-                         name_arg,
+                         vmSymbols::classloader_class_string_string_long_signature(),
+                         &args,
                          CHECK_NULL);
   entry = (address) (intptr_t) result.get_jlong();
 
   if (entry == nullptr) {
     // findNative didn't find it, if there are any agent libraries look in them
-    AgentLibrary* agent;
-    for (agent = Arguments::agents(); agent != nullptr; agent = agent->next()) {
-      entry = (address) os::dll_lookup(agent->os_lib(), jni_name);
+    JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+    while (it.has_next()) {
+      entry = (address)os::dll_lookup(it.next()->os_lib(), jni_name);
       if (entry != nullptr) {
         return entry;
       }
@@ -297,17 +305,10 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   return entry;
 }
 
-const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style) {
+const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size) {
   stringStream st;
-  if (os_style) {
-    os::print_jni_name_prefix_on(&st, args_size);
-  }
-
   st.print_raw(pure_name);
   st.print_raw(long_name);
-  if (os_style) {
-    os::print_jni_name_suffix_on(&st, args_size);
-  }
 
   return st.as_string();
 }
@@ -330,7 +331,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
                 + method->size_of_parameters(); // actual parameters
 
   // 1) Try JNI short style
-  entry = lookup_style(method, pure_name, "",        args_size, true,  CHECK_NULL);
+  entry = lookup_style(method, pure_name, "",        args_size, CHECK_NULL);
   if (entry != nullptr) return entry;
 
   // Compute long name
@@ -342,15 +343,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
   }
 
   // 2) Try JNI long style
-  entry = lookup_style(method, pure_name, long_name, args_size, true,  CHECK_NULL);
-  if (entry != nullptr) return entry;
-
-  // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_style(method, pure_name, "",        args_size, false, CHECK_NULL);
-  if (entry != nullptr) return entry;
-
-  // 4) Try JNI long style without os prefix/suffix
-  entry = lookup_style(method, pure_name, long_name, args_size, false, CHECK_NULL);
+  entry = lookup_style(method, pure_name, long_name, args_size, CHECK_NULL);
 
   return entry; // null indicates not found
 }
@@ -406,12 +399,20 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   entry = lookup_entry_prefixed(method, CHECK_NULL);
   if (entry != nullptr) return entry;
 
+  if (THREAD->has_pending_exception()) {
+    oop exception = THREAD->pending_exception();
+    if (exception->is_a(vmClasses::IllegalCallerException_klass())) {
+      // we already have a pending exception from the restricted method check, just return
+      return nullptr;
+    }
+  }
+
   // Native function not found, throw UnsatisfiedLinkError
   stringStream ss;
   ss.print("'");
   method->print_external_name(&ss);
   ss.print("'");
-  THROW_MSG_0(vmSymbols::java_lang_UnsatisfiedLinkError(), ss.as_string());
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsatisfiedLinkError(), ss.as_string());
 }
 
 

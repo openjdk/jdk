@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  * @test
  * @summary checking localised language/country names in finnish
  * @modules jdk.localedata
- * @bug 4429024 4964035 6558856 8008577 8287868
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4429024
+ * @bug 4429024 4964035 6558856 8008577 8287868 8174269
+ * @run main Bug4429024
  */
 
 import java.util.Locale;

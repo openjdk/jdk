@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,26 @@ ResourceEditor::FileLock::FileLock(const std::wstring& binaryPath) {
 
     ownHandle(true);
     discard(false);
+    notifyUnlockFailed();
 }
 
 
 ResourceEditor::FileLock::FileLock(HANDLE h): h(h) {
     ownHandle(false);
     discard(false);
+    notifyUnlockFailed();
 }
 
 
 ResourceEditor::FileLock::~FileLock() {
     if (theOwnHandle && !EndUpdateResource(h, theDiscard)) {
+        if (unlockFailed) {
+            *unlockFailed = true;
+        }
         JP_NO_THROW(JP_THROW(SysError(tstrings::any()
             << "EndUpdateResource(" << h << ") failed.", EndUpdateResource)));
+    } else if (unlockFailed) {
+        *unlockFailed = false;
     }
 }
 

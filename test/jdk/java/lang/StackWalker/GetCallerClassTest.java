@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8140450 8152893 8189291
+ * @bug 8140450 8152893 8189291 8210375
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
- * @run main/othervm -Djava.security.manager=allow GetCallerClassTest sm
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames GetCallerClassTest
  */
 
 import static java.lang.StackWalker.Option.*;
@@ -35,17 +35,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
 public class GetCallerClassTest {
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private final StackWalker walker;
     private final boolean expectUOE;
 
@@ -54,18 +48,6 @@ public class GetCallerClassTest {
         this.expectUOE = expect;
     }
     public static void main(String... args) throws Exception {
-        if (args.length > 0 && args[0].equals("sm")) {
-            PermissionCollection perms = new Permissions();
-            perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
-            Policy.setPolicy(new Policy() {
-                @Override
-                public boolean implies(ProtectionDomain domain, Permission p) {
-                    return perms.implies(p) ||
-                        DEFAULT_POLICY.implies(domain, p);
-                }
-            });
-            System.setSecurityManager(new SecurityManager());
-        }
         new GetCallerClassTest(StackWalker.getInstance(), true).test();
         new GetCallerClassTest(StackWalker.getInstance(RETAIN_CLASS_REFERENCE), false).test();
         new GetCallerClassTest(StackWalker.getInstance(EnumSet.of(RETAIN_CLASS_REFERENCE,
@@ -118,8 +100,10 @@ public class GetCallerClassTest {
                                                 Class<?> expected,
                                                 boolean expectUOE) {
         try {
+            // Use reflection to call Method::invoke that invokes StackWalker::getCallerClass
             Method m = StackWalker.class.getMethod("getCallerClass");
-            Class<?> c = (Class<?>) m.invoke(stackWalker);
+            Method invoke = Method.class.getMethod("invoke", Object.class, Object[].class);
+            Class<?> c = (Class<?>) invoke.invoke(m, new Object[] { stackWalker, null });
             assertEquals(c, expected);
             if (expectUOE) { // Should have thrown
                 throw new RuntimeException("Didn't get expected exception");

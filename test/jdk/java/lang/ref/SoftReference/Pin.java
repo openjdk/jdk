@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
 /* @test
  * @bug 4076287
  * @summary Invoking get on a SoftReference shouldn't pin the referent
- * @run main/othervm -ms16m -mx16m Pin
- * @author Peter Jones
- * @author Mark Reinhold
+ * @run main/othervm -Xms16m -Xmx16m Pin
  */
 
 

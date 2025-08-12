@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,31 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 // ----------------------------------------------------------------------------
 
-#define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+#define __ masm->
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // movq rbx, 0
   // jmp -5 # to self
 
-  if (mark == NULL) {
-    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+  if (mark == nullptr) {
+    mark = __ inst_mark();  // Get mark within main instrs section.
   }
 
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
-
   address base = __ start_a_stub(to_interp_stub_size());
-  if (base == NULL) {
-    return NULL;  // CodeBuffer::expand failed.
+  if (base == nullptr) {
+    return nullptr;  // CodeBuffer::expand failed.
   }
   // Static stub relocation stores the instruction address of the call.
   __ relocate(static_stub_Relocation::spec(mark), Assembler::imm_operand);
@@ -65,31 +60,24 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 }
 #undef __
 
-int CompiledStaticCall::to_interp_stub_size() {
+int CompiledDirectCall::to_interp_stub_size() {
   return NOT_LP64(10)    // movl; jmp
          LP64_ONLY(15);  // movq (1+1+8); jmp (1+4)
 }
 
-int CompiledStaticCall::to_trampoline_stub_size() {
+int CompiledDirectCall::to_trampoline_stub_size() {
   // x86 doesn't use trampolines.
   return 0;
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
-int CompiledStaticCall::reloc_to_interp_stub() {
+int CompiledDirectCall::reloc_to_interp_stub() {
   return 4; // 3 in emit_to_interp_stub + 1 in emit_call
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
-  guarantee(stub != NULL, "stub not found");
-
-  if (TraceICs) {
-    ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  p2i(instruction_address()),
-                  callee->name_and_sig_as_C_string());
-  }
+  guarantee(stub != nullptr, "stub not found");
 
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
@@ -104,11 +92,11 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   set_destination_mt_safe(stub);
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   assert(CompiledICLocker::is_safe(static_stub->addr()), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
-  assert(stub != NULL, "stub not found");
+  assert(stub != nullptr, "stub not found");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   method_holder->set_data(0);
@@ -121,19 +109,19 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 // Non-product mode code
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledDirectCall::verify() {
   // Verify call.
   _call->verify();
   _call->verify_alignment();
 
 #ifdef ASSERT
   CodeBlob *cb = CodeCache::find_blob((address) _call);
-  assert(cb != NULL, "sanity");
+  assert(cb != nullptr, "sanity");
 #endif
 
   // Verify stub.
   address stub = find_stub();
-  assert(stub != NULL, "no stub found for static call");
+  assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());

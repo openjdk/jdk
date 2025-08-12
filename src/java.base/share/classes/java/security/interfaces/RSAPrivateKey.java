@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security.interfaces;
 
 import java.math.BigInteger;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * The interface to an RSA private key.
@@ -49,7 +50,6 @@ public interface RSAPrivateKey extends java.security.PrivateKey, RSAKey
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 5187144804936595022L;
 
@@ -59,4 +59,18 @@ public interface RSAPrivateKey extends java.security.PrivateKey, RSAKey
      * @return the private exponent
      */
     BigInteger getPrivateExponent();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     * @since 11
+     */
+    @Override
+    default AlgorithmParameterSpec getParams() {
+        return null;
+    }
 }

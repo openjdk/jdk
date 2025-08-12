@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -45,10 +44,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
-
 
 // ------------- compiledVFrame --------------
 
@@ -235,14 +230,14 @@ StackValue *compiledVFrame::create_stack_value(ScopeValue *sv) const {
 }
 
 BasicLock* compiledVFrame::resolve_monitor_lock(Location location) const {
-  return StackValue::resolve_monitor_lock(&_fr, location);
+  return StackValue::resolve_monitor_lock(stack_chunk() == nullptr ? _fr : stack_chunk()->derelativize(_fr), location);
 }
 
 
 GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   // Natives has no scope
   if (scope() == nullptr) {
-    CompiledMethod* nm = code();
+    nmethod* nm = code();
     Method* method = nm->method();
     assert(method->is_native(), "Expect a native method");
     if (!method->is_synchronized()) {
@@ -284,6 +279,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_monitors.
+  if (thread() == nullptr) return result; // Unmounted continuations have no thread so nothing to do.
   GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
   if (list != nullptr ) {
     // In real life this never happens or is typically a single element search
@@ -299,13 +295,13 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 }
 
 
-compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, CompiledMethod* nm)
+compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, nmethod* nm)
 : javaVFrame(fr, reg_map, thread) {
   _scope  = nullptr;
   _vframe_id = 0;
   // Compiled method (native stub or Java code)
   // native wrappers have no scope data, it is implied
-  if (!nm->is_compiled() || !nm->as_compiled_method()->is_native_method()) {
+  if (!nm->is_native_method()) {
       _scope  = nm->scope_desc_at(_fr.pc());
   }
 }
@@ -333,15 +329,15 @@ bool compiledVFrame::is_top() const {
 }
 
 
-CompiledMethod* compiledVFrame::code() const {
-  return CodeCache::find_compiled(_fr.pc());
+nmethod* compiledVFrame::code() const {
+  return CodeCache::find_nmethod(_fr.pc());
 }
 
 
 Method* compiledVFrame::method() const {
   if (scope() == nullptr) {
     // native nmethods have no scope the method is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return nm->method();
   }
@@ -358,7 +354,7 @@ int compiledVFrame::bci() const {
 int compiledVFrame::raw_bci() const {
   if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return 0;
   }
@@ -368,7 +364,7 @@ int compiledVFrame::raw_bci() const {
 bool compiledVFrame::should_reexecute() const {
   if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return false;
   }
@@ -378,7 +374,7 @@ bool compiledVFrame::should_reexecute() const {
 bool compiledVFrame::has_ea_local_in_scope() const {
   if (scope() == nullptr) {
     // native nmethod, all objs escape
-    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    assert(code()->is_native_method(), "must be native");
     return false;
   }
   return (scope()->objects() != nullptr) || scope()->has_ea_local_in_scope();
@@ -387,7 +383,7 @@ bool compiledVFrame::has_ea_local_in_scope() const {
 bool compiledVFrame::arg_escape() const {
   if (scope() == nullptr) {
     // native nmethod, all objs escape
-    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    assert(code()->is_native_method(), "must be native");
     return false;
   }
   return scope()->arg_escape();
@@ -397,7 +393,7 @@ vframe* compiledVFrame::sender() const {
   const frame f = fr();
   if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return vframe::sender();
   } else {

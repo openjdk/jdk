@@ -67,6 +67,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters.AbstractHttpAuthFilter.HttpAuthMode;
 import sun.net.www.HeaderParser;
 import java.net.http.HttpClient.Version;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -88,8 +90,14 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     public static final boolean TUNNEL_REQUIRES_HOST =
             Boolean.parseBoolean(System.getProperty("test.requiresHost", "false"));
     public enum HttpAuthType {
-        SERVER, PROXY, SERVER307, PROXY305
+        SERVER, PROXY, SERVER307, PROXY305;
         /* add PROXY_AND_SERVER and SERVER_PROXY_NONE */
+        public HttpAuthMode authMode() {
+            return switch (this) {
+                case SERVER, SERVER307 -> HttpAuthMode.SERVER;
+                case PROXY, PROXY305 -> HttpAuthMode.PROXY;
+            };
+        }
     };
     public enum HttpAuthSchemeType { NONE, BASICSERVER, BASIC, DIGEST };
     public static final HttpAuthType DEFAULT_HTTP_AUTH_TYPE = HttpAuthType.SERVER;
@@ -480,19 +488,21 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         return server;
     }
 
+    static BasicAuthenticator toBasicAuthenticator(HttpTestAuthenticator auth) {
+        final String realm = auth.getRealm();
+        return new BasicAuthenticator(realm) {
+            @Override
+            public boolean checkCredentials(String username, String pwd) {
+                return auth.getUserName().equals(username)
+                        && new String(auth.getPassword(username)).equals(pwd);
+            }
+        };
+    }
 
     static void setContextAuthenticator(HttpTestContext ctxt,
                                         HttpTestAuthenticator auth) {
-        final String realm = auth.getRealm();
-        com.sun.net.httpserver.Authenticator authenticator =
-            new BasicAuthenticator(realm) {
-                @Override
-                public boolean checkCredentials(String username, String pwd) {
-                    return auth.getUserName().equals(username)
-                           && new String(auth.getPassword(username)).equals(pwd);
-                }
-        };
-        ctxt.setAuthenticator(authenticator);
+
+        ctxt.setAuthenticator(toBasicAuthenticator(auth));
     }
 
     public static DigestEchoServer createServer(Version version,
@@ -659,7 +669,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                                  HttpAuthType authType) {
         switch(schemeType) {
             case DIGEST:
-                // DIGEST authentication is handled by the handler.
+                // DIGEST authentication is handled by the filter.
                 ctxt.addFilter(new HttpDigestFilter(key, auth, authType));
                 break;
             case BASIC:
@@ -689,6 +699,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                         throw new InternalError(key + ": Invalid combination scheme="
                              + schemeType + " authType=" + authType);
                 }
+                break;
             case NONE:
                 // No authentication at all.
                 ctxt.addFilter(new HttpNoAuthFilter(key, authType));
@@ -705,85 +716,6 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         return new Http3xxHandler(key, proxyURL, type, code300);
     }
 
-    // Abstract HTTP filter class.
-    private abstract static class AbstractHttpFilter extends HttpTestFilter {
-
-        final HttpAuthType authType;
-        final String type;
-        public AbstractHttpFilter(HttpAuthType authType, String type) {
-            this.authType = authType;
-            this.type = type;
-        }
-
-        String getLocation() {
-            return "Location";
-        }
-        String getAuthenticate() {
-            return authType == HttpAuthType.PROXY
-                    ? "Proxy-Authenticate" : "WWW-Authenticate";
-        }
-        String getAuthorization() {
-            return authType == HttpAuthType.PROXY
-                    ? "Proxy-Authorization" : "Authorization";
-        }
-        int getUnauthorizedCode() {
-            return authType == HttpAuthType.PROXY
-                    ? HttpURLConnection.HTTP_PROXY_AUTH
-                    : HttpURLConnection.HTTP_UNAUTHORIZED;
-        }
-        String getKeepAlive() {
-            return "keep-alive";
-        }
-        String getConnection() {
-            return authType == HttpAuthType.PROXY
-                    ? "Proxy-Connection" : "Connection";
-        }
-        protected abstract boolean isAuthentified(HttpTestExchange he) throws IOException;
-        protected abstract void requestAuthentication(HttpTestExchange he) throws IOException;
-        protected void accept(HttpTestExchange he, HttpChain chain) throws IOException {
-            chain.doFilter(he);
-        }
-
-        @Override
-        public String description() {
-            return "Filter for " + type;
-        }
-        @Override
-        public void doFilter(HttpTestExchange he, HttpChain chain) throws IOException {
-            try {
-                System.out.println(type + ": Got " + he.getRequestMethod()
-                    + ": " + he.getRequestURI()
-                    + "\n" + DigestEchoServer.toString(he.getRequestHeaders()));
-
-                // Assert only a single value for Expect. Not directly related
-                // to digest authentication, but verifies good client behaviour.
-                List<String> expectValues = he.getRequestHeaders().get("Expect");
-                if (expectValues != null && expectValues.size() > 1) {
-                    throw new IOException("Expect:  " + expectValues);
-                }
-
-                if (!isAuthentified(he)) {
-                    try {
-                        requestAuthentication(he);
-                        he.sendResponseHeaders(getUnauthorizedCode(), -1);
-                        System.out.println(type
-                            + ": Sent back " + getUnauthorizedCode());
-                    } finally {
-                        he.close();
-                    }
-                } else {
-                    accept(he, chain);
-                }
-            } catch (RuntimeException | Error | IOException t) {
-               System.err.println(type
-                    + ": Unexpected exception while handling request: " + t);
-               t.printStackTrace(System.err);
-               he.close();
-               throw t;
-            }
-        }
-
-    }
 
     // WARNING: This is not a full fledged implementation of DIGEST.
     // It does contain bugs and inaccuracy.
@@ -918,16 +850,16 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
 
     }
 
-    private static class HttpNoAuthFilter extends AbstractHttpFilter {
+    private static class HttpNoAuthFilter extends AbstractHttpAuthFilter {
 
         static String type(String key, HttpAuthType authType) {
-            String type = authType == HttpAuthType.SERVER
+            String type = authType.authMode() == HttpAuthMode.SERVER
                     ? "NoAuth Server Filter" : "NoAuth Proxy Filter";
             return "["+type+"]:"+key;
         }
 
         public HttpNoAuthFilter(String key, HttpAuthType authType) {
-            super(authType, type(key, authType));
+            super(authType.authMode(), type(key, authType));
         }
 
         @Override
@@ -948,73 +880,22 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     }
 
     // An HTTP Filter that performs Basic authentication
-    private static class HttpBasicFilter extends AbstractHttpFilter {
+    private static class HttpBasicFilter extends HttpBasicAuthFilter {
 
         static String type(String key, HttpAuthType authType) {
-            String type = authType == HttpAuthType.SERVER
+            String type = authType.authMode() == HttpAuthMode.SERVER
                     ? "Basic Server Filter" : "Basic Proxy Filter";
             return "["+type+"]:"+key;
         }
 
-        private final HttpTestAuthenticator auth;
         public HttpBasicFilter(String key, HttpTestAuthenticator auth,
                                HttpAuthType authType) {
-            super(authType, type(key, authType));
-            this.auth = auth;
-        }
-
-        @Override
-        protected void requestAuthentication(HttpTestExchange he)
-            throws IOException
-        {
-            String headerName = getAuthenticate();
-            String headerValue = "Basic realm=\"" + auth.getRealm() + "\"";
-            he.getResponseHeaders().addHeader(headerName, headerValue);
-            System.out.println(type + ": Requesting Basic Authentication, "
-                               + headerName + " : "+ headerValue);
-        }
-
-        @Override
-        protected boolean isAuthentified(HttpTestExchange he) {
-            if (he.getRequestHeaders().containsKey(getAuthorization())) {
-                List<String> authorization =
-                    he.getRequestHeaders().get(getAuthorization());
-                for (String a : authorization) {
-                    System.out.println(type + ": processing " + a);
-                    int sp = a.indexOf(' ');
-                    if (sp < 0) return false;
-                    String scheme = a.substring(0, sp);
-                    if (!"Basic".equalsIgnoreCase(scheme)) {
-                        System.out.println(type + ": Unsupported scheme '"
-                                           + scheme +"'");
-                        return false;
-                    }
-                    if (a.length() <= sp+1) {
-                        System.out.println(type + ": value too short for '"
-                                            + scheme +"'");
-                        return false;
-                    }
-                    a = a.substring(sp+1);
-                    return validate(a);
-                }
-                return false;
-            }
-            return false;
-        }
-
-        boolean validate(String a) {
-            byte[] b = Base64.getDecoder().decode(a);
-            String userpass = new String (b);
-            int colon = userpass.indexOf (':');
-            String uname = userpass.substring (0, colon);
-            String pass = userpass.substring (colon+1);
-            return auth.getUserName().equals(uname) &&
-                   new String(auth.getPassword(uname)).equals(pass);
+            super(toBasicAuthenticator(auth), authType.authMode(), type(key, authType));
         }
 
         @Override
         public String description() {
-            return "Filter for BASIC authentication: " + type;
+            return "Filter for BASIC authentication: " + type();
         }
 
     }
@@ -1023,10 +904,10 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     // An HTTP Filter that performs Digest authentication
     // WARNING: This is not a full fledged implementation of DIGEST.
     // It does contain bugs and inaccuracy.
-    private static class HttpDigestFilter extends AbstractHttpFilter {
+    private static class HttpDigestFilter extends AbstractHttpAuthFilter {
 
         static String type(String key, HttpAuthType authType) {
-            String type = authType == HttpAuthType.SERVER
+            String type = authType.authMode() == HttpAuthMode.SERVER
                     ? "Digest Server Filter" : "Digest Proxy Filter";
             return "["+type+"]:"+key;
         }
@@ -1038,12 +919,14 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         private final HttpTestAuthenticator auth;
         private final byte[] nonce;
         private final String ns;
+        private final String type;
         public HttpDigestFilter(String key, HttpTestAuthenticator auth, HttpAuthType authType) {
-            super(authType, type(key, authType));
+            super(authType.authMode(), type(key, authType));
             this.auth = auth;
             nonce = new byte[16];
             new Random(Instant.now().toEpochMilli()).nextBytes(nonce);
             ns = new BigInteger(1, nonce).toString(16);
+            this.type = type();
         }
 
         @Override
@@ -1560,18 +1443,19 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 @Override
                 public void run() {
                     try {
-                        int c = 0;
+                        int len = 0;
+                        byte[] buf = new byte[16 * 1024];
                         try {
-                            while ((c = is.read()) != -1) {
-                                os.write(c);
+                            while ((len = is.read(buf)) != -1) {
+                                os.write(buf, 0, len);
                                 os.flush();
                                 // if DEBUG prints a + or a - for each transferred
                                 // character.
-                                if (DEBUG) System.out.print(tag);
+                                if (DEBUG) System.out.print(String.valueOf(tag).repeat(len));
                             }
                             is.close();
                         } catch (IOException ex) {
-                            if (DEBUG || !stopped && c >  -1)
+                            if (DEBUG || !stopped && len > -1)
                                 ex.printStackTrace(System.out);
                             end.completeExceptionally(ex);
                         } finally {

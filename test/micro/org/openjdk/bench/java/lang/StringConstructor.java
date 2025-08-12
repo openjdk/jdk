@@ -21,11 +21,13 @@
  * questions.
  */
 
-package micro.org.openjdk.bench.java.lang;
+package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
@@ -36,45 +38,115 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class StringConstructor {
 
-  @Param({"7", "64"})
-  public int size;
+    private static final char INTEROBANG = 0x2030;
 
-  // Offset to use for ranged newStrings
-  @Param("1")
-  public int offset;
-  private byte[] array;
+    // Fixed offset to use for ranged newStrings
+    public final int offset = 1;
 
-  @Setup
-  public void setup() {
-      if (offset > size) {
-        offset = size;
-      }
-      array = "a".repeat(size).getBytes(StandardCharsets.UTF_8);
-  }
+    @Param({"7", "64"})
+    public int size;
 
-  @Benchmark
-  public String newStringFromArray() {
-      return new String(array);
-  }
+    private byte[] array;
+    private char[] chars;
+    private char[] charsMixedBegin;
+    private char[] charsMixedSmall;
+    private char[] charsMixedEnd;
+    private int[] codePointsLatin1;
+    private int[] codePointsMixedBegin;
+    private int[] codePointsMixedSmall;
 
-  @Benchmark
-  public String newStringFromArrayWithCharset() {
-      return new String(array, StandardCharsets.UTF_8);
-  }
+    private static int[] intCopyOfChars(char[] chars, int newLength) {
+        int[] res = new int[newLength];
+        for (int i = 0; i < Math.min(chars.length, newLength); i++)
+            res[i] = chars[i];
+        return res;
+    }
 
-  @Benchmark
-  public String newStringFromArrayWithCharsetName() throws Exception {
-      return new String(array, StandardCharsets.UTF_8.name());
-  }
+    @Setup
+    public void setup() {
+        String s = "a".repeat(size);
+        array = s.getBytes(StandardCharsets.UTF_8);
+        chars = s.toCharArray();
+        charsMixedBegin = Arrays.copyOf(chars, array.length);
+        charsMixedBegin[0] = INTEROBANG;
+        charsMixedSmall = Arrays.copyOf(chars, array.length);
+        charsMixedSmall[Math.min(charsMixedSmall.length - 1, 7)] = INTEROBANG;
+        charsMixedEnd = new char[size + 7];
+        Arrays.fill(charsMixedEnd, 'a');
+        charsMixedEnd[charsMixedEnd.length - 1] = INTEROBANG;
 
-  @Benchmark
-  public String newStringFromRangedArray() {
-    return new String(array, offset, array.length - offset);
-  }
+        codePointsLatin1 = intCopyOfChars(chars, array.length);
+        codePointsMixedBegin = intCopyOfChars(chars, array.length);
+        codePointsMixedBegin[0] = INTEROBANG;
+        codePointsMixedSmall = intCopyOfChars(chars, array.length);
+        codePointsMixedSmall[Math.min(codePointsMixedSmall.length - 1, 7)] = INTEROBANG;
+    }
 
-  @Benchmark
-  public String newStringFromRangedArrayWithCharset() {
-      return new String(array, offset, array.length - offset, StandardCharsets.UTF_8);
-  }
+    @Benchmark
+    public String newStringFromBytes() {
+        return new String(array);
+    }
 
+    @Benchmark
+    public String newStringFromBytesRanged() {
+        return new String(array, offset, array.length - offset);
+    }
+
+    @Benchmark
+    public String newStringFromBytesRangedWithCharsetUTF8() {
+        return new String(array, offset, array.length - offset, StandardCharsets.UTF_8);
+    }
+
+    @Benchmark
+    public String newStringFromBytesWithCharsetUTF8() {
+        return new String(array, StandardCharsets.UTF_8);
+    }
+
+    @Benchmark
+    public String newStringFromBytesWithCharsetNameUTF8() throws Exception {
+        return new String(array, StandardCharsets.UTF_8.name());
+    }
+
+    @Benchmark
+    public String newStringFromCharsLatin1() {
+        return new String(chars);
+    }
+
+    @Benchmark
+    public String newStringFromCharsMixedBegin() {
+        return new String(charsMixedBegin);
+    }
+
+    @Benchmark
+    public String newStringFromCharsMixedSmall() {
+        return new String(charsMixedSmall);
+    }
+
+    @Benchmark
+    public String newStringFromCharsMixedEnd() {
+        return new String(charsMixedEnd);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void newStringFromCharsMixedAll(Blackhole bh) {
+        bh.consume(new String(charsMixedBegin));
+        bh.consume(new String(charsMixedSmall));
+        bh.consume(new String(chars));
+    }
+
+    @Benchmark
+    public String newStringFromCodePointRangedLatin1() {
+        return new String(codePointsLatin1, 0, codePointsLatin1.length);
+    }
+
+    @Benchmark
+    public String newStringFromCodePointRangedMixedBegin() {
+        return new String(codePointsMixedBegin, 0, codePointsMixedBegin.length);
+    }
+
+    @Benchmark
+    public String newStringFromCodePointRangedMixedSmall() {
+        return new String(codePointsMixedSmall, 0, codePointsMixedSmall.length);
+    }
 }

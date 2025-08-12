@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -35,7 +34,7 @@
 #include "runtime/javaThread.hpp"
 #include "utilities/ostream.hpp"
 
-static Symbol* symbol_size = NULL;
+static Symbol* symbol_size = nullptr;
 
 ObjectDescriptionBuilder::ObjectDescriptionBuilder() {
   reset();
@@ -78,11 +77,11 @@ void ObjectDescriptionBuilder::print_description(outputStream* out) {
 
 const char* ObjectDescriptionBuilder::description() {
   if (_buffer[0] == '\0') {
-    return NULL;
+    return nullptr;
   }
   const size_t len = strlen(_buffer);
   char* copy = NEW_RESOURCE_ARRAY(char, len + 1);
-  assert(copy != NULL, "invariant");
+  assert(copy != nullptr, "invariant");
   strncpy(copy, _buffer, len + 1);
   return copy;
 }
@@ -92,7 +91,7 @@ ObjectSampleDescription::ObjectSampleDescription(oop object) :
 }
 
 void ObjectSampleDescription::ensure_initialized() {
-  if (symbol_size == NULL) {
+  if (symbol_size == nullptr) {
     symbol_size = SymbolTable::new_permanent_symbol("size");
   }
 }
@@ -150,13 +149,13 @@ void ObjectSampleDescription::write_object_details() {
 void ObjectSampleDescription::write_class_name() {
   assert(_object->is_a(vmClasses::Class_klass()), "invariant");
   const Klass* const k = java_lang_Class::as_Klass(_object);
-  if (k == NULL) {
+  if (k == nullptr) {
     // might represent a primitive
     const Klass* const ak = java_lang_Class::array_klass_acquire(_object);
-    // If ak is NULL, this is most likely a mirror associated with a
+    // If ak is null, this is most likely a mirror associated with a
     // jvmti redefine/retransform scratch klass. We can't get any additional
     // information from it.
-    if (ak != NULL) {
+    if (ak != nullptr) {
       write_text(type2name(java_lang_Class::primitive_type(_object)));
     }
     return;
@@ -168,7 +167,7 @@ void ObjectSampleDescription::write_class_name() {
       return;
     }
     const Symbol* name = ik->name();
-    if (name != NULL) {
+    if (name != nullptr) {
       write_text("Class Name: ");
       write_text(name->as_klass_external_name());
     }
@@ -178,7 +177,7 @@ void ObjectSampleDescription::write_class_name() {
 void ObjectSampleDescription::write_thread_group_name() {
   assert(_object->is_a(vmClasses::ThreadGroup_klass()), "invariant");
   const char* tg_name = java_lang_ThreadGroup::name(_object);
-  if (tg_name != NULL) {
+  if (tg_name != nullptr) {
     write_text("Thread Group: ");
     write_text(tg_name);
   }
@@ -187,9 +186,9 @@ void ObjectSampleDescription::write_thread_group_name() {
 void ObjectSampleDescription::write_thread_name() {
   assert(_object->is_a(vmClasses::Thread_klass()), "invariant");
   oop name = java_lang_Thread::name(_object);
-  if (name != NULL) {
+  if (name != nullptr) {
     char* p = java_lang_String::as_utf8_string(name);
-    if (p != NULL) {
+    if (p != nullptr) {
       write_text("Thread Name: ");
       write_text(p);
     }
@@ -208,7 +207,7 @@ bool ObjectSampleDescription::read_int_size(jint* result_size) {
   Klass* klass = _object->klass();
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    if (ik->find_field(symbol_size, vmSymbols::int_signature(), false, &fd) != NULL) {
+    if (ik->find_field(symbol_size, vmSymbols::int_signature(), false, &fd) != nullptr) {
        jint size = _object->int_field(fd.offset());
        *result_size = size;
        return true;

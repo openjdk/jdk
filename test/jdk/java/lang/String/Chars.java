@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 /*
-    @test
-    @bug 8054307
-    @summary test chars() and codePoints()
-*/
+ * @test
+ * @bug 8054307 8311906 8321514
+ * @summary test String chars() and codePoints()
+ * @run main/othervm -XX:+CompactStrings Chars
+ * @run main/othervm -XX:-CompactStrings Chars
+ */
 
 import java.util.Arrays;
 import java.util.Random;
@@ -44,6 +46,8 @@ public class Chars {
                 cc[j] = (char)(ccExp[j] = cpExp[j] = r.nextInt(0x80));
             }
             testChars(cc, ccExp);
+            testCharsSubrange(cc, ccExp);
+            testIntsSubrange(ccExp);
             testCPs(cc, cpExp);
 
             // bmp without surrogates
@@ -51,6 +55,7 @@ public class Chars {
                 cc[j] = (char)(ccExp[j] = cpExp[j] = r.nextInt(0x8000));
             }
             testChars(cc, ccExp);
+            testCharsSubrange(cc, ccExp);
             testCPs(cc, cpExp);
 
             // bmp with surrogates
@@ -69,6 +74,8 @@ public class Chars {
             }
             cpExp = Arrays.copyOf(cpExp, k);
             testChars(cc, ccExp);
+            testCharsSubrange(cc, ccExp);
+            testIntsSubrange(ccExp);
             testCPs(cc, cpExp);
         }
     }
@@ -76,14 +83,56 @@ public class Chars {
     static void testChars(char[] cc, int[] expected) {
         String str = new String(cc);
         if (!Arrays.equals(expected, str.chars().toArray())) {
-            throw new RuntimeException("chars/codePoints() failed!");
+            throw new RuntimeException("testChars failed!");
+        }
+    }
+
+    static void testCharsSubrange(char[] cc, int[] expected) {
+        int[] offsets = { 7, 31 };   // offsets to test
+        int LENGTH = 13;
+        for (int i = 0; i < offsets.length; i++) {
+            int offset = Math.max(0, offsets[i]);       // confine to the input array
+            int count = Math.min(LENGTH, cc.length - offset);
+            String str = new String(cc, offset, count);
+            int[] actual = str.chars().toArray();
+            int errOffset = Arrays.mismatch(actual, 0, actual.length,
+                    expected, offset, offset + count);
+            if (errOffset >= 0) {
+                System.err.printf("expected[%d] (%d) != actual[%d] (%d)%n",
+                        offset + errOffset, expected[offset + errOffset],
+                        errOffset, actual[errOffset]);
+                System.err.println("expected: " + Arrays.toString(expected));
+                System.err.println("actual: " + Arrays.toString(actual));
+                throw new RuntimeException("testCharsSubrange failed!");
+            }
+        }
+    }
+
+    static void testIntsSubrange(int[] expected) {
+        int[] offsets = { 7, 31 };   // offsets to test
+        int LENGTH = 13;
+        for (int i = 0; i < offsets.length; i++) {
+            int offset = Math.max(0, offsets[i]);       // confine to the input array
+            int count = Math.min(LENGTH, expected.length - offset);
+            String str = new String(expected, offset, count);
+            int[] actual = str.chars().toArray();
+            int errOffset = Arrays.mismatch(actual, 0, actual.length,
+                    expected, offset, offset + count);
+            if (errOffset >= 0) {
+                System.err.printf("expected[%d] (%d) != actual[%d] (%d)%n",
+                        offset + errOffset, expected[offset + errOffset],
+                        errOffset, actual[errOffset]);
+                System.err.println("expected: " + Arrays.toString(expected));
+                System.err.println("actual: " + Arrays.toString(actual));
+                throw new RuntimeException("testIntsSubrange failed!");
+            }
         }
     }
 
     static void testCPs(char[] cc, int[] expected) {
         String str = new String(cc);
         if (!Arrays.equals(expected, str.codePoints().toArray())) {
-            throw new RuntimeException("chars/codePoints() failed!");
+            throw new RuntimeException("testCPs failed!");
         }
     }
 }

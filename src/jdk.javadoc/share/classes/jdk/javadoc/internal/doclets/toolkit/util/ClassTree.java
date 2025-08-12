@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ public class ClassTree {
         Messages messages = configuration.getMessages();
         messages.notice("doclet.Building_Tree");
 
-        Comparator<Element> comparator = utils.comparators.makeClassUseComparator();
+        Comparator<Element> comparator = utils.comparators.classUseComparator();
 
         hierarchies = new EnumMap<>(HierarchyKind.class);
         for (var hk : HierarchyKind.values()) {
@@ -206,7 +206,7 @@ public class ClassTree {
         this.configuration = configuration;
         this.utils = configuration.utils;
 
-        Comparator<Element> comparator = utils.comparators.makeClassUseComparator();
+        Comparator<Element> comparator = utils.comparators.classUseComparator();
 
         hierarchies = new EnumMap<>(HierarchyKind.class);
         for (var hk : HierarchyKind.values()) {
@@ -233,7 +233,7 @@ public class ClassTree {
                 continue;
             }
 
-            if (utils.hasHiddenTag(te)) {
+            if (utils.isHidden(te)) {
                 continue;
             }
 

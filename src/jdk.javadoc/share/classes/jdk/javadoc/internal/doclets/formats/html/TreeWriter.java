@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * Generate Class Hierarchy page for all the Classes in this run.  Use
@@ -64,43 +64,23 @@ public class TreeWriter extends AbstractTreeWriter {
     /**
      * Constructor to construct TreeWriter object.
      *
-     * @param configuration the current configuration of the doclet.
-     * @param filename String filename
+     * @param configuration the current configuration of the doclet
      * @param classTree the tree being built.
      */
-    public TreeWriter(HtmlConfiguration configuration, DocPath filename, ClassTree classTree) {
-        super(configuration, filename, classTree);
+    public TreeWriter(HtmlConfiguration configuration, ClassTree classTree) {
+        super(configuration, DocPaths.OVERVIEW_TREE, classTree);
         packages = configuration.packages;
         classesOnly = packages.isEmpty();
         this.bodyContents = new BodyContents();
     }
 
-    /**
-     * Create a TreeWriter object and use it to generate the
-     * "overview-tree.html" file.
-     *
-     * @param configuration the configuration for this doclet
-     * @param classTree the class tree being documented.
-     * @throws  DocFileIOException if there is a problem generating the overview tree page
-     */
-    public static void generate(HtmlConfiguration configuration,
-                                ClassTree classTree) throws DocFileIOException {
-        DocPath filename = DocPaths.OVERVIEW_TREE;
-        TreeWriter treegen = new TreeWriter(configuration, filename, classTree);
-        treegen.generateTreeFile();
-    }
-
-    /**
-     * Generate the interface hierarchy and class hierarchy.
-     *
-     * @throws DocFileIOException if there is a problem generating the overview tree page
-     */
-    public void generateTreeFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getBody();
         Content headContent = contents.hierarchyForAllPackages;
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, headContent);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
         addPackageTreeLinks(mainContent);
@@ -126,10 +106,10 @@ public class TreeWriter extends AbstractTreeWriter {
             return;
         }
         if (!classesOnly) {
-            var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+            var span = HtmlTree.SPAN(HtmlStyles.packageHierarchyLabel,
                     contents.packageHierarchies);
             content.add(span);
-            var ul = HtmlTree.UL(HtmlStyle.horizontal).addStyle(HtmlStyle.contentsList);
+            var ul = HtmlTree.UL(HtmlStyles.horizontal).addStyle(HtmlStyles.contentsList);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option

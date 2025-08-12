@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class AnnotationTypeMismatchException extends RuntimeException {
     private final transient Method element;
 
     /**
-     * The (erroneous) type of data found in the annotation.  This string
+     * @serial The (erroneous) type of data found in the annotation.  This string
      * may, but is not required to, contain the value as well.  The exact
      * format of the string is unspecified.
      */

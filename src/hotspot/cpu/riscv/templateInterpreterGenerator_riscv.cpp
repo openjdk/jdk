@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,9 +24,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -37,20 +37,24 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
@@ -66,7 +70,7 @@
 // Max size with JVMTI
 int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 //-----------------------------------------------------------------------------
 
@@ -80,8 +84,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // c_rarg3: first stack arg - wordSize
   // adjust sp
 
-  __ addi(sp, c_rarg3, -18 * wordSize);
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, c_rarg3, 18 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(ra, Address(sp, 0));
 
   __ call_VM(noreg,
@@ -100,7 +104,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   //        stack args              <- esp
   //        garbage
   //        expression stack bottom
-  //        bcp (NULL)
+  //        bcp (null)
   //        ...
 
   // Restore ra
@@ -114,7 +118,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     const FloatRegister r = g_FPArgReg[i];
     Label d, done;
 
-    __ andi(t0, c_rarg3, 1UL << i);
+    __ test_bit(t0, c_rarg3, i);
     __ bnez(t0, d);
     __ flw(r, Address(sp, (10 + i) * wordSize));
     __ j(done);
@@ -143,10 +147,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // x19_sender_sp: sender sp
   // esp: args
 
-  if (!InlineIntrinsics) {
-    return NULL; // Generate a vanilla entry
-  }
-
   // These don't need a safepoint check because they aren't virtually
   // callable. We won't enter these intrinsics from compiled code.
   // If in the future we added an intrinsic which was virtually callable
@@ -163,9 +163,8 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ arg ]
   // retaddr in ra
 
-  address fn = NULL;
-  address entry_point = NULL;
-  Register continuation = ra;
+  address fn = nullptr;
+  address entry_point = nullptr;
   switch (kind) {
     case Interpreter::java_lang_math_abs:
       entry_point = __ pc();
@@ -184,92 +183,92 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dsin() == NULL) {
+      if (StubRoutines::dsin() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dcos() == NULL) {
+      if (StubRoutines::dcos() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dtan() == NULL) {
+      if (StubRoutines::dtan() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dlog() == NULL) {
+      if (StubRoutines::dlog() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dlog10() == NULL) {
+      if (StubRoutines::dlog10() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dexp() == NULL) {
+      if (StubRoutines::dexp() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
       __ mv(x9, ra);
-      continuation = x9;
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
       __ mv(sp, x19_sender_sp);
-      if (StubRoutines::dpow() == NULL) {
+      if (StubRoutines::dpow() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ call(fn);
+      __ rt_call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -294,16 +293,12 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     default:
       ;
   }
-  if (entry_point != NULL) {
-    __ jr(continuation);
+  if (entry_point != nullptr) {
+    __ ret();
   }
 
   return entry_point;
 }
-
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
@@ -315,7 +310,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 
   // abstract method entry
 
-  //  pop return address, reset last_sp to NULL
+  //  pop return address, reset last_sp to null
   __ empty_expression_stack();
   __ restore_bcp();      // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
@@ -337,6 +332,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    __ shadd(t0, t0, fp, t0, LogBytesPerWord);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
     __ bge(t0, sp, L);
@@ -364,7 +360,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   // setup parameters
 
   // convention: expect aberrant index in register x11
-  __ zero_extend(c_rarg2, x11, 32);
+  __ zext(c_rarg2, x11, 32);
   // convention: expect array in register x13
   __ mv(c_rarg1, x13);
   __ call_VM(noreg,
@@ -395,7 +391,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(
   const char* name, const char* message, bool pass_oop) {
-  assert(!pass_oop || message == NULL, "either oop or message but not both");
+  assert(!pass_oop || message == nullptr, "either oop or message but not both");
   address entry = __ pc();
   if (pass_oop) {
     // object is at TOS
@@ -412,9 +408,9 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                                      create_klass_exception),
                c_rarg1, c_rarg2);
   } else {
-    // kind of lame ExternalAddress can't take NULL because
+    // kind of lame ExternalAddress can't take null because
     // external_word_Relocation will assert.
-    if (message != NULL) {
+    if (message != nullptr) {
       __ la(c_rarg2, Address((address)message));
     } else {
       __ mv(c_rarg2, NULL_WORD);
@@ -424,7 +420,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                c_rarg1, c_rarg2);
   }
   // throw exception
-  __ j(address(Interpreter::throw_exception_entry()));
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 
@@ -432,8 +428,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  // and NULL it as marker that esp is now tos until next java call
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
   __ restore_locals();
@@ -448,18 +445,27 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  // Pop N words from the stack
-  __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
-  __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+  const Register cache = x11;
+  const Register index = x12;
 
-  __ shadd(esp, x11, esp, t0, 3);
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ shadd(esp, cache, esp, t0, 3);
+  } else {
+    // Pop N words from the stack
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
+
+    __ shadd(esp, cache, esp, t0, 3);
+  }
 
   // Restore machine SP
   __ restore_sp_after_call();
 
- __ check_and_handle_popframe(xthread);
- __ check_and_handle_earlyret(xthread);
+  __ check_and_handle_popframe(xthread);
+  __ check_and_handle_earlyret(xthread);
 
   __ get_dispatch();
   __ dispatch_next(state, step);
@@ -480,8 +486,9 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  // NULL last_sp until next java call
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  // null last_sp until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   // handle exceptions
@@ -495,7 +502,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ bind(L);
   }
 
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation);
@@ -520,7 +527,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
 
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
                                                                 address runtime_entry) {
-  assert_cond(runtime_entry != NULL);
+  assert_cond(runtime_entry != nullptr);
   address entry = __ pc();
   __ push(state);
   __ push_cont_fastpath(xthread);
@@ -530,6 +537,38 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Restore constant pool cache
+  __ ld(xcpool, Address(fp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp, t0, Interpreter::logStackElementSize);
+  // and null it as marker that esp is now tos until next java call
+  __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ shadd(sp, t0, fp, t0, LogBytesPerWord);
+
+  // Restore method
+  __ ld(xmethod, Address(fp, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  __ la(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()));
+
+  __ ret();
+
+  return start;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -598,7 +637,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved fp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -650,8 +689,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -671,17 +710,17 @@ void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags(xmethod, Method::access_flags_offset());
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method doesn't need synchronization", false);
 #endif // ASSERT
 
   // get synchronization object
   {
     Label done;
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ andi(t0, x10, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ld(x10, Address(xlocals, Interpreter::local_offset_in_bytes(0)));
@@ -692,7 +731,7 @@ void TemplateInterpreterGenerator::lock_method() {
     {
       Label L;
       __ bnez(x10, L);
-      __ stop("synchronization object is NULL");
+      __ stop("synchronization object is null");
       __ bind(L);
     }
 #endif // ASSERT
@@ -702,12 +741,16 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // add space for monitor & lock
   __ check_extended_sp();
-  __ add(sp, sp, - entry_size); // add space for a monitor entry
-  __ add(esp, esp, - entry_size);
-  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ sd(esp, monitor_block_top);  // set new monitor block top
+  __ sub(sp, sp, entry_size); // add space for a monitor entry
+  __ sub(esp, esp, entry_size);
+  __ sub(t0, sp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sub(t0, esp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, monitor_block_top);  // set new monitor block top
   // store object
-  __ sd(x10, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
+  __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
   __ mv(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
 }
@@ -722,22 +765,26 @@ void TemplateInterpreterGenerator::lock_method() {
 //      xcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
+  // Save ConstMethod* in x15_const_method for later use to avoid loading multiple times
+  Register x15_const_method = x15;
+  __ ld(x15_const_method, Address(xmethod, Method::const_offset()));
+
   // initialize fixed part of activation frame
   if (native_call) {
-    __ add(esp, sp, - 14 * wordSize);
+    __ subi(esp, sp, 14 * wordSize);
     __ mv(xbcp, zr);
-    __ add(sp, sp, - 14 * wordSize);
+    __ subi(sp, sp, 14 * wordSize);
     // add 2 zero-initialized slots for native calls
     __ sd(zr, Address(sp, 13 * wordSize));
     __ sd(zr, Address(sp, 12 * wordSize));
   } else {
-    __ add(esp, sp, - 12 * wordSize);
-    __ ld(t0, Address(xmethod, Method::const_offset()));     // get ConstMethod
-    __ add(xbcp, t0, in_bytes(ConstMethod::codes_offset())); // get codebase
-    __ add(sp, sp, - 12 * wordSize);
+    __ subi(esp, sp, 12 * wordSize);
+    __ add(xbcp, x15_const_method, in_bytes(ConstMethod::codes_offset())); // get codebase
+    __ subi(sp, sp, 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
-  __ sd(esp, Address(sp, 0));
+  __ mv(t0, frame::interpreter_frame_initial_sp_offset);
+  __ sd(t0, Address(sp, 0));
 
   if (ProfileInterpreter) {
     Label method_data_continue;
@@ -754,12 +801,13 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(fp, Address(sp, 10 * wordSize));
   __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
 
-  __ ld(xcpool, Address(xmethod, Method::const_offset()));
-  __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
-  __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
+  // Save ConstantPool* in x28_constants for later use to avoid loading multiple times
+  Register x28_constants = x28;
+  __ ld(x28_constants, Address(x15_const_method, ConstMethod::constants_offset()));
+  __ ld(xcpool, Address(x28_constants, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
-  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
   // Store relativized xlocals, see frame::interpreter_frame_locals().
   __ sd(t0, Address(sp, 2 * wordSize));
 
@@ -768,26 +816,32 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(x19_sender_sp, Address(sp, 9 * wordSize));
   __ sd(zr, Address(sp, 8 * wordSize));
 
-  // Get mirror
-  __ load_mirror(t2, xmethod, x15, t1);
+  // Get mirror, Resolve ConstantPool* -> InstanceKlass* -> Java mirror
+  // and store it in the frame as GC root for this Method*
+  __ ld(t2, Address(x28_constants, ConstantPool::pool_holder_offset()));
+  __ ld(t2, Address(t2, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(t2, t0, t1);
+  __ sd(t2, Address(sp, 4 * wordSize));
+
   if (!native_call) {
-    __ ld(t0, Address(xmethod, Method::const_offset()));
-    __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
+    __ lhu(t0, Address(x15_const_method, ConstMethod::max_stack_offset()));
     __ add(t0, t0, MAX2(3, Method::extra_stack_entries()));
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
-    // Store extended SP and mirror
-    __ sd(t0, Address(sp, 5 * wordSize));
-    __ sd(t2, Address(sp, 4 * wordSize));
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
+    // Store extended SP
+    __ sd(t1, Address(sp, 5 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
-    __ sub(t0, sp, 2 * wordSize);
-    __ sd(t0, Address(sp, 5 * wordSize));
-    __ sd(zr, Address(sp, 4 * wordSize));
+    __ subi(t0, sp, 2 * wordSize);
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
+    __ sd(t1, Address(sp, 5 * wordSize));
     __ mv(sp, t0);
   }
 }
@@ -838,7 +892,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   Label slow_path;
   const Register local_0 = c_rarg0;
-  // Check if local 0 != NULL
+  // Check if local 0 isn't null
   // If the receiver is null then it is OK to jump to the slow path.
   __ ld(local_0, Address(esp, 0));
   __ beqz(local_0, slow_path);
@@ -864,7 +918,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
  */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   // TODO: Unimplemented generate_CRC32_update_entry
-  return 0;
+  return nullptr;
 }
 
 /**
@@ -874,7 +928,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32_updateBytes_entry
-  return 0;
+  return nullptr;
 }
 
 /**
@@ -886,8 +940,12 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return 0;
+  return nullptr;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
@@ -961,7 +1019,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // compute beginning of parameters (xlocals)
   __ shadd(xlocals, x12, esp, xlocals, 3);
-  __ addi(xlocals, xlocals, -wordSize);
+  __ subi(xlocals, xlocals, wordSize);
 
   // Pull SP back to minimum size: this avoids holes in the stack
   __ andi(sp, esp, -16);
@@ -971,7 +1029,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute non-native method as native", false);
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1009,7 +1067,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }
@@ -1067,11 +1125,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in x10
   // set result handler
   __ mv(result_handler, x10);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
+  __ sd(x10, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
-    __ andi(t0, t, JVM_ACC_STATIC);
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
+    __ test_bit(t0, t, exact_log2(JVM_ACC_STATIC));
     __ beqz(t0, L);
     // get mirror
     __ load_mirror(t, xmethod, x28, t1);
@@ -1086,9 +1147,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
-    address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mv(t1, unsatisfied);
-    __ ld(t1, Address(t1, 0));
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ la(t, unsatisfied);
+    __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
+
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1104,6 +1166,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // It is enough that the pc() points into the right code
   // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, fp, native_return, x30);
 
@@ -1112,7 +1176,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ lwu(t, Address(xthread, JavaThread::thread_state_offset()));
-    __ addi(t0, zr, (u1)_thread_in_Java);
+    __ mv(t0, (u1)_thread_in_Java);
     __ beq(t, t0, L);
     __ stop("Wrong thread state in native stub");
     __ bind(L);
@@ -1125,14 +1189,21 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ jalr(x28);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(xmethod);
   // result potentially in x10 or f10
 
+  // Restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(t0);
+
   // make room for the pushes we're about to do
-  __ sub(t0, esp, 4 * wordSize);
+  __ subi(t0, esp, 4 * wordSize);
   __ andi(sp, t0, -16);
 
   // NOTE: The order of these pushes is known to frame::interpreter_frame_result
@@ -1150,21 +1221,15 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
     Label L, Continue;
 
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word. We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    //
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L, true /* at_return */, false /* in_nmethod */);
     __ lwu(t1, Address(xthread, JavaThread::suspend_flags_offset()));
     __ beqz(t1, Continue);
     __ bind(L);
@@ -1175,7 +1240,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1188,6 +1253,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t1, not_preempted);
+    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ jr(t1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
 
@@ -1198,7 +1280,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ ld(t, Address(xthread, JavaThread::active_handles_offset()));
-  __ sd(zr, Address(t, JNIHandleBlock::top_offset_in_bytes()));
+  __ sd(zr, Address(t, JNIHandleBlock::top_offset()));
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1219,12 +1301,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ lwu(t0, Address(xthread, in_bytes(JavaThread::stack_guard_state_offset())));
-    __ addi(t1, zr, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
+    __ mv(t1, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ bne(t0, t1, no_reguard);
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
@@ -1257,8 +1339,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
-    __ andi(t0, t, JVM_ACC_SYNCHRONIZED);
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
+    __ test_bit(t0, t, exact_log2(JVM_ACC_SYNCHRONIZED));
     __ beqz(t0, L);
     // the code below should be shared with interpreter macro
     // assembler implementation
@@ -1273,7 +1355,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                              (intptr_t)(frame::interpreter_frame_initial_sp_offset *
                                         wordSize - sizeof(BasicObjectLock))));
 
-      __ ld(t, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+      __ ld(t, Address(c_rarg1, BasicObjectLock::obj_offset()));
       __ bnez(t, unlock);
 
       // Entry already unlocked, need to throw exception
@@ -1288,6 +1370,31 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  __ j(fast_path);
+
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(esp, fp, __ pc(), t0);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), xthread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1301,9 +1408,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ jalr(result_handler);
 
   // remove activation
-  __ ld(esp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
+  // get sender sp
+  __ ld(esp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
   // remove frame anchor
   __ leave();
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // restore sender sp
   __ mv(sp, esp);
@@ -1351,7 +1461,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // compute beginning of parameters (xlocals)
   __ shadd(xlocals, x12, esp, t1, 3);
-  __ add(xlocals, xlocals, -wordSize);
+  __ subi(xlocals, xlocals, wordSize);
 
   // Make room for additional locals
   __ slli(t1, x13, 3);
@@ -1369,8 +1479,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ blez(x13, exit); // do nothing if x13 <= 0
     __ bind(loop);
     __ sd(zr, Address(t0));
-    __ add(t0, t0, wordSize);
-    __ add(x13, x13, -1); // until everything initialized
+    __ addi(t0, t0, wordSize);
+    __ subi(x13, x13, 1); // until everything initialized
     __ bnez(x13, loop);
     __ bind(exit);
   }
@@ -1383,7 +1493,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute native method as non-native");
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1430,7 +1540,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }
@@ -1528,6 +1638,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We could have returned from deoptimizing this frame, so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe
@@ -1561,7 +1672,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ slli(x10, x10, Interpreter::logStackElementSize);
     __ restore_locals();
     __ sub(xlocals, xlocals, x10);
-    __ add(xlocals, xlocals, wordSize);
+    __ addi(xlocals, xlocals, wordSize);
     // Save these arguments
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                            Deoptimization::
@@ -1590,7 +1701,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* notify_jvmdi */ false);
 
   // Restore the last_sp and null it out
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();
@@ -1618,7 +1730,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ bne(t1, t0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
-    // Detect such a case in the InterpreterRuntime function and return the member name argument,or NULL.
+    // Detect such a case in the InterpreterRuntime function and return the member name argument,or null.
 
     __ ld(c_rarg0, Address(xlocals, 0));
     __ call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null),c_rarg0, xmethod, xbcp);
@@ -1640,11 +1752,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(x10);
-  __ sd(x10, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(x10, Address(xthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, false, true, false);
   // restore exception
-  __ get_vm_result(x10, xthread);
+  __ get_vm_result_oop(x10, xthread);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the
@@ -1655,7 +1767,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // sp: expression stack of caller
   // fp: fp of caller
   // FIXME: There's no point saving ra here because VM calls don't trash it
-  __ sub(sp, sp, 2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(x10, Address(sp, 0));                   // save exception
   __ sd(ra, Address(sp, wordSize));             // save return address
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
@@ -1664,7 +1776,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ mv(x11, x10);                              // save exception handler
   __ ld(x10, Address(sp, 0));                   // restore exception
   __ ld(ra, Address(sp, wordSize));             // restore return address
-  __ add(sp, sp, 2 * wordSize);
+  __ addi(sp, sp, 2 * wordSize);
   // We might be returning to a deopt handler that expects x13 to
   // contain the exception pc
   __ mv(x13, ra);
@@ -1714,15 +1826,23 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& fep,
                                                          address& dep,
                                                          address& vep) {
-  assert(t != NULL && t->is_valid() && t->tos_in() == vtos, "illegal template");
+  assert(t != nullptr && t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ j(L);
-  fep = __ pc();  __ push_f();    __ j(L);
-  dep = __ pc();  __ push_d();    __ j(L);
-  lep = __ pc();  __ push_l();    __ j(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ j(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ j(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ j(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ j(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }
@@ -1749,7 +1869,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ mv(x7, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addw(noreg, 1, x7);
+  __ atomic_add(noreg, 1, x7);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -1773,8 +1893,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   //   _counters[_index] ++;
   Register counter_addr = t1;
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
-  __ slli(index, index, LogBytesPerInt);
-  __ add(counter_addr, x7, index);
+  __ shadd(counter_addr, index, x7, counter_addr, LogBytesPerInt);
   __ atomic_addw(noreg, 1, counter_addr);
  }
 
@@ -1783,8 +1902,8 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
 
-  assert(Interpreter::trace_code(t->tos_in()) != NULL, "entry must have been generated");
-  __ jal(Interpreter::trace_code(t->tos_in()));
+  assert(Interpreter::trace_code(t->tos_in()) != nullptr, "entry must have been generated");
+  __ rt_call(Interpreter::trace_code(t->tos_in()));
   __ reinit_heapbase();
 }
 

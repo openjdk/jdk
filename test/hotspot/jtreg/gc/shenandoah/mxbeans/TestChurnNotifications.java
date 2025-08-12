@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * @test id=passive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -43,7 +44,7 @@
  * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -55,7 +56,7 @@
  * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -67,7 +68,7 @@
  * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -79,7 +80,7 @@
  * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -88,19 +89,14 @@
  */
 
 /*
- * @test id=iu
+ * @test id=generational
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -Dprecise=false
- *      TestChurnNotifications
- *
- * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -Dprecise=false
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -Dprecise=false -Dmem.pool=Young
  *      TestChurnNotifications
  */
 
@@ -128,8 +124,10 @@ public class TestChurnNotifications {
 
     static volatile Object sink;
 
+    private static final String POOL_NAME = "Young".equals(System.getProperty("mem.pool")) ? "Shenandoah Young Gen" : "Shenandoah";
+
     public static void main(String[] args) throws Exception {
-        final long startTime = System.currentTimeMillis();
+        final long startTimeNanos = System.nanoTime();
 
         final AtomicLong churnBytes = new AtomicLong();
 
@@ -141,8 +139,8 @@ public class TestChurnNotifications {
                     Map<String, MemoryUsage> mapBefore = info.getGcInfo().getMemoryUsageBeforeGc();
                     Map<String, MemoryUsage> mapAfter = info.getGcInfo().getMemoryUsageAfterGc();
 
-                    MemoryUsage before = mapBefore.get("Shenandoah");
-                    MemoryUsage after = mapAfter.get("Shenandoah");
+                    MemoryUsage before = mapBefore.get(POOL_NAME);
+                    MemoryUsage after = mapAfter.get(POOL_NAME);
 
                     if ((before != null) && (after != null)) {
                         long diff = before.getUsed() - after.getUsed();
@@ -176,8 +174,8 @@ public class TestChurnNotifications {
         // Look at test timeout to figure out how long we can wait without breaking into timeout.
         // Default to 1/4 of the remaining time in 1s steps.
         final long STEP_MS = 1000;
-        long spentTime = System.currentTimeMillis() - startTime;
-        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - spentTime) / STEP_MS / 4;
+        long spentTimeNanos = System.nanoTime() - startTimeNanos;
+        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
 
         // Wait until enough notifications are accrued to match minimum boundary.
         long tries = 0;

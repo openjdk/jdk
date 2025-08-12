@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,9 @@ public class thrstartreq002 extends JDIBase {
 
         int result = run(argv, System.out);
 
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -125,6 +127,7 @@ public class thrstartreq002 extends JDIBase {
             log2("debuggee launched");
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
+            e.printStackTrace(System.out);
             log2("       test cancelled");
             return FAILED;
         }
@@ -168,6 +171,7 @@ public class thrstartreq002 extends JDIBase {
                           vm.exit(PASS_BASE);
                       } catch ( Exception e ) {
                           log3("ERROR: Exception : " + e);
+                          e.printStackTrace(System.out);
                       }
                       break;
 
@@ -181,6 +185,7 @@ public class thrstartreq002 extends JDIBase {
                           }
                       } catch ( Exception e ) {
                           log3("ERROR: Exception : " + e);
+                          e.printStackTrace(System.out);
                       }
                       break;
             }
@@ -209,9 +214,11 @@ public class thrstartreq002 extends JDIBase {
             return 1;
         } catch ( VMDisconnectedException e ) {
             log3("ERROR: VMDisconnectedException : " + e);
+            e.printStackTrace(System.out);
             return 2;
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
+            e.printStackTrace(System.out);
             return 1;
         }
 
@@ -239,15 +246,7 @@ public class thrstartreq002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

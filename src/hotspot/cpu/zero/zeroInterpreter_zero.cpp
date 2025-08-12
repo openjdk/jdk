@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -37,6 +36,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -44,6 +44,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include "entry_zero.hpp"
@@ -331,23 +332,24 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
-    markWord disp = lockee->mark().set_unlocked();
-    monitor->lock()->set_displaced_header(disp);
-    bool call_vm = UseHeavyMonitors;
-    bool inc_monitor_count = true;
-    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      // Is it simple recursive case?
-      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-      } else {
-        inc_monitor_count = false;
-        CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-        if (HAS_PENDING_EXCEPTION)
-          goto unwind_and_return;
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      markWord disp = lockee->mark().set_unlocked();
+      monitor->lock()->set_displaced_header(disp);
+      success = true;
+      if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+        // Is it simple recursive case?
+        if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+          monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+        } else {
+          success = false;
+        }
       }
     }
-    if (inc_monitor_count) {
-      THREAD->inc_held_monitor_count();
+    if (!success) {
+      CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+          if (HAS_PENDING_EXCEPTION)
+            goto unwind_and_return;
     }
   }
 
@@ -479,26 +481,27 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Unlock if necessary
   if (monitor) {
-    BasicLock *lock = monitor->lock();
-    markWord header = lock->displaced_header();
-    oop rcvr = monitor->obj();
-    monitor->set_obj(nullptr);
-
-    bool dec_monitor_count = true;
-    if (header.to_pointer() != nullptr) {
-      markWord old_header = markWord::encode(lock);
-      if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr);
-        dec_monitor_count = false;
-        InterpreterRuntime::monitorexit(monitor);
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      BasicLock* lock = monitor->lock();
+      oop rcvr = monitor->obj();
+      monitor->set_obj(nullptr);
+      success = true;
+      markWord header = lock->displaced_header();
+      if (header.to_pointer() != nullptr) { // Check for recursive lock
+        markWord old_header = markWord::encode(lock);
+        if (rcvr->cas_set_mark(header, old_header) != old_header) {
+          monitor->set_obj(rcvr);
+          success = false;
+        }
       }
     }
-    if (dec_monitor_count) {
-      THREAD->dec_held_monitor_count();
+    if (!success) {
+      InterpreterRuntime::monitorexit(monitor);
     }
   }
 
- unwind_and_return:
+  unwind_and_return:
 
   // Unwind the current activation
   thread->pop_zero_frame();
@@ -605,7 +608,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_getfield)) {
     return normal_entry(method, 0, THREAD);
   }
@@ -622,7 +625,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // If needed, allocate additional slot on stack: we already have one
   // for receiver, and double/long need another one.
-  switch (entry->flag_state()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       stack->overflow_check(1, CHECK_0);
@@ -634,12 +637,12 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   }
 
   // Read the field to stack(0)
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       OrderAccess::fence();
     }
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field_acquire(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field_acquire(offset),      0); break;
@@ -653,7 +656,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
         ShouldNotReachHere();
     }
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field(offset),      0); break;
@@ -696,7 +699,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
     return normal_entry(method, 0, THREAD);
   }
@@ -707,7 +710,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Figure out where the receiver is. If there is a long/double
   // operand on stack top, then receiver is two slots down.
   oop object = nullptr;
-  switch (entry->flag_state()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       object = STACK_OBJECT(-2);
@@ -724,9 +727,9 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   }
 
   // Store the stack(0) to field
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->release_byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->release_byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->release_char_field_put(offset,   STACK_INT(0));     break;
@@ -741,7 +744,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
     OrderAccess::storeload();
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->char_field_put(offset,   STACK_INT(0));     break;

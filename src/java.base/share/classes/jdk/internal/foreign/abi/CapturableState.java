@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,49 +22,75 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.ValueLayout;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.StructLayout;
+import java.util.ArrayList;
+import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-public enum CapturableState {
-    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1),
-    ERRNO             ("errno",           JAVA_INT, 1 << 2);
+/**
+ * Utility class for the call states to capture.
+ */
+public final class CapturableState {
 
-    private final String stateName;
-    private final ValueLayout layout;
-    private final int mask;
+    public static final StructLayout LAYOUT;
+    // Keep in synch with DowncallLinker::capture_state in downcallLinker.cpp
+    private static final Map<String, Integer> MASKS;
 
-    CapturableState(String stateName, ValueLayout layout, int mask) {
-        this.stateName = stateName;
-        this.layout = layout.withName(stateName);
-        this.mask = mask;
+    static {
+        if (OperatingSystem.isWindows()) {
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("GetLastError"),
+                    JAVA_INT.withName("WSAGetLastError"),
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "GetLastError",    1 << 0,
+                    "WSAGetLastError", 1 << 1,
+                    "errno",           1 << 2
+            );
+        } else {
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "errno",           1 << 2
+            );
+        }
     }
 
-    public static CapturableState forName(String name) {
-        return Stream.of(values())
-                .filter(stl -> stl.stateName().equals(name))
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown name: " + name +", must be one of: "
-                            + Stream.of(CapturableState.values())
-                                    .map(CapturableState::stateName)
-                                    .collect(Collectors.joining(", "))));
+    private CapturableState() {
     }
 
-    public String stateName() {
-        return stateName;
+    /**
+     * Returns the mask for a supported capturable state, or throw an
+     * IllegalArgumentException if no supported state with this name exists.
+     */
+    public static int maskFromName(String name) {
+        var ret = MASKS.get(name);
+        if (ret == null) {
+            throw new IllegalArgumentException(
+                    "Unknown name: " + name + ", must be one of: "
+                            + MASKS.keySet());
+        }
+        return ret;
     }
 
-    public ValueLayout layout() {
-        return layout;
-    }
-
-    public int mask() {
-        return mask;
+    /**
+     * Returns a collection-like display string for a captured state mask.
+     * Enclosed with brackets.
+     */
+    public static String displayString(int mask) {
+        var displayList = new ArrayList<>(); // unordered
+        for (var e : MASKS.entrySet()) {
+            if ((mask & e.getValue()) != 0) {
+                displayList.add(e.getKey());
+            }
+        }
+        return displayList.toString();
     }
 }

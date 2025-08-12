@@ -53,7 +53,7 @@ private:
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, _thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, p, o);
         obj = fwd;
       }
@@ -73,15 +73,6 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
-
-void ShenandoahBarrierSet::clone_marking(oop obj) {
-  assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
-  assert(ShenandoahIUBarrier, "only with incremental-update");
-  if (!_heap->marking_context()->allocated_after_mark_start(obj)) {
-    ShenandoahUpdateRefsForOopClosure</* has_fwd = */ false, /* evac = */ false, /* enqueue */ true> cl;
-    obj->oop_iterate(&cl);
-  }
-}
 
 void ShenandoahBarrierSet::clone_evacuation(oop obj) {
   assert(_heap->is_evacuation_in_progress(), "only during evacuation");
@@ -104,10 +95,7 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
   shenandoah_assert_correct(nullptr, obj);
 
-  int gc_state = _heap->gc_state();
-  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
-    clone_marking(obj);
-  } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+  if (_heap->is_evacuation_in_progress()) {
     clone_evacuation(obj);
   } else {
     clone_update(obj);

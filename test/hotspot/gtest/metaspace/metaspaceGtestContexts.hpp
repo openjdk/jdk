@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,10 +37,14 @@ using metaspace::chunklevel_t;
 using namespace metaspace::chunklevel;
 
 class MetaspaceGtestContext : public metaspace::MetaspaceTestContext {
+  int _num_arenas_created;
 public:
   MetaspaceGtestContext(size_t commit_limit = 0, size_t reserve_limit = 0) :
-    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit)
-  {}
+    metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit),
+    _num_arenas_created(0) {}
+
+  int num_arenas_created() const { return _num_arenas_created; }
+  void inc_num_arenas_created() { _num_arenas_created ++; }
 };
 
 class ChunkGtestContext : public MetaspaceGtestContext {
@@ -89,7 +93,7 @@ public:
 
   // Allocate a chunk but expect it to fail.
   void alloc_chunk_expect_failure(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_size) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     checked_alloc_chunk_0(&c, preferred_level, max_level, min_committed_size);
     ASSERT_NULL(c);
   }

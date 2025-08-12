@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jtreg.SkippedException;
  * @bug 8191538
  * @summary Test clhsdb 'field' command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbField
  */
@@ -55,8 +56,8 @@ public class ClhsdbField {
                 "field InstanceKlass _methods Array<Method*>*",
                 "field InstanceKlass _constants ConstantPool*",
                 "field Klass _name Symbol*",
-                "field JavaThread _osthread OSThread*",
-                "field TenuredGeneration _the_space TenuredSpace*",
+                "field Thread _osthread OSThread*",
+                "field TenuredGeneration _the_space ContiguousSpace*",
                 "field VirtualSpace _low_boundary char*",
                 "field MethodCounters _backedge_counter InvocationCounter",
                 "field nmethod _entry_bci int",

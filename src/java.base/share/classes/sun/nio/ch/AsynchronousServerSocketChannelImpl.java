@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ abstract class AsynchronousServerSocketChannelImpl
     private final Object stateLock = new Object();
 
     // close support
-    private ReadWriteLock closeLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock closeLock = new ReentrantReadWriteLock();
     private volatile boolean closed;
 
     // set true when accept operation is cancelled
@@ -69,7 +69,7 @@ abstract class AsynchronousServerSocketChannelImpl
 
     AsynchronousServerSocketChannelImpl(AsynchronousChannelGroupImpl group) {
         super(group.provider());
-        this.fd = Net.serverSocket(true);
+        this.fd = Net.serverSocket();
     }
 
     @Override
@@ -150,10 +150,6 @@ abstract class AsynchronousServerSocketChannelImpl
     {
         InetSocketAddress isa = (local == null) ? new InetSocketAddress(0) :
             Net.checkAddress(local);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkListen(isa.getPort());
 
         try {
             begin();
@@ -175,7 +171,7 @@ abstract class AsynchronousServerSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return Net.getRevealedLocalAddress(localAddress);
+        return localAddress;
     }
 
     @Override
@@ -257,7 +253,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (localAddress == null) {
                 sb.append("unbound");
             } else {
-                sb.append(Net.getRevealedLocalAddressAsString(localAddress));
+                sb.append(localAddress.toString());
             }
         }
         sb.append(']');

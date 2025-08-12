@@ -84,10 +84,7 @@
 
 - (NSAccessibilitySubrole)accessibilitySubrole
 {
-    if (@available(macOS 10.13, *)) {
-        return NSAccessibilityTabButtonSubrole;
-    }
-    return NSAccessibilityUnknownSubrole;
+    return NSAccessibilityTabButtonSubrole;
 }
 
 - (id)accessibilityValue
@@ -107,6 +104,15 @@
 - (BOOL)accessibilityPerformPress {
     [self performPressAction];
     return YES;
+}
+
+- (NSString *)accessibilityRoleDescription
+{
+    NSString *value = NSAccessibilityRoleDescription([self accessibilityRole], NSAccessibilityTabButtonSubrole);
+    if (value == nil) {
+        value = [super accessibilityRoleDescription];
+    }
+    return value;
 }
 
 @end

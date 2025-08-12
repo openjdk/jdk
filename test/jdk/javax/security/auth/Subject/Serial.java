@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @modules jdk.security.auth
  * @summary     Subject serialized principal set is
  *              implementation-dependent class
- * @run main/othervm/policy=Serial.policy Serial
  */
 
 import java.io.FileInputStream;
@@ -73,25 +72,6 @@ public class Serial implements java.io.Serializable {
             if (!s.equals(s2) || !s2.equals(s)) {
                 throw new SecurityException("Serial test failed: " +
                                         "EQUALS TEST FAILED");
-            }
-
-            // make sure private credentials are not serializable
-            // without permissions
-
-            Set privateCredentials = s.getPrivateCredentials();
-            privateCredentials.add(new Serial());
-
-            fos = new FileOutputStream("serial2.tmp");
-            oos = new ObjectOutputStream(fos);
-            try {
-                oos.writeObject(privateCredentials);
-                oos.flush();
-                fos.close();
-                throw new RuntimeException("Serial test failed: " +
-                        "allowed to serialize private credential set");
-            } catch (SecurityException se) {
-                // good
-                se.printStackTrace();
             }
 
             System.out.println("Serial test succeeded");

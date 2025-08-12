@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,9 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -32,10 +34,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.tools.JavaFileObject;
 
-import static com.sun.tools.classfile.Attribute.Code;
-import static com.sun.tools.classfile.Attribute.LineNumberTable;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Base class for line number table attribute tests.
@@ -67,37 +67,41 @@ public class LineNumberTestBase extends TestBase {
                 writeToFileIfEnabled(Paths.get(testCase.getName() + ".java"), testCase.src);
                 Set<Integer> coveredLines = new HashSet<>();
                 for (JavaFileObject file : compile(testCase.extraCompilerOptions, testCase.src).getClasses().values()) {
-                    ClassFile classFile;
+                    ClassModel classFile;
                     try (InputStream input = file.openInputStream()) {
-                        classFile = ClassFile.read(input);
+                        classFile = ClassFile.of().parse(input.readAllBytes());
                     }
-                    for (Method m : classFile.methods) {
-                        Code_attribute code_attribute = (Code_attribute) m.attributes.get(Code);
+                    for (MethodModel m : classFile.methods()) {
+                        CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
 
+                        assert code_attribute != null;
                         assertEquals(
-                                countAttributes(LineNumberTable, code_attribute.attributes.attrs, classFile.constant_pool),
+                                countAttributes(Attributes.lineNumberTable(), code_attribute),
                                 1,
                                 "Can be more than one LNT attribute, but javac should generate only one.");
 
-                        LineNumberTable_attribute tableAttribute =
-                                (LineNumberTable_attribute) code_attribute.attributes.get(LineNumberTable);
-                        checkAttribute(testCase, tableAttribute, code_attribute.code_length);
-                        coveredLines.addAll(
-                                Stream.of(tableAttribute.line_number_table)
-                                        .map(e -> e.line_number)
-                                        .collect(toList()));
+                        LineNumberTableAttribute tableAttribute = code_attribute.findAttribute(Attributes.lineNumberTable()).orElse(null);
+                        assert tableAttribute != null;
+                        checkAttribute(testCase, tableAttribute, code_attribute.codeLength());
+                        Set<Integer> methodCoveredLines =
+                                tableAttribute.lineNumbers().stream()
+                                        .map(LineNumberInfo::lineNumber)
+                                        .collect(toSet());
+
+                        TestCase.MethodData expected = testCase.findData(m.methodName().stringValue());
+
+                        if (expected != null) {
+                            verifyCoveredLines(methodCoveredLines, expected);
+                        }
+
+                        coveredLines.addAll(methodCoveredLines);
                     }
                 }
-                if (testCase.exactLines) {
-                    assertTrue(coveredLines.equals(testCase.expectedLines),
-                            format("Incorrect covered lines.%n" +
-                                    "Covered: %s%n" +
-                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
-                } else {
-                    assertTrue(coveredLines.containsAll(testCase.expectedLines),
-                            format("All significant lines are not covered.%n" +
-                                    "Covered: %s%n" +
-                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
+
+                TestCase.MethodData expected = testCase.findData(null);
+
+                if (expected != null) {
+                    verifyCoveredLines(coveredLines, expected);
                 }
             } catch (AssertionFailedException | CompilationException ex) {
                 System.err.printf("#       %-20s#%n", testCase.getName());
@@ -117,26 +121,41 @@ public class LineNumberTestBase extends TestBase {
         }
     }
 
-    private int countAttributes(String name, Attribute[] attrs, ConstantPool constant_pool) throws ConstantPoolException {
+    private void verifyCoveredLines(Set<Integer> actualCoveredLines, TestCase.MethodData expected) {
+        if (expected.exactLines()) {
+            assertTrue(actualCoveredLines.equals(expected.expectedLines()),
+                    format("Incorrect covered lines.%n" +
+                            "Covered: %s%n" +
+                            "Expected: %s%n", actualCoveredLines, expected.expectedLines()));
+        } else {
+            assertTrue(actualCoveredLines.containsAll(expected.expectedLines()),
+                    format("All significant lines are not covered.%n" +
+                            "Covered: %s%n" +
+                            "Expected: %s%n", actualCoveredLines, expected.expectedLines()));
+        }
+    }
+
+    private <T extends Attribute<T>> int countAttributes(AttributeMapper<T> attr, AttributedElement attributedElement) {
         int i = 0;
-        for (Attribute attribute : attrs) {
-            if (name.equals(attribute.getName(constant_pool))) {
+        for (Attribute<?> attribute : attributedElement.attributes()) {
+            if (attribute.attributeName().equalsString(attr.name())) {
                 i++;
             }
         }
         return i;
     }
 
-    private void checkAttribute(TestCase testCase, LineNumberTable_attribute tableAttribute, int code_length) {
-        assertEquals(tableAttribute.line_number_table_length, tableAttribute.line_number_table.length,
-                "Incorrect line number table length.");
+    private void checkAttribute(TestCase testCase, LineNumberTableAttribute tableAttribute, int code_length) {
+        // This test is unnecessary
+//        assertEquals(tableAttribute.line_number_table_length, tableAttribute.line_number_table.length,
+//                "Incorrect line number table length.");
         //attribute length is offset(line_number_table_length) + element_size*element_count
-        assertEquals(tableAttribute.attribute_length, 2 + 4 * tableAttribute.line_number_table_length,
+        assertEquals(((BoundAttribute<?>)tableAttribute).payloadLen(), 2 + 4 * tableAttribute.lineNumbers().size(),
                 "Incorrect attribute length");
         testNonEmptyLine(testCase.src.split("\n"), tableAttribute);
         assertEquals(
-                Stream.of(tableAttribute.line_number_table)
-                        .filter(e -> e.start_pc >= code_length)
+                tableAttribute.lineNumbers().stream()
+                        .filter(e -> e.startPc() >= code_length)
                         .count()
                 , 0L, "StartPC is out of bounds.");
     }
@@ -145,11 +164,11 @@ public class LineNumberTestBase extends TestBase {
      * Expects line number table point to non empty lines.
      * The method can't recognize commented lines as empty(insensible) in case of multiline comment.
      */
-    private void testNonEmptyLine(String[] source, LineNumberTable_attribute attribute) {
-        for (LineNumberTable_attribute.Entry e : attribute.line_number_table) {
-            String line = source[e.line_number - 1].trim();
+    private void testNonEmptyLine(String[] source, LineNumberTableAttribute attribute) {
+        for (LineNumberInfo e : attribute.lineNumbers()) {
+            String line = source[e.lineNumber() - 1].trim();
             assertTrue(!("".equals(line) || line.startsWith("//") || line.startsWith("/*")),
-                    format("Expect that line #%d is not empty.%n", e.line_number));
+                    format("Expect that line #%d is not empty.%n", e.lineNumber()));
         }
     }
 

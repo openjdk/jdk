@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class DerValue {
 
     /** The tag class types */
     public static final byte TAG_UNIVERSAL = (byte)0x000;
+    public static final byte TAG_CONSTRUCT = (byte)0x020;
     public static final byte TAG_APPLICATION = (byte)0x040;
     public static final byte TAG_CONTEXT = (byte)0x080;
     public static final byte TAG_PRIVATE = (byte)0x0c0;
@@ -340,6 +341,7 @@ public class DerValue {
      *
      * This is a public constructor.
      */
+    @SuppressWarnings("this-escape")
     public DerValue(byte[] encoding) throws IOException {
         this(encoding.clone(), 0, encoding.length, true, false);
     }
@@ -487,6 +489,7 @@ public class DerValue {
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
      */
+    @SuppressWarnings("this-escape")
     public DerValue(InputStream in) throws IOException {
         this(in, true);
     }
@@ -1061,6 +1064,14 @@ public class DerValue {
     }
 
     /**
+     * Determines whether Date was encoded as UTC or Generalized time and
+     * calls getUTCTime or getGeneralizedTime accordingly
+     */
+    public Date getTime() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
+    }
+
+    /**
      * Returns a Date if the DerValue is UtcTime.
      *
      * @return the Date held in this DER value
@@ -1125,7 +1136,8 @@ public class DerValue {
     @Override
     public String toString() {
         return String.format("DerValue(%02x, %s, %d, %d)",
-                0xff & tag, buffer, start, end);
+                0xff & tag, HexFormat.of().withUpperCase().formatHex(buffer),
+                start, end);
     }
 
     /**
@@ -1252,13 +1264,11 @@ public class DerValue {
     }
 
     /**
-     * Returns a hashcode for this DerValue.
-     *
-     * @return a hashcode for this DerValue.
+     * {@return a hashcode for this DerValue}
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(buffer, start, end - start, tag, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(buffer, start, end - start, tag);
     }
 
     /**

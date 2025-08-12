@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,13 @@
  */
 import java.lang.ref.Reference;
 import java.net.Authenticator;
-import java.net.NetPermission;
 import java.net.PasswordAuthentication;
-import java.security.AccessControlException;
 
 /**
  * @test
  * @bug 8169068
  * @summary  Basic test for Authenticator.getDefault()
- * @run main/othervm -Djava.security.manager=allow GetAuthenticatorTest
+ * @run main/othervm GetAuthenticatorTest
  */
 public class GetAuthenticatorTest {
 
@@ -59,16 +57,6 @@ public class GetAuthenticatorTest {
         defaultAuth = Authenticator.getDefault();
         if (defaultAuth != auth) {
             throw new RuntimeException("Unexpected authenticator: auth expected");
-        }
-        System.setSecurityManager(new SecurityManager());
-        try {
-            defaultAuth = Authenticator.getDefault();
-            throw new RuntimeException("Expected security exception not raised");
-        } catch (AccessControlException s) {
-            System.out.println("Got expected exception: " + s);
-            if (!s.getPermission().equals(new NetPermission("requestPasswordAuthentication"))) {
-                throw new RuntimeException("Unexpected permission check: " + s.getPermission());
-            }
         }
         System.out.println("Test passed with default authenticator "
                            + defaultAuth);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
         jbyteArray name = (*env)->NewByteArray(env, namelen);
         if (name != NULL) {
             (*env)->SetByteArrayRegion(env, name, 0, namelen, (jbyte*)sa->sun_path);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 return NULL;
             }
         }
@@ -118,6 +118,9 @@ Java_sun_nio_ch_UnixDomainSockets_init(JNIEnv *env, jclass cl)
     if (result == SOCKET_ERROR) {
         if (GetLastError() == WSAENOBUFS) {
             infoPtr = (LPWSAPROTOCOL_INFOW)malloc(len);
+            if (infoPtr == NULL) {
+                return JNI_FALSE;
+            }
             result = WSAEnumProtocolsW(0, infoPtr, &len);
             if (result == SOCKET_ERROR) {
                 free(infoPtr);
@@ -158,7 +161,8 @@ Java_sun_nio_ch_UnixDomainSockets_socket0(JNIEnv *env, jclass cl)
 {
     SOCKET s = WSASocketW(PF_UNIX, SOCK_STREAM, 0, &provider, 0, WSA_FLAG_OVERLAPPED);
     if (s == INVALID_SOCKET) {
-        return handleSocketError(env, WSAGetLastError());
+        NET_ThrowNew(env, WSAGetLastError(), "WSASocketW");
+        return IOS_THROWN;
     }
     SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
     return (int)s;

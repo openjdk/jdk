@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -41,8 +40,8 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/flags/flagSetting.hpp"
-#include "runtime/java.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
 
@@ -572,6 +571,7 @@ void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS
       // Do not check loader constraints for overpass methods because overpass
       // methods are created by the jvm to throw exceptions.
       if (!target_method->is_overpass()) {
+        HandleMark hm(THREAD);
         // Override vtable entry if passes loader constraint check
         // if loader constraint checking requested
         // No need to visit his super, since he and his super
@@ -1117,9 +1117,9 @@ klassItable::klassItable(InstanceKlass* klass) {
       intptr_t* method_entry  = (intptr_t *)(((address)klass) + offset_entry->offset());
       intptr_t* end         = klass->end_of_itable();
 
-      _table_offset      = (intptr_t*)offset_entry - (intptr_t*)klass;
-      _size_offset_table = (method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size();
-      _size_method_table = (end - method_entry)                  / itableMethodEntry::size();
+      _table_offset      = int((intptr_t*)offset_entry - (intptr_t*)klass);
+      _size_offset_table = int((method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size());
+      _size_method_table = int((end - method_entry)                  / itableMethodEntry::size());
       assert(_table_offset >= 0 && _size_offset_table >= 0 && _size_method_table >= 0, "wrong computation");
       return;
     }
@@ -1180,38 +1180,42 @@ void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
     Method* interface_method = supers->at(i); // method overridden
 
     if (target != nullptr && interface_method != nullptr) {
-      InstanceKlass* method_holder = target->method_holder();
-      InstanceKlass* interf = interface_method->method_holder();
-      HandleMark hm(THREAD);
-      Handle method_holder_loader(THREAD, method_holder->class_loader());
-      Handle interface_loader(THREAD, interf->class_loader());
+      // Do not check loader constraints for overpass methods because overpass
+      // methods are created by the jvm to throw exceptions.
+      if (!target->is_overpass()) {
+        InstanceKlass* method_holder = target->method_holder();
+        InstanceKlass* interf = interface_method->method_holder();
+        HandleMark hm(THREAD);
+        Handle method_holder_loader(THREAD, method_holder->class_loader());
+        Handle interface_loader(THREAD, interf->class_loader());
 
-      if (method_holder_loader() != interface_loader()) {
-        ResourceMark rm(THREAD);
-        Symbol* failed_type_symbol =
-          SystemDictionary::check_signature_loaders(target->signature(),
-                                                    _klass,
-                                                    method_holder_loader,
-                                                    interface_loader,
-                                                    true);
-        if (failed_type_symbol != nullptr) {
-          stringStream ss;
-          ss.print("loader constraint violation in interface itable"
-                   " initialization for class %s: when selecting method '",
-                   _klass->external_name());
-          interface_method->print_external_name(&ss),
-          ss.print("' the class loader %s for super interface %s, and the class"
-                   " loader %s of the selected method's %s, %s have"
-                   " different Class objects for the type %s used in the signature (%s; %s)",
-                   interf->class_loader_data()->loader_name_and_id(),
-                   interf->external_name(),
-                   method_holder->class_loader_data()->loader_name_and_id(),
-                   method_holder->external_kind(),
-                   method_holder->external_name(),
-                   failed_type_symbol->as_klass_external_name(),
-                   interf->class_in_module_of_loader(false, true),
-                   method_holder->class_in_module_of_loader(false, true));
-          THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+        if (method_holder_loader() != interface_loader()) {
+          ResourceMark rm(THREAD);
+          Symbol* failed_type_symbol =
+            SystemDictionary::check_signature_loaders(target->signature(),
+                                                      _klass,
+                                                      method_holder_loader,
+                                                      interface_loader,
+                                                      true);
+          if (failed_type_symbol != nullptr) {
+            stringStream ss;
+            ss.print("loader constraint violation in interface itable"
+                     " initialization for class %s: when selecting method '",
+                     _klass->external_name());
+            interface_method->print_external_name(&ss),
+              ss.print("' the class loader %s for super interface %s, and the class"
+                       " loader %s of the selected method's %s, %s have"
+                       " different Class objects for the type %s used in the signature (%s; %s)",
+                       interf->class_loader_data()->loader_name_and_id(),
+                       interf->external_name(),
+                       method_holder->class_loader_data()->loader_name_and_id(),
+                       method_holder->external_kind(),
+                       method_holder->external_name(),
+                       failed_type_symbol->as_klass_external_name(),
+                       interf->class_in_module_of_loader(false, true),
+                       method_holder->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+          }
         }
       }
     }
@@ -1229,9 +1233,10 @@ void klassItable::initialize_itable_and_check_constraints(TRAPS) {
 }
 
 inline bool interface_method_needs_itable_index(Method* m) {
-  if (m->is_static())           return false;   // e.g., Stream.empty
-  if (m->is_initializer())      return false;   // <init> or <clinit>
-  if (m->is_private())          return false;   // uses direct call
+  if (m->is_static())             return false; // e.g., Stream.empty
+  if (m->is_object_initializer()) return false; // <init>
+  if (m->is_static_initializer()) return false; // <clinit>
+  if (m->is_private())            return false; // uses direct call
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)
@@ -1332,11 +1337,9 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
                                                                Klass::PrivateLookupMode::skip);
     }
-    if (target == nullptr || !target->is_public() || target->is_abstract() || target->is_overpass()) {
-      assert(target == nullptr || !target->is_overpass() || target->is_public(),
-             "Non-public overpass method!");
+    if (target == nullptr || !target->is_public() || target->is_abstract()) {
       // Entry does not resolve. Leave it empty for AbstractMethodError or other error.
-      if (!(target == nullptr) && !target->is_public()) {
+      if (target != nullptr && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
             initialize(_klass, Universe::throw_illegal_access_error());
@@ -1441,7 +1444,7 @@ class InterfaceVisiterClosure : public StackObj {
 };
 
 // Visit all interfaces with at least one itable method
-void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
+static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
   // Handle array argument
   for(int i = 0; i < transitive_intf->length(); i++) {
     InstanceKlass* intf = transitive_intf->at(i);
@@ -1496,7 +1499,7 @@ class SetupItableClosure : public InterfaceVisiterClosure  {
   itableMethodEntry* method_entry() const { return _method_entry; }
 
   void doit(InstanceKlass* intf, int method_count) {
-    int offset = ((address)_method_entry) - _klass_begin;
+    int offset = int(((address)_method_entry) - _klass_begin);
     _offset_entry->initialize(intf, offset);
     _offset_entry++;
     _method_entry += method_count;

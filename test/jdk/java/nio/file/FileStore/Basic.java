@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126 7020517 8264400
+ * @bug 4313887 6873621 6979526 7006126 7020517 8264400 8360887
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
@@ -57,13 +57,24 @@ public class Basic {
             throw new RuntimeException("Assertion failed");
     }
 
-    static void checkWithin1GB(long expected, long actual) {
+    static void checkWithin1GB(String space, long expected, long actual) {
         long diff = Math.abs(actual - expected);
         if (diff > G) {
-            String msg = String.format("|actual %d - expected %d| = %d (%f G)",
-                                       actual, expected, diff, (float)diff/G);
+            String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
+                                       space, actual, expected, diff,
+                                       (float)diff/G);
             throw new RuntimeException(msg);
         }
+    }
+
+    static <V extends FileAttributeView> void testFileAttributes(Path file,
+                                                                 Class<V> viewClass,
+                                                                 String viewName) throws IOException {
+        FileStore store = Files.getFileStore(file);
+        boolean supported = store.supportsFileAttributeView(viewClass);
+        assertTrue(store.supportsFileAttributeView(viewName) == supported);
+        boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
+        assertTrue(haveView == supported);
     }
 
     static void doTests(Path dir) throws IOException {
@@ -96,33 +107,29 @@ public class Basic {
          * Test: File and FileStore attributes
          */
         assertTrue(store1.supportsFileAttributeView("basic"));
-        assertTrue(store1.supportsFileAttributeView(BasicFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("posix") ==
-            store1.supportsFileAttributeView(PosixFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("dos") ==
-            store1.supportsFileAttributeView(DosFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("acl") ==
-            store1.supportsFileAttributeView(AclFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("user") ==
-            store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
+        testFileAttributes(dir, BasicFileAttributeView.class, "basic");
+        testFileAttributes(dir, PosixFileAttributeView.class, "posix");
+        testFileAttributes(dir, DosFileAttributeView.class, "dos");
+        testFileAttributes(dir, AclFileAttributeView.class, "acl");
+        testFileAttributes(dir, UserDefinedFileAttributeView.class, "user");
 
         /**
          * Test: Space atributes
          */
         File f = file1.toFile();
-        long total = f.getTotalSpace();
-        long free = f.getFreeSpace();
-        long usable = f.getUsableSpace();
 
         // check values are "close"
-        checkWithin1GB(total,  store1.getTotalSpace());
-        checkWithin1GB(free,   store1.getUnallocatedSpace());
-        checkWithin1GB(usable, store1.getUsableSpace());
+        checkWithin1GB("total",  f.getTotalSpace(),  store1.getTotalSpace());
+        checkWithin1GB("free",   f.getFreeSpace(),   store1.getUnallocatedSpace());
+        checkWithin1GB("usable", f.getUsableSpace(), store1.getUsableSpace());
 
         // get values by name
-        checkWithin1GB(total,  (Long)store1.getAttribute("totalSpace"));
-        checkWithin1GB(free,   (Long)store1.getAttribute("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)store1.getAttribute("usableSpace"));
+        checkWithin1GB("total",  f.getTotalSpace(),
+                       (Long)store1.getAttribute("totalSpace"));
+        checkWithin1GB("free",   f.getFreeSpace(),
+                       (Long)store1.getAttribute("unallocatedSpace"));
+        checkWithin1GB("usable", f.getUsableSpace(),
+                       (Long)store1.getAttribute("usableSpace"));
 
         /**
          * Test: Enumerate all FileStores

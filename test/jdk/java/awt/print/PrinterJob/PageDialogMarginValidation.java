@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6509729
+ * @key printer
  * @summary  Verifies pageDialog margin validation is correct
  * @run main/manual PageDialogMarginValidation
  */

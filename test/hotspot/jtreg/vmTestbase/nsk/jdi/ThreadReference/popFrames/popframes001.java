@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,13 +93,13 @@ import java.io.*;
 
 public class popframes001 extends JDIBase {
 
-    static boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
-
     public static void main (String argv[]) {
 
         int result = run(argv, System.out);
 
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -221,10 +221,6 @@ public class popframes001 extends JDIBase {
         try {
             testRun();
 
-            if (vthreadMode) {
-                return 0; // just exit. we already got the expected OpaqueFrameException
-            }
-
             log2("waiting for VMDeathEvent");
             getEventSet();
             if (eventIterator.nextEvent() instanceof VMDeathEvent)
@@ -264,18 +260,7 @@ public class popframes001 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        try {
-            bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
-            throw e;
-        }
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -317,7 +302,7 @@ public class popframes001 extends JDIBase {
             }
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
 
             String poppedMethod    = "poppedMethod";
@@ -326,7 +311,7 @@ public class popframes001 extends JDIBase {
 
             log2("......setting breakpoint in poppedMethod");
             try {
-                breakpointRequest = settingBreakpoint(debuggee.threadByNameOrThrow(thread2Name),
+                breakpointRequest = settingBreakpoint(thread2Ref,
                                           debuggeeClass,
                                           poppedMethod, breakpointLine, "one");
             } catch ( Exception e ) {
@@ -356,24 +341,10 @@ public class popframes001 extends JDIBase {
             log2("......thread2Ref.popFrames(stackFrame);");
             try {
                 thread2Ref.popFrames(stackFrame);
-                if (vthreadMode) {
-                    log3("ERROR: Expected OpaqueFrameException");
-                    testExitCode = FAILED;
-                }
-            } catch ( Exception e ) {
-                if (vthreadMode && (e instanceof OpaqueFrameException)) {
-                    // pass. resume thread and exit
-                    log2("......got expected OpaqueFrameException");
-                    log2("......thread2Ref.resume();");
-                    thread2Ref.resume();
-                    breakpointForCommunication();
-                    vm.resume();
-                    break;
-                } else {
-                    log3("ERROR: " + e.getClass().getSimpleName());
-                    testExitCode = FAILED;
-                    throw e;
-                }
+            } catch ( IncompatibleThreadStateException e ) {
+                log3("ERROR: IncompatibleThreadStateException");
+                testExitCode = FAILED;
+                break;
             }
 
             log2("......thread2Ref.resume();");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
@@ -49,7 +48,7 @@ namespace metaspace {
 // Return a single chunk to the freelist and adjust accounting. No merge is attempted.
 void ChunkManager::return_chunk_simple_locked(Metachunk* c) {
   assert_lock_strong(Metaspace_lock);
-  DEBUG_ONLY(c->verify());
+  SOMETIMES(c->verify();)
   _chunks.add(c);
   c->reset_used_words();
   // Tracing
@@ -82,7 +81,7 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
   assert(c->prev() == nullptr && c->next() == nullptr, "Chunk must be outside of any list.");
 
   DEBUG_ONLY(chunklevel::check_valid_level(target_level);)
-  DEBUG_ONLY(c->verify();)
+  SOMETIMES(c->verify();)
 
   UL2(debug, "splitting chunk " METACHUNK_FORMAT " to " CHKLVL_FORMAT ".",
       METACHUNK_FORMAT_ARGS(c), target_level);
@@ -101,8 +100,8 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
   } else {
     assert(c->committed_words() == committed_words_before, "Sanity");
   }
-  c->verify();
-  verify_locked();
+  SOMETIMES(c->verify();)
+  SOMETIMES(verify_locked();)
   SOMETIMES(c->vsnode()->verify_locked();)
 #endif
   InternalStats::inc_num_chunk_splits();
@@ -136,12 +135,12 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
 //   This may be either the GC threshold or MaxMetaspaceSize.
 Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words) {
   assert_lock_strong(Metaspace_lock);
-  DEBUG_ONLY(verify_locked();)
+  SOMETIMES(verify_locked();)
   DEBUG_ONLY(chunklevel::check_valid_level(max_level);)
   DEBUG_ONLY(chunklevel::check_valid_level(preferred_level);)
 
   UL2(debug, "requested chunk: pref_level: " CHKLVL_FORMAT
-     ", max_level: " CHKLVL_FORMAT ", min committed size: " SIZE_FORMAT ".",
+     ", max_level: " CHKLVL_FORMAT ", min committed size: %zu.",
      preferred_level, max_level, min_committed_words);
 
   // First, optimistically look for a chunk which is already committed far enough to hold min_word_size.
@@ -212,7 +211,7 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
     const size_t to_commit = min_committed_words;
     if (c->committed_words() < to_commit) {
       if (c->ensure_committed_locked(to_commit) == false) {
-        UL2(info, "failed to commit " SIZE_FORMAT " words on chunk " METACHUNK_FORMAT ".",
+        UL2(info, "failed to commit %zu words on chunk " METACHUNK_FORMAT ".",
             to_commit,  METACHUNK_FORMAT_ARGS(c));
         return_chunk_locked(c);
         c = nullptr;
@@ -255,8 +254,8 @@ void ChunkManager::return_chunk(Metachunk* c) {
 void ChunkManager::return_chunk_locked(Metachunk* c) {
   assert_lock_strong(Metaspace_lock);
   UL2(debug, ": returning chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-  DEBUG_ONLY(c->verify();)
-  assert(contains_chunk(c) == false, "A chunk to be added to the freelist must not be in the freelist already.");
+  SOMETIMES(c->verify();)
+  ASSERT_SOMETIMES(contains_chunk(c) == false, "A chunk to be added to the freelist must not be in the freelist already.");
   assert(c->is_in_use() || c->is_free(), "Unexpected chunk state");
   assert(!c->in_list(), "Remove from list first");
 
@@ -272,7 +271,7 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
 
   if (merged != nullptr) {
     InternalStats::inc_num_chunk_merges();
-    DEBUG_ONLY(merged->verify());
+    SOMETIMES(merged->verify();)
     // We did merge chunks and now have a bigger chunk.
     assert(merged->level() < orig_lvl, "Sanity");
     UL2(debug, "merged into chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(merged));
@@ -280,7 +279,7 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
   }
 
   return_chunk_simple_locked(c);
-  DEBUG_ONLY(verify_locked();)
+  SOMETIMES(verify_locked();)
   SOMETIMES(c->vsnode()->verify_locked();)
   InternalStats::inc_num_chunks_returned_to_freelist();
 }
@@ -373,8 +372,8 @@ void ChunkManager::purge() {
       ls.cr();
     }
   }
-  DEBUG_ONLY(_vslist->verify_locked());
-  DEBUG_ONLY(verify_locked());
+  SOMETIMES(_vslist->verify_locked();)
+  SOMETIMES(verify_locked();)
 }
 
 // Convenience methods to return the global class-space chunkmanager
@@ -434,7 +433,7 @@ void ChunkManager::print_on(outputStream* st) const {
 
 void ChunkManager::print_on_locked(outputStream* st) const {
   assert_lock_strong(Metaspace_lock);
-  st->print_cr("cm %s: %d chunks, total word size: " SIZE_FORMAT ".", _name,
+  st->print_cr("cm %s: %d chunks, total word size: %zu.", _name,
                total_num_chunks(), total_word_size());
   _chunks.print_on(st);
 }

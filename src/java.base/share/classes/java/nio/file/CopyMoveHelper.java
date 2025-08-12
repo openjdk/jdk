@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 
 package java.nio.file;
 
-import java.nio.file.attribute.*;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.spi.FileSystemProvider;
 
 /**
  * Helper class to support copying or moving files when the source and target
@@ -112,13 +116,9 @@ class CopyMoveHelper {
         // attributes of source file
         BasicFileAttributes sourceAttrs = null;
         if (sourcePosixView != null) {
-            try {
-                sourceAttrs = Files.readAttributes(source,
-                                                   PosixFileAttributes.class,
-                                                   linkOptions);
-            } catch (SecurityException ignored) {
-                // okay to continue if RuntimePermission("accessUserInformation") not granted
-            }
+            sourceAttrs = Files.readAttributes(source,
+                                               PosixFileAttributes.class,
+                                               linkOptions);
         }
         if (sourceAttrs == null)
             sourceAttrs = Files.readAttributes(source,
@@ -129,10 +129,14 @@ class CopyMoveHelper {
         if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
+        // ensure source can be copied
+        FileSystemProvider provider = source.getFileSystem().provider();
+        provider.checkAccess(source, AccessMode.READ);
+
         // delete target if it exists and REPLACE_EXISTING is specified
-        if (opts.replaceExisting) {
+        if (opts.replaceExisting)
             Files.deleteIfExists(target);
-        } else if (Files.exists(target))
+        else if (Files.exists(target))
             throw new FileAlreadyExistsException(target.toString());
 
         // create directory or copy file
@@ -165,11 +169,7 @@ class CopyMoveHelper {
 
                 if (sourceAttrs instanceof PosixFileAttributes sourcePosixAttrs &&
                     targetView instanceof PosixFileAttributeView targetPosixView) {
-                    try {
-                        targetPosixView.setPermissions(sourcePosixAttrs.permissions());
-                    } catch (SecurityException ignored) {
-                        // okay to continue if RuntimePermission("accessUserInformation") not granted
-                    }
+                    targetPosixView.setPermissions(sourcePosixAttrs.permissions());
                 }
             } catch (Throwable x) {
                 // rollback

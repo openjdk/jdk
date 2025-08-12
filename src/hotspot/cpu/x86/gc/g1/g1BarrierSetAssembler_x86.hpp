@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ class LIR_Assembler;
 class StubAssembler;
 class G1PreBarrierStub;
 class G1PostBarrierStub;
+class G1BarrierStubC2;
+class G1PreBarrierStubC2;
+class G1PostBarrierStubC2;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
  protected:
@@ -41,7 +44,6 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
   void g1_write_barrier_pre(MacroAssembler* masm,
                             Register obj,
                             Register pre_val,
-                            Register thread,
                             Register tmp,
                             bool tosca_live,
                             bool expand_call);
@@ -49,7 +51,6 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
   void g1_write_barrier_post(MacroAssembler* masm,
                              Register store_addr,
                              Register new_val,
-                             Register thread,
                              Register tmp,
                              Register tmp2);
 
@@ -64,7 +65,25 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
   void generate_c1_post_barrier_runtime_stub(StubAssembler* sasm);
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       Register dst, Address src, Register tmp1, Register tmp_thread);
+                       Register dst, Address src, Register tmp1);
+
+#ifdef COMPILER2
+  void g1_write_barrier_pre_c2(MacroAssembler* masm,
+                               Register obj,
+                               Register pre_val,
+                               Register tmp,
+                               G1PreBarrierStubC2* c2_stub);
+  void generate_c2_pre_barrier_stub(MacroAssembler* masm,
+                                    G1PreBarrierStubC2* stub) const;
+  void g1_write_barrier_post_c2(MacroAssembler* masm,
+                                Register store_addr,
+                                Register new_val,
+                                Register tmp,
+                                Register tmp2,
+                                G1PostBarrierStubC2* c2_stub);
+  void generate_c2_post_barrier_stub(MacroAssembler* masm,
+                                     G1PostBarrierStubC2* stub) const;
+#endif // COMPILER2
 };
 
 #endif // CPU_X86_GC_G1_G1BARRIERSETASSEMBLER_X86_HPP

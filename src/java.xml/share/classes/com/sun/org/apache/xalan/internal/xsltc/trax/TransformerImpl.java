@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -82,7 +82,6 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkConstants;
-import static jdk.xml.internal.JdkConstants.SP_XSLTC_IS_STANDALONE;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
@@ -101,7 +100,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Jan 2022
+ * @LastModified: Jan 2025
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -207,7 +206,7 @@ public final class TransformerImpl extends Transformer
     /**
      * State of the secure processing feature.
      */
-    private boolean _isSecureProcessing = false;
+    private boolean _isSecureProcessing = true;
 
     /**
      * Indicates whether 3rd party parser may be used to override the system-default
@@ -219,7 +218,7 @@ public final class TransformerImpl extends Transformer
      */
     private String _accessExternalDTD = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
-    private XMLSecurityManager _securityManager;
+    protected XMLSecurityManager _securityManager;
     /**
      * A map to store parameters for the identity transform. These
      * are not needed during the transformation, but we must keep track of
@@ -293,6 +292,7 @@ public final class TransformerImpl extends Transformer
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
+        _isSecureProcessing = _tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
         _overrideDefaultParser = _tfactory.overrideDefaultParser();
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _securityManager = (XMLSecurityManager)_tfactory.getAttribute(JdkConstants.SECURITY_MANAGER);
@@ -307,7 +307,7 @@ public final class TransformerImpl extends Transformer
         _useCatalog = _tfactory.getFeature(XMLConstants.USE_CATALOG);
         if (_useCatalog) {
             _catalogFeatures = (CatalogFeatures)_tfactory.getAttribute(JdkXmlFeatures.CATALOG_FEATURES);
-            String catalogFiles = _catalogFeatures.get(CatalogFeatures.Feature.DEFER);
+            String catalogFiles = _catalogFeatures.get(CatalogFeatures.Feature.FILES);
             if (catalogFiles != null) {
                 _readerManager.setFeature(XMLConstants.USE_CATALOG, _useCatalog);
                 _readerManager.setProperty(JdkXmlFeatures.CATALOG_FEATURES, _catalogFeatures);
@@ -1355,7 +1355,6 @@ public final class TransformerImpl extends Transformer
                  * Performs the access check without any interface changes
                  * (e.g. Translet and DOMCache).
                  */
-                @SuppressWarnings("unchecked") //AbstractTranslet is the sole impl.
                 AbstractTranslet t = (AbstractTranslet)translet;
                 String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
                 String errMsg = null;

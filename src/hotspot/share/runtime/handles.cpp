@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/method.hpp"
@@ -134,7 +133,7 @@ void HandleMark::initialize(Thread* thread) {
   _hwm   = _area->_hwm;
   _max   = _area->_max;
   _size_in_bytes = _area->_size_in_bytes;
-  debug_only(_area->_handle_mark_nesting++);
+  DEBUG_ONLY(_area->_handle_mark_nesting++);
   assert(_area->_handle_mark_nesting > 0, "must stack allocate HandleMarks");
 
   // Link this in the thread
@@ -162,7 +161,7 @@ void HandleMark::chop_later_chunks() {
   // reset arena size before delete chunks. Otherwise, the total
   // arena size could exceed total chunk size
   _area->set_size_in_bytes(size_in_bytes());
-  _chunk->next_chop();
+  Chunk::next_chop(_chunk);
 }
 
 void* HandleMark::operator new(size_t size) throw() {

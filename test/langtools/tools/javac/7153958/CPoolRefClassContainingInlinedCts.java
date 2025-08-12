@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,13 @@
  * @test
  * @bug 7153958 8073372
  * @summary add constant pool reference to class containing inlined constants
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 
@@ -66,19 +64,15 @@ public class CPoolRefClassContainingInlinedCts {
         }
     }
 
-    void checkReferences() throws IOException, ConstantPoolException {
+    void checkReferences() throws IOException {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 CPoolRefClassContainingInlinedCts.class.getName() + ".class");
-        ClassFile classFile = ClassFile.read(file);
-        int i = 1;
-        CPInfo cpInfo;
-        while (i < classFile.constant_pool.size()) {
-            cpInfo = classFile.constant_pool.get(i);
-            if (cpInfo instanceof CONSTANT_Class_info) {
-                checkClassName(((CONSTANT_Class_info)cpInfo).getName());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
+        for (PoolEntry cpInfo : classFile.constantPool()) {
+            if (cpInfo instanceof ClassEntry classEntry) {
+                checkClassName(classEntry.asInternalName());
             }
-            i += cpInfo.size();
         }
         if (numberOfReferencedClassesToBeChecked != 16) {
             throw new AssertionError("Class reference missing in the constant pool");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,21 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.foreign.MemorySegment;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -52,7 +50,6 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
 
 public class TestVarArgs extends CallGeneratorHelper {
 
-    static final VarHandle VH_IntArray = C_INT.arrayElementVarHandle();
     static final MethodHandle MH_CHECK;
 
     static final Linker LINKER = Linker.nativeLinker();
@@ -71,21 +68,19 @@ public class TestVarArgs extends CallGeneratorHelper {
     @Test(dataProvider = "variadicFunctions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
                             List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             List<Arg> args = makeArgs(arena, paramTypes, fields);
             MethodHandle checker = MethodHandles.insertArguments(MH_CHECK, 2, args);
-            MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), arena.scope());
+            MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), arena);
             MemorySegment callInfo = arena.allocate(CallInfo.LAYOUT);
             MemoryLayout layout = MemoryLayout.sequenceLayout(args.size(), C_INT);
             MemorySegment argIDs = arena.allocate(layout);
-
-            MemorySegment callInfoPtr = callInfo;
 
             CallInfo.writeback(callInfo, writeBack);
             CallInfo.argIDs(callInfo, argIDs);
 
             for (int i = 0; i < args.size(); i++) {
-                VH_IntArray.set(argIDs, (long) i, args.get(i).id.ordinal());
+                argIDs.setAtIndex(ValueLayout.JAVA_INT, i, args.get(i).id.ordinal());
             }
 
             List<MemoryLayout> argLayouts = new ArrayList<>();
@@ -99,7 +94,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             MethodHandle downcallHandle = LINKER.downcallHandle(VARARGS_ADDR, desc, varargIndex);
 
             List<Object> argValues = new ArrayList<>();
-            argValues.add(callInfoPtr); // call info
+            argValues.add(callInfo); // call info
             argValues.add(args.size());  // size
             args.forEach(a -> argValues.add(a.value()));
 
@@ -165,6 +160,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         List<Arg> args = new ArrayList<>();
         for (ParamType pType : paramTypes) {
             MemoryLayout layout = pType.layout(fields);
+            if (layout instanceof ValueLayout.OfFloat) {
+                layout = C_DOUBLE; // promote to double, per C spec
+            }
             TestValue testValue = genTestValue(layout, arena);
             Arg.NativeType type = Arg.NativeType.of(pType.type(fields));
             args.add(pType == ParamType.STRUCT
@@ -178,8 +176,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         Arg varArg = args.get(index);
         MemoryLayout layout = varArg.layout;
         MethodHandle getter = varArg.getter;
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment seg = MemorySegment.ofAddress(ptr.address(), layout.byteSize(), arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = ptr.asSlice(0, layout)
+                    .reinterpret(arena, null);
             Object obj = getter.invoke(seg);
             varArg.check(obj);
         } catch (Throwable e) {
@@ -196,10 +195,10 @@ public class TestVarArgs extends CallGeneratorHelper {
         static final VarHandle VH_argIDs = LAYOUT.varHandle(groupElement("argIDs"));
 
         static void writeback(MemorySegment seg, MemorySegment addr) {
-            VH_writeback.set(seg, addr);
+            VH_writeback.set(seg, 0L, addr);
         }
         static void argIDs(MemorySegment seg, MemorySegment addr) {
-            VH_argIDs.set(seg, addr);
+            VH_argIDs.set(seg, 0L, addr);
         }
     }
 
@@ -218,7 +217,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         }
 
         private static Arg primitiveArg(NativeType id, MemoryLayout layout, TestValue value) {
-            return new Arg(id, layout, value, layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET));
+            MethodHandle getterHandle = layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET);
+            getterHandle = MethodHandles.insertArguments(getterHandle, 1, 0L); // align signature with getter for structs
+            return new Arg(id, layout, value, getterHandle);
         }
 
         private static Arg structArg(NativeType id, MemoryLayout layout, TestValue value) {
@@ -235,7 +236,6 @@ public class TestVarArgs extends CallGeneratorHelper {
 
         enum NativeType {
             INT,
-            FLOAT,
             DOUBLE,
             POINTER,
             S_I,
@@ -328,7 +328,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             public static NativeType of(String type) {
                 return NativeType.valueOf(switch (type) {
                     case "int" -> "INT";
-                    case "float" -> "FLOAT";
+                    case "float" -> "DOUBLE"; // promote
                     case "double" -> "DOUBLE";
                     case "void*" -> "POINTER";
                     default -> type.substring("struct ".length());

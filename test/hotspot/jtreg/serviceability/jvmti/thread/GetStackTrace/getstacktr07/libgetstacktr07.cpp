@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "jvmti_common.hpp"
+#include "../get_stack_trace.hpp"
 
 extern "C" {
 
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -73,7 +73,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmetho
     jni->FatalError("ERROR: don't know where we get called from");
   }
 
-  if (classBytes == NULL) {
+  if (classBytes == nullptr) {
     jni->FatalError("ERROR: don't have any bytes");
   }
 
@@ -83,11 +83,11 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmetho
 
   class_def.klass = klass;
   class_def.class_byte_count = jni->GetArrayLength(classBytes);
-  class_def.class_bytes = (unsigned char *) jni->GetByteArrayElements(classBytes, NULL);
+  class_def.class_bytes = (unsigned char *) jni->GetByteArrayElements(classBytes, nullptr);
 
   check_jvmti_status(jni, jvmti->RedefineClasses(1, &class_def), "RedefineClasses failed.");
   jni->DeleteGlobalRef(classBytes);
-  classBytes = NULL;
+  classBytes = nullptr;
 
   frame_info *expected_frames = jni->IsVirtualThread(thread)
       ? expected_virtual_frames
@@ -105,7 +105,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -137,12 +137,12 @@ Java_getstacktr07_getReady(JNIEnv *jni, jclass cls, jclass clazz, jbyteArray byt
   classBytes = (jbyteArray) jni->NewGlobalRef(bytes);
 
   mid = jni->GetMethodID(clazz, "checkPoint", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     jni->FatalError("Cannot find Method ID for method checkPoint\n");
   }
 
   check_jvmti_status(jni, jvmti->SetBreakpoint(mid, 0), "SetBreakpoint failed.");
-  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 
 }
 

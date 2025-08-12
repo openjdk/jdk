@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,10 @@ inline void jdk_internal_vm_StackChunk::set_parent_access(oop chunk, oop value) 
   chunk->obj_field_put_access<decorators>(_parent_offset, value);
 }
 
+inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
+  return chunk->obj_field(_cont_offset);
+}
+
 template<typename P>
 inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
   return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_cont_offset));
@@ -111,12 +115,19 @@ inline void jdk_internal_vm_StackChunk::set_size(HeapWord* chunk, int value) {
   *(int*)(((char*)chunk) + _size_offset) = (int)value;
 }
 
+inline void jdk_internal_vm_StackChunk::set_bottom(HeapWord* chunk, int value) {
+  // Used by StackChunkAllocator before the Object has been finished,
+  // so don't cast too oop and use int_field_put in this function.
+  assert(_bottom_offset != 0, "must be set");
+  *(int*)(((char*)chunk) + _bottom_offset) = (int)value;
+}
+
 inline int jdk_internal_vm_StackChunk::sp(oop chunk) {
-  return chunk->int_field(_sp_offset);
+  return chunk->int_field_relaxed(_sp_offset);
 }
 
 inline void jdk_internal_vm_StackChunk::set_sp(oop chunk, int value) {
-  chunk->int_field_put(_sp_offset, value);
+  chunk->int_field_put_relaxed(_sp_offset, value);
 }
 
 inline void jdk_internal_vm_StackChunk::set_sp(HeapWord* chunk, int value) {
@@ -134,12 +145,12 @@ inline void jdk_internal_vm_StackChunk::set_pc(oop chunk, address value) {
   chunk->address_field_put(_pc_offset, value);
 }
 
-inline int jdk_internal_vm_StackChunk::argsize(oop chunk) {
-  return chunk->int_field(_argsize_offset);
+inline int jdk_internal_vm_StackChunk::bottom(oop chunk) {
+  return chunk->int_field(_bottom_offset);
 }
 
-inline void jdk_internal_vm_StackChunk::set_argsize(oop chunk, int value) {
-  chunk->int_field_put(_argsize_offset, value);
+inline void jdk_internal_vm_StackChunk::set_bottom(oop chunk, int value) {
+  chunk->int_field_put(_bottom_offset, value);
 }
 
 inline uint8_t jdk_internal_vm_StackChunk::flags(oop chunk) {
@@ -172,6 +183,15 @@ inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value)
   log_develop_trace(continuations)("%s max_size: %d -> %d", value >= old ? "add" : "sub", old, value);
 #endif
   chunk->int_field_put(_maxThawingSize_offset, value);
+}
+
+// lockStackSize is read concurrently by GC threads so we use Atomic.
+inline uint8_t jdk_internal_vm_StackChunk::lockStackSize(oop chunk) {
+  return Atomic::load(chunk->field_addr<uint8_t>(_lockStackSize_offset));
+}
+
+inline void jdk_internal_vm_StackChunk::set_lockStackSize(oop chunk, uint8_t value) {
+  Atomic::store(chunk->field_addr<uint8_t>(_lockStackSize_offset), value);
 }
 
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP

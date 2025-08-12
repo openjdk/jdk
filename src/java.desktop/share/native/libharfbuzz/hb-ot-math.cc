@@ -56,7 +56,7 @@
  *
  * Tests whether a face has a `MATH` table.
  *
- * Return value: %true if the table is found, %false otherwise
+ * Return value: `true` if the table is found, `false` otherwise
  *
  * Since: 1.3.3
  **/
@@ -76,7 +76,7 @@ hb_ot_math_has_data (hb_face_t *face)
  *
  * However, if the requested constant is #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN,
  * #HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN or
- * #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN, then the return value is
+ * #HB_OT_MATH_CONSTANT_RADICAL_DEGREE_BOTTOM_RAISE_PERCENT, then the return value is
  * an integer between 0 and 100 representing that percentage.
  *
  * Return value: the requested constant or zero
@@ -87,6 +87,20 @@ hb_position_t
 hb_ot_math_get_constant (hb_font_t *font,
                          hb_ot_math_constant_t constant)
 {
+  /* https://github.com/harfbuzz/harfbuzz/issues/4653
+   * Cambria Math has incorrect value for displayOperatorMinHeight, and
+   * apparently Microsoft implementation swaps displayOperatorMinHeight and
+   * delimitedSubFormulaMinHeight, so we do the same if we detect Cambria Math
+   * with the swapped values. */
+  if ((constant == HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT ||
+       constant == HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT) &&
+      font->face->table.MATH->is_bad_cambria (font))
+  {
+    if (constant == HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT)
+      constant = HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT;
+    else
+      constant = HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT;
+  }
   return font->face->table.MATH->get_constant(constant, font);
 }
 
@@ -142,7 +156,7 @@ hb_ot_math_get_glyph_top_accent_attachment (hb_font_t *font,
  *
  * Tests whether the given glyph index is an extended shape in the face.
  *
- * Return value: %true if the glyph is an extended shape, %false otherwise
+ * Return value: `true` if the glyph is an extended shape, `false` otherwise
  *
  * Since: 1.3.3
  **/

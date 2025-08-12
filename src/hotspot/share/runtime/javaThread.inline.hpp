@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -55,12 +57,6 @@ inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
   while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
-inline void JavaThread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void JavaThread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
 inline void JavaThread::set_obj_deopt_flag() {
   set_suspend_flag(_obj_deopt);
 }
@@ -69,21 +65,21 @@ inline void JavaThread::clear_obj_deopt_flag() {
 }
 
 #if INCLUDE_JVMTI
-inline void JavaThread::set_carrier_thread_suspended() {
-  _carrier_thread_suspended = true;
+inline bool JavaThread::set_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, false, true) == false;
 }
-inline void JavaThread::clear_carrier_thread_suspended() {
-  _carrier_thread_suspended = false;
+inline bool JavaThread::clear_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, true, false) == true;
 }
 #endif
 
-class AsyncExceptionHandshake : public AsyncHandshakeClosure {
+class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   OopHandle _exception;
  public:
-  AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
+  AsyncExceptionHandshakeClosure(OopHandle& o, const char* name = "AsyncExceptionHandshakeClosure")
   : AsyncHandshakeClosure(name), _exception(o) { }
 
-  ~AsyncExceptionHandshake() {
+  ~AsyncExceptionHandshakeClosure() {
     Thread* current = Thread::current();
     // Can get here from the VMThread via install_async_exception() bail out.
     if (current->is_Java_thread()) {
@@ -107,9 +103,9 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   bool is_async_exception()   { return true; }
 };
 
-class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
-  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
@@ -121,7 +117,7 @@ class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
 
 inline void JavaThread::set_pending_unsafe_access_error() {
   if (!has_async_exception_condition()) {
-    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+    Handshake::execute(new UnsafeAccessErrorHandshakeClosure(), this);
   }
 }
 
@@ -223,6 +219,10 @@ inline void JavaThread::set_terminated(TerminatedTypes t) {
   Atomic::release_store(&_terminated, t);
 }
 
+inline bool JavaThread::is_active_Java_thread() const {
+  return on_thread_list() && !is_terminated();
+}
+
 // Allow tracking of class initialization monitor use
 inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
   assert((k == nullptr && _class_to_be_initialized != nullptr) ||
@@ -233,6 +233,37 @@ inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
 
 inline InstanceKlass* JavaThread::class_to_be_initialized() const {
   return _class_to_be_initialized;
+}
+
+inline void JavaThread::set_class_being_initialized(InstanceKlass* k) {
+  assert(k != nullptr || _class_being_initialized != nullptr, "incorrect usage");
+  assert(this == Thread::current(), "Only the current thread can set this field");
+  _class_being_initialized = k;
+}
+
+inline InstanceKlass* JavaThread::class_being_initialized() const {
+  return _class_being_initialized;
+}
+
+inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
+  assert(UseObjectMonitorTable, "must be");
+  assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
+  assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
+  assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
+
+  _om_cache.set_monitor(monitor);
+}
+
+inline void JavaThread::om_clear_monitor_cache() {
+  if (UseObjectMonitorTable) {
+    _om_cache.clear();
+  }
+}
+
+inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {
+  assert(obj != nullptr, "do not look for null objects");
+  assert(this == current(), "only get own thread locals");
+  return _om_cache.get_monitor(obj);
 }
 
 #endif // SHARE_RUNTIME_JAVATHREAD_INLINE_HPP

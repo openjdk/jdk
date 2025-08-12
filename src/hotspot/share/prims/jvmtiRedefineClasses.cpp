@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
@@ -48,6 +49,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -62,7 +64,12 @@
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -242,7 +249,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -622,7 +629,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
 } // end append_entry()
 
 
-int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
+u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
       int ref_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
   int new_ref_i = ref_i;
@@ -647,19 +654,22 @@ int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& 
     }
   }
 
-  return new_ref_i;
+  // constant pool indices are u2, unless the merged constant pool overflows which
+  // we don't check for.
+  return checked_cast<u2>(new_ref_i);
 } // end find_or_append_indirect_entry()
 
 
 // Append a bootstrap specifier into the merge_cp operands that is semantically equal
 // to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
+void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, const int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  int old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
-  int new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
-                                                merge_cp_length_p);
+  BSMAttributeEntry* old_bsme = scratch_cp->bsm_attribute_entry(old_bs_i);
+  u2 old_ref_i = old_bsme->bootstrap_method_index();
+  u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
+                                               merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
     log_trace(redefine, class, constantpool)
       ("operands entry@%d bootstrap method ref_index change: %d to %d", _operands_cur_length, old_ref_i, new_ref_i);
@@ -671,16 +681,16 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, in
   // However, the operand_offset_at(0) was set in the extend_operands() call.
   int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
                                  : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  int argc     = scratch_cp->operand_argument_count_at(old_bs_i);
+  u2 argc      = old_bsme->argument_count();
 
   ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
   merge_ops->at_put(new_base++, new_ref_i);
   merge_ops->at_put(new_base++, argc);
 
   for (int i = 0; i < argc; i++) {
-    int old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
-    int new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
-                                                      merge_cp_length_p);
+    u2 old_arg_ref_i = old_bsme->argument_index(i);
+    u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
+                                                     merge_cp_length_p);
     merge_ops->at_put(new_base++, new_arg_ref_i);
     if (new_arg_ref_i != old_arg_ref_i) {
       log_trace(redefine, class, constantpool)
@@ -999,8 +1009,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  jushort old_flags = (jushort) the_class->access_flags().get_flags();
-  jushort new_flags = (jushort) scratch_class->access_flags().get_flags();
+  u2 old_flags = the_class->access_flags().as_class_flags();
+  u2 new_flags = scratch_class->access_flags().as_class_flags();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
@@ -1034,9 +1044,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // access
-    old_flags = old_fs.access_flags().as_short();
-    new_flags = new_fs.access_flags().as_short();
-    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
+    old_flags = old_fs.access_flags().as_field_flags();
+    new_flags = new_fs.access_flags().as_field_flags();
+    if (old_flags != new_flags) {
       log_info(redefine, class, normalize)
           ("redefined class %s field %s change error: modifiers changed from %d to %d.",
            the_class->external_name(), name_sym2->as_C_string(), old_flags, new_flags);
@@ -1141,8 +1151,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = (jushort) k_old_method->access_flags().get_flags();
-      new_flags = (jushort) k_new_method->access_flags().get_flags();
+      old_flags = k_old_method->access_flags().as_method_flags();
+      new_flags = k_new_method->access_flags().as_method_flags();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",
@@ -1234,7 +1244,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 // Find new constant pool index value for old constant pool index value
 // by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
-int VM_RedefineClasses::find_new_index(int old_index) {
+u2 VM_RedefineClasses::find_new_index(int old_index) {
   if (_index_map_count == 0) {
     // map is empty so nothing can be found
     return 0;
@@ -1253,7 +1263,9 @@ int VM_RedefineClasses::find_new_index(int old_index) {
     return 0;
   }
 
-  return value;
+  // constant pool indices are u2, unless the merged constant pool overflows which
+  // we don't check for.
+  return checked_cast<u2>(value);
 } // end find_new_index()
 
 
@@ -1280,35 +1292,6 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 
   return value;
 } // end find_new_operand_index()
-
-
-// Returns true if the current mismatch is due to a resolved/unresolved
-// class pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& cp1,
-       int index1, const constantPoolHandle& cp2, int index2) {
-
-  jbyte t1 = cp1->tag_at(index1).value();
-  if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  jbyte t2 = cp2->tag_at(index2).value();
-  if (t2 != JVM_CONSTANT_Class && t2 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  if (t1 == t2) {
-    return false;  // not a mismatch; not our special case
-  }
-
-  char *s1 = cp1->klass_name_at(index1)->as_C_string();
-  char *s2 = cp2->klass_name_at(index2)->as_C_string();
-  if (strcmp(s1, s2) != 0) {
-    return false;  // strings don't match; not our special case
-  }
-
-  return true;  // made it through the gauntlet; this is our special case
-} // end is_unresolved_class_mismatch()
 
 
 // The bug 6214132 caused the verification to fail.
@@ -1382,8 +1365,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
-                       "__VM_RedefineClasses__",
-                       ClassFileStream::verify);
+                       "__VM_RedefineClasses__");
 
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
@@ -1594,28 +1576,20 @@ void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
 
 
 // Merge old_cp and scratch_cp and return the results of the merge via
-// merge_cp_p. The number of entries in *merge_cp_p is returned via
+// merge_cp_p. The number of entries in merge_cp_p is returned via
 // merge_cp_length_p. The entries in old_cp occupy the same locations
-// in *merge_cp_p. Also creates a map of indices from entries in
-// scratch_cp to the corresponding entry in *merge_cp_p. Index map
+// in merge_cp_p. Also creates a map of indices from entries in
+// scratch_cp to the corresponding entry in merge_cp_p. Index map
 // entries are only created for entries in scratch_cp that occupy a
-// different location in *merged_cp_p.
+// different location in merged_cp_p.
 bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
-       const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
-       int *merge_cp_length_p, TRAPS) {
+       const constantPoolHandle& scratch_cp, constantPoolHandle& merge_cp_p,
+       int& merge_cp_length_p, TRAPS) {
 
-  if (merge_cp_p == nullptr) {
-    assert(false, "caller must provide scratch constantPool");
-    return false; // robustness
-  }
-  if (merge_cp_length_p == nullptr) {
-    assert(false, "caller must provide scratch CP length");
-    return false; // robustness
-  }
   // Worst case we need old_cp->length() + scratch_cp()->length(),
   // but the caller might be smart so make sure we have at least
   // the minimum.
-  if ((*merge_cp_p)->length() < old_cp->length()) {
+  if (merge_cp_p->length() < old_cp->length()) {
     assert(false, "merge area too small");
     return false; // robustness
   }
@@ -1643,36 +1617,36 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         // revert the copy to JVM_CONSTANT_UnresolvedClass
         // May be resolving while calling this so do the same for
         // JVM_CONSTANT_UnresolvedClass (klass_name_at() deals with transition)
-        (*merge_cp_p)->temp_unresolved_klass_at_put(old_i,
+        merge_cp_p->temp_unresolved_klass_at_put(old_i,
           old_cp->klass_name_index_at(old_i));
         break;
 
       case JVM_CONSTANT_Double:
       case JVM_CONSTANT_Long:
-        // just copy the entry to *merge_cp_p, but double and long take
+        // just copy the entry to merge_cp_p, but double and long take
         // two constant pool entries
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i);
+        ConstantPool::copy_entry_to(old_cp, old_i, merge_cp_p, old_i);
         old_i++;
         break;
 
       default:
-        // just copy the entry to *merge_cp_p
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i);
+        // just copy the entry to merge_cp_p
+        ConstantPool::copy_entry_to(old_cp, old_i, merge_cp_p, old_i);
         break;
       }
     } // end for each old_cp entry
 
-    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_false);
-    (*merge_cp_p)->extend_operands(scratch_cp, CHECK_false);
+    ConstantPool::copy_operands(old_cp, merge_cp_p, CHECK_false);
+    merge_cp_p->extend_operands(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
-    (*merge_cp_length_p) = old_i;
+    merge_cp_length_p = old_i;
   }
 
   // merge_cp_len should be the same as old_cp->length() at this point
   // so this trace message is really a "warm-and-breathing" message.
-  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", *merge_cp_length_p);
+  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", merge_cp_length_p);
 
   int scratch_i;  // index into scratch_cp
   {
@@ -1696,21 +1670,13 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         break;
       }
 
-      bool match = scratch_cp->compare_entry_to(scratch_i, *merge_cp_p, scratch_i);
+      bool match = scratch_cp->compare_entry_to(scratch_i, merge_cp_p, scratch_i);
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
-      } else if (is_unresolved_class_mismatch(scratch_cp, scratch_i,
-                                              *merge_cp_p, scratch_i)) {
-        // The mismatch in compare_entry_to() above is because of a
-        // resolved versus unresolved class entry at the same index
-        // with the same string value. Since Pass 0 reverted any
-        // class entries to unresolved class entries in *merge_cp_p,
-        // we go with the unresolved class entry.
-        continue;
       }
 
-      int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
+      int found_i = scratch_cp->find_matching_entry(scratch_i, merge_cp_p);
       if (found_i != 0) {
         guarantee(found_i != scratch_i,
           "compare_entry_to() and find_matching_entry() do not agree");
@@ -1721,22 +1687,15 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         continue;
       }
 
-      // The find_matching_entry() call above could fail to find a match
-      // due to a resolved versus unresolved class or string entry situation
-      // like we solved above with the is_unresolved_*_mismatch() calls.
-      // However, we would have to call is_unresolved_*_mismatch() over
-      // all of *merge_cp_p (potentially) and that doesn't seem to be
-      // worth the time.
-
       // No match found so we have to append this entry and any unique
-      // referenced entries to *merge_cp_p.
-      append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p);
+      // referenced entries to merge_cp_p.
+      append_entry(scratch_cp, scratch_i, &merge_cp_p, &merge_cp_length_p);
     }
   }
 
   log_debug(redefine, class, constantpool)
     ("after pass 1a: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
-     *merge_cp_length_p, scratch_i, _index_map_count);
+     merge_cp_length_p, scratch_i, _index_map_count);
 
   if (scratch_i < scratch_cp->length()) {
     // Pass 1b:
@@ -1758,24 +1717,24 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       int found_i =
-        scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
+        scratch_cp->find_matching_entry(scratch_i, merge_cp_p);
       if (found_i != 0) {
-        // Found a matching entry somewhere else in *merge_cp_p so
+        // Found a matching entry somewhere else in merge_cp_p so
         // just need a mapping entry.
         map_index(scratch_cp, scratch_i, found_i);
         continue;
       }
 
       // No match found so we have to append this entry and any unique
-      // referenced entries to *merge_cp_p.
-      append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p);
+      // referenced entries to merge_cp_p.
+      append_entry(scratch_cp, scratch_i, &merge_cp_p, &merge_cp_length_p);
     }
 
     log_debug(redefine, class, constantpool)
       ("after pass 1b: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
-       *merge_cp_length_p, scratch_i, _index_map_count);
+       merge_cp_length_p, scratch_i, _index_map_count);
   }
-  finalize_operands_merge(*merge_cp_p, CHECK_false);
+  finalize_operands_merge(merge_cp_p, CHECK_false);
 
   return true;
 } // end merge_constant_pools()
@@ -1852,13 +1811,19 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   // reference to the cp holder is needed for copy_operands()
   merge_cp->set_pool_holder(scratch_class);
-  bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
-                  &merge_cp_length, THREAD);
+  bool result = merge_constant_pools(old_cp, scratch_cp, merge_cp,
+                  merge_cp_length, THREAD);
   merge_cp->set_pool_holder(nullptr);
 
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
+    return JVMTI_ERROR_INTERNAL;
+  }
+
+  // ensure merged constant pool size does not overflow u2
+  if (merge_cp_length > 0xFFFF) {
+    log_warning(redefine, class, constantpool)("Merged constant pool overflow: %d entries", merge_cp_length);
     return JVMTI_ERROR_INTERNAL;
   }
 
@@ -2188,8 +2153,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
     switch (c) {
       case Bytecodes::_ldc:
       {
-        int cp_index = *(bcp + 1);
-        int new_index = find_new_index(cp_index);
+        u1 cp_index = *(bcp + 1);
+        u2 new_index = find_new_index(cp_index);
 
         if (StressLdcRewrite && new_index == 0) {
           // If we are stressing ldc -> ldc_w rewriting, then we
@@ -2203,7 +2168,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             // unless we are trying to stress ldc -> ldc_w rewriting
             log_trace(redefine, class, constantpool)
               ("%s@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c), p2i(bcp), cp_index, new_index);
-            *(bcp + 1) = new_index;
+            // We checked that new_index fits in a u1 so this cast is safe
+            *(bcp + 1) = (u1)new_index;
           } else {
             log_trace(redefine, class, constantpool)
               ("%s->ldc_w@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c), p2i(bcp), cp_index, new_index);
@@ -2262,7 +2228,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
       {
         address p = bcp + 1;
         int cp_index = Bytes::get_Java_u2(p);
-        int new_index = find_new_index(cp_index);
+        u2 new_index = find_new_index(cp_index);
         if (new_index != 0) {
           // the original index is mapped so update w/ new value
           log_trace(redefine, class, constantpool)
@@ -3304,7 +3270,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type <= 63) {
+    if (frame_type <= StackMapReader::SAME_FRAME_END) {
       // nothing more to do for same_frame
     }
 
@@ -3312,13 +3278,15 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = SAME_LOCALS_1_STACK_ITEM; /* 64-127 */
     //   verification_type_info stack[1];
     // }
-    else if (frame_type >= 64 && frame_type <= 127) {
+    else if (frame_type >= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_START &&
+             frame_type <= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
     }
 
     // reserved for future use
-    else if (frame_type >= 128 && frame_type <= 246) {
+    else if (frame_type >= StackMapReader::RESERVED_START &&
+             frame_type <= StackMapReader::RESERVED_END) {
       // nothing more to do for reserved frame_types
     }
 
@@ -3327,7 +3295,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 offset_delta;
     //   verification_type_info stack[1];
     // }
-    else if (frame_type == 247) {
+    else if (frame_type == StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
       stackmap_p += 2;
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
@@ -3337,28 +3305,30 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = CHOP; /* 248-250 */
     //   u2 offset_delta;
     // }
-    else if (frame_type >= 248 && frame_type <= 250) {
+    else if (frame_type >= StackMapReader::CHOP_FRAME_START &&
+             frame_type <= StackMapReader::CHOP_FRAME_END) {
       stackmap_p += 2;
     }
 
     // same_frame_extended {
-    //   u1 frame_type = SAME_FRAME_EXTENDED; /* 251*/
+    //   u1 frame_type = SAME_EXTENDED; /* 251 */
     //   u2 offset_delta;
     // }
-    else if (frame_type == 251) {
+    else if (frame_type == StackMapReader::SAME_FRAME_EXTENDED) {
       stackmap_p += 2;
     }
 
     // append_frame {
     //   u1 frame_type = APPEND; /* 252-254 */
     //   u2 offset_delta;
-    //   verification_type_info locals[frame_type - 251];
+    //   verification_type_info locals[frame_type - SAME_EXTENDED];
     // }
-    else if (frame_type >= 252 && frame_type <= 254) {
+    else if (frame_type >= StackMapReader::APPEND_FRAME_START &&
+             frame_type <= StackMapReader::APPEND_FRAME_END) {
       assert(stackmap_p + 2 <= stackmap_end,
         "no room for offset_delta");
       stackmap_p += 2;
-      u1 len = frame_type - 251;
+      u1 len = frame_type - StackMapReader::APPEND_FRAME_START + 1;
       for (u1 i = 0; i < len; i++) {
         rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
           calc_number_of_entries, frame_type);
@@ -3373,7 +3343,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 number_of_stack_items;
     //   verification_type_info stack[number_of_stack_items];
     // }
-    else if (frame_type == 255) {
+    else if (frame_type == StackMapReader::FULL_FRAME) {
       assert(stackmap_p + 2 + 2 <= stackmap_end,
         "no room for smallest full_frame");
       stackmap_p += 2;
@@ -3547,32 +3517,55 @@ void VM_RedefineClasses::set_new_constant_pool(
   int i;  // for portability
 
   // update each field in klass to use new constant pool indices as needed
-  for (JavaFieldStream fs(scratch_class); !fs.done(); fs.next()) {
-    jshort cur_index = fs.name_index();
+  int java_fields;
+  int injected_fields;
+  bool update_required = false;
+  GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(scratch_class->fieldinfo_stream(), &java_fields, &injected_fields);
+  for (int i = 0; i < java_fields; i++) {
+    FieldInfo* fi = fields->adr_at(i);
+    jshort cur_index = fi->name_index();
     jshort new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-name_index change: %d to %d", cur_index, new_index);
-      fs.set_name_index(new_index);
+      fi->set_name_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.signature_index();
+    cur_index = fi->signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-signature_index change: %d to %d", cur_index, new_index);
-      fs.set_signature_index(new_index);
+      fi->set_signature_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.initval_index();
+    cur_index = fi->initializer_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-initval_index change: %d to %d", cur_index, new_index);
-      fs.set_initval_index(new_index);
+      fi->set_initializer_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.generic_signature_index();
+    cur_index = fi->generic_signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-generic_signature change: %d to %d", cur_index, new_index);
-      fs.set_generic_signature_index(new_index);
+      fi->set_generic_signature_index(new_index);
+      update_required = true;
     }
-  } // end for each field
+  }
+  if (update_required) {
+    Array<u1>* old_stream = scratch_class->fieldinfo_stream();
+    assert(fields->length() == (java_fields + injected_fields), "Must be");
+    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
+    scratch_class->set_fieldinfo_stream(new_fis);
+    MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_stream);
+
+    Array<u1>* old_table = scratch_class->fieldinfo_search_table();
+    Array<u1>* search_table = FieldInfoStream::create_search_table(scratch_class->constants(), new_fis, scratch_class->class_loader_data(), CHECK);
+    scratch_class->set_fieldinfo_search_table(search_table);
+    MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_table);
+
+    DEBUG_ONLY(FieldInfoStream::validate_search_table(scratch_class->constants(), new_fis, search_table));
+  }
 
   // Update constant pool indices in the inner classes info to use
   // new constant indices as needed. The inner classes info is a
@@ -3584,7 +3577,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     if (cur_index == 0) {
       continue;  // JVM spec. allows null inner class refs so skip it
     }
-    int new_index = find_new_index(cur_index);
+    u2 new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("inner_class_info change: %d to %d", cur_index, new_index);
       iter.set_inner_class_info_index(new_index);
@@ -3610,7 +3603,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     methodHandle method(THREAD, methods->at(i));
     method->set_constants(scratch_cp());
 
-    int new_index = find_new_index(method->name_index());
+    u2 new_index = find_new_index(method->name_index());
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)
         ("method-name_index change: %d to %d", method->name_index(), new_index);
@@ -3626,7 +3619,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)
         ("method-generic_signature_index change: %d to %d", method->generic_signature_index(), new_index);
-      method->set_generic_signature_index(new_index);
+      method->constMethod()->set_generic_signature_index(new_index);
     }
 
     // Update constant pool indices in the method's checked exception
@@ -3655,7 +3648,7 @@ void VM_RedefineClasses::set_new_constant_pool(
 
     for (int j = 0; j < ext_length; j ++) {
       int cur_index = ex_table.catch_type_index(j);
-      int new_index = find_new_index(cur_index);
+      u2 new_index = find_new_index(cur_index);
       if (new_index != 0) {
         log_trace(redefine, class, constantpool)("ext-klass_index change: %d to %d", cur_index, new_index);
         ex_table.set_catch_type_index(j, new_index);
@@ -3798,6 +3791,13 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
 void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
+    // The method_idnum should be within the range of 1..number-of-methods
+    // until incremented later for obsolete methods.
+    // The increment is so if a jmethodID is created for an old obsolete method
+    // it gets a new jmethodID cache slot in the InstanceKlass.
+    // They're cleaned out later when all methods of the previous version are purged.
+    assert(old_method->method_idnum() <= _old_methods->length(),
+           "shouldn't be incremented yet for obsolete methods");
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != nullptr) {
       // There is a jmethodID, change it to point to the new method
@@ -4082,38 +4082,35 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
-// phase then the compiler has recorded all dependencies from startup.
-// In that case we need only deoptimize and throw away all compiled code
-// that depends on the class.
+// phase or 'AlwaysRecordEvolDependencies' is true, then the compiler has
+// recorded all dependencies from startup. In that case we need only
+// deoptimize and throw away all compiled code that depends on the class.
 //
-// If can_redefine_classes is obtained sometime after the onload
-// phase then the dependency information may be incomplete. In that case
-// the first call to RedefineClasses causes all compiled code to be
-// thrown away. As can_redefine_classes has been obtained then
-// all future compilations will record dependencies so second and
-// subsequent calls to RedefineClasses need only throw away code
-// that depends on the class.
+// If can_redefine_classes is obtained sometime after the onload phase
+// (and 'AlwaysRecordEvolDependencies' is false) then the dependency
+// information may be incomplete. In that case the first call to
+// RedefineClasses causes all compiled code to be thrown away. As
+// can_redefine_classes has been obtained then all future compilations will
+// record dependencies so second and subsequent calls to RedefineClasses
+// need only throw away code that depends on the class.
 //
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  assert(JvmtiExport::all_dependencies_are_recorded() || !AlwaysRecordEvolDependencies, "sanity check");
 
-  bool deopt_needed;
+  DeoptimizationScope deopt_scope;
 
   // This is the first redefinition, mark all the nmethods for deoptimization
   if (!JvmtiExport::all_dependencies_are_recorded()) {
+    CodeCache::mark_all_nmethods_for_evol_deoptimization(&deopt_scope);
     log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
-    CodeCache::mark_all_nmethods_for_evol_deoptimization();
-    deopt_needed = true;
   } else {
-    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
-    deopt_needed = (deopt != 0);
+    CodeCache::mark_dependents_for_evol_deoptimization(&deopt_scope);
+    log_debug(redefine, class, nmethod)("Marked dependent nmethods for deopt");
   }
 
-  if (deopt_needed) {
-    CodeCache::flush_evol_dependents();
-  }
+  deopt_scope.deoptimize_marked();
 
   // From now on we know that the dependency information is complete
   JvmtiExport::set_all_dependencies_are_recorded(true);
@@ -4366,7 +4363,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(
@@ -4409,6 +4407,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
+
+  JFR_ONLY(Jfr::on_klass_redefinition(the_class, scratch_class);)
 
   _timer_rsc_phase1.stop();
   if (log_is_enabled(Info, redefine, class, timer)) {

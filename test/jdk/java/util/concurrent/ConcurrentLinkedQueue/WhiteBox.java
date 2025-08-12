@@ -281,36 +281,6 @@ public class WhiteBox {
         assertInvariants(q);
     }
 
-    /**
-     * Actions that append an element, and are expected to
-     * leave at most one slack node at tail.
-     */
-    @DataProvider
-    public Object[][] addActions() {
-        return List.<Consumer<ConcurrentLinkedQueue>>of(
-            q -> q.add(1),
-            q -> q.offer(1))
-            .stream().map(x -> new Object[]{ x }).toArray(Object[][]::new);
-    }
-
-    @Test(dataProvider = "addActions")
-    public void addActionsOneNodeSlack(
-        Consumer<ConcurrentLinkedQueue> addAction) {
-        ConcurrentLinkedQueue q = new ConcurrentLinkedQueue();
-        int n = 1 + rnd.nextInt(5);
-        for (int i = 0; i < n; i++) {
-            boolean slack = next(tail(q)) != null;
-            addAction.accept(q);
-            if (slack)
-                assertNull(next(tail(q)));
-            else {
-                assertNotNull(next(tail(q)));
-                assertNull(next(next(tail(q))));
-            }
-            assertInvariants(q);
-        }
-    }
-
     byte[] serialBytes(Object o) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();

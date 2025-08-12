@@ -24,6 +24,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef WINDOWS
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif // WINDOWS
+
 #include "jni.h"
 
 static JavaVM *jvm;
@@ -52,6 +58,48 @@ static void report(const char* func, int ret_actual, int ret_expected) {
 
 static int using_system_exit = 0; // Not System.exit by default
 
+typedef jint (JNICALL *GetDefaultJavaVMInitArgs_t)(void *args);
+typedef jint (JNICALL *GetCreatedJavaVMs_t)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
+typedef jint (JNICALL *CreateJavaVM_t)(JavaVM **pvm, void **penv, void *args);
+
+GetDefaultJavaVMInitArgs_t GetDefaultJavaVMInitArgs = NULL;
+GetCreatedJavaVMs_t GetCreatedJavaVMs = NULL;
+CreateJavaVM_t CreateJavaVM = NULL;
+
+// VM is already loaded.
+jboolean getJavaVMfunctions() {
+#ifdef WINDOWS
+    HMODULE handle;
+    handle = GetModuleHandle("jvm.dll");
+    if (handle == NULL) {
+      // No loaded jvm.dll. Get the handle to the executable.
+      handle = GetModuleHandle(NULL);
+    }
+#endif
+
+#ifdef WINDOWS
+#define GET_VM_FUNCTION(f) GetProcAddress(handle, f)
+#else
+#define GET_VM_FUNCTION(f) dlsym(RTLD_DEFAULT, f)
+#endif
+    GetDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs_t)GET_VM_FUNCTION("JNI_GetDefaultJavaVMInitArgs");
+    if (GetDefaultJavaVMInitArgs == NULL) {
+      fprintf(stderr, "Failed to find JNI_GetDefaultJavaVMInitArgs");
+      return JNI_FALSE;
+    }
+    GetCreatedJavaVMs = (GetCreatedJavaVMs_t)GET_VM_FUNCTION("JNI_GetCreatedJavaVMs");
+    if (GetCreatedJavaVMs == NULL) {
+      fprintf(stderr, "Failed to find JNI_GetCreatedJavaVMs");
+      return JNI_FALSE;
+    }
+    CreateJavaVM = (CreateJavaVM_t)GET_VM_FUNCTION("JNI_CreateJavaVM");
+    if (CreateJavaVM == NULL) {
+      fprintf(stderr, "Failed to find JNI_CreateJavaVM");
+      return JNI_FALSE;
+    }
+    return JNI_TRUE;
+}
+
 JNIEXPORT
 void JNICALL Java_TestAtExit_00024Tester_setUsingSystemExit(JNIEnv* env, jclass c) {
   using_system_exit = 1;
@@ -59,6 +107,10 @@ void JNICALL Java_TestAtExit_00024Tester_setUsingSystemExit(JNIEnv* env, jclass 
 
 void at_exit_handler(void) {
   printf("In at_exit_handler\n");
+
+  if (!getJavaVMfunctions()) {
+    return;
+  }
 
   // We've saved the JavaVM from OnLoad time so we first try to
   // get a JNIEnv for the current thread.
@@ -78,12 +130,12 @@ void at_exit_handler(void) {
 
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_2;
-    res = JNI_GetDefaultJavaVMInitArgs(&args);
+    res = (*GetDefaultJavaVMInitArgs)(&args);
     report("JNI_GetDefaultJavaVMInitArgs", res, JNI_OK);
 
     JavaVM* jvm_p[1];
     int nVMs;
-    res = JNI_GetCreatedJavaVMs(jvm_p, 1, &nVMs);
+    res = (*GetCreatedJavaVMs)(jvm_p, 1, &nVMs);
     report("JNI_GetCreatedJavaVMs", res, JNI_OK);
     // Whether nVMs is 0 or 1 depends on the termination path
     if (nVMs == 0 && !using_system_exit) {
@@ -98,7 +150,7 @@ void at_exit_handler(void) {
     report("DestroyJavaVM", res, JNI_ERR);
 
     // Failure mode depends on the termination path
-    res = JNI_CreateJavaVM(jvm_p, (void**)&env, &args);
+    res = (*CreateJavaVM)(jvm_p, (void**)&env, &args);
     report("JNI_CreateJavaVM", res, using_system_exit ? JNI_EEXIST : JNI_ERR);
   }
   // else test has already failed

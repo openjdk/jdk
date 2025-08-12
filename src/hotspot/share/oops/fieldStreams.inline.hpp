@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,54 @@
 
 #include "oops/fieldStreams.hpp"
 
+#include "oops/fieldInfo.hpp"
 #include "runtime/javaThread.hpp"
 
-FieldStreamBase::FieldStreamBase(Array<u2>* fields, ConstantPool* constants, int start, int limit) : _fields(fields),
-         _constants(constantPoolHandle(Thread::current(), constants)), _index(start) {
-  _index = start;
-  int num_fields = init_generic_signature_start_slot();
-  if (limit < start) {
-    _limit = num_fields;
-  } else {
-    _limit = limit;
-  }
+FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit) :
+         _fieldinfo_stream(fieldinfo_stream),
+         _reader(FieldInfoReader(_fieldinfo_stream)),
+         _constants(constantPoolHandle(Thread::current(), constants)),
+         _index(start),
+         _limit(limit) {
+  initialize();
 }
 
-FieldStreamBase::FieldStreamBase(Array<u2>* fields, ConstantPool* constants) : _fields(fields),
-         _constants(constantPoolHandle(Thread::current(), constants)), _index(0) {
-  _limit = init_generic_signature_start_slot();
+FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants) :
+        _fieldinfo_stream(fieldinfo_stream),
+        _reader(FieldInfoReader(_fieldinfo_stream)),
+        _constants(constantPoolHandle(Thread::current(), constants)),
+        _index(0),
+        _limit(-1) {
+  initialize();
 }
 
-FieldStreamBase::FieldStreamBase(InstanceKlass* klass) : _fields(klass->fields()),
-         _constants(constantPoolHandle(Thread::current(), klass->constants())), _index(0),
-         _limit(klass->java_fields_count()) {
-  init_generic_signature_start_slot();
+FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
+         _fieldinfo_stream(klass->fieldinfo_stream()),
+         _reader(FieldInfoReader(_fieldinfo_stream)),
+         _constants(constantPoolHandle(Thread::current(), klass->constants())),
+         _index(0),
+         _limit(-1) {
   assert(klass == field_holder(), "");
+  initialize();
+}
+
+inline bool JavaFieldStream::lookup(const Symbol* name, const Symbol* signature) {
+  if (_search_table != nullptr) {
+    int index = _reader.search_table_lookup(_search_table, name, signature, _constants(), _limit);
+    if (index >= 0) {
+      assert(index < _limit, "must be");
+      _index = index;
+      _reader.read_field_info(_fi_buf);
+      return true;
+    }
+  } else {
+    for (; !done(); next()) {
+      if (this->name() == name && this->signature() == signature) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 #endif // SHARE_OOPS_FIELDSTREAMS_INLINE_HPP

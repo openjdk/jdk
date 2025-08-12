@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
- *      8258795 8267038 8287180 8302512
+ * @bug 8025703 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
+ *      8258795 8267038 8287180 8302512 8304761 8306031 8308021 8313702 8318322
+ *      8327631 8332424 8334418 8344589 8348328
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2023-02-14) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2025-05-15) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main LanguageSubtagRegistryTest
  */
@@ -44,10 +45,10 @@ public class LanguageSubtagRegistryTest {
     static boolean err = false;
 
     private static final String ACCEPT_LANGUAGE =
-        "Accept-Language: aam, adp, aeb, ajs, aog, aue, bcg, bic, bpp, cey, cnp, cqu, csp, csx, dif, dmw, dsz, ehs, ema,"
-        + " en-gb-oed, gti, iba, jks, kdz, kmb, koj, kru, ksp, kwq, kxe, kzk, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
-        + " ngv, nns, ola, oyb, pat, phr, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tjj, tjp, tvx,"
-        + " uss, uth, ysm, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
+        "Accept-Language: aam, adp, aeb, ajs, aog, apc, ajp, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, eko, ema,"
+        + " en-gb-oed, gti, hnm, iba, ilw, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, luh, lvi, meg, mtm,"
+        + " ngv, nns, ola, oyb, pat, pcr, phr, plu, pnd, pub, rib, rnb, rsn, scv, sjc, snz, sqm, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
+        + " umi, uss, uth, xia, yos, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
             new LanguageRange("aas", 1.0),
@@ -60,6 +61,10 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-ajs", 1.0),
             new LanguageRange("aog", 1.0),
             new LanguageRange("myd", 1.0),
+            new LanguageRange("apc", 1.0),
+            new LanguageRange("ar-apc", 1.0),
+            new LanguageRange("ar-ajp", 1.0),
+            new LanguageRange("ajp", 1.0),
             new LanguageRange("aue", 1.0),
             new LanguageRange("ktz", 1.0),
             new LanguageRange("bcg", 1.0),
@@ -69,10 +74,14 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("bpp", 1.0),
             new LanguageRange("nxu", 1.0),
             new LanguageRange("cey", 1.0),
+            new LanguageRange("cbr", 1.0),
+            new LanguageRange("nom", 1.0),
             new LanguageRange("cnp", 1.0),
             new LanguageRange("zh-cnp", 1.0),
             new LanguageRange("cqu", 1.0),
             new LanguageRange("quh", 1.0),
+            new LanguageRange("crr", 1.0),
+            new LanguageRange("pmk", 1.0),
             new LanguageRange("csp", 1.0),
             new LanguageRange("zh-csp", 1.0),
             new LanguageRange("csx", 1.0),
@@ -85,19 +94,27 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-dsz", 1.0),
             new LanguageRange("ehs", 1.0),
             new LanguageRange("sgn-ehs", 1.0),
+            new LanguageRange("eko", 1.0),
+            new LanguageRange("nte", 1.0),
             new LanguageRange("ema", 1.0),
             new LanguageRange("uok", 1.0),
             new LanguageRange("en-gb-oed", 1.0),
             new LanguageRange("en-gb-oxendict", 1.0),
             new LanguageRange("gti", 1.0),
             new LanguageRange("nyc", 1.0),
+            new LanguageRange("hnm", 1.0),
+            new LanguageRange("zh-hnm", 1.0),
             new LanguageRange("iba", 1.0),
             new LanguageRange("snb", 1.0),
             new LanguageRange("blg", 1.0),
+            new LanguageRange("ilw", 1.0),
+            new LanguageRange("gal", 1.0),
             new LanguageRange("jks", 1.0),
             new LanguageRange("sgn-jks", 1.0),
             new LanguageRange("kdz", 1.0),
             new LanguageRange("ncp", 1.0),
+            new LanguageRange("kjh", 1.0),
+            new LanguageRange("zkb", 1.0),
             new LanguageRange("kmb", 1.0),
             new LanguageRange("smd", 1.0),
             new LanguageRange("koj", 1.0),
@@ -113,6 +130,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("kzk", 1.0),
             new LanguageRange("gli", 1.0),
             new LanguageRange("drr", 1.0),
+            new LanguageRange("lgs", 1.0),
+            new LanguageRange("sgn-lgs", 1.0),
             new LanguageRange("lii", 1.0),
             new LanguageRange("raq", 1.0),
             new LanguageRange("lmm", 1.0),
@@ -127,7 +146,11 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-lsv", 1.0),
             new LanguageRange("lsw", 1.0),
             new LanguageRange("sgn-lsw", 1.0),
+            new LanguageRange("luh", 1.0),
+            new LanguageRange("zh-luh", 1.0),
             new LanguageRange("lvi", 1.0),
+            new LanguageRange("meg", 1.0),
+            new LanguageRange("cir", 1.0),
             new LanguageRange("mtm", 1.0),
             new LanguageRange("ymt", 1.0),
             new LanguageRange("ngv", 1.0),
@@ -142,8 +165,12 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("jeg", 1.0),
             new LanguageRange("pat", 1.0),
             new LanguageRange("kxr", 1.0),
+            new LanguageRange("pcr", 1.0),
+            new LanguageRange("adx", 1.0),
             new LanguageRange("phr", 1.0),
             new LanguageRange("pmu", 1.0),
+            new LanguageRange("plu", 1.0),
+            new LanguageRange("kgm", 1.0),
             new LanguageRange("pnd", 1.0),
             new LanguageRange("pub", 1.0),
             new LanguageRange("puz", 1.0),
@@ -155,21 +182,37 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-rsn", 1.0),
             new LanguageRange("scv", 1.0),
             new LanguageRange("zir", 1.0),
+            new LanguageRange("sjc", 1.0),
+            new LanguageRange("zh-sjc", 1.0),
             new LanguageRange("snz", 1.0),
             new LanguageRange("asd", 1.0),
+            new LanguageRange("sqm", 1.0),
+            new LanguageRange("dek", 1.0),
             new LanguageRange("sqx", 1.0),
             new LanguageRange("sgn-sqx", 1.0),
             new LanguageRange("suj", 1.0),
             new LanguageRange("szy", 1.0),
             new LanguageRange("taj", 1.0),
             new LanguageRange("tsf", 1.0),
+            new LanguageRange("tdg", 1.0),
+            new LanguageRange("tmk", 1.0),
             new LanguageRange("tjj", 1.0),
             new LanguageRange("tjp", 1.0),
+            new LanguageRange("tpn", 1.0),
+            new LanguageRange("tpw", 1.0),
             new LanguageRange("tvx", 1.0),
+            new LanguageRange("umi", 1.0),
+            new LanguageRange("szd", 1.0),
             new LanguageRange("uss", 1.0),
             new LanguageRange("uth", 1.0),
+            new LanguageRange("xia", 1.0),
+            new LanguageRange("acn", 1.0),
+            new LanguageRange("yos", 1.0),
+            new LanguageRange("zom", 1.0),
             new LanguageRange("ysm", 1.0),
             new LanguageRange("sgn-ysm", 1.0),
+            new LanguageRange("zko", 1.0),
+            new LanguageRange("xss", 1.0),
             new LanguageRange("wkr", 0.9),
             new LanguageRange("ar-hyw", 0.8),
             new LanguageRange("yug", 0.5),
@@ -231,12 +274,18 @@ public class LanguageSubtagRegistryTest {
 
             System.err.println("  Expected size=" + expectedSize);
             for (LanguageRange lr : expected) {
+                if (!got.contains(lr)) {
+                    System.err.print("Error - Actual does not contain:");
+                }
                 System.err.println("    range=" + lr.getRange()
                         + ", weight=" + lr.getWeight());
             }
 
             System.err.println("  Actual size=" + actualSize);
             for (LanguageRange lr : got) {
+                if (!expected.contains(lr)) {
+                    System.err.print("Error - Expected does not contain:");
+                }
                 System.err.println("    range=" + lr.getRange()
                         + ", weight=" + lr.getWeight());
             }

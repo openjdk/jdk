@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
  * @test
  * @bug 8266856
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
- *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ *          jdk.javadoc/jdk.javadoc.internal.html
  * @run main TestVoidHtmlElements
  */
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.HtmlTag;
 
 public class TestVoidHtmlElements {
 
@@ -42,9 +41,8 @@ public class TestVoidHtmlElements {
         // check that the definition of void-ness is the same.
         for (HtmlTag htmlTag : HtmlTag.values()) {
             try {
-                TagName tagName = TagName.valueOf(htmlTag.name());
                 checks++;
-                check(htmlTag, tagName);
+                check(htmlTag);
             } catch (IllegalArgumentException e) {
                 // no matching TagName
             }
@@ -56,8 +54,8 @@ public class TestVoidHtmlElements {
         System.out.println(checks + " checks passed");
     }
 
-    private static void check(HtmlTag htmlTag, TagName tagName) {
-        boolean elementIsVoid = new HtmlTree(tagName).isVoid();
+    private static void check(HtmlTag htmlTag) {
+        boolean elementIsVoid = HtmlTree.of(htmlTag).isVoid();
         boolean elementHasNoEndTag = htmlTag.endKind == HtmlTag.EndKind.NONE;
         if (elementIsVoid != elementHasNoEndTag) {
             throw new AssertionError(htmlTag + ", " + elementIsVoid + ", " + elementHasNoEndTag);

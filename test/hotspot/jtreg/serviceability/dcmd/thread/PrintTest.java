@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -167,10 +168,16 @@ public class PrintTest {
             output.shouldNotMatch(jucLockPattern1);
             output.shouldNotMatch(jucLockPattern2);
         }
+
+        /* Check for presence of version string */
+        output.shouldContain("JDK version:");
     }
 
     @Test
     public void jmx() {
+        if (Thread.currentThread().isVirtual()) {
+            throw new SkipException("skipping test since current thread is virtual thread");
+        }
         run(new JMXExecutor());
     }
 }

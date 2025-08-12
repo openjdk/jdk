@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ import java.util.function.IntFunction;
  */
 // public
 interface ConstantGroup {
-    /// Access
+    //--- Access
 
     /**
      * Returns the number of constants in this group.
@@ -148,7 +148,7 @@ interface ConstantGroup {
      */
     boolean isPresent(int index);
 
-    /// Views
+    //--- Views
 
     /**
      * Create a view on this group as a {@link List} view.
@@ -182,7 +182,7 @@ interface ConstantGroup {
         return new AbstractConstantGroup.SubGroup(this, start, end);
     }
 
-    /// Bulk operations
+    //--- Bulk operations
 
     /**
      * Copy a sequence of constant values into a given buffer.

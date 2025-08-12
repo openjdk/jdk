@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern size_t MinNewSize;
 extern size_t MinOldSize;
 extern size_t MaxOldSize;
 
-extern size_t GenAlignment;
+extern size_t OldSize;
 
 class GenArguments : public GCArguments {
   friend class TestGenCollectorPolicy; // Testing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,8 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     *
+     * @since 10
      */
     @Override
     public R visitDocType(DocTypeTree node, P p) {
@@ -340,7 +342,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
-     * @implSpec This implementation returns {@code null}.
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -348,7 +350,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitInheritDoc(InheritDocTree node, P p) {
-        return null;
+        return scan(node.getSupertype(), p);
     }
 
     /**
@@ -411,6 +413,22 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         R r = scan(node.getServiceType(), p);
         r = scanAndReduce(node.getDescription(), p, r);
         return r;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     *
+     * @since 23
+     */
+    @Override
+    public R visitRawText(RawTextTree node, P p) {
+        return null;
     }
 
     /**

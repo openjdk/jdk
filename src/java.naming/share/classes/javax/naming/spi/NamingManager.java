@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.naming.spi;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.naming.*;
@@ -89,22 +87,15 @@ public class NamingManager {
      * setObjectFactoryBuilder() overrides this default policy by installing
      * an ObjectFactoryBuilder. Subsequent object factories will
      * be loaded and created using the installed builder.
-     *<p>
-     * The builder can only be installed if the executing thread is allowed
-     * (by the security manager's checkSetFactory() method) to do so.
-     * Once installed, the builder cannot be replaced.
      *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
-     * @throws SecurityException builder cannot be installed
-     *         for security reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a factory has already been installed.
      * @see #getObjectInstance
      * @see ObjectFactory
      * @see ObjectFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static void setObjectFactoryBuilder(
             ObjectFactoryBuilder builder) throws NamingException {
@@ -130,9 +121,12 @@ public class NamingManager {
      *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
-     *    Under JDK 1.1, if the factory class must be loaded from a location
-     *    specified in the reference, a {@code SecurityManager} must have
-     *    been installed or the factory creation will fail.
+     *    Downloading a factory class from a location specified in the reference
+     *    can be supported by a custom implementation of {@link ObjectFactoryBuilder}.
+     *    The {@linkplain Reference#getFactoryClassLocation() factory class
+     *    location}, if present, is ignored. A custom {@link ObjectFactoryBuilder}
+     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
+     *    if a different policy is desired.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
      * <li>If {@code refInfo} is a {@code Reference} or
@@ -475,7 +469,6 @@ public class NamingManager {
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
-    @SuppressWarnings("removal")
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
         ClassLoader loader;
@@ -496,16 +489,8 @@ public class NamingManager {
                 throw ne;
             }
 
-            if (System.getSecurityManager() == null) {
-                loader = Thread.currentThread().getContextClassLoader();
-                if (loader == null) loader = ClassLoader.getSystemClassLoader();
-            } else {
-                PrivilegedAction<ClassLoader> pa = () -> {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    return (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
-                };
-                loader = AccessController.doPrivileged(pa);
-            }
+            loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) loader = ClassLoader.getSystemClassLoader();
 
             var key = FACTORIES_CACHE.sub(className);
             try {
@@ -561,19 +546,12 @@ public class NamingManager {
     /**
      * Sets the InitialContextFactory builder to be builder.
      *
-     *<p>
-     * The builder can only be installed if the executing thread is allowed by
-     * the security manager to do so. Once installed, the builder cannot
-     * be replaced.
      * @param builder The initial context factory builder to install. If null,
      *                no builder is set.
-     * @throws SecurityException builder cannot be installed for security
-     *         reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a builder was previous installed.
      * @see #hasInitialContextFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static synchronized void setInitialContextFactoryBuilder(
         InitialContextFactoryBuilder builder)
@@ -581,12 +559,6 @@ public class NamingManager {
             if (initctx_factory_builder != null)
                 throw new IllegalStateException(
                     "InitialContextFactoryBuilder already set");
-
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkSetFactory();
-            }
             initctx_factory_builder = builder;
     }
 

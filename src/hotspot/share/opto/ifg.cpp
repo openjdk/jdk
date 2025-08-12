@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -44,6 +43,7 @@ PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 
 void PhaseIFG::init( uint maxlrg ) {
   _maxlrg = maxlrg;
+  _edges = 0;
   _yanked = new (_arena) VectorSet(_arena);
   _is_square = false;
   // Make uninitialized adjacency lists
@@ -66,7 +66,12 @@ int PhaseIFG::add_edge( uint a, uint b ) {
   // Sort a and b, so that a is bigger
   assert( !_is_square, "only on triangular" );
   if( a < b ) { uint tmp = a; a = b; b = tmp; }
-  return _adjs[a].insert( b );
+  int ret = _adjs[a].insert(b);
+  _edges += ret;
+  if (_edges > IFGEdgesLimit) {
+    C->record_method_not_compilable("out of IFG edges");
+  }
+  return ret;
 }
 
 // Is there an edge between a and b?
@@ -300,6 +305,9 @@ void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
       LRG& interfering_lrg = lrgs(interfering_lid);
       if (rm.overlap(interfering_lrg.mask())) {
         _ifg->add_edge(lid, interfering_lid);
+        if (C->failing()) {
+          return;
+        }
       }
       interfering_lid = elements.next();
     }
@@ -313,7 +321,7 @@ void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
 // at this point can end up in bad places).  Copies I re-insert later I have
 // more opportunity to insert them in low-frequency locations.
 void PhaseChaitin::build_ifg_virtual( ) {
-  Compile::TracePhase tp("buildIFG_virt", &timers[_t_buildIFGvirtual]);
+  Compile::TracePhase tp(_t_buildIFGvirtual);
 
   // For all blocks (in any order) do...
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
@@ -349,6 +357,9 @@ void PhaseChaitin::build_ifg_virtual( ) {
 
         // Interfere with everything live
         interfere_with_live(r, liveout);
+        if (C->failing()) {
+          return;
+        }
       }
 
       // Make all inputs live
@@ -392,6 +403,9 @@ void PhaseChaitin::build_ifg_virtual( ) {
           uint kidx = _lrg_map.live_range_id(n->in(k));
           if (kidx != lidx) {
             _ifg->add_edge(r, kidx);
+            if (C->failing()) {
+              return;
+            }
           }
         }
       }
@@ -622,7 +636,7 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
     b->remove_node(location);
     LRG& lrg = lrgs(lid);
     if (lrg._def == n) {
-      lrg._def = 0;
+      lrg._def = nullptr;
     }
     n->disconnect_inputs(C);
     _cfg.unmap_node_from_block(n);
@@ -843,7 +857,7 @@ void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
  *   low to high register pressure transition within the block (if any).
  */
 uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
-  Compile::TracePhase tp("buildIFG", &timers[_t_buildIFGphysical]);
+  Compile::TracePhase tp(_t_buildIFGphysical);
 
   uint must_spill = 0;
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
@@ -918,6 +932,9 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
         interfere_with_live(lid, &liveout);
+        if (C->failing()) {
+          return 0;
+        }
       }
 
       // Area remaining in the block

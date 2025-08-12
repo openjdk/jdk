@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 6970173
  * @summary Debug pointer at bad position
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
@@ -38,10 +37,8 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -90,22 +87,21 @@ public class DebugPointerAtBadPositionTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
-        for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(methodToFind)) {
+        for (MethodModel m : classFile.methods()) {
+            if (m.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                Code_attribute code = (Code_attribute) method.attributes.get("Code");
-                LineNumberTable_attribute lnt =
-                        (LineNumberTable_attribute) code.attributes.get("LineNumberTable");
-                Assert.check(lnt.line_number_table_length == expectedLNT.length,
+                CodeAttribute code = m.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
+                Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         foundLNTLengthDifferentThanExpMsg);
                 int i = 0;
-                for (LineNumberTable_attribute.Entry entry: lnt.line_number_table) {
-                    Assert.check(entry.line_number == expectedLNT[i][0] &&
-                            entry.start_pc == expectedLNT[i][1],
+                for (LineNumberInfo entry: lnt.lineNumbers()) {
+                    Assert.check(entry.lineNumber() == expectedLNT[i][0] &&
+                            entry.startPc() == expectedLNT[i][1],
                             "LNT entry at pos " + i + " differ from expected." +
-                            "Found " + entry.line_number + ":" + entry.start_pc +
+                            "Found " + entry.lineNumber() + ":" + entry.startPc() +
                             ". Expected " + expectedLNT[i][0] + ":" + expectedLNT[i][1]);
                     i++;
                 }

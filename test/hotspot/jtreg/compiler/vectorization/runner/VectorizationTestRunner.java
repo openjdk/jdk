@@ -25,18 +25,11 @@ package compiler.vectorization.runner;
 
 import compiler.lib.ir_framework.*;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import java.io.File;
-
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 import jdk.test.whitebox.WhiteBox;
@@ -51,19 +44,14 @@ public class VectorizationTestRunner {
     private static final int NMETHOD_COMP_LEVEL_IDX = 1;
     private static final int NMETHOD_INSTS_IDX = 2;
 
-    private static final long COMP_THRES_SECONDS = 30;
+    protected void run(String[] args) {
+        Class klass = getClass();
 
-    protected void run() {
         // 1) Vectorization correctness test
-        // For each method annotated with @Test in the test method, this test runner
+        // For each method annotated with "@Test" in test classes, this test runner
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
         // each test method returning a primitive value or an array of primitive type.
-        // And each test method should not throw any exceptions.
-        Class klass = getClass();
-        // Add extra VM options to verify experimental auto-vectorization
-        WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
-        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
         for (Method method : klass.getDeclaredMethods()) {
             try {
                 if (method.isAnnotationPresent(Test.class)) {
@@ -80,9 +68,13 @@ public class VectorizationTestRunner {
         // To test vectorizability, invoke the IR test framework to check existence of
         // expected C2 IR node.
         TestFramework irTest = new TestFramework(klass);
-        // Add extra VM options to enable more auto-vectorization chances
-        irTest.addFlags("-XX:-OptimizeFill");
+        irTest.addFlags(testVMFlags(args));
         irTest.start();
+    }
+
+    // Override this to add extra flags.
+    protected String[] testVMFlags(String[] args) {
+        return new String[0]; // by default no extra flags
     }
 
     private void verifyTestMethod(Method method) {
@@ -117,9 +109,9 @@ public class VectorizationTestRunner {
         Object expected = null;
         Object actual = null;
 
-        // Lock compilation and inovke the method to get reference result from
-        // the interpreter
-        WB.lockCompilation();
+        // Temporarily disable the compiler and invoke the method to get reference
+        // result from the interpreter
+        WB.setBooleanVMFlag("UseCompiler", false);
         try {
             expected = method.invoke(this);
         } catch (Exception e) {
@@ -127,16 +119,13 @@ public class VectorizationTestRunner {
             fail("Exception is thrown in test method invocation (interpreter).");
         }
         assert(WB.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
-        WB.unlockCompilation();
+        WB.setBooleanVMFlag("UseCompiler", true);
 
         // Compile the method and invoke it again
         long enqueueTime = System.currentTimeMillis();
         WB.enqueueMethodForCompilation(method, COMP_LEVEL_C2);
         while (WB.getMethodCompilationLevel(method) != COMP_LEVEL_C2) {
-            if (System.currentTimeMillis() - enqueueTime > COMP_THRES_SECONDS * 1000) {
-                fail("Method is not compiled after " + COMP_THRES_SECONDS + "s.");
-            }
-            Thread.sleep(50 /*ms*/);
+            Thread.sleep(100 /*ms*/);
         }
         try {
             actual = method.invoke(this);
@@ -208,6 +197,6 @@ public class VectorizationTestRunner {
 
     public static void main(String[] args) {
         VectorizationTestRunner testObj = createTestInstance(Utils.TEST_NAME);
-        testObj.run();
+        testObj.run(args);
     }
 }

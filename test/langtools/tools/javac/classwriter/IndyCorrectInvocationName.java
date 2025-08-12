@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
  * @run main IndyCorrectInvocationName
@@ -54,13 +53,10 @@ import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_InvokeDynamic_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info;
-import com.sun.tools.classfile.Instruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Symbol;
@@ -166,34 +162,32 @@ public class IndyCorrectInvocationName implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassFile cf = ClassFile.read(testClass);
-        BootstrapMethods_attribute bootAttr =
-                (BootstrapMethods_attribute) cf.attributes.get(Attribute.BootstrapMethods);
-        if (bootAttr.bootstrap_method_specifiers.length != 1) {
+        ClassModel cf = ClassFile.of().parse(testClass);
+        BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
+        if (bootAttr.bootstrapMethodsSize() != 1) {
             throw new AssertionError("Incorrect number of bootstrap methods: " +
-                                     bootAttr.bootstrap_method_specifiers.length);
+                                     bootAttr.bootstrapMethodsSize());
         }
-        Code_attribute codeAttr =
-                (Code_attribute) cf.methods[1].attributes.get(Attribute.Code);
-        Set<Integer> seenBootstraps = new HashSet<>();
-        Set<Integer> seenNameAndTypes = new HashSet<>();
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.code()).orElseThrow();
+        Set<BootstrapMethodEntry> seenBootstraps = new HashSet<>();
+        Set<NameAndTypeEntry> seenNameAndTypes = new HashSet<>();
         Set<String> seenNames = new HashSet<>();
-        for (Instruction i : codeAttr.getInstructions()) {
-            switch (i.getOpcode()) {
-                case INVOKEDYNAMIC -> {
-                    int idx = i.getUnsignedShort(1);
-                    CONSTANT_InvokeDynamic_info dynamicInfo =
-                            (CONSTANT_InvokeDynamic_info) cf.constant_pool.get(idx);
-                    seenBootstraps.add(dynamicInfo.bootstrap_method_attr_index);
-                    seenNameAndTypes.add(dynamicInfo.name_and_type_index);
-                    CONSTANT_NameAndType_info nameAndTypeInfo =
-                            cf.constant_pool.getNameAndTypeInfo(dynamicInfo.name_and_type_index);
-                    seenNames.add(nameAndTypeInfo.getName());
+        for (CodeElement i : codeAttr.elementList()) {
+            if (i instanceof Instruction instruction) {
+                switch (instruction ) {
+                    case InvokeDynamicInstruction indy -> {
+                        InvokeDynamicEntry dynamicInfo = indy.invokedynamic();
+                        seenBootstraps.add(dynamicInfo.bootstrap());
+                        seenNameAndTypes.add(dynamicInfo.nameAndType());
+                        NameAndTypeEntry nameAndTypeInfo = dynamicInfo.nameAndType();
+                        seenNames.add(nameAndTypeInfo.name().stringValue());
+                    }
+                    case ReturnInstruction returnInstruction -> {
+                    }
+                    default -> throw new AssertionError("Unexpected instruction: " + instruction.opcode());
                 }
-                case RETURN -> {}
-                default -> throw new AssertionError("Unexpected instruction: " + i.getOpcode());
             }
-            }
+        }
         if (seenBootstraps.size() != 1) {
             throw new AssertionError("Unexpected bootstraps: " + seenBootstraps);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.io;
 
 import java.nio.charset.Charset;
+import java.util.Locale;
+
 import jdk.internal.io.JdkConsole;
 
 /**
@@ -34,17 +36,13 @@ import jdk.internal.io.JdkConsole;
  */
 final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
-    private final Object readLock;
-    private final Object writeLock;
-    private final Reader reader;
-    private final PrintWriter printWriter;
+    private final Object readLock = new Object();
+    private final Object writeLock = new Object();
+    private volatile Reader reader;
+    private volatile PrintWriter printWriter;
 
     ProxyingConsole(JdkConsole delegate) {
         this.delegate = delegate;
-        readLock = new Object();
-        writeLock = new Object();
-        reader = new WrappingReader(delegate.reader(), readLock);
-        printWriter = new WrappingWriter(delegate.writer(), writeLock);
     }
 
     /**
@@ -52,6 +50,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public PrintWriter writer() {
+        PrintWriter printWriter = this.printWriter;
+        if (printWriter == null) {
+            synchronized (this) {
+                printWriter = this.printWriter;
+                if (printWriter == null) {
+                    printWriter = new WrappingWriter(delegate.writer(), writeLock);
+                    this.printWriter = printWriter;
+                }
+            }
+        }
         return printWriter;
     }
 
@@ -60,6 +68,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Reader reader() {
+        Reader reader = this.reader;
+        if (reader == null) {
+            synchronized (this) {
+                reader = this.reader;
+                if (reader == null) {
+                    reader = new WrappingReader(delegate.reader(), readLock);
+                    this.reader = reader;
+                }
+            }
+        }
         return reader;
     }
 
@@ -67,9 +85,17 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public Console format(String fmt, Object ... args) {
+    public Console format(String format, Object ... args) {
+        return format(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console format(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
-            delegate.format(fmt, args);
+            delegate.format(locale, format, args);
         }
         return this;
     }
@@ -79,8 +105,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Console printf(String format, Object ... args) {
+        return printf(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console printf(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
-            delegate.printf(format, args);
+            delegate.format(locale, format, args);
         }
         return this;
     }
@@ -89,10 +123,18 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public String readLine(String fmt, Object ... args) {
+    public String readLine(String format, Object ... args) {
+        return readLine(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String readLine(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
             synchronized (readLock) {
-                return delegate.readLine(fmt, args);
+                return delegate.readLine(locale, format, args);
             }
         }
     }
@@ -111,10 +153,18 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public char[] readPassword(String fmt, Object ... args) {
+    public char[] readPassword(String format, Object ... args) {
+        return readPassword(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public char[] readPassword(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
             synchronized (readLock) {
-                return delegate.readPassword(fmt, args);
+                return delegate.readPassword(locale, format, args);
             }
         }
     }

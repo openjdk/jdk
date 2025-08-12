@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class TestJavaFX extends JavadocTester {
                     r-name-link">rate</a></code></div>
                     <div class="col-last odd-row-color">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played.</div>""",
+                    be played.</div>""",
                 "<dt>Default value:</dt>",
                 """
                     <dt>Since:</dt>
@@ -107,6 +107,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="pausedProperty">
                     <h3>paused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.BooleanProperty.html" title="class in pkg1">\
                     C.BooleanProperty</a></span>&nbsp;<span class="element-name">pausedProperty</span></div>
@@ -114,6 +115,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
@@ -121,6 +123,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="setPaused(boolean)">
                     <h3>setPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setPaused</\
                     span><wbr><span class="parameters">(boolean&nbsp;value)</span></div>
@@ -133,6 +136,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
@@ -145,14 +149,16 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="rateProperty">
                     <h3>rate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.DoubleProperty.html" title="class in pkg1">C\
                     .DoubleProperty</a></span>&nbsp;<span class="element-name">rateProperty</span></div>
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</div>""",
+                    be played. This is the second line.</div>""",
                 """
                     <section class="detail" id="setRate(double)">
                     <h3>setRate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setRate</sp\
                     an><wbr><span class="parameters">(double&nbsp;value)</span></div>
@@ -160,7 +166,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Parameters:</dt>
@@ -170,6 +176,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="getRate()">
                     <h3>getRate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
                     /div>
@@ -177,7 +184,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Returns:</dt>
@@ -233,7 +240,7 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/D.html", true,
                 """
                     <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
-                    nbsp;pkg1.<a href="C.html" title="class in pkg1">C</a></h3>
+                    nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a></h3>
                     <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");
@@ -262,6 +269,7 @@ public class TestJavaFX extends JavadocTester {
                         <li>
                         <section class="detail" id="betaProperty">
                         <h3>beta</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                         lass="return-type">java.lang.Object</span>&nbsp;<span class="element-name">betaProperty<\
                         /span></div>
@@ -273,11 +281,13 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         <li>
                         <section class="detail" id="gammaProperty">
                         <h3>gamma</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                         span class="return-type">java.util.List&lt;java.lang.String&gt;</span>&nbsp;<spa\
                         n class="element-name">gammaProperty</span></div>
@@ -289,11 +299,13 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         <li>
                         <section class="detail" id="deltaProperty">
                         <h3>delta</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                         span class="return-type">java.util.List&lt;java.util.Set&lt;? super java.lang.Ob\
                         ject&gt;&gt;</span>&nbsp;<span class="element-name">deltaProperty</span></div>
@@ -305,6 +317,7 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         </ul>
@@ -369,16 +382,16 @@ public class TestJavaFX extends JavadocTester {
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
                     2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>final java.util.List&lt;java.util.Set&lt;? \
-                    super java.lang.Object&gt;&gt;</code></div>
+                    ab2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.util.Set&\
+                    lt;? super java.lang.Object&gt;&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#deltaProperty()" class="member-n\
                     ame-link">deltaProperty</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>final java.util.List&lt;java.lang.String&gt;\
-                    </code></div>
+                    b2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.lang.Strin\
+                    g&gt;</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#gammaProperty()" class="member-na\
                     me-link">gammaProperty</a>()</code></div>

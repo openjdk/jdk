@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "register_x86.hpp"
 
-Register::RegisterImpl           all_RegisterImpls     [Register::number_of_registers      + 1];
-FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1];
-XMMRegister::XMMRegisterImpl     all_XMMRegisterImpls  [XMMRegister::number_of_registers   + 1];
-KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_of_registers     + 1];
+const Register::RegisterImpl           all_RegisterImpls     [Register::number_of_registers      + 1];
+const FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1];
+const XMMRegister::XMMRegisterImpl     all_XMMRegisterImpls  [XMMRegister::number_of_registers   + 1];
+const KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_of_registers     + 1];
 
 const char * Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
 #ifdef _LP64
     "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
-    "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"
+    "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15",
+    "r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
+    "r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
 #else
     "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
 #endif // _LP64
@@ -63,7 +64,7 @@ const char* XMMRegister::XMMRegisterImpl::name() const {
 }
 
 const char* KRegister::KRegisterImpl::name() const {
-  const char* names[number_of_registers] = {
+  const char *const names[number_of_registers] = {
     "k0", "k1", "k2", "k3", "k4", "k5", "k6", "k7"
   };
   return is_valid() ? names[encoding()] : "knoreg";

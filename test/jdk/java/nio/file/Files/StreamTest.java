@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,15 +72,15 @@ public class StreamTest {
      *            - linkFile(./file)
      */
     static Path testFolder;
-    static boolean supportsLinks;
+    static boolean supportsSymbolicLinks;
     static Path[] level1;
     static Path[] all;
-    static Path[] all_folowLinks;
+    static Path[] allFollowLinks;
 
     @BeforeClass
     void setupTestFolder() throws IOException {
         testFolder = TestUtil.createTemporaryDirectory();
-        supportsLinks = TestUtil.supportsLinks(testFolder);
+        supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(testFolder);
         TreeSet<Path> set = new TreeSet<>();
 
         // Level 1
@@ -96,7 +96,7 @@ public class StreamTest {
         set.add(file);
         set.add(dir);
         set.add(dir2);
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             Path tmp = testFolder.resolve("linkDir");
             Files.createSymbolicLink(tmp, dir);
             set.add(tmp);
@@ -113,7 +113,7 @@ public class StreamTest {
         tmp = dir.resolve("f1");
         Files.createFile(tmp);
         set.add(tmp);
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             tmp = dir.resolve("lnDir2");
             Files.createSymbolicLink(tmp, dir2);
             set.add(tmp);
@@ -123,14 +123,14 @@ public class StreamTest {
         all = set.toArray(new Path[0]);
 
         // Follow links
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             tmp = testFolder.resolve("linkDir");
             set.add(tmp.resolve("d1"));
             set.add(tmp.resolve("f1"));
             tmp = tmp.resolve("lnDir2");
             set.add(tmp);
         }
-        all_folowLinks = set.toArray(new Path[0]);
+        allFollowLinks = set.toArray(new Path[0]);
     }
 
     @AfterClass
@@ -179,7 +179,7 @@ public class StreamTest {
         // We still want to test the behavior with FOLLOW_LINKS option.
         try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
             Object[] actual = s.sorted().toArray();
-            assertEquals(actual, all_folowLinks);
+            assertEquals(actual, allFollowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
@@ -212,7 +212,7 @@ public class StreamTest {
     }
 
     public void testWalkFollowLinkLoop() {
-        if (!supportsLinks) {
+        if (!supportsSymbolicLinks) {
             return;
         }
 
@@ -496,157 +496,6 @@ public class StreamTest {
                 fs.close();
             }
             Files.delete(triggerFile);
-            TestUtil.removeAll(triggerDir);
-        }
-    }
-
-    public void testSecurityException() throws IOException {
-        Path empty = testFolder.resolve("empty");
-        Path triggerFile = Files.createFile(empty.resolve("SecurityException"));
-        Path sampleFile = Files.createDirectories(empty.resolve("sample"));
-
-        Path dir2 = testFolder.resolve("dir2");
-        Path triggerDir = Files.createDirectories(dir2.resolve("SecurityException"));
-        Files.createFile(triggerDir.resolve("fileInSE"));
-        Path sample = Files.createFile(dir2.resolve("file"));
-
-        Path triggerLink = null;
-        Path linkTriggerDir = null;
-        Path linkTriggerFile = null;
-        if (supportsLinks) {
-            Path dir = testFolder.resolve("dir");
-            triggerLink = Files.createSymbolicLink(dir.resolve("SecurityException"), empty);
-            linkTriggerDir = Files.createSymbolicLink(dir.resolve("lnDirSE"), triggerDir);
-            linkTriggerFile = Files.createSymbolicLink(dir.resolve("lnFileSE"), triggerFile);
-        }
-
-        FaultyFileSystem.FaultyFSProvider fsp = FaultyFileSystem.FaultyFSProvider.getInstance();
-        FaultyFileSystem fs = (FaultyFileSystem) fsp.newFileSystem(testFolder, null);
-
-        try {
-            fsp.setFaultyMode(false);
-            Path fakeRoot = fs.getRoot();
-            // validate setting
-            try (Stream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "SecurityException", "sample" });
-            }
-
-            try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "dir2", "SecurityException", "fileInSE", "file" });
-            }
-
-            if (supportsLinks) {
-                try (Stream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
-                    String[] result = s.map(path -> path.getFileName().toString())
-                                       .toArray(String[]::new);
-                    assertEqualsNoOrder(result, new String[] { "d1", "f1", "lnDir2", "SecurityException", "lnDirSE", "lnFileSE" });
-                }
-            }
-
-            // execute test
-            fsp.setFaultyMode(true);
-            // ignore file cause SecurityException
-            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "empty", "sample" });
-            }
-            // skip folder cause SecurityException
-            try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "dir2", "file" });
-            }
-
-            if (supportsLinks) {
-                // not following links
-                try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
-                    String[] result = s.map(path -> path.getFileName().toString())
-                                       .toArray(String[]::new);
-                    assertEqualsNoOrder(result, new String[] { "dir", "d1", "f1", "lnDir2", "lnDirSE", "lnFileSE" });
-                }
-
-                // following links
-                try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir"), FileVisitOption.FOLLOW_LINKS)) {
-                    String[] result = s.map(path -> path.getFileName().toString())
-                                       .toArray(String[]::new);
-                    // ?? Should fileInSE show up?
-                    // With FaultyFS, it does as no exception thrown for link to "SecurityException" with read on "lnXxxSE"
-                    assertEqualsNoOrder(result, new String[] { "dir", "d1", "f1", "lnDir2", "file", "lnDirSE", "lnFileSE", "fileInSE" });
-                }
-            }
-
-            // list instead of walk
-            try (Stream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "sample" });
-            }
-            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "file" });
-            }
-
-            // root cause SecurityException should be reported
-            try (Stream<Path> s = Files.walk(
-                fakeRoot.resolve("dir2").resolve("SecurityException")))
-            {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                fail("should not reach here due to SecurityException");
-            } catch (SecurityException se) {
-                assertTrue(se.getCause() instanceof FaultyFileSystem.FaultyException);
-            }
-
-            // Walk a file cause SecurityException, we should get SE
-            try (Stream<Path> s = Files.walk(
-                fakeRoot.resolve("dir").resolve("SecurityException")))
-            {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                fail("should not reach here due to SecurityException");
-            } catch (SecurityException se) {
-                assertTrue(se.getCause() instanceof FaultyFileSystem.FaultyException);
-            }
-
-            // List a file cause SecurityException, we should get SE as cannot read attribute
-            try (Stream<Path> s = Files.list(
-                fakeRoot.resolve("dir2").resolve("SecurityException")))
-            {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                fail("should not reach here due to SecurityException");
-            } catch (SecurityException se) {
-                assertTrue(se.getCause() instanceof FaultyFileSystem.FaultyException);
-            }
-
-            try (Stream<Path> s = Files.list(
-                fakeRoot.resolve("dir").resolve("SecurityException")))
-            {
-                String[] result = s.map(path -> path.getFileName().toString())
-                                   .toArray(String[]::new);
-                fail("should not reach here due to SecurityException");
-            } catch (SecurityException se) {
-                assertTrue(se.getCause() instanceof FaultyFileSystem.FaultyException);
-            }
-         } finally {
-            // Cleanup
-            if (fs != null) {
-                fs.close();
-            }
-            if (supportsLinks) {
-                Files.delete(triggerLink);
-                Files.delete(linkTriggerDir);
-                Files.delete(linkTriggerFile);
-            }
-            Files.delete(triggerFile);
-            Files.delete(sampleFile);
-            Files.delete(sample);
             TestUtil.removeAll(triggerDir);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @bug 8263461
  * @requires vm.hasJFR
  *
@@ -47,8 +47,8 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *          -Xmx32m -Xms32m -XX:+UnlockExperimentalVMOptions -XX:+G1EvacuationFailureALot
- *          -XX:G1EvacuationFailureALotCount=100 -XX:G1EvacuationFailureALotInterval=1
+ *          -Xmx32m -Xms32m -XX:+UnlockExperimentalVMOptions -XX:+G1GCAllocationFailureALot
+ *          -XX:G1GCAllocationFailureALotCount=100 -XX:G1GCAllocationFailureALotInterval=1
  *          -Xlog:gc=debug -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestEvacuationFailedEvent
  */
 

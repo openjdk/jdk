@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestCloning
- * @run main/othervm -Djava.security.manager=allow TestCloning sm
  */
 
 import java.security.MessageDigest;
@@ -38,6 +37,8 @@ import java.security.Provider;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.List;
+
+import jtreg.SkippedException;
 
 public class TestCloning extends PKCS11Test {
 
@@ -57,14 +58,30 @@ public class TestCloning extends PKCS11Test {
         r.nextBytes(data1);
         r.nextBytes(data2);
         System.out.println("Testing against provider " + p.getName());
+
+        boolean skipTest = true;
+
         for (String alg : ALGS) {
-            System.out.println("Testing " + alg);
+            System.out.println("Digest algo: " + alg);
             MessageDigest md = MessageDigest.getInstance(alg, p);
-            md = testCloning(md, p);
+            try {
+                md = testCloning(md, p);;
+            } catch (CloneNotSupportedException cnse) {
+                // skip test if clone isn't supported
+                System.out.println("=> Clone not supported; skip!");
+                continue;
+            }
+
+            // start testing below
+            skipTest = false;
+
             // repeat the test again after generating digest once
             for (int j = 0; j < 10; j++) {
                 md = testCloning(md, p);
             }
+        }
+        if (skipTest) {
+            throw new SkippedException("Test Skipped!");
         }
     }
 
@@ -125,4 +142,3 @@ public class TestCloning extends PKCS11Test {
         }
     }
 }
-

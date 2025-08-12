@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     X_CFLAGS=
     X_LIBS=
   else
+    x_libraries_orig="$x_libraries"
 
     if test "x${with_x}" = xno; then
       AC_MSG_ERROR([It is not possible to disable the use of X11. Remove the --without-x option.])
@@ -48,6 +49,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
       fi
       if test "x$x_libraries" = xNONE; then
         x_libraries="${with_x}/lib"
+        x_libraries_orig="$x_libraries"
       fi
     else
       # Check if the user has specified sysroot, but not --with-x, --x-includes or --x-libraries.
@@ -69,9 +71,9 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
           elif test -f "$SYSROOT/usr/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib"
           elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
           elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
           fi
         fi
       fi
@@ -82,8 +84,8 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     AC_PATH_XTRA
 
     # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
-    # this doesn't make sense so we remove it.
-    if test "x$COMPILE_TYPE" = xcross; then
+    # this doesn't make sense so we remove it; same for sysroot (devkit).
+    if test "x$COMPILE_TYPE" = xcross || (test "x$SYSROOT" != "x" && test "x$x_libraries_orig" = xNONE); then
       X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
     fi
 

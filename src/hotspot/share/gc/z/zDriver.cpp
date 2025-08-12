@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,217 +21,329 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.hpp"
-#include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGCIdPrinter.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zMessagePort.inline.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zVerify.hpp"
-#include "logging/log.hpp"
-#include "memory/universe.hpp"
-#include "runtime/threads.hpp"
-#include "runtime/vmOperations.hpp"
-#include "runtime/vmThread.hpp"
 
-static const ZStatPhaseCycle      ZPhaseCycle("Garbage Collection Cycle");
-static const ZStatPhasePause      ZPhasePauseMarkStart("Pause Mark Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMark("Concurrent Mark");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinue("Concurrent Mark Continue");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFree("Concurrent Mark Free");
-static const ZStatPhasePause      ZPhasePauseMarkEnd("Pause Mark End");
-static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferences("Concurrent Process Non-Strong References");
-static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSet("Concurrent Reset Relocation Set");
-static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSet("Concurrent Select Relocation Set");
-static const ZStatPhasePause      ZPhasePauseRelocateStart("Pause Relocate Start");
-static const ZStatPhaseConcurrent ZPhaseConcurrentRelocated("Concurrent Relocate");
-static const ZStatCriticalPhase   ZCriticalPhaseGCLockerStall("GC Locker Stall", false /* verbose */);
-static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
+static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Collection", true /* minor */);
+static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Collection", false /* minor */);
 
-ZDriverRequest::ZDriverRequest() :
-    ZDriverRequest(GCCause::_no_gc) {}
-
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause) :
-    ZDriverRequest(cause, ConcGCThreads) {}
-
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint nworkers) :
-    _cause(cause),
-    _nworkers(nworkers) {}
-
-bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
-  return _cause == other._cause;
-}
-
-GCCause::Cause ZDriverRequest::cause() const {
-  return _cause;
-}
-
-uint ZDriverRequest::nworkers() const {
-  return _nworkers;
-}
-
-class VM_ZOperation : public VM_Operation {
+template <typename DriverT>
+class ZGCCauseSetter : public GCCauseSetter {
 private:
-  const uint _gc_id;
-  bool       _gc_locked;
-  bool       _success;
+  DriverT* _driver;
 
 public:
-  VM_ZOperation() :
-      _gc_id(GCId::current()),
-      _gc_locked(false),
-      _success(false) {}
-
-  virtual bool needs_inactive_gc_locker() const {
-    // An inactive GC locker is needed in operations where we change the bad
-    // mask or move objects. Changing the bad mask will invalidate all oops,
-    // which makes it conceptually the same thing as moving all objects.
-    return false;
+  ZGCCauseSetter(DriverT* driver, GCCause::Cause cause)
+    : GCCauseSetter(ZCollectedHeap::heap(), cause),
+      _driver(driver) {
+    _driver->set_gc_cause(cause);
   }
 
-  virtual bool skip_thread_oop_barriers() const {
-    return true;
-  }
-
-  virtual bool do_operation() = 0;
-
-  virtual bool doit_prologue() {
-    Heap_lock->lock();
-    return true;
-  }
-
-  virtual void doit() {
-    // Abort if GC locker state is incompatible
-    if (needs_inactive_gc_locker() && GCLocker::check_active_before_gc()) {
-      _gc_locked = true;
-      return;
-    }
-
-    // Setup GC id and active marker
-    GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
-
-    // Verify before operation
-    ZVerify::before_zoperation();
-
-    // Execute operation
-    _success = do_operation();
-
-    // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
-  }
-
-  virtual void doit_epilogue() {
-    Heap_lock->unlock();
-  }
-
-  bool gc_locked() const {
-    return _gc_locked;
-  }
-
-  bool success() const {
-    return _success;
+  ~ZGCCauseSetter() {
+    _driver->set_gc_cause(GCCause::_no_gc);
   }
 };
 
-class VM_ZMarkStart : public VM_ZOperation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZMarkStart;
-  }
+ZLock*        ZDriver::_lock;
+ZDriverMinor* ZDriver::_minor;
+ZDriverMajor* ZDriver::_major;
 
-  virtual bool needs_inactive_gc_locker() const {
-    return true;
-  }
+void ZDriver::initialize() {
+  _lock = new ZLock();
+}
 
-  virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkStart);
-    ZServiceabilityPauseTracer tracer;
+void ZDriver::lock() {
+  _lock->lock();
+}
 
-    ZCollectedHeap::heap()->increment_total_collections(true /* full */);
+void ZDriver::unlock() {
+  _lock->unlock();
+}
 
-    ZHeap::heap()->mark_start();
-    return true;
-  }
-};
+void ZDriver::set_minor(ZDriverMinor* minor) {
+  _minor = minor;
+}
 
-class VM_ZMarkEnd : public VM_ZOperation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZMarkEnd;
-  }
+void ZDriver::set_major(ZDriverMajor* major) {
+  _major = major;
+}
 
-  virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseMarkEnd);
-    ZServiceabilityPauseTracer tracer;
-    return ZHeap::heap()->mark_end();
-  }
-};
+ZDriverMinor* ZDriver::minor() {
+  return _minor;
+}
 
-class VM_ZRelocateStart : public VM_ZOperation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZRelocateStart;
-  }
+ZDriverMajor* ZDriver::major() {
+  return _major;
+}
 
-  virtual bool needs_inactive_gc_locker() const {
-    return true;
-  }
+ZDriverLocker::ZDriverLocker() {
+  ZDriver::lock();
+}
 
-  virtual bool do_operation() {
-    ZStatTimer timer(ZPhasePauseRelocateStart);
-    ZServiceabilityPauseTracer tracer;
-    ZHeap::heap()->relocate_start();
-    return true;
-  }
-};
+ZDriverLocker::~ZDriverLocker() {
+  ZDriver::unlock();
+}
 
-class VM_ZVerify : public VM_Operation {
-public:
-  virtual VMOp_Type type() const {
-    return VMOp_ZVerify;
-  }
+ZDriverUnlocker::ZDriverUnlocker() {
+  ZDriver::unlock();
+}
 
-  virtual bool skip_thread_oop_barriers() const {
-    return true;
-  }
+ZDriverUnlocker::~ZDriverUnlocker() {
+  ZDriver::lock();
+}
 
-  virtual void doit() {
-    ZVerify::after_weak_processing();
-  }
-};
+ZDriver::ZDriver()
+  : _gc_cause(GCCause::_no_gc) {}
 
-ZDriver::ZDriver() :
-    _gc_cycle_port(),
-    _gc_locker_port() {
-  set_name("ZDriver");
+void ZDriver::set_gc_cause(GCCause::Cause cause) {
+  _gc_cause = cause;
+}
+
+GCCause::Cause ZDriver::gc_cause() {
+  return _gc_cause;
+}
+
+ZDriverMinor::ZDriverMinor()
+  : ZDriver(),
+    _port(),
+    _gc_timer(),
+    _jfr_tracer(),
+    _used_at_start() {
+  ZDriver::set_minor(this);
+  set_name("ZDriverMinor");
   create_and_start();
 }
 
-bool ZDriver::is_busy() const {
-  return _gc_cycle_port.is_busy();
+bool ZDriverMinor::is_busy() const {
+  return _port.is_busy();
 }
 
-void ZDriver::collect(const ZDriverRequest& request) {
+void ZDriverMinor::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
   case GCCause::_wb_young_gc:
+    // Start synchronous GC
+    _port.send_sync(request);
+    break;
+
+  case GCCause::_scavenge_alot:
+  case GCCause::_z_timer:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_allocation_stall:
+  case GCCause::_z_high_usage:
+    // Start asynchronous GC
+    _port.send_async(request);
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
+    break;
+  }
+};
+
+GCTracer* ZDriverMinor::jfr_tracer() {
+  return &_jfr_tracer;
+}
+
+void ZDriverMinor::set_used_at_start(size_t used) {
+  _used_at_start = used;
+}
+
+size_t ZDriverMinor::used_at_start() const {
+  return _used_at_start;
+}
+
+class ZDriverScopeMinor : public StackObj {
+private:
+  GCIdMark                     _gc_id;
+  GCCause::Cause               _gc_cause;
+  ZGCCauseSetter<ZDriverMinor> _gc_cause_setter;
+  ZStatTimer                   _stat_timer;
+  ZServiceabilityCycleTracer   _tracer;
+
+public:
+  ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
+    : _gc_id(),
+      _gc_cause(request.cause()),
+      _gc_cause_setter(ZDriver::minor(), _gc_cause),
+      _stat_timer(ZPhaseCollectionMinor, gc_timer),
+      _tracer(true /* minor */) {
+    // Select number of worker threads to use
+    ZGeneration::young()->set_active_workers(request.young_nworkers());
+  }
+};
+
+void ZDriverMinor::gc(const ZDriverRequest& request) {
+  ZDriverScopeMinor scope(request, &_gc_timer);
+  ZGCIdMinor minor_id(gc_id());
+  ZGeneration::young()->collect(ZYoungType::minor, &_gc_timer);
+}
+
+static void handle_alloc_stalling_for_young() {
+  ZHeap::heap()->handle_alloc_stalling_for_young();
+}
+
+void ZDriverMinor::handle_alloc_stalls() const {
+  handle_alloc_stalling_for_young();
+}
+
+void ZDriverMinor::run_thread() {
+  // Main loop
+  for (;;) {
+    // Wait for GC request
+    const ZDriverRequest request = _port.receive();
+
+    ZDriverLocker locker;
+
+    abortpoint();
+
+    // Run GC
+    gc(request);
+
+    abortpoint();
+
+    // Notify GC completed
+    _port.ack();
+
+    // Handle allocation stalls
+    handle_alloc_stalls();
+
+    // Good point to consider back-to-back GC
+    ZDirector::evaluate_rules();
+  }
+}
+
+void ZDriverMinor::terminate() {
+  const ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  _port.send_async(request);
+}
+
+static bool should_clear_all_soft_references(GCCause::Cause cause) {
+  // Clear all soft references if implied by the GC cause
+  switch (cause) {
+  case GCCause::_wb_full_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_allocation_stall:
+    return true;
+
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_z_timer:
+  case GCCause::_z_warmup:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_proactive:
+  case GCCause::_metadata_GC_threshold:
+  case GCCause::_codecache_GC_threshold:
+  case GCCause::_codecache_GC_aggressive:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
+  }
+
+  // Clear all soft references if threads are stalled waiting for an old collection
+  if (ZHeap::heap()->is_alloc_stalling_for_old()) {
+    return true;
+  }
+
+  // Don't clear all soft references
+  return false;
+}
+
+static bool should_preclean_young(GCCause::Cause cause) {
+  // Preclean young if implied by the GC cause
+  switch (cause) {
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
+  case GCCause::_wb_full_gc:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_z_allocation_stall:
+    return true;
+
+  case GCCause::_z_timer:
+  case GCCause::_z_warmup:
+  case GCCause::_z_allocation_rate:
+  case GCCause::_z_proactive:
+  case GCCause::_metadata_GC_threshold:
+  case GCCause::_codecache_GC_threshold:
+  case GCCause::_codecache_GC_aggressive:
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
+  }
+
+  // Preclean young if threads are stalled waiting for an old collection
+  if (ZHeap::heap()->is_alloc_stalling_for_old()) {
+    return true;
+  }
+
+  // We clear all soft references as a last-ditch effort to collect memory
+  // before throwing an OOM. Therefore it is important that when the GC policy
+  // is to clear all soft references, that we also pre-clean the young
+  // generation, as we might otherwise throw premature OOM.
+  //
+  // Therefore, all causes that trigger all soft ref clearing must also trigger
+  // pre-cleaning of young gen. If allocations stalled when checking for all
+  // soft ref clearing, then since we hold the driver locker all the way until
+  // we check for young gen pre-cleaning, we can be certain that we should
+  // catch that above and perform young gen pre-cleaning.
+  assert(!should_clear_all_soft_references(cause), "Clearing all soft references without pre-cleaning young gen");
+
+  return false;
+}
+
+ZDriverMajor::ZDriverMajor()
+  : ZDriver(),
+    _port(),
+    _gc_timer(),
+    _jfr_tracer(),
+    _used_at_start() {
+  ZDriver::set_major(this);
+  set_name("ZDriverMajor");
+  create_and_start();
+}
+
+bool ZDriverMajor::is_busy() const {
+  return _port.is_busy();
+}
+
+void ZDriverMajor::collect(const ZDriverRequest& request) {
+  switch (request.cause()) {
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
   case GCCause::_wb_full_gc:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:
   case GCCause::_full_gc_alot:
-  case GCCause::_scavenge_alot:
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
   case GCCause::_codecache_GC_aggressive:
     // Start synchronous GC
-    _gc_cycle_port.send_sync(request);
+    _port.send_sync(request);
     break;
 
   case GCCause::_z_timer:
@@ -239,273 +351,143 @@ void ZDriver::collect(const ZDriverRequest& request) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
-  case GCCause::_z_high_usage:
   case GCCause::_codecache_GC_threshold:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
-    _gc_cycle_port.send_async(request);
-    break;
-
-  case GCCause::_gc_locker:
-    // Restart VM operation previously blocked by the GC locker
-    _gc_locker_port.signal();
+    _port.send_async(request);
     break;
 
   case GCCause::_wb_breakpoint:
     ZBreakpoint::start_gc();
-    _gc_cycle_port.send_async(request);
+    _port.send_async(request);
     break;
 
   default:
-    // Other causes not supported
     fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
     break;
   }
 }
 
-template <typename T>
-bool ZDriver::pause() {
-  for (;;) {
-    T op;
-    VMThread::execute(&op);
-    if (op.gc_locked()) {
-      // Wait for GC to become unlocked and restart the VM operation
-      ZStatTimer timer(ZCriticalPhaseGCLockerStall);
-      _gc_locker_port.wait();
-      continue;
-    }
-
-    // Notify VM operation completed
-    _gc_locker_port.ack();
-
-    return op.success();
-  }
+GCTracer* ZDriverMajor::jfr_tracer() {
+  return &_jfr_tracer;
 }
 
-void ZDriver::pause_mark_start() {
-  pause<VM_ZMarkStart>();
+void ZDriverMajor::set_used_at_start(size_t used) {
+  _used_at_start = used;
 }
 
-void ZDriver::concurrent_mark() {
-  ZStatTimer timer(ZPhaseConcurrentMark);
-  ZBreakpoint::at_after_marking_started();
-  ZHeap::heap()->mark(true /* initial */);
-  ZBreakpoint::at_before_marking_completed();
+size_t ZDriverMajor::used_at_start() const {
+  return _used_at_start;
 }
 
-bool ZDriver::pause_mark_end() {
-  return pause<VM_ZMarkEnd>();
-}
-
-void ZDriver::concurrent_mark_continue() {
-  ZStatTimer timer(ZPhaseConcurrentMarkContinue);
-  ZHeap::heap()->mark(false /* initial */);
-}
-
-void ZDriver::concurrent_mark_free() {
-  ZStatTimer timer(ZPhaseConcurrentMarkFree);
-  ZHeap::heap()->mark_free();
-}
-
-void ZDriver::concurrent_process_non_strong_references() {
-  ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
-  ZBreakpoint::at_after_reference_processing_started();
-  ZHeap::heap()->process_non_strong_references();
-}
-
-void ZDriver::concurrent_reset_relocation_set() {
-  ZStatTimer timer(ZPhaseConcurrentResetRelocationSet);
-  ZHeap::heap()->reset_relocation_set();
-}
-
-void ZDriver::pause_verify() {
-  if (ZVerifyRoots || ZVerifyObjects) {
-    VM_ZVerify op;
-    VMThread::execute(&op);
-  }
-}
-
-void ZDriver::concurrent_select_relocation_set() {
-  ZStatTimer timer(ZPhaseConcurrentSelectRelocationSet);
-  ZHeap::heap()->select_relocation_set();
-}
-
-void ZDriver::pause_relocate_start() {
-  pause<VM_ZRelocateStart>();
-}
-
-void ZDriver::concurrent_relocate() {
-  ZStatTimer timer(ZPhaseConcurrentRelocated);
-  ZHeap::heap()->relocate();
-}
-
-void ZDriver::check_out_of_memory() {
-  ZHeap::heap()->check_out_of_memory();
-}
-
-static bool should_clear_soft_references(const ZDriverRequest& request) {
-  // Clear soft references if implied by the GC cause
-  if (request.cause() == GCCause::_wb_full_gc ||
-      request.cause() == GCCause::_metadata_GC_clear_soft_refs ||
-      request.cause() == GCCause::_z_allocation_stall) {
-    // Clear
-    return true;
-  }
-
-  // Don't clear
-  return false;
-}
-
-static uint select_active_worker_threads_dynamic(const ZDriverRequest& request) {
-  // Use requested number of worker threads
-  return request.nworkers();
-}
-
-static uint select_active_worker_threads_static(const ZDriverRequest& request) {
-  const GCCause::Cause cause = request.cause();
-  const uint nworkers = request.nworkers();
-
-  // Boost number of worker threads if implied by the GC cause
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_java_lang_system_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs ||
-      cause == GCCause::_z_allocation_stall) {
-    // Boost
-    const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
-    return boosted_nworkers;
-  }
-
-  // Use requested number of worker threads
-  return nworkers;
-}
-
-static uint select_active_worker_threads(const ZDriverRequest& request) {
-  if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request);
-  } else {
-    return select_active_worker_threads_static(request);
-  }
-}
-
-class ZDriverGCScope : public StackObj {
+class ZDriverScopeMajor : public StackObj {
 private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
-  ZStatTimer                 _timer;
-  ZServiceabilityCycleTracer _tracer;
+  GCIdMark                     _gc_id;
+  GCCause::Cause               _gc_cause;
+  ZGCCauseSetter<ZDriverMajor> _gc_cause_setter;
+  ZStatTimer                   _stat_timer;
+  ZServiceabilityCycleTracer   _tracer;
 
 public:
-  ZDriverGCScope(const ZDriverRequest& request) :
-      _gc_id(),
+  ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
+    : _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
-      _timer(ZPhaseCycle),
-      _tracer() {
-    // Update statistics
-    ZStatCycle::at_start();
+      _gc_cause_setter(ZDriver::major(), _gc_cause),
+      _stat_timer(ZPhaseCollectionMajor, gc_timer),
+      _tracer(false /* minor */) {
+    // Select number of worker threads to use
+    ZGeneration::young()->set_active_workers(request.young_nworkers());
+    ZGeneration::old()->set_active_workers(request.old_nworkers());
 
     // Set up soft reference policy
-    const bool clear = should_clear_soft_references(request);
-    ZHeap::heap()->set_soft_reference_policy(clear);
-
-    // Select number of worker threads to use
-    const uint nworkers = select_active_worker_threads(request);
-    ZHeap::heap()->set_active_workers(nworkers);
+    const bool clear_all = should_clear_all_soft_references(request.cause());
+    ZGeneration::old()->set_soft_reference_policy(clear_all);
   }
 
-  ~ZDriverGCScope() {
-    // Update statistics
-    ZStatCycle::at_end(_gc_cause, ZHeap::heap()->active_workers());
-
+  ~ZDriverScopeMajor() {
     // Update data used by soft reference policy
-    Universe::heap()->update_capacity_and_used_at_gc();
+    ZCollectedHeap::heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
-    Universe::heap()->record_whole_heap_examined_timestamp();
+    ZCollectedHeap::heap()->record_whole_heap_examined_timestamp();
   }
 };
 
-// Macro to execute a termination check after a concurrent phase. Note
-// that it's important that the termination check comes after the call
-// to the function f, since we can't abort between pause_relocate_start()
-// and concurrent_relocate(). We need to let concurrent_relocate() call
-// abort_page() on the remaining entries in the relocation set.
-#define concurrent(f)                 \
-  do {                                \
-    concurrent_##f();                 \
-    if (should_terminate()) {         \
-      return;                         \
-    }                                 \
-  } while (false)
+void ZDriverMajor::collect_young(const ZDriverRequest& request) {
+  ZGCIdMajor major_id(gc_id(), 'Y');
+  if (should_preclean_young(request.cause())) {
+    // Collect young generation and promote everything to old generation
+    ZGeneration::young()->collect(ZYoungType::major_full_preclean, &_gc_timer);
 
-void ZDriver::gc(const ZDriverRequest& request) {
-  ZDriverGCScope scope(request);
+    abortpoint();
 
-  // Phase 1: Pause Mark Start
-  pause_mark_start();
-
-  // Phase 2: Concurrent Mark
-  concurrent(mark);
-
-  // Phase 3: Pause Mark End
-  while (!pause_mark_end()) {
-    // Phase 3.5: Concurrent Mark Continue
-    concurrent(mark_continue);
+    // Collect young generation and gather roots pointing into old generation
+    ZGeneration::young()->collect(ZYoungType::major_full_roots, &_gc_timer);
+  } else {
+    // Collect young generation and gather roots pointing into old generation
+    ZGeneration::young()->collect(ZYoungType::major_partial_roots, &_gc_timer);
   }
 
-  // Phase 4: Concurrent Mark Free
-  concurrent(mark_free);
+  abortpoint();
 
-  // Phase 5: Concurrent Process Non-Strong References
-  concurrent(process_non_strong_references);
-
-  // Phase 6: Concurrent Reset Relocation Set
-  concurrent(reset_relocation_set);
-
-  // Phase 7: Pause Verify
-  pause_verify();
-
-  // Phase 8: Concurrent Select Relocation Set
-  concurrent(select_relocation_set);
-
-  // Phase 9: Pause Relocate Start
-  pause_relocate_start();
-
-  // Phase 10: Concurrent Relocate
-  concurrent(relocate);
+  // Handle allocations waiting for a young collection
+  handle_alloc_stalling_for_young();
 }
 
-void ZDriver::run_service() {
+void ZDriverMajor::collect_old() {
+  ZGCIdMajor major_id(gc_id(), 'O');
+  ZGeneration::old()->collect(&_gc_timer);
+}
+
+void ZDriverMajor::gc(const ZDriverRequest& request) {
+  ZDriverScopeMajor scope(request, &_gc_timer);
+
+  // Collect the young generation
+  collect_young(request);
+
+  abortpoint();
+
+  // Collect the old generation
+  collect_old();
+}
+
+static void handle_alloc_stalling_for_old() {
+  const bool cleared_all = ZGeneration::old()->uses_clear_all_soft_reference_policy();
+  ZHeap::heap()->handle_alloc_stalling_for_old(cleared_all);
+}
+
+void ZDriverMajor::handle_alloc_stalls() const {
+  handle_alloc_stalling_for_old();
+}
+
+void ZDriverMajor::run_thread() {
   // Main loop
-  while (!should_terminate()) {
+  for (;;) {
     // Wait for GC request
-    const ZDriverRequest request = _gc_cycle_port.receive();
-    if (request.cause() == GCCause::_no_gc) {
-      continue;
-    }
+    const ZDriverRequest request = _port.receive();
+
+    ZDriverLocker locker;
 
     ZBreakpoint::at_before_gc();
+
+    abortpoint();
 
     // Run GC
     gc(request);
 
-    if (should_terminate()) {
-      // Abort
-      break;
-    }
+    abortpoint();
 
     // Notify GC completed
-    _gc_cycle_port.ack();
+    _port.ack();
 
-    // Check for out of memory condition
-    check_out_of_memory();
+    // Handle allocation stalls
+    handle_alloc_stalls();
 
     ZBreakpoint::at_after_gc();
   }
 }
 
-void ZDriver::stop_service() {
-  ZAbort::abort();
-  _gc_cycle_port.send_async(GCCause::_no_gc);
+void ZDriverMajor::terminate() {
+  const ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  _port.send_async(request);
 }

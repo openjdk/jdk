@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -44,7 +42,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
-import java.security.AccessControlException;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -149,8 +146,6 @@ public final class RemoteRecordingStream implements EventStream {
     final FlightRecorderMXBean mbean;
     final long recordingId;
     final EventStream stream;
-    @SuppressWarnings("removal")
-    final AccessControlContext accessControllerContext;
     final DiskRepository repository;
     final Instant creationTime;
     final Object lock = new Object();
@@ -175,10 +170,6 @@ public final class RemoteRecordingStream implements EventStream {
      * @throws IOException       if a stream can't be opened, an I/O error occurs
      *                           when trying to access the repository or the
      *                           {@code FlightRecorderMXBean}
-     *
-     * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection) throws IOException {
         this(connection, makeTempDirectory(), true);
@@ -200,22 +191,15 @@ public final class RemoteRecordingStream implements EventStream {
      * @throws IOException       if a stream can't be opened, an I/O error occurs
      *                           when trying to access the repository or the
      *                           {@code FlightRecorderMXBean}
-     *
-     * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection, Path directory) throws IOException {
         this(connection, directory, false);
     }
 
-    @SuppressWarnings("removal")
     private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
         Objects.requireNonNull(connection, "connection");
         Objects.requireNonNull(directory, "directory");
-        accessControllerContext = AccessController.getContext();
-        // Make sure users can't implement malicious version of a Path object.
-        path = Paths.get(directory.toString());
+        path = directory;
         if (!Files.exists(path)) {
             throw new IOException("Download directory doesn't exist");
         }
@@ -227,7 +211,7 @@ public final class RemoteRecordingStream implements EventStream {
         creationTime = Instant.now();
         mbean = createProxy(connection);
         recordingId = createRecording();
-        stream = ManagementSupport.newEventDirectoryStream(accessControllerContext, path, configurations(mbean));
+        stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean));
         stream.setStartTime(Instant.MIN);
         repository = new DiskRepository(path, delete);
         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
@@ -565,7 +549,6 @@ public final class RemoteRecordingStream implements EventStream {
      * The following code snippet illustrates how this method can be used in
      * conjunction with the {@link #startAsync()} method to monitor what happens
      * during a test method:
-     * <p>
      * {@snippet :
      *   AtomicLong bytesWritten = new AtomicLong();
      *   try (var r = new RemoteRecordingStream(connection)) {
@@ -646,9 +629,6 @@ public final class RemoteRecordingStream implements EventStream {
      *
      * @throws IOException if the recording data can't be copied to the specified
      *         location, or if the stream is closed, or not started.
-     *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
      *
      * @see RemoteRecordingStream#setMaxAge(Duration)
      * @see RemoteRecordingStream#setMaxSize(long)

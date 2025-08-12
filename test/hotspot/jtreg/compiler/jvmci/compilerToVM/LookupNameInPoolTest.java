@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.reflect
- *          java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -96,16 +95,12 @@ public class LookupNameInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index);
+        int opcode = ConstantPoolTestsHelper.getDummyOpcode(cpType);
+        int index = dummyClass.getCPCacheIndex(cpi);
+        Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
+        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index, opcode);
         String nameToRefer = entry.name;
-        String msg = String.format("Wrong name accessed by %sconstant pool index %d", cached, index);
+        String msg = String.format("Wrong name accessed by cached constant pool index %d", index);
         Asserts.assertEQ(nameToVerify, nameToRefer, msg);
     }
 }

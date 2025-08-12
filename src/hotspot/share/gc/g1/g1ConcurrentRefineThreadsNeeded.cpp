@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1ConcurrentRefineThreadsNeeded.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <math.h>
 
 G1ConcurrentRefineThreadsNeeded::G1ConcurrentRefineThreadsNeeded(G1Policy* policy,
@@ -60,7 +60,7 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // Estimate time until next GC, based on remaining bytes available for
   // allocation and the allocation rate.
   double alloc_region_rate = analytics->predict_alloc_rate_ms();
-  double alloc_bytes_rate = alloc_region_rate * HeapRegion::GrainBytes;
+  double alloc_bytes_rate = alloc_region_rate * G1HeapRegion::GrainBytes;
   if (alloc_bytes_rate == 0.0) {
     // A zero rate indicates we don't yet have data to use for predictions.
     // Since we don't have any idea how long until the next GC, use a time of

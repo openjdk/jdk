@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package compiler.jsr292.NonInlinedCall;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -51,8 +52,7 @@ public class Agent {
 
         System.out.println("Running jar " + Arrays.toString(jar.getCommand()));
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
         output.shouldHaveExitValue(0);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_C1_C1_GRAPHBUILDER_HPP
 #define SHARE_C1_C1_GRAPHBUILDER_HPP
 
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
@@ -128,7 +128,7 @@ class GraphBuilder {
 
     // How to get a block to be parsed
     void add_to_work_list(BlockBegin* block);
-    // How to remove the next block to be parsed; returns NULL if none left
+    // How to remove the next block to be parsed; returns null if none left
     BlockBegin* remove_from_work_list();
     // Indicates parse is over
     bool is_work_list_empty() const;
@@ -237,7 +237,7 @@ class GraphBuilder {
   void load_indexed (BasicType type);
   void store_indexed(BasicType type);
   void stack_op(Bytecodes::Code code);
-  void arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before = NULL);
+  void arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before = nullptr);
   void negate_op(ValueType* type);
   void shift_op(ValueType* type, Bytecodes::Code code);
   void logic_op(ValueType* type, Bytecodes::Code code);
@@ -266,7 +266,6 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
-  Value round_fp(Value fp_value);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
@@ -309,7 +308,7 @@ class GraphBuilder {
   ValueStack* copy_state_exhandling();
   ValueStack* copy_state_for_exception_with_bci(int bci);
   ValueStack* copy_state_for_exception();
-  ValueStack* copy_state_if_bb(bool is_bb) { return (is_bb || compilation()->is_optimistic()) ? copy_state_before() : NULL; }
+  ValueStack* copy_state_if_bb(bool is_bb) { return (is_bb || compilation()->is_optimistic()) ? copy_state_before() : nullptr; }
   ValueStack* copy_state_indexed_access() { return compilation()->is_optimistic() ? copy_state_before() : copy_state_for_exception(); }
 
   //
@@ -350,9 +349,9 @@ class GraphBuilder {
   void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
 
   // inliners
-  bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
+  bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
   bool try_inline_intrinsics(ciMethod* callee, bool ignore_return = false);
-  bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
+  bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
   bool try_inline_jsr(int jsr_dest_bci);
 
   const char* check_can_parse(ciMethod* callee) const;
@@ -379,11 +378,12 @@ class GraphBuilder {
   void append_unsafe_CAS(ciMethod* callee);
   void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
+  void append_alloc_array_copy(ciMethod* callee);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 
   void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder, Values* obj_args, bool inlined);
-  void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = NULL, int bci = -1);
+  void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = nullptr, int bci = -1);
   void profile_invocation(ciMethod* inlinee, ValueStack* state);
 
   // Shortcuts to profiling control.

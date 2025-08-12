@@ -35,7 +35,7 @@ import jdk.jfr.Event;
 /**
  * @test
  * @summary Verifies that all traces of sensitive data is removed
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordingFileSanitization

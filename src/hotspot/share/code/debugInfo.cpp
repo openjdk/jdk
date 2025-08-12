@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/stackValue.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -52,15 +52,9 @@ void DebugInfoWriteStream::write_metadata(Metadata* h) {
 }
 
 oop DebugInfoReadStream::read_oop() {
-  nmethod* nm = const_cast<CompiledMethod*>(code())->as_nmethod_or_null();
-  oop o;
-  if (nm != nullptr) {
-    // Despite these oops being found inside nmethods that are on-stack,
-    // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
-    o = nm->oop_at_phantom(read_int());
-  } else {
-    o = code()->oop_at(read_int());
-  }
+  // Despite these oops being found inside nmethods that are on-stack,
+  // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
+  oop o = code()->oop_at_phantom(read_int());
   assert(oopDesc::is_oop_or_null(o), "oop only");
   return o;
 }
@@ -75,6 +69,20 @@ ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
 #endif
   ObjectValue* result = is_auto_box ? new AutoBoxObjectValue(id) : new ObjectValue(id);
   // Cache the object since an object field could reference it.
+  _obj_pool->push(result);
+  result->read_object(this);
+  return result;
+}
+
+ScopeValue* DebugInfoReadStream::read_object_merge_value() {
+  int id = read_int();
+#ifdef ASSERT
+  assert(_obj_pool != nullptr, "object pool does not exist");
+  for (int i = _obj_pool->length() - 1; i >= 0; i--) {
+    assert(_obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
+  }
+#endif
+  ObjectMergeValue* result = new ObjectMergeValue(id);
   _obj_pool->push(result);
   result->read_object(this);
   return result;
@@ -98,7 +106,8 @@ ScopeValue* DebugInfoReadStream::get_cached_object() {
 enum { LOCATION_CODE = 0, CONSTANT_INT_CODE = 1,  CONSTANT_OOP_CODE = 2,
                           CONSTANT_LONG_CODE = 3, CONSTANT_DOUBLE_CODE = 4,
                           OBJECT_CODE = 5,        OBJECT_ID_CODE = 6,
-                          AUTO_BOX_OBJECT_CODE = 7, MARKER_CODE = 8 };
+                          AUTO_BOX_OBJECT_CODE = 7, MARKER_CODE = 8,
+                          OBJECT_MERGE_CODE = 9 };
 
 ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
   ScopeValue* result = nullptr;
@@ -110,6 +119,7 @@ ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
    case CONSTANT_DOUBLE_CODE: result = new ConstantDoubleValue(stream);                  break;
    case OBJECT_CODE:          result = stream->read_object_value(false /*is_auto_box*/); break;
    case AUTO_BOX_OBJECT_CODE: result = stream->read_object_value(true /*is_auto_box*/);  break;
+   case OBJECT_MERGE_CODE:    result = stream->read_object_merge_value();                break;
    case OBJECT_ID_CODE:       result = stream->get_cached_object();                      break;
    case MARKER_CODE:          result = new MarkerValue();                                break;
    default: ShouldNotReachHere();
@@ -149,6 +159,7 @@ void ObjectValue::set_value(oop value) {
 }
 
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
+  _is_root = stream->read_bool();
   _klass = read_from(stream);
   assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
@@ -166,6 +177,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
     set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
+    stream->write_bool(_is_root);
     _klass->write_on(stream);
     int length = _field_values.length();
     stream->write_int(length);
@@ -176,19 +188,111 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectValue::print_on(outputStream* st) const {
-  st->print("%s[%d]", is_auto_box() ? "box_obj" : "obj", _id);
+  st->print("%s[%d]", is_auto_box() ? "box_obj" : is_object_merge() ? "merge_obj" : "obj", _id);
 }
 
 void ObjectValue::print_fields_on(outputStream* st) const {
 #ifndef PRODUCT
-  if (_field_values.length() > 0) {
-    _field_values.at(0)->print_on(st);
-  }
-  for (int i = 1; i < _field_values.length(); i++) {
-    st->print(", ");
-    _field_values.at(i)->print_on(st);
+  if (is_object_merge()) {
+    ObjectMergeValue* omv = (ObjectMergeValue*)this;
+    st->print("selector=\"");
+    omv->selector()->print_on(st);
+    st->print("\"");
+    ScopeValue* merge_pointer = omv->merge_pointer();
+    if (!(merge_pointer->is_object() && merge_pointer->as_ObjectValue()->value()() == nullptr) &&
+        !(merge_pointer->is_constant_oop() && merge_pointer->as_ConstantOopReadValue()->value()() == nullptr)) {
+      st->print(", merge_pointer=\"");
+      merge_pointer->print_on(st);
+      st->print("\"");
+    }
+    GrowableArray<ScopeValue*>* possible_objects = omv->possible_objects();
+    st->print(", candidate_objs=[%d", possible_objects->at(0)->as_ObjectValue()->id());
+    int ncandidates = possible_objects->length();
+    for (int i = 1; i < ncandidates; i++) {
+      st->print(", %d", possible_objects->at(i)->as_ObjectValue()->id());
+    }
+    st->print("]");
+  } else {
+    st->print("\n        Fields: ");
+    if (_field_values.length() > 0) {
+      _field_values.at(0)->print_on(st);
+    }
+    for (int i = 1; i < _field_values.length(); i++) {
+      st->print(", ");
+      _field_values.at(i)->print_on(st);
+    }
   }
 #endif
+}
+
+
+// ObjectMergeValue
+
+// Returns the ObjectValue that should be used for the local that this
+// ObjectMergeValue represents. ObjectMergeValue represents allocation
+// merges in C2. This method will select which path the allocation merge
+// took during execution of the Trap that triggered the rematerialization
+// of the object.
+ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
+  StackValue* sv_selector = StackValue::create_stack_value(&fr, &reg_map, _selector);
+  jint selector = sv_selector->get_jint();
+
+  // If the selector is '-1' it means that execution followed the path
+  // where no scalar replacement happened.
+  // Otherwise, it is the index in _possible_objects array that holds
+  // the description of the scalar replaced object.
+  if (selector == -1) {
+    StackValue* sv_merge_pointer = StackValue::create_stack_value(&fr, &reg_map, _merge_pointer);
+    _selected = new ObjectValue(id(), nullptr, false);
+
+    // Retrieve the pointer to the real object and use it as if we had
+    // allocated it during the deoptimization
+    _selected->set_value(sv_merge_pointer->get_obj()());
+
+    return _selected;
+  } else {
+    assert(selector < _possible_objects.length(), "sanity");
+    _selected = (ObjectValue*) _possible_objects.at(selector);
+    return _selected;
+  }
+}
+
+Handle ObjectMergeValue::value() const {
+  if (_selected != nullptr) {
+    return _selected->value();
+  } else {
+    return Handle();
+  }
+}
+
+void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
+  _selector = read_from(stream);
+  _merge_pointer = read_from(stream);
+  int ncandidates = stream->read_int();
+  for (int i = 0; i < ncandidates; i++) {
+    ScopeValue* result = read_from(stream);
+    assert(result->is_object(), "Candidate is not an object!");
+    ObjectValue* obj = result->as_ObjectValue();
+    _possible_objects.append(obj);
+  }
+}
+
+void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
+  if (is_visited()) {
+    stream->write_int(OBJECT_ID_CODE);
+    stream->write_int(_id);
+  } else {
+    set_visited(true);
+    stream->write_int(OBJECT_MERGE_CODE);
+    stream->write_int(_id);
+    _selector->write_on(stream);
+    _merge_pointer->write_on(stream);
+    int ncandidates = _possible_objects.length();
+    stream->write_int(ncandidates);
+    for (int i = 0; i < ncandidates; i++) {
+      _possible_objects.at(i)->as_ObjectValue()->write_on(stream);
+    }
+  }
 }
 
 // ConstantIntValue
@@ -277,7 +381,7 @@ void ConstantOopReadValue::print_on(outputStream* st) const {
   if (value()() != nullptr) {
     value()()->print_value_on(st);
   } else {
-    st->print("nullptr");
+    st->print("null");
   }
 }
 

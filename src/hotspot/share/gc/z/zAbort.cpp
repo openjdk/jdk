@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAbort.hpp"
 #include "runtime/atomic.hpp"
 
 volatile bool ZAbort::_should_abort = false;
 
 void ZAbort::abort() {
-  Atomic::release_store_fence(&_should_abort, true);
+  Atomic::store(&_should_abort, true);
 }

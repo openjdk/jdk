@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  /*
  * @test TestPLABEvacuationFailure
  * @bug 8148376
- * @summary Checks PLAB statistics on evacuation failure
+ * @summary Checks PLAB statistics on evacuation/allocation failure
  * @requires vm.gc.G1
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -99,7 +99,6 @@ public class TestPLABEvacuationFailure {
         // Set up test GC and PLAB options
         List<String> testOptions = new ArrayList<>();
         Collections.addAll(testOptions, COMMON_OPTIONS);
-        Collections.addAll(testOptions, Utils.getTestJavaOpts());
         Collections.addAll(testOptions,
                 "-XX:ParallelGCThreads=" + parGCThreads,
                 "-XX:ParallelGCBufferWastePct=" + wastePct,
@@ -108,7 +107,7 @@ public class TestPLABEvacuationFailure {
                 "-XX:" + (plabIsFixed ? "-" : "+") + "ResizePLAB",
                 "-XX:MaxHeapSize=" + heapSize + "m");
         testOptions.add(AppPLABEvacuationFailure.class.getName());
-        OutputAnalyzer out = ProcessTools.executeTestJvm(testOptions);
+        OutputAnalyzer out = ProcessTools.executeTestJava(testOptions);
 
         appPlabEvacFailureOutput = out.getOutput();
         if (out.getExitValue() != 0) {
@@ -196,7 +195,7 @@ public class TestPLABEvacuationFailure {
 
     private static List<Long> getGcIdPlabEvacFailures(OutputAnalyzer out) {
         return out.asLines().stream()
-                .filter(line -> line.contains("(Evacuation Failure)"))
+                .filter(line -> line.contains("(Evacuation Failure"))
                 .map(line -> LogParser.getGcIdFromLine(line, GC_ID_PATTERN))
                 .collect(Collectors.toList());
     }

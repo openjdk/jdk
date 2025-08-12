@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class TestOneEdenRegionAfterGC {
   private static long YoungGenSize = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run() throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    return ProcessTools.executeLimitedTestJava(
       "-Xbootclasspath/a:.",
       "-Xmn" + YoungGenSize,
       "-Xmx512M",
@@ -50,7 +50,6 @@ public class TestOneEdenRegionAfterGC {
       "-Xlog:gc,gc+ergo*=trace",
       TestOneEdenRegionAfterGC.Allocate.class.getName(),
       "" + YoungGenSize);
-    return new OutputAnalyzer(pb.start());
   }
 
   public static void main(String args[]) throws Exception {
@@ -82,4 +81,3 @@ public class TestOneEdenRegionAfterGC {
     }
   }
 }
-

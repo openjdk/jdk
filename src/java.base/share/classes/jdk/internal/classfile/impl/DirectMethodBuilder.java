@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,16 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
-        implements TerminalMethodBuilder, WritableElement<MethodModel>, MethodInfo {
+        implements TerminalMethodBuilder, Util.Writable {
 
     final Utf8Entry name;
     final Utf8Entry desc;
@@ -48,20 +42,27 @@ public final class DirectMethodBuilder
     int[] parameterSlots;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
+                               ClassFileImpl context,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,
                                MethodModel original) {
-        super(constantPool);
+        super(constantPool, context);
         setOriginal(original);
-        this.name = nameInfo;
-        this.desc = typeInfo;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
         this.flags = flags;
     }
 
+    @Override
+    public MethodBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
+    }
+
     void setFlags(int flags) {
-        boolean wasStatic = (this.flags & Classfile.ACC_STATIC) != 0;
-        boolean isStatic = (flags & Classfile.ACC_STATIC) != 0;
+        boolean wasStatic = (this.flags & ClassFile.ACC_STATIC) != 0;
+        boolean isStatic = (flags & ClassFile.ACC_STATIC) != 0;
         if (wasStatic != isStatic)
             throw new IllegalArgumentException("Cannot change ACC_STATIC flag of method");
         this.flags = flags;
@@ -78,31 +79,43 @@ public final class DirectMethodBuilder
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        return Util.methodTypeSymbol(methodType());
+    }
+
+    @Override
     public int methodFlags() {
         return flags;
     }
 
     @Override
     public int parameterSlot(int paramNo) {
+        if (paramNo == 0) {
+            return ((flags & ClassFile.ACC_STATIC) != 0) ? 0 : 1;
+        }
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool, original);
+        return new BufferedCodeBuilder(this, constantPool, context, original);
     }
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
+        }
         return this;
     }
 
     private MethodBuilder withCode(CodeModel original,
                                   Consumer<? super CodeBuilder> handler) {
-        var cb = DirectCodeBuilder.build(this, handler, constantPool, original);
+        var cb = DirectCodeBuilder.build(this, handler, constantPool, context, original);
         writeAttribute(cb);
         return this;
     }
@@ -128,11 +141,8 @@ public final class DirectMethodBuilder
     }
 
     @Override
-    public void writeTo(BufWriter b) {
-        BufWriterImpl buf = (BufWriterImpl) b;
-        buf.writeU2(flags);
-        buf.writeIndex(name);
-        buf.writeIndex(desc);
+    public void writeTo(BufWriterImpl buf) {
+        buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
     }
 }

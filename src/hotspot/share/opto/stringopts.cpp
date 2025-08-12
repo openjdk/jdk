@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
@@ -203,7 +202,7 @@ class StringConcat : public ResourceObj {
       Node* uct = _uncommon_traps.at(u);
 
       // Build a new call using the jvms state of the allocate
-      address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+      address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
       const TypeFunc* call_type = OptoRuntime::uncommon_trap_Type();
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
@@ -257,6 +256,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
@@ -988,12 +994,21 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
 
-      // A test which leads to an uncommon trap which should be safe.
-      // Later this trap will be converted into a trap that restarts
+      // A test which leads to an uncommon trap. It is safe to convert the trap
+      // into a trap that restarts at the beginning as long as its test does not
+      // depend on intermediate results of the candidate chain.
       // at the beginning.
       if (otherproj->outcnt() == 1) {
         CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
         if (call != nullptr && call->_name != nullptr && strcmp(call->_name, "uncommon_trap") == 0) {
+          // First check for dependency on a toString that is going away during stacked concats.
+          if (_multiple &&
+              ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+               (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            fail = true;
+            break;
+          }
           // control flow leads to uct so should be ok
           _uncommon_traps.push(call);
           ctrl_path.push(call);
@@ -1175,7 +1190,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
       if (arg_val > p) {
         return __ intcon(i + d);
       }
-      p = 10 * p;
+      p = java_multiply(10, p);
     }
     return __ intcon(10 + d);
   }
@@ -1214,7 +1229,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   Node* final_size = new PhiNode(final_merge, TypeInt::INT);
   kit.gvn().set_type(final_size, TypeInt::INT);
 
-  kit.add_empty_predicates();
+  kit.add_parse_predicates();
   C->set_has_loops(true);
 
   RegionNode* loop = new RegionNode(3);
@@ -1299,8 +1314,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   //     if (i == 0) break;
   // }
 
-  // Add loop predicate first.
-  kit.add_empty_predicates();
+  // Add Parse Predicates first.
+  kit.add_parse_predicates();
 
   C->set_has_loops(true);
   RegionNode* head = new RegionNode(3);
@@ -1325,7 +1340,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                                ch, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                                ch, bt, MemNode::unordered, false /* require_atomic_access */,
                                 false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
@@ -1364,8 +1379,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   } else {
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                            sign, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
-                            false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                            sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
+                            (bt != T_BYTE) /* mismatched */);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -1458,9 +1473,14 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
 
   Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
   Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
-  // Check if destination address is aligned to HeapWordSize
-  const TypeInt* tdst = __ gvn().type(start)->is_int();
-  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Check if src array address is aligned to HeapWordSize
+  bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+  // If true, then check if dst array address is aligned to HeapWordSize
+  if (aligned) {
+    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
+                                  tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  }
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);
@@ -1681,7 +1701,7 @@ Node* PhaseStringOpts::allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node*
 
   // Mark the allocation so that zeroing is skipped since the code
   // below will overwrite the entire array
-  AllocateArrayNode* byte_alloc = AllocateArrayNode::Ideal_array_allocation(byte_array, _gvn);
+  AllocateArrayNode* byte_alloc = AllocateArrayNode::Ideal_array_allocation(byte_array);
   byte_alloc->maybe_set_complete(_gvn);
 
   if (ideal != nullptr) {
@@ -2009,8 +2029,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // The value field is final. Emit a barrier here to ensure that the effect
     // of the initialization is committed to memory before any code publishes
     // a reference to the newly constructed object (see Parse::do_exits()).
-    assert(AllocateNode::Ideal_allocation(result, _gvn) != nullptr, "should be newly allocated");
-    kit.insert_mem_bar(Op_MemBarRelease, result);
+    assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
+    kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
   } else {
     result = C->top();
   }

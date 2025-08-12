@@ -1,10 +1,10 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891 8269146 8269113
+ * @bug 8262891 8269146 8269113 8348928
  * @summary Verify errors related to pattern switches.
- * @enablePreview
  * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
+
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
         switch (o) {
@@ -127,12 +127,6 @@ public class SwitchErrors {
             default: break;
         }
     }
-    void primitivePattern(Object o) {
-        switch (o) {
-            case int i: break;
-            default: break;
-        }
-    }
     void patternAndDefault1(Object o) {
         switch (o) {
             case String s, default: break;
@@ -189,10 +183,10 @@ public class SwitchErrors {
                 break;
         }
     }
-    void test8269146a2(Integer i) {
+    void test8269146a2a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case Integer o when o != null, 1:
+            case Integer o, 1:
                 break;
             default:
                 break;
@@ -217,14 +211,14 @@ public class SwitchErrors {
     void test8269301a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case 1, Integer o when o != null, default:
+            case 1, Integer o, default:
                 break;
         }
     }
-    void test8269301b(Integer i) {
+    void test8269301ba(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case Integer o when o != null, 1, default:
+            case Integer o, 1, default:
                 break;
         }
     }
@@ -239,41 +233,31 @@ public class SwitchErrors {
             case CharSequence cs: break;
         }
     }
-    void primitiveToReference(int i) {
-        switch (i) {
-            case Integer j: break;
-        }
-    }
-    void referenceToPrimitive(Integer i) {
-        switch (i) {
-            case int j: break;
-        }
-    }
     void nullAndParenthesized1(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R r)): break;
+            case null, R r: break;
             default: break;
         }
     }
     void nullAndParenthesized2(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R(var v))): break;
+            case null, R(var v): break;
             default: break;
         }
     }
     void nullAndParenthesized3(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R r)): case null: break;
+            case R r: case null: break;
             default: break;
         }
     }
     void nullAndParenthesized4(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R(var v))): case null: break;
+            case R(var v): case null: break;
             default: break;
         }
     }
@@ -298,6 +282,47 @@ public class SwitchErrors {
         record R<T extends Number>() implements A<T> {}
         A<String> i = null;
         if (i instanceof R()) {
+        }
+    }
+    void test8269146a2b(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and constant:
+            case Integer o when o != null, 1:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269301ab(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case 1, Integer o when o != null, default:
+                break;
+        }
+    }
+    void test8269301bb(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case Integer o when o != null, 1, default:
+                break;
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928a(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _, R(int x, String _) -> {}
+            default -> {}
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928b(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _:
+            case R(int x, String _):
+                break;
+            default:
         }
     }
 }

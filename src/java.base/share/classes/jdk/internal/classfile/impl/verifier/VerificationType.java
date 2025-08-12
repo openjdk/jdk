@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,13 @@ import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
+
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.Util;
-import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
-import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
-/**
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.hpp">hotspot/share/classfile/verificationType.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.cpp">hotspot/share/classfile/verificationType.cpp</a>
- */
+import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
+
+/// From `verificationType.cpp`.
 class VerificationType {
 
     private static final int BitsPerByte = 8;
@@ -116,7 +114,7 @@ class VerificationType {
                             Category1                    = (Category1Flag         << BitsPerByte) | Primitive,
                             Category2                    = (Category2Flag         << BitsPerByte) | Primitive,
                             Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
-                            // Primitive values (type descriminator stored in most-signifcant bytes)
+                            // Primitive values (type discriminator stored in most-significant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
                             Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
                             Boolean                        = (ITEM_Boolean        << 2 * BitsPerByte) | Category1,
@@ -131,7 +129,7 @@ class VerificationType {
                             Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
                             BciMask                        = 0xffff << BitsPerByte,
-                            // A bci of -1 is an Unintialized-This
+                            // A bci of -1 is an Uninitialized-This
                             BciForThis = 0xffff,
                             // Query values
                             ReferenceQuery         = (ReferenceFlag         << BitsPerByte) | TypeQuery,
@@ -212,7 +210,7 @@ class VerificationType {
         // the 'query' types should technically return 'false' here, if we
         // allow this to return true, we can perform the test using only
         // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
-        // Since noone should call this on a query type anyway, this is ok.
+        // Since no one should call this on a query type anyway, this is ok.
         if(is_check()) context.verifyError("Must not be a check type (wrong value returned)");
         // should only return false if it's a primitive, and the category1 flag
         // is not set.
@@ -331,7 +329,7 @@ class VerificationType {
                     return from.is_integer();
                 default:
                     if (is_reference() && from.is_reference()) {
-                        return is_reference_assignable_from(from, context);
+                        return is_reference_assignable_from(from, context, null);
                     } else {
                         return false;
                     }
@@ -378,18 +376,25 @@ class VerificationType {
         }
     }
 
-    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String name, String from_name, boolean from_is_array, boolean from_is_object) {
+    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String target_name, String from_name,
+                                            boolean from_is_array, boolean from_is_object, boolean[] target_is_interface) {
         //let's delegate assignability to SPI
-        var desc = Util.toClassDesc(name);
-        if (assignResolver.isInterface(desc)) {
-            return !from_is_array || "java/lang/Cloneable".equals(name) || "java/io/Serializable".equals(name);
+        var targetClass = Util.toClassDesc(target_name);
+        boolean isInterface = assignResolver.isInterface(targetClass);
+
+        if (target_is_interface != null) {
+            target_is_interface[0] = isInterface;
+        }
+
+        if (isInterface) {
+            return !from_is_array || "java/lang/Cloneable".equals(target_name) || "java/io/Serializable".equals(target_name);
         } else if (from_is_object) {
-            return assignResolver.isAssignableFrom(desc, Util.toClassDesc(from_name));
+            return assignResolver.isAssignableFrom(targetClass, Util.toClassDesc(from_name));
         }
         return false;
     }
 
-    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context) {
+    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context, boolean[] target_is_interface) {
         ClassHierarchyImpl clsTree = context.class_hierarchy();
         if (from.is_null()) {
             return true;
@@ -401,7 +406,7 @@ class VerificationType {
             if (VerifierImpl.java_lang_Object.equals(name())) {
                 return true;
             }
-            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object());
+            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object(), target_is_interface);
         } else if (is_array() && from.is_array()) {
             VerificationType comp_this = get_component(context);
             VerificationType comp_from = from.get_component(context);

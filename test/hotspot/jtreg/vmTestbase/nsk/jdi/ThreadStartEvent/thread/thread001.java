@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,11 @@ public class thread001 {
     static private boolean eventsReceived;
     static private long eventTimeout;
 
-    public static void main (String args[]) {
-          System.exit(run(args, System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+         int result = run(argv,System.out);
+         if (result != 0) {
+             throw new RuntimeException("TEST FAILED with result " + result);
+         }
     }
 
     public static int run(final String args[], final PrintStream out) {
@@ -251,7 +254,7 @@ public class thread001 {
                                       // debug agent has already generated the THREAD_START event for the
                                       // original "main", so we end up with two THREAD_START events for "main".
                                       // We need to allow for this.
-                                      if ((System.getProperty("main.wrapper") != null) &&
+                                      if ((System.getProperty("test.thread.factory") != null) &&
                                               checkedThreads[i][0].equals("main") &&
                                               checkedThreads[i][1].equals("1")) {
                                           checkedThreads[i][1] = "2";

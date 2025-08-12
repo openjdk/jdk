@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.jndi.dns;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
@@ -45,12 +46,17 @@ import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 import javax.naming.ServiceUnavailableException;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.IntStream;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.security.jca.JCAUtil;
 
 // Some of this code began life as part of sun.javaos.net.DnsClient
@@ -93,7 +99,7 @@ public class DnsClient {
 
     private static final int DEFAULT_PORT = 53;
     private static final int TRANSACTION_ID_BOUND = 0x10000;
-    private static final int MIN_TIMEOUT = 50; // msec after which there are no retries.
+    private static final int MIN_TIMEOUT = 0; // msec after which there are no retries.
     private static final SecureRandom random = JCAUtil.getSecureRandom();
     private InetAddress[] servers;
     private int[] serverPorts;
@@ -103,6 +109,7 @@ public class DnsClient {
     private final ReentrantLock udpChannelLock = new ReentrantLock();
 
     private final Selector udpChannelSelector;
+    private final Cleaner.Cleanable selectorCleanup;
 
     private static final DNSDatagramChannelFactory factory =
             new DNSDatagramChannelFactory(random);
@@ -158,6 +165,16 @@ public class DnsClient {
             ne.setRootCause(e);
             throw ne;
         }
+        // register a cleaning action to close the Selector
+        // when this DNS client becomes phantom reachable
+        Selector sel = udpChannelSelector;
+        selectorCleanup = CleanerFactory.cleaner().register(this, () -> {
+            try {
+                sel.close();
+            } catch (IOException ignore) {
+            }
+        });
+
         reqs = Collections.synchronizedMap(
             new HashMap<Integer, ResourceRecord>());
         resps = Collections.synchronizedMap(new HashMap<Integer, byte[]>());
@@ -173,19 +190,11 @@ public class DnsClient {
         }
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
-    }
-
     // A lock to access the request and response queues in tandem.
     private Object queuesLock = new Object();
 
     public void close() {
-        try {
-            udpChannelSelector.close();
-        } catch (IOException ioException) {
-        }
+        selectorCleanup.clean();
         synchronized (queuesLock) {
             reqs.clear();
             resps.clear();
@@ -218,18 +227,26 @@ public class DnsClient {
 
         Exception caughtException = null;
         boolean[] doNotRetry = new boolean[servers.length];
-
+        // Holder for unfulfilled timeouts left for each server
+        AtomicLong[] unfulfilledUdpTimeouts = IntStream.range(0, servers.length)
+                .mapToObj(_ -> new AtomicLong())
+                .toArray(AtomicLong[]::new);
         try {
             //
             // The UDP retry strategy is to try the 1st server, and then
             // each server in order. If no answer, double the timeout
             // and try each server again.
             //
-            for (int retry = 0; retry < retries; retry++) {
-
+            for (int retry = 0; retry <= retries; retry++) {
+                boolean isLastRetry = retry == retries;
                 // Try each name server.
                 for (int i = 0; i < servers.length; i++) {
                     if (doNotRetry[i]) {
+                        continue;
+                    }
+                    // unfulfilledServerTimeout is always >= 0
+                    AtomicLong unfulfilledServerTimeout = unfulfilledUdpTimeouts[i];
+                    if (isLastRetry && unfulfilledServerTimeout.get() == 0) {
                         continue;
                     }
 
@@ -240,7 +257,7 @@ public class DnsClient {
                         }
 
                         byte[] msg = doUdpQuery(pkt, servers[i], serverPorts[i],
-                                                retry, xid);
+                                retry, xid, unfulfilledServerTimeout, isLastRetry);
                         assert msg != null;
                         Header hdr = new Header(msg, msg.length);
 
@@ -254,7 +271,12 @@ public class DnsClient {
 
                             // Try each server, starting with the one that just
                             // provided the truncated message.
-                            int retryTimeout = (timeout * (1 << retry));
+                            long retryTimeout = Math.clamp(
+                                    timeout * (1L << (isLastRetry
+                                            ? retry - 1
+                                            : retry)),
+                                    0L, Integer.MAX_VALUE);
+                            ;
                             for (int j = 0; j < servers.length; j++) {
                                 int ij = (i + j) % servers.length;
                                 if (doNotRetry[ij]) {
@@ -296,15 +318,23 @@ public class DnsClient {
                         if (debug) {
                             dprint("Caught Exception:" + ex);
                         }
-                        if (caughtException == null) {
+                        if (caughtException == null || servers.length == 1) {
+                            // If there are several servers we continue trying with other
+                            // servers, otherwise this exception will be reported
                             caughtException = ex;
+                        } else {
+                            // Best reporting effort
+                            caughtException.addSuppressed(ex);
                         }
                         doNotRetry[i] = true;
                     } catch (IOException e) {
                         if (debug) {
                             dprint("Caught IOException:" + e);
                         }
-                        if (caughtException == null) {
+                        if (caughtException instanceof CommunicationException ce) {
+                            e.addSuppressed(ce);
+                            caughtException = e;
+                        } else if (caughtException == null) {
                             caughtException = e;
                         }
                     } catch (ClosedSelectorException e) {
@@ -322,8 +352,13 @@ public class DnsClient {
                             caughtException = e;
                         }
                     } catch (NamingException e) {
-                        if (caughtException == null) {
+                        if (caughtException == null || servers.length == 1) {
+                            // If there are several servers we continue trying with other
+                            // servers, otherwise this exception will be reported
                             caughtException = e;
+                        } else {
+                            // Best reporting effort
+                            caughtException.addSuppressed(e);
                         }
                         doNotRetry[i] = true;
                     }
@@ -334,8 +369,8 @@ public class DnsClient {
             reqs.remove(xid); // cleanup
         }
 
-        if (caughtException instanceof NamingException) {
-            throw (NamingException) caughtException;
+        if (caughtException instanceof NamingException ne) {
+            throw ne;
         }
         // A network timeout or other error occurred.
         NamingException ne = new CommunicationException("DNS error");
@@ -419,10 +454,32 @@ public class DnsClient {
      * is enqueued with the corresponding xid in 'resps'.
      */
     private byte[] doUdpQuery(Packet pkt, InetAddress server,
-                                     int port, int retry, int xid)
+                              int port, int retry, int xid,
+                              AtomicLong unfulfilledTimeout,
+                              boolean unfulfilledOnly)
             throws IOException, NamingException {
 
         udpChannelLock.lock();
+
+
+        // use 1L below to ensure conversion to long and avoid potential
+        // integer overflow (timeout is an int).
+        // no point in supporting timeout > Integer.MAX_VALUE, clamp if needed
+        // timeout remaining after successive 'blockingReceive()'.
+        long thisIterationTimeout = unfulfilledOnly
+                ? 0L
+                : Math.clamp(timeout * (1L << retry), 0L, Integer.MAX_VALUE);
+
+        // Compensate with server's positive unfulfilled timeout.
+        // Calling method never supplies zero 'unfulfilledTimeout' when
+        // 'unfulfilledOnly' is 'true', therefore 'thisIterationTimeout'
+        // will always be a positive number, ie infinite timeout
+        // is not possible.
+        thisIterationTimeout += unfulfilledTimeout.get();
+
+        // Track left timeout for the current retry
+        long timeoutLeft = thisIterationTimeout;
+        long start = 0;
         try {
             try (DatagramChannel udpChannel = getDatagramChannel()) {
                 ByteBuffer opkt = ByteBuffer.wrap(pkt.getData(), 0, pkt.length());
@@ -431,13 +488,11 @@ public class DnsClient {
                 // Packets may only be sent to or received from this server address
                 InetSocketAddress target = new InetSocketAddress(server, port);
                 udpChannel.connect(target);
-                int pktTimeout = (timeout * (1 << retry));
                 udpChannel.write(opkt);
 
-                // timeout remaining after successive 'blockingReceive()'
-                int timeoutLeft = pktTimeout;
                 int cnt = 0;
                 boolean gotData = false;
+                start = System.nanoTime();
                 do {
                     // prepare for retry
                     if (gotData) {
@@ -451,9 +506,7 @@ public class DnsClient {
                                 ") for:" + xid + "    sock-timeout:" +
                                 timeoutLeft + " ms.");
                     }
-                    long start = System.currentTimeMillis();
-                    gotData = blockingReceive(udpChannel, ipkt, timeoutLeft);
-                    long end = System.currentTimeMillis();
+                    gotData = blockingReceive(udpChannel, target, ipkt, timeoutLeft);
                     assert gotData || ipkt.position() == 0;
                     if (gotData && isMatchResponse(data, xid)) {
                         return data;
@@ -466,17 +519,23 @@ public class DnsClient {
                             return cachedMsg;
                         }
                     }
-                    timeoutLeft = pktTimeout - ((int) (end - start));
+                    long elapsedMillis = TimeUnit.NANOSECONDS
+                                                 .toMillis(System.nanoTime() - start);
+                    timeoutLeft = thisIterationTimeout - elapsedMillis;
                 } while (timeoutLeft > MIN_TIMEOUT);
                 // no matching packets received within the timeout
                 throw new SocketTimeoutException();
             }
         } finally {
+            long carryoverTimeout = thisIterationTimeout -
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            unfulfilledTimeout.set(Math.max(0, carryoverTimeout));
             udpChannelLock.unlock();
         }
     }
 
-    boolean blockingReceive(DatagramChannel dc, ByteBuffer buffer, long timeout) throws IOException {
+    boolean blockingReceive(DatagramChannel dc, InetSocketAddress target,
+                            ByteBuffer buffer, long timeout) throws IOException {
         boolean dataReceived = false;
         // The provided datagram channel will be used by the caller only to receive data after
         // it is put to non-blocking mode
@@ -486,10 +545,15 @@ public class DnsClient {
             udpChannelSelector.select(timeout);
             var keys = udpChannelSelector.selectedKeys();
             if (keys.contains(selectionKey) && selectionKey.isReadable()) {
-                dc.receive(buffer);
-                dataReceived = true;
+                int before = buffer.position();
+                var senderAddress = dc.receive(buffer);
+                // Empty packets are ignored
+                dataReceived = target.equals(senderAddress) && buffer.position() > before;
             }
-            keys.clear();
+            // Avoid contention with Selector.close() if called by a clean-up thread
+            synchronized (keys) {
+                keys.clear();
+            }
         } finally {
             selectionKey.cancel();
             // Flush the canceled key out of the selected key set
@@ -745,14 +809,19 @@ class Tcp {
     private final Socket sock;
     private final java.io.InputStream in;
     final java.io.OutputStream out;
-    private int timeoutLeft;
+    private long timeoutLeft;
 
-    Tcp(InetAddress server, int port, int timeout) throws IOException {
+    Tcp(InetAddress server, int port, long timeout) throws IOException {
         sock = new Socket();
         try {
-            long start = System.currentTimeMillis();
-            sock.connect(new InetSocketAddress(server, port), timeout);
-            timeoutLeft = (int) (timeout - (System.currentTimeMillis() - start));
+            long start = System.nanoTime();
+            // It is safe to cast to int since the value is
+            // clamped by the caller
+            int intTimeout = (int) timeout;
+            sock.connect(new InetSocketAddress(server, port), intTimeout);
+            timeoutLeft = Duration.ofMillis(timeout)
+                    .minus(Duration.ofNanos((System.nanoTime() - start)))
+                    .toMillis();
             if (timeoutLeft <= 0)
                 throw new SocketTimeoutException();
 
@@ -780,14 +849,16 @@ class Tcp {
     private int readWithTimeout(SocketReadOp reader) throws IOException {
         if (timeoutLeft <= 0)
             throw new SocketTimeoutException();
-
-        sock.setSoTimeout(timeoutLeft);
-        long start = System.currentTimeMillis();
+        // It is safe to cast to int since the value is clamped
+        int intTimeout = (int) timeoutLeft;
+        sock.setSoTimeout(intTimeout);
+        long start = System.nanoTime();
         try {
             return reader.read();
         }
         finally {
-            timeoutLeft -= (int) (System.currentTimeMillis() - start);
+            timeoutLeft -= TimeUnit.NANOSECONDS.toMillis(
+                    System.nanoTime() - start);
         }
     }
 

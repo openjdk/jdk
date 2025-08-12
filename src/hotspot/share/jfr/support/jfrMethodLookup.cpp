@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
@@ -32,11 +31,11 @@
 
 // The InstanceKlass is assumed to be the method holder for the method to be looked up.
 static const Method* lookup_method(InstanceKlass* ik, int orig_method_id_num) {
-  assert(ik != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
   assert(orig_method_id_num >= 0, "invariant");
   assert(orig_method_id_num < ik->methods()->length(), "invariant");
   const Method* const m = ik->method_with_orig_idnum(orig_method_id_num);
-  assert(m != NULL, "invariant");
+  assert(m != nullptr, "invariant");
   assert(m->orig_method_idnum() == orig_method_id_num, "invariant");
   assert(!m->is_obsolete(), "invariant");
   assert(ik == m->method_holder(), "invariant");
@@ -44,7 +43,7 @@ static const Method* lookup_method(InstanceKlass* ik, int orig_method_id_num) {
 }
 
 const Method* JfrMethodLookup::lookup(const InstanceKlass* ik, traceid method_id) {
-  assert(ik != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
   return lookup_method(const_cast<InstanceKlass*>(ik), method_id_num(method_id));
 }
 
@@ -53,7 +52,7 @@ int JfrMethodLookup::method_id_num(traceid method_id) {
 }
 
 traceid JfrMethodLookup::method_id(const Method* method) {
-  assert(method != NULL, "invariant");
+  assert(method != nullptr, "invariant");
   return METHOD_ID(method->method_holder(), method);
 }
 

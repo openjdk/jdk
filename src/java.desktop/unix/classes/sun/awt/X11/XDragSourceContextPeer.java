@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.awt.X11;
 
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Toolkit;
 import java.awt.Window;
 
 import java.awt.datatransfer.DataFlavor;
@@ -113,6 +114,7 @@ public final class XDragSourceContextPeer
         return theInstance;
     }
 
+    @Override
     protected void startDrag(Transferable transferable,
                              long[] formats, Map<Long, DataFlavor> formatMap) {
         Component component = getTrigger().getComponent();
@@ -255,6 +257,7 @@ public final class XDragSourceContextPeer
      * set cursor
      */
 
+    @Override
     public void setCursor(Cursor c) throws InvalidDnDOperationException {
         XToolkit.awtLock();
         try {
@@ -264,6 +267,7 @@ public final class XDragSourceContextPeer
         }
     }
 
+    @Override
     protected void setNativeCursor(long nativeCtxt, Cursor c, int cType) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -303,6 +307,7 @@ public final class XDragSourceContextPeer
     /**
      * The caller must own awtLock.
      */
+    @Override
     public void cleanup(long time) {
         if (dndInProgress) {
             if (dragProtocol != null) {
@@ -393,10 +398,48 @@ public final class XDragSourceContextPeer
     }
 
     /**
+     * Our X11 code expects the drop target window to be a top level window
+     * and to have the XA_WM_STATE property.
+     * This is not true when performing drag and drop from XWayland
+     * to a native Wayland application.
+     * In this case XWayland creates a dummy window with only one property,
+     * XdndAware.
+     *
+     * @param window to test
+     * @return true if window has XdndAware property when running under Wayland
+     */
+    private static boolean isXWaylandDndAwareWindow(long window) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof SunToolkit)
+                || !((SunToolkit) toolkit).isRunningOnWayland()) {
+            return false;
+        }
+
+        WindowPropertyGetter wpg =
+            new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
+                                     false, XConstants.AnyPropertyType);
+
+        try {
+            int status =
+                wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+
+            return status == XConstants.Success
+                   && wpg.getData() != 0
+                   && wpg.getActualType() == XAtom.XA_ATOM;
+        } finally {
+            wpg.dispose();
+        }
+    }
+
+    /**
      * Returns the client window under the specified root subwindow.
      */
     private static long findClientWindow(long window) {
         if (XlibUtil.isTrueToplevelWindow(window)) {
+            return window;
+        }
+
+        if (isXWaylandDndAwareWindow(window)) {
             return window;
         }
 
@@ -755,18 +798,21 @@ public final class XDragSourceContextPeer
 
     /* XDragSourceProtocolListener implementation */
 
+    @Override
     public void handleDragReply(int action) {
         // NOTE: we have to use the current pointer location, since
         // the target didn't specify the coordinates for the reply.
         handleDragReply(action, xRoot, yRoot);
     }
 
+    @Override
     public void handleDragReply(int action, int x, int y) {
         // NOTE: we have to use the current modifiers state, since
         // the target didn't specify the modifiers state for the reply.
         handleDragReply(action, xRoot, yRoot, XWindow.getModifiers(eventState,0,0));
     }
 
+    @Override
     public void handleDragReply(int action, int x, int y, int modifiers) {
         if (action == DnDConstants.ACTION_NONE &&
             targetAction != DnDConstants.ACTION_NONE) {
@@ -787,23 +833,27 @@ public final class XDragSourceContextPeer
         targetAction = action;
     }
 
+    @Override
     public void handleDragFinished() {
         /* Assume that the drop was successful. */
         handleDragFinished(true);
     }
 
+    @Override
     public void handleDragFinished(boolean success) {
         /* Assume that the performed drop action is the latest drop action
            accepted by the drop target. */
         handleDragFinished(true, targetAction);
     }
 
+    @Override
     public void handleDragFinished(boolean success, int action) {
         // NOTE: we have to use the current pointer location, since
         // the target didn't specify the coordinates for the reply.
         handleDragFinished(success, action, xRoot, yRoot);
     }
 
+    @Override
     public void handleDragFinished(boolean success, int action, int x, int y) {
         dragDropFinished(success, action, x, y);
 

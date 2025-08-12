@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8041458
  * @summary profiling of arguments in C1 at MethodHandle invoke of intrinsic tries to profile popped argument.
  *
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:TieredStopAtLevel=3
  *                   compiler.profiling.TestMethodHandleInvokesIntrinsic
