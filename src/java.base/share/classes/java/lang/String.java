@@ -943,9 +943,8 @@ public final class String
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
     static byte[] getBytesNoReplacement(String s, Charset cs) throws CharacterCodingException {
-        Objects.requireNonNull(s, "s");
-        Objects.requireNonNull(cs, "cs");
-        byte[] val = s.value();
+        Objects.requireNonNull(cs);
+        byte[] val = s.value();     // Implicit null check on `s`
         byte coder = s.coder();
         if (cs == UTF_8.INSTANCE) {
             if (coder == LATIN1 && isASCII(val)) {
