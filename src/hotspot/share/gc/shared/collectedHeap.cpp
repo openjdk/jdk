@@ -607,10 +607,6 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-double percent_of(double component_cpu_time, double process_cpu_time) {
-  return process_cpu_time == 0 ? 0 : 100 * component_cpu_time / process_cpu_time;
-}
-
 void CollectedHeap::log_cpu_time() const {
   LogTarget(Info, cpu) cpuLog;
   if (!os::is_thread_cpu_time_supported() || !cpuLog.is_enabled()) {
