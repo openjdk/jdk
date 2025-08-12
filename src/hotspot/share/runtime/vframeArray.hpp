@@ -56,6 +56,9 @@ class vframeArrayElement {
     frame _frame;                                                // the interpreter frame we will unpack into
     int  _bci;                                                   // raw bci for this vframe
     bool _reexecute;                                             // whether we should reexecute this bytecode
+#if INCLUDE_JVMCI
+    bool _rethrow;                                               // from ScopeDesc::rethrow_exception()
+#endif
     Method*    _method;                                          // the method for this vframe
     MonitorChunk* _monitors;                                     // active monitors for this vframe
     StackValueCollection* _locals;
@@ -73,6 +76,9 @@ class vframeArrayElement {
   int raw_bci(void) const            { return _bci; }
   bool should_reexecute(bool is_top_frame, int exec_mode) const;
   bool should_reexecute(void) const  { return _reexecute; }
+#if INCLUDE_JVMCI
+  bool rethrow_exception(void) const  { return _rethrow; }
+#endif
 
   Method* method(void) const       { return _method; }
 

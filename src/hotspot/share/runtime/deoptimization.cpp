@@ -738,6 +738,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (exceptionObject() != nullptr) {
     current->set_exception_oop(exceptionObject());
     exec_mode = Unpack_exception;
+    assert(array->element(0)->rethrow_exception(), "must be");
   }
 #endif
 
@@ -993,13 +994,27 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       }
 
       // Verify stack depth and oops in frame
-      int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
-      int oopmap_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
-      int expr_ssize_before = iframe_expr_ssize + top_frame_expression_stack_adjustment;
-      int oopmap_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
-      if (!((is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) ||
-            (reexecute ? expr_ssize_before == oopmap_expr_invoke_ssize :
-                         iframe_expr_ssize == oopmap_expr_callee_ssize))) {
+      auto match = [&]() {
+        int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
+#if INCLUDE_JVMCI
+        if (is_top_frame && el->rethrow_exception()) {
+          return iframe_expr_ssize == 1;
+        }
+#endif
+        // This should only be needed for C1
+        if (is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) {
+          return true;
+        }
+        if (reexecute) {
+          int expr_ssize_before = iframe_expr_ssize + top_frame_expression_stack_adjustment;
+          int oopmap_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
+          return expr_ssize_before == oopmap_expr_invoke_ssize;
+        } else {
+          int oopmap_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
+          return iframe_expr_ssize == oopmap_expr_callee_ssize;
+        }
+      };
+      if (!match()) {
         // Print out some information that will help us debug the problem
         tty->print_cr("Wrong number of expression stack elements during deoptimization");
         tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
@@ -1013,6 +1028,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         tty->print_cr("  original should_reexecute = %s", el->should_reexecute() ? "true" : "false");
         tty->print_cr("  reexecute = %s%s", reexecute ? "true" : "false",
                       (reexecute != el->should_reexecute()) ? " (changed)" : "");
+#if INCLUDE_JVMCI
+        tty->print_cr("  rethrow_exception = %s", el->rethrow_exception() ? "true" : "false");
+#endif
         tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
         tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
         tty->print_cr("  Interpreted frames:");
