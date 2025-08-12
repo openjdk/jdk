@@ -1636,7 +1636,8 @@ private:
   private:
     // Sum of all wins regardless of where they happen.
     int _total_wins;
-    // Number of wins on a loop entry edge, which only pays dividens once per loop execution.
+    // Number of wins on a loop entry edge if the split is through a loop head,
+    // otherwise 0. Entry edge wins only pay dividends once on loop entry.
     int _loop_entry_wins;
     // Number of wins on a loop back-edge, which pay dividends on every iteration.
     int _loop_back_wins;
