@@ -312,8 +312,9 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       result->append(argx, mode(x));
       arguments_appended++;
     }
-    // Check if this concatenation would result in an excessive number
-    // of arguments and bail out in that case.
+    // Check if this concatenation would result in an excessive number of arguments
+    // -- leading to high memory use, compilation time, and later, a large number of IR nodes
+    // -- and bail out in that case.
     if (STACKED_CONCAT_UPPER_BOUND < arguments_appended) {
       return nullptr;
     }
