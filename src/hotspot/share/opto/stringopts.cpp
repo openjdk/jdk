@@ -295,6 +295,9 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   }
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
+
+  const int concat_argument_upper_bound = 100;
+  int arguments_appended = 0;
   for (int x = 0; x < num_arguments(); x++) {
     Node* argx = argument_uncast(x);
     if (argx == arg) {
@@ -303,8 +306,15 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       for (int y = 0; y < other->num_arguments(); y++) {
         result->append(other->argument(y), other->mode(y));
       }
+      arguments_appended += other->num_arguments();
     } else {
       result->append(argx, mode(x));
+      arguments_appended++;
+    }
+    // Check if this concatenation would result in an excessive number
+    // of arguments and bail out in that case.
+    if (concat_argument_upper_bound < arguments_appended) {
+      return nullptr;
     }
   }
   result->set_allocation(other->_begin);
@@ -680,14 +690,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-
-            // merge(other, arg) can return a concatenation of size
-            // sc->num_arguments() * other->num_arguments(),
-            // which is a problem in the case of repeated stacked concats.
-            // Put a limit at 100 arguments to guard against excessive resource use.
-            bool n_args_is_bounded = merged->num_arguments() < 100;
-
-            if (n_args_is_bounded && merged->validate_control_flow() && merged->validate_mem_flow()) {
+            if (merged != nullptr && merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
               Atomic::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {

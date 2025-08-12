@@ -26,9 +26,10 @@
  * @bug 8357105
  * @summary Test that repeated stacked string concatenations do not
  *          consume too many compilation resources.
- * @run main/othervm compiler.stringopts.TestStackedConcatsMany
- * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsMany::*
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-OptoScheduling compiler.stringopts.TestStackedConcatsMany
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsMany::f
  *                   compiler.stringopts.TestStackedConcatsMany
  */
 
@@ -37,13 +38,20 @@ package compiler.stringopts;
 public class TestStackedConcatsMany {
 
     public static void main (String... args) {
-        for (int i = 0; i < 10; i++) {
-            String s = f(" ");
+        new StringBuilder(); // Trigger loading of the StringBuilder class.
+        String s = f(); // warmup call
+        s = f();
+        String z = "xy";
+        for (int i = 0; i < 24; i++) {
+            z = z + z;
+        }
+        if (!(s.equals(z))) {
+            throw new RuntimeException("wrong result.");
         }
     }
 
-    static String f(String c) {
-        String s = " ";
+    static String f() {
+        String s = "xy";
         s = new StringBuilder().append(s).append(s).toString();
         s = new StringBuilder().append(s).append(s).toString();
 
