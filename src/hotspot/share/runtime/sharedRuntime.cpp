@@ -74,6 +74,7 @@
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "runtime/vframe_hp.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
@@ -1201,29 +1202,40 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
 
     if (!trust_bytecode && attached_method.not_null() && caller_is_jvmci) {
-      // invoke does not correspond to bytecode
       RegisterMap reg_map2(current,
                           RegisterMap::UpdateMap::include,
                           RegisterMap::ProcessFrames::include,
                           RegisterMap::WalkContinuation::skip);
       frame stubFrame   = current->last_frame();
       frame callerFrame = stubFrame.sender(&reg_map2);
-
-      Method* callee = attached_method();
-
-      if (attached_method->is_static()) {
-        bc = Bytecodes::_invokestatic;
-      } else {
-          receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
-        if (attached_method->method_holder()->is_interface()) {
-          bc = Bytecodes::_invokeinterface;
+      javaVFrame* jVFrame = vfst.asJavaVFrame();
+      assert(jVFrame->is_compiled_frame(), "should be compiled frame");
+      compiledVFrame* cVFrame = (compiledVFrame*) jVFrame;
+      bool should_reexecute = cVFrame->should_reexecute();
+      Bytecodes::Code code = caller->java_code_at(bci);
+      // TODO for Valhalla: If the bytecode is if_acmpeq or if_acmpne and the attached method performs a substitutability check, skip this logic.
+      // Valhalla adds handling for substitutability checks in this method.
+      bool is_substitutability_check = (code == Bytecodes::_if_acmpeq || code == Bytecodes::_if_acmpne) && false;
+      if (cVFrame->should_reexecute() && !is_substitutability_check) {
+        // For invoke bytecodes, the reexecute bit is not set (see Interpreter::bytecode_should_reexecute).
+        // Since the reexecute bit is set for this call, no corresponding invoke bytecode exists.
+        Method* callee = attached_method();
+        if (attached_method->is_static()) {
+          bc = Bytecodes::_invokestatic;
         } else {
-          bc = Bytecodes::_invokevirtual;
+            receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
+          if (attached_method->method_holder()->is_interface()) {
+            bc = Bytecodes::_invokeinterface;
+          } else {
+            bc = Bytecodes::_invokevirtual;
+          }
         }
+
+        LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+        return receiver;
       }
 
-      LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
-      return receiver;
+
     }
   #else
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
