@@ -36,14 +36,14 @@ void CodeBuffer::share_trampoline_for(relocInfo::relocType rtype, address dest, 
   }
 
   bool created;
-  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &created);
+  SharedTrampolineRequestsValue* value = _shared_trampoline_requests->put_if_absent(dest, &created);
   if (created) {
     _shared_trampoline_requests->maybe_grow();
-    offsets->first = rtype;
+    value->rtype = rtype;
   } else {
-    assert(offsets->first == rtype, "same destination with another type already exists");
+    assert(value->rtype == rtype, "same destination with another type already exists");
   }
-  offsets->second.add(caller_offset);
+  value->offsets.add(caller_offset);
   _finalize_stubs = true;
 }
 
@@ -56,10 +56,10 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   MacroAssembler masm(cb);
 
-  auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
+  auto emit = [&](address dest, const CodeBuffer::SharedTrampolineRequestsValue &value) {
     assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
-    relocInfo::relocType rtype = offsets.first;
-    LinkedListIterator<int> it(offsets.second.head());
+    relocInfo::relocType rtype = value.rtype;
+    LinkedListIterator<int> it(value.offsets.head());
     int offset = *it.next();
     if (rtype == relocInfo::static_call_type) {
       dest = SharedRuntime::get_resolve_static_call_stub();
