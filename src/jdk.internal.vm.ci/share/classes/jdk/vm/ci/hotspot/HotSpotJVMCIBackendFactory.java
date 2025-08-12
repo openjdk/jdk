@@ -56,11 +56,11 @@ public interface HotSpotJVMCIBackendFactory {
      * @return the set of converted values
      */
     static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeatures(
-            Class<CPUFeatureType> enumType,
-            Map<String, Long> constants,
-            LongFunction<Long> bitMaskSupplier,
-            LongFunction<Long> featuresSupplier,
-            Map<String, String> renaming) {
+                    Class<CPUFeatureType> enumType,
+                    Map<String, Long> constants,
+                    LongFunction<Long> bitMaskSupplier,
+                    LongFunction<Long> featuresSupplier,
+                    Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
         for (Entry<String, Long> e : constants.entrySet()) {

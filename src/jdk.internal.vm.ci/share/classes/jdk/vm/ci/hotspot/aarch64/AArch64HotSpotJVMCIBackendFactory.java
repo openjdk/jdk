@@ -44,7 +44,6 @@ import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
-
 public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
     private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
