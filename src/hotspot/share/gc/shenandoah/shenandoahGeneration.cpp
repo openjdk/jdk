@@ -421,6 +421,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   size_t old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
 
   if (old_available < old_consumed) {
+    log_info(gc, ergo)("Old has consumed more than available, truncate young promo reserve");
     // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
     // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
     assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
