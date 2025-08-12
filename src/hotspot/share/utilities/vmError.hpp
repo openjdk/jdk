@@ -143,8 +143,8 @@ class VMError : public AllStatic {
   static void clear_step_start_time();
 
   // Handshake/safepoint timed out threads
-  static Thread* _handshake_timed_out_thread;
-  static Thread* _safepoint_timed_out_thread;
+  static Thread* volatile _handshake_timed_out_thread;
+  static Thread* volatile _safepoint_timed_out_thread;
 
   WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
