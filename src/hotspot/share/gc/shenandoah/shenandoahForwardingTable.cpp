@@ -228,5 +228,7 @@ HeapWord* ShenandoahForwardingTable::forwardee(HeapWord* original) const {
 }
 
 void ShenandoahForwardingTable::zap_region() {
+#ifndef PRODUCT
   Copy::fill_to_aligned_words(_region->bottom(), reinterpret_cast<HeapWord*>(_table) - _region->bottom(), 0x12345678);
+#endif
 }
