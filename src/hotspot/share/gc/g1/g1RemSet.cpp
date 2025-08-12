@@ -900,13 +900,12 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for remembered sets. Several methods of it are called by a region's
   // card set iterator to drop card set remembered set entries onto the card.
-  // table. This is in addition to being the HG1eapRegionClosure to iterate over
-  // all region's remembered sets.
+  // table.
   //
   // We add a small prefetching cache in front of the actual work as dropping
   // onto the card table is basically random memory access. This improves
   // performance of this operation significantly.
-  class G1MergeCardSetClosure : public G1HeapRegionClosure {
+  class G1MergeCardSetClosure {
     friend class G1MergeCardSetCache;
 
     G1RemSetScanState* _scan_state;
@@ -953,7 +952,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-
     G1MergeCardSetClosure(G1RemSetScanState* scan_state) :
       _scan_state(scan_state),
       _ct(G1CollectedHeap::heap()->card_table()),
@@ -983,40 +981,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
       size_t cards_changed = _ct->mark_clean_range_as_from_remset(_region_base_idx + start_card_idx, length);
       _stats.inc_merged_cards(cards_changed);
       _stats.inc_total_cards(length);
-    }
-
-    // Helper to merge the cards in the card set for the given region onto the card
-    // table.
-    //
-    // Called directly for humongous starts regions because we should not add
-    // humongous eager reclaim candidates to the "all" list of regions to
-    // clear the card table by default as we do not know yet whether this region
-    // will be reclaimed (and reused).
-    // If the humongous region contains dirty cards, g1 will scan them
-    // because dumping the remembered set entries onto the card table will add
-    // the humongous region to the "dirty" region list to scan. Then scanning
-    // either clears the card during scan (if there is only an initial evacuation
-    // pass) or the "dirty" list will be merged with the "all" list later otherwise.
-    // (And there is no problem either way if the region does not contain dirty
-    // cards).
-    void merge_card_set_for_region(G1HeapRegion* r) {
-      assert(r->in_collection_set() || r->is_starts_humongous(), "must be");
-
-      G1HeapRegionRemSet* rem_set = r->rem_set();
-      assert(!rem_set->is_empty(), "should not be empty");
-
-      rem_set->iterate_for_merge(*this);
-    }
-
-    bool do_heap_region(G1HeapRegion* r) override {
-      assert(r->in_collection_set(), "must be");
-
-      _scan_state->add_all_dirty_region(r->hrm_index());
-      if (!r->rem_set()->is_empty()) {
-        merge_card_set_for_region(r);
-      }
-
-      return false;
     }
 
     G1MergeCardSetStats stats() {
@@ -1129,8 +1093,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
       if (!r->rem_set()->is_empty()) {
-        _cl.merge_card_set_for_region(r);
-
+        r->rem_set()->iterate_for_merge(_cl);
         // We should only clear the card based remembered set here as we will not
         // implicitly rebuild anything else during eager reclaim. Note that at the moment
         // (and probably never) we do not enter this path if there are other kind of

@@ -90,6 +90,12 @@ bool C2Compiler::init_c2_runtime() {
 
   compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
+  // If there was an error generating the blob then UseCompiler will
+  // have been unset and we need to skip the remaining initialization
+  if (!UseCompiler) {
+    return false;
+  }
+
   Compile::pd_compiler2_init();
 
   CompilerThread* thread = CompilerThread::current();

@@ -43,9 +43,15 @@ public:
     // snapshot current stack usage
     VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
-    ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
+    ReservedMemoryRegion rmr_found;
+    {
+      MemTracker::NmtVirtualMemoryLocker vml;
+      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
+    }
+
     ASSERT_TRUE(rmr_found.is_valid());
     ASSERT_EQ(rmr_found.base(), stack_end);
+
 
     int i = 0;
     address i_addr = (address)&i;
@@ -54,18 +60,20 @@ public:
     // stack grows downward
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
-      if (cmr.base() + cmr.size() == stack_top) {
-        EXPECT_TRUE(cmr.size() <= stack_size);
-        found_stack_top = true;
-      }
-      if(i_addr < stack_top && i_addr >= cmr.base()) {
-        found_i_addr = true;
-      }
-      i++;
-      return true;
-    });
-
+    {
+      MemTracker::NmtVirtualMemoryLocker vml;
+      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
+        if (cmr.base() + cmr.size() == stack_top) {
+          EXPECT_TRUE(cmr.size() <= stack_size);
+          found_stack_top = true;
+        }
+        if (i_addr < stack_top && i_addr >= cmr.base()) {
+          found_i_addr = true;
+        }
+        i++;
+        return true;
+      });
+    }
 
     // stack and guard pages may be contiguous as one region
     ASSERT_TRUE(i >= 1);
