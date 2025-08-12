@@ -5411,15 +5411,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, bool ad
   Node* control = pick_cfg_candidate(candidates);
 
   // find the frame pointer
-  StartNode* start = C->start();
-  Node* frame_ptr = nullptr;
-  for (DUIterator_Fast imax, i = start->fast_outs(imax); i < imax; i++) {
-    Node *u = start->fast_out(i);
-    if (u->is_Proj() && u->as_Proj()->_con == TypeFunc::FramePtr) {
-      frame_ptr = u;
-      break;
-    }
-  }
+  Node* frame_ptr = C->start()->proj_out(TypeFunc::FramePtr);
 
   // we do not actually care about IO and memory as it uses neither
   call->init_req( TypeFunc::Control,   control   );
