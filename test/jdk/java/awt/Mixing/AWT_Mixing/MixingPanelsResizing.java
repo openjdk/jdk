@@ -45,7 +45,7 @@ import test.java.awt.regtesthelpers.Util;
  */
 public class MixingPanelsResizing {
 
-    static final int COLOR_TOLERANCE_MACOSX = 15;
+    static final int TOLERANCE_MACOSX = 15;
     static volatile boolean failed = false;
 
     private static JFrame frame;
@@ -308,13 +308,13 @@ public class MixingPanelsResizing {
     private static boolean isAlmostEqualColor(Color color, Color refColor) {
         System.out.println("Comparing color: " + color + " with reference " +
                 "color: " + refColor);
-        return color.equals(refColor)
-                || (Math.abs(color.getRed() - refColor.getRed())
-                < COLOR_TOLERANCE_MACOSX
-                && Math.abs(color.getGreen() - refColor.getGreen())
-                < COLOR_TOLERANCE_MACOSX
-                && Math.abs(color.getBlue() - refColor.getBlue())
-                < COLOR_TOLERANCE_MACOSX;
+        return color.equals(refColor) ||
+               Math.abs(color.getRed() - refColor.getRed()) <
+                       TOLERANCE_MACOSX &&
+               Math.abs(color.getGreen() - refColor.getGreen()) <
+                       TOLERANCE_MACOSX &&
+               Math.abs(color.getBlue() - refColor.getBlue()) <
+                       TOLERANCE_MACOSX;
     }
 }// class JButtonInGlassPane
 class TestPassedException extends RuntimeException {
