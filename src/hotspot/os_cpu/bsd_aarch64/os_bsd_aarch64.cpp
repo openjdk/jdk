@@ -534,7 +534,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#ifdef __APPLE__
+#ifdef MACOS_W_XOR_X
 static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
 // This is a wrapper around the standard library function
 // pthread_jit_write_protect_np(3). We keep track of the state of
