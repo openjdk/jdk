@@ -120,7 +120,7 @@ public class TestMethodBinding extends CodeInstallationTest {
 
                 asm.recordMark(markId);
                 int[] pos = new int[2];
-                BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, 0, false, true, new JavaValue[0], new JavaKind[0], 0, 0, 0);
+                BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, 0, false, false, new JavaValue[0], new JavaKind[0], 0, 0, 0);
                 DebugInfo info = new DebugInfo(frame, new VirtualObject[0]);
                 if (resolvedMethod.isStatic()) {
                     info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
