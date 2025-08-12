@@ -1339,9 +1339,9 @@ void VMError::report(outputStream* st, bool _verbose) {
 }
 
 void VMError::set_handshake_timed_out_thread(Thread* thread) {
-  // Atomic::replace_if_null() operation is used to discard all possible 
+  // Atomic::replace_if_null() operation is used to discard all possible
   // updates except the 1st one. Those can hypothetically happen
-  // if more than one thread times out. 
+  // if more than one thread times out.
   // The default memory ordering guarantees visibility to other threads.
   Atomic::replace_if_null(&_handshake_timed_out_thread, thread);
 }
