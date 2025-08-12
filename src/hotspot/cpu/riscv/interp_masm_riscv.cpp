@@ -733,23 +733,20 @@ void InterpreterMacroAssembler::leave_jfr_critical_section() {
 void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
-  Label done;
 
   const Register tmp = c_rarg2;
   const Register obj_reg = c_rarg3; // Will contain the oop
   const Register tmp2 = c_rarg4;
   const Register tmp3 = c_rarg5;
 
-  Label slow_case;
-
-  // Load object pointer into obj_reg c_rarg3
+  // Load object pointer into obj_reg (c_rarg3)
   ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
+  Label done, slow_case;
   lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
   j(done);
 
   bind(slow_case);
-
   // Call the runtime routine for slow case
   call_VM_preemptable(noreg,
           CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
@@ -773,7 +770,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be rarg1");
-  Label done;
 
   const Register swap_reg   = x10;
   const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -782,13 +778,13 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
   save_bcp(); // Save in case of exception
 
-  // Load oop into obj_reg(c_rarg3)
+  // Load oop into obj_reg (c_rarg3)
   ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
   // Free entry
   sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-  Label slow_case;
+  Label done, slow_case;
   lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
   j(done);
 
