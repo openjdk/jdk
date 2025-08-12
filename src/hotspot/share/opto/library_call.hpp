@@ -129,6 +129,29 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
+  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+   * bailout before making changes because the bailing out decision might depend on new nodes
+   * (their types, for instance).
+   *
+   * So, if an intrinsic might cause this situation, one must start by saving the state in a
+   * SavedState by constructing it, and the state will be restored on destruction. If the
+   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+   */
+  class SavedState {
+    LibraryCallKit* _kit;
+    uint _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(LibraryCallKit*);
+    ~SavedState();
+    void discard();
+  };
+
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
