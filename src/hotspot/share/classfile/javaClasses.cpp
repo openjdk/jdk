@@ -1897,14 +1897,14 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
 
   class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
-    const Handle _thread_oop;
+    const Handle _thread_h;
     int _depth;
     bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceHandshakeClosure(Handle thread_oop) :
-        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_oop(thread_oop), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle thread_h) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
     ~GetStackTraceHandshakeClosure() {
@@ -1933,10 +1933,10 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       }
 
       bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_thread_oop())) {
-        // Ensure _thread_oop is still mounted to java_thread.
+      if (java_lang_VirtualThread::is_instance(_thread_h())) {
+        // Ensure _thread_h is still mounted to java_thread.
         const ContinuationEntry* ce = java_thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_oop())) {
+        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
           // Target thread has been unmounted.
           return;
         }
