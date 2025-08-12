@@ -465,8 +465,6 @@ protected:
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  jlong elapsed_gc_cpu_time() const;
-
   void print_before_gc() const;
   void print_after_gc() const;
 

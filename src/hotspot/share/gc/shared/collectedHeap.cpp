@@ -607,12 +607,13 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-double calc_usage(double component_cpu_time, double process_cpu_time) {
+double percent_of(double component_cpu_time, double process_cpu_time) {
   return process_cpu_time == 0 ? 0 : 100 * component_cpu_time / process_cpu_time;
 }
 
 void CollectedHeap::log_cpu_time() const {
-  if (!os::is_thread_cpu_time_supported()) {
+  LogTarget(Info, cpu) cpuLog;
+  if (!os::is_thread_cpu_time_supported() || !cpuLog.is_enabled()) {
     return;
   }
 
@@ -623,32 +624,28 @@ void CollectedHeap::log_cpu_time() const {
     return;
   }
 
-  LogTarget(Info, cpu) cpuLog;
-  if (cpuLog.is_enabled()) {
-    double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
-    CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
-    double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
-    double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
-    double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
+  double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
+  CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
+  double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
+  double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
+  double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
 
-    if (gc_cpu_time < process_cpu_time) {
-      cpuLog.print("=== CPU time Statistics =============================================================");
-      cpuLog.print("                                                                            CPUs");
-      cpuLog.print("                                                               s       %%  utilized");
-      cpuLog.print("   Process");
-      cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / os::elapsedTime());
-      cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, calc_usage(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / os::elapsedTime());
-      cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, calc_usage(gc_cpu_time, process_cpu_time), gc_cpu_time / os::elapsedTime());
-      cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, calc_usage(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / os::elapsedTime());
-      cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, calc_usage(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / os::elapsedTime());
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / os::elapsedTime());
+    cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, percent_of(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / os::elapsedTime());
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / os::elapsedTime());
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / os::elapsedTime());
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / os::elapsedTime());
 
-      if (UseStringDeduplication) {
-        double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
-        cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, calc_usage(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / os::elapsedTime());
-      }
-      cpuLog.print("=====================================================================================");
-
+    if (UseStringDeduplication) {
+      double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, percent_of(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / os::elapsedTime());
     }
+    cpuLog.print("=====================================================================================");
   }
 }
 
