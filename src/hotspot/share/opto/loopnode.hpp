@@ -1665,20 +1665,25 @@ private:
     }
     // Is this split profitable with respect to the policy?
     // In general this means that the split has to have more wins than specified
-    // in the policy. In loops, we need to be careful when splitting, because it
-    // can sufficiently rearrange the loop structure to prevent RCE and thus
-    // vectorization. Thus, we only deem splitting profitable if the win of a
-    // split is not on the entry edge, as such wins only pay off once and have
-    // a high chance of messing up the loop structure. However, if there are
-    // wins on the entry edge and also sufficient wins on the backadge, which
-    // pay off on every iteration, a split is also deemed profiable.
-    // If the policy is less than 0, a split is always profitable, i.e. we always
-    // split. This is needed when we split a node and then must also split a
-    // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
+    // in the policy. However, for loops we need to take into account where the
+    // wins happen.
     bool profitable(int policy) const {
       assert(_region->is_Loop() || (_loop_entry_wins == 0 && _loop_back_wins == 0), "wins on loop edges without a loop");
       assert(!_region->is_Loop() || _total_wins == _loop_entry_wins + _loop_back_wins, "missed some win");
-      return policy < 0 || (_loop_entry_wins == 0 && _total_wins > policy) || _loop_back_wins > policy;
+      // In loops, we need to be careful when splitting, because splitting nodes
+      // related to the iv through the phi can sufficiently rearrange the loop
+      // structure to prevent RCE and thus vectorization. Thus, we only deem splitting
+      // profitable if the win of a split is not on the entry edge, as such wins
+      // only pay off once and have a high chance of messing up the loop structure.
+      return (_loop_entry_wins == 0 && _total_wins > policy) ||
+      // If there are wins on the entry edge but the backadge also has sufficient wins,
+      // there is sufficient profitability to spilt regardless of the risk of messing
+      // up the loop structure.
+             _loop_back_wins > policy ||
+      // If the policy is less than 0, a split is always profitable, i.e. we always
+      // split. This is needed when we split a node and then must also split a
+      // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
+             policy < 0;
     }
   };
 
