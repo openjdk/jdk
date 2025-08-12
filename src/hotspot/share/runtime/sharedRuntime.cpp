@@ -1163,13 +1163,13 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
   return find_callee_info_helper(vfst, bc, callinfo, THREAD);
 }
 
-Method* SharedRuntime::extract_attached_method(vframeStream& vfst, bool* trust_bytecode) {
+Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
   nmethod* caller = vfst.nm();
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     CompiledICLocker ic_locker(caller);
-    return caller->attached_method_before_pc(pc, trust_bytecode);
+    return caller->attached_method_before_pc(pc);
   }
   return nullptr;
 }
@@ -1197,11 +1197,10 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
 
 
   #if INCLUDE_JVMCI
-    bool trust_bytecode = true;
-    methodHandle attached_method(THREAD, extract_attached_method(vfst, &trust_bytecode));
+    methodHandle attached_method(THREAD, extract_attached_method(vfst));
     bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
 
-    if (!trust_bytecode && attached_method.not_null() && caller_is_jvmci) {
+    if (attached_method.not_null() && caller_is_jvmci) {
       RegisterMap reg_map2(current,
                           RegisterMap::UpdateMap::include,
                           RegisterMap::ProcessFrames::include,

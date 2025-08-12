@@ -301,8 +301,8 @@ public abstract class TestAssembler {
         sites.add(new Call(target, code.position(), size, direct, debugInfo));
     }
 
-    protected void recordCall(int posBefore, int posAfter, InvokeTarget target, boolean direct, boolean bind, boolean trustBytecode, DebugInfo debugInfo) {
-        sites.add(new Call(target, posBefore, posAfter - posBefore, direct, debugInfo, bind, trustBytecode));
+    protected void recordCall(int posBefore, int posAfter, InvokeTarget target, boolean direct, boolean bind, DebugInfo debugInfo) {
+        sites.add(new Call(target, posBefore, posAfter - posBefore, direct, debugInfo, bind));
     }
 
     protected void recordMark(Object id) {

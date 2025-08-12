@@ -124,7 +124,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
   JVMCI_event_3("relocating (foreign call) at " PTR_FORMAT, p2i(inst));
 }
 
-void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, int method_index, bool trust_bytecode, JVMCI_TRAPS) {
+void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, int method_index, JVMCI_TRAPS) {
   NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
@@ -133,21 +133,21 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
     case INVOKEINTERFACE: {
       assert(!method->is_static(), "cannot call static method with invokeinterface");
       call = nativeCall_at(_instructions->start() + pc_offset);
-      _instructions->relocate(call->instruction_address(), virtual_call_Relocation::spec(_invoke_mark_pc, method_index, trust_bytecode));
+      _instructions->relocate(call->instruction_address(), virtual_call_Relocation::spec(_invoke_mark_pc, method_index));
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_virtual_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESTATIC: {
       assert(method->is_static(), "cannot call non-static method with invokestatic");
       call = nativeCall_at(_instructions->start() + pc_offset);
-      _instructions->relocate(call->instruction_address(), relocInfo::static_call_type, method_index, trust_bytecode);
+      _instructions->relocate(call->instruction_address(), relocInfo::static_call_type, method_index);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESPECIAL: {
       assert(!method->is_static(), "cannot call static method with invokespecial");
       call = nativeCall_at(_instructions->start() + pc_offset);
-      _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type, method_index, trust_bytecode);
+      _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type, method_index);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub(), JVMCI_CHECK);
       break;
     }

@@ -268,7 +268,7 @@ class CodeSection {
 
   // Emit a relocation.
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
-  void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0, bool trust_bytecode = true);
+  void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
   int alignment() const;
 

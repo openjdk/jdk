@@ -862,8 +862,8 @@ public:
 
   bool has_evol_metadata();
 
-  Method* attached_method(address call_pc, bool* trust_bytecode = nullptr);
-  Method* attached_method_before_pc(address pc, bool* trust_bytecode = nullptr);
+  Method* attached_method(address call_pc);
+  Method* attached_method_before_pc(address pc);
 
   // GC unloading support
   // Cleans unloaded klasses and unloaded nmethods in inline caches

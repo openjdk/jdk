@@ -737,45 +737,26 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   }
 }
 
-Method* nmethod::attached_method(address call_instr, bool* trust_bytecode) {
+Method* nmethod::attached_method(address call_instr) {
   assert(code_contains(call_instr), "not part of the nmethod");
   RelocIterator iter(this, call_instr, call_instr + 1);
   while (iter.next()) {
     if (iter.addr() == call_instr) {
       switch(iter.type()) {
-        case relocInfo::static_call_type: {
-          static_call_Relocation* reloc = iter.static_call_reloc();
-          if (trust_bytecode != nullptr){
-            *trust_bytecode = reloc->trust_bytecode();
-          }
-          return iter.static_call_reloc()->method_value();
-        }
-        case relocInfo::opt_virtual_call_type:  {
-          opt_virtual_call_Relocation* reloc = iter.opt_virtual_call_reloc();
-          if (trust_bytecode != nullptr){
-            *trust_bytecode = reloc->trust_bytecode();
-          }
-          return iter.opt_virtual_call_reloc()->method_value();
-        }
-        case relocInfo::virtual_call_type:  {
-          virtual_call_Relocation* reloc = iter.virtual_call_reloc();
-          if (trust_bytecode != nullptr){
-            *trust_bytecode = reloc->trust_bytecode();
-          }
-          return iter.virtual_call_reloc()->method_value();
-        }
-        default:
-          break;
+        case relocInfo::static_call_type:      return iter.static_call_reloc()->method_value();
+        case relocInfo::opt_virtual_call_type: return iter.opt_virtual_call_reloc()->method_value();
+        case relocInfo::virtual_call_type:     return iter.virtual_call_reloc()->method_value();
+        default:                               break;
       }
     }
   }
   return nullptr; // not found
 }
 
-Method* nmethod::attached_method_before_pc(address pc, bool* trust_bytecode) {
+Method* nmethod::attached_method_before_pc(address pc) {
   if (NativeCall::is_call_before(pc)) {
     NativeCall* ncall = nativeCall_before(pc);
-    return attached_method(ncall->instruction_address(), trust_bytecode);
+    return attached_method(ncall->instruction_address());
   }
   return nullptr; // not a call
 }

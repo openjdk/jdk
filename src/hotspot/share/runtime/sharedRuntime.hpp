@@ -411,7 +411,7 @@ class SharedRuntime: AllStatic {
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
   static Handle find_callee_info_helper(vframeStream& vfst, Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
 
-  static Method* extract_attached_method(vframeStream& vfst, bool* trust_bytecode = NULL);
+  static Method* extract_attached_method(vframeStream& vfst);
 
 #if defined(X86) && defined(COMPILER1)
   // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.
