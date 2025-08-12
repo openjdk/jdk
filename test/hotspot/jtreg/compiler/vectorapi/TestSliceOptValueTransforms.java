@@ -27,7 +27,7 @@
 * @summary Optimize vector slice operation with constant index using VPALIGNR instruction
 * @modules jdk.incubator.vector
 * @library /test/lib /
-* @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:TieredStopAtLevel=3 compiler.vectorapi.TestSliceOptValueTransforms
+* @run main/othervm compiler.vectorapi.TestSliceOptValueTransforms
 */
 package compiler.vectorapi;
 
