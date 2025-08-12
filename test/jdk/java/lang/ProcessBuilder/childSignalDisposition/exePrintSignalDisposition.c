@@ -72,7 +72,11 @@ int main(int argc, char** argv) {
         } else {
             printf("%p ", handler);
         }
+#ifdef _AIX
+        printf("%X\n", act.sa_flags);
+#else
         printf("%X %X\n", act.sa_flags, act.sa_mask);
+#endif
     }
 
     return 0;
