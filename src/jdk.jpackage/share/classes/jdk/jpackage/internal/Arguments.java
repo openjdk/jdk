@@ -37,6 +37,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -348,16 +349,13 @@ public class Arguments {
 
         WIN_UPDATE_URL ("win-update-url", OptionCategories.PLATFORM_WIN),
 
-        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-menu", true);
-        }),
+        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-menu")),
 
         WIN_MENU_GROUP ("win-menu-group", OptionCategories.PLATFORM_WIN),
 
-        WIN_SHORTCUT_HINT ("win-shortcut",
-                OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-shortcut", true);
-        }),
+        WIN_SHORTCUT_HINT ("win-shortcut", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-shortcut")),
 
         WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
                 OptionCategories.PLATFORM_WIN, () -> {
@@ -396,10 +394,8 @@ public class Arguments {
         LINUX_PACKAGE_DEPENDENCIES ("linux-package-deps",
                 OptionCategories.PLATFORM_LINUX),
 
-        LINUX_SHORTCUT_HINT ("linux-shortcut",
-                OptionCategories.PLATFORM_LINUX, () -> {
-            setOptionValue("linux-shortcut", true);
-        }),
+        LINUX_SHORTCUT_HINT ("linux-shortcut", OptionCategories.PLATFORM_LINUX,
+                createArgumentWithOptionalValueAction("linux-shortcut")),
 
         LINUX_MENU_GROUP ("linux-menu-group", OptionCategories.PLATFORM_LINUX);
 
@@ -478,8 +474,31 @@ public class Arguments {
             context().pos++;
         }
 
+        private static void prevArg() {
+            Objects.checkIndex(context().pos, context().argList.size());
+            context().pos--;
+        }
+
         private static boolean hasNextArg() {
             return context().pos < context().argList.size();
+        }
+
+        private static Runnable createArgumentWithOptionalValueAction(String option) {
+            Objects.requireNonNull(option);
+            return () -> {
+                nextArg();
+                if (hasNextArg()) {
+                    var value = getArg();
+                    if (value.startsWith("-")) {
+                        prevArg();
+                        setOptionValue(option, true);
+                    } else {
+                        setOptionValue(option, value);
+                    }
+                } else {
+                    setOptionValue(option, true);
+                }
+            };
         }
     }
 

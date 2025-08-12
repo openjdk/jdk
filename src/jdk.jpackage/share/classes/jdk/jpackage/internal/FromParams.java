@@ -52,6 +52,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -69,6 +70,7 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.ParseUtils;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 
@@ -171,11 +173,11 @@ final class FromParams {
     }
 
     static Optional<LauncherShortcut> findLauncherShortcut(
-            BundlerParamInfo<Boolean> shortcutParam,
+            BundlerParamInfo<String> shortcutParam,
             Map<String, ? super Object> mainParams,
             Map<String, ? super Object> launcherParams) {
 
-        Optional<Boolean> launcherValue;
+        Optional<String> launcherValue;
         if (launcherParams == mainParams) {
             // The main launcher
             launcherValue = Optional.empty();
@@ -183,17 +185,19 @@ final class FromParams {
             launcherValue = shortcutParam.findIn(launcherParams);
         }
 
-        return launcherValue.map(withShortcut -> {
-            if (withShortcut) {
-                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
-            } else {
-                return Optional.<LauncherShortcutStartupDirectory>empty();
-            }
-        }).or(() -> {
-            return shortcutParam.findIn(mainParams).map(_ -> {
-                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
-            });
-        }).map(LauncherShortcut::new);
+        return launcherValue.map(ParseUtils::parseLauncherShortcutForAddLauncher).or(() -> {
+            return Optional.ofNullable(mainParams.get(shortcutParam.getID())).map(toFunction(value -> {
+                if (value instanceof Boolean) {
+                    return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
+                } else {
+                    try {
+                        return ParseUtils.parseLauncherShortcutForMainLauncher((String)value);
+                    } catch (IllegalArgumentException ex) {
+                        throw I18N.buildConfigException("error.invalid-option-value", value, "--" + shortcutParam.getID()).create();
+                    }
+                }
+            }));
+        });
     }
 
     private static ApplicationLaunchers createLaunchers(
