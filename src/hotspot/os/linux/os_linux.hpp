@@ -164,8 +164,9 @@ class os::Linux {
   // Return the namespace pid if so, otherwise -1.
   static int get_namespace_pid(int vmid);
 
-  // Output structure for query_process_memory_info() (all values in KB)
-  struct meminfo_t {
+  // Output structure for query_process_memory_info()
+  // (memory values in KB)
+  struct process_info_t {
     ssize_t vmsize;     // current virtual size
     ssize_t vmpeak;     // peak virtual size
     ssize_t vmrss;      // current resident set size
@@ -174,12 +175,15 @@ class os::Linux {
     ssize_t rssanon;    // resident set size (anonymous mappings, needs 4.5)
     ssize_t rssfile;    // resident set size (file mappings, needs 4.5)
     ssize_t rssshmem;   // resident set size (shared mappings, needs 4.5)
+    ssize_t vmpte;      // size of page table entries (needs 2.6.10)
+    int threads;        // number of threads
+    int fdsize;         // number of file descriptors
   };
 
   // Attempts to query memory information about the current process and return it in the output structure.
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
-  static bool query_process_memory_info(meminfo_t* info);
+  static bool query_process_info(process_info_t* info);
 
   // Tells if the user asked for transparent huge pages.
   static bool _thp_requested;
@@ -452,6 +456,7 @@ class os::Linux {
     size_t uordblks;
     size_t fordblks;
     size_t keepcost;
+    unsigned num_trims; // Number of times the hotspot trimmed by calling os::trim_native_heap.
   };
   static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
 

@@ -351,8 +351,8 @@ julong os::physical_memory() {
 
 size_t os::rss() {
   size_t size = 0;
-  os::Linux::meminfo_t info;
-  if (os::Linux::query_process_memory_info(&info)) {
+  os::Linux::process_info_t info;
+  if (os::Linux::query_process_info(&info)) {
     size = info.vmrss * K;
   }
   return size;
@@ -2313,13 +2313,14 @@ void os::Linux::print_system_memory_info(outputStream* st) {
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
-bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
+bool os::Linux::query_process_info(os::Linux::process_info_t* info) {
   FILE* f = os::fopen("/proc/self/status", "r");
-  const int num_values = sizeof(os::Linux::meminfo_t) / sizeof(size_t);
-  int num_found = 0;
   char buf[256];
   info->vmsize = info->vmpeak = info->vmrss = info->vmhwm = info->vmswap =
-      info->rssanon = info->rssfile = info->rssshmem = -1;
+      info->rssanon = info->rssfile = info->rssshmem = info->vmpte = -1;
+  info->threads = info->fdsize = -1;
+  constexpr int num_values = 11;
+  int num_found = 0;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
       if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
@@ -2329,7 +2330,10 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
            (info->vmrss == -1     && sscanf(buf, "VmRSS: %zd kB", &info->vmrss) == 1) ||
            (info->rssanon == -1   && sscanf(buf, "RssAnon: %zd kB", &info->rssanon) == 1) || // Needs Linux 4.5
            (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1)  // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1) || // Needs Linux 4.5
+           (info->vmpte == -1     && sscanf(buf, "VmPTE: %zd kB", &info->vmpte) == 1) || // Needs Linux 2.6.10
+           (info->fdsize == -1    && sscanf(buf, "FDSize: %d", &info->fdsize) == 1) ||
+           (info->threads == -1   && sscanf(buf, "Threads: %d", &info->threads) == 1)
            )
       {
         num_found ++;
@@ -2375,8 +2379,8 @@ void os::Linux::print_process_memory_info(outputStream* st) {
 
   // Print virtual and resident set size; peak values; swap; and for
   //  rss its components if the kernel is recent enough.
-  meminfo_t info;
-  if (query_process_memory_info(&info)) {
+  process_info_t info;
+  if (query_process_info(&info)) {
     st->print_cr("Virtual Size: %zdK (peak: %zdK)", info.vmsize, info.vmpeak);
     st->print("Resident Set Size: %zdK (peak: %zdK)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
@@ -2661,8 +2665,8 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 #if INCLUDE_JFR
 
 void os::jfr_report_memory_info() {
-  os::Linux::meminfo_t info;
-  if (os::Linux::query_process_memory_info(&info)) {
+  os::Linux::process_info_t info;
+  if (os::Linux::query_process_info(&info)) {
     // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(info.vmrss * K);
@@ -4872,8 +4876,9 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors,
-  // and this in turn might:
+  // might fork and exec without closing all appropriate file descriptors
+  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
+  // turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or
@@ -5308,6 +5313,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
 }
 
 #ifdef __GLIBC__
+static unsigned g_num_trims = 0;
 void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
   if (g_mallinfo2) {
     new_mallinfo mi = g_mallinfo2();
@@ -5321,6 +5327,7 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     out->uordblks = mi.uordblks;
     out->fordblks = mi.fordblks;
     out->keepcost =  mi.keepcost;
+    out->num_trims = g_num_trims;
     *might_have_wrapped = false;
   } else if (g_mallinfo) {
     old_mallinfo mi = g_mallinfo();
@@ -5335,6 +5342,7 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     out->uordblks = (size_t)(unsigned)mi.uordblks;
     out->fordblks = (size_t)(unsigned)mi.fordblks;
     out->keepcost = (size_t)(unsigned)mi.keepcost;
+    out->num_trims = g_num_trims;
     *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
   } else {
     // We should have either mallinfo or mallinfo2
@@ -5352,14 +5360,14 @@ int os::Linux::malloc_info(FILE* stream) {
 
 bool os::trim_native_heap(os::size_change_t* rss_change) {
 #ifdef __GLIBC__
-  os::Linux::meminfo_t info1;
-  os::Linux::meminfo_t info2;
+  os::Linux::process_info_t info1;
+  os::Linux::process_info_t info2;
 
   bool have_info1 = rss_change != nullptr &&
-                    os::Linux::query_process_memory_info(&info1);
+                    os::Linux::query_process_info(&info1);
   ::malloc_trim(0);
   bool have_info2 = rss_change != nullptr && have_info1 &&
-                    os::Linux::query_process_memory_info(&info2);
+                    os::Linux::query_process_info(&info2);
   ssize_t delta = (ssize_t) -1;
   if (rss_change != nullptr) {
     if (have_info1 && have_info2 &&
@@ -5372,6 +5380,8 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
       rss_change->after = rss_change->before = SIZE_MAX;
     }
   }
+
+  g_num_trims ++;
 
   return true;
 #else
