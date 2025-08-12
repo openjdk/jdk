@@ -56,8 +56,8 @@ public class TestMemorySegmentByteSizeLongLoopLimit {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0",
-                  IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY,        "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)",        "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
