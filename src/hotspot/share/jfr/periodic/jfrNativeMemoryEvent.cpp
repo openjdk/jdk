@@ -59,6 +59,9 @@ void JfrNativeMemoryEvent::send_total_event(const Ticks& timestamp) {
   event.set_starttime(timestamp);
   event.set_reserved(usage->total_reserved());
   event.set_committed(usage->total_committed());
+  event.set_mallocOutstanding(usage->malloc_total());
+  event.set_mallocPeak(usage->malloc_peak());
+  event.set_mallocUnsafe(usage->malloc_unsafe());
   event.commit();
 }
 

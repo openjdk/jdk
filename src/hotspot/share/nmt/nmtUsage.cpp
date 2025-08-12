@@ -37,7 +37,8 @@ const NMTUsageOptions NMTUsage::OptionsNoTS = { false, true, true };
 
 NMTUsage::NMTUsage(NMTUsageOptions options) :
     _malloc_by_type(),
-    _malloc_total(),
+    _malloc_total(0),
+    _malloc_peak(0),
     _vm_by_type(),
     _vm_total(),
     _usage_options(options) { }

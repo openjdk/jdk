@@ -2696,6 +2696,7 @@ void os::jfr_report_process_size() {
 
     size_t malloc_outstanding = 0;
     size_t malloc_retained = 0;
+    unsigned num_trims = 0;
 #ifdef __GLIBC__
     bool might_have_wrapped = false;
     os::Linux::glibc_mallinfo mi;
@@ -2703,10 +2704,12 @@ void os::jfr_report_process_size() {
     if (!might_have_wrapped) {
       malloc_outstanding = mi.uordblks + mi.hblkhd;
       malloc_retained = mi.fordblks;
+      num_trims = mi.num_trims;
     }
 #endif
     e.set_libcMallocOutstanding(malloc_outstanding);
     e.set_libcMallocRetention(malloc_retained);
+    e.set_libcTrims(num_trims);
     e.commit();
   }
 }
