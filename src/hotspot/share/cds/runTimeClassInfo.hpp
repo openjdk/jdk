@@ -77,13 +77,17 @@ private:
   u4 _klass_offset;
   u4 _nest_host_offset;
   int _num_verifier_constraints;
+  int _num_old_verifier_dependencies;
   int _num_loader_constraints;
 
+  // The following optional fields are sorted (somewhat) by access frequency.
+  //
   // optional CrcInfo                 _crc;  (only for UNREGISTERED classes)
   // optional InstanceKlass*          _nest_host
   // optional RTLoaderConstraint      _loader_constraint_types[_num_loader_constraints]
   // optional RTVerifierConstraint    _verifier_constraints[_num_verifier_constraints]
   // optional char                    _verifier_constraint_flags[_num_verifier_constraints]
+  // optional u4                      _old_verifier_dependencies[_num_old_verifier_dependencies]
   // optional RTEnumKlassStaticFields _enum_klass_static_fields;
 
   static size_t header_size_size() {
@@ -94,6 +98,9 @@ private:
   }
   static size_t verifier_constraint_flags_size(int num_verifier_constraints) {
     return align_up(sizeof(char) * num_verifier_constraints, wordSize);
+  }
+  static size_t old_verifier_dependencies_size(int num_old_verifier_dependencies) {
+    return align_up(sizeof(u4) * num_old_verifier_dependencies, wordSize);
   }
   static size_t loader_constraints_size(int num_loader_constraints) {
     return align_up(sizeof(RTLoaderConstraint) * num_loader_constraints, wordSize);
@@ -115,15 +122,17 @@ private:
 public:
   InstanceKlass* klass() const;
   int num_verifier_constraints() const { return _num_verifier_constraints; }
+  int num_old_verifier_dependencies() const { return _num_old_verifier_dependencies; }
   int num_loader_constraints() const { return _num_loader_constraints; }
-  static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints,
-                          int num_enum_klass_static_fields) {
+  static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_old_verifier_dependencies,
+                          int num_loader_constraints, int num_enum_klass_static_fields) {
     return header_size_size() +
            crc_size(klass) +
            nest_host_size(klass) +
            loader_constraints_size(num_loader_constraints) +
            verifier_constraints_size(num_verifier_constraints) +
            verifier_constraint_flags_size(num_verifier_constraints) +
+           old_verifier_dependencies_size(num_old_verifier_dependencies) +
            enum_klass_static_fields_size(num_enum_klass_static_fields);
   }
 
@@ -145,14 +154,19 @@ private:
   size_t verifier_constraint_flags_offset() const {
     return verifier_constraints_offset() + verifier_constraints_size(_num_verifier_constraints);
   }
-  size_t enum_klass_static_fields_offset() const {
+  size_t old_verifier_dependencies_offset() const {
     return verifier_constraint_flags_offset() + verifier_constraint_flags_size(_num_verifier_constraints);
+  }
+  size_t enum_klass_static_fields_offset() const {
+    return old_verifier_dependencies_offset() + old_verifier_dependencies_size(_num_old_verifier_dependencies);
   }
 
   void check_verifier_constraint_offset(int i) const {
     assert(0 <= i && i < _num_verifier_constraints, "sanity");
   }
-
+  void check_old_verifier_constraint_offset(int i) const {
+    assert(0 <= i && i < _num_old_verifier_dependencies, "sanity");
+  }
   void check_loader_constraint_offset(int i) const {
     assert(0 <= i && i < _num_loader_constraints, "sanity");
   }
@@ -175,10 +189,19 @@ public:
     check_verifier_constraint_offset(i);
     return verifier_constraints() + i;
   }
+  Symbol* old_verifier_constraint_at(int i) {
+    check_old_verifier_constraint_offset(i);
+    return ArchiveUtils::offset_to_archived_address<Symbol*>(old_verifier_dependencies()[i]);
+  }
 
   char* verifier_constraint_flags() {
     assert(_num_verifier_constraints > 0, "sanity");
     return (char*)(address(this) + verifier_constraint_flags_offset());
+  }
+
+  u4* old_verifier_dependencies() {
+    assert(_num_old_verifier_dependencies > 0, "sanity");
+    return (u4*)(address(this) + old_verifier_dependencies_offset());
   }
 
   InstanceKlass* nest_host() {
