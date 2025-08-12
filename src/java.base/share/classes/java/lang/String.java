@@ -848,11 +848,11 @@ public final class String
         return encodeWithEncoder(cs, coder, val);
     }
 
-    private static <E extends Exception> byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val) {
+    private static byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val) {
         return encodeWithEncoder(cs, coder, val, null);
     }
 
-    private static <E extends Exception> byte[] encodeWithEncoderNoReplacement(Charset cs, byte coder, byte[] val)
+    private static byte[] encodeWithEncoderNoReplacement(Charset cs, byte coder, byte[] val)
             throws CharacterCodingException {
         return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
     }
@@ -1125,11 +1125,11 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
-    private static <E extends Exception> int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
+    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
     }
 
-    private static <E extends Exception> int decodeUTF8_UTF16NoReplacement(
+    private static int decodeUTF8_UTF16NoReplacement(
             byte[] src, int sp, int sl, byte[] dst, int dp)
             throws MalformedInputException {
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, MalformedInputException.class);
