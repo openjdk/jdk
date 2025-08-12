@@ -53,9 +53,9 @@ public class TestMemorySegmentField {
 
     static int zeroInvarI = 0;
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_ANY, "> 0",
-                  IRNode.ADD_VB, IRNode.VECTOR_SIZE_ANY,        "> 0",
-                  IRNode.STORE_VECTOR,                          "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testFields() {
