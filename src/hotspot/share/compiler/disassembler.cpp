@@ -22,12 +22,12 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/codeCache.hpp"
-#include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"

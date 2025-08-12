@@ -22,10 +22,10 @@
  *
  */
 
+#include "classfile/loaderConstraints.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/loaderConstraints.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"

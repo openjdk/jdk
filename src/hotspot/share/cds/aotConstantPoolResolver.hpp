@@ -26,13 +26,13 @@
 #define SHARE_CDS_AOTCONSTANTPOOLRESOLVER_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/macros.hpp"
 
 class ConstantPool;
 class constantPoolHandle;

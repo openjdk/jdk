@@ -26,14 +26,14 @@
 #define SHARE_CDS_ARCHIVEHEAPWRITER_HPP
 
 #include "cds/heapShared.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "oops/oopHandle.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/macros.hpp"
 
 class MemRegion;
 

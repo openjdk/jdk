@@ -29,8 +29,8 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/hashtable.hpp"
 

@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 #define SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 
-
 #include "classfile/classLoaderData.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
@@ -33,7 +32,6 @@
 #include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.hpp"
-
 
 class ClassLoaderStatsDCmd : public DCmd {
 public:

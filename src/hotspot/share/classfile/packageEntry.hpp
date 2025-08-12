@@ -30,9 +30,9 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/hashtable.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif

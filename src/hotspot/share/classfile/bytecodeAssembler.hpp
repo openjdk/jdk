@@ -32,7 +32,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
 
-
 /**
  * Bytecode Assembler
  *
