@@ -134,7 +134,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection,
-                                         StackIntrospection stackIntrospection) {
+                    StackIntrospection stackIntrospection) {
         return new JVMCIBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
     }
 }

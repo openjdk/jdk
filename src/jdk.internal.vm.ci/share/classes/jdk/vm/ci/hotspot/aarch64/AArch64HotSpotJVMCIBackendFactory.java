@@ -22,6 +22,12 @@
  */
 package jdk.vm.ci.hotspot.aarch64;
 
+import static java.util.Collections.emptyMap;
+import static jdk.vm.ci.common.InitTimer.timer;
+
+import java.util.EnumSet;
+import java.util.Map;
+
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.aarch64.AArch64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
@@ -38,18 +44,13 @@ import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
-import java.util.EnumSet;
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
-import static jdk.vm.ci.common.InitTimer.timer;
 
 public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
     private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
-        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, idx -> 1L << idx, idx -> config.vmVersionFeatures, emptyMap());
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, idx -> 1L << idx, _ -> config.vmVersionFeatures, emptyMap());
     }
 
     private static TargetDescription createTarget(AArch64HotSpotVMConfig config) {
@@ -124,7 +125,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection,
-                                         StackIntrospection stackIntrospection) {
+                    StackIntrospection stackIntrospection) {
         return new JVMCIBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
     }
 }
