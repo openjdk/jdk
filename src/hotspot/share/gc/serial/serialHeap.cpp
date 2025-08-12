@@ -513,38 +513,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return nullptr;
 }
 
-void SerialHeap::process_roots(ScanningOption so,
-                               OopClosure* strong_roots,
-                               CLDClosure* strong_cld_closure,
-                               CLDClosure* weak_cld_closure,
-                               NMethodToOopClosure* code_roots) {
-  // General roots.
-  assert(code_roots != nullptr, "code root closure should always be set");
-
-  ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
-
-  // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
-  NMethodToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
-
-  Threads::oops_do(strong_roots, roots_from_code_p);
-
-  OopStorageSet::strong_oops_do(strong_roots);
-
-  if (so & SO_ScavengeCodeCache) {
-    assert(code_roots != nullptr, "must supply closure for code cache");
-
-    // We only visit parts of the CodeCache when scavenging.
-    ScavengableNMethods::nmethods_do(code_roots);
-  }
-  if (so & SO_AllCodeCache) {
-    assert(code_roots != nullptr, "must supply closure for code cache");
-
-    // CMSCollector uses this to do intermediate-strength collections.
-    // We scan the entire code cache, since CodeCache::do_unloading is not called.
-    CodeCache::nmethods_do(code_roots);
-  }
-}
-
 template <typename OopClosureType>
 static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord** from) {
   assert(*from != nullptr, "precondition");
@@ -635,9 +603,6 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
-  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                            false /* unregister_nmethods_during_purge */,
-                            false /* lock_nmethod_free_separately */);
 
   STWGCTimer* gc_timer = SerialFullGC::gc_timer();
   gc_timer->register_gc_start();
@@ -661,13 +626,6 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   // Adjust generation sizes.
   _old_gen->compute_new_size();
   _young_gen->compute_new_size();
-
-  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-  DEBUG_ONLY(MetaspaceUtils::verify();)
-
-  // Need to clear claim bits for the next mark.
-  ClassLoaderDataGraph::clear_claimed_marks();
 
   _old_gen->update_promote_stats();
 
