@@ -67,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  SplitThruPhiWins wins;
+  SplitThruPhiWins wins(region);
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -120,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins.add_win(region, i);
+      wins.add_win(i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -135,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins.add_win(region, i);
+        wins.add_win(i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -143,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins.add_win(region, i);
+          wins.add_win(i);
           x = y;
         } else {
           // Else x is a new node we are keeping

@@ -1634,6 +1634,7 @@ private:
   // Class to keep track of wins in split_thru_phi.
   class SplitThruPhiWins {
   private:
+    const Node* _region;
     // Sum of all wins regardless of where they happen.
     int _total_wins;
     // Number of wins on a loop entry edge if the split is through a loop head,
@@ -1643,16 +1644,17 @@ private:
     int _loop_back_wins;
 
   public:
-    SplitThruPhiWins() :
+    SplitThruPhiWins(const Node* region) :
+      _region(region),
       _total_wins(0),
       _loop_entry_wins(0),
       _loop_back_wins(0) {};
 
     void reset() {_total_wins = 0; _loop_entry_wins = 0; _loop_back_wins = 0;}
-    void add_win(Node* region, int ctrl_index) {
-      if (region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+    void add_win(int ctrl_index) {
+      if (_region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
         _loop_entry_wins++;
-      } else if (region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+      } else if (_region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
         _loop_back_wins++;
       }
       _total_wins++;
