@@ -37,8 +37,9 @@ class PackageSnippets {
         KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
         KeyPair kp = g.generateKeyPair();
 
-        // The HPKE sender side is initialized with the recipient's public key
-        // and default HPKEParameterSpec with an application-supplied info.
+        // The HPKE sender cipher is initialized with the recipient's public
+        // key and HPKEParameterSpec using specified algorithm identifiers
+        // and application-supplied info.
         Cipher senderCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec ps = HPKEParameterSpec.of(
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
@@ -47,12 +48,13 @@ class PackageSnippets {
                 .info("app_info".getBytes(StandardCharsets.UTF_8));
         senderCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
-        // Retrieve the key encapsulation message (the KEM output) from the sender.
+        // Retrieve the key encapsulation message (from the KEM step) from
+        // the sender.
         byte[] kemEncap = senderCipher.getIV();
 
         // The HPKE recipient side is initialized with its own private key,
-        // the same algorithm identifiers as used by the sender,
-        // and the key encapsulation message from the sender.
+        // HPKEParameterSpec using the same algorithm identifiers as used by
+        // the sender, and the key encapsulation message from the sender.
         Cipher recipientCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec pr = HPKEParameterSpec.of(
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
