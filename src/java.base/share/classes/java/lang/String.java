@@ -785,7 +785,7 @@ public final class String
                     return new String(src, LATIN1);
                 return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
-                throw malformedInputException(src);
+                throw malformedInputException(src, MalformedInputException.class);
             }
         }
 
@@ -848,12 +848,23 @@ public final class String
         return encodeWithEncoder(cs, coder, val);
     }
 
-    private static byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val) {
+    private static <E extends Exception> byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val) {
+        return encodeWithEncoder(cs, coder, val, null);
+    }
+
+    private static <E extends Exception> byte[] encodeWithEncoderNoReplacement(Charset cs, byte coder, byte[] val)
+            throws CharacterCodingException {
+        return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
+    }
+
+    private static <E extends Exception> byte[] encodeWithEncoder(
+            Charset cs, byte coder, byte[] val, Class<E> characterCodingException)
+            throws E {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        // Fast-path with `ArrayEncoder` implies replacement.
-        if (ce instanceof ArrayEncoder ae) {
+        // fastpath with ArrayEncoder implies replacement.
+        if (characterCodingException == null && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
@@ -876,8 +887,10 @@ public final class String
         if (len == 0) {
             return ba;
         }
-        ce.onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        if (characterCodingException == null) {
+            ce.onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        }
         char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
                 : StringUTF16.toChars(val);
         ByteBuffer bb = ByteBuffer.wrap(ba);
@@ -890,29 +903,14 @@ public final class String
             if (!cr.isUnderflow())
                 cr.throwException();
         } catch (CharacterCodingException x) {
-            throw new Error(x);
+            if (characterCodingException != null) {
+                @SuppressWarnings("unchecked")
+                E cce = (E) x;
+                throw cce;
+            } else {
+                throw new Error(x);
+            }
         }
-        return trimArray(ba, bb.position());
-    }
-
-    private static byte[] encodeWithEncoderNoReplacement(Charset cs, byte coder, byte[] val) throws CharacterCodingException {
-        CharsetEncoder ce = cs.newEncoder();
-        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
-        int en = scale(len, ce.maxBytesPerChar());
-        byte[] ba = new byte[en];
-        if (len == 0) {
-            return ba;
-        }
-        char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
-                : StringUTF16.toChars(val);
-        ByteBuffer bb = ByteBuffer.wrap(ba);
-        CharBuffer cb = CharBuffer.wrap(ca, 0, len);
-        CoderResult cr = ce.encode(cb, bb, true);
-        if (!cr.isUnderflow())
-            cr.throwException();
-        cr = ce.flush(bb);
-        if (!cr.isUnderflow())
-            cr.throwException();
         return trimArray(ba, bb.position());
     }
 
@@ -966,7 +964,7 @@ public final class String
                 if (isASCII(val)) {
                     return val;
                 } else {
-                    throw unmappableCharacterException(val);
+                    throw unmappableCharacterException(val, UnmappableCharacterException.class);
                 }
             }
         }
@@ -1012,6 +1010,14 @@ public final class String
     }
 
     private static byte[] encode8859_1(byte coder, byte[] val) {
+        return encode8859_1(coder, val, null);
+    }
+
+    private static byte[] encode8859_1NoReplacement(byte coder, byte[] val) throws UnmappableCharacterException {
+        return encode8859_1(coder, val, UnmappableCharacterException.class);
+    }
+
+    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> unmappableCharacterException) throws E {
         if (coder == LATIN1) {
             return val.clone();
         }
@@ -1025,6 +1031,9 @@ public final class String
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
+                if (unmappableCharacterException != null) {
+                    throw unmappableCharacterException(sp, unmappableCharacterException);
+                }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
                         Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
@@ -1032,28 +1041,6 @@ public final class String
                 }
                 dst[dp++] = '?';
                 len = sl - sp;
-            }
-        }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
-    }
-
-    private static byte[] encode8859_1NoReplacement(byte coder, byte[] val) throws UnmappableCharacterException {
-        if (coder == LATIN1) {
-            return val.clone();
-        }
-        int len = val.length >> 1;
-        byte[] dst = new byte[len];
-        int dp = 0;
-        int sp = 0;
-        while (sp < len) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
-            sp = sp + ret;
-            dp = dp + ret;
-            if (ret != len) {
-                throw unmappableCharacterException(sp);
             }
         }
         if (dp == dst.length) {
@@ -1139,7 +1126,19 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
-    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
+    private static <E extends Exception> int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
+    }
+
+    private static <E extends Exception> int decodeUTF8_UTF16NoReplacement(
+            byte[] src, int sp, int sl, byte[] dst, int dp)
+            throws MalformedInputException {
+        return decodeUTF8_UTF16(src, sp, sl, dst, dp, MalformedInputException.class);
+    }
+
+    private static <E extends Exception> int decodeUTF8_UTF16(
+            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> malformedInputException)
+            throws E {
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1148,12 +1147,18 @@ public final class String
                 if (sp < sl) {
                     int b2 = src[sp++];
                     if (isNotContinuation(b2)) {
+                        if (malformedInputException != null) {
+                            throw malformedInputException(sp - 1, 1, malformedInputException);
+                        }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp--;
                     } else {
                         StringUTF16.putChar(dst, dp++, decode2(b1, b2));
                     }
                     continue;
+                }
+                if (malformedInputException != null) {
+                    throw malformedInputException(sp, 1, malformedInputException);  // underflow()
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1162,12 +1167,18 @@ public final class String
                     int b2 = src[sp++];
                     int b3 = src[sp++];
                     if (isMalformed3(b1, b2, b3)) {
+                        if (malformedInputException != null) {
+                            throw malformedInputException(sp - 3, 3, malformedInputException);
+                        }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 3;
                         sp += malformed3(src, sp);
                     } else {
                         char c = decode3(b1, b2, b3);
                         if (Character.isSurrogate(c)) {
+                            if (malformedInputException != null) {
+                                throw malformedInputException(sp - 3, 3, malformedInputException);
+                            }
                             StringUTF16.putChar(dst, dp++, REPL);
                         } else {
                             StringUTF16.putChar(dst, dp++, c);
@@ -1176,8 +1187,14 @@ public final class String
                     continue;
                 }
                 if (sp < sl && isMalformed3_2(b1, src[sp])) {
+                    if (malformedInputException != null) {
+                        throw malformedInputException(sp - 1, 2, malformedInputException);
+                    }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
+                }
+                if (malformedInputException != null) {
+                    throw malformedInputException(sp, 1, malformedInputException);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1189,6 +1206,9 @@ public final class String
                     int uc = decode4(b1, b2, b3, b4);
                     if (isMalformed4(b2, b3, b4) ||
                             !Character.isSupplementaryCodePoint(uc)) { // shortest form check
+                        if (malformedInputException != null) {
+                            throw malformedInputException(sp - 4, 4, malformedInputException);
+                        }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 4;
                         sp += malformed4(src, sp);
@@ -1200,8 +1220,14 @@ public final class String
                 }
                 b1 &= 0xff;
                 if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
+                    if (malformedInputException != null) {
+                        throw malformedInputException(sp - 1, 1, malformedInputException);  // or 2
+                    }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
+                }
+                if (malformedInputException != null) {
+                    throw malformedInputException(sp - 1, 1, malformedInputException);
                 }
                 sp++;
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1210,71 +1236,10 @@ public final class String
                 }
                 break;
             } else {
+                if (malformedInputException != null) {
+                    throw malformedInputException(sp - 1, 1, malformedInputException);
+                }
                 StringUTF16.putChar(dst, dp++, REPL);
-            }
-        }
-        return dp;
-    }
-
-    private static int decodeUTF8_UTF16NoReplacement(byte[] src, int sp, int sl, byte[] dst, int dp)
-            throws CharacterCodingException {
-        while (sp < sl) {
-            int b1 = src[sp++];
-            if (b1 >= 0) {
-                StringUTF16.putChar(dst, dp++, (char) b1);
-            } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
-                if (sp < sl) {
-                    int b2 = src[sp++];
-                    if (isNotContinuation(b2)) {
-                        throw malformedInputException(sp - 1, 1);
-                    } else {
-                        StringUTF16.putChar(dst, dp++, decode2(b1, b2));
-                    }
-                    continue;
-                }
-                throw malformedInputException(sp, 1);  // underflow()
-            } else if ((b1 >> 4) == -2) {
-                if (sp + 1 < sl) {
-                    int b2 = src[sp++];
-                    int b3 = src[sp++];
-                    if (isMalformed3(b1, b2, b3)) {
-                        throw malformedInputException(sp - 3, 3);
-                    } else {
-                        char c = decode3(b1, b2, b3);
-                        if (Character.isSurrogate(c)) {
-                            throw malformedInputException(sp - 3, 3);
-                        } else {
-                            StringUTF16.putChar(dst, dp++, c);
-                        }
-                    }
-                    continue;
-                }
-                if (sp < sl && isMalformed3_2(b1, src[sp])) {
-                    throw malformedInputException(sp - 1, 2);
-                }
-                throw malformedInputException(sp, 1);
-            } else if ((b1 >> 3) == -2) {
-                if (sp + 2 < sl) {
-                    int b2 = src[sp++];
-                    int b3 = src[sp++];
-                    int b4 = src[sp++];
-                    int uc = decode4(b1, b2, b3, b4);
-                    if (isMalformed4(b2, b3, b4) ||
-                            !Character.isSupplementaryCodePoint(uc)) { // shortest form check
-                        throw malformedInputException(sp - 4, 4);
-                    } else {
-                        StringUTF16.putChar(dst, dp++, Character.highSurrogate(uc));
-                        StringUTF16.putChar(dst, dp++, Character.lowSurrogate(uc));
-                    }
-                    continue;
-                }
-                b1 &= 0xff;
-                if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
-                    throw malformedInputException(sp - 1, 1);  // or 2
-                }
-                throw malformedInputException(sp - 1, 1);
-            } else {
-                throw malformedInputException(sp - 1, 1);
             }
         }
         return dp;
@@ -1314,58 +1279,43 @@ public final class String
         return 3;
     }
 
-    private static MalformedInputException malformedInputException(int off, int nb) {
+    @SuppressWarnings("unchecked")
+    private static <E extends Exception> E malformedInputException(int off, int nb, Class<E> exceptionType) {
         MalformedInputException mie = new MalformedInputException(nb);
         String msg = "malformed input off : " + off + ", length : " + nb;
         mie.initCause(new IllegalArgumentException(msg));
-        return mie;
+        return (E) mie;
     }
 
-    private static MalformedInputException malformedInputException(byte[] val) {
+    private static <E extends Exception> E malformedInputException(byte[] val, Class<E> exceptionType) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        return malformedInputException(dp, 1);
+        return malformedInputException(dp, 1, exceptionType);
     }
 
-    private static UnmappableCharacterException unmappableCharacterException(int off) {
+    @SuppressWarnings("unchecked")
+    private static <E extends Exception> E unmappableCharacterException(int off, Class<E> exceptionType) {
         UnmappableCharacterException uce = new UnmappableCharacterException(1);
         String msg = "malformed input off : " + off + ", length : 1";
         uce.initCause(new IllegalArgumentException(msg, uce));
-        return uce;
+        return (E) uce;
     }
 
-    private static UnmappableCharacterException unmappableCharacterException(byte[] val) {
+    private static <E extends Exception> E unmappableCharacterException(byte[] val, Class<E> exceptionType) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        return unmappableCharacterException(dp);
+        return unmappableCharacterException(dp, exceptionType);
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val) {
-        if (coder == UTF16) {
-            return encodeUTF8_UTF16(val);
-        }
-
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
-            return val.clone();
-        }
-
-        int dp = 0;
-        byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
-            if (c < 0) {
-                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
-                dst[dp++] = (byte) (0x80 | (c & 0x3f));
-            } else {
-                dst[dp++] = c;
-            }
-        }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return encodeUTF8(coder, val, null);
     }
 
     private static byte[] encodeUTF8NoReplacement(byte coder, byte[] val) throws UnmappableCharacterException {
+        return encodeUTF8(coder, val, UnmappableCharacterException.class);
+    }
+
+    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> unmappableCharacterException) throws E {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16NoReplacement(val);
+            return encodeUTF8_UTF16(val, unmappableCharacterException);
         }
 
         if (!StringCoding.hasNegatives(val, 0, val.length)) {
@@ -1388,13 +1338,13 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static byte[] encodeUTF8_UTF16(byte[] val) {
+    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException) throws E {
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, unmappableCharacterException) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
@@ -1423,63 +1373,11 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    dst[dp++] = '?';
-                } else {
-                    dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
-                    dst[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
-                    dst[dp++] = (byte)(0x80 | ((uc >>  6) & 0x3f));
-                    dst[dp++] = (byte)(0x80 | (uc & 0x3f));
-                    sp++;  // 2 chars
-                }
-            } else {
-                // 3 bytes, 16 bits
-                dst[dp++] = (byte)(0xe0 | ((c >> 12)));
-                dst[dp++] = (byte)(0x80 | ((c >>  6) & 0x3f));
-                dst[dp++] = (byte)(0x80 | (c & 0x3f));
-            }
-        }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
-    }
-
-    private static byte[] encodeUTF8_UTF16NoReplacement(byte[] val) throws UnmappableCharacterException {
-        int dp = 0;
-        int sp = 0;
-        int sl = val.length >> 1;
-        // UTF-8 encoded can be as much as 3 times the string length
-        // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16NoReplacement(val) : sl * 3;
-        if (allocLen > (long)Integer.MAX_VALUE) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
-        }
-        byte[] dst = new byte[(int) allocLen];
-        while (sp < sl) {
-            // ascii fast loop;
-            char c = StringUTF16.getChar(val, sp);
-            if (c >= '\u0080') {
-                break;
-            }
-            dst[dp++] = (byte)c;
-            sp++;
-        }
-        while (sp < sl) {
-            char c = StringUTF16.getChar(val, sp++);
-            if (c < 0x80) {
-                dst[dp++] = (byte)c;
-            } else if (c < 0x800) {
-                dst[dp++] = (byte)(0xc0 | (c >> 6));
-                dst[dp++] = (byte)(0x80 | (c & 0x3f));
-            } else if (Character.isSurrogate(c)) {
-                int uc = -1;
-                char c2;
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
-                    uc = Character.toCodePoint(c, c2);
-                }
-                if (uc < 0) {
-                    throw unmappableCharacterException(sp - 1);
+                    if (unmappableCharacterException == null) {
+                        dst[dp++] = '?';
+                    } else {
+                        throw unmappableCharacterException(sp - 1, unmappableCharacterException);
+                    }
                 } else {
                     dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
                     dst[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
@@ -1502,9 +1400,8 @@ public final class String
 
     /**
      * {@return the exact size required to UTF_8 encode this UTF16 string}
-     * @param val UTF16 encoded byte array
      */
-    private static long computeSizeUTF8_UTF16(byte[] val) {
+    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1523,43 +1420,11 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    dp++;
-                } else {
-                    dp += 4;
-                    sp++;  // 2 chars
-                }
-            } else {
-                // 3 bytes, 16 bits
-                dp += 3;
-            }
-        }
-        return dp;
-    }
-
-    /**
-     * {@return the exact size required to UTF_8 encode this UTF16 string}
-     * @param val UTF16 encoded byte array
-     */
-    private static long computeSizeUTF8_UTF16NoReplacement(byte[] val) throws UnmappableCharacterException {
-        long dp = 0L;
-        int sp = 0;
-        int sl = val.length >> 1;
-
-        while (sp < sl) {
-            char c = StringUTF16.getChar(val, sp++);
-            if (c < 0x80) {
-                dp++;
-            } else if (c < 0x800) {
-                dp += 2;
-            } else if (Character.isSurrogate(c)) {
-                int uc = -1;
-                char c2;
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
-                    uc = Character.toCodePoint(c, c2);
-                }
-                if (uc < 0) {
-                    throw unmappableCharacterException(sp - 1);
+                    if (unmappableCharacterException == null) {
+                        dp++;
+                    } else {
+                        throw unmappableCharacterException(sp - 1, unmappableCharacterException);
+                    }
                 } else {
                     dp += 4;
                     sp++;  // 2 chars
