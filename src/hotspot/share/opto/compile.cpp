@@ -5350,14 +5350,16 @@ static void find_candidates_cfg_nodes(Unique_Node_List& worklist, Unique_Node_Li
     Node* n = worklist.at(i);
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
-      if (in->is_CFG()) {
-        if (in->is_Multi()) {
-          candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
+      if (in != nullptr) {
+        if (in->is_CFG()) {
+          if (in->is_Multi()) {
+            candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
+          } else {
+            candidates.push(in);
+          }
         } else {
-          candidates.push(in);
+          worklist.push(in);
         }
-      } else {
-        worklist.push(in);
       }
     }
   }
