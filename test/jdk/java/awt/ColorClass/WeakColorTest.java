@@ -21,17 +21,21 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.lang.ref.WeakReference;
+
+import jtreg.SkippedException;
 
 /*
  * @test
  * @key headful
  * @bug 8364434
  * @summary Check that garbage-collecting Color before accelerated painting is complete does not cause artifacts.
- * @requires (os.family == "mac")
+ * @library /test/lib
  * @run main/othervm -Xms16m -Xmx16m WeakColorTest
  */
 
@@ -60,7 +64,7 @@ public class WeakColorTest {
                 System.out.println("Color collected at: " + i);
                 break;
             } else if (i >= MAX_ITERATIONS) {
-                throw new Error("Color was not collected after " + MAX_ITERATIONS + " iterations");
+                throw new SkippedException("Color was not collected after " + MAX_ITERATIONS + " iterations");
             }
             Object[] a = new Object[ARRAY_SIZE];
             a[0] = array;
