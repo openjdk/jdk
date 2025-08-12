@@ -120,21 +120,6 @@ class StringCoding {
      * array containing characters encoded in UTF-16, into the destination byte
      * array, assuming that the encoding is ISO-8859-1 compatible.
      *
-     * @apiNote
-     *
-     * {@code sa} denotes the {@code byte[]} backing a {@link String}. When
-     * {@linkplain String#COMPACT_STRINGS compact strings} are disabled, a
-     * {@code char} is always represented by 2 bytes, i.e.,
-     * encoded in UTF-16. When enabled, if the content is ISO-8859-1, a
-     * {@code char} is represented by 1 byte; otherwise again by 2 bytes.
-     * <p>
-     * This method assumes that {@code sa} is encoded in UTF-16, and hence,
-     * each {@code char} maps to 2 bytes.
-     * </p><p>
-     * {@code da} is encoded in ISO-8859-1. There each {@code byte} corresponds
-     * to a {@code char}.
-     * </p>
-     *
      * @param sa the source byte array containing characters encoded in UTF-16
      * @param sp the index of the <em>character (not byte!)</em> from the source array to start reading from
      * @param da the target byte array
