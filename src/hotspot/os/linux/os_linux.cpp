@@ -2682,6 +2682,52 @@ void os::jfr_report_memory_info() {
   }
 }
 
+void os::jfr_report_process_size() {
+  os::Linux::process_info_t info;
+  if (os::Linux::query_process_info(&info)) {
+    EventProcessSize e;
+    e.set_vsize(info.vmsize * K);
+    e.set_rss(info.vmrss * K);
+    e.set_rssPeak(info.vmhwm * K);
+    e.set_rssAnon(info.rssanon * K);
+    e.set_rssFile(info.rssfile * K);
+    e.set_rssShmem(info.rssshmem * K);
+    e.set_swap(info.vmswap * K);
+
+    size_t malloc_outstanding = 0;
+    size_t malloc_retained = 0;
+#ifdef __GLIBC__
+    bool might_have_wrapped = false;
+    os::Linux::glibc_mallinfo mi;
+    os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+    if (!might_have_wrapped) {
+      malloc_outstanding = mi.uordblks + mi.hblkhd;
+      malloc_retained = mi.fordblks;
+    }
+#endif
+    e.set_libcMallocOutstanding(malloc_outstanding);
+    e.set_libcMallocRetention(malloc_retained);
+    e.commit();
+  }
+}
+
+void os::jfr_report_openfds() {
+  os::Linux::process_info_t info;
+  if (os::Linux::query_process_info(&info)) {
+    EventOpenFDs e;
+    e.set_value(info.fdsize);
+    e.commit();
+  }
+}
+
+int os::num_process_threads() {
+  os::Linux::process_info_t info;
+  if (os::Linux::query_process_info(&info)) {
+    return info.threads;
+  }
+  return -1;
+}
+
 #endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)

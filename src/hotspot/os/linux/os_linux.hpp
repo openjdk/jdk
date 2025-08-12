@@ -177,7 +177,7 @@ class os::Linux {
     ssize_t rssshmem;   // resident set size (shared mappings, needs 4.5)
     ssize_t vmpte;      // size of page table entries (needs 2.6.10)
     int threads;        // number of threads
-    int fdsize;         // number of file descriptors
+    int fdsize;         // file descriptor array size
   };
 
   // Attempts to query memory information about the current process and return it in the output structure.

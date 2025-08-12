@@ -887,6 +887,7 @@
   </Event>
 
   <Event name="JavaThreadStatistics" category="Java Application, Statistics" label="Java Thread Statistics" period="everyChunk">
+    <Field type="long" name="osThreadCount" label="OS Threads" description="Number of OS threads (JVM- and non-JVM-Threads)" />
     <Field type="long" name="activeCount" label="Active Threads" description="Number of live active threads including both daemon and non-daemon threads" />
     <Field type="long" name="daemonCount" label="Daemon Threads" description="Number of live daemon threads" />
     <Field type="long" name="accumulatedCount" label="Accumulated Threads" description="Number of threads created and also started since JVM start" />

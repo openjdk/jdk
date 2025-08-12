@@ -849,6 +849,13 @@ class os: AllStatic {
 
   // Send JFR memory info event
   static void jfr_report_memory_info() NOT_JFR_RETURN();
+  static void jfr_report_process_size() NOT_JFR_RETURN();
+  static void jfr_report_openfds() NOT_JFR_RETURN();
+
+  // Returns number of OS threads for the calling process; -1 if the information cannot be obtained.
+  // Note: this includes, but is not limited to, the number of threads the JVM has created or that
+  // are attached to it. It may be higher if many threads are created outside the JVM.
+  static int num_process_threads();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as

@@ -99,6 +99,14 @@ TRACE_REQUEST_FUNC(ResidentSetSize) {
   os::jfr_report_memory_info();
 }
 
+TRACE_REQUEST_FUNC(ProcessSize) {
+  os::jfr_report_process_size();
+}
+
+TRACE_REQUEST_FUNC(OpenFDs) {
+  os::jfr_report_openfds();
+}
+
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;
@@ -544,6 +552,7 @@ TRACE_REQUEST_FUNC(SwapSpace) {
 
 TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   EventJavaThreadStatistics event;
+  event.set_osThreadCount(os::num_process_threads());
   event.set_activeCount(ThreadService::get_live_thread_count());
   event.set_daemonCount(ThreadService::get_daemon_thread_count());
   event.set_accumulatedCount(ThreadService::get_total_thread_count());
