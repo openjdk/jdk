@@ -450,8 +450,9 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
   assert(entry_offset[0] == 0, "sanity check");
   for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
-    assert(entry_offset[i] > 0 && entry_offset[i] < cb->insts()->size(),
-           "invalid entry offset 0x%x", entry_offset[i]);
+    assert((entry_offset[i] > 0 && entry_offset[i] < cb->insts()->size()) || // Within the adapter blob
+           (entry_offset[i] + p2i(cb->insts_begin()) == 0),                  // Or wraps back to nullptr
+           "invalid entry offset[%d] = 0x%x", i, entry_offset[i]);
   }
   _c2i_offset = entry_offset[1];
   _c2i_unverified_offset = entry_offset[2];
