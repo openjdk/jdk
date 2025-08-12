@@ -80,7 +80,7 @@ public enum LauncherShortcut {
 
         private final String stringValue;
 
-        private final static Map<String, StartupDirectory> VALUE_MAP =
+        private static final Map<String, StartupDirectory> VALUE_MAP =
                 Stream.of(values()).collect(toMap(StartupDirectory::asStringValue, x -> x));
     }
 

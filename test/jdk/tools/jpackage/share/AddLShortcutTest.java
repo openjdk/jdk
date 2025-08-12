@@ -283,7 +283,7 @@ public class AddLShortcutTest {
     }
 
 
-    private final static class ShortcutStartupDirectoryVerifier {
+    private static final class ShortcutStartupDirectoryVerifier {
 
         ShortcutStartupDirectoryVerifier(String packageName) {
             this.packageName = Objects.requireNonNull(packageName);
@@ -388,7 +388,7 @@ public class AddLShortcutTest {
         }
 
 
-        static private String outputDirVarName() {
+        private static String outputDirVarName() {
             if (TKit.isLinux()) {
                 return "HOME";
             } else if (TKit.isWindows()) {
@@ -398,7 +398,7 @@ public class AddLShortcutTest {
             }
         }
 
-        static private LauncherShortcut shortcut() {
+        private static LauncherShortcut shortcut() {
             if (TKit.isLinux()) {
                 return LauncherShortcut.LINUX_SHORTCUT;
             } else if (TKit.isWindows()) {
