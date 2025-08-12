@@ -127,7 +127,6 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
 
     _full_gc_count_before = full_gc_count_before;
   }
-  ~VM_GC_Operation() {}
 
   virtual const char* cause() const;
 
