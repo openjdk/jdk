@@ -29,7 +29,7 @@ import java.util.Random;
 
 /**
  * @test
- * @bug 8327381
+ * @bug 8327381 8364970
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
  * @run driver compiler.c2.gvn.TestBoolNodeGVN

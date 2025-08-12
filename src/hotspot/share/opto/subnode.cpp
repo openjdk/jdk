@@ -852,22 +852,22 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
 //
 // (1a) and (1b) is covered by this method since we can directly return the corresponding TypeInt::CC_*
 // while (2) is covered in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
-const Type* CmpUNode::Value_cmpu_and_mask(PhaseValues* phase, const Node* in1, const Node* in2) {
-  if (in1->Opcode() == Op_AndI) {
+const Type* CmpUNode::Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, const Node* rhs) {
+  if (andI->Opcode() == Op_AndI) {
     // (1a) "(x & m) <=u m" and "(m & x) <=u m" are always true,
     // so CmpU(x & m, m) and CmpU(m & x, m) are known to be LE.
-    const Node* rhs_m = in2;
-    if (in1->in(2) == rhs_m || in1->in(1) == rhs_m) {
+    const Node* rhs_m = rhs;
+    if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
       return TypeInt::CC_LE;
     }
     // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1" are always true for m != -1,
     // so CmpU(x & m, m + 1) and CmpU(m & x, m + 1) are known to be LT.
-    if (in2->Opcode() == Op_AddI && in2->in(2)->find_int_con(0) == 1) {
-      rhs_m = in2->in(1);
+    if (rhs->Opcode() == Op_AddI && rhs->in(2)->find_int_con(0) == 1) {
+      rhs_m = rhs->in(1);
       const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
       // Exclude any case where m == -1 is possible.
       if (rhs_m_type != nullptr && (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1)) {
-        if (in1->in(2) == rhs_m || in1->in(1) == rhs_m) {
+        if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
           return TypeInt::CC_LT;
         }
       }
@@ -1896,7 +1896,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
-  return _test.cc2logical( phase->type( in(1) ) );
+  return _test.cc2logical(phase->type(in(1)));
 }
 
 #ifndef PRODUCT

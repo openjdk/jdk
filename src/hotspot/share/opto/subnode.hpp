@@ -171,7 +171,7 @@ public:
 //------------------------------CmpUNode---------------------------------------
 // Compare 2 unsigned values (integer or pointer), returning condition codes (-1, 0 or 1).
 class CmpUNode : public CmpNode {
-  static const Type* Value_cmpu_and_mask(PhaseValues*, const Node*, const Node*);
+  static const Type* Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, const Node* rhs);
 public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
