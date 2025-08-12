@@ -1674,6 +1674,9 @@ class ImmutableCollections {
                 private final Iterator<Map.Entry<K, StableValueImpl<V>>> delegateIterator;
 
                 private LazyMapIterator(StableMapEntrySet<K, V> outer) {
+                    // We need to drill down two levels in order to obtain
+                    // the original underlying holder.
+                    // I.e., StableMapEntrySet.StableMap.underlyingHolder
                     this.underlyingHolder = outer.outer.underlyingHolder;
                     this.delegateIterator = outer.delegateEntrySet.iterator();
                 }
