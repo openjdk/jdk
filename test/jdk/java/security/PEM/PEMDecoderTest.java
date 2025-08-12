@@ -489,7 +489,7 @@ public class PEMDecoderTest {
         try {
             testClass(entry, clazz);
         } catch (Exception e) {
-            if (e.getClass().isAssignableFrom(ec)) {
+            if (ec.isInstance(e)) {
                 System.out.println("PASS");
                 return;
             }
