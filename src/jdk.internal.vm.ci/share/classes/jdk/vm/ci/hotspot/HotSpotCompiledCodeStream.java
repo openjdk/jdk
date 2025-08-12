@@ -758,7 +758,6 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                     writeMethod("target", method);
                     writeBoolean("direct", call.direct);
                     writeBoolean("bind", call.bind);
-                    writeBoolean("trustBytecode", call.trustBytecode);
                     writeDebugInfo(debugInfo, true);
                 }
             } else if (site instanceof Infopoint) {

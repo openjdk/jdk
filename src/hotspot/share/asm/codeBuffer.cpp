@@ -279,16 +279,16 @@ address CodeSection::target(Label& L, address branch_pc) {
   }
 }
 
-void CodeSection::relocate(address at, relocInfo::relocType rtype, int format, jint method_index, bool trust_bytecode) {
+void CodeSection::relocate(address at, relocInfo::relocType rtype, int format, jint method_index) {
   RelocationHolder rh;
   switch (rtype) {
     case relocInfo::none: return;
     case relocInfo::opt_virtual_call_type: {
-      rh = opt_virtual_call_Relocation::spec(method_index, trust_bytecode);
+      rh = opt_virtual_call_Relocation::spec(method_index);
       break;
     }
     case relocInfo::static_call_type: {
-      rh = static_call_Relocation::spec(method_index, trust_bytecode);
+      rh = static_call_Relocation::spec(method_index);
       break;
     }
     case relocInfo::virtual_call_type: {

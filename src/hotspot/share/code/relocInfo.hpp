@@ -1080,8 +1080,8 @@ class virtual_call_Relocation : public CallRelocation {
   // "cached_value" points to the first associated set-oop.
   // The oop_limit helps find the last associated set-oop.
   // (See comments at the top of this file.)
-  static RelocationHolder spec(address cached_value, jint method_index = 0, bool trust_bytecode = true) {
-    return RelocationHolder::construct<virtual_call_Relocation>(cached_value, method_index, trust_bytecode);
+  static RelocationHolder spec(address cached_value, jint method_index = 0) {
+    return RelocationHolder::construct<virtual_call_Relocation>(cached_value, method_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
@@ -1089,13 +1089,11 @@ class virtual_call_Relocation : public CallRelocation {
  private:
   address _cached_value; // location of set-value instruction
   jint    _method_index; // resolved method for a Java call
-  bool    _trust_bytecode; // trust the bytecode of an underlying Java call
 
-  virtual_call_Relocation(address cached_value, int method_index, bool trust_bytecode)
+  virtual_call_Relocation(address cached_value, int method_index)
     : CallRelocation(relocInfo::virtual_call_type),
       _cached_value(cached_value),
-      _method_index(method_index),
-      _trust_bytecode(trust_bytecode) {
+      _method_index(method_index) {
     assert(cached_value != nullptr, "first oop address must be specified");
   }
 
@@ -1107,7 +1105,6 @@ class virtual_call_Relocation : public CallRelocation {
 
   int     method_index() { return _method_index; }
   Method* method_value();
-  bool    trust_bytecode() { return _trust_bytecode; }
 
   // data is packed as scaled offsets in "2_ints" format:  [f l] or [Ff Ll]
   // oop_limit is set to 0 if the limit falls somewhere within the call.
@@ -1122,20 +1119,18 @@ class virtual_call_Relocation : public CallRelocation {
 
 class opt_virtual_call_Relocation : public CallRelocation {
  public:
-  static RelocationHolder spec(int method_index = 0, bool trust_bytecode = true) {
-    return RelocationHolder::construct<opt_virtual_call_Relocation>(method_index, trust_bytecode);
+  static RelocationHolder spec(int method_index = 0) {
+    return RelocationHolder::construct<opt_virtual_call_Relocation>(method_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _method_index; // resolved method for a Java call
-  bool _trust_bytecode; // trust the bytecode of an underlying Java call
 
-  opt_virtual_call_Relocation(int method_index, bool trust_bytecode)
+  opt_virtual_call_Relocation(int method_index)
     : CallRelocation(relocInfo::opt_virtual_call_type),
-      _method_index(method_index),
-      _trust_bytecode(trust_bytecode) { }
+      _method_index(method_index) { }
 
   friend class RelocationHolder;
   opt_virtual_call_Relocation() : CallRelocation(relocInfo::opt_virtual_call_type) {}
@@ -1143,7 +1138,6 @@ class opt_virtual_call_Relocation : public CallRelocation {
  public:
   int     method_index() { return _method_index; }
   Method* method_value();
-  bool    trust_bytecode() { return _trust_bytecode; }
 
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
@@ -1157,20 +1151,18 @@ class opt_virtual_call_Relocation : public CallRelocation {
 
 class static_call_Relocation : public CallRelocation {
  public:
-  static RelocationHolder spec(int method_index = 0, bool trust_bytecode = true) {
-    return RelocationHolder::construct<static_call_Relocation>(method_index, trust_bytecode);
+  static RelocationHolder spec(int method_index = 0) {
+    return RelocationHolder::construct<static_call_Relocation>(method_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _method_index; // resolved method for a Java call
-  bool _trust_bytecode; // trust the bytecode of an underlying Java call
 
-  static_call_Relocation(int method_index, bool trust_bytecode)
+  static_call_Relocation(int method_index)
     : CallRelocation(relocInfo::static_call_type),
-    _method_index(method_index),
-    _trust_bytecode(trust_bytecode) { }
+    _method_index(method_index) { }
 
   friend class RelocationHolder;
   static_call_Relocation() : CallRelocation(relocInfo::static_call_type) {}
@@ -1178,7 +1170,6 @@ class static_call_Relocation : public CallRelocation {
  public:
   int     method_index() { return _method_index; }
   Method* method_value();
-  bool    trust_bytecode() { return _trust_bytecode; }
 
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
