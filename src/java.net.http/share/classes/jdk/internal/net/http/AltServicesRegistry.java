@@ -493,7 +493,7 @@ public final class AltServicesRegistry {
      */
     private Stream<AltService> lookup(final Origin origin,
                                       final Predicate<? super String> alpnMatcher) {
-        if (debug.on()) debug.log("looking up service for: %s", origin);
+        if (debug.on()) debug.log("looking up alt-service for: %s", origin);
         final List<AltService> services;
         registryLock.lock();
         try {
