@@ -247,18 +247,17 @@ public class LintMapper {
     private record LintRange(
         Span span,                                      // declaration's lexical range
         Lint lint,                                      // the Lint configuration that applies at this declaration
-        Symbol symbol,                                  // declaration symbol (for debug purposes only; null for root)
         List<LintRange> children                        // the nested declarations one level below this node
     ) {
 
         // Create a node representing the entire file, using the root lint configuration
         LintRange(Lint rootLint) {
-            this(Span.MAXIMAL, rootLint, null, new ArrayList<>());
+            this(Span.MAXIMAL, rootLint, new ArrayList<>());
         }
 
         // Create a node representing the given declaration and its corresponding Lint configuration
-        LintRange(JCTree tree, EndPosTable endPositions, Lint lint, Symbol symbol) {
-            this(new Span(tree, endPositions), lint, symbol, new ArrayList<>());
+        LintRange(JCTree tree, EndPosTable endPositions, Lint lint) {
+            this(new Span(tree, endPositions), lint, new ArrayList<>());
         }
 
         // Find the most specific node in this tree (including me) that contains the given position, if any
@@ -315,7 +314,7 @@ public class LintMapper {
 
                     // Add a new node here and proceed
                     final LintRange previousNode = currentNode;
-                    currentNode = new LintRange(tree, endPositions, newLint, symbol);
+                    currentNode = new LintRange(tree, endPositions, newLint);
                     previousNode.children.add(currentNode);
                     try {
                         recursor.accept(tree);
