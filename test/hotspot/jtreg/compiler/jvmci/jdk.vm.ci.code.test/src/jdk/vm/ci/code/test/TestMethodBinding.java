@@ -59,22 +59,7 @@ import java.util.List;
 public class TestMethodBinding extends CodeInstallationTest {
 
 
-    interface MethodProviderInterface {
-        int invokeInterface();
-    }
-
-    static abstract class AbstractMethodProvider implements MethodProviderInterface {
-        public int invokeVirtual() {
-            return 5 + 6;
-        }
-    }
-
-    static class MethodProvider extends AbstractMethodProvider {
-        @Override
-        public int invokeInterface() {
-            return 3 + 4;
-        }
-
+    static class MethodProvider {
         public static int invokeStatic() {
             return 1 + 2;
         }
@@ -83,19 +68,10 @@ public class TestMethodBinding extends CodeInstallationTest {
     @Test
     public void test() {
         Class<?> returnType = int.class;
-        Object receiver = new MethodProvider();
         Class<?>[] staticArgumentTypes = new Class<?>[]{};
-        Class<?>[] interfaceArgumentTypes = new Class<?>[]{MethodProviderInterface.class};
-        Class<?>[] virtualArgumentTypes = new Class<?>[]{AbstractMethodProvider.class};
         Object[] staticArguments = new Object[]{};
-        Object[] interfaceArguments = new Object[]{receiver};
-        Object[] virtualArguments = interfaceArguments;
 
-
-        test(getMethod(MethodProvider.class, "invokeInterface"), returnType, interfaceArgumentTypes, virtualArguments, config.MARKID_INVOKEINTERFACE);
         test(getMethod(MethodProvider.class, "invokeStatic"), returnType, staticArgumentTypes, staticArguments, config.MARKID_INVOKESTATIC);
-        test(getMethod(AbstractMethodProvider.class, "invokeVirtual"), returnType, virtualArgumentTypes, virtualArguments, config.MARKID_INVOKEVIRTUAL);
-        test(getMethod(MethodProvider.class, "invokeInterface"), returnType, virtualArgumentTypes, virtualArguments, config.MARKID_INVOKESPECIAL);
     }
 
 
@@ -120,6 +96,8 @@ public class TestMethodBinding extends CodeInstallationTest {
 
                 asm.recordMark(markId);
                 int[] pos = new int[2];
+                // duringCall has to be false to trigger our bind logic in SharedRuntime::find_callee_info_helper
+                // we are allowed to do this because the call has no side-effect
                 BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, 0, false, false, new JavaValue[0], new JavaKind[0], 0, 0, 0);
                 DebugInfo info = new DebugInfo(frame, new VirtualObject[0]);
                 if (resolvedMethod.isStatic()) {

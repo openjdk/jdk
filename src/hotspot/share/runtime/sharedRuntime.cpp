@@ -1219,17 +1219,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
         // For invoke bytecodes, the reexecute bit is not set (see Interpreter::bytecode_should_reexecute).
         // Since the reexecute bit is set for this call, no corresponding invoke bytecode exists.
         Method* callee = attached_method();
-        if (attached_method->is_static()) {
-          bc = Bytecodes::_invokestatic;
-        } else {
-            receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
-          if (attached_method->method_holder()->is_interface()) {
-            bc = Bytecodes::_invokeinterface;
-          } else {
-            bc = Bytecodes::_invokevirtual;
-          }
-        }
-
+        assert(attached_method->is_static(), "attached method should be static");
+        bc = Bytecodes::_invokestatic;
         LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
         return receiver;
       }
