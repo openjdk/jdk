@@ -38,6 +38,7 @@ class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
+  static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();
@@ -45,7 +46,6 @@ public:
   static void init_archived_tables();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
-  static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void restore_archived_entries_for_null_class_loader_data();
   static oop  restore_archived_oops_for_null_class_loader_data();
   static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
