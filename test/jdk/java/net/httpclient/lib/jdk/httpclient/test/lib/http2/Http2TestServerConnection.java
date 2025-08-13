@@ -817,7 +817,8 @@ public class Http2TestServerConnection {
     }
     private void respondForMissingHandler(final Http2TestExchange exchange)
             throws IOException {
-        final byte[] responseBody = ("No handler available to handle request "
+        final byte[] responseBody = (this.getClass().getSimpleName()
+                + " - No handler available to handle request "
                 + exchange.getRequestURI()).getBytes(US_ASCII);
         try (final OutputStream os = exchange.getResponseBody()) {
             exchange.sendResponseHeaders(404, responseBody.length);
