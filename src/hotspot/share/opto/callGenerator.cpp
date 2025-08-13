@@ -479,6 +479,7 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
       VM_ENTRY_MARK;
       Compile* C = Compile::current();
       Dependencies* deps = C->dependencies();
+      MutexLocker ml(Compile_lock);
       deps->encode_content_bytes();
       assert(deps->validate_dependencies(C->env()->task()) == Dependencies::call_site_target_value,
         "repeated inline attempt with different callee");
