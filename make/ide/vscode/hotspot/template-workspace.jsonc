@@ -12,11 +12,16 @@
 	],
 	"extensions": {
 		"recommendations": [
+			"oracle.oracle-java",
 			// {{INDEXER_EXTENSIONS}}
 		]
 	},
 	"settings": {
 		// {{INDEXER_SETTINGS}}
+
+		// Java extension
+		"jdk.advanced.disable.nbjavac": true,
+		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
 
 		// Additional conventions
 		"files.associations": {
