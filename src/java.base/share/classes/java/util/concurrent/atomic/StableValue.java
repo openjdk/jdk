@@ -27,6 +27,7 @@ package java.util.concurrent.atomic;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.lang.stable.PresetStableValue;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.io.Serializable;
@@ -370,7 +371,7 @@ import java.util.stream.Stream;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits StableValueImpl {
+        permits PresetStableValue, StableValueImpl {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -478,9 +479,8 @@ public sealed interface StableValue<T>
      * @param <T>     type of the contents
      */
     static <T> StableValue<T> of(T contents) {
-        final StableValue<T> stableValue = StableValue.of();
-        stableValue.trySet(contents);
-        return stableValue;
+        Objects.requireNonNull(contents);
+        return new PresetStableValue<>(contents);
     }
 
     /**
