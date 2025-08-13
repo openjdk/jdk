@@ -97,7 +97,7 @@ public class IsSameFile {
         list.add(Arguments.of(true, x, x));
         list.add(Arguments.of(false, Path.of("w/x/y/z"), x));
         Path y = Path.of("v/w/x/../y/z");
-        list.add(Arguments.of(true, y, Path.of("v/w/y/z")));
+        list.add(Arguments.of(false, y, Path.of("v/w/y/z")));
         list.add(Arguments.of(false, y, Path.of("v/w/x/y/../z")));
         return list.stream();
     }

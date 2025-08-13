@@ -425,8 +425,9 @@ public abstract class UnixFileSystemProvider
             return false;
         }
 
-        // neither exists, compare normalized paths without filesystem access
-        return obj1.normalize().equals(obj2.normalize());
+        // neither exist and comparison of normalized paths is problematic,
+        // so return false
+        return false;
     }
 
     @Override
