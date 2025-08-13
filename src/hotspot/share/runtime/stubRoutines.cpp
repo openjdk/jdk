@@ -131,6 +131,35 @@ address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
+// Used to retrieve mark regions that lie within a generated stub so
+// they can be saved along with the stub and used to reinit the table
+// when the stub is reloaded.
+
+void UnsafeMemoryAccess::collect_entries(address range_start, address range_end, GrowableArray<address>& entries)
+{
+  for (int i = 0; i < _table_length; i++) {
+    UnsafeMemoryAccess& e = _table[i];
+    assert((e._start_pc != nullptr &&
+            e._end_pc != nullptr &&
+            e._error_exit_pc != nullptr),
+           "search for entries found incomplete table entry");
+    if (e._start_pc >= range_start && e._end_pc <= range_end) {
+      assert(((e._error_exit_pc >= range_start &&
+               e._error_exit_pc <= range_end) ||
+              e._error_exit_pc == _common_exit_stub_pc),
+             "unexpected error exit pc");
+      entries.append(e._start_pc);
+      entries.append(e._end_pc);
+      // only return an exit pc when it is within the range of the stub
+      if (e._error_exit_pc != _common_exit_stub_pc) {
+        entries.append(e._error_exit_pc);
+      } else {
+        // an address outside the stub must be the common exit stub address
+        entries.append(nullptr);
+      }
+    }
+  }
+}
 
 static BufferBlob* initialize_stubs(BlobId blob_id,
                                     int code_size, int max_aligned_stubs,
@@ -152,13 +181,26 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
   if (stubs_code == nullptr) {
+    // The compiler blob may be created late by a C2 compiler thread
+    // rather than during normal initialization by the initial thread.
+    // In that case we can tolerate an allocation failure because the
+    // compiler will have been shut down and we have no need of the
+    // blob.
+    if (Thread::current()->is_Compiler_thread()) {
+      assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
+      assert(DelayCompilerStubsGeneration, "sanity");
+      log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
+      return nullptr;
+    }
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
   }
   CodeBuffer buffer(stubs_code);
   StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+  assert(code_size == 0 || buffer.insts_remaining() > 200,
+         "increase %s, code_size: %d, used: %d, free: %d",
+         assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
@@ -167,6 +209,7 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+
   return stubs_code;
 }
 
