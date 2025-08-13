@@ -26,7 +26,7 @@
  * @bug 8358781
  * @summary Regression test for -XX:-TypeProfileCasts crash
  * @requires vm.debug
- * @run main/othervm -XX:-TypeProfileCasts compiler.arguments.TestProfileCasts
+ * @run main/othervm -XX:-TypeProfileCasts -XX:CompileThresholdScaling=0.01 compiler.arguments.TestProfileCasts
  */
 package compiler.arguments;
 
