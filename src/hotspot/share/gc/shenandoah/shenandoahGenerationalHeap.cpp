@@ -295,6 +295,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
+        if (is_promotion && copy != nullptr) {
+          log_debug(gc, plab)("Made a shared promotion of size: %zu, min PLAB: %zu", size, PLAB::min_size());
+        }
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
       // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
@@ -422,7 +425,7 @@ inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, 
   }
 
   if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
-    log_debug(gc, plab)("Thread is not allowed to use PLAB for promotions");
+    log_develop_trace(gc, plab)("Thread is not allowed to use PLAB for promotions");
     return nullptr;
   }
 
@@ -470,13 +473,13 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
   // the case when moderately-sized objects always take a shortcut. At some point,
   // heuristics should catch up with them.  Note that the requested cur_size may
   // not be honored, but we remember that this is the preferred size.
-  log_debug(gc, plab)("Set new PLAB size: %zu", future_size);
+  log_debug(gc, plab)("Set next PLAB refill size: %zu bytes", future_size * HeapWordSize);
   ShenandoahThreadLocalData::set_plab_size(thread, future_size);
 
   if (cur_size < size) {
     // The PLAB to be allocated is still not large enough to hold the object. Fall back to shared allocation.
     // This avoids retiring perfectly good PLABs in order to represent a single large object allocation.
-    log_debug(gc, plab)("Current PLAB size (%zu) is too small for %zu", cur_size, size);
+    log_debug(gc, plab)("Current PLAB size (%zu) is too small for %zu", cur_size * HeapWordSize, size * HeapWordSize);
     return nullptr;
   }
 
@@ -486,7 +489,7 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
     // away on this plab as long as we can.  Meanwhile, return nullptr to force this particular allocation request
     // to be satisfied with a shared allocation.  By packing more promotions into the previously allocated PLAB, we
     // reduce the likelihood of evacuation failures, and we reduce the need for downsizing our PLABs.
-    log_debug(gc, plab)("Existing PLAB is still viable (words remaining: %zu, plab_min_size: %zu", plab->words_remaining(), plab_min_size);
+    log_debug(gc, plab)("Existing PLAB is still viable (words remaining: %zu, plab_min_size: %zu)", plab->words_remaining(), plab_min_size);
     return nullptr;
   }
 
@@ -501,13 +504,13 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
     if (min_size == plab_min_size) {
       // Disable PLAB promotions for this thread because we cannot even allocate a minimal PLAB. This allows us
       // to fail faster on subsequent promotion attempts.
-      log_debug(gc, plab)("Disable PLAB promotions because we can't allocate minimum sized PLAB: %zu", min_size);
+      log_debug(gc, plab)("Disable PLAB promotions because we can't allocate minimum sized PLAB: %zu", min_size * HeapWordSize);
       ShenandoahThreadLocalData::disable_plab_promotions(thread);
     }
     return nullptr;
   }
 
-  log_debug(gc, plab)("Allocated new PLAB of size: %zu, enable PLAB retries", actual_size);
+  log_debug(gc, plab)("Allocated new PLAB of size: %zu bytes, enable PLAB retries", actual_size * HeapWordSize);
   ShenandoahThreadLocalData::enable_plab_retries(thread);
 
 
@@ -528,7 +531,10 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
   assert(is_aligned(actual_size, CardTable::card_size_in_words()), "Align by design");
   plab->set_buf(plab_buf, actual_size);
   if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
-    log_debug(gc, plab)("Thread has new PLAB of size %zu, but is not allowed to use it", actual_size);
+    // Thinking here is that the thread has exhausted promotion reserve, but there may yet be old objects
+    // to evacuate and this plab could be used for those.
+    log_debug(gc, plab)("Thread has new PLAB of size %zu, but is not allowed to promote %zu. Mixed evac in progress? %s",
+      actual_size * HeapWordSize, size * HeapWordSize, BOOL_TO_STR(collection_set()->has_old_regions()));
     return nullptr;
   }
 
@@ -569,6 +575,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   ShenandoahThreadLocalData::reset_plab_promoted(thread);
   ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
   if (not_promoted > 0) {
+    log_debug(gc, plab)("Retire PLAB, unexpend unpromoted: %zu", not_promoted * HeapWordSize);
     old_generation()->unexpend_promoted(not_promoted);
   }
   const size_t original_waste = plab->waste();
@@ -581,7 +588,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
     // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
     // safely walk the region backing the plab.
     log_debug(gc, plab)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
-                  plab->waste() - original_waste, p2i(top));
+                  (plab->waste() - original_waste) * HeapWordSize, p2i(top));
     // No lock is necessary because the PLAB memory is aligned on card boundaries.
     old_generation()->card_scan()->register_object_without_lock(top);
   }

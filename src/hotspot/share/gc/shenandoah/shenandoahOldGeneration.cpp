@@ -227,7 +227,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
 
 void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
   shenandoah_assert_heaplocked_or_safepoint();
-  log_info(gc, ergo)("Changing promotion reserve from %zu to %zu", _promoted_reserve, new_val);
   _promoted_reserve = new_val;
 }
 
@@ -682,12 +681,11 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
   static size_t epoch_report_count = 0;
   auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t promotion_reserve;
-  size_t promotion_expended;
-
   const size_t gc_id = heap->control_thread()->get_gc_id();
 
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
+    size_t promotion_expended;
+    size_t promotion_reserve;
     {
       // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
       ShenandoahHeapLocker locker(heap->lock());
