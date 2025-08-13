@@ -50,8 +50,11 @@ final class StableValueTest {
 
     @Test
     void trySet() {
-        trySet(VALUE);
-        trySet(null);
+        StableValue<Integer> stable = StableValue.of();
+        assertTrue(stable.trySet(VALUE));
+        assertFalse(stable.trySet(VALUE));
+        assertFalse(stable.trySet(VALUE2));
+        assertEquals(VALUE, stable.orElseThrow());
     }
 
     @Test
@@ -62,15 +65,6 @@ final class StableValueTest {
         assertEquals(VALUE, stable.orElse(VALUE2));
         assertEquals(VALUE, stable.orElseSet(() -> VALUE2));
         assertFalse(stable.trySet(VALUE2));
-    }
-
-    void trySet(Integer initial) {
-        StableValue<Integer> stable = StableValue.of();
-        assertTrue(stable.trySet(initial));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(VALUE));
-        assertFalse(stable.trySet(VALUE2));
-        assertEquals(initial, stable.orElseThrow());
     }
 
     @Test
@@ -93,16 +87,11 @@ final class StableValueTest {
 
     @Test
     void isSet() {
-        isSet(VALUE);
-        isSet(null);
-   }
-
-    void isSet(Integer initial) {
         StableValue<Integer> stable = StableValue.of();
         assertFalse(stable.isSet());
-        stable.trySet(initial);
+        stable.trySet(VALUE);
         assertTrue(stable.isSet());
-    }
+   }
 
    @Test
    void testOrElseSetSupplier() {
@@ -134,22 +123,12 @@ final class StableValueTest {
         assertNotEquals("a", s0);
         StableValue<Integer> null0 = StableValue.of();
         StableValue<Integer> null1 = StableValue.of();
-        null0.trySet(null);
-        null1.trySet(null);
-        assertNotEquals(null0, null1);
     }
 
     @Test
     void toStringUnset() {
         StableValue<Integer> stable = StableValue.of();
         assertEquals(".unset", stable.toString());
-    }
-
-    @Test
-    void toStringNull() {
-        StableValue<Integer> stable = StableValue.of();
-        assertTrue(stable.trySet(null));
-        assertEquals("null", stable.toString());
     }
 
     @Test

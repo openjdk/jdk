@@ -26,7 +26,6 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -36,14 +35,14 @@ import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 /**
- * The implementation of StableValue.
+ * The standard (non-preset) implementation of StableValue.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
  * @param <T> type of the contents
  */
-public final class StableValueImpl<T> implements StableValue<T> {
+public final class StandardStableValue<T> implements StableValue<T> {
 
     static final String UNSET_LABEL = ".unset";
 
@@ -53,10 +52,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Unsafe offsets for direct field access
 
     private static final long CONTENTS_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "contents");
-
-    // Used to indicate a holder value is `null` (see field `contents` below)
-    private static final Object NULL_SENTINEL = new Object();
+            UNSAFE.objectFieldOffset(StandardStableValue.class, "contents");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -66,19 +62,19 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | Value          |  Meaning      |
     // | -------------- |  ------------ |
     // | null           |  Unset        |
-    // | NULL_SENTINEL  |  Set(null)    |
     // | other          |  Set(other)   |
     //
     @Stable
     private Object contents;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
-    private StableValueImpl() {}
+    private StandardStableValue() {}
 
     @ForceInline
     @Override
     public boolean trySet(T contents) {
-        if (wrappedContentsAcquire() != null) {
+        Objects.requireNonNull(contents);
+        if (contentsAcquire() != null) {
             return false;
         }
         // Prevent reentry via an orElseSet(supplier)
@@ -86,42 +82,45 @@ public final class StableValueImpl<T> implements StableValue<T> {
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify `this.contents`
         synchronized (this) {
-            return wrapAndSet(contents);
+            return set(contents);
         }
     }
 
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = wrappedContentsAcquire();
+        final Object t = contentsAcquire();
         if (t == null) {
             throw new NoSuchElementException("No contents set");
         }
-        return unwrap(t);
+        return (T) t;
     }
 
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = wrappedContentsAcquire();
-        return (t == null) ? other : unwrap(t);
+        final Object t = contentsAcquire();
+        return (t == null) ? other : (T) t;
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return wrappedContentsAcquire() != null;
+        return contentsAcquire() != null;
     }
 
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        final Object t = wrappedContentsAcquire();
-        return (t == null) ? orElseSetSlowPath(supplier) : unwrap(t);
+        final Object t = contentsAcquire();
+        return (t == null) ? orElseSetSlowPath(supplier) : (T) t;
     }
 
-    @DontInline
+    @SuppressWarnings("unchecked")
     private T orElseSetSlowPath(Supplier<? extends T> supplier) {
         preventReentry();
         synchronized (this) {
@@ -129,10 +128,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
             if (t == null) {
                 final T newValue = supplier.get();
                 // The mutex is not reentrant so we know newValue should be returned
-                wrapAndSet(newValue);
+                set(newValue);
                 return newValue;
             }
-            return unwrap(t);
+            return (T) t;
         }
     }
 
@@ -140,7 +139,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = wrappedContentsAcquire();
+        final Object t = contentsAcquire();
         return t == this
                 ? "(this StableValue)"
                 : renderWrapped(t);
@@ -149,12 +148,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Internal methods shared with other internal classes
 
     @ForceInline
-    public Object wrappedContentsAcquire() {
+    public Object contentsAcquire() {
         return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }
 
     static String renderWrapped(Object t) {
-        return (t == null) ? UNSET_LABEL : Objects.toString(unwrap(t));
+        return (t == null) ? UNSET_LABEL : Objects.toString(t);
     }
 
     // Private methods
@@ -168,7 +167,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     /**
-     * Wraps the provided {@code newValue} and tries to set the contents.
+     * Tries to set the contents to {@code newValue}.
      * <p>
      * This method ensures the {@link Stable} field is written to at most once.
      *
@@ -176,34 +175,20 @@ public final class StableValueImpl<T> implements StableValue<T> {
      * @return if the contents was set
      */
     @ForceInline
-    private boolean wrapAndSet(T newValue) {
+    private boolean set(T newValue) {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
         if (contents == null) {
-            UNSAFE.putReferenceRelease(this, CONTENTS_OFFSET, wrap(newValue));
+            UNSAFE.putReferenceRelease(this, CONTENTS_OFFSET, newValue);
             return true;
         }
         return false;
     }
 
-
-    // Wraps `null` values into a sentinel value
-    @ForceInline
-    private static Object wrap(Object t) {
-        return (t == null) ? NULL_SENTINEL : t;
-    }
-
-    // Unwraps null sentinel values into `null`
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    private static <T> T unwrap(Object t) {
-        return t != NULL_SENTINEL ? (T) t : null;
-    }
-
     // Factory
 
-    public static <T> StableValueImpl<T> of() {
-        return new StableValueImpl<>();
+    public static <T> StandardStableValue<T> of() {
+        return new StandardStableValue<>();
     }
 
 }

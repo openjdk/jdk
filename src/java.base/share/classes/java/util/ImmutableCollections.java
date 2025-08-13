@@ -44,7 +44,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StandardStableValue;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -778,7 +778,7 @@ class ImmutableCollections {
 
     @FunctionalInterface
     interface HasStableDelegates<E> {
-        StableValueImpl<E>[] delegates();
+        StandardStableValue<E>[] delegates();
     }
 
     @jdk.internal.ValueBased
@@ -789,7 +789,7 @@ class ImmutableCollections {
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
-        final StableValueImpl<E>[] delegates;
+        final StandardStableValue<E>[] delegates;
 
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
@@ -803,7 +803,7 @@ class ImmutableCollections {
         @ForceInline
         @Override
         public E get(int i) {
-            final StableValueImpl<E> delegate;
+            final StandardStableValue<E> delegate;
             try {
                 delegate = delegates[i];
             } catch (ArrayIndexOutOfBoundsException aioobe) {
@@ -876,7 +876,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public StableValueImpl<E>[] delegates() {
+        public StandardStableValue<E>[] delegates() {
             return delegates;
         }
 
@@ -909,7 +909,7 @@ class ImmutableCollections {
             }
 
             @Override
-            public StableValueImpl<E>[] delegates() {
+            public StandardStableValue<E>[] delegates() {
                 @SuppressWarnings("unchecked")
                 final var rootDelegates = ((HasStableDelegates<E>) root).delegates();
                 return Arrays.copyOfRange(rootDelegates, offset, offset + size);
@@ -947,7 +947,7 @@ class ImmutableCollections {
             }
 
             @Override
-            public StableValueImpl<E>[] delegates() {
+            public StandardStableValue<E>[] delegates() {
                 @SuppressWarnings("unchecked")
                 final var baseDelegates = ((HasStableDelegates<E>) base).delegates();
                 return ArraysSupport.reverse(
@@ -1601,7 +1601,7 @@ class ImmutableCollections {
         @Stable
         private final Function<? super K, ? extends V> mapper;
         @Stable
-        private final Map<K, StableValueImpl<V>> delegate;
+        private final Map<K, StandardStableValue<V>> delegate;
 
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
@@ -1621,7 +1621,7 @@ class ImmutableCollections {
         @ForceInline
         @Override
         public V getOrDefault(Object key, V defaultValue) {
-            final StableValueImpl<V> stable = delegate.get(key);
+            final StandardStableValue<V> stable = delegate.get(key);
             if (stable == null) {
                 return defaultValue;
             }
@@ -1640,7 +1640,7 @@ class ImmutableCollections {
             private final StableMap<K, V> outer;
 
             @Stable
-            private final Set<Map.Entry<K, StableValueImpl<V>>> delegateEntrySet;
+            private final Set<Map.Entry<K, StandardStableValue<V>>> delegateEntrySet;
 
             private StableMapEntrySet(StableMap<K, V> outer) {
                 this.outer = outer;
@@ -1670,7 +1670,7 @@ class ImmutableCollections {
                 private final StableMapEntrySet<K, V> outer;
 
                 @Stable
-                private final Iterator<Map.Entry<K, StableValueImpl<V>>> delegateIterator;
+                private final Iterator<Map.Entry<K, StandardStableValue<V>>> delegateIterator;
 
                 private LazyMapIterator(StableMapEntrySet<K, V> outer) {
                     this.outer = outer;
@@ -1681,7 +1681,7 @@ class ImmutableCollections {
 
                 @Override
                 public Entry<K, V> next() {
-                    final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
+                    final Map.Entry<K, StandardStableValue<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
                     return new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
                         @Override public V get() { return outer.outer.mapper.apply(k); }});
@@ -1689,10 +1689,10 @@ class ImmutableCollections {
 
                 @Override
                 public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
-                    final Consumer<? super Map.Entry<K, StableValueImpl<V>>> innerAction =
+                    final Consumer<? super Map.Entry<K, StandardStableValue<V>>> innerAction =
                             new Consumer<>() {
                                 @Override
-                                public void accept(Entry<K, StableValueImpl<V>> inner) {
+                                public void accept(Entry<K, StandardStableValue<V>> inner) {
                                     final K k = inner.getKey();
                                     action.accept(new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
                                         @Override public V get() { return outer.outer.mapper.apply(k); }}));
@@ -1710,7 +1710,7 @@ class ImmutableCollections {
         }
 
         private record StableEntry<K, V>(K getKey, // trick
-                                         StableValueImpl<V> stableValue,
+                                         StandardStableValue<V> stableValue,
                                          Supplier<? extends V> supplier) implements Map.Entry<K, V> {
 
             @Override public V setValue(V value) { throw uoe(); }
@@ -1749,16 +1749,16 @@ class ImmutableCollections {
             @Override public boolean isEmpty() { return outer.isEmpty();}
             @Override public boolean contains(Object v) { return outer.containsValue(v); }
 
-            private static final IntFunction<StableValueImpl<?>[]> GENERATOR = new IntFunction<StableValueImpl<?>[]>() {
+            private static final IntFunction<StandardStableValue<?>[]> GENERATOR = new IntFunction<StandardStableValue<?>[]>() {
                 @Override
-                public StableValueImpl<?>[] apply(int len) {
-                    return new StableValueImpl<?>[len];
+                public StandardStableValue<?>[] apply(int len) {
+                    return new StandardStableValue<?>[len];
                 }
             };
 
             @Override
             public String toString() {
-                final StableValueImpl<?>[] values = outer.delegate.values().toArray(GENERATOR);
+                final StandardStableValue<?>[] values = outer.delegate.values().toArray(GENERATOR);
                 return StableUtil.renderElements(this, "StableCollection", values);
             }
 

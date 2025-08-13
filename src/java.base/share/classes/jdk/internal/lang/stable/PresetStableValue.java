@@ -37,15 +37,21 @@ import java.util.function.Supplier;
  * @param <T> type of the contents
  */
 public record PresetStableValue<T>(T contents) implements StableValue<T> {
-    @ForceInline @Override public boolean trySet(T contents) { return false; }
-    @ForceInline @Override public T orElseThrow() { return contents; }
-    @ForceInline @Override public T orElse(T other) { return contents; }
+
+    @ForceInline @Override public boolean trySet(T contents) {
+        Objects.requireNonNull(contents);
+        return false;
+    }
+    @ForceInline @Override public T       orElseThrow() { return contents; }
+    @ForceInline @Override public T       orElse(T other) { return contents; }
     @ForceInline @Override public boolean isSet() { return true; }
-    @ForceInline @Override public T orElseSet(Supplier<? extends T> supplier) {
+    @ForceInline @Override public T       orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
         return contents;
     }
-    @ForceInline @Override public boolean equals(Object obj) { return this == obj; }
-    @ForceInline @Override public int hashCode() { return System.identityHashCode(this); }
-    @ForceInline @Override  public String toString() { return StableValueImpl.renderWrapped(contents); }
+
+    // Object methods
+    @Override public boolean equals(Object obj) { return this == obj; }
+    @Override public int     hashCode() { return System.identityHashCode(this); }
+    @Override public String  toString() { return StandardStableValue.renderWrapped(contents); }
 }

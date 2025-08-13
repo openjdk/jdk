@@ -36,22 +36,22 @@ public final class StableUtil {
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StableValueImpl<?>[] delegates) {
+                                            StandardStableValue<?>[] delegates) {
         return renderElements(self, selfName, delegates, 0, delegates.length);
     }
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StableValueImpl<?>[] delegates,
+                                            StandardStableValue<?>[] delegates,
                                             int offset,
                                             int length) {
         final StringJoiner sj = new StringJoiner(", ", "[", "]");
         for (int i = 0; i < length; i++) {
-            final Object value = delegates[i + offset].wrappedContentsAcquire();
+            final Object value = delegates[i + offset].contentsAcquire();
             if (value == self) {
                 sj.add("(this " + selfName + ")");
             } else {
-                sj.add(StableValueImpl.renderWrapped(value));
+                sj.add(StandardStableValue.renderWrapped(value));
             }
         }
         return sj.toString();
@@ -59,39 +59,39 @@ public final class StableUtil {
 
     public static <K, V> String renderMappings(Object self,
                                                String selfName,
-                                               Iterable<Map.Entry<K, StableValueImpl<V>>> delegates,
+                                               Iterable<Map.Entry<K, StandardStableValue<V>>> delegates,
                                                boolean curly) {
         final StringJoiner sj = new StringJoiner(", ", curly ? "{" : "[", curly ? "}" : "]");
         for (var e : delegates) {
-            final Object value = e.getValue().wrappedContentsAcquire();
+            final Object value = e.getValue().contentsAcquire();
             final String valueString;
             if (value == self) {
                 valueString = "(this " + selfName + ")";
             } else {
-                valueString = StableValueImpl.renderWrapped(value);
+                valueString = StandardStableValue.renderWrapped(value);
             }
             sj.add(e.getKey() + "=" + valueString);
         }
         return sj.toString();
     }
 
-    public static <T> StableValueImpl<T>[] array(int size) {
+    public static <T> StandardStableValue<T>[] array(int size) {
         assertSizeNonNegative(size);
         @SuppressWarnings("unchecked")
-        final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
+        final var stableValues = (StandardStableValue<T>[]) new StandardStableValue<?>[size];
         for (int i = 0; i < size; i++) {
-            stableValues[i] = StableValueImpl.of();
+            stableValues[i] = StandardStableValue.of();
         }
         return stableValues;
     }
 
-    public static <K, T> Map<K, StableValueImpl<T>> map(Set<K> keys) {
+    public static <K, T> Map<K, StandardStableValue<T>> map(Set<K> keys) {
         Objects.requireNonNull(keys);
         @SuppressWarnings("unchecked")
-        final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        final var entries = (Map.Entry<K, StandardStableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
         int i = 0;
         for (K key : keys) {
-            entries[i++] = Map.entry(key, StableValueImpl.of());
+            entries[i++] = Map.entry(key, StandardStableValue.of());
         }
         return Map.ofEntries(entries);
     }

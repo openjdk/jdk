@@ -29,7 +29,7 @@
  */
 
 import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StandardStableValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -44,7 +44,6 @@ import java.util.RandomAccess;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -391,7 +390,7 @@ final class StableListTest {
 
     @Test
     void distinct() {
-        StableValueImpl<Integer>[] array = StableUtil.array(SIZE);
+        StandardStableValue<Integer>[] array = StableUtil.array(SIZE);
         assertEquals(SIZE, array.length);
         // Check, every StableValue is distinct
         Map<java.util.concurrent.atomic.StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();

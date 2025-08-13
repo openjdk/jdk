@@ -31,7 +31,7 @@
  * @run junit/othervm -Dopens=false TrustedFieldTypeTest
  */
 
-import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
@@ -105,7 +105,7 @@ final class TrustedFieldTypeTest {
 
         if (Boolean.getBoolean("opens")) {
             // Unfortunately, add-opens allows direct access to the `value` field
-            Field field = StableValueImpl.class.getDeclaredField("contents");
+            Field field = StandardStableValue.class.getDeclaredField("contents");
             field.setAccessible(true);
 
             StableValue<Integer> stableValue = StableValue.of();
@@ -117,7 +117,7 @@ final class TrustedFieldTypeTest {
             field.set(stableValue, 13);
             assertEquals(13, stableValue.orElseThrow());
         } else {
-            Field field = StableValueImpl.class.getDeclaredField("contents");
+            Field field = StandardStableValue.class.getDeclaredField("contents");
             assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));
         }
     }

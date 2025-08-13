@@ -27,14 +27,15 @@ package java.util.concurrent.atomic;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.lang.stable.PresetStableList;
 import jdk.internal.lang.stable.PresetStableValue;
-import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StandardStableList;
+import jdk.internal.lang.stable.StandardStableValue;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map; // Used in snippet
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Function;
@@ -371,7 +372,7 @@ import java.util.stream.Stream;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits PresetStableValue, StableValueImpl {
+        permits StandardStableValue, PresetStableValue, StandardStableList.ElementStableValue {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -469,7 +470,7 @@ public sealed interface StableValue<T>
      * @param <T> type of the contents
      */
     static <T> StableValue<T> of() {
-        return StableValueImpl.of();
+        return StandardStableValue.of();
     }
 
     /**
@@ -495,6 +496,11 @@ public sealed interface StableValue<T>
      *}
      * except the returned implementation can be more performant and dense.
      *
+     * @implNote The implementation is free to return distinct stable value elements
+     *           upon retrieving successive elements with the same index. Despite this,
+     *           any returned stable value always reflects the correct stable value
+     *           contents at any time.
+     *
      * @param size of the returned list
      * @param <T>  type of the contents
      * @throws IllegalArgumentException if the provided {@code size} is negative
@@ -503,9 +509,7 @@ public sealed interface StableValue<T>
      */
     static <T> List<StableValue<T>> ofList(int size) {
         Utils.checkNonNegativeArgument(size, "size");
-        return Stream.generate(StableValue::<T>of)
-                .limit(size)
-                .toList();
+        return StandardStableList.ofList(size);
     }
 
     /**
@@ -520,19 +524,27 @@ public sealed interface StableValue<T>
      *}
      * except the returned implementation can be more performant and dense.
      *
+     * @implNote The implementation is free to return distinct stable value elements
+     *           upon retrieving successive elements with the same index. Despite this,
+     *           any returned stable value always reflects the correct stable value
+     *           contents at any time.
+     *
      * @param elements in the returned list
      * @param <T>      type of the contents
      * @throws NullPointerException if the provided array of {@code elements}
-     *         is {@code null}
+     *         is {@code null} or contains a {@code null} component
      *
      * @since 26
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
     static <T> List<StableValue<T>> ofList(T... elements) {
-        Objects.requireNonNull(elements);
-        return Arrays.stream(elements)
-                .map(StableValue::of)
-                .toList();
+        // Protect against TOCTOU attacks
+        // Implicit null-check of `elements`
+        final T[] copy = Arrays.copyOf(elements, elements.length);
+        for (T t : copy) {
+            Objects.requireNonNull(t);
+        }
+        return PresetStableList.ofList(copy);
     }
 }

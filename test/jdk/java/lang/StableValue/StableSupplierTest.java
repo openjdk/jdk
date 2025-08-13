@@ -48,7 +48,6 @@ final class StableSupplierTest {
     @Test
     void basic() {
         basic(SUPPLIER);
-        basic(() -> null);
     }
 
     void basic(Supplier<Integer> supplier) {
