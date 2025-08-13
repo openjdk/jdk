@@ -746,8 +746,8 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
 #endif
   }
   _membership[int(partition)].clear_bit(idx);
+  decrease_region_counts(partition, 1);
   shrink_interval_if_boundary_modified(partition, idx);
-  _region_counts[int(partition)]--;
 
   // This region is fully used, whether or not top() equals end().  It
   // is retired and no more memory will be allocated from within it.
@@ -1860,62 +1860,62 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
   }
 
   size_t total_used = 0;
-  size_t used_words_in_last_region = 0;
-  size_t waste_bytes = 0;
+  const size_t used_words_in_last_region = words_size & ShenandoahHeapRegion::region_size_words_mask();
+  size_t waste_bytes;
+  // Retire regions from free partition and initialize them.
   if (is_humongous) {
     // Humongous allocation retires all regions at once: no allocation is possible anymore.
     // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
     _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-    total_used = ShenandoahHeapRegion::region_size_bytes() * num;
-    size_t used_words_in_last_region = words_size & ShenandoahHeapRegion::region_size_words_mask();
-    waste_bytes = ShenandoahHeapRegion::region_size_bytes() - used_words_in_last_region * HeapWordSize;
-  } else {
-    // Non-humongous allocation retires only the regions that cannot be used for allocation anymore.
     for (idx_t i = beg; i <= end; i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
-      if (r->free() < PLAB::min_size() * HeapWordSize) {
-        // retire_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
-        // It also increases used for Muttor partition.
-        waste_bytes += _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, i, r->used());
-      }
-      total_used += r->used();
-    }
-    if (waste_bytes > 0) {
-      increase_bytes_allocated(waste_bytes);
-    }
-  }
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
-  increase_bytes_allocated(total_used);
-
-  // Initialize regions:
-  for (idx_t i = beg; i <= end; i++) {
-    ShenandoahHeapRegion* r = _heap->get_region(i);
-    r->try_recycle_under_lock();
-
-    assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
-    assert(r->is_empty(), "Should be empty");
-
-    r->set_affiliation(req.affiliation());
-    if (is_humongous) {
+      assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
+      assert(r->is_empty(), "Should be empty");
+      r->try_recycle_under_lock();
+      r->set_affiliation(req.affiliation());
       if (i == beg) {
         r->make_humongous_start();
       } else {
         r->make_humongous_cont();
       }
-    } else {
+      r->set_top(r->end());
+      r->set_update_watermark(r->bottom());
+    }
+    total_used = ShenandoahHeapRegion::region_size_bytes() * num;
+    waste_bytes = ShenandoahHeapRegion::region_size_bytes() - used_words_in_last_region * HeapWordSize;
+  } else {
+    // Non-humongous allocation retires only the regions that cannot be used for allocation anymore.
+    waste_bytes = 0;
+    for (idx_t i = beg; i <= end; i++) {
+      ShenandoahHeapRegion* r = _heap->get_region(i);
+      assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
+      assert(r->is_empty(), "Should be empty");
+      r->try_recycle_under_lock();
+      r->set_affiliation(req.affiliation());
       r->make_regular_allocation(req.affiliation());
+      if (i < end) {
+        r->set_top(r->end());
+      } else {
+        r->set_top(r->bottom() + used_words_in_last_region);
+      }
+      r->set_update_watermark(r->bottom());
+      total_used += r->used();
+      if  (r->free() < PLAB::min_size() * HeapWordSize) {
+        // retire_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
+        // It also increases used for the waste bytes, which includes bytes filled at retirement and bytes too small
+        // to be filled.  Only the last iteration may have non-zero waste_bytes.
+        waste_bytes += _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, i, r->used());
+      }
     }
-
-    // Trailing region may be non-full, record the humongous_waste there
-    size_t used_words;
-    if ((i == end) && (used_words_in_last_region != 0)) {
-      used_words = used_words_in_last_region;
-    } else {
-      used_words = ShenandoahHeapRegion::region_size_words();
+    _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, num);
+    if (waste_bytes > 0) {
+      // For humongous allocations, waste_bytes are included in total_used.  Since this is not humongous,
+      // we need to account separately for the waste_bytes.
+      increase_bytes_allocated(waste_bytes);
     }
-    r->set_update_watermark(r->bottom());
-    r->set_top(r->bottom() + used_words);
   }
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
+  increase_bytes_allocated(total_used);
 
 #ifdef KELVIN_OUT_WITH_THE_OLD
   // deprecated with ShenandoahPacing
@@ -1927,18 +1927,15 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
 
   req.set_actual_size(words_size);
   // If !is_humongous, the "waste" is made availabe for new allocation
-  if (is_humongous && used_words_in_last_region != 0) {
-    size_t waste = ShenandoahHeapRegion::region_size_words() - used_words_in_last_region;
-    req.set_waste(waste);
-#ifdef KELVIN_HUMONGOUS_WASTE
-    log_info(gc)("FreeSet alloc_contiguous increasing mutator humongous waste by %zu bytes", waste * HeapWordSize);
-#endif
-    size_t waste_bytes = waste * HeapWordSize;
-    _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, waste_bytes);
-    _total_humongous_waste += waste_bytes;
-  } else if (!is_humongous && (waste_bytes > 0)) {
-    // Waste is padding in last region if padding is too small to serve as TLAB.
+  if (waste_bytes > 0) {
     req.set_waste(waste_bytes / HeapWordSize);
+    if (is_humongous) {
+#ifdef KELVIN_HUMONGOUS_WASTE
+      log_info(gc)("FreeSet alloc_contiguous increasing mutator humongous waste by %zu bytes", waste * HeapWordSize);
+#endif
+      _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, waste_bytes);
+      _total_humongous_waste += waste_bytes;
+    }
   }
 
 #ifdef KELVIN_REGION_COUNTS
