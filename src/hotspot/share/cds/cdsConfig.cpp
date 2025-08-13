@@ -643,8 +643,15 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (is_dumping_preimage_static_archive() || is_dumping_final_static_archive()) {
-      // Don't tweak execution mode
+    if (is_dumping_preimage_static_archive()) {
+      // Don't tweak execution mode during AOT training run
+    } else if (is_dumping_final_static_archive()) {
+      if (Arguments::mode() == Arguments::_comp) {
+        // -Xcomp triggers blocking compilation for all called methods,
+        // but during AOT assembly phase we should AOT compile in parallel
+        // (and not blocking) only methods collected during training run.
+        Arguments::set_mode_flags(Arguments::_mixed);
+      }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
