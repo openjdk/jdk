@@ -110,7 +110,12 @@ public final class SegmentBulkOperations {
         src.checkAccess(srcOffset, len, true);
         dst.checkAccess(dstOffset, len, false);
 
-        if (len < NATIVE_THRESHOLD_COPY && src.overlaps(dst) == 0) {
+        if (len >= NATIVE_THRESHOLD_COPY || src.overlaps(dst)) {
+            // For larger sizes, the transition to native code pays off
+            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, len);
+        } else {
             // 0 < len < FILL_NATIVE_LIMIT : 0...0X...XXXX
             //
             // Strictly, we could check for !src.asSlice(srcOffset, len).overlaps(dst.asSlice(dstOffset, len) but
@@ -129,11 +134,6 @@ public final class SegmentBulkOperations {
                 case 4 -> copy4(src, srcOffset, dst, dstOffset, len);
                 default -> copy5AndUpwards(src, srcOffset, dst, dstOffset, len);
             }
-        } else {
-            // For larger sizes, the transition to native code pays off
-            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
-                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
-                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, len);
         }
     }
 
