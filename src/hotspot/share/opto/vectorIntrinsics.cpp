@@ -1700,7 +1700,7 @@ bool LibraryCallKit::inline_vector_slice() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = elem_type->basic_type();
 
-  if (Matcher::supports_vector_slice_with_non_constant_index(num_elem, elem_bt) || !origin->is_con()) {
+  if (!origin->is_con()) {
     log_if_needed("  ** vector slice from non-constant index not supported");
     return false;
   }

@@ -146,11 +146,6 @@
     return false;
   }
 
-  // Does the CPU supports vector slice from non-constant index?
-  static constexpr bool supports_vector_slice_with_non_constant_index(int vlen, BasicType bt) {
-    return false;
-  }
-
   // Some microarchitectures have mask registers used on vectors
   static constexpr bool has_predicated_vectors(void) {
     return false;
