@@ -923,8 +923,10 @@ BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) 
 }
 
 BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) const {
-  const VPointer& vp1 = *this;
-  const VPointer& vp2 = other;
+  // Ensure iv_scale1 <= iv_scale2.
+  const VPointer& vp1 = (this->iv_scale() <= other.iv_scale()) ? *this : other;
+  const VPointer& vp2 = (this->iv_scale() <= other.iv_scale()) ? other :*this ;
+  assert(vp1.iv_scale() <= vp2.iv_scale(), "ensured by swapping if necessary");
 
   assert(vp1.can_make_speculative_aliasing_check_with(vp2), "sanity");
 
@@ -989,6 +991,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
     condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
   } else {
+    assert(vp1.iv_scale() < vp2.iv_scale(), "assumed in proof, established above by swapping");
+
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
       tty->print_cr("  Different iv_scale -> lines with different slopes -> more complex conditions:");
@@ -1019,13 +1023,6 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     phase->register_new_node_with_ctrl_of(last_minus_init, pre_init);
     phase->register_new_node_with_ctrl_of(span1,           pre_init);
     phase->register_new_node_with_ctrl_of(span2,           pre_init);
-
-    // In the proof, we assumend: iv_scale1 < iv_scale2.
-    if (vp1.iv_scale() > vp2.iv_scale()) {
-      swap(p1_init, p2_init);
-      swap(size1, size2);
-      swap(span1, span2);
-    }
 
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
