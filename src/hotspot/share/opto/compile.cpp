@@ -5375,7 +5375,7 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
     candidate_worklist.push(c);
     for (uint j = 0; j < candidate_worklist.size(); j++) {
       Node* n = candidate_worklist.at(j);
-      if (n->is_Root()) break;
+      if (n->is_Root()) continue;
       for (uint k = 0; k < n->req(); k++) {
         Node* in = n->in(k);
 
