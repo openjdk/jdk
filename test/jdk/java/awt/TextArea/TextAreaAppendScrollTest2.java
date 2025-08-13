@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Button;
 import java.awt.Frame;
 import java.awt.TextArea;
 
@@ -39,10 +38,8 @@ import java.awt.TextArea;
 public class TextAreaAppendScrollTest2 extends Frame {
     TextArea area;
     private static final String INSTRUCTIONS = """
-            Press the "Append \'cool\' button until you are able
-            to reach the end of current line in the text area. If
-            the next \'cool\' added wraps to a new line, press
-            pass. Otherwise, press fail.
+            Press pass if you see exclamation marks in the bottom of textarea.
+            Press fail if you don't.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -58,16 +55,15 @@ public class TextAreaAppendScrollTest2 extends Frame {
 
     public TextAreaAppendScrollTest2() {
         setLayout(new BorderLayout());
-        Button btn = new Button("Append \'cool\'");
-        btn.addActionListener(e -> area.append("cool "));
-        add("South", btn);
         area = new TextArea("AWT is cool ", 3, 3, TextArea.SCROLLBARS_NONE);
         add("Center", area);
         setSize(200, 200);
         StringBuilder coolStr = new StringBuilder("");
+        // I count 15 lines with 12 cools per line
         for (int i = 0; i < 12 * 15; i++) {
             coolStr.append("cool ");
         }
+        coolStr.append("!!!!!!!");
         area.append(coolStr.toString());
     }
 }

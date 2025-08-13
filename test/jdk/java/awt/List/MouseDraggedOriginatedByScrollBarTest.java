@@ -24,45 +24,52 @@
 /*
  * @test
  * @bug 6240151
+ * @key headful
  * @summary XToolkit: Dragging the List scrollbar initiates DnD
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual MouseDraggedOriginatedByScrollBarTest
+ * @run main MouseDraggedOriginatedByScrollBarTest
 */
 
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class MouseDraggedOriginatedByScrollBarTest {
-
-    private static final String INSTRUCTIONS = """
-            1) Click and drag the scrollbar of the list.
-            2) Keep dragging until the mouse pointer passes
-            the bounds of the scrollbar.
-            3) The test fails if you see messages about drag
-            events for anything other than list0.
-            The test passes if you don't.
-    """;
+    static Frame frame;
+    static volatile Point loc;
+    static volatile List list;
+    static volatile int width;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("MouseDraggedOriginatedByScrollBarTest Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(MouseDraggedOriginatedByScrollBarTest::createTestUI)
-                .logArea()
-                .build()
-                .awaitAndCheck();
+        // Restrict test to XToolkit
+        boolean isXToolkit = Toolkit.getDefaultToolkit()
+                .getClass().getName().equals("sun.awt.X11.XToolkit");
+        if (!isXToolkit) {
+            System.out.println("The test is XAWT-only.");
+            return;
+        }
+
+        try {
+            createUI();
+            test();
+        } finally {
+            if (frame != null) {
+                EventQueue.invokeAndWait(() -> frame.dispose());
+            }
+        }
     }
 
-    private static Frame createTestUI() {
-        Frame frame = new Frame();
-        List list = new List(4, false);
+    private static void createUI() {
+        frame = new Frame();
+        list = new List(4, false);
 
         list.add("000");
         list.add("111");
@@ -81,27 +88,62 @@ public class MouseDraggedOriginatedByScrollBarTest {
             new MouseMotionAdapter(){
                 @Override
                 public void mouseDragged(MouseEvent me){
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse dragged " +
+                            "event detected.");
                 }
             });
 
         list.addMouseListener(
             new MouseAdapter() {
                 public void mousePressed(MouseEvent me) {
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse pressed " +
+                            "event detected.");
                 }
 
                 public void mouseReleased(MouseEvent me) {
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse released " +
+                            "event detected.");
                 }
 
                 public void mouseClicked(MouseEvent me){
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse clicked " +
+                            "event detected.");
                 }
             });
 
         frame.setLayout(new FlowLayout());
         frame.pack();
-        return frame;
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private static void test() throws Exception {
+        Robot robot;
+        try {
+            robot = new Robot();
+        } catch (Exception ex) {
+            throw new RuntimeException("Can't create robot");
+        }
+        robot.waitForIdle();
+        robot.delay(1000);
+        robot.setAutoWaitForIdle(true);
+
+        // Focus default button and wait till it gets focus
+        EventQueue.invokeAndWait(() -> {
+            loc = list.getLocationOnScreen();
+            width = list.getWidth();
+        });
+        robot.mouseMove(loc.x + width - 10, loc.y + 20);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        for (int i = 0; i < 30; i++) {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            robot.mouseMove(p.x, p.y + 1);
+        }
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(100);
     }
 }
