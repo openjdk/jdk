@@ -975,6 +975,12 @@
       <setting name="period">1000 ms</setting>
     </event>
 
+    <event name="jdk.LibcHeapTrim">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
 
 
 

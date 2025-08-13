@@ -5404,27 +5404,23 @@ int os::Linux::malloc_info(FILE* stream) {
 }
 #endif // __GLIBC__
 
-bool os::trim_native_heap(os::size_change_t* rss_change) {
+bool os::trim_native_heap(os::size_change_t& rss_change) {
 #ifdef __GLIBC__
   os::Linux::process_info_t info1;
   os::Linux::process_info_t info2;
 
-  bool have_info1 = rss_change != nullptr &&
-                    os::Linux::query_process_info(&info1);
+  bool have_info1 = os::Linux::query_process_info(&info1);
   ::malloc_trim(0);
-  bool have_info2 = rss_change != nullptr && have_info1 &&
-                    os::Linux::query_process_info(&info2);
+  bool have_info2 = have_info1 && os::Linux::query_process_info(&info2);
   ssize_t delta = (ssize_t) -1;
-  if (rss_change != nullptr) {
-    if (have_info1 && have_info2 &&
-        info1.vmrss != -1 && info2.vmrss != -1 &&
-        info1.vmswap != -1 && info2.vmswap != -1) {
-      // Note: query_process_memory_info returns values in K
-      rss_change->before = (info1.vmrss + info1.vmswap) * K;
-      rss_change->after = (info2.vmrss + info2.vmswap) * K;
-    } else {
-      rss_change->after = rss_change->before = SIZE_MAX;
-    }
+  if (have_info1 && have_info2 &&
+      info1.vmrss != -1 && info2.vmrss != -1 &&
+      info1.vmswap != -1 && info2.vmswap != -1) {
+    // Note: query_process_memory_info returns values in K
+    rss_change.before = (info1.vmrss + info1.vmswap) * K;
+    rss_change.after = (info2.vmrss + info2.vmswap) * K;
+  } else {
+    rss_change.after = rss_change.before = SIZE_MAX;
   }
 
   g_num_trims ++;

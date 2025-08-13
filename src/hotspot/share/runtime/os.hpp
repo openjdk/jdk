@@ -494,7 +494,7 @@ class os: AllStatic {
   // Note: If trimming succeeded but no size change information could be obtained,
   // rss_change.after will contain SIZE_MAX upon return.
   struct size_change_t { size_t before; size_t after; };
-  static bool trim_native_heap(size_change_t* rss_change = nullptr);
+  static bool trim_native_heap(size_change_t& rss_change);
 
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);

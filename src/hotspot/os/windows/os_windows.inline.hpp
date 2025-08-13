@@ -88,6 +88,6 @@ inline void PlatformMonitor::notify_all() {
 
 // Trim-native support, stubbed out for now, may be enabled later
 inline bool os::can_trim_native_heap() { return false; }
-inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
+inline bool os::trim_native_heap(os::size_change_t& rss_change) { return false; }
 
 #endif // OS_WINDOWS_OS_WINDOWS_INLINE_HPP

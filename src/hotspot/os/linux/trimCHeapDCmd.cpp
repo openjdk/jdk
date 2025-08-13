@@ -23,28 +23,34 @@
  *
  */
 
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.inline.hpp"
 #include "trimCHeapDCmd.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/ticks.hpp"
 
 #include <malloc.h>
 
 void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
   if (os::can_trim_native_heap()) {
     os::size_change_t sc;
-    if (os::trim_native_heap(&sc)) {
+    const Ticks ticks1 = Ticks::now();
+    if (os::trim_native_heap(sc)) {
+      const Ticks ticks2 = Ticks::now();
+      const double duration = (ticks2.microseconds() - ticks1.microseconds()) / 1000.0;
       _output->print("Trim native heap: ");
       if (sc.after != SIZE_MAX) {
-        const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
-        const char sign = sc.after < sc.before ? '-' : '+';
-        _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
-                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
+        const ssize_t delta = checked_cast<ssize_t>(sc.after) - checked_cast<ssize_t>(sc.before);
+        _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (%zd) (%.3fms)",
+                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), delta, duration);
         // Also log if native trim log is active
-        log_info(trimnative)("Manual Trim: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
-                             PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
+        log_info(trimnative)("Manual Trim: " PROPERFMT "->" PROPERFMT " (%zd) (%.3fms)",
+                             PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), delta, duration);
+        JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, true, duration, sc.before, sc.after, delta);)
       } else {
         _output->print_cr("(no details available).");
       }
