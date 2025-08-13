@@ -49,7 +49,7 @@ import java.util.function.IntPredicate;
  * @param member           an int predicate that can be used to test if an enum is a member
  *                         of the valid inputs (as there might be "holes")
  * @param delegates        a delegate array of inputs to StableValue mappings
- * @param underlyingHolder of the original underlying Function
+ * @param underlyingHolder the holder of the original underlying Function
  * @param <E>              the type of the input to the function
  * @param <R>              the type of the result of the function
  */
