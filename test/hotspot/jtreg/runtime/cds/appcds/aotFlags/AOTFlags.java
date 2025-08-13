@@ -257,6 +257,16 @@ public class AOTFlags {
         out.shouldContain("AOTCache creation is complete: hello.aot");
         out.shouldMatch("Picked up JAVA_TOOL_OPTIONS:.* -Dmy.prop=My' 'string' '-Xshare:off' 'here");
         out.shouldHaveExitValue(0);
+
+        // Training run with -XX:+PrintTieredEvents (see JDK-8362530).
+        printTestCase("Training run with -XX:+PrintTieredEvents");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=record",
+            "-XX:+PrintTieredEvents",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "train-with-tiered-events");
+        out.shouldHaveExitValue(0);
     }
 
     static void negativeTests() throws Exception {

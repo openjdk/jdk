@@ -549,7 +549,6 @@ void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int b
   stringStream s;
   print_event_on(&s, type, m, im, bci, level);
   ResourceMark rm;
-  ttyLocker tty_lock;
   tty->print("%s", s.as_string());
 }
 
