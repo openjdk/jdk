@@ -404,7 +404,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   return 1;
 }
 
-void CompilationPolicy::print_counters_on(outputStream* st,  const char* prefix, Method* m) {
+void CompilationPolicy::print_counters_on(outputStream* st, const char* prefix, Method* m) {
   int invocation_count = m->invocation_count();
   int backedge_count = m->backedge_count();
   MethodData* mdh = m->method_data();
