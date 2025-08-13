@@ -1414,6 +1414,7 @@ public:
 
   // Add a vectorized drain loop between the main loop and the current post loop.
   void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
+
 // If 'back_ctrl' is not null:
 //   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
 //   - Otherwise, return 'n' unchanged.
@@ -1422,6 +1423,7 @@ public:
 //   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
 //   - Otherwise, return 'n'.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
+
   // If Node 'main_incr' lives in the 'main_backedge_ctrl' block, we clone
   // a private version of 'main_incr' in 'drain_entry' block and return that,
   // otherwise return a phi node 'main_merge_phi' merging exit values from

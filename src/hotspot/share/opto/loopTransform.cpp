@@ -1387,7 +1387,7 @@ void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNo
   _igvn.replace_input_of(phi, LoopNode::EntryControl, castii);
 }
 
-//------------------------------look_up_vectorized_drain_input--------------------------
+//------------------------------get_vectorized_drain_input--------------------------
 // After inserting zero trip guard for the vectorized drain loop,
 // now we need to make the fall-in values to the vectorized drain
 // loop come from phis merging exit values from the pre loop and
