@@ -45,7 +45,10 @@ public class TestIncludesAreSorted {
     private static final String[] HOTSPOT_SOURCES_TO_CHECK = {
                     "share/adlc",
                     "share/c1",
+                    "share/cds",
                     "share/ci",
+                    "share/classfile",
+                    "share/code",
                     "share/compiler",
                     "share/jvmci",
                     "share/libadt",
