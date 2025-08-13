@@ -1201,12 +1201,6 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
 
     if (attached_method.not_null() && caller_is_jvmci) {
-      RegisterMap reg_map2(current,
-                          RegisterMap::UpdateMap::include,
-                          RegisterMap::ProcessFrames::include,
-                          RegisterMap::WalkContinuation::skip);
-      frame stubFrame   = current->last_frame();
-      frame callerFrame = stubFrame.sender(&reg_map2);
       javaVFrame* jVFrame = vfst.asJavaVFrame();
       assert(jVFrame->is_compiled_frame(), "should be compiled frame");
       compiledVFrame* cVFrame = (compiledVFrame*) jVFrame;
