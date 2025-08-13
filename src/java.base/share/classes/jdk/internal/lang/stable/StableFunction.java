@@ -42,7 +42,7 @@ import java.util.function.Function;
  *           rely on reflection, MethodHandles, Streams etc.
  *
  * @param values           a delegate map of inputs to StableValue mappings
- * @param underlyingHolder of the original underlying Function
+ * @param underlyingHolder the holder of the original underlying Function
  * @param <T>              the type of the input to the function
  * @param <R>              the type of the result of the function
  */
