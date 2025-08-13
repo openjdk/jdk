@@ -125,7 +125,7 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
 
 // No lock required because arguments align with card boundaries.
 void ShenandoahCardCluster::reset_object_range(HeapWord* from, HeapWord* to) {
-  assert(is_card_aligned(from) && is_card_aligned(to),
+  assert(CardTable::is_card_aligned(from) && CardTable::is_card_aligned(to),
          "Must align with card boundaries");
   size_t card_at_start = _rs->card_index_for_addr(from);
   size_t num_cards = (to - from) / CardTable::card_size_in_words();
