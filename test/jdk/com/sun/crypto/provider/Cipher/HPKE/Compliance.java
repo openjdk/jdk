@@ -50,11 +50,6 @@ import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
 public class Compliance {
     public static void main(String[] args) throws Exception {
 
-        var defaultParams = HPKEParameterSpec.of(
-                KEM_DHKEM_X25519_HKDF_SHA256,
-                KDF_HKDF_SHA256,
-                AEAD_AES_256_GCM);
-
         var kp = KeyPairGenerator.getInstance("X25519").generateKeyPair();
         var info = "info".getBytes(StandardCharsets.UTF_8);
         var psk = new SecretKeySpec(new byte[32], "ONE");
@@ -62,8 +57,11 @@ public class Compliance {
 
         // HPKEParameterSpec
 
-        // Default values
-        var spec = defaultParams;
+        // A typical spec
+        var spec = HPKEParameterSpec.of(
+                KEM_DHKEM_X25519_HKDF_SHA256,
+                KDF_HKDF_SHA256,
+                AEAD_AES_256_GCM);
         Asserts.assertEQ(spec.kem_id(), KEM_DHKEM_X25519_HKDF_SHA256);
         Asserts.assertEQ(spec.kdf_id(), KDF_HKDF_SHA256);
         Asserts.assertEQ(spec.aead_id(), AEAD_AES_256_GCM);
@@ -73,16 +71,16 @@ public class Compliance {
         Asserts.assertEQ(spec.psk(), null);
         Asserts.assertEqualsByteArray(spec.psk_id(), new byte[0]);
 
-        // Specified values
-        var spec2 = HPKEParameterSpec.of(0, 0, 0);
-        Asserts.assertEQ(spec2.kem_id(), 0);
-        Asserts.assertEQ(spec2.kdf_id(), 0);
-        Asserts.assertEQ(spec2.aead_id(), 0);
-        Asserts.assertEQ(spec2.authKey(), null);
-        Asserts.assertEQ(spec2.encapsulation(), null);
-        Asserts.assertEqualsByteArray(spec2.info(), new byte[0]);
-        Asserts.assertEQ(spec2.psk(), null);
-        Asserts.assertEqualsByteArray(spec2.psk_id(), new byte[0]);
+        // A fake spec but still valid
+        var specZero = HPKEParameterSpec.of(0, 0, 0);
+        Asserts.assertEQ(specZero.kem_id(), 0);
+        Asserts.assertEQ(specZero.kdf_id(), 0);
+        Asserts.assertEQ(specZero.aead_id(), 0);
+        Asserts.assertEQ(specZero.authKey(), null);
+        Asserts.assertEQ(specZero.encapsulation(), null);
+        Asserts.assertEqualsByteArray(specZero.info(), new byte[0]);
+        Asserts.assertEQ(specZero.psk(), null);
+        Asserts.assertEqualsByteArray(specZero.psk_id(), new byte[0]);
 
         // identifiers must be in range
         HPKEParameterSpec.of(65535, 65535, 65535);
@@ -104,12 +102,12 @@ public class Compliance {
         Asserts.assertTrue(spec.authKey(kp.getPublic()).authKey() != null);
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey(null).authKey() == null);
 
-        Asserts.assertTrue(defaultParams.toString().contains("kem_id=32, kdf_id=1, aead_id=2"));
-        Asserts.assertTrue(defaultParams.info(new byte[3]).toString().contains("info=000000"));
-        Asserts.assertTrue(defaultParams.toString().contains("mode_base}"));
-        Asserts.assertTrue(defaultParams.psk(psk, psk_id).toString().contains("mode_psk}"));
-        Asserts.assertTrue(defaultParams.authKey(kp.getPrivate()).toString().contains("mode_auth}"));
-        Asserts.assertTrue(defaultParams.authKey(kp.getPrivate()).psk(psk, psk_id).toString().contains("mode_auth_psk}"));
+        Asserts.assertTrue(spec.toString().contains("kem_id=32, kdf_id=1, aead_id=2"));
+        Asserts.assertTrue(spec.info(new byte[3]).toString().contains("info=000000"));
+        Asserts.assertTrue(spec.toString().contains("mode_base}"));
+        Asserts.assertTrue(spec.psk(psk, psk_id).toString().contains("mode_psk}"));
+        Asserts.assertTrue(spec.authKey(kp.getPrivate()).toString().contains("mode_auth}"));
+        Asserts.assertTrue(spec.authKey(kp.getPrivate()).psk(psk, psk_id).toString().contains("mode_auth_psk}"));
 
         // Info can be empty but not null
         Asserts.assertThrows(NullPointerException.class, () -> spec.info(null));
@@ -150,16 +148,16 @@ public class Compliance {
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0));
 
         // Simplest usages
-        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), defaultParams);
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), spec);
         var encap = c1.getIV();
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                defaultParams.encapsulation(encap));
+                spec.encapsulation(encap));
 
         // Does not support WRAP and UNWRAP mode
         Asserts.assertThrows(UnsupportedOperationException.class,
-                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic(), defaultParams));
+                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic(), spec));
         Asserts.assertThrows(UnsupportedOperationException.class,
-                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic(), defaultParams));
+                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic(), spec));
 
         // Cannot init sender with private key
         Asserts.assertThrows(InvalidKeyException.class,
@@ -168,7 +166,7 @@ public class Compliance {
         // Cannot provide key encap msg to sender
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        defaultParams.encapsulation(new byte[32])));
+                        spec.encapsulation(new byte[32])));
 
         // Cannot init without algorithm identifiers
         Asserts.assertThrows(InvalidKeyException.class,
@@ -179,10 +177,10 @@ public class Compliance {
         // Cannot init recipient with public key
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPublic(),
-                        defaultParams.encapsulation(encap)));
+                        spec.encapsulation(encap)));
         // Must provide key encap msg to recipient
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), defaultParams));
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), spec));
 
         // Unsupported identifiers
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
@@ -207,14 +205,14 @@ public class Compliance {
         var aad = "AAD".getBytes(StandardCharsets.UTF_8);
 
         // HPKE with encryption
-        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), defaultParams);
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), spec);
         Asserts.assertEquals(16, c1.getBlockSize());
         Asserts.assertEquals(116, c1.getOutputSize(100));
         c1.updateAAD(aad);
         var ct = c1.doFinal(new byte[2]);
 
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                defaultParams.encapsulation(c1.getIV()));
+                spec.encapsulation(c1.getIV()));
         Asserts.assertEquals(16, c2.getBlockSize());
         Asserts.assertEquals(84, c2.getOutputSize(100));
         c2.updateAAD(aad);
@@ -222,31 +220,31 @@ public class Compliance {
 
         // info and psk
         checkEncryptDecrypt(kp,
-                defaultParams.info(info).psk(psk, psk_id),
-                defaultParams.info(info).psk(psk, psk_id));
+                spec.info(info).psk(psk, psk_id),
+                spec.info(info).psk(psk, psk_id));
 
         var kp2 = KeyPairGenerator.getInstance("X25519").generateKeyPair();
 
         // mod_auth, wrong key type
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        defaultParams.authKey(kp2.getPublic())));
+                        spec.authKey(kp2.getPublic())));
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        defaultParams.authKey(kp2.getPrivate())));
+                        spec.authKey(kp2.getPrivate())));
 
         // mod_auth
         checkEncryptDecrypt(kp,
-                defaultParams.authKey(kp2.getPrivate()),
-                defaultParams.authKey(kp2.getPublic()));
+                spec.authKey(kp2.getPrivate()),
+                spec.authKey(kp2.getPublic()));
 
         checkEncryptDecrypt(kp,
-                defaultParams,
-                defaultParams.info(new byte[0]));
+                spec,
+                spec.info(new byte[0]));
 
         checkEncryptDecrypt(kp,
-                defaultParams,
-                defaultParams.psk(null, new byte[0]));
+                spec,
+                spec.psk(null, new byte[0]));
 
         // HPKEParameters
         var ap = AlgorithmParameters.getInstance("HPKE");
@@ -255,7 +253,7 @@ public class Compliance {
                 () -> ap.init(NamedParameterSpec.X25519));
         Asserts.assertTrue(ap.toString() == null);
 
-        ap.init(defaultParams);
+        ap.init(spec);
         var actual = ap.getParameterSpec(HPKEParameterSpec.class);
         Asserts.assertEquals(KEM_DHKEM_X25519_HKDF_SHA256, actual.kem_id());
         Asserts.assertEquals(KDF_HKDF_SHA256, actual.kdf_id());
