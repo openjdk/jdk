@@ -1870,23 +1870,25 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     for (idx_t i = beg; i <= end; i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
       assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
-      assert(r->is_empty(), "Should be empty");
       r->try_recycle_under_lock();
+      assert(r->is_empty(), "Should be empty");
       r->set_affiliation(req.affiliation());
       if (i == beg) {
         r->make_humongous_start();
       } else {
         r->make_humongous_cont();
       }
-      if (i == end) {
+      if ((i == end) && (used_words_in_last_region > 0)) {
         r->set_top(r->bottom() + used_words_in_last_region);
       } else {
+        // if used_words_in_last_region is zero, then the end region is fully consumed.
         r->set_top(r->end());
       }
       r->set_update_watermark(r->bottom());
     }
     total_used = ShenandoahHeapRegion::region_size_bytes() * num;
-    waste_bytes = ShenandoahHeapRegion::region_size_bytes() - used_words_in_last_region * HeapWordSize;
+    waste_bytes =
+      (used_words_in_last_region == 0)? 0: ShenandoahHeapRegion::region_size_bytes() - used_words_in_last_region * HeapWordSize;
   } else {
     // Non-humongous allocation retires only the regions that cannot be used for allocation anymore.
     waste_bytes = 0;
@@ -1897,9 +1899,10 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       r->try_recycle_under_lock();
       r->set_affiliation(req.affiliation());
       r->make_regular_allocation(req.affiliation());
-      if (i == end) {
+      if ((i == end) && (used_words_in_last_region > 0)) {
         r->set_top(r->bottom() + used_words_in_last_region);
       } else {
+        // if used_words_in_last_region is zero, then the end region is fully consumed.
         r->set_top(r->end());
       }
       r->set_update_watermark(r->bottom());
