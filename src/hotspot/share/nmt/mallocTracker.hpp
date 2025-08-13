@@ -213,7 +213,7 @@ class MallocMemorySummary : AllStatic {
 
   // Called when a total limit break was detected.
   // Will return true if the limit was handled, false if it was ignored.
-  static bool mem_tag_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
+  static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
    static void initialize();
@@ -255,7 +255,7 @@ class MallocMemorySummary : AllStatic {
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
-  // either global or the MemTag limit
+  // either global or the category limit
   static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
 };

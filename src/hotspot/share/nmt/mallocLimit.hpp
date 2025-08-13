@@ -54,7 +54,7 @@ public:
   bool parse_malloclimit_option(const char* optionstring, const char** err);
 
   void set_global_limit(size_t s, MallocLimitMode type);
-  void set_mem_tag_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
+  void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
   const malloclimit* mem_tag_limit(MemTag mem_tag) const { return &_mtag[(int)mem_tag]; }

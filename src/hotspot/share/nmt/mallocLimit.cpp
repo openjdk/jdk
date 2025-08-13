@@ -130,7 +130,7 @@ void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
   _glob.sz = s; _glob.mode = flag;
 }
 
-void MallocLimitSet::set_mem_tag_limit(MemTag mem_tag, size_t s, MallocLimitMode mode) {
+void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode) {
   const int i = NMTUtil::tag_to_index(mem_tag);
   _mtag[i].sz = s; _mtag[i].mode = mode;
 }
@@ -139,7 +139,7 @@ void MallocLimitSet::reset() {
   set_global_limit(0, MallocLimitMode::trigger_fatal);
   _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
   for (int i = 0; i < mt_number_of_tags; i++) {
-    set_mem_tag_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
+    set_category_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
   }
 }
 

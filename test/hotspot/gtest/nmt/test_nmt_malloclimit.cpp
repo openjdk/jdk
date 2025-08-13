@@ -76,19 +76,19 @@ TEST(NMT, MallocLimitBasics) {
   test("2048k:oom", expected);
 }
 
-TEST(NMT, MallocLimitPerMemTag) {
+TEST(NMT, MallocLimitPerCategory) {
   MallocLimitSet expected;
 
-  expected.set_mem_tag_limit(mtMetaspace, 1 * M, MallocLimitMode::trigger_fatal);
+  expected.set_category_limit(mtMetaspace, 1 * M, MallocLimitMode::trigger_fatal);
   test("metaspace:1m", expected);
   test("metaspace:1m:fatal", expected);
   test("METASPACE:1m", expected);
 
-  expected.set_mem_tag_limit(mtCompiler, 2 * M, MallocLimitMode::trigger_oom);
-  expected.set_mem_tag_limit(mtThread, 3 * M, MallocLimitMode::trigger_oom);
-  expected.set_mem_tag_limit(mtThreadStack, 4 * M, MallocLimitMode::trigger_oom);
-  expected.set_mem_tag_limit(mtClass, 5 * M, MallocLimitMode::trigger_fatal);
-  expected.set_mem_tag_limit(mtClassShared, 6 * M, MallocLimitMode::trigger_fatal);
+  expected.set_category_limit(mtCompiler, 2 * M, MallocLimitMode::trigger_oom);
+  expected.set_category_limit(mtThread, 3 * M, MallocLimitMode::trigger_oom);
+  expected.set_category_limit(mtThreadStack, 4 * M, MallocLimitMode::trigger_oom);
+  expected.set_category_limit(mtClass, 5 * M, MallocLimitMode::trigger_fatal);
+  expected.set_category_limit(mtClassShared, 6 * M, MallocLimitMode::trigger_fatal);
   test("metaspace:1m,compiler:2m:oom,thread:3m:oom,threadstack:4m:oom,class:5m,classshared:6m", expected);
 }
 
@@ -98,7 +98,7 @@ TEST(NMT, MallocLimitMemTagEnumNames) {
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
-      expected.set_mem_tag_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
+      expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
       option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_enum_name(mem_tag), i + 1);
     }
   }
@@ -111,7 +111,7 @@ TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
-      expected.set_mem_tag_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
+      expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
       option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_name(mem_tag), i + 1);
     }
   }
