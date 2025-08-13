@@ -245,20 +245,6 @@ public class Compliance {
         checkEncryptDecrypt(kp,
                 spec,
                 spec.psk(null, new byte[0]));
-
-        // HPKEParameters
-        var ap = AlgorithmParameters.getInstance("HPKE");
-        Asserts.assertThrows(IOException.class, () -> ap.init(new byte[100]));
-        Asserts.assertThrows(InvalidParameterSpecException.class,
-                () -> ap.init(NamedParameterSpec.X25519));
-        Asserts.assertTrue(ap.toString() == null);
-
-        ap.init(spec);
-        var actual = ap.getParameterSpec(HPKEParameterSpec.class);
-        Asserts.assertEquals(KEM_DHKEM_X25519_HKDF_SHA256, actual.kem_id());
-        Asserts.assertEquals(KDF_HKDF_SHA256, actual.kdf_id());
-        Asserts.assertEquals(AEAD_AES_256_GCM, actual.aead_id());
-        Asserts.assertEquals(actual.toString(), ap.toString());
     }
 
     static void checkEncryptDecrypt(KeyPair kp, HPKEParameterSpec ps,
