@@ -296,7 +296,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
         copy = allocate_memory(req);
         alloc_from_lab = false;
         if (is_promotion && copy != nullptr) {
-          log_debug(gc, plab)("Made a shared promotion of size: %zu, min PLAB: %zu", size, PLAB::min_size());
+          log_debug(gc, plab)("Made a shared promotion of size: %zu, actual PLAB size for thread: %zu, min PLAB: %zu, max PLAB: %zu",
+            size * HeapWordSize, ShenandoahThreadLocalData::get_plab_actual_size(thread) * HeapWordSize,
+            PLAB::min_size() * HeapWordSize, plab_max_size() * HeapWordSize);
         }
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
