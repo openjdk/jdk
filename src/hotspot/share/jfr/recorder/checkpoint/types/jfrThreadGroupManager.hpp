@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,47 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP
 
-function readMsi(msiPath, callback) {
-    var installer = new ActiveXObject('WindowsInstaller.Installer')
-    var database = installer.OpenDatabase(msiPath, 0 /* msiOpenDatabaseModeReadOnly */)
+#include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
 
-    return callback(database)
-}
+class JfrCheckpointWriter;
 
+class JfrThreadGroupManager : public AllStatic {
+  friend class JfrRecorder;
 
-function queryAllProperties(db) {
-    var reply = {}
+ private:
+  static bool create();
+  static void destroy();
 
-    var view = db.OpenView("SELECT `Property`, `Value` FROM Property")
-    view.Execute()
+ public:
+  static void serialize(JfrCheckpointWriter& w);
+  static void serialize(JfrCheckpointWriter& w, traceid tgid, bool is_blob);
 
-    try {
-        while(true) {
-            var record = view.Fetch()
-            if (!record) {
-                break
-            }
+  static traceid thread_group_id(JavaThread* thread);
+  static traceid thread_group_id(const JavaThread* thread, Thread* current);
+};
 
-            var name = record.StringData(1)
-            var value = record.StringData(2)
-
-            reply[name] = value
-        }
-    } finally {
-        view.Close()
-    }
-
-    return reply
-}
-
-
-(function () {
-    var msi = WScript.arguments(0)
-    var propName = WScript.arguments(1)
-
-    var props = readMsi(msi, queryAllProperties)
-    WScript.Echo(props[propName])
-})()
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADGROUPMANAGER_HPP

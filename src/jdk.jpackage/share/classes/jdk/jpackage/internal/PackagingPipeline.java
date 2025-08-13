@@ -55,19 +55,49 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
 
 final class PackagingPipeline {
 
+    /**
+     * Runs the pipeline for the given application.
+     *
+     * @param env the build environment
+     * @param app the application
+     */
     void execute(BuildEnv env, Application app) throws PackagerException {
         execute(appContextMapper.apply(createTaskContext(env, app)));
     }
 
+    /**
+     * Runs the pipeline for the given package.
+     * <p>
+     * Building a package may require a directory where the app image bits will be
+     * accumulated or the existing app image may be used. The decision is made based
+     * on the properties of the given package. A new build environment will be
+     * created if an intermediate directory is required. To access the build
+     * environment that will be used by the pipeline before running the pipeline
+     * create {@link StartupParameters} instance using
+     * {@link Builder#createStartupParameters(BuildEnv, Package, Path)} method.
+     *
+     * @param env       the build environment
+     * @param pkg       the package
+     * @param outputDir the output directory for the package file
+     */
     void execute(BuildEnv env, Package pkg, Path outputDir) throws PackagerException {
         execute((StartupParameters)createPackagingTaskContext(env, pkg, outputDir,
                 taskConfig, appImageLayoutForPackaging.apply(pkg)));
     }
 
+    /**
+     * Runs the pipeline using the startup parameters created with
+     * {@link Builder#createStartupParameters(BuildEnv, Package, Path)} call.
+     *
+     * @param startupParameters the pipeline startup parameters
+     */
     void execute(StartupParameters startupParameters) throws PackagerException {
         execute(pkgContextMapper.apply(createTaskContext((PackagingTaskContext)startupParameters)));
     }
 
+    /**
+     * The way to access packaging build environment before building a package in a pipeline.
+     */
     interface StartupParameters {
         BuildEnv packagingEnv();
     }

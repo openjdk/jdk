@@ -62,8 +62,8 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -245,7 +245,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
   size_t alignment = MetaspaceShared::core_region_alignment();
-  if (UseCompressedClassPointers) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
     alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
 
