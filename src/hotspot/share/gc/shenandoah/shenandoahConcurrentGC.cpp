@@ -834,7 +834,6 @@ public:
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
     if (GENERATIONAL) {
-      log_debug(gc, plab)("Conc evac closure: enable plab promotions for java thread");
       ShenandoahThreadLocalData::enable_plab_promotions(thread);
     }
   }
@@ -854,7 +853,6 @@ public:
   void work(uint worker_id) override {
     if (GENERATIONAL) {
       Thread* worker_thread = Thread::current();
-      log_debug(gc, plab)("Conc evac update task: enable plab promotions for worker");
       ShenandoahThreadLocalData::enable_plab_promotions(worker_thread);
     }
 

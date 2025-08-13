@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/osThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
 
@@ -201,10 +202,12 @@ public:
   }
 
   static void enable_plab_promotions(Thread* thread) {
+    log_debug(gc, plab)("Enable PLAB promotions for thread: %d (java? %s)", thread->osthread()->thread_id(), BOOL_TO_STR(thread->is_Java_thread()));
     data(thread)->_plab_allows_promotion = true;
   }
 
   static void disable_plab_promotions(Thread* thread) {
+    log_debug(gc, plab)("Disable PLAB promotions for thread: %d", thread->osthread()->thread_id());
     data(thread)->_plab_allows_promotion = false;
   }
 
