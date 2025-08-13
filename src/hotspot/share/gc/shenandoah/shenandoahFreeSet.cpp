@@ -1878,7 +1878,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       } else {
         r->make_humongous_cont();
       }
-      r->set_top(r->end());
+      if (i == end) {
+        r->set_top(r->bottom() + used_words_in_last_region);
+      } else {
+        r->set_top(r->end());
+      }
       r->set_update_watermark(r->bottom());
     }
     total_used = ShenandoahHeapRegion::region_size_bytes() * num;
@@ -1893,10 +1897,10 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       r->try_recycle_under_lock();
       r->set_affiliation(req.affiliation());
       r->make_regular_allocation(req.affiliation());
-      if (i < end) {
-        r->set_top(r->end());
-      } else {
+      if (i == end) {
         r->set_top(r->bottom() + used_words_in_last_region);
+      } else {
+        r->set_top(r->end());
       }
       r->set_update_watermark(r->bottom());
       total_used += r->used();
