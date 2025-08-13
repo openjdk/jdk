@@ -122,17 +122,21 @@ public final class SegmentBulkOperations {
             // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
             // is an overlap, we could tolerate one particular direction of overlap (but not the other).
 
-            // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
-            switch (64 - Long.numberOfLeadingZeros(len)) {
-                case 0 -> { /* Do nothing */ }
-                case 1 -> {
-                    final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
-                    SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v);
+
+            if( len > 15) {
+                copy5AndUpwards(src, srcOffset, dst, dstOffset, len);
+            } else {
+                // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
+                switch (64 - Long.numberOfLeadingZeros(len)) {
+                    case 0 -> { /* Do nothing */ }
+                    case 1 -> {
+                        final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
+                        SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v);
+                    }
+                    case 2 -> copy2(src, srcOffset, dst, dstOffset, len);
+                    case 3 -> copy3(src, srcOffset, dst, dstOffset, len);
+                    case 4 -> copy4(src, srcOffset, dst, dstOffset, len);
                 }
-                case 2 -> copy2(src, srcOffset, dst, dstOffset, len);
-                case 3 -> copy3(src, srcOffset, dst, dstOffset, len);
-                case 4 -> copy4(src, srcOffset, dst, dstOffset, len);
-                default -> copy5AndUpwards(src, srcOffset, dst, dstOffset, len);
             }
         }
     }
