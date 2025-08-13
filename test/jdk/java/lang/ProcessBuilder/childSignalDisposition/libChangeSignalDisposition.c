@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,46 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SURVIVORREGIONS_HPP
-#define SHARE_GC_G1_G1SURVIVORREGIONS_HPP
+#include <errno.h>
+#include "jvmti.h"
+#include <signal.h>
+#include <stdio.h>
 
-#include "gc/g1/g1RegionsOnNodes.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/growableArray.hpp"
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
-template <typename T>
-class GrowableArray;
-class G1HeapRegion;
-
-// Set of current survivor regions.
-class G1SurvivorRegions {
-  GrowableArray<G1HeapRegion*> _regions;
-  volatile size_t _used_bytes;
-  G1RegionsOnNodes _regions_on_node;
-
-public:
-  G1SurvivorRegions();
-
-  uint add(G1HeapRegion* hr);
-
-  void convert_to_eden();
-
-  void clear();
-
-  uint length() const;
-  uint regions_on_node(uint node_index) const;
-
-  const GrowableArray<G1HeapRegion*>& regions() const {
-    return _regions;
+  if (signal(SIGPIPE, SIG_IGN) != SIG_ERR) {
+    printf("changed signal disposition for SIGPIPE to SIG_IGN\n");
+  } else {
+    printf("FAILED to change signal disposition for SIGPIPE to SIG_IGN (%d)\n", errno);
+    return JNI_ERR;
   }
 
-  // Used bytes of all survivor regions.
-  size_t used_bytes() const { return _used_bytes; }
-
-  void add_used_bytes(size_t used_bytes);
-};
-
-#endif // SHARE_GC_G1_G1SURVIVORREGIONS_HPP
+  return JNI_OK;
+}
