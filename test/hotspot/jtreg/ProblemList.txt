@@ -75,21 +75,15 @@ compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
 
-compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
-compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
-
 compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
-
-compiler/debug/TestStressBailout.java 8361752 generic-all
 
 #############################################################################
 
 # :hotspot_gc
 
 gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
-gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/TestAllocHumongousFragment.java#adaptive 8298781 generic-all
