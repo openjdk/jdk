@@ -50,7 +50,7 @@ public interface ExpressionParserConstants {
   /** RegularExpression Id. */
   int BYTE = 12;
   /** RegularExpression Id. */
-  int CASE = 13;
+  int _CASE = 13;
   /** RegularExpression Id. */
   int CATCH = 14;
   /** RegularExpression Id. */

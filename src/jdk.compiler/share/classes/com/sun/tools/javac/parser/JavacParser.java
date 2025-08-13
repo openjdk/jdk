@@ -54,7 +54,7 @@ import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.ASSERT;
-import static com.sun.tools.javac.parser.Tokens.TokenKind._CASE;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.CASE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.MAXJCASE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CATCH;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
@@ -427,23 +427,23 @@ public class JavacParser implements Parser {
                    if (stopAtIdentifier)
                         return;
                     break;
-                case _CASE:
+                case CASE:
                 case MAXJCASE:
                 case DEFAULT:
                 case MAXJDEFAULT:
-                case _IF:
+                case IF:
                 case MAXJIF:
                 case FOR:
                 case WHILE:
                 case DO:
                 case TRY:
-                case _SWITCH:
+                case SWITCH:
                 case MAXJSWITCH:
                 case RETURN:
                 case THROW:
                 case BREAK:
                 case CONTINUE:
-                case _ELSE:
+                case ELSE:
                 case MAXJELSE:
                 case FINALLY:
                 case CATCH:
@@ -1761,7 +1761,7 @@ public class JavacParser implements Parser {
                 //return illegal();
             }
             break;
-        case _SWITCH:
+        case SWITCH:
             checkSourceLevel(Feature.SWITCH_EXPRESSION);
             allowYieldStatement = true;
             int switchPos = token.pos;
@@ -1772,7 +1772,7 @@ public class JavacParser implements Parser {
             while (true) {
                 pos = token.pos;
                 switch (token.kind) {
-                case _CASE:
+                case CASE:
                 case DEFAULT:
                     cases.appendList(switchExpressionStatementGroup());
                     break;
@@ -1784,7 +1784,7 @@ public class JavacParser implements Parser {
                     return e;
                 default:
                     nextToken(); // to ensure progress
-                    syntaxError(pos, Errors.Expected3(_CASE, DEFAULT, RBRACE));
+                    syntaxError(pos, Errors.Expected3(CASE, DEFAULT, RBRACE));
                 }
             }
             // Not reachable.
@@ -1803,7 +1803,7 @@ public class JavacParser implements Parser {
             nextToken();
             pats.append(toP(F.at(casePos).DefaultCaseLabel()));
         } else {
-            accept(_CASE);
+            accept(CASE);
             boolean allowDefault = false;
             while (true) {
                 JCCaseLabel label = parseCaseLabel(allowDefault);
@@ -2064,7 +2064,7 @@ public class JavacParser implements Parser {
                         case STRINGFRAGMENT:
                         case TRUE: case FALSE: case NULL:
                         case NEW: case IDENTIFIER: case ASSERT: case ENUM: case UNDERSCORE:
-                        case _SWITCH:
+                        case SWITCH:
                         case BYTE: case SHORT: case CHAR: case INT:
                         case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
                             return ParensResult.CAST;
@@ -2862,7 +2862,7 @@ public class JavacParser implements Parser {
         ignoreDanglingComments();   // ignore any comments from before the '{'
         List<JCStatement> stats = blockStatements();
         JCBlock t = F.at(pos).Block(flags, stats);
-        while (token.kind == _CASE || token.kind == DEFAULT) {
+        while (token.kind == CASE || token.kind == DEFAULT) {
             syntaxError(token.pos, Errors.Orphaned(token.kind));
             switchBlockStatementGroups();
         }
@@ -2946,11 +2946,11 @@ public class JavacParser implements Parser {
         Comment dc;
         int pos = token.pos;
         switch (token.kind) {
-        case RBRACE: case _CASE: case DEFAULT: case MAXJCASE: case MAXJDEFAULT: case EOF:
+        case RBRACE: case CASE: case DEFAULT: case MAXJCASE: case MAXJDEFAULT: case EOF:
             return List.nil();
-        case LBRACE: case _IF: case MAXJIF: case FOR: case WHILE: case DO: case TRY:
-        case _SWITCH: case MAXJSWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
-        case CONTINUE: case SEMI: case _ELSE: case MAXJELSE: case FINALLY: case CATCH:
+        case LBRACE: case IF: case MAXJIF: case FOR: case WHILE: case DO: case TRY:
+        case SWITCH: case MAXJSWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
+        case CONTINUE: case SEMI: case ELSE: case MAXJELSE: case FINALLY: case CATCH:
         case ASSERT:
             return List.of(parseSimpleStatement());
         case MONKEYS_AT:
@@ -2988,7 +2988,7 @@ public class JavacParser implements Parser {
                     case STRINGFRAGMENT:
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
                     case NULL: case IDENTIFIER: case UNDERSCORE: case TRUE: case FALSE:
-                    case NEW: case _SWITCH: case THIS: case SUPER:
+                    case NEW: case SWITCH: case THIS: case SUPER:
                     case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
                         break;
@@ -3087,14 +3087,14 @@ public class JavacParser implements Parser {
 
     /** Statement =
      *       Block
-     *     | _IF ParExpression Statement [_ELSE Statement]
+     *     | IF ParExpression Statement [ELSE Statement]
      *     | FOR "(" ForInitOpt ";" [Expression] ";" ForUpdateOpt ")" Statement
      *     | FOR "(" FormalParameter : Expression ")" Statement
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
      *     | TRY "(" ResourceSpecification ";"opt ")" Block [Catches] [FinallyPart]
-     *     | _SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
+     *     | SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
      *     | SYNCHRONIZED ParExpression Block
      *     | RETURN [Expression] ";"
      *     | THROW Expression ";"
@@ -3109,12 +3109,12 @@ public class JavacParser implements Parser {
         switch (token.kind) {
         case LBRACE:
             return block();
-        case _IF: {
+        case IF: {
             nextToken();
             JCExpression cond = parExpression();
             JCStatement thenpart = parseStatementAsBlock();
             JCStatement elsepart = null;
-            if (token.kind == _ELSE) {
+            if (token.kind == ELSE) {
                 nextToken();
                 elsepart = parseStatementAsBlock();
             }
@@ -3194,7 +3194,7 @@ public class JavacParser implements Parser {
             }
             return F.at(pos).Try(resources, body, catchers.toList(), finalizer);
         }
-        case _SWITCH: {
+        case SWITCH: {
             nextToken();
             JCExpression selector = parExpression();
             accept(LBRACE);
@@ -3251,7 +3251,7 @@ public class JavacParser implements Parser {
         case SEMI:
             nextToken();
             return toP(F.at(pos).Skip());
-        case _ELSE:
+        case ELSE:
             int elsePos = token.pos;
             nextToken();
             return doRecover(elsePos, BasicErrorRecoveryAction.BLOCK_STMT, Errors.ElseWithoutIf);
@@ -3327,14 +3327,14 @@ public class JavacParser implements Parser {
 
     /** SwitchBlockStatementGroups = { SwitchBlockStatementGroup }
      *  SwitchBlockStatementGroup = SwitchLabel BlockStatements
-     *  SwitchLabel = _CASE ConstantExpression ":" | DEFAULT ":"
+     *  SwitchLabel = CASE ConstantExpression ":" | DEFAULT ":"
      */
     List<JCCase> switchBlockStatementGroups() {
         ListBuffer<JCCase> cases = new ListBuffer<>();
         while (true) {
             int pos = token.pos;
             switch (token.kind) {
-            case _CASE:
+            case CASE:
             case DEFAULT:
                 cases.appendList(switchBlockStatementGroup());
                 break;
@@ -3342,7 +3342,7 @@ public class JavacParser implements Parser {
                 return cases.toList();
             default:
                 nextToken(); // to ensure progress
-                syntaxError(pos, Errors.Expected3(_CASE, DEFAULT, RBRACE));
+                syntaxError(pos, Errors.Expected3(CASE, DEFAULT, RBRACE));
             }
         }
     }
@@ -3353,7 +3353,7 @@ public class JavacParser implements Parser {
         JCCase c;
         ListBuffer<JCCase> cases = new ListBuffer<JCCase>();
         switch (token.kind) {
-        case _CASE: {
+        case CASE: {
             nextToken();
             ListBuffer<JCCaseLabel> pats = new ListBuffer<>();
             boolean allowDefault = false;
@@ -5068,7 +5068,7 @@ public class JavacParser implements Parser {
      */
     private boolean isDefiniteStatementStartToken() {
         return switch (token.kind) {
-            case _IF, WHILE, DO, _SWITCH, RETURN, TRY, FOR, ASSERT, BREAK,
+            case IF, WHILE, DO, SWITCH, RETURN, TRY, FOR, ASSERT, BREAK,
                  CONTINUE, THROW -> true;
             default -> false;
         };
@@ -5247,8 +5247,8 @@ public class JavacParser implements Parser {
         } else {
             return switch (token.kind) {
                 //definitelly sees a statement:
-                case _CASE, DEFAULT, _IF, FOR, WHILE, DO, TRY, _SWITCH,
-                    RETURN, THROW, BREAK, CONTINUE, _ELSE, FINALLY,
+                case CASE, DEFAULT, IF, FOR, WHILE, DO, TRY, SWITCH,
+                    RETURN, THROW, BREAK, CONTINUE, ELSE, FINALLY,
                     CATCH, THIS, SUPER, NEW -> true;
                 case RBRACE -> {
                     //check if adding an opening brace would balance out

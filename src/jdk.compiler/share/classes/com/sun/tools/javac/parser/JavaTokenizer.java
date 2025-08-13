@@ -143,6 +143,11 @@ public class JavaTokenizer extends UnicodeReader {
     protected final Lint lint;
 
     /**
+     * true if we are parsing a .maxj file (enables MAXJ keywords).
+     */
+    protected final boolean isMaxJFile;
+
+    /**
      * Construct a Java token scanner from the input character buffer.
      *
      * @param fac  the factory which created this Scanner.
@@ -170,6 +175,19 @@ public class JavaTokenizer extends UnicodeReader {
         this.enableLineDocComments = fac.enableLineDocComments;
         this.lint = fac.lint;
         this.sb = new StringBuilder(256);
+
+        // Check if we're parsing a .maxj file
+        boolean isMaxJ = false;
+        try {
+            if (fac.log != null && fac.log.currentSourceFile() != null) {
+                String filename = fac.log.currentSourceFile().getName();
+                isMaxJ = filename.endsWith(".maxj");
+            }
+        } catch (Exception e) {
+            // If we can't determine the file type, assume it's not MAXJ
+            isMaxJ = false;
+        }
+        this.isMaxJFile = isMaxJ;
     }
 
     /**
@@ -653,6 +671,29 @@ public class JavaTokenizer extends UnicodeReader {
     private void checkIdent() {
         name = names.fromString(sb.toString());
         tk = tokens.lookupKind(name);
+
+        // Apply MAXJ keyword scoping based on file extension
+        if (isMaxJFile) {
+            // In .maxj files: recognize MAXJ keywords (CASE, ELSE, SWITCH, IF, OTHERWISE)
+            String nameStr = name.toString();
+            if ("CASE".equals(nameStr)) {
+                tk = TokenKind.MAXJCASE;
+            } else if ("ELSE".equals(nameStr)) {
+                tk = TokenKind.MAXJELSE;
+            } else if ("SWITCH".equals(nameStr)) {
+                tk = TokenKind.MAXJSWITCH;
+            } else if ("IF".equals(nameStr)) {
+                tk = TokenKind.MAXJIF;
+            } else if ("OTHERWISE".equals(nameStr)) {
+                tk = TokenKind.MAXJDEFAULT;
+            }
+        } else {
+            // In .java files: convert MAXJ keywords back to identifiers to avoid conflicts
+            if (tk == TokenKind.MAXJCASE || tk == TokenKind.MAXJELSE ||
+                tk == TokenKind.MAXJSWITCH || tk == TokenKind.MAXJIF || tk == TokenKind.MAXJDEFAULT) {
+                tk = TokenKind.IDENTIFIER;
+            }
+        }
     }
 
     /**
