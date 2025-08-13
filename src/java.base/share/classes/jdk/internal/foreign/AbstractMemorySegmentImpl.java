@@ -252,7 +252,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         return Optional.empty();
     }
 
-    // Returns a negative value if the regions overlap, otherwise a non-negative value.
     @ForceInline
     boolean overlaps(AbstractMemorySegmentImpl that) {
         if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
