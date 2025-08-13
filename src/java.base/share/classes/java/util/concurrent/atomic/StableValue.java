@@ -60,11 +60,11 @@ import java.util.stream.Stream;
  * the contents is <em>set</em>:
  *
  * {@snippet lang = java:
- * import java.util.concurrent.atomic.StableValue;public class Component {
+ * public class Component {
  *
  *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
- *    private final java.util.concurrent.atomic.StableValue<Logger> logger = StableValue.of();
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        if (!logger.isSet()) {
