@@ -64,17 +64,38 @@ bool AOTLinkedClassBulkLoader::has_finished_loading_classes() {
   }
 }
 
-void AOTLinkedClassBulkLoader::preload_classes(TRAPS) {
+// This function is called before the VM executes any Java code (include AOT-compiled Java methods).
+//
+// We populate the boot/platform/app class loaders with classes from the AOT cache. This is a fundamental
+// step in restoring the JVM's state from the snapshot recorded in the AOT cache: other AOT optimizations
+// such as AOT compiled methods can make direct references to the preloaded classes, knowing that
+// these classes are guaranteed to be in at least the loaded state.
+//
+// Preloading requires that the Java heap objects of java.lang.Class, java.lang.Package and
+// java.security.ProtectionDomain already exist for the preloaded classes. Therefore, we support preloading
+// only for the classes in the static CDS archive. Classes in the dynamic archive are not supported because
+// the dynamic archive does not include Java heap objects.
+void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
+  preload_classes_impl(current);
+  if (current->has_pending_exception()) {
+    exit_on_exception(current);
+  }
+}
+
+void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
+  precond(CDSConfig::is_using_preloaded_classes());
   log_info(aot, load)("Start preloading classes");
 
   ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(THREAD);
   Handle h_platform_loader(THREAD, SystemDictionary::java_platform_loader());
   Handle h_system_loader(THREAD, SystemDictionary::java_system_loader());
 
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot1(), "boot1", Handle(), THREAD);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot2(), "boot2", Handle(), THREAD);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->platform(), "plat", h_platform_loader, THREAD);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->app(), "app", h_system_loader, THREAD);
+  // Preloading is supported only for the static archive. Classes in the dynamic archive are loaded
+  // later in load_javabase_classes() and load_non_javabase_classes().
+  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot1(), "boot1", Handle(), CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot2(), "boot2", Handle(), CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->platform(), "plat", h_platform_loader, CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->app(), "app", h_system_loader, CHECK);
 
   log_info(aot, load)("Finished preloading classes");
 }

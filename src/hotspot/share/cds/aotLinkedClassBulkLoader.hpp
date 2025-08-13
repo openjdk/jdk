@@ -42,6 +42,15 @@ enum class AOTLinkedClassCategory : int;
 // a AOTLinkedClassTable into their respective ClassLoaders. This happens very early
 // in the JVM bootstrap stage, before any application code is executed.
 //
+// The classes are loaded in two steps:
+//
+// [1] preload_classes():
+//     This happens before any Java bytecode is executed, to load aot-linked classes in the static archive,
+//     placing them into the "loaded" state.
+//
+// [2] load_javabase_classes() and load_non_javabase_classes():
+//     This happens after some Java code is executed, to load aot-linked classes in the dynamic archive.
+//     This steps also puts all aot-linked classes into at least the "linked" state.
 class AOTLinkedClassBulkLoader :  AllStatic {
   static bool _boot2_completed;
   static bool _platform_completed;
@@ -49,6 +58,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static bool _all_completed;
   static bool _preloading_non_javavase_classes;
 
+  static void preload_classes_impl(TRAPS);
   static void preload_classes_in_table(Array<InstanceKlass*>* classes,
                                        const char* category_name, Handle loader, TRAPS);
   static void load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop);
@@ -70,7 +80,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
 
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
-  static void preload_classes(TRAPS);
+  static void preload_classes(JavaThread* current);
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;

@@ -700,19 +700,19 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
+  if (h_platform_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  }
+
+  if (h_system_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  }
+
   if (CDSConfig::is_using_preloaded_classes()) {
     // Already initialized
     precond(SystemDictionary::java_platform_loader() == h_platform_loader());
     precond(SystemDictionary::java_system_loader() == h_system_loader());
   } else {
-    if (h_platform_loader.is_null()) {
-      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
-    }
-
-    if (h_system_loader.is_null()) {
-      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
-    }
-
     init_archived_modules(THREAD, h_platform_loader, h_system_loader);
   }
 }

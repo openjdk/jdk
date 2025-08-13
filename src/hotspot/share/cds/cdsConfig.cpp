@@ -991,6 +991,8 @@ void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
   _has_aot_linked_classes |= has_aot_linked_classes;
 }
 
+// Preload classes = load classes from the AOT cache into the boot/platform/app loaders before
+// executing any Java code.
 bool CDSConfig::is_using_preloaded_classes() {
   return is_using_full_module_graph() && _has_preloaded_classes;
 }
