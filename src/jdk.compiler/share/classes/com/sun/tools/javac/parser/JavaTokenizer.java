@@ -739,6 +739,7 @@ public class JavaTokenizer extends UnicodeReader {
         case '+': case '-': case ':': case '<': case '=':
         case '>': case '^': case '|': case '~':
         case '@':
+        case '#':
             return true;
 
         default:

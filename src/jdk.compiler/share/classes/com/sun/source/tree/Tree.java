@@ -96,7 +96,7 @@ public interface Tree {
         /**
          * Used for instances of {@link CaseTree}.
          */
-        CASE(CaseTree.class),
+        _CASE(CaseTree.class),
 
         /**
          * Used for instances of {@link CatchTree}.
@@ -161,7 +161,7 @@ public interface Tree {
         /**
          * Used for instances of {@link IfTree}.
          */
-        IF(IfTree.class),
+        _IF(IfTree.class),
 
         /**
          * Used for instances of {@link ImportTree}.
@@ -279,7 +279,7 @@ public interface Tree {
         /**
          * Used for instances of {@link SwitchTree}.
          */
-        SWITCH(SwitchTree.class),
+        _SWITCH(SwitchTree.class),
 
         /**
          * Used for instances of {@link SwitchExpressionTree}.
@@ -501,6 +501,27 @@ public interface Tree {
         CONDITIONAL_OR(BinaryTree.class),
 
         /**
+         * MAXJ
+         * Used for instances of {@link BinaryTree} representing
+         * binary-concatenation {@code #}.
+         */
+        CAT(BinaryTree.class),
+
+        /**
+         * MAXJ
+         * Used for instances of {@link BinaryTree} representing
+         * value-equal-to {@code ===}.
+         */
+        EQUAL_EQUAL_TO(BinaryTree.class),
+
+        /**
+         * MAXJ
+         * Used for instances of {@link BinaryTree} representing
+         * value-not-equal-to {@code !==}.
+         */
+        NOT_EQUAL_EQUAL_TO(BinaryTree.class),
+
+        /**
          * Used for instances of {@link CompoundAssignmentTree} representing
          * multiplication assignment {@code *=}.
          */
@@ -565,6 +586,13 @@ public interface Tree {
          * bitwise and logical "or" assignment {@code |=}.
          */
         OR_ASSIGNMENT(CompoundAssignmentTree.class),
+
+        /**
+         * MAXJ
+         * Used for instances of {@link CompoundAssignmentTree} representing
+         * connect operator {@code <==}.
+         */
+        LE_ASSIGNMENT(CompoundAssignmentTree.class),
 
         /**
          * Used for instances of {@link LiteralTree} representing

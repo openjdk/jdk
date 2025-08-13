@@ -2801,7 +2801,7 @@ public class Flow {
             if (!isExhaustive) {
                 if (tree.hasTag(SWITCH_EXPRESSION)) {
                     markDead();
-                } else if (tree.hasTag(SWITCH) && !TreeInfo.expectedExhaustive((JCSwitch) tree)) {
+                } else if (tree.hasTag(_SWITCH) && !TreeInfo.expectedExhaustive((JCSwitch) tree)) {
                     inits.assign(initsSwitch);
                     uninits.assign(uninits.andSet(uninitsSwitch));
                 }
@@ -3287,7 +3287,7 @@ public class Flow {
                     sym.pos < getCurrentTreeStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
-                    case CASE:
+                    case _CASE:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -3314,7 +3314,7 @@ public class Flow {
                                 reportEffectivelyFinalError(tree, sym);
                             }
                         }
-                        case CASE -> {
+                        case _CASE -> {
                             if (!declaredInsideGuard.includes(sym)) {
                                 log.error(tree.pos(), Errors.CannotAssignNotDeclaredGuard(sym));
                             }
@@ -3327,7 +3327,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case CASE -> Fragments.Guard;
+                case _CASE -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };

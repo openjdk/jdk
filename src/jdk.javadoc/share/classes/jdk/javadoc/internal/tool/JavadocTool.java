@@ -160,11 +160,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Normally, the args should be a series of package names or file names.
             // Parse the files and collect the package names.
             for (String arg: javaNames) {
-                if (fm != null && arg.endsWith(".java") && isRegularFile(arg)) {
+                if (fm != null && (arg.endsWith(".java") || arg.endsWith(".maxj")) && isRegularFile(arg)) {
                     parse(fm.getJavaFileObjects(arg), compilationUnits, true);
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
-                } else if (arg.endsWith(".java")) {
+                } else if (arg.endsWith(".java") || arg.endsWith(".maxj")) {
                     if (fm == null) {
                         String text = log.getText("main.assertion.error", "fm == null");
                         throw new ToolException(ABNORMAL, text);

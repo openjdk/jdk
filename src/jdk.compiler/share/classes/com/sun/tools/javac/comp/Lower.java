@@ -3879,7 +3879,7 @@ public class Lower extends TreeTranslator {
         boolean boxedSwitch = !enumSwitch && !stringSwitch && !selector.type.isPrimitive();
         selector = translate(selector, selector.type);
         cases = translateCases(cases);
-        if (tree.hasTag(SWITCH)) {
+        if (tree.hasTag(_SWITCH)) {
             ((JCSwitch) tree).selector = selector;
             ((JCSwitch) tree).cases = cases;
         } else if (tree.hasTag(SWITCH_EXPRESSION)) {
@@ -3951,7 +3951,7 @@ public class Lower extends TreeTranslator {
             }
         }
         JCTree enumSwitch;
-        if (tree.hasTag(SWITCH)) {
+        if (tree.hasTag(_SWITCH)) {
             enumSwitch = make.Switch(newSelector, newCases.toList());
         } else if (tree.hasTag(SWITCH_EXPRESSION)) {
             enumSwitch = make.SwitchExpression(newSelector, newCases.toList());
@@ -4157,7 +4157,7 @@ public class Lower extends TreeTranslator {
                                     oneCase.stats, null));
             }
 
-            if (tree.hasTag(SWITCH)) {
+            if (tree.hasTag(_SWITCH)) {
                 JCSwitch switch2 = make.Switch(make.Ident(dollar_tmp), lb.toList());
                 // Rewire up old unlabeled break statements to the
                 // replacement switch being created.
@@ -4242,7 +4242,7 @@ public class Lower extends TreeTranslator {
             newSelector = unbox(selector, syms.intType);
         }
 
-        if (tree.hasTag(SWITCH)) {
+        if (tree.hasTag(_SWITCH)) {
             ((JCSwitch) tree).selector = newSelector;
         } else {
             ((JCSwitchExpression) tree).selector = newSelector;

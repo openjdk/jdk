@@ -797,6 +797,13 @@ public class Operators {
                     .addBinaryOperator(FLOAT, FLOAT, BOOLEAN, fcmpl, ifne)
                     .addBinaryOperator(LONG, LONG, BOOLEAN, lcmp, ifne)
                     .addBinaryOperator(INT, INT, BOOLEAN, if_icmpne),
+            // MAXJ operators
+            new BinaryNumericOperator(Tag.CONCAT)
+                    .addBinaryOperator(DOUBLE, DOUBLE, DOUBLE, dadd)
+                    .addBinaryOperator(FLOAT, FLOAT, FLOAT, fadd)
+                    .addBinaryOperator(LONG, LONG, LONG, ladd)
+                    .addBinaryOperator(INT, INT, INT, iadd),
+            // END MAXJ operators
             new BinaryBooleanOperator(Tag.AND)
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, bool_and),
             new BinaryBooleanOperator(Tag.OR)
@@ -848,6 +855,7 @@ public class Operators {
         setOperatorName(Tag.BITOR, "|");
         setOperatorName(Tag.BITXOR, "^");
         setOperatorName(Tag.BITAND, "&");
+        setOperatorName(Tag.CONCAT, "#");
         setOperatorName(Tag.SL, "<<");
         setOperatorName(Tag.SR, ">>");
         setOperatorName(Tag.USR, ">>>");
