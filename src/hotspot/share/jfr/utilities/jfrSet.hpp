@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename AllocPolicy = JfrCHeapObj, AnyObj::allocation_type AllocType = AnyObj::C_HEAP, MemTag memtag = mtTracing>
 class ConfigTraceID : public AllStatic {
@@ -60,7 +60,7 @@ template <typename CONFIG>
 class JfrSet : public CONFIG::STORAGE {
  public:
   typedef typename CONFIG::TYPE TYPE;
-  typedef ResizeableResourceHashtable<TYPE, TYPE, CONFIG::alloc_type(), CONFIG::memory_tag(), CONFIG::hash, CONFIG::cmp> HashMap;
+  typedef ResizeableHashTable<TYPE, TYPE, CONFIG::alloc_type(), CONFIG::memory_tag(), CONFIG::hash, CONFIG::cmp> HashMap;
 
   constexpr static bool is_cheap() {
     return CONFIG::alloc_type() == AnyObj::C_HEAP;
