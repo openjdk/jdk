@@ -256,6 +256,12 @@ class SystemDictionaryShared::ExclusionCheckCandidates
 
     put(k, info);
 
+    if (!k->is_loaded()) {
+      // super types are not yet initialized for k.
+      return;
+    }
+
+
     InstanceKlass* super = k->java_super();
     if (super != nullptr) {
       add_candidate(super);
