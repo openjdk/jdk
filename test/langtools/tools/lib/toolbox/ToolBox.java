@@ -477,7 +477,7 @@ public class ToolBox {
     }
 
     private static final int RETRY_DELETE_MILLIS = isWindows() ? 500 : 0;
-    private static final int MAX_RETRY_DELETE_MILLIS = isWindows() ?  60 * 1000 : 0;
+    private static final int MAX_RETRY_DELETE_MILLIS = isWindows() ? 60 * 1000 : 0;
 
     /**
      * Moves a file.
