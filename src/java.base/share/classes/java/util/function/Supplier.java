@@ -85,6 +85,7 @@ public interface Supplier<T> {
      * @param <T>        the type of results supplied by the returned supplier
      *
      * @see StableValue
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
     static <T> Supplier<T> ofLazy(Supplier<? extends T> underlying) {

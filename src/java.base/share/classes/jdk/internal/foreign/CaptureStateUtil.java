@@ -192,6 +192,9 @@ public final class CaptureStateUtil {
 
         // ((int | long), MemorySegment)(int | long)
         final MethodHandle segmentExtractor = SEGMENT_EXTRACTION_HANDLE_CACHE.get(key);
+        if (segmentExtractor == null) {
+            throw new IllegalArgumentException("Input not allowed: " + key);
+        }
 
         // Make `target` specific adaptations of the basic handle
 

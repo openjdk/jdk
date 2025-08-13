@@ -1793,6 +1793,7 @@ public interface Map<K, V> {
      *                              {@code null} element.
      *
      * @see StableValue
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
     static <K, V> Map<K, V> ofLazy(Set<K> keys,

@@ -1239,6 +1239,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      *
      * @see StableValue
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
     static <E> List<E> ofLazy(int size,

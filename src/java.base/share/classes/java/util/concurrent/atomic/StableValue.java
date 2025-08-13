@@ -366,7 +366,7 @@ import java.util.stream.Stream;
  *
  * @param <T> type of the contents
  *
- * @since 25
+ * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
@@ -498,6 +498,8 @@ public sealed interface StableValue<T>
      * @param size of the returned list
      * @param <T>  type of the contents
      * @throws IllegalArgumentException if the provided {@code size} is negative
+     *
+     * @since 26
      */
     static <T> List<StableValue<T>> ofList(int size) {
         Utils.checkNonNegativeArgument(size, "size");
@@ -522,6 +524,8 @@ public sealed interface StableValue<T>
      * @param <T>      type of the contents
      * @throws NullPointerException if the provided array of {@code elements}
      *         is {@code null}
+     *
+     * @since 26
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
