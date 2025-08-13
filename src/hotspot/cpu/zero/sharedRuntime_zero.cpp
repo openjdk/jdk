@@ -55,12 +55,13 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
   // foil any attempt to call the i2c, c2i or unverified c2i entries
-  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            nullptr);
+  entry_address[AdapterBlob::I2C] = CAST_FROM_FN_PTR(address,zero_null_code_stub);
+  entry_address[AdapterBlob::C2I] = CAST_FROM_FN_PTR(address,zero_null_code_stub);
+  entry_address[AdapterBlob::C2I_Unverified] = CAST_FROM_FN_PTR(address,zero_null_code_stub);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
+  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
