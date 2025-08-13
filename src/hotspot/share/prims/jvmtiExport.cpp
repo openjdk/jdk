@@ -382,7 +382,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     JavaThread* current_thread = JavaThread::current();
     // transition code: native to VM
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
-    ThreadInVMfromNative _tiv(current_thread);
+    ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
     DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
