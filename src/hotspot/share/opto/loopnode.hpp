@@ -1664,13 +1664,12 @@ private:
       _total_wins++;
     }
     // Is this split profitable with respect to the policy?
-    // In general this means that the split has to have more wins than specified
-    // in the policy. However, for loops we need to take into account where the
-    // wins happen.
     bool profitable(int policy) const {
       assert(_region->is_Loop() || (_loop_entry_wins == 0 && _loop_back_wins == 0), "wins on loop edges without a loop");
       assert(!_region->is_Loop() || _total_wins == _loop_entry_wins + _loop_back_wins, "missed some win");
-      // In loops, we need to be careful when splitting, because splitting nodes
+      // In general this means that the split has to have more wins than specified
+      // in the policy. However, for loops we need to take into account where the
+      // wins happen. We need to be careful when splitting, because splitting nodes
       // related to the iv through the phi can sufficiently rearrange the loop
       // structure to prevent RCE and thus vectorization. Thus, we only deem splitting
       // profitable if the win of a split is not on the entry edge, as such wins
