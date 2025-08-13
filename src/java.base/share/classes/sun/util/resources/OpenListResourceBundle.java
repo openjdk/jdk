@@ -119,7 +119,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return new HashSet<>();
     }
 
-    private final Supplier<Map<String, Object>> lookup = StableValue.supplier(
+    private final Supplier<Map<String, Object>> lookup = Supplier.ofLazy(
             new Supplier<>() { public Map<String, Object> get() { return lookup0(); }});
 
     private Map<String, Object> lookup0() {
@@ -134,7 +134,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return temp;
     }
 
-    private final Supplier<Set<String>> keyset = StableValue.supplier(
+    private final Supplier<Set<String>> keyset = Supplier.ofLazy(
             new Supplier<>() { public Set<String> get() { return keyset0(); }});
 
     private Set<String> keyset0() {

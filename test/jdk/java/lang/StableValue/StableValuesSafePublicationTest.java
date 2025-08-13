@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.StableValue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,13 +47,13 @@ final class StableValuesSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final StableValue<Holder>[] STABLES = stables();
+    private static final java.util.concurrent.atomic.StableValue<Holder>[] STABLES = stables();
 
-    static StableValue<Holder>[] stables() {
+    static java.util.concurrent.atomic.StableValue<Holder>[] stables() {
         @SuppressWarnings("unchecked")
-        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
+        java.util.concurrent.atomic.StableValue<Holder>[] stables = (java.util.concurrent.atomic.StableValue<Holder>[]) new java.util.concurrent.atomic.StableValue[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = StableValue.of();
+            stables[i] = java.util.concurrent.atomic.StableValue.of();
         }
         return stables;
     }
@@ -70,13 +71,13 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final StableValue<Holder>[] stables = STABLES;
+        final java.util.concurrent.atomic.StableValue<Holder>[] stables = STABLES;
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                StableValue<Holder> s = stables[i];
+                java.util.concurrent.atomic.StableValue<Holder> s = stables[i];
                 Holder h;
                 // Wait until the StableValue has a holder value
                 while ((h = s.orElse(null)) == null) {}
@@ -92,7 +93,7 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final StableValue<Holder>[] stables = STABLES;
+        final java.util.concurrent.atomic.StableValue<Holder>[] stables = STABLES;
 
         @Override
         public void run() {

@@ -54,6 +54,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.spi.ResourceBundleControlProvider;
@@ -488,7 +489,7 @@ public abstract class ResourceBundle {
     /**
      * A Set of the keys contained only in this ResourceBundle.
      */
-    private final Supplier<Set<String>> keySet = StableValue.supplier(
+    private final Supplier<Set<String>> keySet = Supplier.ofLazy(
             new Supplier<>() { public Set<String> get() { return keySet0(); }});
 
     private Set<String> keySet0() {

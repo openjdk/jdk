@@ -32,6 +32,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -86,16 +87,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
         // attempt to modify `this.contents`
         synchronized (this) {
             return wrapAndSet(contents);
-        }
-    }
-
-    @ForceInline
-    @Override
-    public void setOrThrow(T contents) {
-        if (!trySet(contents)) {
-            // Neither the set contents nor the provided contents is revealed in the
-            // exception message as it might be sensitive.
-            throw new IllegalStateException("The contents is already set");
         }
     }
 

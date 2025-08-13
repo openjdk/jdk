@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,8 +58,8 @@ final class StableMapTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.map(KEYS, null));
-        assertThrows(NullPointerException.class, () -> StableValue.map(null, IDENTITY));
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(KEYS, null));
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(null, IDENTITY));
     }
 
     @Test
@@ -76,7 +77,7 @@ final class StableMapTest {
     @Test
     void get() {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(IDENTITY);
-        var lazy = StableValue.map(KEYS, cf);
+        var lazy = Map.ofLazy(KEYS, cf);
         int cnt = 1;
         for (int i : KEYS) {
             assertEquals(i, lazy.get(i));
@@ -92,7 +93,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = StableValue.map(KEYS, cf);
+        var lazy = Map.ofLazy(KEYS, cf);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(1, cf.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
@@ -131,7 +132,7 @@ final class StableMapTest {
     @Test
     void toStringTest() {
         assertEquals("{}", newEmptyMap().toString());
-        var map = StableValue.map(Set.of(KEY), IDENTITY);
+        var map = Map.ofLazy(Set.of(KEY), IDENTITY);
         assertEquals("{" + KEY + "=.unset}", map.toString());
         map.get(KEY);
         assertEquals("{" + KEY + "=" + KEY + "}", map.toString());
@@ -319,14 +320,14 @@ final class StableMapTest {
         Map<Integer, StableValueImpl<Integer>> map = StableUtil.map(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        Map<java.util.concurrent.atomic.StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
         map.forEach((k, v) -> idMap.put(v, true));
         assertEquals(3, idMap.size());
     }
 
     @Test
     void nullResult() {
-        var map = StableValue.map(Set.of(0), _ -> null);
+        var map = Map.ofLazy(Set.of(0), _ -> null);
         assertNull(map.getOrDefault(0, 1));;
         assertTrue(map.containsKey(0));
         assertNull(map.get(0));
@@ -337,7 +338,7 @@ final class StableMapTest {
         Set<Integer> inputs = new HashSet<>();
         inputs.add(0);
         inputs.add(null);
-        assertThrows(NullPointerException.class, () -> StableValue.map(inputs, IDENTITY));
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(inputs, IDENTITY));
     }
 
     // Support constructs
@@ -374,11 +375,11 @@ final class StableMapTest {
     }
 
     static Map<Integer, Integer> newMap() {
-        return StableValue.map(KEYS, IDENTITY);
+        return Map.ofLazy(KEYS, IDENTITY);
     }
 
     static Map<Integer, Integer> newEmptyMap() {
-        return StableValue.map(EMPTY, IDENTITY);
+        return Map.ofLazy(EMPTY, IDENTITY);
     }
 
     static Map<Integer, Integer> newRegularMap() {

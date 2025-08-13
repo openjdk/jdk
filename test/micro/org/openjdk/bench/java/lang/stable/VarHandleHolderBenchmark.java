@@ -40,6 +40,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -75,8 +76,8 @@ public class VarHandleHolderBenchmark {
     private static final VarHandle VH_X = VAR_HANDLE_FUNCTION.apply("x");
     private static final VarHandle VH_Y = VAR_HANDLE_FUNCTION.apply("y");
 
-    private static final Supplier<VarHandle> SV_X = StableValue.supplier(() -> VAR_HANDLE_FUNCTION.apply("x"));
-    private static final Supplier<VarHandle> SV_Y = StableValue.supplier(() -> VAR_HANDLE_FUNCTION.apply("y"));
+    private static final Supplier<VarHandle> SV_X = Supplier.ofLazy(() -> VAR_HANDLE_FUNCTION.apply("x"));
+    private static final Supplier<VarHandle> SV_Y = Supplier.ofLazy(() -> VAR_HANDLE_FUNCTION.apply("y"));
 
     private static final Map<String, VarHandle> U_MAP = Map.of(
             "x", VH_X,
@@ -86,13 +87,11 @@ public class VarHandleHolderBenchmark {
             "x", LAYOUT.varHandle(groupElement("x")),
             "y", LAYOUT.varHandle(groupElement("y")));
 
-    private static final Map<String, VarHandle> S_MAP = StableValue.map(
+    private static final Map<String, VarHandle> S_MAP = Map.ofLazy(
             Set.of("x", "y"),
             VAR_HANDLE_FUNCTION);
 
-    private static final Function<String, VarHandle> S_FUN = StableValue.function(
-            Set.of("x", "y"),
-            VAR_HANDLE_FUNCTION);
+    private static final Function<String, VarHandle> S_FUN = S_MAP::get;
 
     private static final MemorySegment confined;
     static {

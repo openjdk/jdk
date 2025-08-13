@@ -23,29 +23,23 @@
  * questions.
  */
 
-package java.lang;
+package java.util.concurrent.atomic;
 
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.StableEnumFunction;
-import jdk.internal.lang.stable.StableFunction;
-import jdk.internal.lang.stable.StableIntFunction;
-import jdk.internal.lang.stable.StableSupplier;
-import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Map; // Used in snippet
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.RandomAccess;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * A stable value is a holder of contents that can be set at most once.
@@ -54,10 +48,10 @@ import java.util.function.Supplier;
  * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
  * the stable value is <em>unset</em>, which means it holds no <em>contents</em>.
  * Its contents, of type {@code T}, can be <em>set</em> by calling
- * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
- * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the contents
- * can never change and can be retrieved by calling {@linkplain #orElseThrow() orElseThrow()}
- * , {@linkplain #orElse(Object) orElse()}, or {@linkplain #orElseSet(Supplier) orElseSet()}.
+ * {@linkplain #trySet(Object) trySet()},  or {@linkplain #orElseSet(Supplier) orElseSet()}.
+ * Once set, the contents can never change and can be retrieved by calling
+ * {@linkplain #orElseThrow() orElseThrow()} , {@linkplain #orElse(Object) orElse()},
+ * or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
  * shallowly immutable holder of contents of type {@code Logger} and that is initially
@@ -66,11 +60,11 @@ import java.util.function.Supplier;
  * the contents is <em>set</em>:
  *
  * {@snippet lang = java:
- * public class Component {
+ * import java.util.concurrent.atomic.StableValue;public class Component {
  *
  *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    private final java.util.concurrent.atomic.StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -130,7 +124,7 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A stable supplier is created via the
- * {@linkplain StableValue#supplier(Supplier) StableValue.supplier()} factory, by
+ * {@linkplain Supplier#ofLazy(Supplier) Supplier.ofLazy()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
@@ -138,8 +132,8 @@ import java.util.function.Supplier;
  * public class Component {
  *
  *     private final Supplier<Logger> logger =
- *             // @link substring="supplier" target="#supplier(Supplier)" :
- *             StableValue.supplier( () -> Logger.getLogger(Component.class) );
+ *             // @link substring="ofLazy" target="Supplier#ofLazy(Supplier)" :
+ *             Supplier.ofLazy( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -150,82 +144,12 @@ import java.util.function.Supplier;
  * A stable supplier encapsulates access to its backing stable value storage. This means
  * that code inside {@code Component} can obtain the logger object directly from the
  * stable supplier, without having to go through an accessor method like {@code getLogger()}.
- * <p>
- * A <em>stable int function</em> is a function that takes an {@code int} parameter and
- * uses it to compute a result that is then cached by the backing stable value storage
- * for that parameter value. A stable {@link IntFunction} is created via the
- * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
- * factory. Upon creation, the input range (i.e. {@code [0, size)}) is specified together
- * with an underlying {@linkplain IntFunction} which is invoked at most once per input
- * value. In effect, the stable int function will act like a cache for the underlying
- * {@linkplain IntFunction}:
- *
- * {@snippet lang = java:
- * final class PowerOf2Util {
- *
- *     private PowerOf2Util() {}
- *
- *     private static final int SIZE = 6;
- *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO =
- *         v -> 1 << v;
- *
- *     private static final IntFunction<Integer> POWER_OF_TWO =
- *         // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *         StableValue.intFunction(SIZE, UNDERLYING_POWER_OF_TWO);
- *
- *     public static int powerOfTwo(int a) {
- *         return POWER_OF_TWO.apply(a);
- *     }
- * }
- *
- * int result = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
- *
- *}
- * The {@code PowerOf2Util.powerOfTwo()} function is a <em>partial function</em> that only
- * allows a subset {@code [0, 5]} of the underlying function's {@code UNDERLYING_POWER_OF_TWO}
- * input range.
- *
- * <p>
- * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
- * uses it to compute a result (of type {@code R}) that is then cached by the backing
- * stable value storage for that parameter value. A stable function is created via the
- * {@linkplain StableValue#function(Set, Function) StableValue.function()} factory.
- * Upon creation, the input {@linkplain Set} is specified together with an underlying
- * {@linkplain Function} which is invoked at most once per input value. In effect, the
- * stable function will act like a cache for the underlying {@linkplain Function}:
- *
- * {@snippet lang = java:
- * class Log2Util {
- *
- *     private Log2Util() {}
- *
- *     private static final Set<Integer> KEYS =
- *         Set.of(1, 2, 4, 8, 16, 32);
- *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 =
- *         i -> 31 - Integer.numberOfLeadingZeros(i);
- *
- *     private static final Function<Integer, Integer> LOG2 =
- *         // @link substring="function" target="#function(Set,Function)" :
- *         StableValue.function(KEYS, UNDERLYING_LOG2);
- *
- *     public static int log2(int a) {
- *         return LOG2.apply(a);
- *     }
- *
- * }
- *
- * int result = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
- *}
- *
- * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
- * a subset {@code {1, 2, 4, 8, 16, 32}} of the underlying function's
- * {@code UNDERLYING_LOG2} input range.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
- * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>stable list</em>
- * is an unmodifiable list, backed by an array of stable values. The stable list elements
- * are computed when they are first accessed, using a provided {@linkplain IntFunction}:
+ * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>lazy stable list</em>
+ * is an unmodifiable list, backed by an array of stable values. The lazy stable list's
+ * elements are computed when they are first accessed, using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
  * final class PowerOf2Util {
@@ -237,8 +161,8 @@ import java.util.function.Supplier;
  *             v -> 1 << v;
  *
  *     private static final List<Integer> POWER_OF_TWO =
- *         // @link substring="list" target="#list(int,IntFunction)" :
- *         StableValue.list(SIZE, UNDERLYING_POWER_OF_TWO);
+ *         // @link substring="ofLazy" target="List#ofLazy(int,IntFunction)" :
+ *         List.ofLazy(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.get(a);
@@ -249,8 +173,8 @@ import java.util.function.Supplier;
  *
  * }
  * <p>
- * Similarly, a <em>stable map</em> is an unmodifiable map whose keys are known at
- * construction. The stable map values are computed when they are first accessed,
+ * Similarly, a <em>lazy stable map</em> is an unmodifiable map whose keys are known at
+ * construction. The lazy stable map's values are computed when they are first accessed,
  * using a provided {@linkplain Function}:
  *
  * {@snippet lang = java:
@@ -264,8 +188,8 @@ import java.util.function.Supplier;
  *         i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Map<Integer, INTEGER> LOG2 =
- *         // @link substring="map" target="#map(Set,Function)" :
- *         StableValue.map(CACHED_KEYS, UNDERLYING_LOG2);
+ *         // @link substring="ofLazy" target="Map#ofLazy(Set,Function)" :
+ *         Map.ofLazy(CACHED_KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
  *          return LOG2.get(a);
@@ -298,8 +222,8 @@ import java.util.function.Supplier;
  *         }
  *     }
  *
- *     private static final Supplier<Foo> FOO = StableValue.supplier(Foo::new);
- *     private static final Supplier<Bar> BAR = StableValue.supplier(() -> new Bar(FOO.get()));
+ *     private static final Supplier<Foo> FOO = Supplier.ofLazy(Foo::new);
+ *     private static final Supplier<Bar> BAR = Supplier.ofLazy(() -> new Bar(FOO.get()));
  *
  *     public static Foo foo() {
  *         return FOO.get();
@@ -324,19 +248,19 @@ import java.util.function.Supplier;
  *
  *     private static final int MAX_SIZE_INT = 46;
  *
- *     private static final IntFunction<Integer> FIB =
- *         StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
+ *     private static final List<Integer> FIB =
+ *         List.ofLazy(MAX_SIZE_INT, Fibonacci::fib);
  *
  *     public static int fib(int n) {
  *         return n < 2
  *                 ? n
- *                 : FIB.apply(n - 1) + FIB.apply(n - 2);
+ *                 : FIB.get(n - 1) + FIB.get(n - 2);
  *     }
  *
  * }
  *}
  * Both {@code FIB} and {@code Fibonacci::fib} recurse into each other. Because the
- * stable int function {@code FIB} caches intermediate results, the initial
+ * lazy stable list {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
  * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
  * constant-fold expressions like {@code Fibonacci.fib(5)}.
@@ -370,8 +294,7 @@ import java.util.function.Supplier;
  * any successful read operation (e.g. {@linkplain #orElseThrow()}).
  * A successful write operation can be either:
  * <ul>
- *     <li>a {@link #trySet(Object)} that returns {@code true},</li>
- *     <li>a {@link #setOrThrow(Object)} that does not throw, or</li>
+ *     <li>a {@link #trySet(Object)} that returns {@code true}, or</li>
  *     <li>an {@link #orElseSet(Supplier)} that successfully runs the supplier</li>
  * </ul>
  * A successful read operation can be either:
@@ -429,12 +352,17 @@ import java.util.function.Supplier;
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the
  *           <em>array reference</em> as a stable value but <em>not its components</em>.
- *           Instead, a {@linkplain #list(int, IntFunction) a stable list} of arbitrary
+ *           Instead, a {@linkplain List#ofLazy(int, IntFunction) a stable list} of arbitrary
  *           depth can be used, which provides stable components. More generally, a
  *           stable value can hold other stable values of arbitrary depth and still
  *           provide transitive constantness.
  *           <p>
  *           Stable values, functions, and collections are not {@link Serializable}.
+ *           <p>
+ *           Stable values, collections and functions strongly references its underlying
+ *           function used to compute values so long as there are values remaining to
+ *           be computed after which the underlying function is not strongly referenced
+ *           anymore and may be collected.
  *
  * @param <T> type of the contents
  *
@@ -456,10 +384,12 @@ public sealed interface StableValue<T>
      * @param contents to set
      * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
      *         recursively attempts to set this stable value by calling this method
-     *         directly or indirectly.
+     *         directly or indirectly
+     * @throws NullPointerException if the provided {@code content} is {@code null}
      */
     boolean trySet(T contents);
 
+    // Todo: Consider replacing this method with toOptional (works not that SV is null averse)
     /**
      * {@return the contents if set, otherwise, returns the provided {@code other} value}
      *
@@ -467,6 +397,7 @@ public sealed interface StableValue<T>
      */
     T orElse(T other);
 
+    // Todo: Consider renaming this method to get()
     /**
      * {@return the contents if set, otherwise, throws {@code NoSuchElementException}}
      *
@@ -479,14 +410,15 @@ public sealed interface StableValue<T>
      */
     boolean isSet();
 
+    // Todo: Consider throwing NPE if the supplier returns null
     /**
      * {@return the contents; if unset, first attempts to compute and set the
      *          contents using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception. If this method is invoked several times
-     * with different suppliers, only one of them will be invoked provided it completes
-     * without throwing an exception.
+     * completes without throwing an exception or returning {@code null}. If this method
+     * is invoked several times with different suppliers, only one of them will be invoked
+     * provided it completes without throwing an exception or returning {@code null}.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown and no
      * contents is set. The most common usage is to construct a new object serving
@@ -496,30 +428,20 @@ public sealed interface StableValue<T>
      * Value v = stable.orElseSet(Value::new);
      * }
      * <p>
-     * When this method returns successfully, the contents is always set.
+     * When this method returns successfully and the {@code supplier} did not return
+     * {@code null}, the contents is set.
      * <p>
      * The provided {@code supplier} will only be invoked once even if invoked from
-     * several threads unless the {@code supplier} throws an exception.
+     * several threads unless the {@code supplier} throws an exception or returns
+     * {@code null}.
+     * <p>
+     * If the provided {@code supplier} returns {@code null}, no contents is set.
      *
      * @param  supplier to be used for computing the contents, if not previously set
      * @throws IllegalStateException if the provided {@code supplier} recursively
-     *                               attempts to set this stable value.
+     *                               attempts to set this stable value
      */
     T orElseSet(Supplier<? extends T> supplier);
-
-    /**
-     * Sets the contents of this StableValue to the provided {@code contents}, or, if
-     * already set, throws {@code IllegalStateException}.
-     * <p>
-     * When this method returns (or throws an exception), the contents is always set.
-     *
-     * @param contents to set
-     * @throws IllegalStateException if the contents was already set
-     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
-     *         recursively attempts to set this stable value by calling this method
-     *         directly or indirectly.
-     */
-    void setOrThrow(T contents);
 
     // Object methods
 
@@ -562,195 +484,51 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable supplier}
+     * {@return a new unmodifiable list of the provided {@code size} containing
+     *          unset stable value elements}
      * <p>
-     * The returned {@linkplain Supplier supplier} is a caching supplier that records
-     * the value of the provided {@code underlying} supplier upon being first accessed via
-     * the returned supplier's {@linkplain Supplier#get() get()} method.
-     * <p>
-     * The provided {@code underlying} supplier is guaranteed to be successfully invoked
-     * at most once even in a multi-threaded environment. Competing threads invoking the
-     * returned supplier's {@linkplain Supplier#get() get()} method when a value is
-     * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread. The competing threads will then observe the newly
-     * computed value (if any) and will then never execute the {@code underlying} supplier.
-     * <p>
-     * If the provided {@code underlying} supplier throws an exception, it is rethrown
-     * to the initial caller and no contents is recorded.
-     * <p>
-     * If the provided {@code underlying} supplier recursively calls the returned
-     * supplier, an {@linkplain IllegalStateException} will be thrown.
+     * The returned list is equivalent to creating an unmodifiable list as in this example:
+     * {@snippet lang = java:
+     * return Stream.generate(StableValue::<T>of)
+     *            .limit(size)
+     *            .toList();
+     *}
+     * except the returned implementation can be more performant and dense.
      *
-     * @param underlying supplier used to compute a cached value
-     * @param <T>        the type of results supplied by the returned supplier
+     * @param size of the returned list
+     * @param <T>  type of the contents
+     * @throws IllegalArgumentException if the provided {@code size} is negative
      */
-    static <T> Supplier<T> supplier(Supplier<? extends T> underlying) {
-        Objects.requireNonNull(underlying);
-        return StableSupplier.of(underlying);
+    static <T> List<StableValue<T>> ofList(int size) {
+        Utils.checkNonNegativeArgument(size, "size");
+        return Stream.generate(StableValue::<T>of)
+                .limit(size)
+                .toList();
     }
 
     /**
-     * {@return a new stable {@linkplain IntFunction}}
+     * {@return a new unmodifiable list containing set stable value with values from
+     *          the provided array of {@code elements}}
      * <p>
-     * The returned function is a caching function that, for each allowed {@code int}
-     * input, records the values of the provided {@code underlying}
-     * function upon being first accessed via the returned function's
-     * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
-     * invoked with an input that is not in the range {@code [0, size)}, an
-     * {@link IllegalArgumentException} will be thrown.
-     * <p>
-     * The provided {@code underlying} function is guaranteed to be successfully invoked
-     * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the returned function's
-     * {@linkplain IntFunction#apply(int) apply()} method when a value is already under
-     * computation will block until a value is computed or an exception is thrown by
-     * the computing thread.
-     * <p>
-     * If invoking the provided {@code underlying} function throws an exception, it is
-     * rethrown to the initial caller and no contents is recorded.
-     * <p>
-     * If the provided {@code underlying} function recursively calls the returned
-     * function for the same input, an {@linkplain IllegalStateException} will
-     * be thrown.
+     * The returned list is equivalent to creating an unmodifiable list as in this example:
+     * {@snippet lang = java:
+     * return Arrays.stream(elements)
+     *            .map(StableValue::of)
+     *            .toList();
+     *}
+     * except the returned implementation can be more performant and dense.
      *
-     * @param size       the upper bound of the range {@code [0, size)} indicating
-     *                   the allowed inputs
-     * @param underlying {@code IntFunction} used to compute cached values
-     * @param <R>        the type of results delivered by the returned IntFunction
-     * @throws IllegalArgumentException if the provided {@code size} is negative.
+     * @param elements in the returned list
+     * @param <T>      type of the contents
+     * @throws NullPointerException if the provided array of {@code elements}
+     *         is {@code null}
      */
-    static <R> IntFunction<R> intFunction(int size,
-                                          IntFunction<? extends R> underlying) {
-        StableUtil.assertSizeNonNegative(size);
-        Objects.requireNonNull(underlying);
-        return StableIntFunction.of(size, underlying);
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    static <T> List<StableValue<T>> ofList(T... elements) {
+        Objects.requireNonNull(elements);
+        return Arrays.stream(elements)
+                .map(StableValue::of)
+                .toList();
     }
-
-    /**
-     * {@return a new stable {@linkplain Function}}
-     * <p>
-     * The returned function is a caching function that, for each allowed
-     * input in the given set of {@code inputs}, records the values of the provided
-     * {@code underlying} function upon being first accessed via the returned function's
-     * {@linkplain Function#apply(Object) apply()} method. If the returned function is
-     * invoked with an input that is not in {@code inputs}, an {@link IllegalArgumentException}
-     * will be thrown.
-     * <p>
-     * The provided {@code underlying} function is guaranteed to be successfully invoked
-     * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the returned function's {@linkplain Function#apply(Object) apply()}
-     * method when a value is already under computation will block until a value is
-     * computed or an exception is thrown by the computing thread.
-     * <p>
-     * If invoking the provided {@code underlying} function throws an exception, it is
-     * rethrown to the initial caller and no contents is recorded.
-     * <p>
-     * If the provided {@code underlying} function recursively calls the returned
-     * function for the same input, an {@linkplain IllegalStateException} will
-     * be thrown.
-     *
-     * @param inputs     the set of (non-null) allowed input values
-     * @param underlying {@code Function} used to compute cached values
-     * @param <T>        the type of the input to the returned Function
-     * @param <R>        the type of results delivered by the returned Function
-     * @throws NullPointerException if the provided set of {@code inputs} contains a
-     *                              {@code null} element.
-     */
-    static <T, R> Function<T, R> function(Set<? extends T> inputs,
-                                          Function<? super T, ? extends R> underlying) {
-        Objects.requireNonNull(inputs);
-        // Checking that the Set of inputs does not contain a `null` value is made in the
-        // implementing classes.
-        Objects.requireNonNull(underlying);
-        return inputs instanceof EnumSet<?> && !inputs.isEmpty()
-                ? StableEnumFunction.of(inputs, underlying)
-                : StableFunction.of(inputs, underlying);
-    }
-
-    /**
-     * {@return a new stable list with the provided {@code size}}
-     * <p>
-     * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
-     * with the provided {@code size}. The list's elements are computed via the
-     * provided {@code mapper} when they are first accessed
-     * (e.g. via {@linkplain List#get(int) List::get}).
-     * <p>
-     * The provided {@code mapper} function is guaranteed to be successfully invoked
-     * at most once per list index, even in a multi-threaded environment. Competing
-     * threads accessing an element already under computation will block until an element
-     * is computed or an exception is thrown by the computing thread.
-     * <p>
-     * If invoking the provided {@code mapper} function throws an exception, it
-     * is rethrown to the initial caller and no value for the element is recorded.
-     * <p>
-     * Any {@link List#subList(int, int) subList} or {@link List#reversed()} views
-     * of the returned list are also stable.
-     * <p>
-     * The returned list and its {@link List#subList(int, int) subList} or
-     * {@link List#reversed()} views implement the {@link RandomAccess} interface.
-     * <p>
-     * The returned list is unmodifiable and does not implement the
-     * {@linkplain Collection##optional-operation optional operations} in the
-     * {@linkplain List} interface.
-     * <p>
-     * If the provided {@code mapper} recursively calls the returned list for the
-     * same index, an {@linkplain IllegalStateException} will be thrown.
-     *
-     * @param size   the size of the returned list
-     * @param mapper to invoke whenever an element is first accessed
-     *               (may return {@code null})
-     * @param <E>    the type of elements in the returned list
-     * @throws IllegalArgumentException if the provided {@code size} is negative.
-     */
-    static <E> List<E> list(int size,
-                            IntFunction<? extends E> mapper) {
-        StableUtil.assertSizeNonNegative(size);
-        Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
-    }
-
-    /**
-     * {@return a new stable map with the provided {@code keys}}
-     * <p>
-     * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
-     * keys are known at construction. The map's values are computed via the provided
-     * {@code mapper} when they are first accessed
-     * (e.g. via {@linkplain Map#get(Object) Map::get}).
-     * <p>
-     * The provided {@code mapper} function is guaranteed to be successfully invoked
-     * at most once per key, even in a multi-threaded environment. Competing
-     * threads accessing a value already under computation will block until an element
-     * is computed or an exception is thrown by the computing thread.
-     * <p>
-     * If invoking the provided {@code mapper} function throws an exception, it
-     * is rethrown to the initial caller and no value associated with the provided key
-     * is recorded.
-     * <p>
-     * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
-     * also stable.
-     * <p>
-     * The returned map is unmodifiable and does not implement the
-     * {@linkplain Collection##optional-operations optional operations} in the
-     * {@linkplain Map} interface.
-     * <p>
-     * If the provided {@code mapper} recursively calls the returned map for
-     * the same key, an {@linkplain IllegalStateException} will be thrown.
-     *
-     * @param keys   the (non-null) keys in the returned map
-     * @param mapper to invoke whenever an associated value is first accessed
-     *               (may return {@code null})
-     * @param <K>    the type of keys maintained by the returned map
-     * @param <V>    the type of mapped values in the returned map
-     * @throws NullPointerException if the provided set of {@code inputs} contains a
-     *                              {@code null} element.
-     */
-    static <K, V> Map<K, V> map(Set<K> keys,
-                                Function<? super K, ? extends V> mapper) {
-        Objects.requireNonNull(keys);
-        // Checking that the Set of keys does not contain a `null` value is made in the
-        // implementing class.
-        Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
-    }
-
 }

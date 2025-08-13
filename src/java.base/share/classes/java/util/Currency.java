@@ -38,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -143,7 +144,7 @@ public final class Currency implements Serializable {
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
     private static final Supplier<HashSet<Currency>> available =
-            StableValue.supplier(Currency::computeAllCurrencies);
+            Supplier.ofLazy(Currency::computeAllCurrencies);
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:

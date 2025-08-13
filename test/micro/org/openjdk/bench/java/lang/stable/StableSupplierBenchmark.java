@@ -36,6 +36,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -58,13 +59,13 @@ public class StableSupplierBenchmark {
 
     private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
     private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = StableValue.supplier(() -> VALUE);
-    private static final Supplier<Integer> SUPPLIER2 = StableValue.supplier(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER = Supplier.ofLazy(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofLazy(() -> VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final Supplier<Integer> supplier = StableValue.supplier(() -> VALUE);
-    private final Supplier<Integer> supplier2 = StableValue.supplier(() -> VALUE2);
+    private final Supplier<Integer> supplier = Supplier.ofLazy(() -> VALUE);
+    private final Supplier<Integer> supplier2 = Supplier.ofLazy(() -> VALUE2);
 
     @Benchmark
     public int stable() {

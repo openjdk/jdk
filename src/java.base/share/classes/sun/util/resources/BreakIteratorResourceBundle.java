@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -50,7 +51,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
     // those keys must be added to NON_DATA_KEYS.
     private static final Set<String> NON_DATA_KEYS = Set.of("BreakIteratorClasses");
 
-    private final Supplier<Set<String>> keys = StableValue.supplier(
+    private final Supplier<Set<String>> keys = Supplier.ofLazy(
             new Supplier<>() { public Set<String> get() { return keys0(); }});
 
     private Set<String> keys0() {

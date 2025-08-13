@@ -25,6 +25,9 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1746,4 +1749,60 @@ public interface Map<K, V> {
             return (Map<K,V>)Map.ofEntries(map.entrySet().toArray(new Entry[0]));
         }
     }
+
+    /**
+     * {@return a new lazy, stable map with the provided {@code keys}}
+     * <p>
+     * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
+     * keys are known at construction. The map's values are computed via the provided
+     * {@code mapper} when they are first accessed
+     * (e.g., via {@linkplain Map#get(Object) Map::get}).
+     * <p>
+     * The provided {@code mapper} function is guaranteed to be successfully invoked
+     * at most once per key, even in a multi-threaded environment. Competing
+     * threads accessing a value already under computation will block until an element
+     * is computed or an exception is thrown by the computing thread.
+     * <p>
+     * If the provided {@code mapper} returns {@code null}, no associated value for the
+     * key is recorded and a new attempt will be made to compute an associated value is
+     * made upon accessing the same key again. Hence, just like other unmodifiable maps
+     * created via the {@code Map::of} factories, a lazy map cannot contain {@code null}
+     * values. Clients that want to use nullable values can wrap values into
+     * an {@linkplain Optional} holder.
+     * <p>
+     * If invoking the provided {@code mapper} function throws an exception, it
+     * is rethrown to the initial caller and no value associated with the provided key
+     * is recorded.
+     * <p>
+     * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
+     * also stable.
+     * <p>
+     * The returned map is unmodifiable and does not implement the
+     * {@linkplain Collection##optional-operations optional operations} in the
+     * {@linkplain Map} interface.
+     * <p>
+     * If the provided {@code mapper} recursively calls the returned map for
+     * the same key, an {@linkplain IllegalStateException} will be thrown.
+     *
+     * @param keys   the (non-null) keys in the returned map
+     * @param mapper to invoke whenever an associated value is first accessed
+     *               (may return {@code null})
+     * @param <K>    the type of keys maintained by the returned map
+     * @param <V>    the type of mapped values in the returned map
+     * @throws NullPointerException if the provided set of {@code inputs} contains a
+     *                              {@code null} element.
+     *
+     * @see StableValue
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
+    static <K, V> Map<K, V> ofLazy(Set<K> keys,
+                                   Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(keys);
+        // Checking that the Set of keys does not contain a `null` value is made in the
+        // implementing class.
+        Objects.requireNonNull(mapper);
+        // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
+        return new ImmutableCollections.StableMap<>(keys, mapper);
+    }
+
 }

@@ -29,21 +29,15 @@
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,10 +62,6 @@ final class StableValueTest {
         assertEquals(VALUE, stable.orElse(VALUE2));
         assertEquals(VALUE, stable.orElseSet(() -> VALUE2));
         assertFalse(stable.trySet(VALUE2));
-        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
-        assertEquals(
-                "The contents is already set",
-                e.getMessage());
     }
 
     void trySet(Integer initial) {
@@ -81,22 +71,6 @@ final class StableValueTest {
         assertFalse(stable.trySet(VALUE));
         assertFalse(stable.trySet(VALUE2));
         assertEquals(initial, stable.orElseThrow());
-    }
-
-    @Test
-    void setOrThrowValue() {
-        StableValue<Integer> stable = StableValue.of();
-        stable.setOrThrow(VALUE);
-        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
-        assertEquals("The contents is already set", e.getMessage());
-    }
-
-    @Test
-    void setOrThrowNull() {
-        StableValue<Integer> stable = StableValue.of();
-        stable.setOrThrow(null);
-        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(null));
-        assertEquals("The contents is already set", e.getMessage());
     }
 
     @Test
@@ -154,14 +128,14 @@ final class StableValueTest {
         assertNotEquals(null, s0);
         StableValue<Integer> s1 = StableValue.of();
         assertNotEquals(s0, s1); // Identity based
-        s0.setOrThrow(42);
-        s1.setOrThrow(42);
+        s0.trySet(42);
+        s1.trySet(42);
         assertNotEquals(s0, s1);
         assertNotEquals("a", s0);
         StableValue<Integer> null0 = StableValue.of();
         StableValue<Integer> null1 = StableValue.of();
-        null0.setOrThrow(null);
-        null1.setOrThrow(null);
+        null0.trySet(null);
+        null1.trySet(null);
         assertNotEquals(null0, null1);
     }
 
@@ -213,145 +187,12 @@ final class StableValueTest {
         );
     }
 
-    @Test
-    void intFunctionExample() {
-        final class SqrtUtil {
-
-            private SqrtUtil() {}
-
-            private static final int CACHED_SIZE = 10;
-
-            private static final IntFunction<Double> SQRT =
-                    // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
-                    StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
-
-            public static double sqrt(int a) {
-                return SQRT.apply(a);
-            }
-        }
-
-        double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
-
-        assertEquals(3, sqrt9);
-        assertThrows(IllegalArgumentException.class, () -> SqrtUtil.sqrt(16));
-    }
-
-    @Test
-    void intFunctionExample2() {
-        final class PowerOf2Util {
-
-            private PowerOf2Util() {}
-
-            private static final int SIZE = 6;
-            private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
-                    v -> 1 << v;
-
-            private static final IntFunction<Integer> POWER_OF_TWO =
-                    // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
-                    StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
-
-            public static int powerOfTwo(int a) {
-                return POWER_OF_TWO.apply(a);
-            }
-        }
-
-        int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
-
-        assertEquals(16, pwr4);
-        assertEquals(1, PowerOf2Util.powerOfTwo(0));
-        assertEquals(8, PowerOf2Util.powerOfTwo(3));
-        assertEquals(32, PowerOf2Util.powerOfTwo(5));
-        assertThrows(IllegalArgumentException.class, () -> PowerOf2Util.powerOfTwo(10));
-    }
-
-    @Test
-    void functionExample() {
-
-        class Log2Util {
-
-            private Log2Util() {}
-
-            private static final Set<Integer> CACHED_KEYS =
-                    Set.of(1, 2, 4, 8, 16, 32);
-            private static final UnaryOperator<Integer> LOG2_ORIGINAL =
-                    i -> 31 - Integer.numberOfLeadingZeros(i);
-
-            private static final Function<Integer, Integer> LOG2_CACHED =
-                    // @link substring="function" target="#function(Set,Function)" :
-                    StableValue.function(CACHED_KEYS, LOG2_ORIGINAL);
-
-            public static double log2(int a) {
-                if (CACHED_KEYS.contains(a)) {
-                    return LOG2_CACHED.apply(a);
-                } else {
-                    return LOG2_ORIGINAL.apply(a);
-                }
-            }
-
-        }
-
-        double log16 = Log2Util.log2(16); // May eventually constant fold to 4.0 at runtime
-        double log256 = Log2Util.log2(256); // Will not constant fold
-
-        assertEquals(4, log16);
-        assertEquals(8, log256);
-    }
-
-    @Test
-    void functionExample2() {
-
-        class Log2Util {
-
-            private Log2Util() {}
-
-            private static final Set<Integer> KEYS =
-                    Set.of(1, 2, 4, 8);
-            private static final UnaryOperator<Integer> LOG2_ORIGINAL =
-                    i -> 31 - Integer.numberOfLeadingZeros(i);
-
-            private static final Function<Integer, Integer> LOG2 =
-                    // @link substring="function" target="#function(Set,Function)" :
-                    StableValue.function(KEYS, LOG2_ORIGINAL);
-
-            public static double log2(int a) {
-                return LOG2.apply(a);
-            }
-
-        }
-
-        double log16 = Log2Util.log2(8); // May eventually constant fold to 3.0 at runtime
-
-        assertEquals(3, log16);
-        assertThrows(IllegalArgumentException.class, () -> Log2Util.log2(3));
-    }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;
-    private static final BiPredicate<StableValue<Integer>, Integer> SET_OR_THROW = (s, i) -> {
-        try {
-            s.setOrThrow(i);
-            return true;
-        } catch (IllegalStateException e) {
-            return false;
-        }
-    };
 
     @Test
     void raceTrySet() {
         race(TRY_SET);
-    }
-
-    @Test
-    void raceSetOrThrow() {
-        race(SET_OR_THROW);
-    }
-
-    @Test
-    void raceMixed() {
-        race((s, i) -> switch (i % 2) {
-            case 0 -> TRY_SET.test(s, i);
-            case 1 -> SET_OR_THROW.test(s, i);
-            default -> fail("should not reach here");
-        });
     }
 
     void race(BiPredicate<StableValue<Integer>, Integer> winnerPredicate) {

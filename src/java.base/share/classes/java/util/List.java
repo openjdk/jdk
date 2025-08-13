@@ -25,6 +25,11 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.lang.stable.StableUtil;
+
+import java.util.concurrent.atomic.StableValue;
+import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 /**
@@ -1190,4 +1195,58 @@ public interface List<E> extends SequencedCollection<E> {
     static <E> List<E> copyOf(Collection<? extends E> coll) {
         return ImmutableCollections.listCopy(coll);
     }
+
+    /**
+     * {@return a new lazy, stable list with the provided {@code size}}
+     * <p>
+     * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
+     * with the provided {@code size}. The list's elements are computed via the
+     * provided {@code mapper} when they are first accessed
+     * (e.g., via {@linkplain List#get(int) List::get}).
+     * <p>
+     * The provided {@code mapper} function is guaranteed to be successfully invoked
+     * at most once per list index, even in a multi-threaded environment. Competing
+     * threads accessing an element already under computation will block until an element
+     * is computed or an exception is thrown by the computing thread.
+     * <p>
+     * If the provided {@code mapper} returns {@code null}, no value for the index is
+     * recorded and a new attempt will be made to compute an element value is made upon
+     * accessing the same index again. Hence, just like other unmodifiable lists created
+     * via the {@code List::of} factories, a lazy list cannot contain {@code null}
+     * elements. Clients that want to use nullable values can wrap elements into
+     * an {@linkplain Optional} holder.
+     * <p>
+     * If invoking the provided {@code mapper} function throws an exception, it
+     * is rethrown to the initial caller and no value for the element is recorded.
+     * <p>
+     * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
+     * of the returned list are also lazy and stable.
+     * <p>
+     * The returned list and its {@link List#subList(int, int) subList()} or
+     * {@link List#reversed()} views implement the {@link RandomAccess} interface.
+     * <p>
+     * The returned list is unmodifiable and does not implement the
+     * {@linkplain Collection##optional-operation optional operations} in the
+     * {@linkplain List} interface.
+     * <p>
+     * If the provided {@code mapper} recursively calls the returned list for the
+     * same index, an {@linkplain IllegalStateException} will be thrown.
+     *
+     * @param size   the size of the returned list
+     * @param mapper to invoke whenever an element is first accessed
+     *               (may not return {@code null})
+     * @param <E>    the type of elements in the returned list
+     * @throws IllegalArgumentException if the provided {@code size} is negative.
+     *
+     * @see StableValue
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
+    static <E> List<E> ofLazy(int size,
+                              IntFunction<? extends E> mapper) {
+        StableUtil.assertSizeNonNegative(size);
+        Objects.requireNonNull(mapper);
+        // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
+        return new ImmutableCollections.StableList<>(size, mapper);
+    }
+
 }

@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.IntFunction;
 
 /**
@@ -57,11 +58,11 @@ public class StableIntFunctionBenchmark {
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final List<Integer> LIST = StableValue.list(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = StableValue.intFunction(SIZE, IDENTITY);
+    private static final List<Integer> LIST = List.ofLazy(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = LIST::get;
 
-    private final List<Integer> list = StableValue.list(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = StableValue.intFunction(SIZE, IDENTITY);
+    private final List<Integer> list = List.ofLazy(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = list::get;
 
     @Benchmark
     public int list() {

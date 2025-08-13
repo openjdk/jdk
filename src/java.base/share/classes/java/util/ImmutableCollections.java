@@ -135,14 +135,6 @@ class ImmutableCollections {
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
-                public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
-                    // A stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-                    return new StableList<>(size, mapper);
-                }
-                public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-                    // A stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-                    return new StableMap<>(keys, mapper);
-                }
             });
         }
     }

@@ -48,6 +48,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.concurrent.atomic.StableValue;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -94,7 +95,7 @@ public class Net {
         return EXCLUSIVE_BIND;
     }
 
-    private static final StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
+    private static final java.util.concurrent.atomic.StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
 
     /**
      * Tells whether a TCP connection should be shutdown for writing before closing.

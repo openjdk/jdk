@@ -38,6 +38,7 @@ import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 public final class BaseLocale {
@@ -93,7 +94,7 @@ public final class BaseLocale {
 
     // Interned BaseLocale cache
     private static final Supplier<ReferencedKeySet<BaseLocale>> CACHE =
-            StableValue.supplier(new Supplier<>() {
+            Supplier.ofLazy(new Supplier<>() {
                 @Override
                 public ReferencedKeySet<BaseLocale> get() {
                     return ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());

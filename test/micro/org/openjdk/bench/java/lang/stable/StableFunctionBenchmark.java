@@ -38,6 +38,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,11 +61,11 @@ public class StableFunctionBenchmark {
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final Map<Integer, Integer> MAP = StableValue.map(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.function(SET, Function.identity());
+    private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
+    private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
-    private final Map<Integer, Integer> map = StableValue.map(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.function(SET, Function.identity());
+    private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
+    private final Function<Integer, Integer> function = map::get;
 
     @Benchmark
     public int map() {

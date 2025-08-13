@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,7 +42,7 @@ final class StableSupplierTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.supplier(null));
+        assertThrows(NullPointerException.class, () -> Supplier.ofLazy(null));
     }
 
     @Test
@@ -52,7 +53,7 @@ final class StableSupplierTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = StableValue.supplier(cs);
+        var cached = Supplier.ofLazy(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -66,7 +67,7 @@ final class StableSupplierTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.supplier(cs);
+        var cached = Supplier.ofLazy(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -77,7 +78,7 @@ final class StableSupplierTest {
     @Test
     void circular() {
         final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
-        Supplier<Supplier<?>> cached = StableValue.supplier(ref::get);
+        Supplier<Supplier<?>> cached = Supplier.ofLazy(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -87,15 +88,15 @@ final class StableSupplierTest {
 
     @Test
     void equality() {
-        Supplier<Integer> f0 = StableValue.supplier(SUPPLIER);
-        Supplier<Integer> f1 = StableValue.supplier(SUPPLIER);
+        Supplier<Integer> f0 = Supplier.ofLazy(SUPPLIER);
+        Supplier<Integer> f1 = Supplier.ofLazy(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = StableValue.supplier(SUPPLIER);
+        Supplier<Integer> f0 = Supplier.ofLazy(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());

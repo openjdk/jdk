@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -138,7 +139,7 @@ public class StableValueBenchmark {
         private final StableValue<Integer> delegate = StableValue.of();
 
         Holder(int value) {
-            delegate.setOrThrow(value);
+            delegate.trySet(value);
         }
 
         int get() {
@@ -151,7 +152,7 @@ public class StableValueBenchmark {
 
         RecordHolder(int value) {
             this(StableValue.of());
-            delegate.setOrThrow(value);
+            delegate.trySet(value);
         }
 
         int get() {
