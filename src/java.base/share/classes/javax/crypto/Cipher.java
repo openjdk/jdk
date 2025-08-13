@@ -681,7 +681,7 @@ public class Cipher {
      *         by the {@code NoSuchPaddingException}
      *
      * @throws NoSuchPaddingException if the {@code CipherSpi} implementation
-     *         from the {@code provider} is found using the algorithm
+     *         from the specified {@code provider} is found using the algorithm
      *         and mode but not the padding scheme
      *
      * @see java.security.Provider
