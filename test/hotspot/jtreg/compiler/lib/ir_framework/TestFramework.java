@@ -45,7 +45,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class represents the main entry point to the test framework whose main purpose is to perform regex-based checks on
@@ -330,6 +332,43 @@ public class TestFramework {
         }
         TestFormat.throwIfAnyFailures();
         return this;
+    }
+
+    /**
+     * Add the cross-product (cartesian product) of sets of flags as Scenarios.
+     *
+     * @param sets sets of flags to generate the cross product for.
+     * @return the same framework instance.
+     */
+    @SafeVarargs
+    final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
+        TestFormat.checkAndReport(flagSets != null && Arrays.stream(flagSets).noneMatch(Objects::isNull),
+                                  "Flags must not be null");
+        int initIdx = 0;
+        if (this.scenarioIndices != null && !this.scenarioIndices.isEmpty()) {
+            initIdx = this.scenarioIndices.stream().max(Comparator.comparingInt(Integer::intValue)).get() + 1;
+        }
+        AtomicInteger idx = new AtomicInteger(initIdx);
+
+        return addScenarios(
+                crossProductHelper(0, flagSets)
+                        .map(flags -> new Scenario(idx.getAndIncrement(), flags.toArray(new String[0])))
+                        .collect(Collectors.toList()).toArray(new Scenario[0]));
+    }
+
+    @SafeVarargs
+    private static Stream<Set<String>> crossProductHelper(int idx, Set<String>... sets) {
+        if (idx == sets.length) {
+            Set<String> empty = Set.of();
+            return Set.of(empty).stream();
+        }
+        return sets[idx].stream()
+                .flatMap(setElement -> crossProductHelper(idx + 1, sets)
+                        .map(set -> {
+                            Set<String> newSet = new HashSet(set);
+                            newSet.add(setElement);
+                            return newSet;
+                        }));
     }
 
     /**
