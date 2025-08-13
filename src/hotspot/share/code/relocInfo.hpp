@@ -567,8 +567,8 @@ class RelocIterator : public StackObj {
   int             _len;     // length
   nmethod*        _code;    // compiled method containing _addr
   address         _addr;    // instruction to which the relocation applies
-  short           _databuf; // spare buffer for compressed data
   short*          _data;    // pointer to the relocation's data
+  short           _databuf; // spare buffer for compressed data
   short           _datalen; // number of halfwords in _data
 
   // Base addresses needed to compute targets of section_word_type relocs.

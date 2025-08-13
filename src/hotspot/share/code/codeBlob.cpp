@@ -209,6 +209,7 @@ void CodeBlob::purge() {
   _mutable_data_size = 0;
   delete _oop_maps;
   _oop_maps = nullptr;
+  _relocation_size = 0;
 
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
