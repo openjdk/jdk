@@ -1833,11 +1833,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   methodHandle mh(thread, method);
 
   JvmtiThreadState *state = nullptr;
-  JavaThread* current = thread; // for JRT_BLOCK
-  JRT_BLOCK
-  state = get_jvmti_thread_state(thread);
-  JRT_BLOCK_END
-
+  {
+    ThreadInVMfromJava __tiv(thread);
+    state = get_jvmti_thread_state(thread);
+  }
   if (state == nullptr || !state->is_interp_only_mode()) {
     // for any thread that actually wants method exit, interp_only_mode is set
     return;
@@ -1872,6 +1871,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
+  JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
