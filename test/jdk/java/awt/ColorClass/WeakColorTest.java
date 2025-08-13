@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @key headful
  * @bug 8364434
  * @summary Check that garbage-collecting Color before accelerated painting is complete does not cause artifacts.
+ * @requires (os.family != "linux")
  * @library /test/lib
  * @run main/othervm -Xms16m -Xmx16m WeakColorTest
  */
