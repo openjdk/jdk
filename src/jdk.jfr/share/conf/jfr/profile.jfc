@@ -965,12 +965,12 @@
       <setting name="level">forRemoval</setting>
     </event>
 
-    <event name="jdk.OpenFDs">
+    <event name="jdk.ProcessSize">
       <setting name="enabled">true</setting>
-      <setting name="period">5000 ms</setting>
+      <setting name="period">1000 ms</setting>
     </event>
 
-    <event name="jdk.ProcessSize">
+    <event name="jdk.LibcStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">1000 ms</setting>
     </event>

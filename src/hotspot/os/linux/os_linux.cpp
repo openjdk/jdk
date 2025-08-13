@@ -2664,6 +2664,14 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
 #if INCLUDE_JFR
 
+#define JFR_WARN_ONCE(text) { \
+  static bool first_warning = true; \
+  if (first_warning) { \
+    log_warning(jfr)(text); \
+    first_warning = false; \
+  } \
+}
+
 void os::jfr_report_memory_info() {
   os::Linux::process_info_t info;
   if (os::Linux::query_process_info(&info)) {
@@ -2673,12 +2681,7 @@ void os::jfr_report_memory_info() {
     event.set_peak(info.vmhwm * K);
     event.commit();
   } else {
-    // Log a warning
-    static bool first_warning = true;
-    if (first_warning) {
-      log_warning(jfr)("Error fetching RSS values: query_process_memory_info failed");
-      first_warning = false;
-    }
+    JFR_WARN_ONCE("Error fetching RSS values: query_process_memory_info failed");
   }
 }
 
@@ -2692,46 +2695,40 @@ void os::jfr_report_process_size() {
     e.set_rssAnon(info.rssanon * K);
     e.set_rssFile(info.rssfile * K);
     e.set_rssShmem(info.rssshmem * K);
+    e.set_pagetable(info.vmpte * K);
     e.set_swap(info.vmswap * K);
+    e.commit();
+  } else {
+    JFR_WARN_ONCE("Error fetching ProcessSize: query_process_memory_info failed");
+  }
+}
 
-    size_t malloc_outstanding = 0;
-    size_t malloc_retained = 0;
-    unsigned num_trims = 0;
+void os::jfr_report_libc_statistics() {
 #ifdef __GLIBC__
-    bool might_have_wrapped = false;
-    os::Linux::glibc_mallinfo mi;
-    os::Linux::get_mallinfo(&mi, &might_have_wrapped);
-    if (!might_have_wrapped) {
-      malloc_outstanding = mi.uordblks + mi.hblkhd;
-      malloc_retained = mi.fordblks;
-      num_trims = mi.num_trims;
-    }
-#endif
-    e.set_libcMallocOutstanding(malloc_outstanding);
-    e.set_libcMallocRetention(malloc_retained);
-    e.set_libcTrims(num_trims);
+  bool might_have_wrapped = false;
+  os::Linux::glibc_mallinfo mi;
+  os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+  if (!might_have_wrapped) {
+    EventLibcStatistics e;
+    e.set_mallocOutstanding(mi.uordblks + mi.hblkhd);
+    e.set_mallocRetained(mi.fordblks);
+    e.set_trims(mi.num_trims);
     e.commit();
+  } else {
+    JFR_WARN_ONCE("Error libc statistics: too old glibc");
   }
+#endif
 }
 
-void os::jfr_report_openfds() {
-  os::Linux::process_info_t info;
-  if (os::Linux::query_process_info(&info)) {
-    EventOpenFDs e;
-    e.set_value(info.fdsize);
-    e.commit();
-  }
-}
+#endif // INCLUDE_JFR
 
 int os::num_process_threads() {
   os::Linux::process_info_t info;
   if (os::Linux::query_process_info(&info)) {
-    return info.threads;
+    return info.threads; // These are OS threads
   }
   return -1;
 }
-
-#endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";

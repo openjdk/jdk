@@ -103,8 +103,8 @@ TRACE_REQUEST_FUNC(ProcessSize) {
   os::jfr_report_process_size();
 }
 
-TRACE_REQUEST_FUNC(OpenFDs) {
-  os::jfr_report_openfds();
+TRACE_REQUEST_FUNC(LibcStatistics) {
+  os::jfr_report_libc_statistics();
 }
 
 TRACE_REQUEST_FUNC(JVMInformation) {

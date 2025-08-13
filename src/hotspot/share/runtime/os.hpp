@@ -850,7 +850,7 @@ class os: AllStatic {
   // Send JFR memory info event
   static void jfr_report_memory_info() NOT_JFR_RETURN();
   static void jfr_report_process_size() NOT_JFR_RETURN();
-  static void jfr_report_openfds() NOT_JFR_RETURN();
+  static void jfr_report_libc_statistics() NOT_JFR_RETURN();
 
   // Returns number of OS threads for the calling process; -1 if the information cannot be obtained.
   // Note: this includes, but is not limited to, the number of threads the JVM has created or that

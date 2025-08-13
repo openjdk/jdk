@@ -771,9 +771,6 @@
     description="Total native memory usage for the JVM. Might not be the exact sum of the NativeMemoryUsage events due to timing." period="everyChunk">
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Total amount of reserved bytes for the JVM" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Total amount of committed bytes for the JVM" />
-    <Field type="ulong" contentType="bytes" name="mallocOutstanding" label="NMT Malloc Outstanding" description="Outstanding Malloc Size, total, by NMT" />
-    <Field type="ulong" contentType="bytes" name="mallocPeak" label="NMT Malloc Peak" description="Peak Malloc Size, total, by NMT" />
-    <Field type="ulong" contentType="bytes" name="mallocUnsafe" label="NMT Malloc Unsafe" description="Outstanding Malloc Size, Unsafe.allocateMemory, by NMT" />
   </Event>
 
   <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"
@@ -1334,13 +1331,13 @@
     <Field type="ulong" contentType="bytes" name="rssFile" label="File RSS" description="Resident Set Size, File Buffers" />
     <Field type="ulong" contentType="bytes" name="rssShmem" label="Shmem RSS" description="Resident Set Size, Shared Memory" />
     <Field type="ulong" contentType="bytes" name="swap" label="Swap" description="Process memory swapped out" />
-    <Field type="ulong" contentType="bytes" name="libcMallocOutstanding" label="Libc Malloc Outstanding" description="Outstanding libc Malloc allocations" />
-    <Field type="ulong" contentType="bytes" name="libcMallocRetention" label="Libc Malloc Retained" description="libc Malloc Retention (estimate)" />
-    <Field type="ulong" name="libcTrims" label="libc trims" description="Number of Libc Trims" />
+    <Field type="ulong" contentType="bytes" name="pagetable" label="Page Table Size" description="Size of Page Table Entries" />
   </Event>
-
-  <Event name="OpenFDs" category="Java Virtual Machine, Memory" label="Open File Descriptors" description="Open file descriptors" thread="false" period="everyChunk">
-  <Field type="ulong" name="value" label="Value" />
+  
+  <Event name="LibcStatistics" category="Java Virtual Machine, Memory" label="Libc Malloc Statistics" description="Malloc Statistics reported by the Libc" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="mallocOutstanding" label="Libc Malloc Outstanding" description="Outstanding Malloc Size" />
+    <Field type="ulong" contentType="bytes" name="mallocRetained" label="Libc Malloc Retained" description="Retained (freed but cached in libc) Malloc size (estimate)" />
+    <Field type="ulong" name="trims" label="libc trims" description="Number of Libc Heap Trims" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
