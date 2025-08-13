@@ -194,7 +194,6 @@ abstract class ExchangeImpl<T> {
                 if (debug.on())
                     debug.log("get: no HTTP/3 pooled connection found");
                 // possibly start an HTTP/3 connection
-                String authority = request.uri().getRawAuthority();
                 boolean mayAttemptDirectConnection = client3.mayAttemptDirectConnection(request);
                 c3f = client3.getConnectionFor(request, exchange);
                 if ((!c3f.isDone() || c3f.isCompletedExceptionally()) && mayAttemptDirectConnection) {
