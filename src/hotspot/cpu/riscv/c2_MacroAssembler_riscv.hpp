@@ -97,13 +97,14 @@
                        Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6,
                        BasicType eltype);
+  int arrays_hashcode_elsize(BasicType eltype);
+  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
+
   void arrays_hashcode_v(Register ary, Register cnt, Register result,
                          Register tmp1, Register tmp2, Register tmp3,
                          BasicType eltype);
-  // helper functions for arrays_hashcode
-  int arrays_hashcode_elsize(BasicType eltype);
-  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
-  void arrays_hashcode_vec_elload(VectorRegister varr, VectorRegister vtmp, Register array, BasicType eltype);
+  void arrays_hashcode_elload_v(VectorRegister vdst, VectorRegister vtmp,
+                                Register src, BasicType eltype);
 
   void string_equals(Register r1, Register r2,
                      Register result, Register cnt1);
