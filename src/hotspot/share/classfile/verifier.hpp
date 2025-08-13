@@ -31,7 +31,7 @@
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 // The verifier class
 class Verifier : AllStatic {

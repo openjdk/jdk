@@ -75,7 +75,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;

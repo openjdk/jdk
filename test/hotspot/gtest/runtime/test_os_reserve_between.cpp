@@ -27,7 +27,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 // #define LOG_PLEASE

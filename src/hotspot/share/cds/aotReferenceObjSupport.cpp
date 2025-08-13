@@ -35,7 +35,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 // Handling of java.lang.ref.Reference objects in the AOT cache
 // ============================================================

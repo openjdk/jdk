@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename AllocPolicy = JfrCHeapObj, AnyObj::allocation_type AllocType = AnyObj::C_HEAP, MemTag memtag = mtTracing>
 class ConfigTraceID : public AllStatic {

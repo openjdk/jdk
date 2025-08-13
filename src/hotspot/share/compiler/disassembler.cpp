@@ -41,7 +41,7 @@
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 void*       Disassembler::_library               = nullptr;
 bool        Disassembler::_tried_to_load_library = false;

@@ -31,7 +31,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 class ClassLoaderStatsDCmd : public DCmd {
 public:

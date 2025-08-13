@@ -30,7 +30,7 @@
 #include "oops/symbol.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 /**
  * Bytecode Assembler

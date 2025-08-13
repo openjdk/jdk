@@ -26,7 +26,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 StubLocations::StubLocations() {
   for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {

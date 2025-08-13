@@ -37,7 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 // A ConstantPool is an array containing class constants as described in the

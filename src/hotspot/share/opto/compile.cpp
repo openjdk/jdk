@@ -87,7 +87,7 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 // -------------------- Compile::mach_constant_base_node -----------------------

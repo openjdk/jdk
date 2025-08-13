@@ -31,7 +31,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 class ConstantPool;

@@ -33,7 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T>

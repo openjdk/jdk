@@ -29,7 +29,7 @@
 #include "unittest.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 class CommonHashTableTest : public ::testing::Test {
  protected:

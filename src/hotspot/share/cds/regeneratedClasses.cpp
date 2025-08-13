@@ -32,7 +32,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 using RegeneratedObjTable = HashTable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
 static RegeneratedObjTable* _regenerated_objs = nullptr; // InstanceKlass* and Method*  orig_obj  -> regen_obj

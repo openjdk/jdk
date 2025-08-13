@@ -37,7 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ciEnv;
 class ciBaseObject;

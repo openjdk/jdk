@@ -36,8 +36,8 @@
 #include "runtime/os.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/hashTable.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ArchiveHeapInfo;
 class CHeapBitMap;

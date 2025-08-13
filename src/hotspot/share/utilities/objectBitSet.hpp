@@ -29,7 +29,7 @@
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class MemRegion;
 

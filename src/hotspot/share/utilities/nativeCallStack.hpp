@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 
 /*

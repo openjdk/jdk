@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
-#define SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
+#ifndef SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
+#define SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
 
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 template<
     typename K, typename V,
@@ -180,4 +180,4 @@ public:
 #endif // ASSERT
 };
 
-#endif // SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
+#endif // SHARE_UTILITIES_RESIZABLEHASHTABLE_HPP

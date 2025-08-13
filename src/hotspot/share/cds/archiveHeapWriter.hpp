@@ -32,7 +32,7 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 class MemRegion;

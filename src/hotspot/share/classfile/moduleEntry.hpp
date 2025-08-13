@@ -31,7 +31,7 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_JFR

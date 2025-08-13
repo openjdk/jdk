@@ -31,7 +31,7 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 class PlaceholderKey {
   SymbolHandle _name;

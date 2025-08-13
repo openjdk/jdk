@@ -29,7 +29,7 @@
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 
 class outputStream;
 class NativeCallStack;

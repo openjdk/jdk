@@ -39,7 +39,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"

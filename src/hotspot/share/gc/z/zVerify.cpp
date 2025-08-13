@@ -51,7 +51,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/vmError.hpp"
 
