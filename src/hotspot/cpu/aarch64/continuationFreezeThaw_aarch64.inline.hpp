@@ -197,6 +197,11 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
   }
 }
 
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
+  intptr_t** fp_addr = (intptr_t**)(sp - frame::sender_sp_offset);
+  *fp_addr = UNUSED_FP;
+}
+
 //////// Thaw
 
 // Fast path
