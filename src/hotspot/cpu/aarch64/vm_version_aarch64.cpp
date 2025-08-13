@@ -32,6 +32,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -50,6 +51,8 @@ uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
 
+const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
+
 static SpinWait get_spin_wait_desc() {
   SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
   if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
@@ -60,6 +63,11 @@ static SpinWait get_spin_wait_desc() {
 }
 
 void VM_Version::initialize() {
+#define SET_CPU_FEATURE_NAME(id, name, bit) \
+  _features_names[bit] = XSTR(name);
+  CPU_FEATURE_FLAGS(SET_CPU_FEATURE_NAME)
+#undef SET_CPU_FEATURE_NAME
+
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -194,7 +202,7 @@ void VM_Version::initialize() {
 
   // Cortex A53
   if (_cpu == CPU_ARM && model_is(0xd03)) {
-    _features |= CPU_A53MAC;
+    set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
@@ -234,7 +242,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_features & (CPU_FP | CPU_ASIMD)) {
+  if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -397,7 +405,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (_features & CPU_ASIMD) {
+  if (supports_feature(CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       UseChaCha20Intrinsics = true;
     }
@@ -408,7 +416,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
-  if (_features & CPU_ASIMD) {
+  if (supports_feature(CPU_ASIMD)) {
       if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
           UseKyberIntrinsics = true;
       }
@@ -419,7 +427,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
   }
 
-  if (_features & CPU_ASIMD) {
+  if (supports_feature(CPU_ASIMD)) {
       if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
           UseDilithiumIntrinsics = true;
       }
@@ -620,32 +628,38 @@ void VM_Version::initialize() {
 
   // Sync SVE related CPU features with flags
   if (UseSVE < 2) {
-    _features &= ~CPU_SVE2;
-    _features &= ~CPU_SVEBITPERM;
+    clear_feature(CPU_SVE2);
+    clear_feature(CPU_SVEBITPERM);
   }
   if (UseSVE < 1) {
-    _features &= ~CPU_SVE;
+    clear_feature(CPU_SVE);
   }
 
   // Construct the "features" string
-  char buf[512];
-  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  stringStream ss(512);
+  ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) {
-    os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
+    ss.print("(0x%03x)", _model2);
   }
-  size_t features_offset = strnlen(buf, sizeof(buf));
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
-  do {                                                          \
-    if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
-  } while(0);
-  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
-#undef ADD_FEATURE_IF_SUPPORTED
+  ss.print(", ");
+  int features_offset = (int)ss.size();
+  insert_features_names(_features, ss);
 
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = ss.as_string(true);
+  _features_string = _cpu_info_string + features_offset;
+}
 
-  _features_string = extract_features_string(_cpu_info_string,
-                                             strnlen(_cpu_info_string, sizeof(buf)),
-                                             features_offset);
+void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
+    }
+    return (const char*)nullptr;
+  }, ", ");
 }
 
 #if defined(LINUX)

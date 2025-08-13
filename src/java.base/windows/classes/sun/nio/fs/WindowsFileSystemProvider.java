@@ -243,7 +243,8 @@ class WindowsFileSystemProvider
         try {
              // need to know if file is a directory or junction
              attrs = WindowsFileAttributes.get(file, false);
-             if (attrs.isDirectory() || attrs.isDirectoryLink()) {
+             if (attrs.isDirectory() || attrs.isDirectoryLink() ||
+                 attrs.isDirectoryJunction()) {
                 RemoveDirectory(file.getPathForWin32Calls());
              } else {
                 DeleteFile(file.getPathForWin32Calls());

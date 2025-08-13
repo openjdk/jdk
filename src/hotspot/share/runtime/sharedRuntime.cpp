@@ -2769,12 +2769,13 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
   ResourceMark rm;
   const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
   const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
-  int offsets[AdapterHandlerEntry::ENTRIES_COUNT];
+  int offsets[AdapterBlob::ENTRY_COUNT];
 
   AdapterBlob* adapter_blob = nullptr;
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, offsets);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
     adapter_blob = blob->as_adapter_blob();
+    adapter_blob->get_offsets(offsets);
     address i2c_entry = adapter_blob->content_begin();
     assert(offsets[0] == 0, "sanity check");
     handler->set_entry_points(i2c_entry, i2c_entry + offsets[1], i2c_entry + offsets[2], i2c_entry + offsets[3]);
@@ -2837,7 +2838,15 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
   }
 #endif
 
-  adapter_blob = AdapterBlob::create(&buffer);
+  int entry_offset[AdapterBlob::ENTRY_COUNT];
+  assert(AdapterBlob::ENTRY_COUNT == 4, "sanity");
+  address i2c_entry = handler->get_i2c_entry();
+  entry_offset[0] = 0; // i2c_entry offset
+  entry_offset[1] = handler->get_c2i_entry() - i2c_entry;
+  entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
+  entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
+
+  adapter_blob = AdapterBlob::create(&buffer, entry_offset);
   if (adapter_blob == nullptr) {
     // CodeCache is full, disable compilation
     // Ought to log this but compile log is only per compile thread
@@ -2848,14 +2857,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
-    int entry_offset[AdapterHandlerEntry::ENTRIES_COUNT];
-    assert(AdapterHandlerEntry::ENTRIES_COUNT == 4, "sanity");
-    address i2c_entry = handler->get_i2c_entry();
-    entry_offset[0] = 0; // i2c_entry offset
-    entry_offset[1] = handler->get_c2i_entry() - i2c_entry;
-    entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
-    entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
+    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
   handler->relocate(adapter_blob->content_begin());
