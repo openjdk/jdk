@@ -32,8 +32,38 @@ package gc.stress;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver gc.stress.TestReclaimStringsLeaksMemory
+ */
+
+/*
+ * @test TestReclaimStringsLeaksMemorySerial
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with SerialGC.
+ * @requires vm.gc.Serial
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
+ */
+
+/*
+ * @test TestReclaimStringsLeaksMemoryParallel
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ParallelGC.
+ * @requires vm.gc.Parallel
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
+ */
+
+/*
+ * @test TestReclaimStringsLeaksMemoryG1
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with G1GC.
+ * @requires vm.gc.G1
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 
