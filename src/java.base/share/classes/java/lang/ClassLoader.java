@@ -65,6 +65,8 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * A class loader is an object that is responsible for loading classes. The
@@ -221,10 +223,16 @@ import jdk.internal.util.StaticProperty;
  * @see      #resolveClass(Class)
  * @since 1.0
  */
+@AOTSafeClassInitializer
 public abstract class ClassLoader {
 
     private static native void registerNatives();
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         registerNatives();
     }
 
