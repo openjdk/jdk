@@ -222,9 +222,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   address pc;
   bool reexecute = should_reexecute(is_top_frame, exec_mode);
   if (is_top_frame && exec_mode == Deoptimization::Unpack_exception) {
-#if 1
     assert(raw_bci() >= 0, "bad bci %d for Unpack_exception", raw_bci());
-#endif
     bcp = method()->bcp_from(bci());
     // exception is pending
     pc = Interpreter::rethrow_exception_entry();
@@ -283,9 +281,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (JvmtiExport::can_pop_frame() &&
         (thread->has_pending_popframe() || thread->popframe_forcing_deopt_reexecution())) {
-#if 1
-      assert(exec_mode != Deoptimization::Unpack_exception, "TODO");
-#endif
       if (thread->has_pending_popframe()) {
         // Pop top frame after deoptimization
         pc = Interpreter::remove_activation_preserving_args_entry();
@@ -308,9 +303,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         popframe_preserved_args_size_in_words = in_words(thread->popframe_preserved_args_size_in_words());
       }
     } else if (JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
-#if 1
-      assert(exec_mode != Deoptimization::Unpack_exception, "TODO");
-#endif
       if (!realloc_failure_exception) {
         // Force early return from top frame after deoptimization
         pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
