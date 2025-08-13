@@ -28,8 +28,7 @@ import java.awt.TextArea;
 /*
  * @test
  * @bug 6192116
- * @summary Auto-scrolling does not work properly for TextArea when appending
- *          some text, on XToolkit
+ * @summary Auto-scrolling does not work properly for TextArea when appending some text, on XToolkit
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaAppendScrollTest2
