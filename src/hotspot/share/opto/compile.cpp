@@ -5378,9 +5378,15 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
       if (n->is_Root()) break;
       for (uint k = 0; k < n->req(); k++) {
         Node* in = n->in(k);
-        // TODO we have to add some condition for loops, otherwise we'll probably run blindly into cycles
-        if (candidates.member(in) && !candidate_worklist.member(in)) candidates_found++; // TODO we can probably break here
-        if (in->is_CFG()) candidate_worklist.push(in);
+
+        // we should not go through cycles in the CFG
+        if (n->is_Loop() && k == LoopNode::LoopBackControl) continue;
+        if (candidates.member(in) && !candidate_worklist.member(in)) {
+          candidates_found++;
+        }
+        if (in->is_CFG()) {
+          candidate_worklist.push(in);
+        }
       }
     }
 
