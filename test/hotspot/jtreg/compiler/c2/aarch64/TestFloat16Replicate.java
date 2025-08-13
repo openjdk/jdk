@@ -44,7 +44,7 @@ public class TestFloat16Replicate {
     private static short[] input;
     private static short[] output;
 
-   // Choose FP16_IN_RANGE which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
+    // Choose FP16_IN_RANGE which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
     private static final Float16 FP16_IN_RANGE = Float16.shortBitsToFloat16((short)512);
 
     // Choose a value out of the range of [-128 << 8, 127 << 8] or a non multiple of 256 for FP16_OUT_OF_RANGE
