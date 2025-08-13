@@ -37,7 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ciEnv;
 class ciBaseObject;
@@ -173,7 +173,7 @@ public:
   // A set of TD objects that we collect during the training run.
   class TrainingDataSet {
     friend TrainingData;
-    ResizeableResourceHashtable<const Key*, TrainingData*,
+    ResizeableHashTable<const Key*, TrainingData*,
                                 AnyObj::C_HEAP, MemTag::mtCompiler,
                                 &TrainingData::Key::hash,
                                 &TrainingData::Key::equals>
@@ -229,7 +229,7 @@ public:
   // A widget to ensure that we visit TD object only once (TD objects can have pointer to
   // other TD object that are sometimes circular).
   class Visitor {
-    ResizeableResourceHashtable<TrainingData*, bool> _visited;
+    ResizeableHashTable<TrainingData*, bool> _visited;
   public:
     Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
     bool is_visited(TrainingData* td) {

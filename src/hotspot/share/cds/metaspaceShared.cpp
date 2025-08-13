@@ -97,9 +97,9 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 
 #include <sys/stat.h>
 
@@ -178,7 +178,7 @@ class DumpClassListCLDClosure : public CLDClosure {
   static const int MAX_TABLE_SIZE = 61333;
 
   fileStream *_stream;
-  ResizeableResourceHashtable<InstanceKlass*, bool,
+  ResizeableHashTable<InstanceKlass*, bool,
                               AnyObj::C_HEAP, mtClassShared> _dumped_classes;
 
   void dump(InstanceKlass* ik) {

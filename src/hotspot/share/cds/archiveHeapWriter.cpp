@@ -70,7 +70,7 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<
+typedef HashTable<
       size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
       size_t,    // size of this filler (in bytes)
       127,       // prime number

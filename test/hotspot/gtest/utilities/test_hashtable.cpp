@@ -29,9 +29,9 @@
 #include "unittest.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
-class CommonResourceHashtableTest : public ::testing::Test {
+class CommonHashTableTest : public ::testing::Test {
  protected:
   typedef void* K;
   typedef uintx V;
@@ -79,7 +79,7 @@ class CommonResourceHashtableTest : public ::testing::Test {
 
 };
 
-class SmallResourceHashtableTest : public CommonResourceHashtableTest {
+class SmallHashTableTest : public CommonHashTableTest {
  protected:
 
   template<
@@ -93,7 +93,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(V step) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
+      HashTable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
 
       ASSERT_FALSE(rh.contains(as_K(step)));
 
@@ -157,61 +157,61 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
   };
 };
 
-TEST_VM_F(SmallResourceHashtableTest, default) {
+TEST_VM_F(SmallHashTableTest, default) {
   ResourceMark rm;
   Runner<>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, default_shifted) {
+TEST_VM_F(SmallHashTableTest, default_shifted) {
   ResourceMark rm;
   Runner<>::test(0x10);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, bad_hash) {
+TEST_VM_F(SmallHashTableTest, bad_hash) {
   ResourceMark rm;
   Runner<bad_hash>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, bad_hash_shifted) {
+TEST_VM_F(SmallHashTableTest, bad_hash_shifted) {
   ResourceMark rm;
   Runner<bad_hash>::test(0x10);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, identity_hash) {
+TEST_VM_F(SmallHashTableTest, identity_hash) {
   ResourceMark rm;
   Runner<identity_hash>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, identity_hash_shifted) {
+TEST_VM_F(SmallHashTableTest, identity_hash_shifted) {
   ResourceMark rm;
   Runner<identity_hash>::test(0x10);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm) {
+TEST_VM_F(SmallHashTableTest, primitive_hash_no_rm) {
   Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm_shifted) {
+TEST_VM_F(SmallHashTableTest, primitive_hash_no_rm_shifted) {
   Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm) {
+TEST_VM_F(SmallHashTableTest, bad_hash_no_rm) {
   Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm_shifted) {
+TEST_VM_F(SmallHashTableTest, bad_hash_no_rm_shifted) {
   Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm) {
+TEST_VM_F(SmallHashTableTest, identity_hash_no_rm) {
   Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x1);
 }
 
-TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm_shifted) {
+TEST_VM_F(SmallHashTableTest, identity_hash_no_rm_shifted) {
   Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x10);
 }
 
-class GenericResourceHashtableTest : public CommonResourceHashtableTest {
+class GenericHashTableTest : public CommonHashTableTest {
  protected:
 
   template<
@@ -225,7 +225,7 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(unsigned num_elements = SIZE) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
+      HashTable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
 
       for (uintptr_t i = 0; i < num_elements; ++i) {
         ASSERT_TRUE(rh.put(as_K(i), i));
@@ -263,39 +263,39 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
   };
 };
 
-TEST_VM_F(GenericResourceHashtableTest, default) {
+TEST_VM_F(GenericHashTableTest, default) {
   ResourceMark rm;
   Runner<>::test();
 }
 
-TEST_VM_F(GenericResourceHashtableTest, bad_hash) {
+TEST_VM_F(GenericHashTableTest, bad_hash) {
   ResourceMark rm;
   Runner<bad_hash>::test();
 }
 
-TEST_VM_F(GenericResourceHashtableTest, identity_hash) {
+TEST_VM_F(GenericHashTableTest, identity_hash) {
   ResourceMark rm;
   Runner<identity_hash>::test();
 }
 
-TEST_VM_F(GenericResourceHashtableTest, primitive_hash_no_rm) {
+TEST_VM_F(GenericHashTableTest, primitive_hash_no_rm) {
   Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
-TEST_VM_F(GenericResourceHashtableTest, bad_hash_no_rm) {
+TEST_VM_F(GenericHashTableTest, bad_hash_no_rm) {
   Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
-TEST_VM_F(GenericResourceHashtableTest, identity_hash_no_rm) {
+TEST_VM_F(GenericHashTableTest, identity_hash_no_rm) {
   Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(512);
 }
 
-// Simple ResourceHashtable whose key is a SymbolHandle and value is an int
+// Simple HashTable whose key is a SymbolHandle and value is an int
 // This test is to show that the SymbolHandle will correctly handle the refcounting
 // in the table.
-class SimpleResourceHashtableDeleteTest : public ::testing::Test {
+class SimpleHashTableDeleteTest : public ::testing::Test {
  public:
-    ResourceHashtable<SymbolHandle, int, 107, AnyObj::C_HEAP, mtTest, SymbolHandle::compute_hash> _simple_test_table;
+    HashTable<SymbolHandle, int, 107, AnyObj::C_HEAP, mtTest, SymbolHandle::compute_hash> _simple_test_table;
 
     class SimpleDeleter : public StackObj {
       public:
@@ -305,7 +305,7 @@ class SimpleResourceHashtableDeleteTest : public ::testing::Test {
     };
 };
 
-TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_remove) {
+TEST_VM_F(SimpleHashTableDeleteTest, simple_remove) {
   TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
   Symbol* s = t;
   int s_orig_count = s->refcount();
@@ -317,7 +317,7 @@ TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_remove) {
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
 }
 
-TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
+TEST_VM_F(SimpleHashTableDeleteTest, simple_delete) {
   TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
   Symbol* s = t;
   int s_orig_count = s->refcount();
@@ -330,10 +330,10 @@ TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
 }
 
-// More complicated ResourceHashtable with SymbolHandle in the key. Since the *same* Symbol is part
+// More complicated HashTable with SymbolHandle in the key. Since the *same* Symbol is part
 // of the value, it's not necessary to manipulate the refcount of the key, but you must in the value.
 // Luckily SymbolHandle does this.
-class ResourceHashtableDeleteTest : public ::testing::Test {
+class HashTableDeleteTest : public ::testing::Test {
  public:
     class TestValue : public CHeapObj<mtTest> {
         SymbolHandle _s;
@@ -348,8 +348,8 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         // Symbol* s() const { return _s; }  // needed for conversion from TempNewSymbol to SymbolHandle member
     };
 
-    // ResourceHashtable whose value is a *copy* of TestValue.
-    ResourceHashtable<Symbol*, TestValue, 107, AnyObj::C_HEAP, mtTest> _test_table;
+    // HashTable whose value is a *copy* of TestValue.
+    HashTable<Symbol*, TestValue, 107, AnyObj::C_HEAP, mtTest> _test_table;
 
     class Deleter : public StackObj {
       public:
@@ -362,8 +362,8 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         }
     };
 
-    // ResourceHashtable whose value is a pointer to TestValue.
-    ResourceHashtable<Symbol*, TestValue*, 107, AnyObj::C_HEAP, mtTest> _ptr_test_table;
+    // HashTable whose value is a pointer to TestValue.
+    HashTable<Symbol*, TestValue*, 107, AnyObj::C_HEAP, mtTest> _ptr_test_table;
 
     class PtrDeleter : public StackObj {
       public:
@@ -378,7 +378,7 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
 };
 
 
-TEST_VM_F(ResourceHashtableDeleteTest, value_remove) {
+TEST_VM_F(HashTableDeleteTest, value_remove) {
   TempNewSymbol s = SymbolTable::new_symbol("abcdefg");
   int s_orig_count = s->refcount();
   {
@@ -396,7 +396,7 @@ TEST_VM_F(ResourceHashtableDeleteTest, value_remove) {
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }
 
-TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
+TEST_VM_F(HashTableDeleteTest, value_delete) {
   TempNewSymbol d = SymbolTable::new_symbol("defghijklmnop");
   int d_orig_count = d->refcount();
   {
@@ -412,7 +412,7 @@ TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
   ASSERT_EQ(d->refcount(), d_orig_count) << "refcount should be as we started";
 }
 
-TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
+TEST_VM_F(HashTableDeleteTest, check_delete_ptr) {
   TempNewSymbol s = SymbolTable::new_symbol("abcdefg_ptr");
   int s_orig_count = s->refcount();
   {
@@ -432,7 +432,7 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }
 
-class ResourceHashtablePrintTest : public ::testing::Test {
+class HashTablePrintTest : public ::testing::Test {
  public:
     class TestValue {
       int _i;
@@ -441,7 +441,7 @@ class ResourceHashtablePrintTest : public ::testing::Test {
      public:
       TestValue(int i) : _i(i), _j(i+1), _k(i+2) {}
     };
-    ResourceHashtable<int, TestValue*, 30, AnyObj::C_HEAP, mtTest> _test_table;
+    HashTable<int, TestValue*, 30, AnyObj::C_HEAP, mtTest> _test_table;
 
     class TableDeleter {
      public:
@@ -452,7 +452,7 @@ class ResourceHashtablePrintTest : public ::testing::Test {
     };
 };
 
-TEST_VM_F(ResourceHashtablePrintTest, print_test) {
+TEST_VM_F(HashTablePrintTest, print_test) {
   for (int i = 0; i < 300; i++) {
     TestValue* tv = new TestValue(i);
     _test_table.put(i, tv);  // all the entries can be the same.

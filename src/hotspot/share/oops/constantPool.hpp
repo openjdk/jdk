@@ -37,8 +37,8 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.
@@ -872,7 +872,7 @@ private:
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    HashTable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
    public:
     void add_if_absent(const Symbol* sym, u2 value) {

@@ -22,6 +22,7 @@
  *
  */
 
+
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
@@ -74,7 +75,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
@@ -445,7 +446,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
-class UnregisteredClassesTable : public ResourceHashtable<
+class UnregisteredClassesTable : public HashTable<
   Symbol*, InstanceKlass*,
   15889, // prime number
   AnyObj::C_HEAP> {};

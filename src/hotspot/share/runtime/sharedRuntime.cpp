@@ -80,7 +80,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -2450,7 +2450,7 @@ class ArchivedAdapterTable : public OffsetCompactHashtable<
 #endif // INCLUDE_CDS
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = HashTable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals>;

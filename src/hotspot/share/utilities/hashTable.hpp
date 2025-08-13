@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_RESOURCEHASH_HPP
-#define SHARE_UTILITIES_RESOURCEHASH_HPP
+#ifndef SHARE_UTILITIES_HASHTABLE_HPP
+#define SHARE_UTILITIES_HASHTABLE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -33,20 +33,20 @@
 #include <type_traits>
 
 template<typename K, typename V>
-class ResourceHashtableNode : public AnyObj {
+class HashTableNode : public AnyObj {
 public:
   unsigned _hash;
   K _key;
   V _value;
-  ResourceHashtableNode* _next;
+  HashTableNode* _next;
 
-  ResourceHashtableNode(unsigned hash, K const& key, V const& value,
-                        ResourceHashtableNode* next = nullptr) :
+  HashTableNode(unsigned hash, K const& key, V const& value,
+                        HashTableNode* next = nullptr) :
     _hash(hash), _key(key), _value(value), _next(next) {}
 
   // Create a node with a default-constructed value.
-  ResourceHashtableNode(unsigned hash, K const& key,
-                        ResourceHashtableNode* next = nullptr) :
+  HashTableNode(unsigned hash, K const& key,
+                        HashTableNode* next = nullptr) :
     _hash(hash), _key(key), _value(), _next(next) {}
 };
 
@@ -58,12 +58,12 @@ template<
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
-class ResourceHashtableBase : public STORAGE {
+class HashTableBase : public STORAGE {
   static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
                 "Destructor for K is only called with C_HEAP");
   static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
                 "Destructor for V is only called with C_HEAP");
-  using Node = ResourceHashtableNode<K, V>;
+  using Node = HashTableNode<K, V>;
  private:
   int _number_of_entries;
 
@@ -94,17 +94,17 @@ class ResourceHashtableBase : public STORAGE {
 
   Node const** lookup_node(unsigned hash, K const& key) const {
     return const_cast<Node const**>(
-        const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
+        const_cast<HashTableBase*>(this)->lookup_node(hash, key));
   }
 
  protected:
   Node** table() const { return STORAGE::table(); }
 
-  ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
-  ResourceHashtableBase(unsigned size) : STORAGE(size), _number_of_entries(0) {}
-  NONCOPYABLE(ResourceHashtableBase);
+  HashTableBase() : STORAGE(), _number_of_entries(0) {}
+  HashTableBase(unsigned size) : STORAGE(size), _number_of_entries(0) {}
+  NONCOPYABLE(HashTableBase);
 
-  ~ResourceHashtableBase() {
+  ~HashTableBase() {
     if (ALLOC_TYPE == AnyObj::C_HEAP) {
       Node* const* bucket = table();
       const unsigned sz = table_size();
@@ -343,13 +343,13 @@ class ResourceHashtableBase : public STORAGE {
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
-class FixedResourceHashtableStorage : public AnyObj {
-  using Node = ResourceHashtableNode<K, V>;
+class FixedHashTableStorage : public AnyObj {
+  using Node = HashTableNode<K, V>;
 
   Node* _table[TABLE_SIZE];
 protected:
-  FixedResourceHashtableStorage() { memset(_table, 0, sizeof(_table)); }
-  ~FixedResourceHashtableStorage() = default;
+  FixedHashTableStorage() { memset(_table, 0, sizeof(_table)); }
+  ~FixedHashTableStorage() = default;
 
   constexpr unsigned table_size() const {
     return TABLE_SIZE;
@@ -368,13 +368,13 @@ template<
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
-class ResourceHashtable : public ResourceHashtableBase<
-  FixedResourceHashtableStorage<SIZE, K, V>,
+class HashTable : public HashTableBase<
+  FixedHashTableStorage<SIZE, K, V>,
     K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> {
-  NONCOPYABLE(ResourceHashtable);
+  NONCOPYABLE(HashTable);
 public:
-  ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
+  HashTable() : HashTableBase<FixedHashTableStorage<SIZE, K, V>,
                                               K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS>() {}
 };
 
-#endif // SHARE_UTILITIES_RESOURCEHASH_HPP
+#endif // SHARE_UTILITIES_HASHTABLE_HPP

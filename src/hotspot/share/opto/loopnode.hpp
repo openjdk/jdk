@@ -1982,7 +1982,7 @@ class DataNodeGraph : public StackObj {
   DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
       : _phase(phase),
         _data_nodes(data_nodes),
-        // Use 107 as best guess which is the first resize value in ResizeableResourceHashtable::large_table_sizes.
+        // Use 107 as best guess which is the first resize value in ResizeableHashTable::large_table_sizes.
         _orig_to_new(107, MaxNodeLimit)
   {
 #ifdef ASSERT

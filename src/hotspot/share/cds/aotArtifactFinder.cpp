@@ -37,7 +37,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/trainingData.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // All the classes that should be included in the AOT cache (in at least the "allocated" state)
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
@@ -47,7 +47,7 @@ static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
 static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes = nullptr;
 
 static const int TABLE_SIZE = 15889; // prime number
-using ClassesTable = ResourceHashtable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
+using ClassesTable = HashTable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 static ClassesTable* _seen_classes;       // all classes that have been seen by AOTArtifactFinder
 static ClassesTable* _aot_inited_classes; // all classes that need to be AOT-initialized.
 

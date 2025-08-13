@@ -1332,7 +1332,7 @@ typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
 //----------------------------------------------------------------------------------------------------
-// Default hash/equals functions used by ResourceHashtable
+// Default hash/equals functions used by HashTable
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);

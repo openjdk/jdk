@@ -40,7 +40,7 @@ template<typename T> class GrowableArray;
 template<typename K, typename V,
          AnyObj::allocation_type, MemTag,
          unsigned (*HASH)  (K const&),
-         bool (*EQUALS)(K const&, K const&)> class ResizeableResourceHashtable;
+         bool (*EQUALS)(K const&, K const&)> class ResizeableHashTable;
 
 // Knuth multiplicative hashing.
 inline uint32_t knuth_hash(const traceid& id) {
@@ -48,7 +48,7 @@ inline uint32_t knuth_hash(const traceid& id) {
   return v * UINT32_C(2654435761);
 }
 
-typedef ResizeableResourceHashtable<traceid, jclass,
+typedef ResizeableHashTable<traceid, jclass,
                                     AnyObj::RESOURCE_AREA,
                                     mtTracing,
                                     knuth_hash,

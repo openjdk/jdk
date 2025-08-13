@@ -831,7 +831,7 @@ public:
 
 class DumperClassCacheTable {
 private:
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
   static constexpr size_t TABLE_SIZE = 1031;
 
@@ -841,7 +841,7 @@ private:
   // sized table from overloading.
   static constexpr int CACHE_TOP = 256;
 
-  typedef ResourceHashtable<InstanceKlass*, DumperClassCacheTableEntry*,
+  typedef HashTable<InstanceKlass*, DumperClassCacheTableEntry*,
                             TABLE_SIZE, AnyObj::C_HEAP, mtServiceability> PtrTable;
   PtrTable* _ptrs;
 
