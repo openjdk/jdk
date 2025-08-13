@@ -168,11 +168,6 @@ class MallocMemorySnapshot {
     return _all_mallocs.count() * MallocHeader::malloc_overhead();
   }
 
-  size_t malloc_size(MemTag mem_tag) const {
-    const MallocMemory* mm = by_tag(mem_tag);
-    return mm->malloc_size() + mm->arena_size();
-  }
-
   // Total malloc invocation count
   size_t total_count() const {
     return _all_mallocs.count();
@@ -263,18 +258,6 @@ class MallocMemorySummary : AllStatic {
   // either global or the category limit
   static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
-  // Total malloc'd memory amount
-  static size_t total() {
-    return as_snapshot()->total();
-  }
-
-  static size_t total_peak_malloc() {
-    return as_snapshot()->total_peak();
-  }
-
-  static size_t malloc_size(MemTag mem_tag) {
-    return as_snapshot()->malloc_size(mem_tag);
-  }
 };
 
 // Main class called from MemTracker to track malloc activities
@@ -335,20 +318,6 @@ class MallocTracker : AllStatic {
   static inline const MallocHeader* malloc_header(const void *memblock) {
     assert(memblock != nullptr, "null pointer");
     return (const MallocHeader*)memblock -1;
-  }
-
-  // Total malloc'd memory amount
-  static size_t total_malloc() {
-    return MallocMemorySummary::total();
-  }
-
-  // Total malloc'd memory amount
-  static size_t total_peak_malloc() {
-    return MallocMemorySummary::total_peak_malloc();
-  }
-
-  static size_t malloc_size(MemTag mem_tag) {
-    return MallocMemorySummary::malloc_size(mem_tag);
   }
 };
 

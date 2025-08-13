@@ -195,6 +195,9 @@ public class EventNames {
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
     public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
+    public static final String ProcessSize = PREFIX + "ProcessSize";
+    public static final String LibcStatistics = PREFIX + "LibcStatistics";
+    public static final String LibcHeapTrim = PREFIX + "LibcHeapTrim";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";

@@ -44,7 +44,6 @@ class NMTUsage : public CHeapObj<mtNMT> {
 private:
   size_t _malloc_by_type[mt_number_of_tags];
   size_t _malloc_total;
-  size_t _malloc_peak;
   NMTUsagePair _vm_by_type[mt_number_of_tags];
   NMTUsagePair _vm_total;
 
@@ -65,10 +64,6 @@ public:
   size_t total_committed() const;
   size_t reserved(MemTag mem_tag) const;
   size_t committed(MemTag mem_tag) const;
-
-  size_t malloc_total() const { return _malloc_total; }
-  size_t malloc_peak() const { return _malloc_peak; }
-  size_t malloc_unsafe() const { return _malloc_by_type[(int)mtOther]; }
 };
 
 #endif // SHARE_NMT_NMTUSAGE_HPP
