@@ -244,12 +244,12 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (!overlaps(that)) {
-            return Optional.empty();
+        if (overlaps(that)) {
+            final long offsetToThat = that.address() - this.address();
+            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
         }
-        final long offsetToThat = that.address() - this.address();
-        final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-        return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
+        return Optional.empty();
     }
 
     // Returns a negative value if the regions overlap, otherwise a non-negative value.
