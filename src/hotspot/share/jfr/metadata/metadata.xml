@@ -1333,7 +1333,7 @@
     <Field type="ulong" contentType="bytes" name="swap" label="Swap" description="Process memory swapped out" />
     <Field type="ulong" contentType="bytes" name="pagetable" label="Page Table Size" description="Size of Page Table Entries" />
   </Event>
-  
+
   <Event name="LibcStatistics" category="Java Virtual Machine, Memory" label="Libc Malloc Statistics" description="Malloc Statistics reported by the Libc" thread="false" period="everyChunk">
     <Field type="ulong" contentType="bytes" name="mallocOutstanding" label="Libc Malloc Outstanding" description="Outstanding Malloc Size" />
     <Field type="ulong" contentType="bytes" name="mallocRetained" label="Libc Malloc Retained" description="Retained (freed but cached in libc) Malloc size (estimate)" />
@@ -1605,4 +1605,5 @@
   <XmlContentType name="hertz" annotation="jdk.jfr.Frequency" />
   <XmlContentType name="bytes-per-second" annotation="jdk.jfr.DataAmount(BYTES), jdk.jfr.Frequency" />
   <XmlContentType name="bits-per-second" annotation="jdk.jfr.DataAmount(BITS), jdk.jfr.Frequency" />
+
 </Metadata>
