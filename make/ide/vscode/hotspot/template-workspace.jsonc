@@ -22,6 +22,7 @@
 		// Java extension
 		"jdk.advanced.disable.nbjavac": true,
 		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
+		"jdk.java.onSave.organizeImports": false, // prevents unnecessary changes
 
 		// Additional conventions
 		"files.associations": {
