@@ -36,3 +36,6 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
 
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
+
+address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }

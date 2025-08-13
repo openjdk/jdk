@@ -204,7 +204,7 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
 // update the region state between n1 and n2. Since n1 and n2 are pointers, any update of them will be visible from tree.
 // If n1 is noop, it can be removed because its left region (n1->val().in) is already decided and its right state (n1->val().out) is decided here.
 // The state of right of n2 (n2->val().out) cannot be decided here yet.
-void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
+void VMATree::update_region(TNode* n1, TNode* n2, const RequestInfo& req, SummaryDiff& diff) {
   assert(n1 != nullptr,"sanity");
   assert(n2 != nullptr,"sanity");
   //.........n1......n2......
@@ -261,8 +261,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   };
   stA.out.set_commit_stack(NativeCallStackStorage::invalid);
   stB.in.set_commit_stack(NativeCallStackStorage::invalid);
-  VMATreap::Range rA = _tree.find_enclosing_range(_A);
-  VMATreap::Range rB = _tree.find_enclosing_range(_B);
+  VMARBTree::Range rA = _tree.find_enclosing_range(_A);
+  VMARBTree::Range rB = _tree.find_enclosing_range(_B);
 
   // nodes:          .....X.......Y...Z......W........U
   // request:                 A------------------B
@@ -320,24 +320,24 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   // Meaning that whenever any of one item in this sequence is changed, the rest of the consequent items to
   // be checked/changed.
 
-  TreapNode* X = rA.start;
-  TreapNode* Y = rA.end;
-  TreapNode* W = rB.start;
-  TreapNode* U = rB.end;
-  TreapNode nA{_A, stA, 0}; // the node that represents A
-  TreapNode nB{_B, stB, 0}; // the node that represents B
-  TreapNode* A = &nA;
-  TreapNode* B = &nB;
-  auto upsert_if= [&](TreapNode* node) {
+  TNode* X = rA.start;
+  TNode* Y = rA.end;
+  TNode* W = rB.start;
+  TNode* U = rB.end;
+  TNode nA{_A, stA}; // the node that represents A
+  TNode nB{_B, stB}; // the node that represents B
+  TNode* A = &nA;
+  TNode* B = &nB;
+  auto upsert_if= [&](TNode* node) {
     if (!node->val().is_noop()) {
       _tree.upsert(node->key(), node->val());
     }
   };
   // update region between n1 and n2
-  auto update = [&](TreapNode* n1, TreapNode* n2) {
+  auto update = [&](TNode* n1, TNode* n2) {
     update_region(n1, n2, req, diff);
   };
-  auto remove_if = [&](TreapNode* node) -> bool{
+  auto remove_if = [&](TNode* node) -> bool{
     if (node->val().is_noop()) {
       _tree.remove(node->key());
       return true;
@@ -347,8 +347,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   GrowableArrayCHeap<position, mtNMT> to_be_removed;
   // update regions in range A to B
   auto update_loop = [&]() {
-    TreapNode* prev = nullptr;
-    _tree.visit_range_in_order(_A + 1, _B + 1, [&](TreapNode* curr) {
+    TNode* prev = nullptr;
+    _tree.visit_range_in_order(_A + 1, _B + 1, [&](TNode* curr) {
       if (prev != nullptr) {
         update_region(prev, curr, req, diff);
         // during visit, structure of the tree should not be changed
@@ -362,7 +362,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
     });
   };
   // update region of [A,T)
-  auto update_A = [&](TreapNode* T) {
+  auto update_A = [&](TNode* T) {
     A->val().out = A->val().in;
     update(A, T);
   };
@@ -650,7 +650,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
 
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
-  visit_in_order([&](TreapNode* current) {
+  visit_in_order([&](const TNode* current) {
     out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
     return true;
@@ -660,11 +660,11 @@ void VMATree::print_on(outputStream* out) {
 #endif
 
 VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, const MemTag tag) {
-  auto pos = [](TreapNode* n) { return n->key(); };
+  auto pos = [](TNode* n) { return n->key(); };
   position from = start;
   position end  = from+size;
   size_t remsize = size;
-  VMATreap::Range range(nullptr, nullptr);
+  VMARBTree::Range range(nullptr, nullptr);
 
   // Find the next range to adjust and set range, remsize and from
   // appropriately. If it returns false, there is no valid next range.

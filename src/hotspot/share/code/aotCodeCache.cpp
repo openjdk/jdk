@@ -61,8 +61,8 @@
 #include "gc/z/zBarrierSetRuntime.hpp"
 #endif
 
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 const char* aot_code_entry_kind_name[] = {
 #define DECL_KIND_STRING(kind) XSTR(kind),
@@ -799,7 +799,7 @@ bool AOTCodeCache::finish_write() {
 
 //------------------Store/Load AOT code ----------------------
 
-bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) {
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
   AOTCodeCache* cache = open_for_dump();
   if (cache == nullptr) {
     return false;
@@ -883,18 +883,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     return false;
   }
 
-  // Write entries offsets
-  n = cache->write_bytes(&entry_offset_count, sizeof(int));
-  if (n != sizeof(int)) {
-    return false;
-  }
-  for (int i = 0; i < entry_offset_count; i++) {
-    uint32_t off = (uint32_t)entry_offsets[i];
-    n = cache->write_bytes(&off, sizeof(uint32_t));
-    if (n != sizeof(uint32_t)) {
-      return false;
-    }
-  }
   uint entry_size = cache->_write_position - entry_position;
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
@@ -903,13 +891,13 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   return true;
 }
 
-bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, BlobId id, int entry_offset_count, int* entry_offsets) {
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, BlobId id) {
   assert(AOTCodeEntry::is_blob(entry_kind),
          "wrong entry kind for blob id %s", StubInfo::name(id));
-  return store_code_blob(blob, entry_kind, (uint)id, StubInfo::name(id), entry_offset_count, entry_offsets);
+  return store_code_blob(blob, entry_kind, (uint)id, StubInfo::name(id));
 }
 
-CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) {
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
   AOTCodeCache* cache = open_for_use();
   if (cache == nullptr) {
     return nullptr;
@@ -929,20 +917,20 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
     return nullptr;
   }
   AOTCodeReader reader(cache, entry);
-  CodeBlob* blob = reader.compile_code_blob(name, entry_offset_count, entry_offsets);
+  CodeBlob* blob = reader.compile_code_blob(name);
 
   log_debug(aot, codecache, stubs)("%sRead blob '%s' (id=%u, kind=%s) from AOT Code Cache",
                                    (blob == nullptr? "Failed to " : ""), name, id, aot_code_entry_kind_name[entry_kind]);
   return blob;
 }
 
-CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, BlobId id, int entry_offset_count, int* entry_offsets) {
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, BlobId id) {
   assert(AOTCodeEntry::is_blob(entry_kind),
          "wrong entry kind for blob id %s", StubInfo::name(id));
-  return load_code_blob(entry_kind, (uint)id, StubInfo::name(id), entry_offset_count, entry_offsets);
+  return load_code_blob(entry_kind, (uint)id, StubInfo::name(id));
 }
 
-CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_count, int* entry_offsets) {
+CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   uint entry_position = _entry->offset();
 
   // Read name
@@ -988,21 +976,6 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
 #endif // PRODUCT
 
   fix_relocations(code_blob);
-
-  // Read entries offsets
-  offset = read_position();
-  int stored_count = *(int*)addr(offset);
-  assert(stored_count == entry_offset_count, "entry offset count mismatch, count in AOT code cache=%d, expected=%d", stored_count, entry_offset_count);
-  offset += sizeof(int);
-  set_read_position(offset);
-  for (int i = 0; i < stored_count; i++) {
-    uint32_t off = *(uint32_t*)addr(offset);
-    offset += sizeof(uint32_t);
-    const char* entry_name = (_entry->kind() == AOTCodeEntry::Adapter) ? AdapterHandlerEntry::entry_name(i) : "";
-    log_trace(aot, codecache, stubs)("Reading adapter '%s:%s' (0x%x) offset: 0x%x from AOT Code Cache",
-                                      stored_name, entry_name, _entry->id(), off);
-    entry_offsets[i] = off;
-  }
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
