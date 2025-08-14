@@ -173,7 +173,6 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
     final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     HttpClient newHttpClient() {
         return TRACKER.track(newClientBuilderForH3()
-                         .version(HTTP_3)
                          .executor(executor)
                          .sslContext(sslContext)
                          .build());
@@ -181,7 +180,6 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
 
     HttpClient newSingleThreadClient() {
         return TRACKER.track(newClientBuilderForH3()
-                .version(HTTP_3)
                 .executor(singleThreadExecutor)
                 .sslContext(sslContext)
                 .build());
@@ -189,7 +187,6 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
 
     HttpClient newInLineClient() {
         return TRACKER.track(newClientBuilderForH3()
-                .version(HTTP_3)
                 .executor((r) -> r.run() )
                 .sslContext(sslContext)
                 .build());
@@ -442,8 +439,12 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
     }
 
     private HttpRequest buildRequest(URI uri) {
-        Http3DiscoveryMode config = uri.getPath().contains("/https3/") ? HTTP_3_URI_ONLY : null;
-        return HttpRequest.newBuilder(uri).setOption(H3_DISCOVERY, config).build();
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getPath().contains("/https3/")) {
+            builder.version(HTTP_3);
+            builder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder.build();
     }
 
     static final class GZIPBodyHandler implements BodyHandler<InputStream> {

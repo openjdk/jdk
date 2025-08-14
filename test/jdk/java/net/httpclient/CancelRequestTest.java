@@ -259,7 +259,6 @@ public class CancelRequestTest implements HttpServerAdapters {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
-                .version(HTTP_3)
                 .build());
     }
 
@@ -275,6 +274,17 @@ public class CancelRequestTest implements HttpServerAdapters {
             return shared;
         }
     }
+
+    // set HTTP/3 version on the request when targeting
+    // an HTTP/3 server
+    private HttpRequest.Builder requestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (uri.contains("h3")) {
+            builder.version(HTTP_3);
+        }
+        return builder;
+    }
+
 
     final static String BODY = "Some string | that ? can | be split ? several | ways.";
 
@@ -329,7 +339,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
             Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = requestBuilder(uri)
                     .GET()
                     .setOption(H3_DISCOVERY, config)
                     .build();
@@ -460,7 +470,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
             Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = requestBuilder(uri)
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
                     .build();
@@ -579,7 +589,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
             Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uriStr))
+            HttpRequest req = requestBuilder(uriStr)
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
                     .build();

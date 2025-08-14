@@ -173,6 +173,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
     private String[] uris() {
         return new String[] {
                 https2URI,
+                h3URI
         };
     }
 
@@ -243,15 +244,11 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .GET();
         version.ifPresent(builder::version);
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            if (version.isPresent() && version.get() == Version.HTTP_3) {
-                // don't want to attempt direct connection as there could be another
-                // HTTP/3 endpoint listening at the URI port.
-                // sameClient should be fine because version.empty() should
-                // have come first and populated alt-services.
-                builder.setOption(H3_DISCOVERY, ALT_SVC);
-            } else {
-                builder.setOption(H3_DISCOVERY, null);
-            }
+            // don't want to attempt direct connection as there could be another
+            // HTTP/3 endpoint listening at the URI port.
+            // sameClient should be fine because version.empty() should
+            // have come first and populated alt-services.
+            builder.setOption(H3_DISCOVERY, ALT_SVC);
             HttpRequest request = builder.build();
             System.out.println("Iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
