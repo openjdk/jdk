@@ -118,7 +118,7 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
     if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
       BASIC_ASFLAGS="-nologo"
     else
-      BASIC_ASFLAGS="-nologo -c -Ta"
+      BASIC_ASFLAGS="-nologo -c"
     fi
   fi
   AC_SUBST(BASIC_ASFLAGS)
