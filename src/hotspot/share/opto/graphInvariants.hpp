@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "opto/node.hpp"
 
+#ifndef PRODUCT
 // An invariant that needs only a local view of the graph, around a given node.
 class LocalGraphInvariant : public ResourceObj {
 public:
@@ -89,5 +90,6 @@ public:
   static GraphInvariantChecker* make_default();
   bool run() const;
 };
+#endif
 
 #endif // SHARE_OPTO_GRAPHINVARIANTS_HPP

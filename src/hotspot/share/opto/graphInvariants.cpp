@@ -25,8 +25,8 @@
 #include "opto/graphInvariants.hpp"
 #include "opto/rootnode.hpp"
 
-constexpr int LocalGraphInvariant::OutputStep;
 #ifndef PRODUCT
+constexpr int LocalGraphInvariant::OutputStep;
 
 void LocalGraphInvariant::LazyReachableCFGNodes::fill() {
   precond(live_nodes.size() == 0);
@@ -178,7 +178,7 @@ struct HasAtLeastNInputs : Pattern {
 struct AtInput : Pattern {
   AtInput(uint which_input, const Pattern* pattern) : _which_input(which_input), _pattern(pattern) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    assert(_which_input < center->req(), "First check the input number");
+    assert(_which_input < center->req(), "Input number is out of range");
     if (center->in(_which_input) == nullptr) {
       ss.print_cr("Input at index %d is nullptr.", _which_input);
       return false;
@@ -194,8 +194,8 @@ struct AtInput : Pattern {
   const Pattern* const _pattern;
 };
 
-struct HasType : Pattern {
-  explicit HasType(bool (Node::*type_check)() const) : _type_check(type_check) {}
+struct NodeClass : Pattern {
+  explicit NodeClass(bool (Node::*type_check)() const) : _type_check(type_check) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!(center->*_type_check)()) {
       ss.print_cr("Unexpected type: %s.", center->Name());
@@ -297,7 +297,7 @@ struct PhiArity : PatternBasedCheck {
                 new AtInput(
                     0,
                     And::make(
-                        new HasType(&Node::is_Region),
+                        new NodeClass(&Node::is_Region),
                         new Bind(region_node))))) {
   }
   const char* name() const override {
@@ -443,12 +443,12 @@ struct CountedLoopInvariants : PatternBasedCheck {
                 new AtInput(
                     LoopNode::LoopBackControl,
                     And::make(
-                        new HasType(&Node::is_IfTrue),
+                        new NodeClass(&Node::is_IfTrue),
                         new HasAtLeastNInputs(1),
                         new AtInput(
                             0,
                             And::make(
-                                new HasType(&Node::is_BaseCountedLoopEnd),
+                                new NodeClass(&Node::is_BaseCountedLoopEnd),
                                 new Bind(counted_loop))))))) {}
   const char* name() const override {
     return "CountedLoopInvariants";
@@ -489,16 +489,16 @@ struct OuterStripMinedLoopInvariants : PatternBasedCheck {
                 new AtInput(
                     0,
                     And::make(
-                        new HasType(&Node::is_SafePoint),
+                        new NodeClass(&Node::is_SafePoint),
                         new HasAtLeastNInputs(1),
                         new AtInput(
                             0,
                             And::make(
-                                new HasType(&Node::is_IfFalse),
+                                new NodeClass(&Node::is_IfFalse),
                                 new HasAtLeastNInputs(1),
                                 new AtInput(
                                     0,
-                                    new HasType(&Node::is_CountedLoopEnd)))))),
+                                    new NodeClass(&Node::is_CountedLoopEnd)))))),
                 new AtSingleOutputOfType(
                     &Node::is_IfTrue,
                     new AtSingleOutputOfType(
@@ -537,11 +537,9 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
   }
 };
 
-#endif
 
 GraphInvariantChecker* GraphInvariantChecker::make_default() {
   auto* checker = new GraphInvariantChecker();
-#ifndef PRODUCT
 #define ADD_CHECKER(T) checker->_checks.push(new T())
   ADD_CHECKER(IfProjections);
   ADD_CHECKER(PhiArity);
@@ -551,14 +549,10 @@ GraphInvariantChecker* GraphInvariantChecker::make_default() {
   ADD_CHECKER(OuterStripMinedLoopInvariants);
   ADD_CHECKER(MultiBranchNodeOut);
 #undef ADD_CHECKER
-#endif
   return checker;
 }
 
 bool GraphInvariantChecker::run() const {
-#ifdef PRODUCT
-  return true;
-#else
   ResourceMark rm;
 
   if (_checks.is_empty()) {
@@ -619,5 +613,5 @@ bool GraphInvariantChecker::run() const {
   }
 
   return success;
-#endif
 }
+#endif
