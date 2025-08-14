@@ -37,7 +37,6 @@ import java.util.Random;
 public class TestBoolNodeGVN {
     public static void main(String[] args) {
         TestFramework.run();
-        testCorrectness();
     }
 
     /**
@@ -87,7 +86,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -97,7 +95,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -147,7 +144,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -157,7 +153,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -167,7 +162,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -178,7 +172,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -189,7 +182,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -200,7 +192,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -211,7 +202,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -222,7 +212,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -233,7 +222,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -244,7 +232,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -255,7 +242,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -266,7 +252,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -277,7 +262,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -288,7 +272,6 @@ public class TestBoolNodeGVN {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
@@ -352,6 +335,22 @@ public class TestBoolNodeGVN {
         return Integer.compareUnsigned((m & x), m + 2) < 0;
     }
 
+    @Run(test = { "testCase1aOptimizeAsTrueForLExm",
+                  "testCase1aOptimizeAsTrueForLEmx",
+                  "testCase1aOptimizeAsFalseForGTxm",
+                  "testCase1aOptimizeAsFalseForGTmx",
+                  "testCase1bOptimizeAsFalseForEQxm",
+                  "testCase1bOptimizeAsFalseForEQmx",
+                  "testCase1bOptimizeAsTrueForNExm",
+                  "testCase1bOptimizeAsTrueForNEmx",
+                  "testCase1bOptimizeAsTrueForLExm",
+                  "testCase1bOptimizeAsTrueForLEmx",
+                  "testCase1bOptimizeAsFalseForGExm",
+                  "testCase1bOptimizeAsFalseForGEmx",
+                  "testCase1bOptimizeAsTrueForLTxm",
+                  "testCase1bOptimizeAsTrueForLTmx",
+                  "testCase1bOptimizeAsFalseForGTxm",
+                  "testCase1bOptimizeAsFalseForGTmx" })
     private static void testCorrectness() {
         int[] values = {
                 -100, -42, -16, -8, -5, -1, 0, 1, 5, 8, 16, 42, 100,
