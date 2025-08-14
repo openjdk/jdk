@@ -25,10 +25,13 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.util.JarBuilder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.opentest4j.TestAbortedException;
 import org.opentest4j.TestSkippedException;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -214,15 +217,18 @@ public class ImageReaderTest {
 
     ///  Returns the helper for building JAR and jimage files.
     private static Helper getHelper() {
+        Helper helper;
         try {
-            Helper helper = Helper.newHelper();
-            if (helper == null) {
-                throw new TestSkippedException("Cannot create test helper (exploded image?)");
-            }
-            return helper;
+            helper = Helper.newHelper();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // Gracefully skip if there's no jimage to work with (e.g. if
+        // '--generate-linkable-runtime' was used to build the runtime).
+        // This may be reporting as a skipped test, or a pass, depending
+        // on how the test was run.
+        Assumptions.assumeTrue(helper != null, "Cannot create test helper (no jimage file)");
+        return helper;
     }
 
     /// Loads and performs actions on classes stored in a given `ImageReader`.
