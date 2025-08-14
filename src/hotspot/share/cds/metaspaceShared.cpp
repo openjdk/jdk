@@ -326,6 +326,24 @@ void MetaspaceShared::initialize_for_static_dump() {
 // Called by universe_post_init()
 void MetaspaceShared::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
+    FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+
+    if (AOTMapLogger::is_logging_at_bootstrap()) {
+      // The map logging needs to be done here, as it requires some stubs on Windows,
+      // which are not generated until the end of init_globals().
+      AOTMapLogger::runtime_log(static_mapinfo, dynamic_mapinfo);
+    }
+
+    // Close any open file descriptors. However, mmap'ed pages will remain in memory.
+    static_mapinfo->close();
+    static_mapinfo->unmap_region(MetaspaceShared::bm);
+
+    if (dynamic_mapinfo != nullptr) {
+      dynamic_mapinfo->close();
+      dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+    }
+
     int size = AOTClassLocationConfig::runtime()->length();
     if (size > 0) {
       CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
@@ -1976,18 +1994,6 @@ void MetaspaceShared::initialize_shared_spaces() {
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
-  }
-
-  if (AOTMapLogger::is_logging_at_bootstrap()) {
-    AOTMapLogger::runtime_log(static_mapinfo, dynamic_mapinfo);
-  }
-
-  static_mapinfo->close();
-  static_mapinfo->unmap_region(MetaspaceShared::bm);
-
-  if (dynamic_mapinfo != nullptr) {
-    dynamic_mapinfo->close();
-    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   LogStreamHandle(Info, aot) lsh;
