@@ -83,24 +83,14 @@ public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
      * The JDK built-in implementation of the {@link HttpClient} understands the
      * request option {@link #H3_DISCOVERY} hint.
      * <br>
-     * If no H3_DISCOVERY hint is provided, and {@linkplain  Version#HTTP_3
+     * If no {@code H3_DISCOVERY} hint is provided, and the {@linkplain  Version#HTTP_3
      * HTTP/3 version} is selected, either as {@linkplain Builder#version(Version)
      * request preferred version} or {@linkplain HttpClient.Builder#version(Version)
-     * client preferred version}, the JDK built-in implementation of
-     * the {@link HttpClient} will select one:
-     * <ul>
-     *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
-     *          explicitly set to {@linkplain Version#HTTP_3 HTTP/3},
-     *          the exchange will be established as per {@link
-     *          Http3DiscoveryMode#ANY}.</li>
-     *     <li> Otherwise, if no request preferred version is explicitly provided
-     *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
-     *          preferred version} is {@linkplain Version#HTTP_3 HTTP/3},
-     *          the exchange will be established as per {@link
-     *          Http3DiscoveryMode#ALT_SVC}.</li>
-     * </ul>
+     * client preferred version}, the JDK built-in implementation will establish
+     * the exchange as per {@link Http3DiscoveryMode#ANY}.
+     * <p>
      * In case of {@linkplain HttpClient.Redirect redirect}, the
-     * {@link #H3_DISCOVERY} option is always transferred to
+     * {@link #H3_DISCOVERY} option, if present, is always transferred to
      * the new request.
      * <p>
      * In this implementation, HTTP/3 through proxies is not supported.
@@ -133,6 +123,33 @@ public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
      */
     enum Http3DiscoveryMode {
         /**
+         * This instructs the {@link HttpClient} to use its own implementation
+         * specific algorithm to find or establish a connection for the exchange.
+         * Typically, if no connection was previously established with the origin
+         * server defined by the request URI, the {@link HttpClient} implementation
+         * may attempt to establish both an HTTP/3 connection over QUIC and an HTTP
+         * connection over TLS/TCP at the authority present in the request URI,
+         * and use the first that succeeds. The exchange may then be carried out with
+         * any of the {@linkplain Version
+         * three HTTP protocol versions}, depending on which method succeeded first.
+         *
+         * @implNote
+         * If the {@linkplain Builder#version(Version) request preferred version} is {@linkplain
+         * Version#HTTP_3 HTTP/3}, the {@code HttpClient} may give priority to HTTP/3 by
+         * first attempting to establish an HTTP/3 connection, before attempting a TLS
+         * connection over TCP: if, after an implementation specific timeout, no reply
+         * is obtained to the first initial QUIC packet, the TLS/TCP connection may be
+         * attempted. Otherwise, both connections may be started in parallel and the first
+         * that succeeds will be used.
+         * <p>
+         * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} may
+         * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
+         * information it may have previously obtained from the origin server. If no
+         * such information is available, a direct HTTP/3 connection at the authority (host, port)
+         * present in the {@linkplain HttpRequest#uri() request URI} will be attempted.
+         */
+        ANY,
+        /**
          * This instructs the {@link HttpClient} to only use the
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * to find or establish an HTTP/3 connection with the origin server.
@@ -148,31 +165,6 @@ public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
          * use of that alternative service.
          */
         ALT_SVC,
-        /**
-         * This instructs the {@link HttpClient} to use its own implementation
-         * specific algorithm to find or establish a connection for the exchange.
-         * Typically, if no connection was previously established with the origin
-         * server defined by the request URI, the {@link HttpClient} implementation
-         * may attempt to establish both an HTTP/3 connection over QUIC and an HTTP
-         * connection over TLS/TCP at the authority present in the request URI,
-         * and use the first that succeeds. The exchange may then be carried out with
-         * any of the {@linkplain Version
-         * three HTTP protocol versions}, depending on which method succeeded first.
-         *
-         * @implNote
-         * If the {@linkplain Builder#version(Version) request preferred version} is {@linkplain
-         * Version#HTTP_3 HTTP/3}, the {@code HttpClient} will first attempt to
-         * establish an HTTP/3 connection, before attempting a TLS connection over TCP.
-         * If, after an implementation specific timeout, no reply is obtained to the first
-         * initial QUIC packet, the TLS/TCP connection will be attempted.
-         * <p>
-         * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} will
-         * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
-         * information it may have previously obtained from the origin server. If no
-         * such information is available, a direct HTTP/3 connection at the authority (host, port)
-         * present in the {@linkplain HttpRequest#uri() request URI} will be attempted.
-         */
-        ANY,
         /**
          * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
          * with the origin server. The connection will only succeed if the origin server
