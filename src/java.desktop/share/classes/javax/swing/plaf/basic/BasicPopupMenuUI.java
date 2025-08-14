@@ -379,6 +379,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 } else if (item.isEnabled()) {
                     // we have a menu item
                     manager.clearSelectedPath();
+                    sun.awt.SunToolkit.consumeNextKeyTyped(e);
                     item.doClick();
                 }
                 e.consume();
