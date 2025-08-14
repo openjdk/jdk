@@ -1305,7 +1305,7 @@ public class TestResolvedJavaType extends TypeUniverse {
 
     /**
      * Tests that {@link AnnotationValue}s obtained from a {@link Class}, {@link Method} or
-     * {@link Field} matches {@link AnnotatedElement#getDeclaredAnnotations()} for the corresponding JVMCI
+     * {@link Field} match {@link AnnotatedElement#getDeclaredAnnotations()} for the corresponding JVMCI
      * object.
      *
      * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
@@ -1331,6 +1331,10 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static List<AnnotationValue> testGetAnnotationValue(Annotated annotated, List<Annotation> annotations) throws AssertionError {
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         List<AnnotationValue> res = new ArrayList<>(annotations.size());
+
+        Map<ResolvedJavaType, AnnotationValue> allAnnotationValues = annotated.getDeclaredAnnotationValues();
+        assertEquals(annotations.size(), allAnnotationValues.size());
+
         for (Annotation a : annotations) {
             var annotationType = metaAccess.lookupJavaType(a.annotationType());
             AnnotationValue av = annotated.getDeclaredAnnotationValue(annotationType);
@@ -1339,6 +1343,9 @@ public class TestResolvedJavaType extends TypeUniverse {
             // Check that encoding/decoding produces a stable result
             AnnotationValue av2 = annotated.getDeclaredAnnotationValue(annotationType);
             assertEquals(av, av2);
+
+            av2 = allAnnotationValues.get(annotationType);
+            assertAnnotationsEquals(a, av2);
 
             Map<ResolvedJavaType, AnnotationValue> annotationValues = annotated.getDeclaredAnnotationValues(annotationType, suppressWarningsType, suppressWarningsType);
             assertEquals(1, annotationValues.size());

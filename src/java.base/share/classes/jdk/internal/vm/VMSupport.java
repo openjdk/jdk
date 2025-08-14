@@ -191,9 +191,14 @@ public class VMSupport {
                                            Class<?> declaringClass,
                                            ConstantPool cp,
                                            Class<? extends Annotation>[] selectAnnotationClasses) {
-        for (Class<?> c : selectAnnotationClasses) {
-            if (!c.isAnnotation()) {
-                throw new IllegalArgumentException(c + " is not an annotation interface");
+        if (selectAnnotationClasses != null) {
+            if (selectAnnotationClasses.length == 0) {
+                throw new IllegalArgumentException("annotation class selection must be null or non-empty");
+            }
+            for (Class<?> c : selectAnnotationClasses) {
+                if (!c.isAnnotation()) {
+                    throw new IllegalArgumentException(c + " is not an annotation interface");
+                }
             }
         }
         return encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
