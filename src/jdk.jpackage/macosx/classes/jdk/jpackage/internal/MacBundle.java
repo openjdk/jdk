@@ -77,7 +77,7 @@ record MacBundle(Path root) {
     static Optional<MacBundle> fromAppImageLayout(AppImageLayout layout) {
         final var root = layout.rootDirectory();
         final var bundleSubdir = root.relativize(layout.runtimeDirectory());
-        final var contentsDirname =Path.of("Contents");
+        final var contentsDirname = Path.of("Contents");
         var bundleRoot = root;
         for (int i = 0; i != bundleSubdir.getNameCount(); i++) {
             var nameComponent = bundleSubdir.getName(i);

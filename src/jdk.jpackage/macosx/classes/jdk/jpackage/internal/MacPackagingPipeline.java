@@ -448,7 +448,7 @@ final class MacPackagingPipeline {
         }
 
         final Runnable signAction = () -> {
-            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(env.env().appImageDir());
+            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow());
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
