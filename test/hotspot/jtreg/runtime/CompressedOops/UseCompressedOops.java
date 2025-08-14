@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
- * @comment Do not run with asan enabled, because it changes memory layout and we get a different coops mode
+ * @comment Asan changes memory layout and we get a different coops mode
  * @requires !vm.asan
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UseCompressedOops
