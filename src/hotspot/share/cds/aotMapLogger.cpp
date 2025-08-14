@@ -186,7 +186,7 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<Archived
   runtime_log_metaspace_regions(mapinfo, objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (mapinfo->has_heap_region()) {
+  if (mapinfo->has_heap_region() && CDSConfig::is_loading_heap()) {
     _num_root_segments = mapinfo->heap_root_segments().count();
     runtime_log_heap_region(mapinfo);
   }
