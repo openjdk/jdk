@@ -580,20 +580,10 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
 
     assert(current->thread_state() == _thread_in_vm, "invariant");
 
-    for (;;) {
-      enter_internal(current);
-      current->set_current_pending_monitor(nullptr);
-        // We can go to a safepoint at the end of this block. If we
-        // do a thread dump during that safepoint, then this thread will show
-        // as having "-locked" the monitor, but the OS and java.lang.Thread
-        // states will still report that the thread is blocked trying to
-        // acquire it.
-        // If there is a suspend request, ExitOnSuspend will exit the OM
-        // and set the OM as pending.
-    }
+    enter_internal(current);
+    current->set_current_pending_monitor(nullptr);
 
-    // We've just gotten past the enter-check-for-suspend dance and we now own
-    // the monitor free and clear.
+    // We now own the monitor free and clear.
   }
 
   assert(contentions() >= 0, "must not be negative: contentions=%d", contentions());
