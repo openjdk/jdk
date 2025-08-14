@@ -34,7 +34,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T>
@@ -545,7 +545,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     address dest;
     LinkedListImpl<int> offsets;
   };
-  typedef ResizeableResourceHashtable<address, SharedTrampolineRequestsValue, AnyObj::C_HEAP, mtCompiler>
+  typedef ResizeableHashTable<address, SharedTrampolineRequestsValue, AnyObj::C_HEAP, mtCompiler>
     SharedTrampolineRequests;
 
  private:
