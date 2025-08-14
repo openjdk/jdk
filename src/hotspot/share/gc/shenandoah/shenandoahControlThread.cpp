@@ -146,6 +146,7 @@ void ShenandoahControlThread::run_service() {
       // If GC was requested, we better dump freeset data for performance debugging
       heap->free_set()->log_status_under_lock();
 
+      heap->print_before_gc();
       switch (mode) {
         case concurrent_normal:
           service_concurrent_normal_cycle(cause);
@@ -159,6 +160,7 @@ void ShenandoahControlThread::run_service() {
         default:
           ShouldNotReachHere();
       }
+      heap->print_after_gc();
 
       // If this was the requested GC cycle, notify waiters about it
       if (is_gc_requested) {
@@ -208,6 +210,12 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+#ifdef NOT_PRODUCT
+          ShenandoahEvacuationTracker* evac_tracker = heap->evac_tracker();
+          ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
+          evac_tracker->print_evacuations_on(&ls, &evac_stats.workers,
+                                                  &evac_stats.mutators);
+#endif
         }
       }
 
@@ -283,6 +291,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     log_info(gc)("Cancelled");
     return;
   }
+  heap->increment_total_collections(false);
 
   ShenandoahGCSession session(cause, heap->global_generation());
 
@@ -329,6 +338,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCSession session(cause, heap->global_generation());
 
+  heap->increment_total_collections(true);
+
   ShenandoahFullGC gc;
   gc.collect(cause);
 }
@@ -337,6 +348,8 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCSession session(cause, heap->global_generation());
+
+  heap->increment_total_collections(false);
 
   ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);

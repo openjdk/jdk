@@ -33,6 +33,8 @@ import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -72,6 +74,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * Trusted implementation code for MethodHandle.
  * @author jrose
  */
+@AOTSafeClassInitializer
 /*non-public*/
 abstract class MethodHandleImpl {
 
@@ -158,6 +161,7 @@ abstract class MethodHandleImpl {
         return newInternalError("should not reach here (unmatched ArrayAccess: " + a + ")");
     }
 
+    @AOTSafeClassInitializer
     static final class ArrayAccessor {
         /// Support for array element and length access
         static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
@@ -453,6 +457,7 @@ abstract class MethodHandleImpl {
         return new AsVarargsCollector(target, arrayType);
     }
 
+    @AOTSafeClassInitializer
     static final class AsVarargsCollector extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
@@ -675,6 +680,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
+    @AOTSafeClassInitializer
     private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
@@ -710,6 +716,7 @@ abstract class MethodHandleImpl {
      * Behavior in counting and non-counting states is determined by lambda forms produced by
      * countingFormProducer & nonCountingFormProducer respectively.
      */
+    @AOTSafeClassInitializer
     static final class CountingWrapper extends DelegatingMethodHandle {
         private final MethodHandle target;
         private int count;
@@ -1035,6 +1042,7 @@ abstract class MethodHandleImpl {
 
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
+    @AOTSafeClassInitializer
     private static class BindCaller {
 
         private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
@@ -1143,6 +1151,7 @@ abstract class MethodHandleImpl {
             return BindCaller.CV_makeInjectedInvoker.get(caller).reflectInvoker();
         }
 
+        @AOTSafeClassInitializer
         private static final class InjectedInvokerHolder {
             private final Class<?> invokerClass;
             // lazily resolved and cached DMH(s) of invoke_V methods
@@ -1285,6 +1294,7 @@ abstract class MethodHandleImpl {
     }
 
     /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
+    @AOTSafeClassInitializer
     static final class WrappedMember extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final MemberName member;
@@ -1348,6 +1358,7 @@ abstract class MethodHandleImpl {
 
     /** Mark arbitrary method handle as intrinsic.
      * InvokerBytecodeGenerator uses this info to produce more efficient bytecode shape. */
+    @AOTSafeClassInitializer
     static final class IntrinsicMethodHandle extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Intrinsic intrinsicName;
@@ -1528,7 +1539,7 @@ abstract class MethodHandleImpl {
         runtimeSetup();
     }
 
-    // Also called from JVM when loading an AOT cache
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
@@ -1778,6 +1789,7 @@ abstract class MethodHandleImpl {
         return lform.editor().noteLoopLocalTypesForm(BOXED_ARGS, localVarTypes);
     }
 
+    @AOTSafeClassInitializer
     static class LoopClauses {
         @Stable final MethodHandle[][] clauses;
         LoopClauses(MethodHandle[][] clauses) {
@@ -2105,6 +2117,7 @@ abstract class MethodHandleImpl {
     }
 
     // use a wrapper because we need this array to be @Stable
+    @AOTSafeClassInitializer
     static class CasesHolder {
         @Stable
         final MethodHandle[] cases;
@@ -2134,6 +2147,7 @@ abstract class MethodHandleImpl {
         return mh;
     }
 
+    @AOTSafeClassInitializer
     private static class TableSwitchCacheKey {
         private static final Map<TableSwitchCacheKey, LambdaForm> CACHE = new ConcurrentHashMap<>();
 

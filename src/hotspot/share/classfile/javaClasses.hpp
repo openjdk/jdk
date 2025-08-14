@@ -258,6 +258,7 @@ class java_lang_Class : AllStatic {
   static int _reflectionData_offset;
   static int _modifiers_offset;
   static int _is_primitive_offset;
+  static int _raw_access_flags_offset;
 
   static bool _offsets_computed;
 
@@ -341,6 +342,9 @@ class java_lang_Class : AllStatic {
 
   static int modifiers(oop java_class);
   static void set_modifiers(oop java_class, u2 value);
+
+  static int raw_access_flags(oop java_class);
+  static void set_raw_access_flags(oop java_class, u2 value);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);
