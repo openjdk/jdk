@@ -24,48 +24,43 @@ package jdk.vm.ci.meta.annotation;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-import java.lang.annotation.Inherited;
-import java.util.List;
+import java.lang.reflect.AnnotatedElement;
+import java.util.Map;
 
 /**
  * Represents a program element such as a method, constructor, field or class for which annotations
- * may be present.
+ * may be directly present. This API is analogous to {@link java.lang.reflect.AnnotatedElement}
+ * except that it only supports {@linkplain AnnotatedElement#getDeclaredAnnotations() declared annotations}.
  */
 public interface Annotated {
 
     /**
-     * Gets the annotations present on this element whose types are in {@code types}.
+     * Gets the annotations directly present on this element whose types are in {@code types}.
      * Class initialization is not triggered for enum types referenced by the returned
-     * annotations or any other annotations of this element.
-     *
-     * If this element is a class, then {@link Inherited} annotations are included in the set of
-     * annotations considered.
-     *
-     * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
+     * annotation. This method ignores inherited annotations.
      *
      * @param types annotation types to select
-     * @return an immutable list of the annotations present on this element that match one {@code types}
-     * @throws IllegalArgumentException if any type in {@code types} is not an annotation interface type
+     * @return an immutable map from annotation type to annotation of the annotations directly present
+     * on this element that match {@code types}
+     * @throws IllegalArgumentException      if any type in {@code types} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
+    default Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
         throw new UnsupportedOperationException(this.getClass().getName());
     }
 
     /**
-     * Gets the annotation present on this element of type {@code type}.
+     * Gets the annotation directly present on this element whose type is {@code type}.
      * Class initialization is not triggered for enum types referenced by the returned
-     * annotation.
-     *
-     * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
+     * annotation. This method ignores inherited annotations.
      *
      * @param type the type object corresponding to the annotation interface type
-     * @return this element's annotation for the specified annotation type if present on this
-     *         element, else null
-     * @throws IllegalArgumentException if {@code type} is not an annotation interface type
+     * @return this element's annotation for the specified annotation type if directly present on this
+     * element, else null
+     * @throws IllegalArgumentException      if {@code type} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default AnnotationValue getAnnotationValue(ResolvedJavaType type) {
+    default AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
         throw new UnsupportedOperationException(this.getClass().getName());
     }
 }

@@ -22,19 +22,22 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.util.Map;
-import java.util.List;
-
+import jdk.internal.vm.VMSupport;
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
-import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.EnumArrayElement;
-import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.annotation.MissingType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
+import jdk.vm.ci.meta.annotation.EnumArrayElement;
+import jdk.vm.ci.meta.annotation.EnumElement;
+import jdk.vm.ci.meta.annotation.MissingType;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
@@ -44,6 +47,11 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
 final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
 
     private final HotSpotResolvedJavaType accessingClass;
+
+    Map<ResolvedJavaType, AnnotationValue> decode(byte[] encoded) {
+        List<AnnotationValue> annotationValues = VMSupport.decodeAnnotations(encoded, this);
+        return annotationValues.stream().collect(Collectors.toMap(AnnotationValue::getAnnotationType, Function.identity()));
+    }
 
     AnnotationValueDecoder(HotSpotResolvedJavaType accessingClass) {
         this.accessingClass = accessingClass;
