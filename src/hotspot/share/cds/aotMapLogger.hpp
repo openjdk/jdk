@@ -69,7 +69,7 @@ class AOTMapLogger : AllStatic {
   class   FakeTypeArray;
 
   class RequestedMetadataAddr;
-  class GatherArchivedMetaspaceObjs;
+  class RuntimeGatherArchivedMetaspaceObjs;
 
   static bool _is_logging_at_bootstrap;
   static bool _is_runtime_logging;

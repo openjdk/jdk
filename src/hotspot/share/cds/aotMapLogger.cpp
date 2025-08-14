@@ -113,7 +113,7 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 
 // This class is used to find the location and type of all the
 // archived metaspace objects.
-class AOTMapLogger::GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
+class AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
   GrowableArrayCHeap<ArchivedObjInfo, mtClass> _objs;
 
   static int compare_objs_by_addr(ArchivedObjInfo* a, ArchivedObjInfo* b) {
@@ -146,14 +146,14 @@ public:
     UniqueMetaspaceClosure::finish();
     _objs.sort(compare_objs_by_addr);
   }
-}; // AOTMapLogger::GatherArchivedMetaspaceObjs
+}; // AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs
 
 void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo) {
   _is_runtime_logging = true;
   _requested_to_mapped_metadata_delta = static_mapinfo->relocation_delta();
 
   ResourceMark rm;
-  GatherArchivedMetaspaceObjs gatherer;
+  RuntimeGatherArchivedMetaspaceObjs gatherer;
 
   if (log_is_enabled(Debug, aot, map)) {
     // The metaspace objects in the AOT cache are stored as a stream of bytes. For space
@@ -436,7 +436,7 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 // - For -UseCompressedOops: pointers are not direct: see FakeOop::read_oop_at(oop*)
 //
 // Hence, in general, we cannot use regular oop API (such as oopDesc::obj_field()) on these objects. There
-// are a few raw case where regular oop API work, but these are all guarded with the raw_oop() method and
+// are a few rare case where regular oop API work, but these are all guarded with the raw_oop() method and
 // should be used with care.
 class AOTMapLogger::FakeOop {
   static int _requested_shift;
@@ -466,7 +466,8 @@ protected:
   oop raw_oop() { return cast_to_oop(_buffer_addr); }
 
 public:
-  static void init(address requested_base, address requested_start, int requested_shift, address buffer_start, address buffer_end) {
+  static void init_globals(address requested_base, address requested_start, int requested_shift,
+                           address buffer_start, address buffer_end) {
     _requested_shift = requested_shift;
     _buffer_to_requested_delta = requested_start - buffer_start;
     _buffer_start = buffer_start;
@@ -774,7 +775,7 @@ void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
   address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
   int requested_shift =  CompressedOops::shift();
 
-  FakeOop::init(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
+  FakeOop::init_globals(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
 
   log_region_range("heap", buffer_start, buffer_end, requested_start);
   log_oops(buffer_start, buffer_end);
@@ -800,7 +801,7 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
   address requested_start = requested_base + r->mapping_offset();
   int requested_shift = mapinfo->narrow_oop_shift();
 
-  FakeOop::init(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
+  FakeOop::init_globals(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
 
   log_region_range("heap", buffer_start, buffer_end, requested_start);
   log_oops(buffer_start, buffer_end);
