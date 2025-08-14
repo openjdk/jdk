@@ -184,11 +184,10 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
 
     private static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        SwingUtilities3.setDisabledForeground(disabledForeground);
-        SwingUtilities3.setAcceleratorSelectionForeground(
-                        acceleratorSelectionForeground);
-        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
-        SwingUtilities3.paintAccText(g, lh, lr);
+        SwingUtilities3.paintAccText(g, lh, lr,
+                                     disabledForeground,
+                                     acceleratorSelectionForeground,
+                                     acceleratorForeground);
     }
 
     private static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
