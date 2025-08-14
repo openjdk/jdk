@@ -1102,6 +1102,22 @@ public enum Option {
         return Option.valueOf(name() + "_CUSTOM");
     }
 
+    /**
+     * Like {@link #getCustom} but also requires that the custom option supports lint categories.
+     *
+     * <p>
+     * In practice, that means {@code option} must be {@link Option#LINT} or {@link Option#WERROR}.
+     *
+     * @param option regular option
+     * @return corresponding lint custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getLintCustom() {
+        if (this == XLINT || this == WERROR)
+            return getCustom();
+        throw new IllegalArgumentException();
+    }
+
     public boolean isInBasicOptionGroup() {
         return group == BASIC;
     }
