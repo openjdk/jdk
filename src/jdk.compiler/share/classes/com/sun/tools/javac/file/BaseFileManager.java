@@ -493,7 +493,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     public static Kind getKind(String name) {
         if (name.endsWith(Kind.CLASS.extension))
             return Kind.CLASS;
-        else if (name.endsWith(Kind.SOURCE.extension))
+        else if (name.endsWith(Kind.SOURCE.extension) || name.endsWith(".maxj"))
             return Kind.SOURCE;
         else if (name.endsWith(Kind.HTML.extension))
             return Kind.HTML;
