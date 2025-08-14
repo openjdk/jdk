@@ -75,17 +75,23 @@ int main(int argc, char** argv) {
 #ifdef _AIX
         printf("%X\n", act.sa_flags);
 #else
-        #ifdef _SIGSET_NWORDS
-            printf("%X ", act.sa_flags);
-            for (size_t i = 0; i < _SIGSET_NWORDS; i++) {
-                printf("%lX ", act.sa_mask.__val[i]);
+        // Note: for shortness, just print out the first 32. That should
+        // cover most of the useful ones, apart from realtime signals.
+        const int NUM_IMPORTANT_SIGS = 32;
+        printf("%X ", act.sa_flags);
+        char buf[NUM_IMPORTANT_SIGS + 1];
+        for (size_t sig = 1; sig <= NUM_IMPORTANT_SIGS; sig++) {
+            int rc = sigismember(&act.sa_mask, sig);
+            if (rc == -1) {
+                buf[sig - 1] = '?';
+            } else {
+                buf[sig - 1] = rc ? '1' : '0';
             }
-            printf("\n");
-        #else
-            printf("%X %X\n", act.sa_flags, act.sa_mask);
-        #endif
+        }
+        buf[NUM_IMPORTANT_SIGS] = '\0';
+        printf("%s\n", buf);
 #endif
     }
-
+    
     return 0;
 }
