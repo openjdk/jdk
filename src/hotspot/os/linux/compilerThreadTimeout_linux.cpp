@@ -31,7 +31,6 @@
 
 #include <pthread.h>
 
-#ifndef PRODUCT
 #ifdef ASSERT
 void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
   CompilerThread::current()->timeout()->compiler_signal_handler(signo, info, context);
@@ -50,7 +49,6 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
   }
 }
 #endif // ASSERT
-#endif // !PRODUCT
 
 void CompilerThreadTimeoutLinux::arm() {
 #ifdef ASSERT

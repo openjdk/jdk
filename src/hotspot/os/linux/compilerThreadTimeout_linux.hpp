@@ -33,7 +33,6 @@
 #include <ctime>
 
 class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
-#ifndef PRODUCT
 #ifdef ASSERT
  public:
   static const int TIMEOUT_SIGNAL = SIGALRM;
@@ -41,9 +40,8 @@ class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
  private:
   timer_t          _timer;
 #endif // ASSERT
-#endif // !PRODUCT
  public:
-  CompilerThreadTimeoutLinux() NOT_PRODUCT(DEBUG_ONLY(: _timer(nullptr))) {};
+  CompilerThreadTimeoutLinux() DEBUG_ONLY(: _timer(nullptr)) {};
 
   bool init_timeout();
   void arm();
