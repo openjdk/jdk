@@ -309,8 +309,8 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
         // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
-        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
-          actual_size, get_promoted_expended(), get_promoted_reserve());
+        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
+          actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
       }
     } else if (req.is_promotion()) {
       // Shared promotion.

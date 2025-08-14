@@ -346,6 +346,7 @@ void ShenandoahAgeCensus::print() {
 
   const uint tt = tenuring_threshold();
 
+  size_t total_tenurable = 0;
   size_t total= 0;
   for (uint i = 1; i < MAX_COHORTS; i++) {
     const size_t prev_pop = prev_pv->sizes[i-1];  // (i-1) OK because i >= 1
@@ -358,11 +359,19 @@ void ShenandoahAgeCensus::print() {
          i, prev_pop*oopSize, cur_pop*oopSize, mr);
     }
     total += cur_pop;
-    if (i == tt) {
-      // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
-      log_info(gc, age)("----------------------------------------------------------------------------");
+
+    if ( i >= tt) {
+      total_tenurable += cur_pop;
+      if (i == tt) {
+        // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
+        log_info(gc, age)("----------------------------------------------------------------------------");
+      }
     }
   }
+
+  log_info(gc, age)("%.3f of population meets tenuring threshold (%u). Total: (%zu), Tenurable: (%zu)",
+    double(total_tenurable) / double(MAX2(total, 1UL)), tt, total, total_tenurable);
+
   CENSUS_NOISE(_global_noise[cur_epoch].print(total);)
 }
 
