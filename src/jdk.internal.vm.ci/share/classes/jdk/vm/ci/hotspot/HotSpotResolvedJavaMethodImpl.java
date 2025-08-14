@@ -22,29 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.getFirstAnnotationOrNull;
-import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
-import java.util.BitSet;
-import java.util.List;
-
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
@@ -59,6 +38,25 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
+import java.util.BitSet;
+import java.util.Map;
+
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 /**
  * Implementation of {@link JavaMethod} for resolved HotSpot methods.
@@ -774,26 +772,26 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public AnnotationValue getAnnotationValue(ResolvedJavaType type) {
+    public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
         if (!hasAnnotations()) {
             checkIsAnnotation(type);
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationValues0(type));
+        return getAnnotationValues0(type).get(type);
     }
 
     @Override
-    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         if (!hasAnnotations()) {
-            return List.of();
+            return Map.of();
         }
         return getAnnotationValues0(types);
     }
 
-    private List<AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
+    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
+        return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
     }
 
     @Override

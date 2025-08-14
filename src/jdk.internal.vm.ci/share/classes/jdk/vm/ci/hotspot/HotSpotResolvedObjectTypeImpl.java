@@ -22,24 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.util.Objects.requireNonNull;
-import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
-import static jdk.vm.ci.hotspot.HotSpotConstantPool.isSignaturePolymorphicHolder;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmClassModifiers;
-import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.List;
-
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;
@@ -54,6 +37,23 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.Objects.requireNonNull;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotConstantPool.isSignaturePolymorphicHolder;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmClassModifiers;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes. This class is not
@@ -1115,25 +1115,25 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public AnnotationValue getAnnotationValue(ResolvedJavaType annotationType) {
+    public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType annotationType) {
         if (!mayHaveAnnotations(true)) {
             checkIsAnnotation(annotationType);
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationValues0(annotationType));
+        return getAnnotationValues0(annotationType).get(annotationType);
     }
 
     @Override
-    public List<AnnotationValue> getAnnotationValues(ResolvedJavaType... types) {
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
         if (!mayHaveAnnotations(true)) {
             checkAreAnnotations(types);
-            return List.of();
+            return Map.of();
         }
         return getAnnotationValues0(types);
     }
 
-    private List<AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
+    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationValueDecoder(this));
+        return new AnnotationValueDecoder(this).decode(encoded);
     }
 }

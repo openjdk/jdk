@@ -25,12 +25,13 @@
 package jdk.internal.vm;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
-import sun.reflect.annotation.AnnotationType;
+import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
+import sun.reflect.annotation.EnumValue;
+import sun.reflect.annotation.EnumValueArray;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,16 +42,10 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.List;
-
-import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
-import sun.reflect.annotation.EnumValue;
-import sun.reflect.annotation.EnumValueArray;
-import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
@@ -195,46 +190,13 @@ public class VMSupport {
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
                                            Class<?> declaringClass,
                                            ConstantPool cp,
-                                           boolean forClass,
-                                           Class<? extends Annotation>[] selectAnnotationClasses)
-    {
+                                           Class<? extends Annotation>[] selectAnnotationClasses) {
         for (Class<?> c : selectAnnotationClasses) {
             if (!c.isAnnotation()) {
                 throw new IllegalArgumentException(c + " is not an annotation interface");
             }
         }
-        Map<Class<? extends Annotation>, Annotation> annotations =
-                AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses);
-        if (forClass && annotations.size() != selectAnnotationClasses.length) {
-            Class<?> superClass = declaringClass.getSuperclass();
-            nextSuperClass:
-            while (superClass != null) {
-                JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-                Map<Class<? extends Annotation>, Annotation> superAnnotations =
-                    AnnotationParser.parseSelectAnnotations(
-                            jla.getRawClassAnnotations(superClass),
-                            jla.getConstantPool(superClass),
-                            superClass,
-                            false,
-                            selectAnnotationClasses);
-
-                for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
-                    Class<? extends Annotation> annotationClass = e.getKey();
-                    if (!annotations.containsKey(annotationClass) && AnnotationType.getInstance(annotationClass).isInherited()) {
-                        if (annotations.isEmpty()) {
-                            // An empty map might be unmodifiable (e.g. Collections.emptyMap()).
-                            annotations = new LinkedHashMap<Class<? extends Annotation>, Annotation>();
-                        }
-                        annotations.put(annotationClass, e.getValue());
-                        if (annotations.size() == selectAnnotationClasses.length) {
-                            break nextSuperClass;
-                        }
-                    }
-                }
-                superClass = superClass.getSuperclass();
-            }
-        }
-        return encodeAnnotations(annotations.values());
+        return encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
     }
 
     /**
