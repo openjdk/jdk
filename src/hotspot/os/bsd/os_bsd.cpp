@@ -219,7 +219,9 @@ bool os::Bsd::query_process_memory_info(os::Bsd::process_info_t* pi) {
     // We've seen that resident_size_max sometimes trails resident_size with one page.
     // Make sure we always report size <= peak
     pi->rssmax = MAX2(info.resident_size_max, info.resident_size);
+    return true;
   }
+  return false;
 }
 #endif
 
