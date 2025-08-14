@@ -40,7 +40,7 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
   switch (signo) {
     case TIMEOUT_SIGNAL: {
       CompileTask* task = CompilerThread::current()->task();
-      assert(false, "compile task %d (%s) timed out after %ld ms",
+      assert(false, "compile task %d (%s) timed out after " INTPTR_FORMAT " ms",
              task->compile_id(), task->method()->name_and_sig_as_C_string(), CompileTaskTimeout);
     }
     default: {
