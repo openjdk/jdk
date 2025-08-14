@@ -888,7 +888,7 @@
     <Field type="long" name="daemonCount" label="Daemon Threads" description="Number of live daemon threads" />
     <Field type="long" name="accumulatedCount" label="Accumulated Threads" description="Number of threads created and also started since JVM start" />
     <Field type="long" name="peakCount" label="Peak Threads" description="Peak live thread count since JVM start or when peak count was reset" />
-    <Field type="long" name="nonJavaThreadCount" label="Non-Java Threads" description="JVM-internal Non-Java threads" />
+    <Field type="long" name="nonJavaThreadCount" label="Non-Java Threads" description="JVM-internal non-Java threads" />
     <Field type="long" name="osThreadCount" label="OS Threads" description="Number of OS threads (JVM- and non-JVM-Threads)" />
   </Event>
 
