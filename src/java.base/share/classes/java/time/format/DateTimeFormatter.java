@@ -1201,7 +1201,7 @@ public final class DateTimeFormatter {
      * The nano-of-second outputs zero, three, six or nine digits as necessary.
      * When parsing, the behaviour of
      * {@link DateTimeFormatterBuilder#appendOffset(String, String)
-     * appendOffset("+HH:mm:ss", "Z")} will be used to parse the offset,
+     * appendOffset("+HH", "Z")} in lenient mode will be used to parse the offset,
      * converting the instant to UTC as necessary.
      * The time to at least the seconds field is required.
      * Fractional seconds from zero to nine are parsed.
