@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,15 @@ int main(int argc, char** argv) {
 #ifdef _AIX
         printf("%X\n", act.sa_flags);
 #else
-        printf("%X %X\n", act.sa_flags, act.sa_mask);
+        #ifdef _SIGSET_NWORDS
+            printf("%X ", act.sa_flags);
+            for (size_t i = 0; i < _SIGSET_NWORDS; i++) {
+                printf("%lX ", act.sa_mask.__val[i]);
+            }
+            printf("\n");
+        #else
+            printf("%X %lX\n", act.sa_flags, act.sa_mask);
+        #endif
 #endif
     }
 
