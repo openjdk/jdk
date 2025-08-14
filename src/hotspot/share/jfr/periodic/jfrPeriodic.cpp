@@ -57,6 +57,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
@@ -552,11 +553,12 @@ TRACE_REQUEST_FUNC(SwapSpace) {
 
 TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   EventJavaThreadStatistics event;
-  event.set_osThreadCount(os::num_process_threads());
   event.set_activeCount(ThreadService::get_live_thread_count());
   event.set_daemonCount(ThreadService::get_daemon_thread_count());
   event.set_accumulatedCount(ThreadService::get_total_thread_count());
   event.set_peakCount(ThreadService::get_peak_thread_count());
+  event.set_osThreadCount(os::num_process_threads());
+  event.set_nonJavaThreadCount(NonJavaThread::count());
   event.commit();
 }
 
