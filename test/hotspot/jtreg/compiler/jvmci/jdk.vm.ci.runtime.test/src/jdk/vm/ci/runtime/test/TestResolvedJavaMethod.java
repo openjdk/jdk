@@ -621,10 +621,10 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
         // Ensure NumbersDE is not initialized before Annotation2 is requested
         Assert.assertFalse(numbersDEType.isInitialized());
-        Assert.assertEquals(2, m.getAnnotationValues(a1, a3).size());
+        Assert.assertEquals(2, m.getDeclaredAnnotationValues(a1, a3).size());
 
         // Ensure NumbersDE is not initialized after Annotation2 is requested
-        Assert.assertNotNull(m.getAnnotationValue(a2));
+        Assert.assertNotNull(m.getDeclaredAnnotationValue(a2));
         Assert.assertFalse(numbersDEType.isInitialized());
     }
 
