@@ -352,13 +352,6 @@ void ShenandoahAgeCensus::print() {
     const size_t prev_pop = prev_pv->sizes[i-1];  // (i-1) OK because i >= 1
     const size_t cur_pop  = cur_pv->sizes[i];
     double mr = mortality_rate(prev_pop, cur_pop);
-    // Suppress printing when everything is zero
-    if (prev_pop + cur_pop > 0) {
-      log_info(gc, age)
-        (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
-         i, prev_pop*oopSize, cur_pop*oopSize, mr);
-    }
-    total += cur_pop;
 
     if ( i >= tt) {
       total_tenurable += cur_pop;
@@ -367,6 +360,14 @@ void ShenandoahAgeCensus::print() {
         log_info(gc, age)("----------------------------------------------------------------------------");
       }
     }
+
+    // Suppress printing when everything is zero
+    if (prev_pop + cur_pop > 0) {
+      log_info(gc, age)
+        (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
+         i, prev_pop*oopSize, cur_pop*oopSize, mr);
+    }
+    total += cur_pop;
   }
 
   log_info(gc, age)("%.3f of population meets tenuring threshold (%u). Total: (%zu), Tenurable: (%zu)",
