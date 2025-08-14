@@ -208,17 +208,17 @@ julong os::physical_memory() {
 }
 
 #ifdef __APPLE__
-bool os::Bsd::query_process_memory_info(os::Bsd::process_info_t* info) {
+bool os::Bsd::query_process_memory_info(os::Bsd::process_info_t* pi) {
   mach_task_basic_info info;
   mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
   kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
                                 (task_info_t)&info, &count);
   if (ret == KERN_SUCCESS) {
-    info->vsize = info.virtual_size;
-    info->rss = info.resident_size;
+    pi->vsize = info.virtual_size;
+    pi->rss = info.resident_size;
     // We've seen that resident_size_max sometimes trails resident_size with one page.
     // Make sure we always report size <= peak
-    info->rssmax = MAX2(info.resident_size_max, info.resident_size);
+    pi->rssmax = MAX2(info.resident_size_max, info.resident_size);
   }
 }
 #endif
