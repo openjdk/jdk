@@ -4064,7 +4064,9 @@ public:
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
 
-  // SVE move prefix (unpredicated)
+// SVE Integer Misc - Unpredicated
+
+  // SVE constructive prefix (unpredicated)
   void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
     starti;
     f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
