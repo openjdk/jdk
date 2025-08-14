@@ -725,8 +725,8 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
       // Adjust down the old workers so the next minor during major will be less sad
       old_workers = old_workers_clamped;
       // Since collecting the old generation depends on the initial young collection
-      // finishing, we don't want it to have fewer workers than the old generation.
-      young_workers = MAX2(old_workers, young_workers);
+      // finishing, we ideally don't want it to have fewer workers than the old generation.
+      young_workers = clamp(MAX2(old_workers, young_workers), 1u, ZYoungGCThreads);
     } else if (type == ZWorkerSelectionType::minor_during_old) {
       // Adjust young and old workers for minor during old to fit within ConcGCThreads
       young_workers = young_workers_clamped;
