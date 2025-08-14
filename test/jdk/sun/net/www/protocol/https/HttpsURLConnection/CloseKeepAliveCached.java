@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id="separateServerThread"
  * @bug 6618387
  * @summary SSL client sessions do not close cleanly. A TCP reset occurs
  *      instead of a close_notify alert.
@@ -30,6 +30,22 @@
  *
  * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached false
  * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached true
+ *
+ * @comment SunJSSE does not support dynamic system properties, no way to re-use
+ *    system properties in samevm/agentvm mode.
+ *    if "MainThread, called close()" found, the test passed. Otherwise,
+ *    if "Keep-Alive-Timer: called close()", the test failed.
+ */
+
+/*
+ * @test id="separateClientThread"
+ * @bug 6618387
+ * @summary SSL client sessions do not close cleanly. A TCP reset occurs
+ *      instead of a close_notify alert.
+ * @library /test/lib
+ *
+ * @run main/othervm -Dtest.separateThreads=false CloseKeepAliveCached false
+ * @run main/othervm -Dtest.separateThreads=false CloseKeepAliveCached true
  *
  * @comment SunJSSE does not support dynamic system properties, no way to re-use
  *    system properties in samevm/agentvm mode.
@@ -95,47 +111,48 @@ public class CloseKeepAliveCached {
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslSsf =
                 (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        sslServerSocket =
-                (SSLServerSocket) sslSsf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+        // autoclose sslServerSocket, but keeping it global to be used by the client
+        try (var _ = this.sslServerSocket = (SSLServerSocket) sslSsf.createServerSocket(serverPort)) {
+            serverPort = sslServerSocket.getLocalPort();
 
-        // getting input and output streams
-        InputStream is = sslSocket.getInputStream();
-        BufferedReader r = new BufferedReader(
-                new InputStreamReader(is));
-        PrintStream out = new PrintStream(
-                new BufferedOutputStream(
-                        sslSocket.getOutputStream()));
+            /*
+             * Signal Client, we're ready for his connect.
+             */
+            serverReady = true;
+            try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept()) {
 
-        for (int i = 0; i < 3 && !sslSocket.isClosed(); i++) {
-            // read request
-            String x;
-            while ((x = r.readLine()) != null) {
-                if (x.isEmpty()) {
-                    break;
+                // getting input and output streams
+                InputStream is = sslSocket.getInputStream();
+                BufferedReader r = new BufferedReader(
+                        new InputStreamReader(is));
+                PrintStream out = new PrintStream(
+                        new BufferedOutputStream(
+                                sslSocket.getOutputStream()));
+
+                for (int i = 0; i < 3 && !sslSocket.isClosed(); i++) {
+                    // read request
+                    String x;
+                    while ((x = r.readLine()) != null) {
+                        if (x.isEmpty()) {
+                            break;
+                        }
+                    }
+
+                    /* send the response headers and body */
+                    out.print("HTTP/1.1 200 OK\r\n");
+                    out.print("Keep-Alive: timeout=15, max=100\r\n");
+                    out.print("Connection: Keep-Alive\r\n");
+                    out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
+                    out.print("Content-Length: 9\r\n");
+                    out.print("\r\n");
+                    out.print("Testing\r\n");
+                    out.flush();
+
                 }
             }
-
-            /* send the response headers and body */
-            out.print("HTTP/1.1 200 OK\r\n");
-            out.print("Keep-Alive: timeout=15, max=100\r\n");
-            out.print("Connection: Keep-Alive\r\n");
-            out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
-            out.print("Content-Length: 9\r\n");
-            out.print("\r\n");
-            out.print("Testing\r\n");
-            out.flush();
-
-            Thread.sleep(50);
         }
-        sslSocket.close();
-        sslServerSocket.close();
+
     }
 
     /*
@@ -161,13 +178,13 @@ public class CloseKeepAliveCached {
             URL url = new URI("https://localhost:" + serverPort + "/").toURL();
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
             http = (HttpsURLConnection) url.openConnection();
-            InputStream is = http.getInputStream();
-            while (is.read() != -1) ;
-            is.close();
+            try (InputStream is = http.getInputStream()) {
+                while (is.read() != -1) ;
+            }
 
             url = new URI("https://localhost:" + serverPort + "/").toURL();
             http = (HttpsURLConnection) url.openConnection();
-            is = http.getInputStream();
+            InputStream is = http.getInputStream(); // not closed by design
             while (is.read() != -1) ;
 
             // if inputstream.close() called, the http.disconnect() will
