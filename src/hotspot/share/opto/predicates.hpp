@@ -46,12 +46,14 @@ class TemplateAssertionPredicate;
  *                    above which Regular Predicates can be created later after parsing.
  *
  *                    There are initially four Parse Predicates for each loop:
- *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
- *                    - Profiled Loop Parse Predicate:    The Parse Predicate added for Profiled Loop Predicates.
- *                    - AutoVectorization Predicate:      The Parse Predicate added for AutoVectorization runtime checks.
- *                    - Loop Limit Check Parse Predicate: The Parse Predicate added for a Loop Limit Check Predicate.
+ *                    - Loop Parse Predicate:               The Parse Predicate added for Loop Predicates.
+ *                    - Profiled Loop Parse Predicate:      The Parse Predicate added for Profiled Loop Predicates.
+ *                    - Loop Limit Check Parse Predicate:   The Parse Predicate added for a Loop Limit Check Predicate.
+ *                    - Short Running Loop Parse Predicate: The Parse Predicate added for the short running long loop check.
+ *                    - AutoVectorization Parse Predicate:  The Parse Predicate added for AutoVectorization runtime checks.
  * - Runtime Predicate: This term is used to refer to a Hoisted Check Predicate (either a Loop Predicate or a Profiled
- *                      Loop Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while
+ *                      Loop Predicate), a Loop Limit Check Predicate, a Short Running Long Loop Predicate, or a
+ *                      AutoVectorization Runtime Check Predicate. These predicates will be checked at runtime while
  *                      the Parse and Assertion Predicates are always removed before code generation (except for
  *                      Initialized Assertion Predicates which are kept in debug builds while being removed in product
  *                      builds).
@@ -83,6 +85,21 @@ class TemplateAssertionPredicate;
  *                           int counted loops with long range checks for which a loop nest also needs to be created
  *                           in the general case (so the transformation of long range checks to int range checks is
  *                           legal).
+ *     - AutoVectorization:  This predicate is used for speculative runtime checks required for AutoVectorization.
+ *       Runtime Check       There are multiple reasons why we need a runtime check to allow vectorization:
+ *       Predicate           - Unknown aliasing:
+ *                             An important compoinent of AutoVectorization is proving that memory addresses do not
+ *                             alias, and can therefore be reordered. In some cases, this cannot be done statically
+ *                             and a runtime check is necessary.
+ *                           - Unknown alignment of native memory:
+ *                             While heap objects have 8-byte alignment, off-heap (native) memory often has no alignment
+ *                             guarantees. On platforms that require vectors to be aligned, we need to prove alignment.
+ *                             We cannot do that statically with native memory, hence we need a runtime check.
+ *                           The benefit of using a predicate is that we only have to compile the vectorized loop. If
+ *                           the runtime check fails, we simply deoptimize. Should we eventually recompile, then the
+ *                           predicate is not available any more, and we instead use a multiversioning approach with
+ *                           both a vectorized and a scalar loop, where the runtime determines which loop is taken.
+ *                           See: PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
  *                        Hoisted Check Predicate or the main-loop entry guard) but is required in order to fold away a
  *                        dead sub loop in which some data could be proven to be dead (by the type system) and replaced
