@@ -899,7 +899,7 @@ const Type* CmpUNode::Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, 
       rhs_m = rhs->in(1);
       const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
       // Exclude any case where m == -1 is possible.
-      if (rhs_m_type != nullptr && (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1)) {
+      if (rhs_m_type != nullptr && !rhs_m_type->contains(-1)) {
         if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
           return TypeInt::CC_LT;
         }
