@@ -48,7 +48,7 @@ public record StableSupplier<T>(StandardStableValue<T> delegate,
     @Override public boolean equals(Object obj) { return obj == this; }
     @Override public String  toString() {
                    final Object t = delegate.contentsAcquire();
-                   return t == this ? "(this StableSupplier)" : StandardStableValue.renderWrapped(t);
+                   return t == this ? "(this StableSupplier)" : StandardStableValue.render(t);
               }
 
     public static <T> StableSupplier<T> of(Supplier<? extends T> original) {

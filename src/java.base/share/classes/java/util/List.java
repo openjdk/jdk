@@ -1209,15 +1209,14 @@ public interface List<E> extends SequencedCollection<E> {
      * threads accessing an element already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code mapper} returns {@code null}, no value for the index is
-     * recorded and a new attempt will be made to compute an element value is made upon
-     * accessing the same index again. Hence, just like other unmodifiable lists created
-     * via the {@code List::of} factories, a lazy list cannot contain {@code null}
-     * elements. Clients that want to use nullable values can wrap elements into
-     * an {@linkplain Optional} holder.
-     * <p>
      * If invoking the provided {@code mapper} function throws an exception, it
      * is rethrown to the initial caller and no value for the element is recorded.
+     * <p>
+     * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
+     * will be thrown. Hence, just like other unmodifiable lists created via the
+     * {@code List::of} factories, a lazy list cannot contain {@code null}
+     * elements. Clients that want to use nullable values can wrap elements into
+     * an {@linkplain Optional} holder.
      * <p>
      * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
      * of the returned list are also lazy and stable.

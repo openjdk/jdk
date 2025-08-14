@@ -106,7 +106,7 @@ public class StableMethodHandleBenchmark {
 
     @Benchmark
     public int stableMh() throws Throwable {
-        return (int) STABLE_MH.orElseThrow().invokeExact(1);
+        return (int) STABLE_MH.get().invokeExact(1);
     }
 
     static MethodHandle identityHandle() {

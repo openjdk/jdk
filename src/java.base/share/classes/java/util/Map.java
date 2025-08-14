@@ -1763,19 +1763,18 @@ public interface Map<K, V> {
      * threads accessing a value already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code mapper} returns {@code null}, no associated value for the
-     * key is recorded and a new attempt will be made to compute an associated value is
-     * made upon accessing the same key again. Hence, just like other unmodifiable maps
-     * created via the {@code Map::of} factories, a lazy map cannot contain {@code null}
-     * values. Clients that want to use nullable values can wrap values into
-     * an {@linkplain Optional} holder.
-     * <p>
      * If invoking the provided {@code mapper} function throws an exception, it
      * is rethrown to the initial caller and no value associated with the provided key
      * is recorded.
      * <p>
+     * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
+     * will be thrown. Hence, just like other unmodifiable maps created via the
+     * {@code Map::of} factories, a lazy map cannot contain {@code null} values. Clients
+     * that want to use nullable values can wrap values into an {@linkplain Optional}
+     * holder.
+     * <p>
      * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
-     * also stable.
+     * also lazy and stable.
      * <p>
      * The returned map is unmodifiable and does not implement the
      * {@linkplain Collection##optional-operations optional operations} in the

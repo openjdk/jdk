@@ -19,6 +19,7 @@ public class PresetStableList<E>
 
     private PresetStableList(E[] elements) {
         this.elements = elements;
+        super();
     }
 
     @ForceInline

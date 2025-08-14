@@ -28,7 +28,8 @@
  * @run junit StableValuesSafePublicationTest
  */
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +37,9 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.StableValue;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -47,13 +50,13 @@ final class StableValuesSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final java.util.concurrent.atomic.StableValue<Holder>[] STABLES = stables();
+    private static final AtomicReference<StableValue<Holder>[]> STABLES = new AtomicReference<>();
 
-    static java.util.concurrent.atomic.StableValue<Holder>[] stables() {
+    static StableValue<Holder>[] stables() {
         @SuppressWarnings("unchecked")
-        java.util.concurrent.atomic.StableValue<Holder>[] stables = (java.util.concurrent.atomic.StableValue<Holder>[]) new java.util.concurrent.atomic.StableValue[SIZE];
+        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = java.util.concurrent.atomic.StableValue.of();
+            stables[i] = StableValue.of();
         }
         return stables;
     }
@@ -71,16 +74,16 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final java.util.concurrent.atomic.StableValue<Holder>[] stables = STABLES;
+        final StableValue<Holder>[] stables = STABLES.get();
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                java.util.concurrent.atomic.StableValue<Holder> s = stables[i];
+                StableValue<Holder> s = stables[i];
                 Holder h;
                 // Wait until the StableValue has a holder value
-                while ((h = s.orElse(null)) == null) {}
+                while ((h = s.toOptional().orElse(null)) == null) {}
                 int a = h.a;
                 int b = h.b;
                 int c = h.c;
@@ -93,7 +96,7 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final java.util.concurrent.atomic.StableValue<Holder>[] stables = STABLES;
+        final StableValue<Holder>[] stables = STABLES.get();
 
         @Override
         public void run() {
@@ -110,8 +113,17 @@ final class StableValuesSafePublicationTest {
         }
     }
 
-    @Test
-    void main() {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void mainTest(Supplier<StableValue<Integer>> factory) {
+        @SuppressWarnings("unchecked")
+        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            stables[i] = StableValue.of();
+        }
+        STABLES.set(stables);
+
+
         List<Consumer> consumers = IntStream.range(0, THREADS)
                 .mapToObj(_ -> new Consumer())
                 .toList();
@@ -164,8 +176,8 @@ final class StableValuesSafePublicationTest {
                     }
                     if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
-                                Stream.of(STABLES)
-                                        .map(s -> s.orElse(null))
+                                Stream.of(STABLES.get())
+                                        .map(s -> s.toOptional().orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
                         fail("Giving up! Set stables seen by a new thread: " + nonNulls);
@@ -177,4 +189,30 @@ final class StableValuesSafePublicationTest {
         }
     }
 
+    private static final int LIST_SIZE = 8;
+    private static final int LIST_MID = 3;
+
+    private static Stream<Supplier<StableValue<Integer>>> factories() {
+        final List<StableValue<Integer>> list = StableValue.ofList(LIST_SIZE);
+        return Stream.of(
+                supplier("StableValue.of()", StableValue::of),
+                supplier("list::getFirst", list::getFirst),
+                supplier("() -> list.get(LIST_MID)", () -> list.get(LIST_MID)),
+                supplier("list::getLast", list::getLast)
+        );
+    }
+
+    private static <T> Supplier<T> supplier(String name, Supplier<? extends T> underlying) {
+        return new Supplier<T>() {
+            @Override
+            public T get() {
+                return underlying.get();
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
 }

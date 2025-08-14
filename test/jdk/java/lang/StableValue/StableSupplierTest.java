@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -38,10 +38,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * A stable value is a holder of contents that can be set at most once.
@@ -52,7 +52,7 @@ import java.util.stream.Stream;
  * Its contents, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()},  or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * Once set, the contents can never change and can be retrieved by calling
- * {@linkplain #orElseThrow() orElseThrow()} , {@linkplain #orElse(Object) orElse()},
+ * {@linkplain #get() orElseThrow()} , {@linkplain #toOptional() toOptional()},
  * or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
@@ -72,7 +72,7 @@ import java.util.stream.Stream;
  *        if (!logger.isSet()) {
  *            logger.trySet(Logger.create(Component.class));
  *        }
- *        return logger.orElseThrow();
+ *        return logger.get();
  *    }
  *
  *    public void process() {
@@ -159,12 +159,10 @@ import java.util.stream.Stream;
  *     private PowerOf2Util() {}
  *
  *     private static final int SIZE = 6;
- *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO =
- *             v -> 1 << v;
+ *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO = v -> 1 << v;
  *
- *     private static final List<Integer> POWER_OF_TWO =
- *         // @link substring="ofLazy" target="List#ofLazy(int,IntFunction)" :
- *         List.ofLazy(SIZE, UNDERLYING_POWER_OF_TWO);
+ *     // @link substring="ofLazy" target="List#ofLazy(int,IntFunction)" :
+ *     private static final List<Integer> POWER_OF_TWO = List.ofLazy(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.get(a);
@@ -184,14 +182,12 @@ import java.util.stream.Stream;
  *
  *     private Log2Util() {}
  *
- *     private static final Set<Integer> KEYS =
- *         Set.of(1, 2, 4, 8, 16, 32);
- *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 =
- *         i -> 31 - Integer.numberOfLeadingZeros(i);
+ *     private static final Set<Integer> KEYS = Set.of(1, 2, 4, 8, 16, 32);
  *
- *     private static final Map<Integer, INTEGER> LOG2 =
- *         // @link substring="ofLazy" target="Map#ofLazy(Set,Function)" :
- *         Map.ofLazy(CACHED_KEYS, UNDERLYING_LOG2);
+ *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 = i -> 31 - Integer.numberOfLeadingZeros(i);
+ *
+ *     // @link substring="ofLazy" target="Map#ofLazy(Set,Function)" :
+ *     private static final Map<Integer, INTEGER> LOG2 = Map.ofLazy(CACHED_KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
  *          return LOG2.get(a);
@@ -250,8 +246,7 @@ import java.util.stream.Stream;
  *
  *     private static final int MAX_SIZE_INT = 46;
  *
- *     private static final List<Integer> FIB =
- *         List.ofLazy(MAX_SIZE_INT, Fibonacci::fib);
+ *     private static final List<Integer> FIB = List.ofLazy(MAX_SIZE_INT, Fibonacci::fib);
  *
  *     public static int fib(int n) {
  *         return n < 2
@@ -293,7 +288,7 @@ import java.util.stream.Stream;
  * The at-most-once write operation on a stable value that succeeds
  * (e.g. {@linkplain #trySet(Object) trySet()})
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * any successful read operation (e.g. {@linkplain #orElseThrow()}).
+ * any successful read operation (e.g. {@linkplain #get()}).
  * A successful write operation can be either:
  * <ul>
  *     <li>a {@link #trySet(Object)} that returns {@code true}, or</li>
@@ -301,8 +296,8 @@ import java.util.stream.Stream;
  * </ul>
  * A successful read operation can be either:
  * <ul>
- *     <li>a {@link #orElseThrow()} that does not throw,</li>
- *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value</li>
+ *     <li>a {@link #get()} that does not throw,</li>
+ *     <li>a {@link #toOptional() toOptional(other)} that does not return the {@code other} value</li>
  *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}, or</li>
  *     <li>an {@link #isSet()} that returns {@code true}</li>
  * </ul>
@@ -330,7 +325,7 @@ import java.util.stream.Stream;
  *           synchronizing on {@code this} may lead to deadlock.
  *           <p>
  *           Except for a {@code StableValue}'s contents itself,
- *           an {@linkplain #orElse(Object) orElse(other)} parameter, and
+ *           an {@linkplain #toOptional() toOptional(other)} parameter, and
  *           an {@linkplain #equals(Object) equals(obj)} parameter; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
@@ -391,36 +386,31 @@ public sealed interface StableValue<T>
      */
     boolean trySet(T contents);
 
-    // Todo: Consider replacing this method with toOptional (works not that SV is null averse)
     /**
-     * {@return the contents if set, otherwise, returns the provided {@code other} value}
-     *
-     * @param other to return if the contents is not set
+     * {@return the contents if set, otherwise, returns {@linkplain Optional#empty()}}
      */
-    T orElse(T other);
+    Optional<T> toOptional();
 
-    // Todo: Consider renaming this method to get()
     /**
      * {@return the contents if set, otherwise, throws {@code NoSuchElementException}}
      *
      * @throws NoSuchElementException if no contents is set
      */
-    T orElseThrow();
+    T get();
 
     /**
      * {@return {@code true} if the contents is set, {@code false} otherwise}
      */
     boolean isSet();
 
-    // Todo: Consider throwing NPE if the supplier returns null
     /**
      * {@return the contents; if unset, first attempts to compute and set the
      *          contents using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception or returning {@code null}. If this method
-     * is invoked several times with different suppliers, only one of them will be invoked
-     * provided it completes without throwing an exception or returning {@code null}.
+     * completes without throwing an exception. If this method is invoked several times
+     * with different suppliers, only one of them will be invoked provided it completes
+     * without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown and no
      * contents is set. The most common usage is to construct a new object serving
@@ -430,14 +420,13 @@ public sealed interface StableValue<T>
      * Value v = stable.orElseSet(Value::new);
      * }
      * <p>
-     * When this method returns successfully and the {@code supplier} did not return
-     * {@code null}, the contents is set.
+     * When this method returns successfully the contents is always set.
      * <p>
      * The provided {@code supplier} will only be invoked once even if invoked from
-     * several threads unless the {@code supplier} throws an exception or returns
-     * {@code null}.
+     * several threads unless the {@code supplier} throws an exception.
      * <p>
-     * If the provided {@code supplier} returns {@code null}, no contents is set.
+     * If the provided {@code supplier} returns {@code null},
+     * a {@linkplain NullPointerException} is thrown.
      *
      * @param  supplier to be used for computing the contents, if not previously set
      * @throws IllegalStateException if the provided {@code supplier} recursively
@@ -478,6 +467,7 @@ public sealed interface StableValue<T>
      *
      * @param contents to set
      * @param <T>     type of the contents
+     * @throws NullPointerException if the provided {@code contents} is {@code null}
      */
     static <T> StableValue<T> of(T contents) {
         Objects.requireNonNull(contents);
@@ -540,7 +530,6 @@ public sealed interface StableValue<T>
     @SuppressWarnings("varargs")
     static <T> List<StableValue<T>> ofList(T... elements) {
         // Protect against TOCTOU attacks
-        // Implicit null-check of `elements`
         final T[] copy = Arrays.copyOf(elements, elements.length);
         for (T t : copy) {
             Objects.requireNonNull(t);

@@ -794,6 +794,7 @@ class ImmutableCollections {
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
             this.delegates = StableUtil.array(size);
+            super();
         }
 
         @Override public boolean  isEmpty() { return delegates.length == 0;}
@@ -1606,6 +1607,7 @@ class ImmutableCollections {
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
             this.delegate = StableUtil.map(keys);
+            super();
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
@@ -1645,6 +1647,7 @@ class ImmutableCollections {
             private StableMapEntrySet(StableMap<K, V> outer) {
                 this.outer = outer;
                 this.delegateEntrySet = outer.delegate.entrySet();
+                super();
             }
 
             @Override public Iterator<Map.Entry<K, V>> iterator() { return LazyMapIterator.of(this); }
@@ -1675,6 +1678,7 @@ class ImmutableCollections {
                 private LazyMapIterator(StableMapEntrySet<K, V> outer) {
                     this.outer = outer;
                     this.delegateIterator = outer.delegateEntrySet.iterator();
+                    super();
                 }
 
                 @Override public boolean hasNext() { return delegateIterator.hasNext(); }
@@ -1742,6 +1746,7 @@ class ImmutableCollections {
 
             private StableMapValues(StableMap<?, V> outer) {
                 this.outer = outer;
+                super();
             }
 
             @Override public Iterator<V> iterator() { return outer.new ValueIterator(); }

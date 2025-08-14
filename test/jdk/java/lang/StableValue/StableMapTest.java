@@ -327,9 +327,8 @@ final class StableMapTest {
     @Test
     void nullResult() {
         var map = Map.ofLazy(Set.of(0), _ -> null);
-        assertNull(map.getOrDefault(0, 1));;
+        assertThrows(NullPointerException.class, () -> map.getOrDefault(0, 1));;
         assertTrue(map.containsKey(0));
-        assertNull(map.get(0));
     }
 
     @Test

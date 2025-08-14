@@ -97,7 +97,7 @@ final class TrustedFieldTypeTest {
         // Unfortunately, it is possible to update the underlying data via jdk.internal.misc.Unsafe
         Object oldData = unsafe.getAndSetReference(stableValue, offset, 13);
         assertEquals(42, oldData);
-        assertEquals(13, stableValue.orElseThrow());
+        assertEquals(13, stableValue.get());
     }
 
     @Test
@@ -115,7 +115,7 @@ final class TrustedFieldTypeTest {
             assertEquals(42, oldData);
 
             field.set(stableValue, 13);
-            assertEquals(13, stableValue.orElseThrow());
+            assertEquals(13, stableValue.get());
         } else {
             Field field = StandardStableValue.class.getDeclaredField("contents");
             assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));

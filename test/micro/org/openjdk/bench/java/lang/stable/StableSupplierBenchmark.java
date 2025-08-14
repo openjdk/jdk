@@ -69,7 +69,7 @@ public class StableSupplierBenchmark {
 
     @Benchmark
     public int stable() {
-        return stable.orElseThrow() + stable2.orElseThrow();
+        return stable.get() + stable2.get();
     }
 
     @Benchmark
@@ -79,7 +79,7 @@ public class StableSupplierBenchmark {
 
     @Benchmark
     public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+        return STABLE.get() + STABLE2.get();
     }
 
     @Benchmark

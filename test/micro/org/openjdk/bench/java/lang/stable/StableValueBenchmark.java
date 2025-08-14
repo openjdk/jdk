@@ -89,12 +89,12 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int stable() {
-        return stable.orElseThrow() + stable2.orElseThrow();
+        return stable.get() + stable2.get();
     }
 
     @Benchmark
     public int stableNull() {
-        return (stableNull.orElseThrow() == null ? VALUE : VALUE2) + (stableNull2.orElseThrow() == null ? VALUE : VALUE2);
+        return (stableNull.get() == null ? VALUE : VALUE2) + (stableNull2.get() == null ? VALUE : VALUE2);
     }
 
     // Reference case
@@ -110,7 +110,7 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int staticDcl() {
-        return DCL.orElseThrow() + DCL2.orElseThrow();
+        return DCL.get() + DCL2.get();
     }
 
     @Benchmark
@@ -125,7 +125,7 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+        return STABLE.get() + STABLE2.get();
     }
 
 
@@ -143,7 +143,7 @@ public class StableValueBenchmark {
         }
 
         int get() {
-            return delegate.orElseThrow();
+            return delegate.get();
         }
 
     }
@@ -156,7 +156,7 @@ public class StableValueBenchmark {
         }
 
         int get() {
-            return delegate.orElseThrow();
+            return delegate.get();
         }
 
     }

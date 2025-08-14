@@ -51,7 +51,7 @@ public final class StableUtil {
             if (value == self) {
                 sj.add("(this " + selfName + ")");
             } else {
-                sj.add(StandardStableValue.renderWrapped(value));
+                sj.add(StandardStableValue.render(value));
             }
         }
         return sj.toString();
@@ -68,7 +68,7 @@ public final class StableUtil {
             if (value == self) {
                 valueString = "(this " + selfName + ")";
             } else {
-                valueString = StandardStableValue.renderWrapped(value);
+                valueString = StandardStableValue.render(value);
             }
             sj.add(e.getKey() + "=" + valueString);
         }

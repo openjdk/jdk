@@ -9,6 +9,7 @@ import java.util.AbstractList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
@@ -28,13 +29,14 @@ public class StandardStableList<E>
     private StandardStableList(int length) {
         this.elements = new Object[length];
         this.mutexes = new Object[length];
+        super();
     }
 
     @ForceInline
     @Override
-    public StableValue<E> get(int index) {
+    public ElementStableValue<E> get(int index) {
         Objects.checkIndex(index, elements.length);
-        return new ElementStableValue<>(elements, mutexes, index);
+        return new ElementStableValue<>(elements, mutexes, offsetFor(index));
     }
 
     @Override
@@ -43,10 +45,10 @@ public class StandardStableList<E>
     }
 
     // Todo: Views
-
+    // Todo: Consider having just a StandardStableList field and an offset
     public record ElementStableValue<T>(@Stable Object[] elements,
                                         Object[] mutexes,
-                                        int index)
+                                        long offset)
             implements StableValue<T> {
 
         private static final Object TOMB_STONE = new Object();
@@ -76,15 +78,14 @@ public class StandardStableList<E>
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public T orElse(T other) {
-            final Object t = contentsAcquire();
-            return (t == null) ? other : (T) t;
+        public Optional<T> toOptional() {
+            return Optional.ofNullable((T) contentsAcquire());
         }
 
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public T orElseThrow() {
+        public T get() {
             final Object t = contentsAcquire();
             if (t == null) {
                 throw new NoSuchElementException("No contents set");
@@ -110,10 +111,15 @@ public class StandardStableList<E>
         @SuppressWarnings("unchecked")
         private T orElseSetSlowPath(Supplier<? extends T> supplier) {
             preventReentry();
-            synchronized (this) {
-                final Object t = elements[index];  // Plain semantics suffice here
+            final Object mutex = acquireMutex();
+            if (mutex == TOMB_STONE) {
+                return (T) contentsAcquire();
+            }
+            synchronized (mutex) {
+                final Object t = UNSAFE.getReference(elements, offset);  // Plain semantics suffice here
                 if (t == null) {
-                    final T newValue = supplier.get();
+                     final T newValue = supplier.get();
+                    Objects.requireNonNull(newValue);
                     // The mutex is not reentrant so we know newValue should be returned
                     set(newValue);
                     return newValue;
@@ -122,34 +128,45 @@ public class StandardStableList<E>
             }
         }
 
+        // Object methods
+        @Override public boolean equals(Object obj) { return this == obj; }
+        @Override public int     hashCode() { return System.identityHashCode(this); }
+        @Override public String toString() {
+            final Object t = contentsAcquire();
+            return t == this
+                    ? "(this StableValue)"
+                    : StandardStableValue.render(t);
+        }
+
         @ForceInline
         private Object contentsAcquire() {
-            return UNSAFE.getReferenceAcquire(elements, offsetFor(index));
+            return UNSAFE.getReferenceAcquire(elements, offset);
         }
 
         @ForceInline
         private Object acquireMutex() {
             final Object candidate = new Object();
-            final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offsetFor(index), null, candidate);
+            final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
             return witness == null ? candidate : witness;
         }
 
         @ForceInline
         private void disposeOfMutex() {
-            UNSAFE.putReferenceVolatile(mutexes, offsetFor(index), TOMB_STONE);
+            UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
         }
 
         @ForceInline
         private Object mutexVolatile() {
-            // Can be plain semantics
-            return UNSAFE.getReferenceVolatile(mutexes, offsetFor(index));
+            // Can be plain semantics?
+            return UNSAFE.getReferenceVolatile(mutexes, offset);
         }
 
         // This method is not annotated with @ForceInline as it is always called
         // in a slow path.
         private void preventReentry() {
-            if (Thread.holdsLock(mutexVolatile())) {
-                throw new IllegalStateException("Recursive initialization of a stable value is illegal: " + index);
+            final Object mutex = mutexVolatile();
+            if (mutex != null && Thread.holdsLock(mutexVolatile())) {
+                throw new IllegalStateException("Recursive initialization of a stable value is illegal. Index: " + indexFor(offset));
             }
         }
 
@@ -165,18 +182,22 @@ public class StandardStableList<E>
         private boolean set(T newValue) {
             assert Thread.holdsLock(mutexVolatile());
             // We know we hold the monitor here so plain semantic is enough
-            if (elements[index] == null) {
-                UNSAFE.putReferenceRelease(elements, offsetFor(index), newValue);
+            if (UNSAFE.getReference(elements, offset) == null) {
+                UNSAFE.putReferenceRelease(elements, offset, newValue);
                 return true;
             }
             return false;
         }
 
-        @ForceInline
-        private long offsetFor(long index) {
-            return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
+        private long indexFor(long offset) {
+            return (offset - Unsafe.ARRAY_OBJECT_BASE_OFFSET) / Unsafe.ARRAY_OBJECT_INDEX_SCALE;
         }
 
+    }
+
+    @ForceInline
+    private static long offsetFor(long index) {
+        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
     }
 
     public static <T> List<StableValue<T>> ofList(int size) {

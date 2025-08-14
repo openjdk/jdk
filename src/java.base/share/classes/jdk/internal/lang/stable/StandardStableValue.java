@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.StableValue;
 import java.util.function.Supplier;
 
@@ -89,7 +90,7 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
-    public T orElseThrow() {
+    public T get() {
         final Object t = contentsAcquire();
         if (t == null) {
             throw new NoSuchElementException("No contents set");
@@ -100,9 +101,8 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
-    public T orElse(T other) {
-        final Object t = contentsAcquire();
-        return (t == null) ? other : (T) t;
+    public Optional<T> toOptional() {
+        return Optional.ofNullable((T) contentsAcquire());
     }
 
     @ForceInline
@@ -127,6 +127,7 @@ public final class StandardStableValue<T> implements StableValue<T> {
             final Object t = contents;  // Plain semantics suffice here
             if (t == null) {
                 final T newValue = supplier.get();
+                Objects.requireNonNull(newValue);
                 // The mutex is not reentrant so we know newValue should be returned
                 set(newValue);
                 return newValue;
@@ -142,7 +143,7 @@ public final class StandardStableValue<T> implements StableValue<T> {
         final Object t = contentsAcquire();
         return t == this
                 ? "(this StableValue)"
-                : renderWrapped(t);
+                : render(t);
     }
 
     // Internal methods shared with other internal classes
@@ -152,7 +153,7 @@ public final class StandardStableValue<T> implements StableValue<T> {
         return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }
 
-    static String renderWrapped(Object t) {
+    static String render(Object t) {
         return (t == null) ? UNSET_LABEL : Objects.toString(t);
     }
 
