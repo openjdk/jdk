@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 6772689 8347841
+ * @bug 6772689 8347841 8347955
  * @summary Test for standard-to-daylight transitions at midnight:
  * date stays on the given day.
  */
 
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -46,7 +45,7 @@ public class Bug6772689 {
         int errors = 0;
 
         Calendar cal = new GregorianCalendar(BEGIN_YEAR, MARCH, 1);
-        String[] tzids = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] tzids = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
         try {

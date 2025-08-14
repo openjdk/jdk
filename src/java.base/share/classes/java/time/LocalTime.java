@@ -92,7 +92,7 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
-import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -1632,40 +1632,8 @@ public final class LocalTime
     @Override
     public String toString() {
         var buf = new StringBuilder(18);
-        formatTo(buf);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
-    }
-
-    /**
-     * Prints the toString result to the given buf, avoiding extra string allocations.
-     * Requires extra capacity of 18 to avoid StringBuilder reallocation.
-     */
-    void formatTo(StringBuilder buf) {
-        int hourValue = hour;
-        int minuteValue = minute;
-        int secondValue = second;
-        int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
-        if (secondValue > 0 || nanoValue > 0) {
-            buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
-            if (nanoValue > 0) {
-                buf.append('.');
-                int zeros = 9 - DecimalDigits.stringSize(nanoValue);
-                if (zeros > 0) {
-                    buf.repeat('0', zeros);
-                }
-                int digits;
-                if (nanoValue % 1_000_000 == 0) {
-                    digits = nanoValue / 1_000_000;
-                } else if (nanoValue % 1000 == 0) {
-                    digits = nanoValue / 1000;
-                } else {
-                    digits = nanoValue;
-                }
-                buf.append(digits);
-            }
-        }
     }
 
     //-----------------------------------------------------------------------

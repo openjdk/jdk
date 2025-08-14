@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ protected:
   virtual oop loader()             { return nullptr; }
   virtual jobject loader_handle()  { return nullptr; }
 
-  virtual oop protection_domain()             { return nullptr; }
-  virtual jobject protection_domain_handle()  { return nullptr; }
-
   const char* type_string() { return "ciKlass"; }
 
   void print_impl(outputStream* st);
@@ -122,7 +119,7 @@ public:
   // Get the instance of java.lang.Class corresponding to this klass.
   ciInstance*            java_mirror();
 
-  // Fetch Klass::modifier_flags.
+  // Fetch modifier flags.
   jint                   modifier_flags();
 
   // Fetch Klass::access_flags.

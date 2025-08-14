@@ -114,6 +114,7 @@
   do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle                            ) \
   do_klass(MemberName_klass,                            java_lang_invoke_MemberName                           ) \
   do_klass(ResolvedMethodName_klass,                    java_lang_invoke_ResolvedMethodName                   ) \
+  do_klass(MethodHandleImpl_klass,                      java_lang_invoke_MethodHandleImpl                     ) \
   do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives                  ) \
   do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm                           ) \
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
@@ -123,7 +124,6 @@
   do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
   do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
   do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \

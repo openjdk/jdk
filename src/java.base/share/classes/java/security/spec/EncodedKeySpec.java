@@ -74,16 +74,17 @@ public abstract class EncodedKeySpec implements KeySpec {
      *
      * @param encodedKey the encoded key. The contents of the
      * array are copied to protect against subsequent modification.
-     * @param algorithm the algorithm name of the encoded key
-     * See the KeyFactory section in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
+     * @param algorithm the algorithm name of the encoded key.
+     * See the AsymmetricKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#asymmetrickey-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
-     * for information about standard algorithm names.
+     * for information about standard asymmetric key algorithm names.
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @since 9
      */
     protected EncodedKeySpec(byte[] encodedKey, String algorithm) {

@@ -26,10 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
@@ -145,6 +145,11 @@ protected:
   // this threshold, or we might consider this when dynamically resizing generations
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
   size_t min_free_threshold();
+
+  inline void accept_trigger_with_type(Trigger trigger_type) {
+    _last_trigger = trigger_type;
+    ShenandoahHeuristics::accept_trigger();
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

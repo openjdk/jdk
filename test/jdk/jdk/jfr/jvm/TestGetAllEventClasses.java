@@ -31,7 +31,6 @@ import java.util.List;
 
 /**
  * @test TestGetAllEventClasses
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal

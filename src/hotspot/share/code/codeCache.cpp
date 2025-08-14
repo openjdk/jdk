@@ -433,7 +433,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
   add_heap(heap);
 
   // Reserve Space
-  size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
+  size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
   size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (%zuK)",
@@ -868,10 +868,7 @@ void CodeCache::on_gc_marking_cycle_finish() {
 }
 
 void CodeCache::arm_all_nmethods() {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->arm_all_nmethods();
-  }
+  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
@@ -885,6 +882,7 @@ void CodeCache::do_unloading(bool unloading_occurred) {
 
 void CodeCache::verify_clean_inline_caches() {
 #ifdef ASSERT
+  if (!VerifyInlineCaches) return;
   NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
@@ -1109,9 +1107,9 @@ size_t CodeCache::freelists_length() {
 void icache_init();
 
 void CodeCache::initialize() {
-  assert(CodeCacheSegmentSize >= (uintx)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
+  assert(CodeCacheSegmentSize >= (size_t)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
-  assert(CodeCacheSegmentSize >= (uintx)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
+  assert(CodeCacheSegmentSize >= (size_t)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
 #endif
   assert(CodeCacheSegmentSize >= sizeof(jdouble),    "CodeCacheSegmentSize must be large enough to align constants");
   // This was originally just a check of the alignment, causing failure, instead, round
@@ -1187,7 +1185,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   FlagSetting fs(Dependencies::_verify_in_progress, true);
 
-  typedef ResourceHashtable<DependencySignature, int, 11027,
+  typedef HashTable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,
                             &DependencySignature::hash,
                             &DependencySignature::equals> DepTable;
@@ -1364,7 +1362,7 @@ void CodeCache::make_marked_nmethods_deoptimized() {
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-      nm->make_not_entrant();
+      nm->make_not_entrant(nmethod::InvalidationReason::MARKED_FOR_DEOPTIMIZATION);
       nm->make_deoptimized();
     }
   }
@@ -1516,9 +1514,14 @@ void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
 void CodeCache::print_internals() {
   int nmethodCount = 0;
   int runtimeStubCount = 0;
+  int upcallStubCount = 0;
   int adapterCount = 0;
+  int mhAdapterCount = 0;
+  int vtableBlobCount = 0;
   int deoptimizationStubCount = 0;
   int uncommonTrapStubCount = 0;
+  int exceptionStubCount = 0;
+  int safepointStubCount = 0;
   int bufferBlobCount = 0;
   int total = 0;
   int nmethodNotEntrant = 0;
@@ -1555,12 +1558,22 @@ void CodeCache::print_internals() {
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStubCount++;
+      } else if (cb->is_upcall_stub()) {
+        upcallStubCount++;
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStubCount++;
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStubCount++;
+      } else if (cb->is_exception_stub()) {
+        exceptionStubCount++;
+      } else if (cb->is_safepoint_stub()) {
+        safepointStubCount++;
       } else if (cb->is_adapter_blob()) {
         adapterCount++;
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapterCount++;
+      } else if (cb->is_vtable_blob()) {
+        vtableBlobCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
       }
@@ -1587,10 +1600,15 @@ void CodeCache::print_internals() {
   tty->print_cr("\tjava: %d",nmethodJava);
   tty->print_cr("\tnative: %d",nmethodNative);
   tty->print_cr("runtime_stubs: %d",runtimeStubCount);
+  tty->print_cr("upcall_stubs: %d",upcallStubCount);
   tty->print_cr("adapters: %d",adapterCount);
+  tty->print_cr("MH adapters: %d",mhAdapterCount);
+  tty->print_cr("VTables: %d",vtableBlobCount);
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
+  tty->print_cr("exception_stubs: %d",exceptionStubCount);
+  tty->print_cr("safepoint_stubs: %d",safepointStubCount);
   tty->print_cr("\nnmethod size distribution");
   tty->print_cr("-------------------------------------------------");
 
@@ -1616,9 +1634,14 @@ void CodeCache::print() {
 
   CodeBlob_sizes live[CompLevel_full_optimization + 1];
   CodeBlob_sizes runtimeStub;
+  CodeBlob_sizes upcallStub;
   CodeBlob_sizes uncommonTrapStub;
   CodeBlob_sizes deoptimizationStub;
+  CodeBlob_sizes exceptionStub;
+  CodeBlob_sizes safepointStub;
   CodeBlob_sizes adapter;
+  CodeBlob_sizes mhAdapter;
+  CodeBlob_sizes vtableBlob;
   CodeBlob_sizes bufferBlob;
   CodeBlob_sizes other;
 
@@ -1630,12 +1653,22 @@ void CodeCache::print() {
         live[level].add(cb);
       } else if (cb->is_runtime_stub()) {
         runtimeStub.add(cb);
+      } else if (cb->is_upcall_stub()) {
+        upcallStub.add(cb);
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStub.add(cb);
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStub.add(cb);
+      } else if (cb->is_exception_stub()) {
+        exceptionStub.add(cb);
+      } else if (cb->is_safepoint_stub()) {
+        safepointStub.add(cb);
       } else if (cb->is_adapter_blob()) {
         adapter.add(cb);
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapter.add(cb);
+      } else if (cb->is_vtable_blob()) {
+        vtableBlob.add(cb);
       } else if (cb->is_buffer_blob()) {
         bufferBlob.add(cb);
       } else {
@@ -1666,9 +1699,14 @@ void CodeCache::print() {
     const CodeBlob_sizes* sizes;
   } non_nmethod_blobs[] = {
     { "runtime",        &runtimeStub },
+    { "upcall",         &upcallStub },
     { "uncommon trap",  &uncommonTrapStub },
     { "deoptimization", &deoptimizationStub },
+    { "exception",      &exceptionStub },
+    { "safepoint",      &safepointStub },
     { "adapter",        &adapter },
+    { "mh_adapter",     &mhAdapter },
+    { "vtable",         &vtableBlob },
     { "buffer blob",    &bufferBlob },
     { "other",          &other },
   };

@@ -26,9 +26,9 @@
 #define SHARE_CI_BCESCAPEANALYZER_HPP
 
 #ifdef COMPILER2
-#include "ci/ciObject.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciObject.hpp"
 #include "code/dependencies.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"

@@ -201,8 +201,7 @@ final class Metadata extends Command {
         }
 
         try (PrintWriter pw = new PrintWriter(System.out, false, UTF_8)) {
-            PrettyWriter prettyWriter = new PrettyWriter(pw);
-            prettyWriter.setShowIds(showIds);
+            MetadataWriter metadataWriter = new MetadataWriter(pw, showIds);
             if (!filters.isEmpty()) {
                 filter =  Filters.matchAny(filters);
             }
@@ -215,14 +214,14 @@ final class Metadata extends Command {
                     if (Type.SUPER_TYPE_EVENT.equals(type.getSuperType())) {
                         EventType et = PrivateAccess.getInstance().newEventType((PlatformEventType) type);
                         if (filter.test(et)) {
-                            prettyWriter.printType(type);
+                            metadataWriter.printType(type);
                         }
                     }
                 } else {
-                    prettyWriter.printType(type);
+                    metadataWriter.printType(type);
                 }
             }
-            prettyWriter.flush(true);
+            metadataWriter.flush(true);
             pw.flush();
         }
     }

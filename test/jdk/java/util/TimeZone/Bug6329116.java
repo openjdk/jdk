@@ -25,7 +25,7 @@
  * @test
  * @bug 6329116 6756569 6757131 6758988 6764308 6796489 6834474 6609737 6507067
  *      7039469 7090843 7103108 7103405 7158483 8008577 8059206 8064560 8072042
- *      8077685 8151876 8166875 8169191 8170316 8176044 8174269 8347841
+ *      8077685 8151876 8166875 8169191 8170316 8176044 8174269 8347841 8347955
  * @summary Make sure that timezone short display names are identical to Olson's data.
  * @run junit Bug6329116
  */
@@ -46,7 +46,7 @@ public class Bug6329116 {
 
     // static Locale[] locales = Locale.getAvailableLocales();
     static Locale[] locales = {Locale.US};
-    static String[] timezones = Arrays.stream(TimeZone.getAvailableIDs())
+    static String[] timezones = TimeZone.availableIDs()
             .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
             .toArray(String[]::new);
 

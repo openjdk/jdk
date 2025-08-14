@@ -11,6 +11,11 @@ extern "C" {
 
 #include <spa/param/audio/raw.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 enum spa_audio_mp3_channel_mode {
     SPA_AUDIO_MP3_CHANNEL_MODE_UNKNOWN,
     SPA_AUDIO_MP3_CHANNEL_MODE_MONO,

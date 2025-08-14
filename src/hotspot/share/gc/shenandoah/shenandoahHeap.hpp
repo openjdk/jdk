@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,19 +27,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahGenerationSizer.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -122,9 +122,9 @@ typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
-// Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
-// to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
-// See ShenandoahControlThread for GC cycle structure.
+// Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
+// for concurent evacuation and a snapshot-at-the-beginning write barrier for
+// concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
@@ -158,6 +158,10 @@ private:
   // In that sense, it's a stable snapshot of _gc_generation that is
   // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
+
+protected:
+  void print_tracing_info() const override;
+  void stop() override;
 
 public:
   ShenandoahHeapLock* lock() {
@@ -202,12 +206,9 @@ public:
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
-  void print_on(outputStream* st)              const override;
-  void print_extended_on(outputStream *st)     const override;
-  void print_tracing_info()                    const override;
+  void print_heap_on(outputStream* st)         const override;
+  void print_gc_on(outputStream *st)           const override;
   void print_heap_regions_on(outputStream* st) const;
-
-  void stop() override;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
@@ -430,35 +431,38 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
-  enum CancelState {
-    // Normal state. GC has not been cancelled and is open for cancellation.
-    // Worker threads can suspend for safepoint.
-    CANCELLABLE,
-
-    // GC has been cancelled. Worker threads can not suspend for
-    // safepoint but must finish their work as soon as possible.
-    CANCELLED
-  };
-
+  // Records the time of the first successful cancellation request. This is used to measure
+  // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
-  ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+
+  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
+  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc();
+  bool try_cancel_gc(GCCause::Cause cause);
 
 public:
+  // True if gc has been cancelled
   inline bool cancelled_gc() const;
+
+  // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
+  // This indicates the reason the last GC cycle was cancelled.
+  inline GCCause::Cause cancelled_cause() const;
+
+  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
+  // old mark does _not_ touch the oom handler).
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
-  void cancel_gc(GCCause::Cause cause);
 
-public:
+  // Returns true if and only if this call caused a gc to be cancelled.
+  bool cancel_gc(GCCause::Cause cause);
+
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -478,10 +482,13 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
+
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
   virtual void update_heap_references(bool concurrent);
   // Final update region states
@@ -550,6 +557,10 @@ public:
 
   ShenandoahEvacOOMHandler*  oom_evac_handler()        { return &_oom_evac_handler; }
 
+  ShenandoahEvacuationTracker* evac_tracker() const {
+    return _evac_tracker;
+  }
+
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
@@ -608,8 +619,6 @@ private:
 // and can be stubbed out.
 //
 public:
-  bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
-
   // Check the pointer is in active part of Java heap.
   // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
@@ -676,7 +685,7 @@ public:
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return !ShenandoahCardBarrier; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 
@@ -689,6 +698,9 @@ private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
+
+  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
+  bool should_retry_allocation(size_t original_full_gc_count) const;
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
@@ -733,7 +745,7 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
+  // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 
   template<class T>
@@ -749,8 +761,9 @@ public:
   inline bool requires_marking(const void* entry) const;
 
   // Support for bitmap uncommits
-  bool commit_bitmap_slice(ShenandoahHeapRegion *r);
-  bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  void commit_bitmap_slice(ShenandoahHeapRegion *r);
+  void uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  bool is_bitmap_region_special() { return _bitmap_region_special; }
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
   // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
@@ -780,6 +793,10 @@ private:
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+protected:
+  // Used primarily to look for failed evacuation attempts.
+  ShenandoahEvacuationTracker*  _evac_tracker;
 
 public:
   static address in_cset_fast_test_addr();
@@ -821,7 +838,7 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
-  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
   static inline void increase_object_age(oop obj, uint additional_age);
 

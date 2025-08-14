@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.StringArrayUtils;
+import jdk.test.whitebox.WhiteBox;
 
 public class SystemMapTestBase {
 
@@ -82,12 +84,15 @@ public class SystemMapTestBase {
         static final String shouldMatchUnconditionally_linux[] = {
             // java launcher
             regexBase_committed + "/bin/java",
-            // libjvm
-            regexBase_committed + "/lib/.*/libjvm.so",
             // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
             regexBase_committed + "\\[heap\\]",
             // we should see the hs-perf data file, and it should appear as shared as well as committed
             regexBase_shared_and_committed + "hsperfdata_.*"
+        };
+
+        static final String shouldMatch_linux_libjvm[] = {
+            // libjvm
+            regexBase_committed + "/lib/.*/libjvm.so"
         };
 
         static final String shouldMatchIfNMTIsEnabled_linux[] = {
@@ -103,7 +108,14 @@ public class SystemMapTestBase {
         };
 
         public String[] shouldMatchUnconditionally() {
-            return shouldMatchUnconditionally_linux;
+            if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
+                return shouldMatchUnconditionally_linux;
+            } else {
+                return StringArrayUtils.concat(shouldMatchUnconditionally_linux,
+                                               shouldMatch_linux_libjvm);
+            }
         }
 
         public String[] shouldMatchIfNMTIsEnabled() {
@@ -125,6 +137,9 @@ public class SystemMapTestBase {
         static final String shouldMatchUnconditionally_windows[] = {
             // java launcher
             winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
+        };
+
+        static final String shouldMatch_windows_libjvm[] = {
             // libjvm
             winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
         };
@@ -142,7 +157,14 @@ public class SystemMapTestBase {
         };
 
         public String[] shouldMatchUnconditionally() {
-            return shouldMatchUnconditionally_windows;
+            if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
+                return shouldMatchUnconditionally_windows;
+            } else {
+                return StringArrayUtils.concat(shouldMatchUnconditionally_windows,
+                                               shouldMatch_windows_libjvm);
+            }
         }
 
         public String[] shouldMatchIfNMTIsEnabled() {
@@ -165,10 +187,13 @@ public class SystemMapTestBase {
         static final String shouldMatchUnconditionally_macOS[] = {
             // java launcher
             macOSbase + macow + space + someNumber + space + "/.*/bin/java",
-            // libjvm
-            macOSbase + macow + space + someNumber + space + "/.*/lib/server/libjvm.dylib",
             // we should see the hs-perf data file, and it should appear as shared as well as committed
             macOSbase + macprivate + space + someNumber + space + ".*/.*/hsperfdata_.*"
+        };
+
+        static final String shouldMatch_macOS_libjvm[] = {
+            // libjvm
+            macOSbase + macow + space + someNumber + space + "/.*/lib/server/libjvm.dylib",
         };
 
         static final String shouldMatchIfNMTIsEnabled_macOS[] = {
@@ -183,7 +208,14 @@ public class SystemMapTestBase {
         };
 
         public String[] shouldMatchUnconditionally() {
-            return shouldMatchUnconditionally_macOS;
+            if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
+                return shouldMatchUnconditionally_macOS;
+            } else {
+                return StringArrayUtils.concat(shouldMatchUnconditionally_macOS,
+                                               shouldMatch_macOS_libjvm);
+            }
         }
 
         public String[] shouldMatchIfNMTIsEnabled() {

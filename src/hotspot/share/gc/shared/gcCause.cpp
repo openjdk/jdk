@@ -41,9 +41,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _jvmti_force_gc:
       return "JvmtiEnv ForceGarbageCollection";
 
-    case _gc_locker:
-      return "GCLocker Initiated GC";
-
     case _heap_inspection:
       return "Heap Inspection Initiated GC";
 
@@ -92,11 +89,14 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _dcmd_gc_run:
       return "Diagnostic Command";
 
+    case _shenandoah_stop_vm:
+      return "Stopping VM";
+
     case _shenandoah_allocation_failure_evac:
       return "Allocation Failure During Evacuation";
 
-    case _shenandoah_stop_vm:
-      return "Stopping VM";
+    case _shenandoah_humongous_allocation_failure:
+      return "Humongous Allocation Failure";
 
     case _shenandoah_concurrent_gc:
       return "Concurrent GC";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ class methodHandle;
 NOT_PRODUCT(option(TraceEscapeAnalysis, "TraceEscapeAnalysis", Bool)) \
 NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
 NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
+NOT_PRODUCT(option(PhasePrintLevel, "PhasePrintLevel", Intx)) \
 NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
 NOT_PRODUCT(option(TraceAutoVectorization, "TraceAutoVectorization", Ccstrlist)) \
 NOT_PRODUCT(option(TraceMergeStores, "TraceMergeStores", Ccstrlist)) \
@@ -166,7 +167,6 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to (collect|collect+print) memory statistics for
   static bool should_collect_memstat();
-  static bool should_print_final_memstat_report();
 
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);

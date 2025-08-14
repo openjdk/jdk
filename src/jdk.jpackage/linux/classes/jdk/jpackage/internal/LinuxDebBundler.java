@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxDebPackage;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -34,172 +38,64 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
-import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
+import jdk.jpackage.internal.model.AppImageLayout;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 
 public class LinuxDebBundler extends LinuxPackageBundler {
-
-    // Debian rules for package naming are used here
-    // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
-    //
-    // Package names must consist only of lower case letters (a-z),
-    // digits (0-9), plus (+) and minus (-) signs, and periods (.).
-    // They must be at least two characters long and
-    // must start with an alphanumeric character.
-    //
-    private static final Pattern DEB_PACKAGE_NAME_PATTERN =
-            Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
-
-    private static final BundlerParamInfo<String> PACKAGE_NAME =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_BUNDLE_NAME.getId(),
-            String.class,
-            params -> {
-                String nm = INSTALLER_NAME.fetchFrom(params);
-                if (nm == null) return null;
-
-                // make sure to lower case and spaces/underscores become dashes
-                nm = nm.toLowerCase().replaceAll("[ _]", "-");
-                return nm;
-            },
-            (s, p) -> {
-                if (!DEB_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    throw new IllegalArgumentException(new ConfigException(
-                            MessageFormat.format(I18N.getString(
-                            "error.invalid-value-for-package-name"), s),
-                            I18N.getString(
-                            "error.invalid-value-for-package-name.advice")));
-                }
-
-                return s;
-            });
 
     private static final String TOOL_DPKG_DEB = "dpkg-deb";
     private static final String TOOL_DPKG = "dpkg";
     private static final String TOOL_FAKEROOT = "fakeroot";
 
-    private static final String DEB_ARCH;
-    static {
-        String debArch;
-        try {
-            debArch = Executor.of(TOOL_DPKG, "--print-architecture").saveOutput(
-                    true).executeExpectSuccess().getOutput().get(0);
-        } catch (IOException ex) {
-            debArch = null;
-        }
-        DEB_ARCH = debArch;
-    }
-
-    private static final String releaseSuffix(Map<String, ? super Object> params) {
-        return Optional.ofNullable(RELEASE.fetchFrom(params, false)).map(
-                rel -> "-" + rel).orElse("");
-    }
-
-    private static final BundlerParamInfo<String> FULL_PACKAGE_NAME =
-            new StandardBundlerParam<>(
-                    "linux.deb.fullPackageName", String.class, params -> {
-                        return PACKAGE_NAME.fetchFrom(params)
-                            + "_" + VERSION.fetchFrom(params)
-                            + releaseSuffix(params)
-                            + "_" + DEB_ARCH;
-                    }, (s, p) -> s);
-
-    private static final BundlerParamInfo<String> EMAIL =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
-            String.class,
-            params -> "Unknown",
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> MAINTAINER =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId() + ".internal",
-            String.class,
-            params -> VENDOR.fetchFrom(params) + " <"
-                    + EMAIL.fetchFrom(params) + ">",
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> SECTION =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_CATEGORY.getId(),
-            String.class,
-            params -> "misc",
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> LICENSE_TEXT =
-            new StandardBundlerParam<> (
-            "linux.deb.licenseText",
-            String.class,
-            params -> {
-                try {
-                    String licenseFile = LICENSE_FILE.fetchFrom(params);
-                    if (licenseFile != null) {
-                        return Files.readString(Path.of(licenseFile));
-                    }
-                } catch (IOException e) {
-                    Log.verbose(e);
-                }
-                return "Unknown";
-            },
-            (s, p) -> s);
-
     public LinuxDebBundler() {
-        super(PACKAGE_NAME);
+        super(LinuxFromParams.DEB_PACKAGE);
     }
 
     @Override
-    public void doValidate(Map<String, ? super Object> params)
-            throws ConfigException {
+    protected void doValidate(BuildEnv env, LinuxPackage pkg) throws ConfigException {
 
         // Show warning if license file is missing
-        if (LICENSE_FILE.fetchFrom(params) == null) {
+        if (pkg.licenseFile().isEmpty()) {
             Log.verbose(I18N.getString("message.debs-like-licenses"));
         }
     }
 
     @Override
-    protected List<ToolValidator> getToolValidators(
-            Map<String, ? super Object> params) {
+    protected List<ToolValidator> getToolValidators() {
         return Stream.of(TOOL_DPKG_DEB, TOOL_DPKG, TOOL_FAKEROOT).map(
                 ToolValidator::new).toList();
     }
 
     @Override
-    protected Path buildPackageBundle(
-            Map<String, String> replacementData,
-            Map<String, ? super Object> params, Path outputParentDir) throws
-            PackagerException, IOException {
+    protected void createConfigFiles(Map<String, String> replacementData,
+            BuildEnv env, LinuxPackage pkg) throws IOException {
+        prepareProjectConfig(replacementData, env, pkg);
+        adjustPermissionsRecursive(env.appImageDir());
+    }
 
-        prepareProjectConfig(replacementData, params);
-        adjustPermissionsRecursive(createMetaPackage(params).sourceRoot());
-        return buildDeb(params, outputParentDir);
+    @Override
+    protected Path buildPackageBundle(BuildEnv env, LinuxPackage pkg,
+            Path outputParentDir) throws PackagerException, IOException {
+        return buildDeb(env, pkg, outputParentDir);
     }
 
     private static final Pattern PACKAGE_NAME_REGEX = Pattern.compile("^(^\\S+):");
 
     @Override
-    protected void initLibProvidersLookup(
-            Map<String, ? super Object> params,
-            LibProvidersLookup libProvidersLookup) {
+    protected void initLibProvidersLookup(LibProvidersLookup libProvidersLookup) {
 
         libProvidersLookup.setPackageLookup(file -> {
             Path realPath = file.toRealPath();
@@ -264,16 +160,18 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         Set<String> archPackages = new HashSet<>();
         Set<String> otherPackages = new HashSet<>();
 
+        var debArch = LinuxPackageArch.getValue(LINUX_DEB);
+
         Executor.of(TOOL_DPKG, "-S", file.toString())
                 .saveOutput(true).executeExpectSuccess()
                 .getOutput().forEach(line -> {
                     Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);
                     if (matcher.find()) {
                         String name = matcher.group(1);
-                        if (name.endsWith(":" + DEB_ARCH)) {
+                        if (name.endsWith(":" + debArch)) {
                             // Strip arch suffix
                             name = name.substring(0,
-                                    name.length() - (DEB_ARCH.length() + 1));
+                                    name.length() - (debArch.length() + 1));
                             archPackages.add(name);
                         } else {
                             otherPackages.add(name);
@@ -288,21 +186,19 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected List<ConfigException> verifyOutputBundle(
-            Map<String, ? super Object> params, Path packageBundle) {
+    protected List<ConfigException> verifyOutputBundle(BuildEnv env, LinuxPackage pkg,
+            Path packageBundle) {
         List<ConfigException> errors = new ArrayList<>();
 
         String controlFileName = "control";
 
         List<PackageProperty> properties = List.of(
-                new PackageProperty("Package", PACKAGE_NAME.fetchFrom(params),
+                new PackageProperty("Package", pkg.packageName(),
                         "APPLICATION_PACKAGE", controlFileName),
-                new PackageProperty("Version", String.format("%s%s",
-                        VERSION.fetchFrom(params), releaseSuffix(params)),
+                new PackageProperty("Version", ((LinuxDebPackage)pkg).versionWithRelease(),
                         "APPLICATION_VERSION_WITH_RELEASE",
                         controlFileName),
-                new PackageProperty("Architecture", DEB_ARCH, "APPLICATION_ARCH",
-                        controlFileName));
+                new PackageProperty("Architecture", pkg.arch(), "APPLICATION_ARCH", controlFileName));
 
         List<String> cmdline = new ArrayList<>(List.of(TOOL_DPKG_DEB, "-f",
                 packageBundle.toString()));
@@ -397,10 +293,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
             return this;
         }
 
-        void create(Map<String, String> data, Map<String, ? super Object> params)
+        void create(Map<String, String> data, Function<String, OverridableResource> resourceFactory)
                 throws IOException {
-            createResource("template." + dstFilePath.getFileName().toString(),
-                    params)
+            resourceFactory.apply("template." + dstFilePath.getFileName().toString())
                     .setCategory(I18N.getString(comment))
                     .setSubstitutionData(data)
                     .saveToFile(dstFilePath);
@@ -414,10 +309,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         private String permissions;
     }
 
-    private void prepareProjectConfig(Map<String, String> data,
-            Map<String, ? super Object> params) throws IOException {
+    private void prepareProjectConfig(Map<String, String> data, BuildEnv env, LinuxPackage pkg) throws IOException {
 
-        Path configDir = createMetaPackage(params).sourceRoot().resolve("DEBIAN");
+        Path configDir = env.appImageDir().resolve("DEBIAN");
         List<DebianFile> debianFiles = new ArrayList<>();
         debianFiles.add(new DebianFile(
                 configDir.resolve("control"),
@@ -435,71 +329,47 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
 
-        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
-
-        if (!StandardBundlerParam.isRuntimeInstaller(params)
-                || (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/"))) {
-            debianFiles.add(new DebianFile(
-                    getConfig_CopyrightFile(params),
+        ((LinuxDebPackage)pkg).relativeCopyrightFilePath().ifPresent(copyrightFile -> {
+            debianFiles.add(new DebianFile(env.appImageDir().resolve(copyrightFile),
                     "resource.copyright-file"));
-        }
+        });
 
         for (DebianFile debianFile : debianFiles) {
-            debianFile.create(data, params);
+            debianFile.create(data, env::createResource);
         }
     }
 
     @Override
-    protected Map<String, String> createReplacementData(
-            Map<String, ? super Object> params) throws IOException {
+    protected Map<String, String> createReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        data.put("APPLICATION_MAINTAINER", MAINTAINER.fetchFrom(params));
-        data.put("APPLICATION_SECTION", SECTION.fetchFrom(params));
-        data.put("APPLICATION_COPYRIGHT", COPYRIGHT.fetchFrom(params));
-        data.put("APPLICATION_LICENSE_TEXT", LICENSE_TEXT.fetchFrom(params));
-        data.put("APPLICATION_ARCH", DEB_ARCH);
+        String licenseText = pkg.licenseFile().map(toFunction(Files::readString)).orElse("Unknown");
+
+        data.put("APPLICATION_MAINTAINER", ((LinuxDebPackage) pkg).maintainer());
+        data.put("APPLICATION_SECTION", pkg.category().orElseThrow());
+        data.put("APPLICATION_COPYRIGHT", pkg.app().copyright());
+        data.put("APPLICATION_LICENSE_TEXT", licenseText);
+        data.put("APPLICATION_ARCH", pkg.arch());
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
-                createMetaPackage(params).sourceApplicationLayout().sizeInBytes() >> 10));
-        data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(
-                ABOUT_URL.fetchFrom(params)).map(value -> "Homepage: " + value).orElse(
-                ""));
-        data.put("APPLICATION_VERSION_WITH_RELEASE", String.format("%s%s",
-                VERSION.fetchFrom(params), releaseSuffix(params)));
+                AppImageLayout.toPathGroup(pkg.packageLayout().resolveAt(
+                        env.appImageDir())).sizeInBytes() >> 10));
+        data.put("APPLICATION_HOMEPAGE", pkg.aboutURL().map(
+                value -> "Homepage: " + value).orElse(""));
+        data.put("APPLICATION_VERSION_WITH_RELEASE", ((LinuxDebPackage) pkg).versionWithRelease());
 
         return data;
     }
 
-    private Path getConfig_CopyrightFile(Map<String, ? super Object> params) {
-        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
-        final String packageName = PACKAGE_NAME.fetchFrom(params);
-
-        final Path installPath;
-        if (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/")) {
-            installPath = Path.of("/usr/share/doc/", packageName, "copyright");
-        } else {
-            installPath = Path.of(installDir, packageName, "share/doc/copyright");
-        }
-
-        return createMetaPackage(params).sourceRoot().resolve(
-                Path.of("/").relativize(installPath));
-    }
-
-    private Path buildDeb(Map<String, ? super Object> params,
-            Path outdir) throws IOException {
-        Path outFile = outdir.resolve(
-                FULL_PACKAGE_NAME.fetchFrom(params)+".deb");
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.outputting-to-location"), outFile.toAbsolutePath().toString()));
-
-        PlatformPackage thePackage = createMetaPackage(params);
+    private Path buildDeb(BuildEnv env, LinuxPackage pkg, Path outdir) throws IOException {
+        Path outFile = outdir.resolve(pkg.packageFileNameWithSuffix());
+        Log.verbose(I18N.format("message.outputting-to-location", outFile.toAbsolutePath()));
 
         List<String> cmdline = new ArrayList<>();
         cmdline.addAll(List.of(TOOL_FAKEROOT, TOOL_DPKG_DEB));
         if (Log.isVerbose()) {
             cmdline.add("--verbose");
         }
-        cmdline.addAll(List.of("-b", thePackage.sourceRoot().toString(),
+        cmdline.addAll(List.of("-b", env.appImageDir().toString(),
                 outFile.toAbsolutePath().toString()));
 
         // run dpkg
@@ -507,8 +377,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 "semop(1): encountered an error: Invalid argument").execute(
                         cmdline.toArray(String[]::new));
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.output-to-location"), outFile.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.output-to-location", outFile.toAbsolutePath()));
 
         return outFile;
     }

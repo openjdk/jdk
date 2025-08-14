@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 package com.sun.media.sound;
 
-import java.applet.AudioClip;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import javax.sound.SoundClip;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
@@ -57,8 +60,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-@SuppressWarnings("removal")
-public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
+public final class JavaSoundAudioClip implements MetaEventListener, LineListener {
 
     private long lastPlayCall = 0;
     private static final int MINIMUM_PLAY_DELAY = 30;
@@ -69,8 +71,10 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     private AutoClosingClip clip = null;
     private boolean clipLooping = false;
+    private boolean clipPlaying = false;
 
     private DataPusher datapusher = null;
+    private boolean daemonThread = false;
 
     private Sequencer sequencer = null;
     private Sequence sequence = null;
@@ -90,24 +94,37 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private static final long CLIP_THRESHOLD = 1048576;
     private static final int STREAM_BUFFER_SIZE = 1024;
 
-    public static JavaSoundAudioClip create(final URLConnection uc) {
+    public static JavaSoundAudioClip create(final File file) throws IOException {
         JavaSoundAudioClip clip = new JavaSoundAudioClip();
-        try {
-            clip.init(uc.getInputStream());
-        } catch (final Exception ignored) {
-            // AudioClip will be no-op if some exception will occurred
+        clip.daemonThread = true; // used only by javax.sound.SoundClip
+        try (FileInputStream stream = new FileInputStream(file)) {
+            clip.init(stream);
         }
         return clip;
     }
 
-    public static JavaSoundAudioClip create(final URL url) {
-        JavaSoundAudioClip clip = new JavaSoundAudioClip();
+    /* Used [only] by sun.awt.www.content.MultiMediaContentHandlers */
+    public static SoundClip create(final URLConnection uc) {
+        File tmpFile = null;
         try {
-            clip.init(url.openStream());
-        } catch (final Exception ignored) {
-            // AudioClip will be no-op if some exception will occurred
+            tmpFile = File.createTempFile("javaurl", ".aud");
+        } catch (IOException e) {
+            return null;
         }
-        return clip;
+
+        try (InputStream in = uc.getInputStream();
+             FileOutputStream out = new FileOutputStream(tmpFile)) {
+             in.transferTo(out);
+        } catch (IOException e) {
+        }
+
+        try {
+             return SoundClip.createSoundClip(tmpFile);
+        } catch (IOException e) {
+        } finally {
+            tmpFile.delete();
+        }
+        return null;
     }
 
     private void init(InputStream in) throws IOException {
@@ -128,7 +145,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 }
             }
         } catch (UnsupportedAudioFileException e) {
-            // not an audio file
             try {
                 MidiFileFormat mff = MidiSystem.getMidiFileFormat(bis);
                 success = createSequencer(bis);
@@ -138,7 +154,23 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
-    @Override
+    public synchronized boolean canPlay() {
+        return success;
+    }
+
+    public synchronized boolean isPlaying() {
+        if (!canPlay()) {
+            return false;
+        } else if (clip != null) {
+            return clipPlaying;
+        } else if (datapusher != null) {
+            return datapusher.isPlaying();
+        } else if (sequencer != null) {
+           return sequencer.isRunning();
+        }
+        return false;
+    }
+
     public synchronized void play() {
         if (!success) {
             return;
@@ -146,7 +178,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         startImpl(false);
     }
 
-    @Override
     public synchronized void loop() {
         if (!success) {
             return;
@@ -155,7 +186,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     }
 
     private synchronized void startImpl(boolean loop) {
-        // hack for some applets that call the start method very rapidly...
+        // hack for some applications that call the start method very rapidly...
         long currentTime = System.currentTimeMillis();
         long diff = currentTime - lastPlayCall;
         if (diff < MINIMUM_PLAY_DELAY) {
@@ -218,7 +249,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         }
     }
 
-    @Override
     public synchronized void stop() {
         if (!success) {
             return;
@@ -258,6 +288,16 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     @Override
     public synchronized void update(LineEvent event) {
+       if (clip != null) {
+           if (clip == event.getSource()) {
+               if (event.getType() == LineEvent.Type.START) {
+                  clipPlaying = true;
+               } else if ((event.getType() == LineEvent.Type.STOP) ||
+                          (event.getType() == LineEvent.Type.CLOSE)) {
+                  clipPlaying = false;
+               }
+           }
+       }
     }
 
     // handle MIDI track end meta events for looping
@@ -381,6 +421,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
             }
             clip = (AutoClosingClip) line;
             clip.setAutoClosing(true);
+            clip.addLineListener(this);
         } catch (Exception e) {
             if (Printer.err) e.printStackTrace();
             // fail silently
@@ -403,7 +444,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 return false;
             }
             SourceDataLine source = (SourceDataLine) AudioSystem.getLine(info);
-            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength);
+            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength, daemonThread);
         } catch (Exception e) {
             if (Printer.err) e.printStackTrace();
             // fail silently

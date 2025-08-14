@@ -121,10 +121,8 @@ public class ModINodeIdealizationTests {
     }
 
     @Test
-    @IR(applyIfPlatform = {"riscv64", "false"},
-        failOn = {IRNode.MOD_I})
-    @IR(applyIfPlatform = {"riscv64", "false"},
-        counts = {IRNode.AND_I, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_I, "2"})
+    @IR(failOn = {IRNode.MOD_I})
+    @IR(counts = {IRNode.AND_I, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_I, "2"})
     // Special optimization for the case 2^k-1 for bigger k
     public int powerOf2Minus1(int x) {
         return x % 127;

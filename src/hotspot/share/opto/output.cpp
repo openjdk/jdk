@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
@@ -35,8 +36,8 @@
 #include "memory/allocation.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -1073,8 +1074,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     assert( !method ||
             !method->is_synchronized() ||
             method->is_native() ||
-            num_mon > 0 ||
-            !GenerateSynchronizationCode,
+            num_mon > 0,
             "monitors must always exist for synchronized methods");
 
     // Build the growable array of ScopeValues for exp stack
@@ -2014,8 +2014,10 @@ void PhaseOutput::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_s
 
     // Handle implicit null exception table updates
     if (n->is_MachNullCheck()) {
-      assert(n->in(1)->as_Mach()->barrier_data() == 0,
-             "Implicit null checks on memory accesses with barriers are not yet supported");
+      MachNode* access = n->in(1)->as_Mach();
+      assert(access->barrier_data() == 0 ||
+             access->is_late_expanded_null_check_candidate(),
+             "Implicit null checks on memory accesses with barriers are only supported on nodes explicitly marked as null-check candidates");
       uint block_num = block->non_connector_successor(0)->_pre_order;
       _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
       continue;
@@ -2971,7 +2973,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
   }
 
   Node *kill = def;             // Rename 'def' to more descriptive 'kill'
-  debug_only( def = (Node*)((intptr_t)0xdeadbeef); )
+  DEBUG_ONLY( def = (Node*)((intptr_t)0xdeadbeef); )
 
   // After some number of kills there _may_ be a later def
   Node *later_def = nullptr;
@@ -3479,10 +3481,17 @@ void PhaseOutput::install_stub(const char* stub_name) {
                                                       // _code_offsets.value(CodeOffsets::Frame_Complete),
                                                       frame_size_in_words(),
                                                       oop_map_set(),
+                                                      false,
                                                       false);
-      assert(rs != nullptr && rs->is_runtime_stub(), "sanity check");
 
-      C->set_stub_entry_point(rs->entry_point());
+      if (rs == nullptr) {
+        C->record_failure("CodeCache is full");
+      } else {
+        assert(rs->is_runtime_stub(), "sanity check");
+        C->set_stub_entry_point(rs->entry_point());
+        BlobId blob_id = StubInfo::blob(C->stub_id());
+        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, blob_id);
+      }
     }
   }
 }

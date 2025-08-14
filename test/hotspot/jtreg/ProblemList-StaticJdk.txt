@@ -1,0 +1,43 @@
+# Require javac
+runtime/HiddenClasses/DefineHiddenClass.java            8346719 generic-all
+
+# Require jstack
+runtime/Thread/TestThreadDumpClassInitMonitor.java      8346719 generic-all
+runtime/Thread/TestThreadDumpSMRInfo.java               8346719 generic-all
+serviceability/tmtools/jstack/DaemonThreadTest.java     8346719 generic-all
+serviceability/tmtools/jstack/JstackThreadTest.java     8346719 generic-all
+serviceability/tmtools/jstack/SpreadLockTest.java       8346719 generic-all
+serviceability/tmtools/jstack/ThreadNamesTest.java      8346719 generic-all
+serviceability/tmtools/jstack/TraveledLockTest.java     8346719 generic-all
+serviceability/tmtools/jstack/WaitNotifyThreadTest.java 8346719 generic-all
+serviceability/tmtools/jstat/GcCapacityTest.java        8346719 generic-all
+serviceability/tmtools/jstat/GcCauseTest01.java         8346719 generic-all
+serviceability/tmtools/jstat/GcCauseTest02.java         8346719 generic-all
+serviceability/tmtools/jstat/GcCauseTest03.java         8346719 generic-all
+serviceability/tmtools/jstat/GcNewTest.java             8346719 generic-all
+serviceability/tmtools/jstat/GcTest01.java              8346719 generic-all
+serviceability/tmtools/jstat/GcTest02.java              8346719 generic-all
+
+# Require jcmd
+serviceability/HeapDump/DuplicateArrayClassesTest.java  8346719 generic-all
+serviceability/HeapDump/FieldsInInstanceTest.java       8346719 generic-all
+serviceability/attach/ConcAttachTest.java               8346719 generic-all
+serviceability/attach/RemovingUnixDomainSocketTest.java 8346719 generic-all
+serviceability/jvmti/vthread/HeapDump/VThreadInHeapDump.java#default            8346719 generic-all
+serviceability/jvmti/vthread/HeapDump/VThreadInHeapDump.java#no-vmcontinuations 8346719 generic-all
+
+# Require jhsdb
+serviceability/sa/ClhsdbCDSCore.java                    8346719 generic-all
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core       8346719 generic-all
+serviceability/sa/ClhsdbFindPC.java#xcomp-core          8346719 generic-all
+serviceability/sa/ClhsdbPmap.java#core                  8346719 generic-all
+serviceability/sa/ClhsdbPstack.java#core                8346719 generic-all
+
+# Dynamically link with JDK/VM native libraries
+gtest/GTestWrapper.java                                 8356201 generic-all
+gtest/LargePageGtests.java#use-large-pages              8356201 generic-all
+gtest/LargePageGtests.java#use-large-pages-1G           8356201 generic-all
+gtest/MetaspaceGtests.java#no-ccs                       8356201 generic-all
+gtest/NMTGtests.java#nmt-detail                         8356201 generic-all
+gtest/NMTGtests.java#nmt-off                            8356201 generic-all
+gtest/NMTGtests.java#nmt-summary                        8356201 generic-all

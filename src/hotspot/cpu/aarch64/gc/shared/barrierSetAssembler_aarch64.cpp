@@ -285,10 +285,6 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   Label local_guard;
   Label skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -361,11 +357,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ cbz(rmethod, bad_call);
 

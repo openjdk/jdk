@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
@@ -45,7 +47,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage with --module-path testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest.java
+ * @compile -Xlint:all -Werror ModulePathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest
  */
@@ -53,7 +55,7 @@ import jdk.jpackage.test.Annotations.Test;
 public final class ModulePathTest {
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {GOOD_PATH, EMPTY_DIR, NON_EXISTING_DIR},
             {EMPTY_DIR, NON_EXISTING_DIR, GOOD_PATH},
@@ -80,7 +82,7 @@ public final class ModulePathTest {
 
         Path goodModulePath = TKit.createTempDirectory("modules");
 
-        Path appBundle = HelloApp.createBundle(appDesc, goodModulePath);
+        HelloApp.createBundle(appDesc, goodModulePath);
 
         JPackageCommand cmd = new JPackageCommand()
                 .setArgumentValue("--dest", TKit.workDir().resolve("output"))
@@ -121,25 +123,22 @@ public final class ModulePathTest {
         if (withGoodPath) {
             cmd.executeAndAssertHelloAppImageCreated();
         } else {
-            final String expectedErrorMessage;
+            final CannedFormattedString expectedErrorMessage;
             if (modulePathArgs.isEmpty()) {
-                expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
+                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "ERR_MissingArgument", "--runtime-image or --module-path");
             } else {
-                expectedErrorMessage = String.format(
-                        "Failed to find %s module in module path", appDesc.moduleName());
+                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "error.no-module-in-path", appDesc.moduleName());
             }
 
-            List<String> output = cmd
-                    .saveConsoleOutput(true)
-                    .execute(1)
-                    .getOutput();
-            TKit.assertTextStream(expectedErrorMessage).apply(output.stream());
+            cmd.validateOutput(expectedErrorMessage).execute(1);
         }
     }
 
     private final List<String> modulePathArgs;
 
-    private final static String GOOD_PATH = "@GoodPath@";
-    private final static String EMPTY_DIR = "@EmptyDir@";
-    private final static String NON_EXISTING_DIR = "@NonExistingDir@";
+    private static final String GOOD_PATH = "@GoodPath@";
+    private static final String EMPTY_DIR = "@EmptyDir@";
+    private static final String NON_EXISTING_DIR = "@NonExistingDir@";
 }

@@ -30,6 +30,7 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 
 
 // Implementation of StubCodeDesc
@@ -68,6 +69,15 @@ void StubCodeDesc::print() const { print_on(tty); }
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
   _masm = new MacroAssembler(code);
+  _blob_id = BlobId::NO_BLOBID;
+  _print_code = PrintStubCode || print_code;
+}
+
+StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, BlobId blob_id, bool print_code) {
+  assert(StubInfo::is_stubgen(blob_id),
+         "not a stubgen blob %s", StubInfo::name(blob_id));
+  _masm = new MacroAssembler(code);
+  _blob_id = blob_id;
   _print_code = PrintStubCode || print_code;
 }
 
@@ -110,6 +120,11 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   }
 }
 
+#ifdef ASSERT
+void StubCodeGenerator::verify_stub(StubId stub_id) {
+  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
+}
+#endif
 
 // Implementation of CodeMark
 
@@ -119,6 +134,12 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   _cgen->stub_prolog(_cdesc);
   // define the stub's beginning (= entry point) to be after the prolog:
   _cdesc->set_begin(_cgen->assembler()->pc());
+}
+
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
+#ifdef ASSERT
+  cgen->verify_stub(stub_id);
+#endif
 }
 
 StubCodeMark::~StubCodeMark() {

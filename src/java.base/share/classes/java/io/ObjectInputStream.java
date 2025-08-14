@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,14 +255,6 @@ public class ObjectInputStream
     private static final Object unsharedMarker = new Object();
 
     private static class Caches {
-        /** cache of subclass security audit results */
-        static final ClassValue<Boolean> subclassAudits =
-            new ClassValue<>() {
-                @Override
-                protected Boolean computeValue(Class<?> type) {
-                    return auditSubclass(type);
-                }
-            };
 
         /**
          * Property to permit setting a filter after objects
@@ -1542,31 +1534,6 @@ public class ObjectInputStream
          *         not serializable or if the field type is incorrect
          */
         public abstract Object get(String name, Object val) throws IOException, ClassNotFoundException;
-    }
-
-    /**
-     * Performs reflective checks on given subclass to verify that it doesn't
-     * override security-sensitive non-final methods.  Returns TRUE if subclass
-     * is "safe", FALSE otherwise.
-     */
-    private static Boolean auditSubclass(Class<?> subcl) {
-        for (Class<?> cl = subcl;
-             cl != ObjectInputStream.class;
-             cl = cl.getSuperclass())
-        {
-            try {
-                cl.getDeclaredMethod(
-                    "readUnshared", (Class[]) null);
-                return Boolean.FALSE;
-            } catch (NoSuchMethodException ex) {
-            }
-            try {
-                cl.getDeclaredMethod("readFields", (Class[]) null);
-                return Boolean.FALSE;
-            } catch (NoSuchMethodException ex) {
-            }
-        }
-        return Boolean.TRUE;
     }
 
     /**

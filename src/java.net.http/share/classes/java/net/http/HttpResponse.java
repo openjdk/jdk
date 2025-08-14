@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLSession;
 import jdk.internal.net.http.BufferingSubscriber;
+import jdk.internal.net.http.LimitingSubscriber;
 import jdk.internal.net.http.LineSubscriberAdapter;
 import jdk.internal.net.http.ResponseBodyHandlers.FileDownloadBodyHandler;
 import jdk.internal.net.http.ResponseBodyHandlers.PathBodyHandler;
@@ -97,6 +98,28 @@ public interface HttpResponse<T> {
      * @return the response code
      */
     public int statusCode();
+
+    /**
+     * {@return if present, a label identifying the connection on which the
+     * response was received}
+     * <p>
+     * The format of the string is opaque, but the value is fixed and unique
+     * for any connection in the scope of the associated {@link HttpClient}
+     * instance.
+     *
+     * @implSpec
+     * The default implementation of this method returns
+     * {@link Optional#empty() Optional.empty()}.
+     *
+     * @implNote
+     * Instances of {@code HttpResponse} returned by the JDK built-in
+     * implementation of {@code HttpClient} always return a non-empty value.
+     *
+     * @since 25
+     */
+    default Optional<String> connectionLabel() {
+        return Optional.empty();
+    }
 
     /**
      * Returns the {@link HttpRequest} corresponding to this response.
@@ -382,7 +405,7 @@ public interface HttpResponse<T> {
          * BodySubscribers#fromLineSubscriber(Subscriber, Function, Charset, String)
          * BodySubscribers.fromLineSubscriber(subscriber, s -> null, charset, null)},
          * with the given {@code subscriber}.
-         * The {@link Charset charset} used to decode the response body bytes is
+         * The {@linkplain Charset charset} used to decode the response body bytes is
          * obtained from the HTTP response headers as specified by {@link #ofString()},
          * and lines are delimited in the manner of {@link BufferedReader#readLine()}.
          *
@@ -428,7 +451,7 @@ public interface HttpResponse<T> {
          * BodySubscribers#fromLineSubscriber(Subscriber, Function, Charset, String)
          * BodySubscribers.fromLineSubscriber(subscriber, finisher, charset, lineSeparator)},
          * with the given {@code subscriber}, {@code finisher} function, and line separator.
-         * The {@link Charset charset} used to decode the response body bytes is
+         * The {@linkplain Charset charset} used to decode the response body bytes is
          * obtained from the HTTP response headers as specified by {@link #ofString()}.
          *
          * <p> The given {@code finisher} function is applied after the given
@@ -618,7 +641,7 @@ public interface HttpResponse<T> {
          * Returns a {@code BodyHandler<Stream<String>>} that returns a
          * {@link BodySubscriber BodySubscriber}{@code <Stream<String>>} obtained
          * from {@link BodySubscribers#ofLines(Charset) BodySubscribers.ofLines(charset)}.
-         * The {@link Charset charset} used to decode the response body bytes is
+         * The {@linkplain Charset charset} used to decode the response body bytes is
          * obtained from the HTTP response headers as specified by {@link #ofString()},
          * and lines are delimited in the manner of {@link BufferedReader#readLine()}.
          *
@@ -714,7 +737,7 @@ public interface HttpResponse<T> {
          * To ensure that all resources associated with the
          * corresponding exchange are properly released the caller must
          * subscribe to the publisher and conform to the rules outlined in
-         * {@linkplain BodySubscribers#ofPublisher()}
+         * {@link BodySubscribers#ofPublisher()}
          *
          * @return a {@linkplain HttpClient##streaming publishing} response body handler
          *
@@ -748,6 +771,33 @@ public interface HttpResponse<T> {
                      .buffering(downstreamHandler.apply(responseInfo),
                                 bufferSize);
          }
+
+        /**
+         * {@return a {@code BodyHandler} that limits the number of body bytes
+         * that are delivered to the given {@code downstreamHandler}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamHandler the downstream handler to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodyHandler<T> limiting(BodyHandler<T> downstreamHandler, long capacity) {
+            Objects.requireNonNull(downstreamHandler, "downstreamHandler");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return responseInfo -> {
+                BodySubscriber<T> downstreamSubscriber = downstreamHandler.apply(responseInfo);
+                return BodySubscribers.limiting(downstreamSubscriber, capacity);
+            };
+        }
+
     }
 
     /**
@@ -868,7 +918,7 @@ public interface HttpResponse<T> {
      * BodySubscriber} should ensure to {@linkplain Flow.Subscription#request
      * request} more data until one of {@link #onComplete() onComplete} or
      * {@link #onError(Throwable) onError} are signalled, or {@link
-     * Flow.Subscription#request cancel} its {@linkplain
+     * Flow.Subscription#cancel cancel} its {@linkplain
      * #onSubscribe(Flow.Subscription) subscription} if unable or unwilling to
      * do so. Calling {@code cancel} before exhausting the response body data
      * may cause the underlying HTTP connection to be closed and prevent it
@@ -888,7 +938,7 @@ public interface HttpResponse<T> {
          * Returns a {@code CompletionStage} which when completed will return
          * the response body object. This method can be called at any time
          * relative to the other {@link Flow.Subscriber} methods and is invoked
-         * using the client's {@link HttpClient#executor() executor}.
+         * using the client's {@linkplain HttpClient#executor() executor}.
          *
          * @return a CompletionStage for the response body
          */
@@ -934,7 +984,7 @@ public interface HttpResponse<T> {
      *  the resources associated with the request and the client to be {@linkplain
      *  HttpClient##closing eventually reclaimed}.
      *  Some other implementations are {@linkplain  Publisher publishers} which need to be
-     *  {@link BodySubscribers#ofPublisher() subscribed} in order for their associated
+     *  {@linkplain BodySubscribers#ofPublisher() subscribed} in order for their associated
      *  resources to be released and for the associated request to {@linkplain
      *  HttpClient##closing run to completion}.
      *
@@ -1131,7 +1181,7 @@ public interface HttpResponse<T> {
          * Returns a {@code BodySubscriber} which provides the incoming body
          * data to the provided Consumer of {@code Optional<byte[]>}. Each
          * call to {@link Consumer#accept(java.lang.Object) Consumer.accept()}
-         * will contain a non empty {@code Optional}, except for the final
+         * will contain a non-empty {@code Optional}, except for the final
          * invocation after all body data has been read, when the {@code
          * Optional} will be empty.
          *
@@ -1350,5 +1400,30 @@ public interface HttpResponse<T> {
         {
             return new ResponseSubscribers.MappingSubscriber<>(upstream, mapper);
         }
+
+        /**
+         * {@return a {@code BodySubscriber} that limits the number of body
+         * bytes that are delivered to the given {@code downstreamSubscriber}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamSubscriber the downstream subscriber to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodySubscriber<T> limiting(BodySubscriber<T> downstreamSubscriber, long capacity) {
+            Objects.requireNonNull(downstreamSubscriber, "downstreamSubscriber");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return new LimitingSubscriber<>(downstreamSubscriber, capacity);
+        }
+
     }
+
 }

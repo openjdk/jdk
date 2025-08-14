@@ -33,13 +33,13 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
@@ -211,19 +211,6 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
       ShouldNotReachHere();
   }
 }
-
-class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
-private:
-  SATBMarkQueueSet& _qset;
-public:
-  ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
-    HandshakeClosure("Shenandoah Flush SATB"),
-    _qset(qset) {}
-
-  void do_thread(Thread* thread) {
-    _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-  }
-};
 
 void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();

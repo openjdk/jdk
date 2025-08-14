@@ -28,6 +28,17 @@
 
 #ifdef ASSERT
 
+#ifdef _WINDOWS
+
+#include <windows.h>
+
+TEST_VM_ASSERT_MSG(vmErrorTest, fatalWithError,
+                   "fatal error: GetLastError should be 6 - actually: 6") {
+  SetLastError(6);
+  fatal("GetLastError should be 6 - actually: %lu", GetLastError());
+}
+#endif // WINDOWS
+
 TEST_VM_ASSERT_MSG(vmErrorTest, resourceMark,
                   "fatal error: memory leak: allocating without ResourceMark") {
 

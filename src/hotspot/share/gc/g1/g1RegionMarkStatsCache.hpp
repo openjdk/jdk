@@ -33,20 +33,26 @@
 
 // Per-Region statistics gathered during marking.
 //
-// This includes
+// These include:
 // * the number of live words gathered during marking for the area from bottom
-// to tams. This is an exact measure.
-// The code corrects later for the live data between tams and top.
+//   to tams. This is an exact measure. The code corrects later for the live data
+//   between tams and top.
+// * the number of incoming references found during marking. This is an approximate
+//   value because we do not mark through all objects.
 struct G1RegionMarkStats {
   size_t _live_words;
+  size_t _incoming_refs;
 
   // Clear all members.
   void clear() {
     _live_words = 0;
+    _incoming_refs = 0;
   }
-  // Clear all members after a marking overflow. Nothing to do as the live words
-  // are updated by the atomic mark. We do not remark objects after overflow.
+  // Clear all members after a marking overflow. Only needs to clear the number of
+  // incoming references as all objects will be rescanned, while the live words are
+  // gathered whenever a thread can mark an object, which is synchronized.
   void clear_during_overflow() {
+    _incoming_refs = 0;
   }
 };
 
@@ -105,6 +111,11 @@ public:
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
     cur->_stats._live_words += live_words;
+  }
+
+  void inc_incoming_refs(uint region_idx) {
+    G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
+    cur->_stats._incoming_refs++;
   }
 
   void reset(uint region_idx) {

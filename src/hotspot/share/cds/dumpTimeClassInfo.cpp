@@ -66,14 +66,14 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
 
   GrowableArray<char>* vcflags_array = _verifier_constraint_flags;
   char c = 0;
-  c |= from_field_is_protected ? SystemDictionaryShared::FROM_FIELD_IS_PROTECTED : 0;
-  c |= from_is_array           ? SystemDictionaryShared::FROM_IS_ARRAY           : 0;
-  c |= from_is_object          ? SystemDictionaryShared::FROM_IS_OBJECT          : 0;
+  c |= from_field_is_protected ? RunTimeClassInfo::FROM_FIELD_IS_PROTECTED : 0;
+  c |= from_is_array           ? RunTimeClassInfo::FROM_IS_ARRAY           : 0;
+  c |= from_is_object          ? RunTimeClassInfo::FROM_IS_OBJECT          : 0;
   vcflags_array->append(c);
 
-  if (log_is_enabled(Trace, cds, verification)) {
+  if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(cds, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
+    log_trace(aot, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
                                  k->external_name(), from_name->as_klass_external_name(),
                                  name->as_klass_external_name(), c, vc_array->length(), vcflags_array->length());
   }
@@ -142,7 +142,7 @@ bool DumpTimeClassInfo::is_builtin() {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
-  assert(!k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
   bool created;
   DumpTimeClassInfo* p = put_if_absent(k, &created);
   assert(created, "must not exist in table");
@@ -151,7 +151,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  assert(!k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");

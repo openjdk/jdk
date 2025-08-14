@@ -208,6 +208,19 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+#if (FP_REG_NUM == 11)
+  assert(Rbcp == R7, "expected FP=R11, Rbcp=R7");
+  return (intptr_t*)uc->uc_mcontext.arm_r7;
+#else
+  assert(Rbcp == R11, "expected FP=R7, Rbcp=R11");
+  return (intptr_t*)uc->uc_mcontext.arm_fp; // r11
+#endif
+}
+
 frame os::get_sender_for_C_frame(frame* fr) {
 #ifdef __thumb__
   // We can't reliably get anything from a thumb C frame.
@@ -354,11 +367,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::continuation_for_implicit_exception(
               thread, pc, SharedRuntime::IMPLICIT_NULL);
         }
-      } else if (sig == SIGILL &&
-                 *(int*)pc ==
-                     NativeInstruction::not_entrant_illegal_instruction) {
-        // Not entrant
-        stub = SharedRuntime::get_handle_wrong_method_stub();
       }
     } else if ((thread->thread_state() == _thread_in_vm ||
                 thread->thread_state() == _thread_in_native) &&
@@ -537,7 +545,7 @@ int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t ex
 
 int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
-  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::atomic_load_long_entry());
+  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::Arm::atomic_load_long_entry());
 
   if (func != nullptr) {
     _load_long_func = func;
@@ -551,7 +559,7 @@ int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
 
 void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
-  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::atomic_store_long_entry());
+  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::Arm::atomic_store_long_entry());
 
   if (func != nullptr) {
     _store_long_func = func;

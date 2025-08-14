@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,22 +118,23 @@ public class NameFormat {
         testName("CN=Before\\0dAfter,DC=example,DC=net", "toString",
                 "CN=Before\\0DAfter, DC=example, DC=net", 22);
         testName("CN=Before\\0dAfter,DC=example,DC=net", "RFC1779",
-                "CN=Before\\0DAfter, " +
+                "CN=Before\r" + "After, " +
                 "OID.0.9.2342.19200300.100.1.25=example, " +
                 "OID.0.9.2342.19200300.100.1.25=net", 23);
+
         testName("CN=Before\\0dAfter,DC=example,DC=net", "RFC2253",
-                "CN=Before\\0DAfter,DC=example,DC=net", 24);
+                "CN=Before\r" + "After,DC=example,DC=net", 24);
         testName("CN=Before\\0dAfter,DC=example,DC=net", "CANONICAL",
-                "cn=before\\0dafter,dc=#16076578616d706c65,dc=#16036e6574", 25);
+                "cn=before\r" + "after,dc=#16076578616d706c65,dc=#16036e6574", 25);
 
         testName("CN=Lu\\C4\\8Di\\C4\\87", "toString",
                 "CN=Lu\\C4\\8Di\\C4\\87", 26);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "RFC1779",
-                "CN=Lu\\C4\\8Di\\C4\\87", 27);
+                "CN=Lu\u010di\u0107", 27);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "RFC2253",
-                "CN=Lu\\C4\\8Di\\C4\\87", 28);
+                "CN=Lu\u010di\u0107", 28);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "CANONICAL",
-                "cn=lu\\c4\\8di\\c4\\87", 29);
+                "cn=luc\u030cic\u0301", 29);
 
         try {
             p = new X500Principal("cn=\\gg");

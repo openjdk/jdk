@@ -27,3 +27,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
+
+address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }

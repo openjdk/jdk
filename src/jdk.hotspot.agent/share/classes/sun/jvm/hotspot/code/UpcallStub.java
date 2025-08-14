@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class UpcallStub extends RuntimeBlob {
+public class UpcallStub extends CodeBlob {
 
   private static CIntegerField frameDataOffsetField;
   private static AddressField lastJavaFPField;
@@ -83,10 +83,6 @@ public class UpcallStub extends RuntimeBlob {
 
   public Address getLastJavaPC(Frame frame) {
     return lastJavaPCField.getValue(getJavaFrameAnchor(frame));
-  }
-
-  public boolean isUpcallStub() {
-    return true;
   }
 
   public static class FrameData extends VMObject {

@@ -74,7 +74,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _the_class_for_redefinition_verification = nullptr;
   _scratch_class_for_redefinition_verification = nullptr;
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
-  _saved_interp_only_mode = 0;
+  _saved_interp_only_mode = false;
 
   // JVMTI ForceEarlyReturn support
   _pending_step_for_earlyret = false;
@@ -102,7 +102,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   {
     // The thread state list manipulation code must not have safepoints.
     // See periodic_clean_up().
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     _prev = nullptr;
     _next = _head;
@@ -123,7 +123,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
     }
-    thread->set_interp_only_mode(0);
+    thread->set_interp_only_mode(false);
   }
 }
 
@@ -154,7 +154,7 @@ JvmtiThreadState::~JvmtiThreadState()   {
   {
     // The thread state list manipulation code must not have safepoints.
     // See periodic_clean_up().
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     if (_prev == nullptr) {
       assert(_head == this, "sanity check");
@@ -254,7 +254,10 @@ JvmtiVTMSTransitionDisabler::print_info() {
 // disable VTMS transitions for one virtual thread
 // disable VTMS transitions for all threads if thread is nullptr or a platform thread
 JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
-  : _is_SR(false), _thread(thread)
+  : _is_SR(false),
+    _is_virtual(false),
+    _is_self(false),
+    _thread(thread)
 {
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
@@ -262,21 +265,26 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
+  JavaThread* current = JavaThread::current();
+  oop thread_oop = JNIHandles::resolve_external_guard(thread);
+  _is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+
+  if (thread == nullptr ||
+      (!_is_virtual && thread_oop == current->threadObj()) ||
+      (_is_virtual && thread_oop == current->vthread())) {
+    _is_self = true;
+    return; // no need for current thread to disable and enable transitions for itself
+  }
   if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
   }
-  oop thread_oop = JNIHandles::resolve_external_guard(thread);
 
   // Target can be virtual or platform thread.
   // If target is a platform thread then we have to disable VTMS transitions for all threads.
   // It is by several reasons:
   // - carrier threads can mount virtual threads which may cause incorrect behavior
   // - there is no mechanism to disable transitions for a specific carrier thread yet
-  if (!java_lang_VirtualThread::is_instance(thread_oop)) {
-    _thread = nullptr; // target is a platform thread, switch to disabling VTMS transitions for all threads
-  }
-
-  if (_thread != nullptr) {
+  if (_is_virtual) {
     VTMS_transition_disable_for_one(); // disable VTMS transitions for one virtual thread
   } else {
     VTMS_transition_disable_for_all(); // disable VTMS transitions for all virtual threads
@@ -285,7 +293,10 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
 
 // disable VTMS transitions for all virtual threads
 JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
-  : _is_SR(is_SR), _thread(nullptr)
+  : _is_SR(is_SR),
+    _is_virtual(false),
+    _is_self(false),
+    _thread(nullptr)
 {
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
@@ -309,7 +320,10 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  if (_thread != nullptr) {
+  if (_is_self) {
+    return; // no need for current thread to disable and enable transitions for itself
+  }
+  if (_is_virtual) {
     VTMS_transition_enable_for_one(); // enable VTMS transitions for one virtual thread
   } else {
     VTMS_transition_enable_for_all(); // enable VTMS transitions for all virtual threads
@@ -684,7 +698,7 @@ JvmtiVTSuspender::_not_suspended_list = new VirtualThreadList();
 
 void
 JvmtiVTSuspender::register_all_vthreads_suspend() {
-  MonitorLocker ml(JvmtiVTMSTransition_lock);
+  MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
 
   _SR_mode = SR_all;
   _suspended_list->invalidate();
@@ -693,7 +707,7 @@ JvmtiVTSuspender::register_all_vthreads_suspend() {
 
 void
 JvmtiVTSuspender::register_all_vthreads_resume() {
-  MonitorLocker ml(JvmtiVTMSTransition_lock);
+  MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
 
   _SR_mode = SR_none;
   _suspended_list->invalidate();
@@ -703,7 +717,7 @@ JvmtiVTSuspender::register_all_vthreads_resume() {
 void
 JvmtiVTSuspender::register_vthread_suspend(oop vt) {
   int64_t id = java_lang_Thread::thread_id(vt);
-  MonitorLocker ml(JvmtiVTMSTransition_lock);
+  MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
 
   if (_SR_mode == SR_all) {
     assert(_not_suspended_list->contains(id),
@@ -720,7 +734,7 @@ JvmtiVTSuspender::register_vthread_suspend(oop vt) {
 void
 JvmtiVTSuspender::register_vthread_resume(oop vt) {
   int64_t id = java_lang_Thread::thread_id(vt);
-  MonitorLocker ml(JvmtiVTMSTransition_lock);
+  MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
 
   if (_SR_mode == SR_all) {
     assert(!_not_suspended_list->contains(id),
@@ -759,7 +773,7 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
   // add this environment thread state to the end of the list (order is important)
   {
     // list deallocation (which occurs at a safepoint) cannot occur simultaneously
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     JvmtiEnvThreadStateIterator it(this);
     JvmtiEnvThreadState* previous_ets = nullptr;
@@ -776,8 +790,9 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
   _seen_interp_only_mode = true;
-  _thread->increment_interp_only_mode();
+  _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }
 
@@ -785,9 +800,9 @@ void JvmtiThreadState::leave_interp_only_mode() {
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
   if (_thread == nullptr) {
     // Unmounted virtual thread updates the saved value.
-    --_saved_interp_only_mode;
+    _saved_interp_only_mode = false;
   } else {
-    _thread->decrement_interp_only_mode();
+    _thread->set_interp_only_mode(false);
   }
 }
 
@@ -1024,6 +1039,13 @@ void JvmtiThreadState::run_nmethod_entry_barriers() {
 
 oop JvmtiThreadState::get_thread_oop() {
   return _thread_oop_h.resolve();
+}
+
+void JvmtiThreadState::update_thread_oop_during_vm_start() {
+  assert(_thread->threadObj() != nullptr, "santity check");
+  if (get_thread_oop() == nullptr) {
+    _thread_oop_h.replace(_thread->threadObj());
+  }
 }
 
 void JvmtiThreadState::set_thread(JavaThread* thread) {

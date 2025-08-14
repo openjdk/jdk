@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -2146,42 +2145,54 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         return getRowSelectionAllowed() && getColumnSelectionAllowed();
     }
 
+    private void selectRows(int rowCount) {
+        ListSelectionModel selModel = selectionModel;
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
+
+        setRowSelectionInterval(0, rowCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
+    private void selectColumns(int columnCount) {
+        ListSelectionModel selModel = columnModel.getSelectionModel();
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
+
+        setColumnSelectionInterval(0, columnCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
     /**
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
+        int rowCount = getRowCount();
+        int columnCount = getColumnCount();
+
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
         }
-        if (getRowCount() > 0 && getColumnCount() > 0) {
-            int oldLead;
-            int oldAnchor;
-            ListSelectionModel selModel;
-
-            selModel = selectionModel;
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
-
-            setRowSelectionInterval(0, getRowCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
-
-            selModel = columnModel.getSelectionModel();
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
-
-            setColumnSelectionInterval(0, getColumnCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
+        if (rowCount > 0 && columnCount > 0) {
+            selectRows(rowCount);
+            selectColumns(columnCount);
+        } else if (rowCount > 0 && columnCount == 0
+                   && getRowSelectionAllowed()) {
+            selectRows(rowCount);
+        } else if (columnCount > 0  && rowCount == 0
+                   && getColumnSelectionAllowed()) {
+            selectColumns(columnCount);
         }
     }
 
@@ -6110,7 +6121,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.focusManager = fm;
         }
 
-        @SuppressWarnings("removal")
         public void propertyChange(PropertyChangeEvent ev) {
             if (!isEditing() || getClientProperty("terminateEditOnFocusLost") != Boolean.TRUE) {
                 return;
@@ -6121,8 +6131,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (c == JTable.this) {
                     // focus remains inside the table
                     return;
-                } else if ((c instanceof Window) ||
-                           (c instanceof Applet && c.getParent() == null)) {
+                } else if (c instanceof Window) {
                     if (c == SwingUtilities.getRoot(JTable.this)) {
                         if (!getCellEditor().stopCellEditing()) {
                             getCellEditor().cancelCellEditing();

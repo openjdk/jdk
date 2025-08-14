@@ -35,7 +35,6 @@ import jdk.test.lib.Utils;
 /**
  * @test TestStartStopRecording
  *
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recorder.TestStartStopRecording

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4640234 4946057 4938151 4873691 5023181 8347841
+ * @bug 4640234 4946057 4938151 4873691 5023181 8347841 8347955
  * @summary Verifies the translation of time zone names, this test will catch
  *          presence of country name for english and selected locales for all
  *          ISO country codes.
@@ -43,7 +43,6 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Enumeration;
@@ -86,7 +85,7 @@ public class Bug4640234  {
             StringBuffer errors = new StringBuffer("");
             StringBuffer warnings = new StringBuffer("");
 
-            String[] timezones = Arrays.stream(TimeZone.getAvailableIDs())
+            String[] timezones = TimeZone.availableIDs()
                     .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                     .toArray(String[]::new);
             String[] countries = locEn.getISOCountries();

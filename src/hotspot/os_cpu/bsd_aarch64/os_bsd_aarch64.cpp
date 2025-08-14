@@ -49,8 +49,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -81,14 +83,12 @@
 #endif
 
 #define SPELL_REG_SP "sp"
-#define SPELL_REG_FP "fp"
 
 #ifdef __APPLE__
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
 // 10.5 UNIX03 member name prefixes
 #define DU3_PREFIX(s, m) __ ## s.__ ## m
-#endif
 
 #define context_x    uc_mcontext->DU3_PREFIX(ss,x)
 #define context_fp   uc_mcontext->DU3_PREFIX(ss,fp)
@@ -97,6 +97,33 @@
 #define context_pc   uc_mcontext->DU3_PREFIX(ss,pc)
 #define context_cpsr uc_mcontext->DU3_PREFIX(ss,cpsr)
 #define context_esr  uc_mcontext->DU3_PREFIX(es,esr)
+#endif
+
+#ifdef __FreeBSD__
+# define context_x  uc_mcontext.mc_gpregs.gp_x
+# define context_fp context_x[REG_FP]
+# define context_lr uc_mcontext.mc_gpregs.gp_lr
+# define context_sp uc_mcontext.mc_gpregs.gp_sp
+# define context_pc uc_mcontext.mc_gpregs.gp_elr
+#endif
+
+#ifdef __NetBSD__
+# define context_x  uc_mcontext.__gregs
+# define context_fp uc_mcontext.__gregs[_REG_FP]
+# define context_lr uc_mcontext.__gregs[_REG_LR]
+# define context_sp uc_mcontext.__gregs[_REG_SP]
+# define context_pc uc_mcontext.__gregs[_REG_ELR]
+#endif
+
+#ifdef __OpenBSD__
+# define context_x  sc_x
+# define context_fp sc_x[REG_FP]
+# define context_lr sc_lr
+# define context_sp sc_sp
+# define context_pc sc_elr
+#endif
+
+#define REG_BCP context_x[22]
 
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
@@ -179,6 +206,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
+}
+
 // JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.
 frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
@@ -239,14 +273,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
-      // Handle signal from NativeJump::patch_verified_entry().
-      if ((sig == SIGILL)
-          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-      } else if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
+      if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
 #if defined(__APPLE__)
       // 32-bit Darwin reports a SIGBUS for nearly all memory access exceptions.
@@ -271,11 +298,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in r0
+        const char *detail_msg = (const char *)(uc->uc_mcontext->DU3_PREFIX(ss,x[0]));
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -491,49 +515,43 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+#ifdef __APPLE__
 void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
+#endif
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;
 }
 
 extern "C" {
-  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
     // We should return 1 if SpinPause is implemented, and since there
-    // will be a sequence of 11 instructions for NONE and YIELD and 12
-    // instructions for NOP and ISB, SpinPause will always return 1.
-    uint64_t br_dst;
-    const int instructions_per_case = 2;
-    int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
-
-    assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
-           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
-    assert(-1 == SpinWait::NONE,  "must be");
-    assert( 0 == SpinWait::NOP,   "must be");
-    assert( 1 == SpinWait::ISB,   "must be");
-    assert( 2 == SpinWait::YIELD, "must be");
-
-    asm volatile(
-        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
-                                      // to entry for case SpinWait::NOP
-        "  add  %[d], %[d], %[o]  \n"
-        "  br   %[d]              \n"
-        "  b    1f                \n" // case SpinWait::NONE  (-1)
-        "  nop                    \n" // padding
-        "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    1f                \n"
-        "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    1f                \n"
-        "  yield                  \n" // case SpinWait::YIELD ( 2)
-        "1:        \n"
-        : [d]"=&r"(br_dst)
-        : [o]"r"(off)
-        : "memory");
+    // will be always a sequence of instructions, SpinPause will always return 1.
+    switch (VM_Version::spin_wait_desc().inst()) {
+    case SpinWait::NONE:
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
+      break;
+    case SpinWait::ISB:
+      asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
+      break;
+    case SpinWait::SB:
+      assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+      asm volatile(".inst 0xd50330ff" : : : "memory");
+      break;
+#ifdef ASSERT
+    default:
+      ShouldNotReachHere();
+#endif
+    }
     return 1;
   }
 

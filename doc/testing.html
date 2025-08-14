@@ -72,6 +72,11 @@ id="toc-notes-for-specific-tests">Notes for Specific Tests</a>
 <li><a href="#non-us-locale" id="toc-non-us-locale">Non-US
 locale</a></li>
 <li><a href="#pkcs11-tests" id="toc-pkcs11-tests">PKCS11 Tests</a></li>
+</ul></li>
+<li><a href="#testing-ahead-of-time-optimizations"
+id="toc-testing-ahead-of-time-optimizations">### Testing Ahead-of-time
+Optimizations</a>
+<ul>
 <li><a href="#testing-with-alternative-security-providers"
 id="toc-testing-with-alternative-security-providers">Testing with
 alternative security providers</a></li>
@@ -411,6 +416,13 @@ instrumentation
 special target <code>jcov-test</code> instead of <code>test</code>, e.g.
 <code>make jcov-test TEST=jdk_lang</code>. This will make sure the JCov
 image is built, and that JCov reporting is enabled.</p>
+<p>To include JCov coverage for just a subset of all modules, you can
+use the <code>--with-jcov-modules</code> arguments to
+<code>configure</code>, e.g.
+<code>--with-jcov-modules=jdk.compiler,java.desktop</code>.</p>
+<p>For more fine-grained control, you can pass arbitrary filters to JCov
+using <code>--with-jcov-filters</code>, and you can specify a specific
+JDK to instrument using <code>--with-jcov-input-jdk</code>.</p>
 <p>The JCov report is stored in
 <code>build/$BUILD/test-results/jcov-output/report</code>.</p>
 <p>Please note that running with JCov reporting can be very memory
@@ -589,6 +601,37 @@ element of the appropriate <code>@Artifact</code> class. (See
     JTREG=&quot;JAVA_OPTIONS=-Djdk.test.lib.artifacts.nsslib-linux_aarch64=/path/to/NSS-libs&quot;</code></pre>
 <p>For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.</p>
+<h2 id="testing-ahead-of-time-optimizations">### Testing Ahead-of-time
+Optimizations</h2>
+<p>One way to improve test coverage of ahead-of-time (AOT) optimizations
+in the JDK is to run existing jtreg test cases in a special "AOT_JDK"
+mode. Example:</p>
+<pre><code>$ make test JTREG=&quot;AOT_JDK=onestep&quot; \
+    TEST=open/test/hotspot/jtreg/runtime/invokedynamic</code></pre>
+<p>In this testing mode, we first perform an AOT training run (see
+https://openjdk.org/jeps/483) of a special test program (<a
+href="../test/setup_aot/TestSetupAOT.java">test/setup_aot/TestSetupAOT.java</a>)
+that accesses about 5,0000 classes in the JDK core libraries.
+Optimization artifacts for these classes (such as pre-linked lambda
+expressions, execution profiles, and pre-generated native code) are
+stored into an AOT cache file, which will be used by all the JVMs
+launched by the selected jtreg test cases.</p>
+<p>When the jtreg tests call into the core libraries classes that are in
+the AOT cache, we will be able to test the AOT optimizations that were
+used on those classes.</p>
+<p>Please note that not all existing jtreg test cases can be executed
+with the AOT_JDK mode. See <a
+href="../test/hotspot/jtreg/ProblemList-AotJdk.txt">test/hotspot/jtreg/ProblemList-AotJdk.txt</a>
+and <a
+href="../test/jdk/ProblemList-AotJdk.txt">test/jdk/ProblemList-AotJdk.txt</a>.</p>
+<p>Also, test cases that were written specifically to test AOT, such as
+the tests under <a
+href="../test/hotspot/jtreg/runtime/cds/">test/hotspot/jtreg/runtime/cds</a>,
+cannot be executed with the AOT_JDK mode.</p>
+<p>Valid values for <code>AOT_JDK</code> are <code>onestep</code> and
+<code>twostep</code>. These control how the AOT cache is generated. See
+https://openjdk.org/jeps/514 for details. All other values are
+ignored.</p>
 <h3 id="testing-with-alternative-security-providers">Testing with
 alternative security providers</h3>
 <p>Some security tests use a hardcoded provider for

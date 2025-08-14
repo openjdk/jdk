@@ -30,12 +30,11 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -791,7 +790,16 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  assert(bol->Opcode() == Op_Bool, "Unexpected node");
+  if (bol->is_OpaqueMultiversioning()) {
+    assert(bol->as_OpaqueMultiversioning()->is_useless(), "Must be useless, i.e. fast main loop has already disappeared.");
+    // Ignore multiversion_if that just lost its loops. The OpaqueMultiversioning is marked useless,
+    // and will make the multiversion_if constant fold in the next IGVN round.
+    return nullptr;
+  }
+  if (!bol->is_Bool()) {
+    assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
+    return nullptr;
+  }
   int cmp_op = bol->in(1)->Opcode();
   if (cmp_op == Op_SubTypeCheck) { // SubTypeCheck expansion expects an IfNode
     return nullptr;
@@ -834,10 +842,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == nullptr || _igvn.type(phi) == Type::TOP) {
+    if (phi == nullptr || _igvn.type(phi) == Type::TOP || !CMoveNode::supported(_igvn.type(phi))) {
       break;
     }
-    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     wq.push(phi);
     while (wq.size() > 0) {
@@ -845,12 +852,6 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       for (uint j = 1; j < n->req(); j++) {
         Node* m = n->in(j);
         if (m != nullptr && !is_dominator(get_ctrl(m), cmov_ctrl)) {
-#ifndef PRODUCT
-          if (PrintOpto && VerifyLoopOptimizations) {
-            tty->print("  speculate: ");
-            m->dump();
-          }
-#endif
           set_ctrl(m, cmov_ctrl);
           wq.push(m);
         }
@@ -1087,25 +1088,6 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
   }
 }
 
-// Split some nodes that take a counted loop phi as input at a counted
-// loop can cause vectorization of some expressions to fail
-bool PhaseIdealLoop::split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk) {
-  if (!n_blk->is_CountedLoop()) {
-    return false;
-  }
-
-  int opcode = n->Opcode();
-
-  if (opcode != Op_AndI &&
-      opcode != Op_MulI &&
-      opcode != Op_RotateRight &&
-      opcode != Op_RShiftI) {
-    return false;
-  }
-
-  return n->in(1) == n_blk->as_BaseCountedLoop()->phi();
-}
-
 //------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
@@ -1189,10 +1171,6 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
   if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
       n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
-    return n;
-  }
-
-  if (split_thru_phi_could_prevent_vectorization(n, n_blk)) {
     return n;
   }
 
@@ -1482,7 +1460,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+    if (TraceLoopOpts) {
       tty->print_cr("Split-If");
     }
     do_split_if(iff);
@@ -1697,6 +1675,10 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
+
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
@@ -1706,7 +1688,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
-      !n->is_Type()) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      (KillPathsReachableByDeadTypeNode || !n->is_Type())
+      ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
@@ -3412,7 +3396,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
     if ( not_peel.test(use->_idx) &&
-         (use->is_If() || use->is_CMove() || use->is_Bool()) &&
+         (use->is_If() || use->is_CMove() || use->is_Bool() || use->is_OpaqueInitializedAssertionPredicate()) &&
          use->in(1) == n)  {
       worklist.push(use);
     }
@@ -4292,13 +4276,13 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
       assert(in->Opcode() == Op_AddI, "wrong increment code");
       Node* xphi = nullptr;
-      Node* stride = loop_iv_stride(in, loop, xphi);
+      Node* stride = loop_iv_stride(in, xphi);
 
       if (stride == nullptr) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(xphi, nullptr, head, loop);
+      PhiNode* phi = loop_iv_phi(xphi, nullptr, head);
       if (phi == nullptr ||
           (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
           (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {
@@ -4354,6 +4338,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
     }
   }
+  C->print_method(PHASE_BEFORE_DUPLICATE_LOOP_BACKEDGE, 4, head);
 
   // Collect data nodes that need to be clones as well
   int dd = dom_depth(head);
@@ -4444,6 +4429,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 
   C->set_major_progress();
 
+  C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, outer_head);
+
   return true;
 }
 
@@ -4480,6 +4467,66 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   }
 
   return AutoVectorizeStatus::Success;
+}
+
+// Just before insert_pre_post_loops, we can multiversion the loop:
+//
+//              multiversion_if
+//               |       |
+//         fast_loop   slow_loop
+//
+// In the fast_loop we can make speculative assumptions, and put the
+// conditions into the multiversion_if. If the conditions hold at runtime,
+// we enter the fast_loop, if the conditions fail, we take the slow_loop
+// instead which does not make any of the speculative assumptions.
+//
+// Note: we only multiversion the loop if the loop does not have any
+//       auto vectorization check Predicate. If we have that predicate,
+//       then we can simply add the speculative assumption checks to
+//       that Predicate. This means we do not need to duplicate the
+//       loop - we have a smaller graph and save compile time. Should
+//       the conditions ever fail, then we deopt / trap at the Predicate
+//       and recompile without that Predicate. At that point we will
+//       multiversion the loop, so that we can still have speculative
+//       runtime checks.
+//
+// We perform the multiversioning when the loop is still in its single
+// iteration form, even before we insert pre and post loops. This makes
+// the cloning much simpler. However, this means that both the fast
+// and the slow loop have to be optimized independently (adding pre
+// and post loops, unrolling the main loop, auto-vectorize etc.). And
+// we may end up not needing any speculative assumptions in the fast_loop
+// and then rejecting the slow_loop by constant folding the multiversion_if.
+//
+// Therefore, we "delay" the optimization of the slow_loop until we add
+// at least one speculative assumption for the fast_loop. If we never
+// add such a speculative runtime check, the OpaqueMultiversioningNode
+// of the multiversion_if constant folds to true after loop opts, and the
+// multiversion_if folds away the "delayed" slow_loop. If we add any
+// speculative assumption, then we notify the OpaqueMultiversioningNode
+// with "notify_slow_loop_that_it_can_resume_optimizations".
+//
+// Note: new runtime checks can be added to the multiversion_if with
+//       PhaseIdealLoop::create_new_if_for_multiversion
+void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  LoopNode* outer_loop = cl->skip_strip_mined();
+  Node* entry = outer_loop->in(LoopNode::EntryControl);
+
+  // Check we have multiversioning enabled, and are not already multiversioned.
+  if (!LoopMultiversioning || cl->is_multiversion()) { return; }
+
+  // Check that we do not have a parse-predicate where we can add the runtime checks
+  // during auto-vectorization.
+  const Predicates predicates(entry);
+  const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+  if (predicate_block->has_parse_predicate()) { return; }
+
+  // Check node budget.
+  uint estimate = lpt->est_loop_clone_sz(2);
+  if (!may_require_nodes(estimate)) { return; }
+
+  do_multiversioning(lpt, old_new);
 }
 
 // Returns true if the Reduction node is unordered.

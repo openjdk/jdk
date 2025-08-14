@@ -292,9 +292,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
     return 0;
   }
 
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, decorations, msg);
+  if (AsyncLogWriter::enqueue(*this, decorations, msg)) {
     return 0;
   }
 
@@ -306,10 +304,7 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
-
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, msg_iterator);
+  if (AsyncLogWriter::enqueue(*this, msg_iterator)) {
     return 0;
   }
 

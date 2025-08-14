@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1ANALYTICSSEQUENCES_INLINE_HPP
 
 #include "gc/g1/g1AnalyticsSequences.hpp"
+
 #include "gc/g1/g1Predictions.hpp"
 
 bool G1PhaseDependentSeq::enough_samples_to_use_mixed_seq() const {

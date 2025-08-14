@@ -81,14 +81,10 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import jdk.internal.jmod.JmodFile;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -141,7 +137,7 @@ public class Locations {
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
     List<Closeable> closeables = new ArrayList<>();
-    private Map<String,String> fsEnv = Collections.emptyMap();
+    private String releaseVersion = null;
 
     Locations() {
         initHandlers();
@@ -225,7 +221,7 @@ public class Locations {
                 try {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
-                    lint.logIfEnabled(log, LintWarnings.InvalidPath(s));
+                    lint.logIfEnabled(LintWarnings.InvalidPath(s));
                 }
             }
         }
@@ -233,7 +229,8 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
+        // Null is implicitly allowed and unsets the value.
+        this.releaseVersion = multiReleaseValue;
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -319,7 +316,7 @@ public class Locations {
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    lint.logIfEnabled(log, LintWarnings.DirPathElementNotFound(dir));
+                    lint.logIfEnabled(LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -364,7 +361,7 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    lint.logIfEnabled(log, LintWarnings.PathElementNotFound(file));
+                    lint.logIfEnabled(LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -386,12 +383,12 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                lint.logIfEnabled(log, LintWarnings.UnexpectedArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                lint.logIfEnabled(log, LintWarnings.InvalidArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -480,7 +477,7 @@ public class Locations {
         }
 
         /**
-         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject, String)
+         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject)
          */
         Location getLocationForModule(Path file) throws IOException  {
             return null;
@@ -1387,7 +1384,7 @@ public class Locations {
                         log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
-                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsEnv)) {
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(releaseVersion))) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1463,7 +1460,7 @@ public class Locations {
                                 log.error(Errors.LocnCantReadFile(p));
                                 return null;
                             }
-                            fs = jarFSProvider.newFileSystem(p, Collections.emptyMap());
+                            fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(null));
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
@@ -1654,7 +1651,7 @@ public class Locations {
 
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
-                lint.logIfEnabled(log, Files.exists(prefix) ?
+                lint.logIfEnabled(Files.exists(prefix) ?
                     LintWarnings.DirPathElementNotDirectory(prefix) :
                     LintWarnings.DirPathElementNotFound(prefix));
                 return;

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Explanation of start of release changes</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Explanation of start of release changes</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#overview" id="toc-overview">Overview</a></li>
+<li><a href="#details-and-file-updates"
+id="toc-details-and-file-updates">Details and file updates</a>
+<ul>
+<li><a href="#meta-data-files" id="toc-meta-data-files">Meta-data
+files</a></li>
+<li><a href="#src-files" id="toc-src-files"><code>src</code>
+files</a></li>
+<li><a href="#test-files" id="toc-test-files"><code>test</code>
+files</a></li>
+</ul></li>
+</ul>
+</nav>
+<h2 id="overview">Overview</h2>
+<p>The start of release changes, the changes that turn JDK <em>N</em>
+into JDK (<em>N</em>+1), are primarily small updates to various files
+along with new files to store symbol information to allow
+<code>javac --release N ...</code> to run on JDK (<em>N</em>+1).</p>
+<p>The updates include changes to files holding meta-data about the
+release, files under the <code>src</code> directory for API and tooling
+updates, and incidental updates under the <code>test</code>
+directory.</p>
+<h2 id="details-and-file-updates">Details and file updates</h2>
+<p>As a matter of policy, there are a number of semantically distinct
+concepts which get incremented separately at the start of a new
+release:</p>
+<ul>
+<li>Feature value of <code>Runtime.version()</code></li>
+<li>Highest source version modeled by
+<code>javax.lang.model.SourceVersion</code></li>
+<li>Highest class file format major version recognized by the
+platform</li>
+<li>Highest
+<code>-source</code>/<code>-target</code>/<code>--release</code>
+argument recognized by <code>javac</code> and related tools</li>
+</ul>
+<p>The expected file updates are listed below. Additional files may need
+to be updated for a particular release.</p>
+<h3 id="meta-data-files">Meta-data files</h3>
+<ul>
+<li><code>jcheck/conf</code>: update meta-data used by
+<code>jcheck</code> and the Skara tooling</li>
+<li><code>make/conf/version-numbers.conf</code>: update to meta-data
+used in the build</li>
+</ul>
+<h3 id="src-files"><code>src</code> files</h3>
+<ul>
+<li><code>src/hotspot/share/classfile/classFileParser.cpp</code>: add a
+<code>#define</code> for the new version</li>
+<li><code>src/java.base/share/classes/java/lang/classfile/ClassFile.java</code>:
+add a constant for the new class file format version</li>
+<li><code>src/java.base/share/classes/java/lang/reflect/ClassFileFormatVersion.java</code>:
+add an <code>enum</code> constant for the new class file format
+version</li>
+<li><code>src/java.compiler/share/classes/javax/lang/model/SourceVersion.java</code>:
+add an <code>enum</code> constant for the new source version</li>
+<li><code>src/java.compiler/share/classes/javax/lang/model/util/*</code>
+visitors: Update <code>@SupportedSourceVersion</code> annotations to
+latest value. Note this update is done in lieu of introducing another
+set of visitors for each Java SE release.</li>
+<li><code>src/jdk.compiler/share/classes/com/sun/tools/javac/code/Source.java</code>:
+add an <code>enum</code> constant for the new source version internal to
+<code>javac</code></li>
+<li><code>src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/ClassFile.java</code>:
+add an <code>enum</code> constant for the new class file format version
+internal to <code>javac</code></li>
+<li><code>src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/Target.java</code>:
+add an <code>enum</code> constant for the new target version internal to
+<code>javac</code></li>
+<li><code>src/jdk.compiler/share/classes/com/sun/tools/javac/processing/PrintingProcessor.java</code>
+update printing processor to support the new source version</li>
+<li>The symbol information for <code>--release</code> is stored as new
+text files in the <code>src/jdk.compiler/share/data/symbols</code>
+directory, one file per module. The README file in that directory
+contains directions on how to create the files.</li>
+</ul>
+<h3 id="test-files"><code>test</code> files</h3>
+<ul>
+<li><code>test/langtools/tools/javac/api/TestGetSourceVersions.java</code>:
+add new <code>SourceVersion</code> constant to test matrix.</li>
+<li><code>test/langtools/tools/javac/classfiles/ClassVersionChecker.java</code>:
+add new enum constant for the new class file version</li>
+<li><code>test/langtools/tools/javac/lib/JavacTestingAbstractProcessor.java</code>
+update annotation processor extended by <code>javac</code> tests to
+cover the new source version</li>
+<li><code>test/langtools/tools/javac/preview/classReaderTest/Client.nopreview.out</code>
+and
+<code>test/langtools/tools/javac/preview/classReaderTest/Client.preview.out</code>:
+update expected messages for preview errors and warnings</li>
+</ul>
+</body>
+</html>

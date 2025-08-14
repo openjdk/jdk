@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package jdk.internal.math;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.Arrays;
-import java.util.regex.*;
 
 /**
  * A class for converting between ASCII and decimal representations of a single
@@ -48,7 +49,6 @@ public class FloatingDecimal{
     static final int    MAX_DECIMAL_DIGITS = 15;
     static final int    MAX_DECIMAL_EXPONENT = 308;
     static final int    MIN_DECIMAL_EXPONENT = -324;
-    static final int    BIG_DECIMAL_EXPONENT = 324; // i.e. abs(MIN_DECIMAL_EXPONENT)
     static final int    MAX_NDIGITS = 1100;
 
     static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
@@ -107,7 +107,7 @@ public class FloatingDecimal{
      * represent a properly formatted double precision value.
      */
     public static double parseDouble(String s) throws NumberFormatException {
-        return readJavaFormatString(s).doubleValue();
+        return readJavaFormatString(s, BINARY_64_IX).doubleValue();
     }
 
     /**
@@ -119,7 +119,20 @@ public class FloatingDecimal{
      * represent a properly formatted single precision value.
      */
     public static float parseFloat(String s) throws NumberFormatException {
-        return readJavaFormatString(s).floatValue();
+        return readJavaFormatString(s, BINARY_32_IX).floatValue();
+    }
+
+    /**
+     * Converts a sequence of digits ('0'-'9') as well as an exponent to a positive
+     * double value
+     *
+     * @param decExp The decimal exponent of the value to generate
+     * @param digits The digits of the significand.
+     * @param length Number of digits to use
+     * @return The double-precision value of the conversion
+     */
+    public static double parseDoubleSignlessDigits(int decExp, char[] digits, int length) {
+        return readDoubleSignlessDigits(decExp, digits, length).doubleValue();
     }
 
     /**
@@ -188,7 +201,7 @@ public class FloatingDecimal{
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
-        private boolean isNegative;
+        private final boolean isNegative;
 
         public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
             this.image = image;
@@ -243,9 +256,7 @@ public class FloatingDecimal{
     }
 
     private static final String INFINITY_REP = "Infinity";
-    private static final int INFINITY_LENGTH = INFINITY_REP.length();
     private static final String NAN_REP = "NaN";
-    private static final int NAN_LENGTH = NAN_REP.length();
 
     private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
@@ -1826,726 +1837,600 @@ public class FloatingDecimal{
         return buf;
     }
 
-    @SuppressWarnings("fallthrough")
-    static ASCIIToBinaryConverter readJavaFormatString( String in ) throws NumberFormatException {
-        boolean isNegative = false;
-        boolean signSeen   = false;
-        int     decExp;
-        char    c;
+    static ASCIIToBinaryConverter readDoubleSignlessDigits(int decExp, char[] digits, int length) {
 
-    parseNumber:
-        try{
-            in = in.trim(); // don't fool around with white space.
-                            // throws NullPointerException if null
-            int len = in.length();
-            if ( len == 0 ) {
-                throw new NumberFormatException("empty String");
-            }
-            int i = 0;
-            switch (in.charAt(i)){
-            case '-':
-                isNegative = true;
-                //FALLTHROUGH
-            case '+':
-                i++;
-                signSeen = true;
-            }
-            c = in.charAt(i);
-            if(c == 'N') { // Check for NaN
-                if((len-i)==NAN_LENGTH && in.indexOf(NAN_REP,i)==i) {
-                    return A2BC_NOT_A_NUMBER;
-                }
-                // something went wrong, throw exception
-                break parseNumber;
-            } else if(c == 'I') { // Check for Infinity strings
-                if((len-i)==INFINITY_LENGTH && in.indexOf(INFINITY_REP,i)==i) {
-                    return isNegative? A2BC_NEGATIVE_INFINITY : A2BC_POSITIVE_INFINITY;
-                }
-                // something went wrong, throw exception
-                break parseNumber;
-            } else if (c == '0')  { // check for hexadecimal floating-point number
-                if (len > i+1 ) {
-                    char ch = in.charAt(i+1);
-                    if (ch == 'x' || ch == 'X' ) { // possible hex string
-                        return parseHexString(in);
-                    }
-                }
-            }  // look for and process decimal floating-point string
-
-            byte[] digits = new byte[len];
-            boolean decSeen = false;
-            int nDigits = 0;
-            int decPt = 0;
-            int nLeadZero = 0;
-            int nTrailZero = 0;
-
-        skipLeadingZerosLoop:
-            while (i < len) {
-                c = in.charAt(i);
-                if (c == '0') {
-                    nLeadZero++;
-                } else if (c == '.') {
-                    if (decSeen) {
-                        // already saw one ., this is the 2nd.
-                        throw new NumberFormatException("multiple points");
-                    }
-                    decPt = i;
-                    if (signSeen) {
-                        decPt -= 1;
-                    }
-                    decSeen = true;
-                } else {
-                    break skipLeadingZerosLoop;
-                }
-                i++;
-            }
-        digitLoop:
-            while (i < len) {
-                c = in.charAt(i);
-                if (c >= '1' && c <= '9') {
-                    digits[nDigits++] = (byte) c;
-                    nTrailZero = 0;
-                } else if (c == '0') {
-                    digits[nDigits++] = (byte) c;
-                    nTrailZero++;
-                } else if (c == '.') {
-                    if (decSeen) {
-                        // already saw one ., this is the 2nd.
-                        throw new NumberFormatException("multiple points");
-                    }
-                    decPt = i;
-                    if (signSeen) {
-                        decPt -= 1;
-                    }
-                    decSeen = true;
-                } else {
-                    break digitLoop;
-                }
-                i++;
-            }
-            nDigits -=nTrailZero;
-            //
-            // At this point, we've scanned all the digits and decimal
-            // point we're going to see. Trim off leading and trailing
-            // zeros, which will just confuse us later, and adjust
-            // our initial decimal exponent accordingly.
-            // To review:
-            // we have seen i total characters.
-            // nLeadZero of them were zeros before any other digits.
-            // nTrailZero of them were zeros after any other digits.
-            // if ( decSeen ), then a . was seen after decPt characters
-            // ( including leading zeros which have been discarded )
-            // nDigits characters were neither lead nor trailing
-            // zeros, nor point
-            //
-            //
-            // special hack: if we saw no non-zero digits, then the
-            // answer is zero!
-            // Unfortunately, we feel honor-bound to keep parsing!
-            //
-            boolean isZero = (nDigits == 0);
-            if ( isZero &&  nLeadZero == 0 ){
-                // we saw NO DIGITS AT ALL,
-                // not even a crummy 0!
-                // this is not allowed.
-                break parseNumber; // go throw exception
-            }
-            //
-            // Our initial exponent is decPt, adjusted by the number of
-            // discarded zeros. Or, if there was no decPt,
-            // then its just nDigits adjusted by discarded trailing zeros.
-            //
-            if ( decSeen ){
-                decExp = decPt - nLeadZero;
-            } else {
-                decExp = nDigits + nTrailZero;
-            }
-
-            //
-            // Look for 'e' or 'E' and an optionally signed integer.
-            //
-            if ( (i < len) &&  (((c = in.charAt(i) )=='e') || (c == 'E') ) ){
-                int expSign = 1;
-                int expVal  = 0;
-                int reallyBig = Integer.MAX_VALUE / 10;
-                boolean expOverflow = false;
-                switch( in.charAt(++i) ){
-                case '-':
-                    expSign = -1;
-                    //FALLTHROUGH
-                case '+':
-                    i++;
-                }
-                int expAt = i;
-            expLoop:
-                while ( i < len  ){
-                    if ( expVal >= reallyBig ){
-                        // the next character will cause integer
-                        // overflow.
-                        expOverflow = true;
-                    }
-                    c = in.charAt(i++);
-                    if(c>='0' && c<='9') {
-                        expVal = expVal*10 + ( (int)c - (int)'0' );
-                    } else {
-                        i--;           // back up.
-                        break expLoop; // stop parsing exponent.
-                    }
-                }
-                int expLimit = BIG_DECIMAL_EXPONENT + nDigits + nTrailZero;
-                if (expOverflow || (expVal > expLimit)) {
-                    // There is still a chance that the exponent will be safe to
-                    // use: if it would eventually decrease due to a negative
-                    // decExp, and that number is below the limit.  We check for
-                    // that here.
-                    if (!expOverflow && (expSign == 1 && decExp < 0)
-                            && (expVal + decExp) < expLimit) {
-                        // Cannot overflow: adding a positive and negative number.
-                        decExp += expVal;
-                    } else {
-                        //
-                        // The intent here is to end up with
-                        // infinity or zero, as appropriate.
-                        // The reason for yielding such a small decExponent,
-                        // rather than something intuitive such as
-                        // expSign*Integer.MAX_VALUE, is that this value
-                        // is subject to further manipulation in
-                        // doubleValue() and floatValue(), and I don't want
-                        // it to be able to cause overflow there!
-                        // (The only way we can get into trouble here is for
-                        // really outrageous nDigits+nTrailZero, such as 2
-                        // billion.)
-                        //
-                        decExp = expSign * expLimit;
-                    }
-                } else {
-                    // this should not overflow, since we tested
-                    // for expVal > (MAX+N), where N >= abs(decExp)
-                    decExp = decExp + expSign*expVal;
-                }
-
-                // if we saw something not a digit ( or end of string )
-                // after the [Ee][+-], without seeing any digits at all
-                // this is certainly an error. If we saw some digits,
-                // but then some trailing garbage, that might be ok.
-                // so we just fall through in that case.
-                // HUMBUG
-                if ( i == expAt ) {
-                    break parseNumber; // certainly bad
-                }
-            }
-            //
-            // We parsed everything we could.
-            // If there are leftovers, then this is not good input!
-            //
-            if ( i < len &&
-                ((i != len - 1) ||
-                (in.charAt(i) != 'f' &&
-                 in.charAt(i) != 'F' &&
-                 in.charAt(i) != 'd' &&
-                 in.charAt(i) != 'D'))) {
-                break parseNumber; // go throw exception
-            }
-            if(isZero) {
-                return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-            }
-            return new ASCIIToBinaryBuffer(isNegative, decExp, digits, nDigits);
-        } catch ( StringIndexOutOfBoundsException e ){ }
-        throw new NumberFormatException("For input string: \"" + in + "\"");
-    }
-
-    private static class HexFloatPattern {
-        /**
-         * Grammar is compatible with hexadecimal floating-point constants
-         * described in section 6.4.4.2 of the C99 specification.
-         */
-        private static final Pattern VALUE = Pattern.compile(
-                   //1           234                   56                7                   8      9
-                    "([-+])?0[xX](((\\p{XDigit}+)\\.?)|((\\p{XDigit}*)\\.(\\p{XDigit}+)))[pP]([-+])?(\\p{Digit}+)[fFdD]?"
-                    );
+        // Prevent an extreme negative exponent from causing overflow issues in doubleValue().
+        // Large positive values are handled within doubleValue();
+        if (decExp < MIN_DECIMAL_EXPONENT) {
+            return A2BC_POSITIVE_ZERO;
+        }
+        byte[] buf = new byte[length];
+        for (int i = 0; i < length; i++) {
+            buf[i] = (byte) digits[i];
+        }
+        return new ASCIIToBinaryBuffer(false, decExp, buf, length);
     }
 
     /**
-     * Converts string s to a suitable floating decimal; uses the
-     * double constructor and sets the roundDir variable appropriately
-     * in case the value is later converted to a float.
+     * The input must match the {@link Double#valueOf(String) rules described here},
+     * about leading and trailing whitespaces, and the grammar.
      *
-     * @param s The <code>String</code> to parse.
+     * @param in the non-null input
+     * @param ix one of the {@code BINARY_<S>_IX} constants, where {@code <S>}
+     *          is one of 16, 32, 64
+     * @return an appropriate binary converter
+     * @throws NullPointerException if the input is null
+     * @throws NumberFormatException if the input is malformed
      */
-   static ASCIIToBinaryConverter parseHexString(String s) {
-            // Verify string is a member of the hexadecimal floating-point
-            // string language.
-            Matcher m = HexFloatPattern.VALUE.matcher(s);
-            boolean validInput = m.matches();
-            if (!validInput) {
-                // Input does not match pattern
-                throw new NumberFormatException("For input string: \"" + s + "\"");
-            } else { // validInput
-                //
-                // We must isolate the sign, significand, and exponent
-                // fields.  The sign value is straightforward.  Since
-                // floating-point numbers are stored with a normalized
-                // representation, the significand and exponent are
-                // interrelated.
-                //
-                // After extracting the sign, we normalized the
-                // significand as a hexadecimal value, calculating an
-                // exponent adjust for any shifts made during
-                // normalization.  If the significand is zero, the
-                // exponent doesn't need to be examined since the output
-                // will be zero.
-                //
-                // Next the exponent in the input string is extracted.
-                // Afterwards, the significand is normalized as a *binary*
-                // value and the input value's normalized exponent can be
-                // computed.  The significand bits are copied into a
-                // double significand; if the string has more logical bits
-                // than can fit in a double, the extra bits affect the
-                // round and sticky bits which are used to round the final
-                // value.
-                //
-                //  Extract significand sign
-                String group1 = m.group(1);
-                boolean isNegative = ((group1 != null) && group1.equals("-"));
+    static ASCIIToBinaryConverter readJavaFormatString(String in, int ix) {
+        /*
+         * The scanning proper does not allocate any object,
+         * nor does it perform any costly computation.
+         * This means that all scanning errors are detected without consuming
+         * any heap, before actually throwing.
+         *
+         * Once scanning is complete, the method determines the length
+         * of a prefix of the significand that is sufficient for correct
+         * rounding according to roundTiesToEven.
+         * The actual value of the prefix length might not be optimal,
+         * but is always a safe choice.
+         *
+         * For hexadecimal input, the prefix is processed by this method directly,
+         * without allocating objects before creating the returned instance.
+         *
+         * For decimal input, the prefix is copied to the returned instance,
+         * along with the other information needed for the conversion.
+         * For comparison, the prefix length is at most
+         *       23 for BINARY_16_IX (Float16, once integrated in java.base)
+         *      114 for BINARY_32_IX (float)
+         *      769 for BINARY_64_IX (double)
+         */
+        int len = in.length();  // fail fast on null
 
-                //  Extract Significand magnitude
-                //
-                // Based on the form of the significand, calculate how the
-                // binary exponent needs to be adjusted to create a
-                // normalized//hexadecimal* floating-point number; that
-                // is, a number where there is one nonzero hex digit to
-                // the left of the (hexa)decimal point.  Since we are
-                // adjusting a binary, not hexadecimal exponent, the
-                // exponent is adjusted by a multiple of 4.
-                //
-                // There are a number of significand scenarios to consider;
-                // letters are used in indicate nonzero digits:
-                //
-                // 1. 000xxxx       =>      x.xxx   normalized
-                //    increase exponent by (number of x's - 1)*4
-                //
-                // 2. 000xxx.yyyy =>        x.xxyyyy        normalized
-                //    increase exponent by (number of x's - 1)*4
-                //
-                // 3. .000yyy  =>   y.yy    normalized
-                //    decrease exponent by (number of zeros + 1)*4
-                //
-                // 4. 000.00000yyy => y.yy normalized
-                //    decrease exponent by (number of zeros to right of point + 1)*4
-                //
-                // If the significand is exactly zero, return a properly
-                // signed zero.
-                //
+        /* Skip leading whitespaces. */
+        int i = skipWhitespaces(in, 0);  // main running index
+        if (i == len) {
+            throw new NumberFormatException("empty String");
+        }
 
-                String significandString;
-                int signifLength;
-                int exponentAdjust;
-                {
-                    int leftDigits = 0; // number of meaningful digits to
-                    // left of "decimal" point
-                    // (leading zeros stripped)
-                    int rightDigits = 0; // number of digits to right of
-                    // "decimal" point; leading zeros
-                    // must always be accounted for
-                    //
-                    // The significand is made up of either
-                    //
-                    // 1. group 4 entirely (integer portion only)
-                    //
-                    // OR
-                    //
-                    // 2. the fractional portion from group 7 plus any
-                    // (optional) integer portions from group 6.
-                    //
-                    String group4;
-                    if ((group4 = m.group(4)) != null) {  // Integer-only significand
-                        // Leading zeros never matter on the integer portion
-                        significandString = stripLeadingZeros(group4);
-                        leftDigits = significandString.length();
-                    } else {
-                        // Group 6 is the optional integer; leading zeros
-                        // never matter on the integer portion
-                        String group6 = stripLeadingZeros(m.group(6));
-                        leftDigits = group6.length();
+        /* Scan opt significand sign. */
+        int ch;  // running char
+        int ssign = ' ';  // ' ' iff sign is implicit
+        if ((ch = in.charAt(i)) == '-' || ch == '+') {  // i < len
+            ssign = ch;
+            ++i;
+        }
 
-                        // fraction
-                        String group7 = m.group(7);
-                        rightDigits = group7.length();
+        /* Determine whether we are facing a symbolic value or hex notation. */
+        boolean isDec = true;  // decimal input until proven to the contrary
+        if (i < len) {
+            ch = in.charAt(i);
+            if (ch == 'I') {
+                scanSymbolic(in, i, INFINITY_REP);
+                return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+            }
+            if (ch == 'N') {
+                scanSymbolic(in, i, NAN_REP);
+                return A2BC_NOT_A_NUMBER;  // ignore sign
+            }
+            if (ch == '0' && i + 1 < len && toLowerCase(in.charAt(i + 1)) == 'x') {
+                isDec = false;
+                i += 2;
+            }
+        }
 
-                        // Turn "integer.fraction" into "integer"+"fraction"
-                        significandString =
-                                ((group6 == null) ? "" : group6) + // is the null
-                                        // check necessary?
-                                        group7;
-                    }
+        int pt = 0;  // index after point, 0 iff absent
+        int start = i;  // index of start of the significand, excluding opt sign
 
-                    significandString = stripLeadingZeros(significandString);
-                    signifLength = significandString.length();
+        /* Skip opt leading zeros, including an opt point. */
+        while (i < len && ((ch = in.charAt(i)) == '0' || ch == '.')) {
+            ++i;
+            if (ch == '.') {
+                pt = checkMultiplePoints(pt, i);
+            }
+        }
+        int lz = i;  // index after leading group of zeros or point
 
-                    //
-                    // Adjust exponent as described above
-                    //
-                    if (leftDigits >= 1) {  // Cases 1 and 2
-                        exponentAdjust = 4 * (leftDigits - 1);
-                    } else {                // Cases 3 and 4
-                        exponentAdjust = -4 * (rightDigits - signifLength + 1);
-                    }
+        /*
+         * Scan all remaining chars of the significand, including an opt point.
+         * Also locate the index after the end of the trailing group of non-zeros
+         * inside this range of the input.
+         */
+        int tnz = 0;  // index after trailing group of non-zeros, 0 iff absent
+        while (i < len && (isDigit(ch = in.charAt(i), isDec) || ch == '.')) {
+            i++;
+            if (ch == '.') {
+                pt = checkMultiplePoints(pt, i);
+            } else if (ch != '0') {
+                tnz = i;
+            }
+        }
+        check(in, i - start > (pt != 0 ? 1 : 0));  // must have at least one digit
+        int stop = i;  // index after the significand
 
-                    // If the significand is zero, the exponent doesn't
-                    // matter; return a properly signed zero.
+        /* Scan exponent part, optional for dec, mandatory for hex. */
+        long ep = 0;  // exponent, implicitly 0
+        boolean hasExp = false;
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'e' && isDec
+                || ch == 'p' && !isDec)) {
+            ++i;
 
-                    if (signifLength == 0) { // Only zeros in input
-                        return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-                    }
-                }
+            /* Scan opt exponent sign. */
+            int esign = ' ';  // esign == ' ' iff the sign is implicit
+            if (i < len && ((ch = in.charAt(i)) == '-' || ch == '+')) {
+                esign = ch;
+                ++i;
+            }
 
-                //  Extract Exponent
-                //
-                // Use an int to read in the exponent value; this should
-                // provide more than sufficient range for non-contrived
-                // inputs.  If reading the exponent in as an int does
-                // overflow, examine the sign of the exponent and
-                // significand to determine what to do.
-                //
-                String group8 = m.group(8);
-                boolean positiveExponent = (group8 == null) || group8.equals("+");
-                long unsignedRawExponent;
-                try {
-                    unsignedRawExponent = Integer.parseInt(m.group(9));
-                }
-                catch (NumberFormatException e) {
-                    // At this point, we know the exponent is
-                    // syntactically well-formed as a sequence of
-                    // digits.  Therefore, if an NumberFormatException
-                    // is thrown, it must be due to overflowing int's
-                    // range.  Also, at this point, we have already
-                    // checked for a zero significand.  Thus the signs
-                    // of the exponent and significand determine the
-                    // final result:
-                    //
-                    //                      significand
-                    //                      +               -
-                    // exponent     +       +infinity       -infinity
-                    //              -       +0.0            -0.0
-                    return isNegative ?
-                              (positiveExponent ? A2BC_NEGATIVE_INFINITY : A2BC_NEGATIVE_ZERO)
-                            : (positiveExponent ? A2BC_POSITIVE_INFINITY : A2BC_POSITIVE_ZERO);
+            /* Scan the exponent digits. Accumulate in ep, clamping at 10^10. */
+            while (i < len && isDigit(ch = in.charAt(i), true)) {  // ep is decimal
+                ++i;
+                ep = appendDecDigit(ep, ch);
+            }
+            check(in, i - stop >= 3  // at least 3 chars after significand
+                    || i - stop == 2 && esign == ' ');  // 2 chars, one is digit
+            if (esign == '-') {
+                ep = -ep;
+            }
+            hasExp = true;
+        }
+        /*
+         * |ep| < 10^10, or |ep| = 10^10 when considered "large".
+         * A "large" ep either generates a zero or an infinity.
+         */
+        check(in, isDec | hasExp);
 
-                }
+        /* Skip opt [FfDd]? suffix. */
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'f' || ch == 'd')) {
+            ++i;
+        }
 
-                long rawExponent =
-                        (positiveExponent ? 1L : -1L) * // exponent sign
-                                unsignedRawExponent;            // exponent magnitude
+        /* Skip optional trailing whitespaces, then must be at the end of input. */
+        check(in, skipWhitespaces(in, i) == len);
 
-                // Calculate partially adjusted exponent
-                long exponent = rawExponent + exponentAdjust;
+        /* By now, the input is syntactically correct. */
+        if (tnz == 0) {  // all zero digits, so ignore ep and point
+            return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+        }
 
-                // Starting copying non-zero bits into proper position in
-                // a long; copy explicit bit too; this will be masked
-                // later for normal values.
+        /*
+         * Virtually adjust the point position to be just after
+         * the last non-zero digit by adjusting the exponent accordingly
+         * (without modifying the physical pt, as it is used later on).
+         *
+         * Determine the count of digits, excluding leading and trailing zeros.
+         *
+         * These are the possible situations:
+         *         |lz               |tnz     |stop
+         * 00000000123456000000234567000000000
+         *
+         *  |pt     |lz               |tnz     |stop
+         * .00000000123456000000234567000000000
+         *
+         *    |pt   |lz               |tnz     |stop
+         * 00.000000123456000000234567000000000
+         *
+         *          |pt=lz            |tnz     |stop
+         * 00000000.123456000000234567000000000
+         *
+         *         |lz  |pt           |tnz     |stop
+         * 000000001234.56000000234567000000000
+         *
+         *         |lz      |pt       |tnz     |stop
+         * 0000000012345600.0000234567000000000
+         *
+         *         |lz          |pt   |tnz     |stop
+         * 00000000123456000000.234567000000000
+         *
+         *         |lz            |pt |tnz     |stop
+         * 0000000012345600000023.4567000000000
+         *
+         *         |lz                |pt=tnz  |stop
+         * 00000000123456000000234567.000000000
+         *
+         *         |lz               |tnz  |pt |stop
+         * 0000000012345600000023456700000.0000
+         *
+         *         |lz               |tnz      |pt=stop
+         * 00000000123456000000234567000000000.
+         *
+         * In decimal, moving the point by one position means correcting ep by 1.
+         * In hexadecimal, it means correcting ep by 4.
+         */
+        long emult = isDec ? 1L : 4L;
+        int n = tnz - lz;  // number of significant digits, 1st approximation
+        if (pt == 0) {
+            ep += emult * (stop - tnz);
+        } else {
+            ep += emult * (pt - tnz);
+            if (pt > tnz) {  // '.' was counted as a position, adjust ep
+                ep -= emult;
+            } else if (lz < pt) {  // lz < pt <= tnz
+                n -= 1;
+            }
+        }
+        /*
+         * n = number of significant digits (that is, not counting leading nor
+         * trailing zeros)
+         * |ep| < 10^11
+         *
+         * The magnitude x of the input meets
+         *      x = f 10^ep  (decimal)
+         *      x = f 2^ep  (hexadecimal)
+         * Integer f = <f_1 ... f_n> consists of the n decimal or hexadecimal
+         * digits found in part [lz, tnz) of the input, and f_1 != 0, f_n != 0.
+         */
 
-                boolean round = false;
-                boolean sticky = false;
-                int nextShift;
-                long significand = 0L;
-                // First iteration is different, since we only copy
-                // from the leading significand bit; one more exponent
-                // adjust will be needed...
-
-                // IMPORTANT: make leadingDigit a long to avoid
-                // surprising shift semantics!
-                long leadingDigit = getHexDigit(significandString, 0);
-
-                //
-                // Left shift the leading digit (53 - (bit position of
-                // leading 1 in digit)); this sets the top bit of the
-                // significand to 1.  The nextShift value is adjusted
-                // to take into account the number of bit positions of
-                // the leadingDigit actually used.  Finally, the
-                // exponent is adjusted to normalize the significand
-                // as a binary value, not just a hex value.
-                //
-                if (leadingDigit == 1) {
-                    significand |= leadingDigit << 52;
-                    nextShift = 52 - 4;
-                    // exponent += 0
-                } else if (leadingDigit <= 3) { // [2, 3]
-                    significand |= leadingDigit << 51;
-                    nextShift = 52 - 5;
-                    exponent += 1;
-                } else if (leadingDigit <= 7) { // [4, 7]
-                    significand |= leadingDigit << 50;
-                    nextShift = 52 - 6;
-                    exponent += 2;
-                } else if (leadingDigit <= 15) { // [8, f]
-                    significand |= leadingDigit << 49;
-                    nextShift = 52 - 7;
-                    exponent += 3;
-                } else {
-                    throw new AssertionError("Result from digit conversion too large!");
-                }
-                // The preceding if-else could be replaced by a single
-                // code block based on the high-order bit set in
-                // leadingDigit.  Given leadingOnePosition,
-
-                // significand |= leadingDigit << (SIGNIFICAND_WIDTH - leadingOnePosition);
-                // nextShift = 52 - (3 + leadingOnePosition);
-                // exponent += (leadingOnePosition-1);
-
-                //
-                // Now the exponent variable is equal to the normalized
-                // binary exponent.  Code below will make representation
-                // adjustments if the exponent is incremented after
-                // rounding (includes overflows to infinity) or if the
-                // result is subnormal.
-                //
-
-                // Copy digit into significand until the significand can't
-                // hold another full hex digit or there are no more input
-                // hex digits.
-                int i = 0;
-                for (i = 1;
-                     i < signifLength && nextShift >= 0;
-                     i++) {
-                    long currentDigit = getHexDigit(significandString, i);
-                    significand |= (currentDigit << nextShift);
-                    nextShift -= 4;
-                }
-
-                // After the above loop, the bulk of the string is copied.
-                // Now, we must copy any partial hex digits into the
-                // significand AND compute the round bit and start computing
-                // sticky bit.
-
-                if (i < signifLength) { // at least one hex input digit exists
-                    long currentDigit = getHexDigit(significandString, i);
-
-                    // from nextShift, figure out how many bits need
-                    // to be copied, if any
-                    switch (nextShift) { // must be negative
-                        case -1:
-                            // three bits need to be copied in; can
-                            // set round bit
-                            significand |= ((currentDigit & 0xEL) >> 1);
-                            round = (currentDigit & 0x1L) != 0L;
-                            break;
-
-                        case -2:
-                            // two bits need to be copied in; can
-                            // set round and start sticky
-                            significand |= ((currentDigit & 0xCL) >> 2);
-                            round = (currentDigit & 0x2L) != 0L;
-                            sticky = (currentDigit & 0x1L) != 0;
-                            break;
-
-                        case -3:
-                            // one bit needs to be copied in
-                            significand |= ((currentDigit & 0x8L) >> 3);
-                            // Now set round and start sticky, if possible
-                            round = (currentDigit & 0x4L) != 0L;
-                            sticky = (currentDigit & 0x3L) != 0;
-                            break;
-
-                        case -4:
-                            // all bits copied into significand; set
-                            // round and start sticky
-                            round = ((currentDigit & 0x8L) != 0);  // is top bit set?
-                            // nonzeros in three low order bits?
-                            sticky = (currentDigit & 0x7L) != 0;
-                            break;
-
-                        default:
-                            throw new AssertionError("Unexpected shift distance remainder.");
-                            // break;
-                    }
-
-                    // Round is set; sticky might be set.
-
-                    // For the sticky bit, it suffices to check the
-                    // current digit and test for any nonzero digits in
-                    // the remaining unprocessed input.
-                    i++;
-                    while (i < signifLength && !sticky) {
-                        currentDigit = getHexDigit(significandString, i);
-                        sticky = sticky || (currentDigit != 0);
-                        i++;
-                    }
-
-                }
-                // else all of string was seen, round and sticky are
-                // correct as false.
-
-                // Float calculations
-                int floatBits = isNegative ? FloatConsts.SIGN_BIT_MASK : 0;
-                if (exponent >= Float.MIN_EXPONENT) {
-                    if (exponent > Float.MAX_EXPONENT) {
-                        // Float.POSITIVE_INFINITY
-                        floatBits |= FloatConsts.EXP_BIT_MASK;
-                    } else {
-                        int threshShift = DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH - 1;
-                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
-                        int iValue = (int) (significand >>> threshShift);
-                        if ((iValue & 3) != 1 || floatSticky) {
-                            iValue++;
-                        }
-                        floatBits |= (((((int) exponent) + (FloatConsts.EXP_BIAS - 1))) << SINGLE_EXP_SHIFT) + (iValue >> 1);
-                    }
-                } else {
-                    if (exponent < FloatConsts.MIN_SUB_EXPONENT - 1) {
-                        // 0
-                    } else {
-                        // exponent == -127 ==> threshShift = 53 - 2 + (-149) - (-127) = 53 - 24
-                        int threshShift = (int) ((DoubleConsts.SIGNIFICAND_WIDTH - 2 + FloatConsts.MIN_SUB_EXPONENT) - exponent);
-                        assert threshShift >= DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH;
-                        assert threshShift < DoubleConsts.SIGNIFICAND_WIDTH;
-                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
-                        int iValue = (int) (significand >>> threshShift);
-                        if ((iValue & 3) != 1 || floatSticky) {
-                            iValue++;
-                        }
-                        floatBits |= iValue >> 1;
-                    }
-                }
-                float fValue = Float.intBitsToFloat(floatBits);
-
-                // Check for overflow and update exponent accordingly.
-                if (exponent > Double.MAX_EXPONENT) {         // Infinite result
-                    // overflow to properly signed infinity
-                    return isNegative ? A2BC_NEGATIVE_INFINITY : A2BC_POSITIVE_INFINITY;
-                } else {  // Finite return value
-                    if (exponent <= Double.MAX_EXPONENT && // (Usually) normal result
-                            exponent >= Double.MIN_EXPONENT) {
-
-                        // The result returned in this block cannot be a
-                        // zero or subnormal; however after the
-                        // significand is adjusted from rounding, we could
-                        // still overflow in infinity.
-
-                        // AND exponent bits into significand; if the
-                        // significand is incremented and overflows from
-                        // rounding, this combination will update the
-                        // exponent correctly, even in the case of
-                        // Double.MAX_VALUE overflowing to infinity.
-
-                        significand = ((( exponent +
-                                (long) DoubleConsts.EXP_BIAS) <<
-                                (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                & DoubleConsts.EXP_BIT_MASK) |
-                                (DoubleConsts.SIGNIF_BIT_MASK & significand);
-
-                    } else {  // Subnormal or zero
-                        // (exponent < Double.MIN_EXPONENT)
-
-                        if (exponent < (DoubleConsts.MIN_SUB_EXPONENT - 1)) {
-                            // No way to round back to nonzero value
-                            // regardless of significand if the exponent is
-                            // less than -1075.
-                            return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-                        } else { //  -1075 <= exponent <= MIN_EXPONENT -1 = -1023
-                            //
-                            // Find bit position to round to; recompute
-                            // round and sticky bits, and shift
-                            // significand right appropriately.
-                            //
-
-                            sticky = sticky || round;
-                            round = false;
-
-                            // Number of bits of significand to preserve is
-                            // exponent - abs_min_exp +1
-                            // check:
-                            // -1075 +1074 + 1 = 0
-                            // -1023 +1074 + 1 = 52
-
-                            int bitsDiscarded = 53 -
-                                    ((int) exponent - DoubleConsts.MIN_SUB_EXPONENT + 1);
-                            assert bitsDiscarded >= 1 && bitsDiscarded <= 53;
-
-                            // What to do here:
-                            // First, isolate the new round bit
-                            round = (significand & (1L << (bitsDiscarded - 1))) != 0L;
-                            if (bitsDiscarded > 1) {
-                                // create mask to update sticky bits; low
-                                // order bitsDiscarded bits should be 1
-                                long mask = ~((~0L) << (bitsDiscarded - 1));
-                                sticky = sticky || ((significand & mask) != 0L);
-                            }
-
-                            // Now, discard the bits
-                            significand = significand >> bitsDiscarded;
-
-                            significand = ((((long) (Double.MIN_EXPONENT - 1) + // subnorm exp.
-                                    (long) DoubleConsts.EXP_BIAS) <<
-                                    (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                    & DoubleConsts.EXP_BIT_MASK) |
-                                    (DoubleConsts.SIGNIF_BIT_MASK & significand);
-                        }
-                    }
-
-                    // The significand variable now contains the currently
-                    // appropriate exponent bits too.
-
-                    //
-                    // Determine if significand should be incremented;
-                    // making this determination depends on the least
-                    // significant bit and the round and sticky bits.
-                    //
-                    // Round to nearest even rounding table, adapted from
-                    // table 4.7 in "Computer Arithmetic" by IsraelKoren.
-                    // The digit to the left of the "decimal" point is the
-                    // least significant bit, the digits to the right of
-                    // the point are the round and sticky bits
-                    //
-                    // Number       Round(x)
-                    // x0.00        x0.
-                    // x0.01        x0.
-                    // x0.10        x0.
-                    // x0.11        x1. = x0. +1
-                    // x1.00        x1.
-                    // x1.01        x1.
-                    // x1.10        x1. + 1
-                    // x1.11        x1. + 1
-                    //
-                    boolean leastZero = ((significand & 1L) == 0L);
-                    if ((leastZero && round && sticky) ||
-                            ((!leastZero) && round)) {
-                        significand++;
-                    }
-
-                    double value = isNegative ?
-                            Double.longBitsToDouble(significand | DoubleConsts.SIGN_BIT_MASK) :
-                            Double.longBitsToDouble(significand );
-
-                    return new PreparedASCIIToBinaryBuffer(value, fValue);
+        if (!isDec) {  // hexadecimal conversion is performed entirely here
+            /*
+             * Rounding the leftmost P bits +1 rounding bit +1 sticky bit
+             * has the same outcome as rounding all bits.
+             * In terms of hex digits, we need room for HEX_COUNT of them.
+             */
+            int j = 0;
+            i = lz;
+            long c = 0;
+            int le = Math.min(n, HEX_COUNT[ix]);
+            while (j < le) {
+                if ((ch = in.charAt(i++)) != '.') {
+                    ++j;
+                    c = c << 4 | digitFor(ch);
                 }
             }
-    }
-
-    /**
-     * Returns <code>s</code> with any leading zeros removed.
-     */
-    static String stripLeadingZeros(String s) {
-        if(!s.isEmpty() && s.charAt(0)=='0') {
-            for(int i=1; i<s.length(); i++) {
-                if(s.charAt(i)!='0') {
-                    return s.substring(i);
-                }
+            if (n > le) {
+                c |= 0b1;  // force a sticky bit
+                ep += 4L * (n - le);
             }
-            return "";
+
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(c);  // bitlength
+            /*
+             * Let x = c 2^ep, so 2^(ep+bl-1) <= x < 2^(ep+bl)
+             * When ep + bl < Q_MIN then x certainly rounds to zero.
+             * When ep + bl > QE_MAX then x surely rounds to infinity.
+             */
+            if (ep < Q_MIN[ix] - bl) {
+                return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+            }
+            if (ep > QE_MAX[ix] - bl) {
+                return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+            }
+            int q = (int) ep;  // narrowing conversion is safe
+            int shr;  // (sh)ift to (r)ight iff shr > 0
+            if (q >= QE_MIN[ix] - bl) {
+                shr = bl - P[ix];
+                q += shr;
+            } else {
+                shr = Q_MIN[ix] - q;
+                q = Q_MIN[ix];
+            }
+            if (shr > 0) {
+                long thr = 1L << shr;
+                long tail = (c & thr - 1) << 1;
+                c >>>= shr;
+                if (tail > thr || tail == thr && (c & 0b1) != 0) {
+                    c += 1;
+                    if (c >= 1L << P[ix]) {  // but in fact it can't be >
+                        c >>>= 1;
+                        q += 1;
+                    }
+                }
+            } else {
+                c <<= -shr;
+            }
+
+            /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+            return switch (ix) {
+                case BINARY_32_IX ->
+                    new PreparedASCIIToBinaryBuffer(Double.NaN, buildFloat(ssign, q, c));
+                case BINARY_64_IX ->
+                    new PreparedASCIIToBinaryBuffer(buildDouble(ssign, q, c), Float.NaN);
+                default -> throw new AssertionError("unexpected");
+            };
         }
-        return s;
+
+        /*
+         * For decimal inputs, we copy an appropriate prefix of the input and
+         * rely on another method to do the (sometimes intensive) math conversion.
+         *
+         * Define e = n + ep, which leads to
+         *      x = 0.d_1 ... d_n 10^e, 10^(e-1) <= x < 10^e
+         * If e <= E_THR_Z then x rounds to zero.
+         * Similarly, if e >= E_THR_I then x rounds to infinity.
+         * We return immediately in these cases.
+         * Otherwise, e fits in an int, aptly named e as well.
+         */
+        int e = Math.clamp(ep + n, E_THR_Z[ix], E_THR_I[ix]);
+        if (e == E_THR_Z[ix]) {  // true e <= E_THR_Z
+            return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+        }
+        if (e == E_THR_I[ix]) {  // true e >= E_THR_I
+            return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+        }
+
+        /*
+         * For further considerations, x also needs to be seen as
+         *      x = beta 2^q
+         * with real beta and integer q meeting
+         *      q >= Q_MIN
+         * and
+         *      either  2^(P-1) <= beta < 2^P
+         *      or      0 < beta < 2^(P-1) and q = Q_MIN
+         * The (unique) solution is
+         *      q = max(floor(log2(x)) - (P-1), Q_MIN), beta = x 2^(-q)
+         * It's usually costly to determine q as here.
+         * However, estimates to q are cheaper and quick to compute.
+         *
+         * Indeed, it's a matter of some simple maths to show that, by defining
+         *      ql = max(floor((e-1) log2(10)) - (P-1), Q_MIN)
+         *      qh = max(floor(e log2(10)) - (P-1), Q_MIN)
+         * then the following hold
+         *      ql <= q <= qh, and qh - ql <= 4
+         * Since by now e is relatively small, we can leverage flog2pow10().
+         *
+         * Consider the half-open interval [ 2^(P-1+q), 2^(P+q) ).
+         * It contains all floating-point values of the form
+         *      c 2^q, c integer, 2^(P-1) <= c < 2^P (normal values)
+         * When q = Q_MIN also consider the interval half-open [0, 2^(P-1+q) ),
+         * which contains all floating-point values of the form
+         *      c 2^q, c integer, 0 <= c < 2^(P-1) (subnormal values and zero)
+         * For these c values, all numbers of the form
+         *      (c + 1/2) 2^q
+         * also belong to the intervals.
+         * These are the boundaries of the rounding intervals and are key for
+         * correct rounding.
+         *
+         * First assume ql > 0, so q > 0.
+         * All rounding boundaries (c + 1/2) 2^q are integers.
+         *
+         * Hence, to correctly round x, it's enough to retain its integer part,
+         * +1 non-zero sticky digit iff the fractional part is non-zero.
+         * (Well, the sticky digit is only needed when the integer part
+         * coincides with a boundary, but that's hard to detect at this stage.
+         * Adding the sticky digit is always safe.)
+         * If n > e we pass the digits d_1...d_e 3 (3 is as good as any other
+         * non-zero sticky digit) and the exponent e to the conversion routine.
+         * If n <= e we pass all the digits d_1...d_n (no sticky digit,
+         * as the fractional part is empty) and the exponent e to the converter.
+         *
+         * Now assume qh <= 0, so q <= 0.
+         * The boundaries (c + 1/2) 2^q = (2c + 1) 2^(q-1) have a fractional part
+         * of 1 - q digits: some (or zero) leading zeros, the rightmost is 5.
+         * A correct rounding needs to retain the integer part of x (if any),
+         * 1 - q digits of the fractional part, +1 non-zero sticky digit iff
+         * the rest of the fractional part beyond the 1 - q digits is non-zero.
+         * (Again, the sticky digit is only needed when the digit in f at the
+         * same position as the last 5 of the rounding boundary is 5 as well.
+         * But let's keep it simple for now.)
+         * However, q is unknown, so use the conservative ql instead.
+         * More precisely, if n > e + 1 - ql we pass the leftmost e + 1 - ql
+         * digits of f, sticky 3, and e.
+         * Otherwise, n <= e + 1 - ql.
+         * We pass all n digits of f, no sticky digit, and e to the converter.
+         *
+         * Otherwise, ql <= 0 < qh, so -4 < q <= 4.
+         * Again, since q is not known exactly, we proceed as in the previous
+         * case, with ql as a safe replacement for q.
+         */
+        // TODO insert logic for small n: 9 for float, 18 for double
+        int ql = Math.max(MathUtils.flog2pow10(e - 1) - (P[ix] - 1), Q_MIN[ix]);
+        int np = e + Math.max(2 - ql, 1);
+        byte[] digits = new byte[Math.min(n, np)];
+        if (n >= np) {
+            copyDigits(in, digits, np - 1, lz);
+            digits[np - 1] = '3';  // append any non-zero sticky digit
+        } else {
+            copyDigits(in, digits, n, lz);
+        }
+        return new ASCIIToBinaryBuffer(ssign == '-', e, digits, digits.length);
     }
 
-    /**
-     * Extracts a hexadecimal digit from position <code>position</code>
-     * of string <code>s</code>.
-     */
-    static int getHexDigit(String s, int position) {
-        int value = Character.digit(s.charAt(position), 16);
-        if (value <= -1 || value >= 16) {
-            throw new AssertionError("Unexpected failure of digit conversion of " +
-                                     s.charAt(position));
-        }
-        return value;
+    private static int toLowerCase(int ch) {
+        return ch | 0b10_0000;
     }
+
+    private static double buildDouble(int ssign, int q, long c) {
+        long be = c < 1L << P[BINARY_64_IX] - 1
+                ? 0
+                : q + ((DoubleConsts.EXP_BIAS - 1) + P[BINARY_64_IX]);
+        long bits = (ssign != '-' ? 0L : 1L << Double.SIZE - 1)
+                | be << P[BINARY_64_IX] - 1
+                | c & DoubleConsts.SIGNIF_BIT_MASK;
+        return Double.longBitsToDouble(bits);
+    }
+
+    private static float buildFloat(int ssign, int q, long c) {
+        int be = c < 1L << P[BINARY_32_IX] - 1
+                ? 0
+                : q + ((FloatConsts.EXP_BIAS - 1) + P[BINARY_32_IX]);
+        int bits = (ssign != '-' ? 0 : 1 << Float.SIZE - 1)
+                | be << P[BINARY_32_IX] - 1
+                | (int) c & FloatConsts.SIGNIF_BIT_MASK;
+        return Float.intBitsToFloat(bits);
+    }
+
+    private static void copyDigits(String in, byte[] digits, int len, int i) {
+        int ch;
+        int j = 0;
+        while (j < len) {
+            if ((ch = in.charAt(i++)) != '.') {
+                digits[j++] = (byte) ch;
+            }
+        }
+    }
+
+    /* Arithmetically "appends the dec digit" ch to v >= 0, clamping at 10^10. */
+    private static long appendDecDigit(long v, int ch) {
+        return v < 10_000_000_000L / 10 ? 10 * v + (ch - '0') : 10_000_000_000L;
+    }
+
+    /* Whether ch is a digit char '0-9', 'A-F', or 'a-f', depending on isDec. */
+    private static boolean isDigit(int ch, boolean isDec) {
+        int lch;  // lowercase ch
+        return '0' <= ch && ch <= '9' ||
+                !isDec && 'a' <= (lch = toLowerCase(ch)) && lch <= 'f';
+    }
+
+    /* Returns the numeric value of ch, assuming it is a hexdigit. */
+    private static int digitFor(int ch) {
+        return ch <= '9' ? ch - '0' : toLowerCase(ch) - ('a' - 10);
+    }
+
+    /*
+     * Starting at i, skips all chars in ['\0', ' '].
+     * Returns the index after the whitespaces.
+     */
+    private static int skipWhitespaces(String in, int i) {
+        int len = in.length();
+        for (; i < len && in.charAt(i) <= ' '; ++i);  // empty body
+        return i;
+    }
+
+    /*
+     * Attempts to scan sub and optional trailing whitespaces, starting at index i.
+     * The optional whitespaces must be at the end of in.
+     */
+    private static void scanSymbolic(String in, int i, String sub) {
+        int high = i + sub.length();  // might overflow, checked in next line
+        check(in, i <= high && high <= in.length()
+                        && in.indexOf(sub, i, high) == i
+                        && skipWhitespaces(in, high) == in.length());
+    }
+
+    /*
+     * Returns i if this is the first time the scanner detects a point.
+     * Throws otherwise.
+     */
+    private static int checkMultiplePoints(int pt, int i) {
+        if (pt != 0) {
+            throw new NumberFormatException("multiple points");
+        }
+        return i;
+    }
+
+    private static final int MAX_OUT = 1_000;
+    private static final String OMITTED = " ... ";
+    private static final int L_HALF = (MAX_OUT - OMITTED.length()) / 2;
+    private static final int R_HALF = MAX_OUT - (L_HALF + OMITTED.length());
+
+    private static void check(String in, boolean expected) {
+        if (!expected) {
+            int len = in.length();
+            if (len > MAX_OUT) {  // discard middle chars to achieve a length of MAX_OUT
+                in = in.substring(0, L_HALF) + OMITTED + in.substring(len - R_HALF);
+            }
+            throw new NumberFormatException("For input string: \"" + in + "\"");
+        }
+    }
+
+    /*
+     * According to IEEE 754-2019, a finite positive binary floating-point
+     * value of precision P is (uniquely) expressed as
+     *      c 2^q
+     * where integers c and q meet
+     *      Q_MIN <= q <= Q_MAX
+     *      either      2^(P-1) <= c < 2^P                  (normal)
+     *      or          0 < c < 2^(P-1)  &  q = Q_MIN       (subnormal)
+     *      c = b_1...b_P  (b_i in [0, 2))
+     *
+     * Equivalently, the floating-point value can be (uniquely) expressed as
+     *      m 2^ep
+     * where integer qe and real f meet
+     *      qe = q + P
+     *      m = c 2^(-P)
+     * Hence,
+     *      QE_MIN = Q_MIN + P, QE_MAX = Q_MAX + P,
+     *      2^(-1) <= m < 1     (normal)
+     *      m < 2^(-1)          (subnormal)
+     *      m = 0.b_1...b_P
+     */
+
+    /*
+     * These constants are used to indicate the IEEE binary floating-point format
+     * as an index (ix) to some methods and static arrays in this class.
+     */
+    private static final int BINARY_16_IX = 0;
+    private static final int BINARY_32_IX = 1;
+    private static final int BINARY_64_IX = 2;
+//    private static final int BINARY_128_IX = 3;
+//    private static final int BINARY_256_IX = 4;
+
+    @Stable
+    private static final int[] P = {
+            11,
+            FloatToDecimal.P,
+            DoubleToDecimal.P,
+            // 113,
+            // 237,
+    };
+
+    @Stable
+    private static final int[] W = {
+            5,
+            FloatToDecimal.W,
+            DoubleToDecimal.W,
+//            (1 << 4 + BINARY_128_IX) - P[BINARY_128_IX],
+//            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
+    };
+
+    /* Minimum exponent in the m 2^e representation. */
+    /* Minimum exponent in the c 2^q representation. */
+    @Stable
+    private static final int[] Q_MIN = {
+            -24,  // Float16ToDecimal.Q_MIN,
+            FloatToDecimal.Q_MIN,
+            DoubleToDecimal.Q_MIN,
+//            QE_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
+//            QE_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
+    };
+
+    @Stable
+    private static final int[] QE_MIN = {
+            Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
+            FloatToDecimal.Q_MIN + FloatToDecimal.P,
+            DoubleToDecimal.Q_MIN + DoubleToDecimal.P,
+//            Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],
+//            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
+    };
+
+    /* Maximum exponent in the m 2^e representation. */
+    @Stable
+    private static final int[] QE_MAX = {
+            3 - QE_MIN[BINARY_16_IX],
+            FloatToDecimal.Q_MAX + FloatToDecimal.P,
+            DoubleToDecimal.Q_MAX + DoubleToDecimal.P,
+//            3 - QE_MIN[BINARY_128_IX],
+//            3 - QE_MIN[BINARY_256_IX],
+    };
+
+    @Stable
+    private static final int[] E_THR_Z = {
+            -8,
+            FloatToDecimal.E_THR_Z,
+            DoubleToDecimal.E_THR_Z,
+            // -4_966,
+            // -78_985,
+    };
+
+    @Stable
+    private static final int[] E_THR_I = {
+            6,
+            FloatToDecimal.E_THR_I,
+            DoubleToDecimal.E_THR_I,
+            // 4_934,
+            // 78_915,
+    };
+
+    /*
+     * The most significant P +1 rounding bit +1 sticky bit = P + 2 bits in a
+     * hexadecimal string need up to HEX_COUNT = floor(P/4) + 2 hex digits.
+     */
+    @Stable
+    private static final int[] HEX_COUNT = {
+            P[BINARY_16_IX] / 4 + 2,
+            P[BINARY_32_IX] / 4 + 2,
+            P[BINARY_64_IX] / 4 + 2,
+//            P[BINARY_128_IX] / 4 + 2,
+//            P[BINARY_256_IX] / 4 + 2,
+    };
+
 }

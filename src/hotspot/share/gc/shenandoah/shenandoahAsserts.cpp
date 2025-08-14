@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "oops/oop.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/os.hpp"
+#include "utilities/vmError.hpp"
 
 void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // Be extra safe. Only access data that is guaranteed to be safe:
@@ -57,24 +60,42 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ResourceMark rm;
   stringStream ss;
-  r->print_on(&ss);
-
-  stringStream mw_ss;
-  obj->mark().print_on(&mw_ss);
+  StreamIndentor si(&ss);
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj->klass()), obj->klass()->external_name());
-  msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
-  msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
-  msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
-  msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
-  msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
-  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
-    msg.append("  age: %d\n", obj->age());
+  narrowKlass nk = 0;
+  const Klass* obj_klass = nullptr;
+  const bool klass_valid = extract_klass_safely(obj, nk, obj_klass);
+  const char* klass_text = "(invalid)";
+  if (klass_valid && os::is_readable_pointer(obj_klass) && Metaspace::contains(obj_klass)) {
+    klass_text = obj_klass->external_name();
   }
-  msg.append("  mark:%s\n", mw_ss.freeze());
-  msg.append("  region: %s", ss.freeze());
+  ss.print_cr(PTR_FORMAT " - nk %u klass " PTR_FORMAT " %s\n", p2i(obj), nk, p2i(obj_klass), klass_text);
+  {
+    StreamIndentor si(&ss);
+    ss.print_cr("%3s allocated after mark start", ctx->allocated_after_mark_start(obj) ? "" : "not");
+    ss.print_cr("%3s after update watermark",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
+    ss.print_cr("%3s marked strong",              ctx->is_marked_strong(obj) ? "" : "not");
+    ss.print_cr("%3s marked weak",                ctx->is_marked_weak(obj) ? "" : "not");
+    ss.print_cr("%3s in collection set",          heap->in_collection_set(obj) ? "" : "not");
+    if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+      ss.print_cr("age: %d", obj->age());
+    }
+    ss.print_raw("mark: ");
+    obj->mark().print_on(&ss);
+    ss.cr();
+    ss.print_raw("region: ");
+    r->print_on(&ss);
+    ss.cr();
+    if (obj_klass == vmClasses::Class_klass()) {
+      msg.append("  mirrored klass:       " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::klass_offset())));
+      msg.append("  mirrored array klass: " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
+    }
+  }
+  const_address loc = cast_from_oop<const_address>(obj);
+  os::print_hex_dump(&ss, loc, loc + 64, 4, true, 32, loc);
+  msg.append("%s", ss.base());
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
@@ -115,6 +136,10 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ResourceMark rm;
 
+  if (!os::is_readable_pointer(obj)) {
+    level = _safe_unknown;
+  }
+
   bool loc_in_heap = (loc != nullptr && heap->is_in_reserved(loc));
 
   ShenandoahMessageBuffer msg("%s; %s\n\n", phase, label);
@@ -122,7 +147,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   msg.append("Referenced from:\n");
   if (interior_loc != nullptr) {
     msg.append("  interior location: " PTR_FORMAT "\n", p2i(interior_loc));
-    if (loc_in_heap) {
+    if (loc_in_heap && os::is_readable_pointer(loc)) {
       print_obj(msg, loc);
     } else {
       print_non_obj(msg, interior_loc);
@@ -144,7 +169,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
     oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
     if (obj != fwd) {
-      if (level >= _safe_oop_fwd) {
+      if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
       } else {
         print_obj_safe(msg, fwd);
@@ -199,17 +224,10 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  Klass* obj_klass = ShenandoahForwarding::klass(obj);
-  if (obj_klass == nullptr) {
+  if (!os::is_readable_pointer(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object klass pointer should not be null",
-                  file,line);
-  }
-
-  if (!Metaspace::contains(obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object klass pointer must go to metaspace",
-                  file,line);
+                  "oop within heap bounds but at unreadable location",
+                  file, line);
   }
 
   if (!heap->is_in(obj)) {
@@ -237,9 +255,9 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
 
-    if (obj_klass != ShenandoahForwarding::klass(fwd)) {
+    if (!os::is_readable_pointer(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Forwardee klass disagrees with object class",
+                    "Forwardee within heap bounds but at unreadable location",
                     file, line);
     }
 
@@ -265,21 +283,49 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
   }
 
+  const Klass* obj_klass = nullptr;
+  narrowKlass nk = 0;
+  if (!extract_klass_safely(obj, nk, obj_klass)) {
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer invalid",
+                  file,line);
+  }
+
+  if (obj_klass == nullptr) {
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer should not be null",
+                  file,line);
+  }
+
+  if (!Metaspace::contains(obj_klass)) {
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer must go to metaspace",
+                  file,line);
+  }
+
+  if (!UseCompactObjectHeaders && obj_klass != fwd->klass_or_null()) {
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Forwardee klass disagrees with object class",
+                  file, line);
+  }
+
   // Do additional checks for special objects: their fields can hold metadata as well.
-  // We want to check class loading/unloading did not corrupt them.
+  // We want to check class loading/unloading did not corrupt them. We can only reasonably
+  // trust the forwarded objects, as the from-space object can have the klasses effectively
+  // dead.
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
-    Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+    const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Instance class mirror should point to Metaspace",
+                    "Mirrored instance class should point to Metaspace",
                     file, line);
     }
 
-    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
     if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Array class mirror should point to Metaspace",
+                    "Mirrored array class should point to Metaspace",
                     file, line);
     }
   }
@@ -510,4 +556,35 @@ void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line
 
   ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
   report_vm_error(file, line, msg.buffer());
+}
+
+bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k) {
+  nk = 0;
+  k = nullptr;
+
+  if (!os::is_readable_pointer(obj)) {
+    return false;
+  }
+  if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) { // look in forwardee
+      markWord mark = obj->mark();
+      if (mark.is_marked()) {
+        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+        if (!os::is_readable_pointer(fwd)) {
+          return false;
+        }
+        mark = fwd->mark();
+      }
+      nk = mark.narrow_klass();
+    } else {
+      nk = obj->narrow_klass();
+    }
+    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
+      return false;
+    }
+    k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+  } else {
+    k = obj->klass();
+  }
+  return k != nullptr;
 }
