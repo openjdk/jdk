@@ -45,6 +45,7 @@ class CompileQueue;
 class CompilerCounters;
 class IdealGraphPrinter;
 
+#ifndef LINUX
 class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
  public:
   CompilerThreadTimeoutGeneric() {};
@@ -52,6 +53,7 @@ class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
   void disarm() {};
   bool init_timeout() { return true; };
 };
+#endif // !LINUX
 
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
