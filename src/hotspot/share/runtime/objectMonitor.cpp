@@ -577,16 +577,12 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
     if (!is_virtual) { // already notified contended_enter for virtual
       notify_contended_enter(current);
     }
-    OSThreadContendState osts(current->osthread());
 
     assert(current->thread_state() == _thread_in_vm, "invariant");
 
     for (;;) {
-      ExitOnSuspend eos(this);
-      {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
-        enter_internal(current);
-        current->set_current_pending_monitor(nullptr);
+      enter_internal(current);
+      current->set_current_pending_monitor(nullptr);
         // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
         // as having "-locked" the monitor, but the OS and java.lang.Thread
@@ -594,12 +590,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
         // acquire it.
         // If there is a suspend request, ExitOnSuspend will exit the OM
         // and set the OM as pending.
-      }
-      if (!eos.exited()) {
-        // ExitOnSuspend did not exit the OM
-        assert(has_owner(current), "invariant");
-        break;
-      }
     }
 
     // We've just gotten past the enter-check-for-suspend dance and we now own
@@ -927,8 +917,6 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
 }
 
 void ObjectMonitor::enter_internal(JavaThread* current) {
-  assert(current->thread_state() == _thread_blocked, "invariant");
-
   // Try the lock - TATAS
   if (try_lock(current) == TryLockResult::Success) {
     assert(!has_successor(current), "invariant");
@@ -1004,16 +992,24 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
     }
     assert(!has_owner(current), "invariant");
 
-    // park self
-    if (do_timed_parked) {
-      current->_ParkEvent->park((jlong) recheck_interval);
-      // Increase the recheck_interval, but clamp the value.
-      recheck_interval *= 8;
-      if (recheck_interval > MAX_RECHECK_INTERVAL) {
-        recheck_interval = MAX_RECHECK_INTERVAL;
+    OSThreadContendState osts(current->osthread());
+
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+    {
+      ClearSuccOnSuspend csos(this);
+      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+
+      // park self
+      if (do_timed_parked) {
+        current->_ParkEvent->park((jlong) recheck_interval);
+        // Increase the recheck_interval, but clamp the value.
+        recheck_interval *= 8;
+        if (recheck_interval > MAX_RECHECK_INTERVAL) {
+          recheck_interval = MAX_RECHECK_INTERVAL;
+        }
+      } else {
+        current->_ParkEvent->park();
       }
-    } else {
-      current->_ParkEvent->park();
     }
 
     if (try_lock(current) == TryLockResult::Success) {
