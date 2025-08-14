@@ -176,19 +176,27 @@ class TemplateAssertionPredicate;
  *                    Predicates, and the associated Parse Predicate which all share the same uncommon trap. This block
  *                    could be empty if there were no Runtime Predicates created and the Parse Predicate was already
  *                    removed.
- *                    There are three different Predicate Blocks:
+ *                    There are five different Predicate Blocks:
+ *                    - Short Running Long    Groups the Short Running Long Loop Predicate (if created), and the
+ *                      Loop Predicate Block: Short Running Long Loop Parse Predicate together.
  *                    - Loop Predicate Block: Groups the Loop Predicates (if any), including the Assertion Predicates,
  *                                            and the Loop Parse Predicate (if not removed, yet) together.
  *                    - Profiled Loop         Groups the Profiled Loop Predicates (if any), including the Assertion
  *                      Predicate Block:      Predicates, and the Profiled Loop Parse Predicate (if not removed, yet)
  *                                            together.
+ *                    - AutoVectorization     Groups the AutoVectorization Runtime Check Predicates (if any), and the
+ *                      Runtime Check         AutoVectorization Runtime Check Parse Predicate together.
+ *                      Predicate Block:
  *                    - Loop Limit Check      Groups the Loop Limit Check Predicate (if created) and the Loop Limit
  *                      Predicate Block:      Check Parse Predicate (if not removed, yet) together.
  * - Regular Predicate Block: A block that only contains the Regular Predicates of a Predicate Block without the
  *                            Parse Predicate.
  *
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
- * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
+ * (predicates inside square brackets [] do not need to exist if there are no checks to hoist / insert):
+ *
+ *   [Short Running Long Loop Predicate] (at most one)                 \ Short Running Long
+ * Short Running Long Loop Parse Predicate                             / Loop Predicate Block
  *
  *   [Loop Predicate 1 + two Template Assertion Predicates]            \
  *   [Loop Predicate 2 + two Template Assertion Predicates]            |
@@ -201,6 +209,12 @@ class TemplateAssertionPredicate;
  *   ...                                                               | Predicate Block
  *   [Profiled Loop Predicate m + two Template Assertion Predicates]   |
  * Profiled Loop Parse Predicate                                       /
+ *
+ *   [AutoVectorization Runtime Check Predicate 1]                     \
+ *   [AutoVectorization Runtime Check Predicate 2]                     | AutoVectorization
+ *   ...                                                               | Runtime Check
+ *   [AutoVectorization Runtime Check Predicate l]                     | Predicate Block
+ * AutoVectorization Runtime Check Parse Predicate                     /
  *
  *   [Loop Limit Check Predicate] (at most one)                        \ Loop Limit Check
  * Loop Limit Check Parse Predicate                                    / Predicate Block
