@@ -850,18 +850,51 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
 //   m > 0
 // is false which is a contradiction.
 //
-// (1a) and (1b) is covered by this method since we can directly return the corresponding TypeInt::CC_*
-// while (2) is covered in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
+// (1a) and (1b) is covered by this method since we can directly return the
+// corresponding TypeInt::CC_* while (2) is covered in BoolNode::Ideal since
+// we create a new non-constant node (see [CMPU_MASK]).
+//
+// Depending on the _test of the child(ren) Bool node(s) of CmpU, the following
+// optimizations will be later performed in BoolTest::cc2logical.
+//
+// (1a) "(x & m) <=u m" is always true, so type(CmpU) = CC_LE.
+//
+//      | BoolTest | CmpU + Bool expression  |      Result       |
+//      |----------|-------------------------|-------------------|
+//      |    eq    |     (x & m)  ==u  m     |      unknown      |
+//      |    ne    |     (x & m)  !=u  m     |      unknown      |
+//      |~~~ le ~~~|~~~~ (x & m)  <=u  m ~~~~|~~~~~~ true ~~~~~~~|
+//      |    ge    |     (x & m)  >=u  m     |      unknown      |
+//      |    lt    |     (x & m)   <u  m     |      unknown      |
+//      |    gt    |     (x & m)   >u  m     |       false       |
+//
+// (1b) "(x & m) <u m + 1" is always true (if m != -1), so type(CmpU) = CC_LT.
+//
+//      | BoolTest | CmpU + Bool expression  | Result if m != -1 |
+//      |----------|-------------------------|-------------------|
+//      |    eq    |   (x & m)  ==u  m + 1   |       false       |
+//      |    ne    |   (x & m)  !=u  m + 1   |       true        |
+//      |    le    |   (x & m)  <=u  m + 1   |       true        |
+//      |    ge    |   (x & m)  >=u  m + 1   |       false       |
+//      |~~~ lt ~~~|~~ (x & m)   <u  m + 1 ~~|~~~~~~ true ~~~~~~~|
+//      |    gt    |   (x & m)   >u  m + 1   |       false       |
+//
+// NOTE: all the cases with "m & x" also apply.
+//
 const Type* CmpUNode::Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, const Node* rhs) {
   if (andI->Opcode() == Op_AndI) {
     // (1a) "(x & m) <=u m" and "(m & x) <=u m" are always true,
     // so CmpU(x & m, m) and CmpU(m & x, m) are known to be LE.
+    // NOTE: any CCP update to "m" will push the CmpUNode to the worklist,
+    // since rhs_m is a direct input of it.
     const Node* rhs_m = rhs;
     if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
       return TypeInt::CC_LE;
     }
     // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1" are always true for m != -1,
     // so CmpU(x & m, m + 1) and CmpU(m & x, m + 1) are known to be LT.
+    // NOTE: any CCP update to "m" or "1" will push the CmpUNode to the worklist,
+    // this granchild push is handled by PhaseCCP::push_cmpu.
     if (rhs->Opcode() == Op_AddI && rhs->in(2)->find_int_con(0) == 1) {
       rhs_m = rhs->in(1);
       const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
