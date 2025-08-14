@@ -24,6 +24,7 @@
 
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -60,7 +61,6 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 class ClassLoaderData;
@@ -607,51 +607,23 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_cpu_time() const {
-  LogTarget(Info, cpu) cpuLog;
-  if (!os::is_thread_cpu_time_supported() || !cpuLog.is_enabled()) {
-    return;
-  }
-
-  double process_cpu_time = os::elapsed_process_cpu_time();
-  if (process_cpu_time == 0 || process_cpu_time == -1) {
-    // 0 can happen e.g. for short running processes with
-    // low CPU utilization
-    return;
-  }
-
-  double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
-  CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
-  double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
-  double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
-  double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
-
-  if (gc_cpu_time < process_cpu_time) {
-    cpuLog.print("=== CPU time Statistics =============================================================");
-    cpuLog.print("                                                                            CPUs");
-    cpuLog.print("                                                               s       %%  utilized");
-    cpuLog.print("   Process");
-    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / os::elapsedTime());
-    cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, percent_of(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / os::elapsedTime());
-    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / os::elapsedTime());
-    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / os::elapsedTime());
-    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / os::elapsedTime());
-
-    if (UseStringDeduplication) {
-      double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
-      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, percent_of(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / os::elapsedTime());
-    }
-    cpuLog.print("=====================================================================================");
-  }
-}
-
 void CollectedHeap::before_exit() {
   print_tracing_info();
 
-  log_cpu_time();
-
   // Stop any on-going concurrent work and prepare for exit.
   stop();
+
+  // Print GC/heap related information.
+  Log(gc, exit) log;
+  if (log.is_info()) {
+    LogStream ls_info(log.info());
+    Universe::print_on(&ls_info);
+    if (log.is_trace()) {
+      LogStream ls_trace(log.trace());
+      MutexLocker mcld(ClassLoaderDataGraph_lock);
+      ClassLoaderDataGraph::print_on(&ls_trace);
+    }
+  }
 }
 
 #ifndef PRODUCT

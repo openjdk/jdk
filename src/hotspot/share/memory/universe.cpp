@@ -86,6 +86,7 @@
 #include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
@@ -1300,6 +1301,50 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
 }
 
+static void log_cpu_time() {
+  LogTarget(Info, cpu) cpuLog;
+  if (!cpuLog.is_enabled()) {
+    return;
+  }
+
+  const double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  const double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
+  CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
+  const double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
+  const double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
+
+  const double elasped_time = os::elapsedTime();
+
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
+    cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, percent_of(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / elasped_time);
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
+
+    if (UseStringDeduplication) {
+      double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, percent_of(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / elasped_time);
+    }
+    cpuLog.print("=====================================================================================");
+  }
+}
+
+void Universe::before_exit() {
+  log_cpu_time();
+  heap()->before_exit();
+}
 
 #ifndef PRODUCT
 void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) {
