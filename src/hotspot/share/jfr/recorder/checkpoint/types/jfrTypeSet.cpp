@@ -606,6 +606,7 @@ typedef CompositeFunctor<KlassPtr, CompositeKlassWriter, KlassArtifactRegistrato
 typedef JfrArtifactCallbackHost<KlassPtr, CompositeKlassWriterRegistration> CompositeKlassCallback;
 
 static void write_klasses() {
+  assert(!_artifacts->has_klass_entries(), "invariant");
   assert(_writer != nullptr, "invariant");
   KlassArtifactRegistrator reg(_artifacts);
   KlassWriter kw(_writer, unloading());
@@ -629,6 +630,7 @@ static void write_klasses() {
 }
 
 static void write_klasses_on_clear() {
+  assert(!_artifacts->has_klass_entries(), "invariant");
   assert(_writer != nullptr, "invariant");
   assert(_leakp_writer != nullptr, "invariant");
   KlassArtifactRegistrator reg(_artifacts);
@@ -1280,6 +1282,7 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   }
   assert(current_epoch() || _leakp_writer != nullptr, "invariant");
   assert(_artifacts != nullptr, "invariant");
+  assert(!_artifacts->has_klass_entries(), "invariant");
 }
 
 /**

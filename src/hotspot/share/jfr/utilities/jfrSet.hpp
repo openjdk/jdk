@@ -58,6 +58,7 @@ class JfrSetStorage : public AnyObj {
  protected:
   K* _table;
   unsigned _table_size;
+  unsigned _elements;
 
   static K* alloc_table(unsigned table_size) {
     K* table;
@@ -72,7 +73,8 @@ class JfrSetStorage : public AnyObj {
 
   JfrSetStorage(unsigned table_size) :
     _table(alloc_table(table_size)),
-    _table_size(table_size) {}
+    _table_size(table_size),
+    _elements(0) {}
 
   ~JfrSetStorage() {
     if (CONFIG::alloc_type() == C_HEAP) {
@@ -80,13 +82,10 @@ class JfrSetStorage : public AnyObj {
     }
   }
 
-  K* table() const {
-    return _table;
-  }
-
  public:
   template <typename Functor>
   void iterate(Functor& functor) {
+    assert(is_nonempty(), "invariant");
     for (unsigned i = 0; i < _table_size; ++i) {
       K k = _table[i];
       if (k != 0) {
@@ -97,6 +96,14 @@ class JfrSetStorage : public AnyObj {
 
   unsigned table_size() const {
     return _table_size;
+  }
+
+  unsigned size() const {
+    return _elements;
+  }
+
+  bool is_nonempty() const {
+    return _elements > 0;
   }
 
   void clear() {
@@ -110,90 +117,92 @@ class JfrSet : public JfrSetStorage<CONFIG> {
   static_assert(sizeof(K) > 1, "invalid size of CONFIG::KEY_TYPE");
  private:
   static const constexpr unsigned max_initial_size = 1 << 30;
-  const unsigned _max_probe_sequence;
+  unsigned _table_mask;
+  unsigned _resize_threshold; // 0.5 load factor
 
   uint32_t slot_idx(const uint32_t hash) const {
-    return hash & (this->table_size() - 1);
+    return hash & _table_mask;
   }
 
   void resize() {
-   begin:
-    K* const old_table = this->table();
+    assert(this->_elements == _resize_threshold, "invariant");
+    K* const old_table = this->_table;
     assert(old_table != nullptr, "invariant");
     const unsigned old_table_size = this->table_size();
     guarantee(old_table_size < max_initial_size, "overflow");
-    this->_table_size = old_table_size * 2;
-    this->_table = this->alloc_table(this->_table_size);
+    this->_table_size = old_table_size << 1;
+    this->_table = JfrSetStorage<CONFIG>::alloc_table(this->_table_size);
+    _table_mask = this->_table_size - 1;
+    _resize_threshold = old_table_size;
     for (unsigned i = 0; i < old_table_size; ++i) {
       const K k = old_table[i];
       if (k != 0) {
         uint32_t idx = slot_idx(CONFIG::hash(k));
-        unsigned probe_sequence = 0;
         do {
           K v = this->_table[idx];
           if (v == 0) {
             this->_table[idx] = k;
-            goto continue_for_loop;
+            break;
           }
           idx = slot_idx(idx + 1);
-        } while (++probe_sequence < _max_probe_sequence);
-        memcpy(this->_table, old_table, old_table_size * sizeof(K));
-        if (CONFIG::alloc_type() == AnyObj::C_HEAP) {
-          FREE_C_HEAP_ARRAY(K, old_table);
-        }
-        goto begin;
+        } while (true);
       }
-      continue_for_loop:;
     }
-
     if (CONFIG::alloc_type() == AnyObj::C_HEAP) {
       FREE_C_HEAP_ARRAY(K, old_table);
     }
+    assert(_table_mask + 1 == this->_table_size, "invariant");
+    assert(_resize_threshold << 1 == this->_table_size, "invariant");
   }
 
   K* find_slot(K const& k) const {
     uint32_t idx = slot_idx(CONFIG::hash(k));
     assert(idx < this->table_size(), "invariant");
-    unsigned probe_sequence = 0;
-    do {
+    K* result = nullptr;
+    while (true) {
       K v = this->_table[idx];
       if (v == 0) {
-        return &this->_table[idx];
+        result = &this->_table[idx];
+        break;
       }
       if (CONFIG::cmp(v, k)) {
-        return reinterpret_cast<K*>(p2i(&this->_table[idx]) | 1);
+        result = reinterpret_cast<K*>(p2i(&this->_table[idx]) | 1);
+        break;
       }
       idx = slot_idx(idx + 1);
-    } while (++probe_sequence < _max_probe_sequence);
-    return nullptr; // Will trigger resize.
+    }
+    assert(result != nullptr, "invariant");
+    return result;
   }
 
  public:
-  JfrSet(unsigned size, unsigned max_probe_sequence = 8) :
+  JfrSet(unsigned size) :
     JfrSetStorage<CONFIG>(size),
-    _max_probe_sequence(max_probe_sequence) {
+    _table_mask(size - 1),
+    _resize_threshold(size >> 1) {
+    assert(size >= 2, "invariant");
     assert(size % 2 == 0, "invariant");
     assert(size <= max_initial_size, "avoid overflow in resize");
   }
 
   bool contains(K const& k) const {
     K* const slot = find_slot(k);
-    return slot != nullptr && (p2i(slot) & 1);
+    return p2i(slot) & 1;
   }
 
   bool add(K const& k) {
     K* const slot = find_slot(k);
-    if (slot != nullptr) {
-      if (p2i(slot) & 1) {
-        // Already exists.
-        return false;
-      }
-      assert(*slot == 0, "invariant");
-      *slot = k;
-      return true;
+    if (p2i(slot) & 1) {
+      // Already exists.
+      return false;
     }
-    resize();
-    return add(k);
+    assert(*slot == 0, "invariant");
+    *slot = k;
+    if (++this->_elements == _resize_threshold) {
+      resize();
+    }
+    assert(this->_elements < _resize_threshold, "invariant");
+    return true;
   }
 };
 

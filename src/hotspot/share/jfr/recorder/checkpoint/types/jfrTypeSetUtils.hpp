@@ -265,7 +265,9 @@ class JfrArtifactSet : public JfrCHeapObj {
   template <typename Functor>
   bool iterate(Functor& functor, JfrKlassSet* set) const {
     assert(set != nullptr, "invariant");
-    set->iterate(functor);
+    if (set->is_nonempty()) {
+      set->iterate(functor);
+    }
     return true;
   }
 };

@@ -99,6 +99,9 @@ traceid JfrArtifactSet::mark(uintptr_t hash, const char* const str, bool leakp) 
   return _symbol_table->mark(hash, str, leakp);
 }
 
+bool JfrArtifactSet::has_klass_entries() const {
+  return _klass_set->is_nonempty();
+}
 static inline bool not_in_set(JfrArtifactSet::JfrKlassSet* set, const Klass* k) {
   assert(set != nullptr, "invariant");
   assert(k != nullptr, "invariant");

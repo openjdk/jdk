@@ -355,13 +355,13 @@ static inline bool should_write(const JfrStackTrace* stacktrace) {
 class LeakProfilerStackTraceWriter {
  private:
   JfrCheckpointWriter& _writer;
-  int _count;
+  unsigned _count;
  public:
   LeakProfilerStackTraceWriter(JfrCheckpointWriter& writer) : _writer(writer), _count(0) {
     assert(_stacktrace_id_set != nullptr, "invariant");
   }
 
-  int count() const { return _count; }
+  unsigned count() const { return _count; }
 
   void operator()(const JfrStackTrace* stacktrace) {
     if (should_write(stacktrace)) {
@@ -373,24 +373,14 @@ class LeakProfilerStackTraceWriter {
 
 void ObjectSampleCheckpoint::write_stacktraces(Thread* thread) {
   assert(_stacktrace_id_set != nullptr, "invariant");
+  assert(_stacktrace_id_set->is_nonempty(), "invariant");
 
   JfrCheckpointWriter writer(thread);
-
-  // save context
-  const JfrCheckpointContext ctx = writer.context();
-
   writer.write_type(TYPE_STACKTRACE);
-  const int64_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
-
+  writer.write_count(_stacktrace_id_set->size());
   LeakProfilerStackTraceWriter lpstw(writer);
   JfrStackTraceRepository::iterate_leakprofiler(lpstw);
-
-  if (lpstw.count() == 0) {
-    writer.set_context(ctx);
-    return;
-  }
-
-  writer.write_count(lpstw.count(), count_offset);
+  assert(lpstw.count() == _stacktrace_id_set->size(), "invariant");
 }
 
 static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
@@ -474,7 +464,9 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
     assert(is_power_of_2(stacktrace_set_size), "invariant");
     _stacktrace_id_set = new JfrResourceAreaTraceIdSet(stacktrace_set_size);
     write_sample_blobs(sampler, emit_all, thread);
-    write_stacktraces(thread);
+    if (_stacktrace_id_set->is_nonempty()) {
+      write_stacktraces(thread);
+    }
   }
   // write reference chains
   if (!edge_store->is_empty()) {
