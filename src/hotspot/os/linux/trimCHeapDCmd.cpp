@@ -45,11 +45,11 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
       _output->print("Trim native heap: ");
       if (sc.after != SIZE_MAX) {
         const ssize_t delta = checked_cast<ssize_t>(sc.after) - checked_cast<ssize_t>(sc.before);
-        _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (%zd) (%.3fms)",
-                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), delta, duration);
+        _output->print_cr("RSS+Swap: %zuM->%zuM (%zdM) (%.3fms)",
+                          sc.before / M, sc.after / M, delta / M, duration);
         // Also log if native trim log is active
-        log_info(trimnative)("Manual Trim: " PROPERFMT "->" PROPERFMT " (%zd) (%.3fms)",
-                             PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), delta, duration);
+        log_info(trimnative)("Manual Trim: %zuM->%zuM (%zdM) (%.3fms)",
+                             sc.before / M, sc.after / M, delta / M, duration);
         JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, true, duration, sc.before, sc.after, delta);)
       } else {
         _output->print_cr("(no details available).");
