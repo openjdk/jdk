@@ -2043,8 +2043,10 @@ class MutableBigInteger {
                     // the first Double.PRECISION leftmost bits are correct
                     // We scale the corresponding wrong bits of approx in the fraction part.
                     int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
-                    // wrongBits must be less than ((Math.getExponent(rad) + 1) - 1) / n + 1,
-                    // the bit length of approx, so rootSh < rootLen
+                    // Since rad <= 2^(bitLength - sh), then
+                    // wrongBits <= ((bitLength - sh + 1) - Double.PRECISION) / n,
+                    // so wrongBits is less than ((bitLength - sh) - 1) / n + 1,
+                    // the bit length of the exact shifted root, hence rootSh < rootLen
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
