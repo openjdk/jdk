@@ -51,15 +51,16 @@ public class TestBoolNodeGVN {
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldReplaceCpmUCase1(int x, int m) {
-        return !(Integer.compareUnsigned((x & m), m) > 0); // assert in inversions to generates the pattern looking for
+        return Integer.compareUnsigned((x & m), m) <= 0;
     }
+
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldReplaceCpmUCase2(int x, int m) {
-        return !(Integer.compareUnsigned((m & x), m) > 0);
+        return Integer.compareUnsigned((m & x), m) <= 0;
     }
 
     @Test
@@ -106,7 +107,7 @@ public class TestBoolNodeGVN {
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase1(int x, int m) {
-        return !(Integer.compareUnsigned((x & m), m - 1) > 0);
+        return Integer.compareUnsigned((x & m), m - 1) <= 0;
     }
 
     @Test
@@ -115,7 +116,7 @@ public class TestBoolNodeGVN {
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase2(int x, int m) {
-        return !(Integer.compareUnsigned((m & x), m - 1) > 0);
+        return Integer.compareUnsigned((m & x), m - 1) <= 0;
     }
 
     @Test
