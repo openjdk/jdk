@@ -368,7 +368,7 @@ public class LintMapper {
     private record LintRange(
         Span span,                                      // declaration's lexical range
         Lint lint,                                      // the Lint configuration that applies at this declaration
-        Symbol symbol,                                  // declaration symbol (for debug purposes only; null for root)
+        Symbol symbol,                                  // declaration symbol (null for root range)
         List<LintRange> children,                       // the nested declarations one level below this node
         JCAnnotation annotation,                        // the @SuppressWarnings on this declaration, if any
         EnumSet<LintCategory> suppressions,             // categories suppressed by @SuppressWarnings, if any
