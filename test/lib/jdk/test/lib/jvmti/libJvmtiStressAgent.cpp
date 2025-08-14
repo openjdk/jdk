@@ -286,9 +286,9 @@ should_stop(jvmtiEnv *jvmti, JNIEnv *jni) {
 
 /* Read stack, frames, method, variables, etc. */
 static void
-stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
+walk_stack(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  debug("In stack_trace: %p", thread);
+  debug("In walk_stack: %p", thread);
 
   jvmtiFrameInfo frames[5];
   jint count = 0;
@@ -342,9 +342,9 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   debug("---- End of stack inspection %d -----", count);
 }
 
-/* Iterate with stack_trace through all thread. */
+/* Iterate with walk_stack through all thread. */
 static void JNICALL
-all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
+walk_all_threads_stacks(jvmtiEnv *jvmti, JNIEnv *jni) {
     jint threads_count = 0;
     jthread *threads = nullptr;
     jvmtiError err = JVMTI_ERROR_NONE;
@@ -368,7 +368,7 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
         // The non-intrusive actions are allowed to ensure that results of target
         // thread are not affected.
         jthread thread = threads[t];
-        stack_trace(jvmti, jni, thread);
+        walk_stack(jvmti, jni, thread);
 
         // Suspend/resume are solo capabilities and are treated like debugging
         if (gdata->is_debugger_enabled) {
@@ -384,7 +384,7 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
           check_jvmti_status(jni, err, "SuspendThread");
           debug("Inspect:  Suspended thread %s", info.name);
 
-          stack_trace(jvmti, jni, thread);
+          walk_stack(jvmti, jni, thread);
 
           debug("Inspect: Trying to resume thread %s", info.name);
           err = jvmti->ResumeThread(thread);
@@ -435,7 +435,7 @@ get_heap_info(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass) {
 
 int
 is_event_frequent(int event) {
-  // Should include all interpreter-only events and all often events.
+  // Should include all interpreter-only events and all frequent events.
   return event == JVMTI_EVENT_SINGLE_STEP
       || event == JVMTI_EVENT_METHOD_ENTRY
       || event == JVMTI_EVENT_METHOD_EXIT
@@ -539,7 +539,7 @@ stress_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
     }
 
     if (gdata->is_tracing_enabled) {
-      all_threads_stack_trace(jvmti, jni);
+      walk_all_threads_stacks(jvmti, jni);
     }
 
     sleep_ms(gdata->events_interval);
@@ -931,8 +931,6 @@ void get_capabilities(jvmtiEnv *jvmti) {
     capabilities.can_generate_field_modification_events = false;
   }
 
-  // can_generate_early_vmstart might impact VMStart for any agent
-  // accordingly to spec, so don't enable it
   capabilities.can_generate_early_vmstart = false;
 
   check_jvmti_error(err, "GetPotentialCapabilities");
@@ -974,7 +972,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   get_capabilities(jvmti);
   gdata->finished_lock = create_raw_monitor(jvmti, "Finished lock");
   set_callbacks(jvmti, JNI_TRUE);
-  // Enable all events until start jvmti stress agent.
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
     JVMTI_EVENT_VM_INIT, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode");
