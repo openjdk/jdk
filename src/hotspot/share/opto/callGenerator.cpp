@@ -474,14 +474,14 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
 
   virtual void set_callee_method(ciMethod* m) {
 #ifdef ASSERT
-    // Check that callee hasn't changed between inline attempts (except if dynamic loading changed method target)
+    // Check that the callee hasn't changed between inline attempts (except with dynamic loading: then check dependencies)
     if (_callee != nullptr && _callee != m) {
       VM_ENTRY_MARK;
       Compile* C = Compile::current();
       Dependencies* deps = C->dependencies();
       MutexLocker ml(Compile_lock);
       deps->encode_content_bytes();
-      assert(deps->validate_dependencies(C->env()->task()) == Dependencies::call_site_target_value,
+      assert(deps->validate_dependencies(C->env()->task()) != Dependencies::end_marker,
         "repeated inline attempt with different callee");
     }
 #endif
