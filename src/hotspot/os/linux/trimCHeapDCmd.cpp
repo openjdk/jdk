@@ -44,7 +44,7 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
       const double duration = (ticks2.microseconds() - ticks1.microseconds()) / 1000.0; // millis
       _output->print("Trim native heap: ");
       if (sc.after != SIZE_MAX) {
-        const size_t recovered = MIN((size_t)0, sc.after - sc.before);
+        const size_t recovered = MIN2((size_t)0, sc.after - sc.before);
         _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                           PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);
         // Also log if native trim log is active

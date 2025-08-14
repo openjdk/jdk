@@ -557,7 +557,8 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   event.set_daemonCount(ThreadService::get_daemon_thread_count());
   event.set_accumulatedCount(ThreadService::get_total_thread_count());
   event.set_peakCount(ThreadService::get_peak_thread_count());
-  event.set_osThreadCount(os::num_process_threads());
+  const int os_threads = os::num_process_threads();
+  event.set_osThreadCount(os_threads == -1 ? 0 : os_threads);
   event.set_nonJavaThreadCount(NonJavaThread::count());
   event.commit();
 }

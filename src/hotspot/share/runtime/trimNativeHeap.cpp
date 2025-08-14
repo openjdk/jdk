@@ -146,7 +146,7 @@ class NativeHeapTrimmerThread : public NamedThread {
       _num_trims_performed++;
       if (lt.is_enabled()) {
         if (sc.after != SIZE_MAX) {
-          const size_t recovered = MIN((size_t)0, sc.after - sc.before);
+          const size_t recovered = MIN2((size_t)0, sc.after - sc.before);
           log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                                _num_trims_performed,
                                PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);

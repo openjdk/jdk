@@ -207,20 +207,30 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
-size_t os::rss() {
-  size_t rss = 0;
 #ifdef __APPLE__
+bool os::Bsd::query_process_memory_info(os::Bsd::process_info_t* info) {
   mach_task_basic_info info;
   mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
-
   kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
                                 (task_info_t)&info, &count);
   if (ret == KERN_SUCCESS) {
-    rss = info.resident_size;
+    info->vsize = info.virtual_size;
+    info->rss = info.resident_size;
+    // We've seen that resident_size_max sometimes trails resident_size with one page.
+    // Make sure we always report size <= peak
+    info->rssmax = MAX2(info.resident_size_max, info.resident_size);
+  }
+}
+#endif
+
+size_t os::rss() {
+#ifdef __APPLE__
+  os::Bsd::process_info_t info;
+  if (os::Bsd::query_process_memory_info(&info)) {
+    return info.rss;
   }
 #endif // __APPLE__
-
-  return rss;
+  return 0;
 }
 
 // Cpu architecture string
@@ -2447,36 +2457,51 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 
 #if INCLUDE_JFR
 
-void os::jfr_report_memory_info() {
-#ifdef __APPLE__
-  mach_task_basic_info info;
-  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
-
-  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
-  if (ret == KERN_SUCCESS) {
-    // Send the RSS JFR event
-    EventResidentSetSize event;
-    event.set_size(info.resident_size);
-    // We've seen that resident_size_max sometimes trails resident_size with one page.
-    // Make sure we always report size <= peak
-    event.set_peak(MAX2(info.resident_size_max, info.resident_size));
-    event.commit();
-  } else {
-    // Log a warning
-    static bool first_warning = true;
-    if (first_warning) {
-      log_warning(jfr)("Error fetching RSS values: task_info failed");
-      first_warning = false;
-    }
-  }
-
-#endif // __APPLE__
+#define JFR_WARN_ONCE(text) { \
+  static bool first_warning = true; \
+  if (first_warning) { \
+    log_warning(jfr)(text); \
+    first_warning = false; \
+  } \
 }
 
+#ifdef __APPLE__
+void os::jfr_report_memory_info() {
+  os::Bsd::process_info_t info;
+  if (os::Bsd::query_process_memory_info(&info)) {
+    EventResidentSetSize event;
+    event.set_size(info.rss);
+    event.set_peak(info.rssmax);
+    event.commit();
+  } else {
+    JFR_WARN_ONCE("Error fetching RSS values: task_info failed");
+  }
+}
+
+void os::jfr_report_process_size() {
+  os::Bsd::process_info_t info;
+  if (os::Bsd::query_process_memory_info(&info)) {
+    EventProcessSize e;
+    e.set_vsize(info.vsize);
+    e.set_rss(info.rss);
+    e.set_rssPeak(info.rssmax);
+    e.set_rssAnon(0);
+    e.set_rssFile(0);
+    e.set_rssShmem(0);
+    e.set_pagetable(0);
+    e.set_swap(0);
+    e.commit();
+  } else {
+    JFR_WARN_ONCE("Error fetching RSS values: task_info failed");
+  }
+}
+#else
+void os::jfr_report_memory_info() {}
 void os::jfr_report_process_size() {}
+#endif // __APPLE__
+
 void os::jfr_report_libc_statistics() {}
 int os::num_process_threads() { return -1; }
-
 #endif // INCLUDE_JFR
 
 bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
