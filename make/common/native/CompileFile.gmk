@@ -236,7 +236,7 @@ define CreateCompiledNativeFileBody
             # For assembler calls just create empty dependency lists
 	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 	        $$($1_COMPILER) $$($1_FLAGS) \
-	        $(CC_OUT_OPTION)$$($1_OBJ) -Ta $$($1_SRC_FILE))) \
+	        $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE))) \
 	        | $(TR) -d '\r' | $(GREP) -v -e "Assembling:" || test "$$$$?" = "1" ; \
 	    $(ECHO) > $$($1_DEPS_FILE) ; \
 	    $(ECHO) > $$($1_DEPS_TARGETS_FILE)
