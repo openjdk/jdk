@@ -25,14 +25,11 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.util.JarBuilder;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.opentest4j.TestAbortedException;
-import org.opentest4j.TestSkippedException;
 import tests.Helper;
 import tests.JImageGenerator;
 
