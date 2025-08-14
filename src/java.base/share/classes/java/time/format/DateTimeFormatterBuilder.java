@@ -894,8 +894,10 @@ public final class DateTimeFormatterBuilder {
      * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
      * <p>
      * When formatting, the instant will always be suffixed by 'Z' to indicate UTC.
-     * When parsing, the behaviour of {@link DateTimeFormatterBuilder#appendOffsetId()}
-     * will be used to parse the offset, converting the instant to UTC as necessary.
+     * When parsing, the behaviour of
+     * {@link DateTimeFormatterBuilder#appendOffset(String, String)
+     * appendOffset("+HH:mm:ss", "Z")} will be used to parse the offset, converting
+     * the instant to UTC as necessary.
      * <p>
      * An alternative to this method is to format/parse the instant as a single
      * epoch-seconds value. That is achieved using {@code appendValue(INSTANT_SECONDS)}.
@@ -3887,7 +3889,7 @@ public final class DateTimeFormatterBuilder {
                     .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
                     .appendValue(SECOND_OF_MINUTE, 2)
                     .appendFraction(NANO_OF_SECOND, minDigits, maxDigits, true)
-                    .appendOffsetId()
+                    .appendOffset("+HH:mm:ss", "Z")
                     .toFormatter().toPrinterParser(false);
             DateTimeParseContext newContext = context.copy();
             int pos = parser.parse(newContext, text, position);
