@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
             }
             printf("\n");
         #else
-            printf("%X %lX\n", act.sa_flags, act.sa_mask);
+            printf("%X %X\n", act.sa_flags, act.sa_mask);
         #endif
 #endif
     }
