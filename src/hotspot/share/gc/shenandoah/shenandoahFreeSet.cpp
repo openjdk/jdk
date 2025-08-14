@@ -228,6 +228,45 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
   return alloc_capacity(r) > 0;
 }
 
+// This is used for unit testing.  Do not use in production code.
+void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
+  shenandoah_assert_not_heaplocked();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeapLocker locker(heap->lock());
+  size_t original_old_regions = _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  size_t unaffiliated_mutator_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator);
+  size_t unaffiliated_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector);
+  size_t unaffiliated_old_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  if (regions > original_old_regions) {
+    size_t regions_to_transfer = regions - original_old_regions;
+    if (regions_to_transfer <= unaffiliated_mutator_regions + unaffiliated_collector_regions) {
+      size_t regions_from_mutator =
+        (regions_to_transfer > unaffiliated_mutator_regions)? unaffiliated_mutator_regions: regions_to_transfer;
+      regions_to_transfer -= regions_from_mutator;
+      size_t regions_from_collector = regions_to_transfer;
+      if (regions_from_mutator > 0) {
+        transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId::Mutator, ShenandoahFreeSetPartitionId::OldCollector,
+                                       regions_from_mutator);
+      }
+      if (regions_from_collector > 0) {
+        transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId::Collector, ShenandoahFreeSetPartitionId::OldCollector,
+                                       regions_from_mutator);
+      }
+    } else {
+      fatal("Could not resize old for unit test");
+    }
+  } else if (regions < original_old_regions) {
+    size_t regions_to_transfer = original_old_regions - regions;
+    if (regions_to_transfer <= unaffiliated_old_collector_regions) {
+      transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId::OldCollector, ShenandoahFreeSetPartitionId::Mutator,
+                                     regions_to_transfer);
+    } else {
+      fatal("Could not resize old for unit test");
+    }
+  }
+  // else, old generation is already appropriately sized
+}
+
 void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start() {
   shenandoah_assert_heaplocked();
   _mutator_bytes_allocated_since_gc_start = 0;
@@ -2579,6 +2618,70 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
   // global_used is unaffected by this transfer
 
   // No need to adjust ranges because humongous regions are not allocatable
+}
+
+void ShenandoahFreeSet::transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId source,
+                                                       ShenandoahFreeSetPartitionId dest,
+                                                       size_t num_regions) {
+  shenandoah_assert_heaplocked();
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+  size_t transferred_regions = 0;
+  size_t used_transfer = 0;
+  idx_t source_low_idx = _partitions.max();
+  idx_t source_high_idx = -1;
+  idx_t dest_low_idx = _partitions.max();
+  idx_t dest_high_idx = -1;
+  ShenandoahLeftRightIterator iterator(&_partitions, source, true);
+  for (idx_t idx = iterator.current(); transferred_regions < num_regions && iterator.has_next(); idx = iterator.next()) {
+    // Note: can_allocate_from() denotes that region is entirely empty
+    if (can_allocate_from(idx)) {
+      if (idx < source_low_idx) {
+        source_low_idx = idx;
+      }
+      if (idx > source_high_idx) {
+        source_high_idx = idx;
+      }
+      if (idx < dest_low_idx) {
+        dest_low_idx = idx;
+      }
+      if (idx > dest_high_idx) {
+        dest_high_idx = idx;
+      }
+      used_transfer += _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, source, dest, region_size_bytes);
+      transferred_regions++;
+    }
+  }
+  // All transferred regions are empty.
+  assert(used_transfer == 0, "empty regions should have no used");
+  _partitions.expand_interval_if_range_modifies_either_boundary(dest, dest_low_idx,
+                                                                dest_high_idx, dest_low_idx, dest_high_idx);
+  _partitions.shrink_interval_if_range_modifies_either_boundary(source, source_low_idx, source_high_idx,
+                                                                transferred_regions);
+
+  _partitions.decrease_region_counts(source, transferred_regions);
+  _partitions.decrease_empty_region_counts(source, transferred_regions);
+  _partitions.decrease_total_region_counts(source, transferred_regions);
+  _partitions.decrease_capacity(source, transferred_regions * region_size_bytes);
+
+  _partitions.increase_total_region_counts(dest, transferred_regions);
+  _partitions.increase_capacity(dest, transferred_regions * region_size_bytes);
+  _partitions.increase_region_counts(dest, transferred_regions);
+  _partitions.increase_empty_region_counts(dest, transferred_regions);
+
+  if ((source == ShenandoahFreeSetPartitionId::OldCollector) && (dest == ShenandoahFreeSetPartitionId::Mutator)) {
+    _total_young_regions += transferred_regions;
+  } else if ((source == ShenandoahFreeSetPartitionId::Mutator) && (dest == ShenandoahFreeSetPartitionId::OldCollector)) {
+    _total_young_regions -= transferred_regions;
+  } else if ((source == ShenandoahFreeSetPartitionId::OldCollector) && (dest == ShenandoahFreeSetPartitionId::Collector)) {
+    _total_young_regions += transferred_regions;
+  } else if ((source == ShenandoahFreeSetPartitionId::Collector) && (dest == ShenandoahFreeSetPartitionId::OldCollector)) {
+    _total_young_regions -= transferred_regions;
+  }
+
+  // _total_global_regions unaffected by transfer
+  recompute_total_used();
+  _partitions.assert_bounds(true);
+  // Should not need to recompute_total_affiliated() because all transferred regions are empty.
 }
 
 // Returns number of regions transferred, adds transferred bytes to var argument bytes_transferred

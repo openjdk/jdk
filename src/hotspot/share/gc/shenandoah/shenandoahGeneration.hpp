@@ -130,6 +130,11 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
+  // Use this only for unit testing.  Do not use for production.
+  inline void set_capacity(size_t bytes) {
+    ShenandoahHeap::heap()->free_set()->resize_old_collector_capacity(bytes / ShenandoahHeapRegion::region_size_bytes());
+  }
+  
   size_t max_capacity() const override;
 
   virtual size_t used_regions() const;

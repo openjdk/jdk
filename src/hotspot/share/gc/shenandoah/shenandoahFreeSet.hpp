@@ -628,6 +628,10 @@ private:
 
   inline bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
 
+  void transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId source_partition,
+                                      ShenandoahFreeSetPartitionId dest_partition,
+                                      size_t num_regions);
+
   size_t transfer_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
                                                                   size_t max_xfer_regions,
                                                                   size_t& bytes_transferred);
@@ -681,6 +685,9 @@ public:
   }
 
   void prepare_to_promote_in_place(size_t idx, size_t bytes);
+
+  // This is used for unit testing.  Not for preoduction.  Invokes exit() if old cannot be resized.
+  void resize_old_collector_capacity(size_t desired_regions);
 
   // Return bytes used by young
   inline size_t young_used() {
