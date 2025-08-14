@@ -85,7 +85,6 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(can_get_source_debug_extension)
   JVMTI_SUPPORT_FLAG(can_maintain_original_method_order)
   JVMTI_SUPPORT_FLAG(can_post_interpreter_events)
-
   JVMTI_SUPPORT_FLAG(can_post_on_exceptions)
   JVMTI_SUPPORT_FLAG(can_post_breakpoint)
   JVMTI_SUPPORT_FLAG(can_post_field_access)
