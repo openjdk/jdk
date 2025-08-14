@@ -73,7 +73,7 @@ public final class JavaSoundAudioClip {
     private JavaSoundAudioClipDelegate delegate;
 
     public JavaSoundAudioClip(final File file) throws IOException {
-        disposerRecord = new AudioClipDisposerRecord(); 
+        disposerRecord = new AudioClipDisposerRecord();
         Disposer.addRecord(this, disposerRecord);
         delegate = new JavaSoundAudioClipDelegate(file, disposerRecord);
     }
@@ -113,15 +113,15 @@ public final class JavaSoundAudioClip {
         void setClip(AutoClosingClip clip) {
             this.clip = clip;
         }
-        
+
         void setDataPusher(DataPusher datapusher) {
             this.datapusher = datapusher;
         }
-        
+
         void setSequencer(Sequencer sequencer) {
             this.sequencer = sequencer;
         }
-        
+
         public void dispose() {
             if (clip != null) {
                 clip.close();
