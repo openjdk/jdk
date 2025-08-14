@@ -1995,19 +1995,18 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
                                           BasicType eltype)
 {
   assert(UseRVV, "sanity");
-  assert(MaxVectorSize >= 16, "sanity");
   assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, t0, t1);
 
   // The MaxVectorSize should have been set by detecting RVV max vector register
   // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
   // Let's use T_INT as all hashCode calculations eventually deal with ints.
-  const int ints_in_vec_reg = MaxVectorSize/sizeof(jint);
+  const int ints_in_vec_reg = MaxVectorSize / sizeof(jint);
   const int lmul = 2;
 
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
-  const int MAX_VEC_MASK = ~(ints_in_vec_reg*lmul - 1);
+  const int MAX_VEC_MASK = ~(ints_in_vec_reg * lmul - 1);
 
   switch (eltype) {
     case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
@@ -2019,9 +2018,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
       ShouldNotReachHere();
   }
 
-  const Register pow31_highest  = tmp1;
-  const Register ary_end = tmp2;
-  const Register consumed = tmp3;
+  const Register pow31_highest = tmp1;
+  const Register ary_end       = tmp2;
+  const Register consumed      = tmp3;
 
   const VectorRegister v_sum    = v2;
   const VectorRegister v_src    = v4;
@@ -2052,9 +2051,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmul_vv(v_src, v_src, v_coeffs);
   vmadd_vx(v_sum, pow31_highest, v_src);
   shadd(ary, consumed, ary, t0, elsize_shift);
+  mulw(result, result, pow31_highest);
   subw(cnt, cnt, consumed);
   andi(t1, cnt, MAX_VEC_MASK);
-  mulw(result, result, pow31_highest);
   bnez(t1, VEC_LOOP);
 
   vmv_s_x(v_tmp, x0);
@@ -2080,27 +2079,27 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
-  case T_BOOLEAN: return sizeof(jboolean);
-  case T_BYTE:    return sizeof(jbyte);
-  case T_SHORT:   return sizeof(jshort);
-  case T_CHAR:    return sizeof(jchar);
-  case T_INT:     return sizeof(jint);
-  default:
-    ShouldNotReachHere();
-    return -1;
+    case T_BOOLEAN: return sizeof(jboolean);
+    case T_BYTE:    return sizeof(jbyte);
+    case T_SHORT:   return sizeof(jshort);
+    case T_CHAR:    return sizeof(jchar);
+    case T_INT:     return sizeof(jint);
+    default:
+      ShouldNotReachHere();
+      return -1;
   }
 }
 
 void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
   switch (eltype) {
-  // T_BOOLEAN used as surrogate for unsigned byte
-  case T_BOOLEAN: lbu(dst, src);   break;
-  case T_BYTE:     lb(dst, src);   break;
-  case T_SHORT:    lh(dst, src);   break;
-  case T_CHAR:    lhu(dst, src);   break;
-  case T_INT:      lw(dst, src);   break;
-  default:
-    ShouldNotReachHere();
+    // T_BOOLEAN used as surrogate for unsigned byte
+    case T_BOOLEAN: lbu(dst, src);   break;
+    case T_BYTE:     lb(dst, src);   break;
+    case T_SHORT:    lh(dst, src);   break;
+    case T_CHAR:    lhu(dst, src);   break;
+    case T_INT:      lw(dst, src);   break;
+    default:
+      ShouldNotReachHere();
   }
 }
 
@@ -2108,7 +2107,7 @@ void C2_MacroAssembler::arrays_hashcode_elload_v(VectorRegister vdst,
                                                  VectorRegister vtmp,
                                                  Register src,
                                                  BasicType eltype) {
-  assert((T_INT == eltype) || (vdst != vtmp), "should be");
+  assert_different_registers(vdst, vtmp);
   switch (eltype) {
     case T_BOOLEAN:
       vle8_v(vtmp, src);

@@ -6583,12 +6583,12 @@ static const int64_t right_3_bits = right_n_bits(3);
 
   address generate_arrays_hashcode_powers_of_31() {
     assert(UseRVV, "sanity");
-    const int ints_in_vec_reg = MaxVectorSize/sizeof(jint);
+    const int ints_in_vec_reg = MaxVectorSize / sizeof(jint);
     const int lmul = 2;
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "arrays_hashcode_powers_of_31");
     address start = __ pc();
-    for (int i = ints_in_vec_reg*lmul; i >= 0; i--) {
+    for (int i = ints_in_vec_reg * lmul; i >= 0; i--) {
         jint power_of_31 = 1;
         for (int j = i; j > 0; j--) {
           power_of_31 = java_multiply(power_of_31, 31);
