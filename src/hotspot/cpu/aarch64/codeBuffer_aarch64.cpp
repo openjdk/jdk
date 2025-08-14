@@ -28,7 +28,7 @@
 #include "code/relocInfo.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-void CodeBuffer::share_trampoline_for(relocInfo::relocType rtype, address dest, int caller_offset) {
+void CodeBuffer::share_trampoline_for(address key, address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
@@ -36,12 +36,12 @@ void CodeBuffer::share_trampoline_for(relocInfo::relocType rtype, address dest, 
   }
 
   bool created;
-  SharedTrampolineRequestsValue* value = _shared_trampoline_requests->put_if_absent(dest, &created);
+  SharedTrampolineRequestsValue* value = _shared_trampoline_requests->put_if_absent(key, &created);
   if (created) {
     _shared_trampoline_requests->maybe_grow();
-    value->rtype = rtype;
+    value->dest = dest;
   } else {
-    assert(value->rtype == rtype, "same destination with another type already exists");
+    assert(value->dest == dest, "Another destination for the same key already exists");
   }
   value->offsets.add(caller_offset);
   _finalize_stubs = true;
@@ -56,14 +56,11 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   MacroAssembler masm(cb);
 
-  auto emit = [&](address dest, const CodeBuffer::SharedTrampolineRequestsValue &value) {
+  auto emit = [&](address key, const CodeBuffer::SharedTrampolineRequestsValue &value) {
     assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
-    relocInfo::relocType rtype = value.rtype;
+    address dest = value.dest;
     LinkedListIterator<int> it(value.offsets.head());
     int offset = *it.next();
-    if (rtype == relocInfo::static_call_type) {
-      dest = SharedRuntime::get_resolve_static_call_stub();
-    }
     address stub = __ emit_trampoline_stub(offset, dest);
     assert(stub, "pre-allocated trampolines");
 

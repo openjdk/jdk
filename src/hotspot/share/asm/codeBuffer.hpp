@@ -542,7 +542,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   struct SharedTrampolineRequestsValue {
-    relocInfo::relocType rtype;
+    address dest;
     LinkedListImpl<int> offsets;
   };
   typedef ResizeableResourceHashtable<address, SharedTrampolineRequestsValue, AnyObj::C_HEAP, mtCompiler>

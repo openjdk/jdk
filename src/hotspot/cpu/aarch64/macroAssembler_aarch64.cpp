@@ -906,10 +906,10 @@ address MacroAssembler::trampoline_call(Address entry, ciMethod* callee /* = nul
       // code during its branch shortening phase.
       if (entry.rspec().type() == relocInfo::runtime_call_type) {
         assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(relocInfo::runtime_call_type, entry.target(), offset());
+        code()->share_trampoline_for(entry.target(), entry.target(), offset());
       } else if (entry.rspec().type() == relocInfo::static_call_type && callee != nullptr) {
         assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(relocInfo::static_call_type, (address)callee, offset());
+        code()->share_trampoline_for(address(callee), entry.target(), offset());
       } else {
         address stub = emit_trampoline_stub(offset(), target);
         if (stub == nullptr) {
