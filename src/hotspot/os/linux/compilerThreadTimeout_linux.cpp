@@ -23,11 +23,11 @@
  */
 
 #include "compiler/compilerThread.hpp"
-#include "runtime/osThread.hpp"
-#include "utilities/globalDefinitions.hpp"
-
+#include "compiler/compileTask.hpp"
 #include "compilerThreadTimeout_linux.hpp"
+#include "runtime/osThread.hpp"
 #include "signals_posix.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <pthread.h>
 
@@ -40,7 +40,9 @@ void compiler_signal_handler(int signo, siginfo_t* info, void* context) {
 void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* info, void* context) {
   switch (signo) {
     case TIMEOUT_SIGNAL: {
-      assert(false, "compile task timed out");
+      CompileTask* task = CompilerThread::current()->task();
+      assert(false, "compile task %d (%s) timed out after %ld ms",
+             task->compile_id(), task->method()->name_and_sig_as_C_string(), CompileTaskTimeout);
     }
     default: {
       assert(false, "unexpected signal %d", signo);
