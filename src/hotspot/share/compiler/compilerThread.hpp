@@ -48,8 +48,8 @@ class IdealGraphPrinter;
 class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
  public:
   CompilerThreadTimeoutGeneric() {};
-  void arm() { return; };
-  void disarm() { return; };
+  void arm() {};
+  void disarm() {};
   bool init_timeout() { return true; };
 };
 
