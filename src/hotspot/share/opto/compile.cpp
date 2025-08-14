@@ -5397,10 +5397,19 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
   return nullptr;
 }
 
-Node* Compile::make_debug_print_call(const char* str, address call_addr, bool add_to_igvn, Node* parm0, Node* parm1,
+static void replace_input_of(PhaseGVN* gvn, Node* n, uint i, Node* in) {
+  PhaseIterGVN* igvn = gvn->is_IterGVN();
+  if (igvn != nullptr) {
+    igvn->replace_input_of(n, i, in);
+  } else if (gvn != nullptr) {
+    gvn->hash_delete(n);
+    n->set_req(i, in);
+  }
+}
+
+Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn, Node* parm0, Node* parm1,
                                      Node* parm2, Node* parm3, Node* parm4, Node* parm5, Node* parm6) {
-  // TODO is it okay to call igvn like this? Or do we need to pass it as argument?
-  Node* str_node = initial_gvn()->transform(new ConPNode(TypeRawPtr::make(((address) str))));
+  Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   CallNode* call = new CallLeafNode(OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6), call_addr, "debug_print", TypeRawPtr::BOTTOM);
 
   // find the most suitable control input
@@ -5437,25 +5446,24 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, bool ad
   /* close each nested if ===> */  } } } } } } }
   assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
 
-  Node* c = initial_gvn()->transform(call);
-  Node* call_control_proj = initial_gvn()->transform( new ProjNode(c,TypeFunc::Control) );
+  Node* c = gvn->transform(call);
+  Node* call_control_proj = gvn->transform( new ProjNode(c, TypeFunc::Control) );
 
   for (DUIterator i = control->outs(); control->has_out(i); i++) {
     Node *p = control->out(i);
-    // TODO we have to make sure not to rewire one of the params, otherwise we might get in trouble
     if (p->is_CFG() && p != control && p != c) {
-      initial_gvn()->hash_delete(p);
-      p->set_req(TypeFunc::Control, call_control_proj);
+      replace_input_of(gvn, p, TypeFunc::Control, call_control_proj);
+      igvn_worklist()->push(p);
       --i; // we have to do this because we delete users
-      if (add_to_igvn) igvn_worklist()->push(p);
     }
   }
 
-  if (add_to_igvn) {
-    igvn_worklist()->push(c);
-    igvn_worklist()->push(call_control_proj);
-    igvn_worklist()->push(control);
-  }
+
+  // TODO should we add a condition for this? unclear
+  igvn_worklist()->push(c);
+  igvn_worklist()->push(call_control_proj);
+  igvn_worklist()->push(control);
+
 
   return c;
 }
