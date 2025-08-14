@@ -879,10 +879,10 @@ define SetupRunJtregTestBody
 
   ifneq ($$(JTREG_JVMTI_STRESS_AGENT), )
     AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
-    $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:${TEST_IMAGE_DIR}/hotspot/jtreg/native/$${AGENT}'
+    $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:$(TEST_IMAGE_DIR)/hotspot/jtreg/native/$$(AGENT)'
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
-	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
-    ))
+	    $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+        ))
   endif
 
 
