@@ -1474,6 +1474,8 @@ nmethod::nmethod(
 #endif
     {
       // Exception handler and deopt handler are in the stub section
+      assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
+
       bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
       assert(has_exception_handler == (compiler->type() != compiler_c2),
              "C2 compiler doesn't provide exception handler stub code.");
@@ -1483,7 +1485,6 @@ nmethod::nmethod(
         _exception_offset = -1;
       }
 
-      assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
       _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
       if (offsets->value(CodeOffsets::DeoptMH) != -1) {
         _deopt_mh_handler_offset = _stub_offset + offsets->value(CodeOffsets::DeoptMH);

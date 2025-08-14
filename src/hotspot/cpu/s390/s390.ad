@@ -1649,7 +1649,6 @@ source_hpp %{ // Header information of the source block.
 class HandlerImpl {
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_deopt_handler() {
