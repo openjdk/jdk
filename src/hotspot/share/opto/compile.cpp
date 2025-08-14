@@ -5397,17 +5397,6 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
   return nullptr;
 }
 
-static void replace_input_of(PhaseGVN* gvn, Node* n, uint i, Node* in) {
-  PhaseIterGVN* igvn = gvn->is_IterGVN();
-  if (igvn != nullptr) {
-    igvn->replace_input_of(n, i, in);
-  } else if (gvn != nullptr) {
-    // TODO we need to clarify exactly what we need to do if we don't have IGVN yet
-    gvn->hash_delete(n);
-    n->set_req(i, in);
-  }
-}
-
 Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn, Node* parm0, Node* parm1,
                                      Node* parm2, Node* parm3, Node* parm4, Node* parm5, Node* parm6) {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
@@ -5450,21 +5439,35 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   Node* c = gvn->transform(call);
   Node* call_control_proj = gvn->transform( new ProjNode(c, TypeFunc::Control) );
 
-  for (DUIterator i = control->outs(); control->has_out(i); i++) {
-    Node *p = control->out(i);
-    if (p->is_CFG() && p != control && p != c) {
-      replace_input_of(gvn, p, TypeFunc::Control, call_control_proj);
-      igvn_worklist()->push(p);
-      // --i; // we have to do this because we delete users
+  GrowableArray<Node*> users_of_control;
+  for (DUIterator_Fast kmax, k = control->fast_outs(kmax); k < kmax; k++) {
+    Node* use = control->fast_out(k);
+    if (use->is_CFG() && use != control && use != c) {
+      users_of_control.push(use);
     }
   }
 
+  PhaseIterGVN* igvn = gvn->is_IterGVN();
+  for (int k = 0; k < users_of_control.length(); k++) {
+    Node* use = users_of_control.at(k);
+    for (uint j = 0; j < use->req(); j++) {
+      Node* def = use->in(j);
+      if (def == control) {
+        if (igvn != nullptr) {
+          igvn->replace_input_of(use, j, call_control_proj);
+        } else if (gvn != nullptr) {
+          // TODO we need to clarify exactly what we need to do if we don't have IGVN yet
+          gvn->hash_delete(use);
+          use->set_req(j, call_control_proj);
+          igvn_worklist()->push(use);
+        }
+      }
+    }
+  }
 
-  // TODO should we add a condition for this? unclear
   igvn_worklist()->push(c);
   igvn_worklist()->push(call_control_proj);
   igvn_worklist()->push(control);
-
 
   return c;
 }
