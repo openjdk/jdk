@@ -3033,13 +3033,16 @@ static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, Annotatio
   typeArrayOop annotations_oop = Annotations::make_java_array(annotations_array, CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
 
-  InstanceKlass** filter = filter_length == 1 ?
-      (InstanceKlass**) &filter_klass_pointers:
-      (InstanceKlass**) filter_klass_pointers;
-  objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
-  objArrayHandle filter_classes(THREAD, filter_oop);
-  for (int i = 0; i < filter_length; i++) {
-    filter_classes->obj_at_put(i, filter[i]->java_mirror());
+  objArrayHandle filter_classes;
+  if (filter_length != 0) {
+    InstanceKlass** filter = filter_length == 1 ?
+        (InstanceKlass**) &filter_klass_pointers:
+        (InstanceKlass**) filter_klass_pointers;
+    objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
+    filter_classes = objArrayHandle(THREAD, filter_oop);
+    for (int i = 0; i < filter_length; i++) {
+      filter_classes->obj_at_put(i, filter[i]->java_mirror());
+    }
   }
 
   // invoke VMSupport.encodeAnnotations

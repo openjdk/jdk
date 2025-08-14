@@ -39,9 +39,9 @@ public interface Annotated {
      * Class initialization is not triggered for enum types referenced by the returned
      * annotation. This method ignores inherited annotations.
      *
-     * @param types annotation types to select
+     * @param types annotation types to select. If empty, then all declared annotations are returned.
      * @return an immutable map from annotation type to annotation of the annotations directly present
-     * on this element that match {@code types}
+     * on this element selected by {@code types}
      * @throws IllegalArgumentException      if any type in {@code types} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
