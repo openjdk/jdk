@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,9 @@ import static jdk.test.lib.Asserts.*;
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management
- * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+PrintVMInfoAtExit jdk.jfr.event.runtime.TestProcessSizeEvent
+ * @run main/othervm -Xmx64m -XX:TrimNativeHeapInterval=250 -XX:+UnlockDiagnosticVMOptions -XX:+PrintNMTStatistics jdk.jfr.event.runtime.TestLibcStatisticsEvent
  */
-public class TestProcessSizeEvent {
-    private final static String ProcessSizeEventName = EventNames.ProcessSize;
+public class TestLibcStatisticsEvent {
     private final static String LibcStatisticsEventName = EventNames.LibcStatistics;
 
     private final static long K = 1024;
@@ -77,7 +76,7 @@ public class TestProcessSizeEvent {
     }
 
     private static void generateEvents(Recording recording) throws Exception {
-        recording.enable(ProcessSizeEventName).with("period", "250ms");
+        recording.enable(LibcStatisticsEventName).with("period", "250ms");
 
         recording.start();
 
@@ -87,45 +86,36 @@ public class TestProcessSizeEvent {
     }
 
     private static void verifyExpectedEvents(List<RecordedEvent> events) throws Exception {
-        List<RecordedEvent> filteredEvents = events.stream().filter(e -> e.getEventType().getName().equals(ProcessSizeEventName)).toList();
-        assertGreaterThan(filteredEvents.size(), 0, "Should exist events of type: " + ProcessSizeEventName);
+        List<RecordedEvent> filteredEvents = events.stream().filter(e -> e.getEventType().getName().equals(LibcStatisticsEventName)).toList();
+
+        assertGreaterThan(filteredEvents.size(), 0, "Should exist events of type: " + LibcStatisticsEventName);
+
+        long mallocOutstanding = 0, mallocRetained = 0;
+        long trims = 0;
+
+        RecordedEvent last = null;
         for (RecordedEvent event : filteredEvents) {
             System.out.println(event);
-            long vsize = event.getLong("vsize");
-            long rss = event.getLong("rss");
-            long rssPeak = event.getLong("rssPeak");
-            long rssAnon = event.getLong("rssAnon");
-            long rssFile = event.getLong("rssFile");
-            long rssShmem = event.getLong("rssShmem");
-            long swap = event.getLong("swap");
-            long pagetable = event.getLong("pagetable");
+            mallocOutstanding = event.getLong("mallocOutstanding");
+            mallocRetained = event.getLong("mallocRetained");
+            trims = event.getLong("trims");
 
-            long reasonableVsizeHigh = G * K; // vsize can get very large
-            long reasonableVsizeLow = 100 * M;
-            assertGreaterThan(vsize, reasonableVsizeLow);
-            assertLessThan(vsize, reasonableVsizeHigh);
+            long reasonableLow = K; // probably a lot more, but the very first events may not show much yet
+            long reasonableLimit = G; // probably a lot less
+            assertGreaterThan(mallocOutstanding, reasonableLow);
+            assertLessThan(mallocOutstanding, reasonableLimit);
 
-            long reasonableRSSHigh = G; // probably a lot less
-            long reasonableRSSLow = 10 * M; // probably a lot less
-            assertGreaterThan(rss, reasonableRSSLow);
-            assertLessThan(rss, reasonableRSSHigh);
+            assertGreaterThan(mallocRetained, 0L);
+            assertLessThan(mallocRetained, reasonableLimit);
 
-            assertGreaterThan(rssPeak, reasonableRSSLow);
-            assertLessThan(rssPeak, reasonableRSSHigh);
-
-            assertGreaterThan(rssAnon, reasonableRSSLow / 2);
-            assertLessThanOrEqual(rssAnon, rss);
-
-            assertGreaterThanOrEqual(rssFile, 0L);
-            assertLessThanOrEqual(rssFile, rss);
-
-            assertGreaterThanOrEqual(rssShmem, 0L);
-            assertLessThanOrEqual(rssShmem, rss);
-
-            assertGreaterThan(pagetable, 0L);
-
-            assertGreaterThanOrEqual(swap, 0L);
+            last = event;
         }
+
+        assertNotNull(last);
+        // we activated periodic trims and by the time the last event was taken we should see them
+        assertGreaterThan(trims, 0L, "Must be");
+        // by this time we also should have allocated the majority of what we allocate
+        assertGreaterThan(mallocOutstanding, toAllocate / 2, "Must be");
     }
 
     public static void main(String[] args) throws Exception {

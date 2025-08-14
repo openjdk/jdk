@@ -50,7 +50,7 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
         // Also log if native trim log is active
         log_info(trimnative)("Manual Trim: " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                               PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);
-        JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, true, duration, sc.before, sc.after, -recovered);)
+        JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, true, duration, sc.before, sc.after, recovered);)
       } else {
         _output->print_cr("(no details available).");
       }

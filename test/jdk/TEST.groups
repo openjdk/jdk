@@ -562,7 +562,9 @@ jdk_jfr_sanity = \
     jdk/jfr/event/metadata/TestDefaultConfigurations.java \
     jdk/jfr/startupargs/TestDumpOnExit.java \
     jdk/jfr/api/consumer/recordingstream/TestBasics.java \
-    jdk/jfr/event/runtime/TestProcessSizeEvent.java
+    jdk/jfr/event/runtime/TestProcessSizeEvent.java \
+    jdk/jfr/event/runtime/TestLibcStatisticsEvent.java \
+    jdk/jfr/event/runtime/TestLibcHeapTrimEvent.java \
 
 svc_tools_sanity =
 

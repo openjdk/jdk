@@ -1344,9 +1344,9 @@
     description="A Libc Trim operation">
     <Field type="boolean" name="manual" label="manual" description="True for manual trims, false for periodic automatic trims" />
     <Field type="double" contentType="millis" name="duration" label="Duration" description="Trim duration" />
-    <Field type="long" contentType="bytes" name="rssPre" label="RSS Before" description="Resident Set Size before trim" />
-    <Field type="long" contentType="bytes" name="rssPost" label="RSS After" description="Resident Set Size after trim" />
-    <Field type="long" contentType="bytes" name="rssDelta" label="Delta RSS" description="Resident Set Size Delta" />
+    <Field type="long" contentType="bytes" name="rssPre" label="RSS Before" description="RSS before Trim" />
+    <Field type="long" contentType="bytes" name="rssPost" label="RSS After" description="RSS after Trim" />
+    <Field type="long" contentType="bytes" name="rssRecovered" label="RSS Recovered" description="Amount of RSS Recovered by Trim (estimate)" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

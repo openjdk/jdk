@@ -147,11 +147,10 @@ class NativeHeapTrimmerThread : public NamedThread {
       if (lt.is_enabled()) {
         if (sc.after != SIZE_MAX) {
           const size_t recovered = MIN((size_t)0, sc.after - sc.before);
-          const ssize_t delta = checked_cast<ssize_t>(sc.after) - checked_cast<ssize_t>(sc.before);
           log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                                _num_trims_performed,
                                PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);
-          JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, false, duration, sc.before, sc.after, delta);)
+          JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, false, duration, sc.before, sc.after, recovered);)
         } else {
           log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): complete (no details) %.3fms",
                                _num_trims_performed, duration);
