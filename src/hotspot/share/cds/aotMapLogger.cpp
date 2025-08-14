@@ -30,12 +30,12 @@
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/globals_extension.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/growableArray.hpp"
 
 bool AOTMapLogger::_is_logging_at_bootstrap;
