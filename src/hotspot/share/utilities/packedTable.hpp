@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_UTILITIES_PACKEDTABLE_HPP
+#define SHARE_UTILITIES_PACKEDTABLE_HPP
+
 #include "oops/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -121,3 +124,5 @@ public:
     }
   }
 };
+
+#endif // SHARE_UTILITIES_PACKEDTABLE_HPP

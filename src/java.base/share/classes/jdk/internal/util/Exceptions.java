@@ -274,11 +274,8 @@ public final class Exceptions {
      */
     public static IOException ioException(IOException e, SocketAddress addr) {
         setup();
-        if (addr == null) {
+        if (!enhancedSocketExceptionText || addr == null) {
             return e;
-        }
-        if (!enhancedSocketExceptionText) {
-            return create(e, e.getMessage());
         }
         if (addr instanceof UnixDomainSocketAddress) {
             return ofUnixDomain(e, (UnixDomainSocketAddress)addr);

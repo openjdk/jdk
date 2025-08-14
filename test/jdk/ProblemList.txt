@@ -119,6 +119,7 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
+java/awt/Frame/BogusFocusableWindowState/BogusFocusableWindowState.java 8361521 linux-all
 java/awt/Frame/MaximizedToMaximized/MaximizedToMaximized.java 8340374 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
@@ -614,8 +615,6 @@ java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generi
 
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
 
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
-
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
 
@@ -812,6 +811,7 @@ java/awt/font/GlyphVector/TestGlyphVectorLayout.java 8354987 generic-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all
+java/awt/FileDialog/DoubleActionESC.java 8356981 linux-all
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/TextComponent/CorrectTextComponentSelectionTest.java 8237220 macosx-all
@@ -838,6 +838,4 @@ java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 
 # jdk_since_checks
 
-tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8358627 generic-all
 tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
-
