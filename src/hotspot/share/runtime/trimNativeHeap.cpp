@@ -142,18 +142,19 @@ class NativeHeapTrimmerThread : public NamedThread {
     const Ticks ticks1 = Ticks::now();
     if (os::trim_native_heap(sc)) {
       const Ticks ticks2 = Ticks::now();
-      const double duration_millis = (ticks2.microseconds() - ticks1.microseconds()) / 1000.0;
+      const double duration = (ticks2.microseconds() - ticks1.microseconds()) / 1000.0; // millis
       _num_trims_performed++;
       if (lt.is_enabled()) {
         if (sc.after != SIZE_MAX) {
+          const size_t recovered = MIN((size_t)0, sc.after - sc.before);
           const ssize_t delta = checked_cast<ssize_t>(sc.after) - checked_cast<ssize_t>(sc.before);
-          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): %zuM->%zuM (%zsM) %.3fms",
+          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                                _num_trims_performed,
-                               sc.before / M, sc.after / M, delta / M, duration_millis);
-          JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, false, duration_millis, sc.before, sc.after, delta);)
+                               PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);
+          JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, false, duration, sc.before, sc.after, delta);)
         } else {
           log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): complete (no details) %.3fms",
-                               _num_trims_performed, duration_millis);
+                               _num_trims_performed, duration);
         }
       }
     }
