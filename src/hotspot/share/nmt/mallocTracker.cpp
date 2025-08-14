@@ -207,6 +207,10 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   deaccount(header->free_info());
 
+  if (ZapCHeapObjects) {
+    memset(memblock, freeBlockPad, header->size());
+  }
+
   header->mark_block_as_dead();
 
   return (void*)header;
