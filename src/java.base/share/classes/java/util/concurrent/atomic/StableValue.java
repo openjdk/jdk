@@ -186,7 +186,7 @@ import java.util.function.Supplier;
  *
  *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 = i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     // @link substring="ofLazy" target="Map#ofLazy(Set,Function)" :
+ *     // @link substring="ofLazy" target="java.util.Map#ofLazy(Set,Function)" :
  *     private static final Map<Integer, INTEGER> LOG2 = Map.ofLazy(CACHED_KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
