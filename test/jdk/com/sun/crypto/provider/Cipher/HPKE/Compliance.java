@@ -26,15 +26,11 @@ import jdk.test.lib.Asserts;
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.NamedParameterSpec;
 
 import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
 import static javax.crypto.spec.HPKEParameterSpec.EXPORT_ONLY;
