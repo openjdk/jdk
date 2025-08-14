@@ -2023,7 +2023,7 @@ class MutableBigInteger {
                 // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
                 rad = Math.nextUp(rad);
                 approx = nthRootApprox(rad, n);
-                rootSh = sh / n;
+                rootSh = sh / n; // sh < bitLength, so sh / n == rootSh < rootLen
             }
 
             if (rootSh == 0) {
@@ -2043,8 +2043,8 @@ class MutableBigInteger {
                     // the first Double.PRECISION leftmost bits are correct
                     // We scale the corresponding wrong bits of approx in the fraction part.
                     int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
-                    // Double.PRECISION correct bits in the radicand yield to at least
-                    // one correct bit in the root, so rootSh < rootLen
+                    // wrongBits must be less than ((Math.getExponent(rad) + 1) - 1) / n + 1,
+                    // the bit length of approx, so rootSh < rootLen
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
