@@ -2046,7 +2046,8 @@ class MutableBigInteger {
                     // Since rad <= 2^(bitLength - sh), then
                     // wrongBits <= ((bitLength - sh + 1) - Double.PRECISION) / n,
                     // so wrongBits is less than ((bitLength - sh) - 1) / n + 1,
-                    // the bit length of the exact shifted root, hence rootSh < rootLen
+                    // the bit length of the exact shifted root,
+                    // hence wrongBits + rootSh < (((bitLength - sh) - 1) / n + 1) + rootSh == rootLen
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
