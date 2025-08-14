@@ -5402,6 +5402,7 @@ static void replace_input_of(PhaseGVN* gvn, Node* n, uint i, Node* in) {
   if (igvn != nullptr) {
     igvn->replace_input_of(n, i, in);
   } else if (gvn != nullptr) {
+    // TODO we need to clarify exactly what we need to do if we don't have IGVN yet
     gvn->hash_delete(n);
     n->set_req(i, in);
   }
@@ -5454,7 +5455,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
     if (p->is_CFG() && p != control && p != c) {
       replace_input_of(gvn, p, TypeFunc::Control, call_control_proj);
       igvn_worklist()->push(p);
-      --i; // we have to do this because we delete users
+      // --i; // we have to do this because we delete users
     }
   }
 
