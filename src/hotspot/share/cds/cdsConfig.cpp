@@ -647,9 +647,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
       // Don't tweak execution mode during AOT training run
     } else if (is_dumping_final_static_archive()) {
       if (Arguments::mode() == Arguments::_comp) {
-        // -Xcomp triggers blocking compilation for all called methods,
-        // but during AOT assembly phase we should AOT compile in parallel
-        // (and not blocking) only methods collected during training run.
+        // AOT assembly phase submits the non-blocking compilation requests
+        // for methods collected during training run, then waits for all compilations
+        // to complete. With -Xcomp, we block for each compilation request, which is
+        // counter-productive. Switching back to mixed mode improves testing time
+        // with AOT and -Xcomp.
         Arguments::set_mode_flags(Arguments::_mixed);
       }
     } else if (!mode_flag_cmd_line) {
