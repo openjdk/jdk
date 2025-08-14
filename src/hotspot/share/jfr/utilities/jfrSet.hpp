@@ -129,11 +129,9 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     K* const old_table = this->_table;
     assert(old_table != nullptr, "invariant");
     const unsigned old_table_size = this->table_size();
-    guarantee(old_table_size < max_initial_size, "overflow");
-    this->_table_size = old_table_size << 1;
-    this->_table = JfrSetStorage<CONFIG>::alloc_table(this->_table_size);
-    _table_mask = this->_table_size - 1;
-    _resize_threshold = old_table_size;
+    guarantee(old_table_size <= max_initial_size, "overflow");
+    this->_table_size = old_table_size * 2;
+    this->_table = this->alloc_table(this->_table_size);
     for (unsigned i = 0; i < old_table_size; ++i) {
       const K k = old_table[i];
       if (k != 0) {
