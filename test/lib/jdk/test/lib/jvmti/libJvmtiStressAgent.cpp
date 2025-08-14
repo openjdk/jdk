@@ -35,7 +35,7 @@
  *
  * Test supports 2 modes:
  *   - standard, where the agent doesn't require debugging capabilities
- *   - debug, where the agent  additionally test debug-related functionality
+ *   - debug, where the agent additionally test debug-related functionality
  *   The debug mode is incompatible with debugger tests and debug jvmti tests.
  *   The standard mode should be compatible with all tests except probelmlisted.
  *
