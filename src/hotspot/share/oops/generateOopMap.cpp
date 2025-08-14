@@ -2217,10 +2217,6 @@ void GenerateOopMap::result_for_basicblock(int bci) {
   // Find basicblock and report results
   BasicBlock* bb = get_basic_block_containing(bci);
   guarantee(bb != nullptr, "no basic block for bci");
-  if (!bb->is_reachable()) {
-    this->_method->print_on(tty);
-    tty->print_cr("BB start: %d, bb end %d", bb->_bci, bb->_end_bci);
-  }
   assert(bb->is_reachable(), "getting result from unreachable basicblock");
   bb->set_changed(true);
   interp_bb(bb);
