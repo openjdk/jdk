@@ -218,14 +218,6 @@ static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
                                     const char* buffer_name,
                                     const char* assert_msg) {
   ResourceMark rm;
-  if (code_size == 0) {
-    LogTarget(Info, stubs) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print_cr("%s\t not generated", buffer_name);
-      return nullptr;
-    }
-  }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
@@ -235,9 +227,18 @@ static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
   }
   CodeBuffer buffer(stubs_code);
   StubGenerator_generate(&buffer, blob_id);
+  if (code_size == 0) {
+    assert(buffer.insts_size() == 0, "should not write into buffer when bob size declared as 0");
+    LogTarget(Info, stubs) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("%s\t not generated", buffer_name);
+      return nullptr;
+    }
+  }
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+  assert(buffer.insts_remaining() > 200, "increase %s", assert_msg);
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
