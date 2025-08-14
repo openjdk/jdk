@@ -1981,7 +1981,7 @@ class MutableBigInteger {
             double rad = 0.0, approx = 0.0;
             if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
                 // Set the root shift to the root's bit length minus 1
-                // The initial estimate will be 2^rBitLen == 2 << (rBitLen - 1)
+                // The initial estimate will be 2^rBitLen == 2 << (rootLen - 1)
                 rootSh = rootLen - 1;
             } else {
                 // Set up the initial estimate of the iteration.
@@ -2034,7 +2034,7 @@ class MutableBigInteger {
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
 
                 if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
-                    // Set the initial estimate to 2 << (rBitLen - 1)
+                    // Set the initial estimate to 2 << (rootLen - 1)
                     s.value[0] = 2;
                     s.intLen = 1;
                 } else {
