@@ -7086,18 +7086,21 @@ instruct loadConD(vRegD dst, immD con) %{
 %}
 
 // Load Half Float Constant
-// The "ldr" instruction loads a 32-bit word from the constant pool into a
-// 32-bit register but only the bottom half will be populated and the top
-// 16 bits are zero.
 instruct loadConH(vRegF dst, immH con) %{
   match(Set dst con);
-  format %{
-    "ldrs $dst, [$constantaddress]\t# load from constant table: half float=$con\n\t"
-  %}
+  format %{ "mov    rscratch1, $con\n\t"
+            "fmov   $dst, rscratch1"
+         %}
   ins_encode %{
-    __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
+    uint32_t imm = (uint32_t)$con$$constant;
+    if (imm == 0) {
+      __ movw(rscratch1, zr);
+    } else {
+      __ movw(rscratch1, imm);
+    }
+    __ fmovs($dst$$FloatRegister, rscratch1);
   %}
-  ins_pipe(fp_load_constant_s);
+  ins_pipe(pipe_class_default);
 %}
 
 // Store Instructions
