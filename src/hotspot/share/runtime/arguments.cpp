@@ -567,6 +567,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
+  { "PretenureSizeThreshold",       JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
