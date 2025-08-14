@@ -1976,11 +1976,13 @@ class MutableBigInteger {
             // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
             s = new MutableBigInteger(sLong);
         } else {
+            final int rootLen = (bitLength - 1) / n + 1;
             int rootSh;
             double rad = 0.0, approx = 0.0;
             if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
-                // Set the shift to the root's bit length and then the initial estimate to 1
-                rootSh = (bitLength - 1) / n + 1;
+                // Set the root shift to the root's bit length minus 1
+                // The initial estimate will be 2^rBitLen == 2 << (rBitLen - 1)
+                rootSh = rootLen - 1;
             } else {
                 // Set up the initial estimate of the iteration.
                 /* Since the following equality holds:
@@ -2032,8 +2034,8 @@ class MutableBigInteger {
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
 
                 if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
-                    // Set the initial estimate to 1
-                    s.value[0] = 1;
+                    // Set the initial estimate to 2 << (rBitLen - 1)
+                    s.value[0] = 2;
                     s.intLen = 1;
                 } else {
                     // Discard wrong integer bits from the initial estimate
@@ -2041,6 +2043,8 @@ class MutableBigInteger {
                     // the first Double.PRECISION leftmost bits are correct
                     // We scale the corresponding wrong bits of approx in the fraction part.
                     int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
+                    // Double.PRECISION correct bits in the radicand yield to at least
+                    // one correct bit in the root, so rootSh < rootLen
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
@@ -2059,9 +2063,10 @@ class MutableBigInteger {
                  */
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
-                for (int rootBits = (int) s.bitLength(); rootSh > rootBits; rootBits <<= 1) {
-                    s.leftShift(rootBits);
-                    rootSh -= rootBits;
+                // rootSh is always less than rootLen, so correctBits >= 1
+                for (int correctBits = rootLen - rootSh; correctBits < rootSh; correctBits <<= 1) {
+                    s.leftShift(correctBits);
+                    rootSh -= correctBits;
 
                     // Remove useless bits from the radicand
                     MutableBigInteger x = new MutableBigInteger(this);
