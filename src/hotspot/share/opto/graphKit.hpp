@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_GRAPHKIT_HPP
 #define SHARE_OPTO_GRAPHKIT_HPP
 
-#include "runtime.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"

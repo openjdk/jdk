@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
-#include "safepointVerifiers.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
@@ -33,6 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
