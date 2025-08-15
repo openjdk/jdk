@@ -78,7 +78,7 @@ public abstract class SourceCodeAnalysis {
      * @return list of candidate continuations of the given input.
      * @since 26
      */
-    public abstract <S> List<S> completionSuggestions(String input, int cursor, Function<List<ElementSuggestion>, List<S>> convertor);
+    public abstract <S> List<S> completionSuggestions(String input, int cursor, ElementSuggestionConvertor<S> convertor);
 
     /**
      * Compute documentation for the given user's input. Multiple {@code Documentation} objects may
@@ -337,7 +337,7 @@ public abstract class SourceCodeAnalysis {
      *
      * @apiNote Instances of this interface and instances of the returned {@linkplain Elements}
      * should only be used and held during the execution of the {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) }
-     * method. Their use outside of the context of the method is not support and
+     * method. Their use outside of the context of the method is not supported and
      * the effect is undefined.
      *
      * @since 26
@@ -356,13 +356,10 @@ public abstract class SourceCodeAnalysis {
         /**
          * {@return {@code true} if this {@linkplain Element}'s type fits into
          *  the context.}
+         *
+         * Typically used when the type of the element fits the expected type.
          */
-        boolean matchesTypes();
-        /**
-         * {@return {@code true} if parentheses should not be filled for methods and
-         *  constructor in the current context.}
-         */
-        boolean noParenthesis();
+        boolean matchesType();
         /**
          * {@return the offset in the original snippet at which point this {@linkplain Element}
          *  should be inserted.}
@@ -376,6 +373,74 @@ public abstract class SourceCodeAnalysis {
          * {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) } method.
          */
         Supplier<String> documentation();
+    }
+
+    /**
+     * Permit access to completion state.
+     *
+     * @since 26
+     */
+    public sealed interface CompletionState permits SourceCodeAnalysisImpl.CompletionStateImpl {
+        /**
+         * {@return true if the given element is available using the simple name at
+         *  the place of the cursor.}
+         *
+         * @param el {@linkplain Element} to check
+         */
+        public boolean availableUsingSimpleName(Element el);
+        /**
+         * {@return flags describing the overall completion context.}
+         */
+        public Set<CompletionContext> completionContext();
+    }
+
+    /**
+     * Various flags describing the context in which the completion happens.
+     *
+     * @since 26
+     */
+    public enum CompletionContext {
+        /**
+         * The context is inside annotation attributes.
+         */
+        ANNOTATION_ATTRIBUTE,
+        /**
+         * Parentheses should not be filled for methods and constructor
+         * in the current context.
+         *
+         * Typically used in the import or method reference contexts.
+         */
+        NO_PAREN,
+        /**
+         * Interpret {@link ANNOTATION_TYPE}s as annotation uses. Typically means
+         * they should be prefixed with {@code @}.
+         */
+        TYPES_AS_ANNOTATION,
+        /**
+         * The context is in a qualified expression (like member access). Simple
+         * names only should be used.
+         */
+        QUALIFIED,
+        ;
+    }
+
+    /**
+     * A convertor from a list of {@linkplain ElementSuggestion} to a list
+     * of custom target completion items.
+     *
+     * @param <S> a custom target completion type.
+     * @since 26
+     */
+    public interface ElementSuggestionConvertor<S> {
+        /**
+         * Convert a list of {@linkplain ElementSuggestion} to a list
+         * of custom completion items.
+         *
+         * @param state the state of the completion
+         * @param suggestions the input suggestions
+         * @return the converted suggestions
+         */
+        public List<S> convert(CompletionState state, List<? extends ElementSuggestion> suggestions);
     }
 
     /**
