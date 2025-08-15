@@ -4092,7 +4092,7 @@ instruct varrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI b
          TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
-  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result\t#varrays_hashcode" %}
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
   ins_encode %{
     __ arrays_hashcode_v($ary$$Register, $cnt$$Register, $result$$Register,
                          $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,

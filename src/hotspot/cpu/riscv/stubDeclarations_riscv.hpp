@@ -75,7 +75,7 @@
                 string_indexof_linear_ul, string_indexof_linear_ul)     \
   do_stub(compiler, arrays_hashcode_powers_of_31)                       \
   do_arch_entry(riscv, compiler, arrays_hashcode_powers_of_31,          \
-                arrays_hashcode_powers_of_31, arrays_hashcode_powers_of_31) \
+            arrays_hashcode_powers_of_31, arrays_hashcode_powers_of_31) \
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \

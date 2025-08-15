@@ -2001,12 +2001,11 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   // The MaxVectorSize should have been set by detecting RVV max vector register
   // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
   // Let's use T_INT as all hashCode calculations eventually deal with ints.
-  const int ints_in_vec_reg = MaxVectorSize / sizeof(jint);
   const int lmul = 2;
+  const int stride = MaxVectorSize / sizeof(jint) * lmul;
 
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
-  const int MAX_VEC_MASK = ~(ints_in_vec_reg * lmul - 1);
 
   switch (eltype) {
     case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
@@ -2034,7 +2033,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   // NB: at this point (a) 'result' already has some value,
   // (b) 'cnt' is not 0 or 1, see java code for details.
 
-  andi(t0, cnt, MAX_VEC_MASK);
+  andi(t0, cnt, ~(stride - 1));
   beqz(t0, SCALAR_TAIL);
 
   vsetvli(t1, x0, Assembler::e32, Assembler::m2);
@@ -2050,10 +2049,10 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   arrays_hashcode_elload_v(v_src, v_tmp, ary, eltype);
   vmul_vv(v_src, v_src, v_coeffs);
   vmadd_vx(v_sum, pow31_highest, v_src);
-  shadd(ary, consumed, ary, t0, elsize_shift);
   mulw(result, result, pow31_highest);
+  shadd(ary, consumed, ary, t0, elsize_shift);
   subw(cnt, cnt, consumed);
-  andi(t1, cnt, MAX_VEC_MASK);
+  andi(t1, cnt, ~(stride - 1));
   bnez(t1, VEC_LOOP);
 
   vmv_s_x(v_tmp, x0);
@@ -2067,8 +2066,8 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   bind(SCALAR_TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
-  slli(t1, result, 5);           // optimize 31 * result
-  subw(result, t1, result);      // with result<<5 - result
+  slli(t1, result, 5);      // optimize 31 * result
+  subw(result, t1, result); // with result<<5 - result
   addw(result, result, t0);
   addi(ary, ary, elsize_bytes);
   bne(ary, ary_end, SCALAR_TAIL_LOOP);
