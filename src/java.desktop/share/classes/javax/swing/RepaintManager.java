@@ -1082,33 +1082,28 @@ public class RepaintManager
     }
 
     /**
-     * Return an Image that can be used to paint a Component that may take into
-     * account the AffineTransform of the Component's GraphicConfiguration.
+     * Return a BackingStoreMultiResolutionImage that can be used to paint a
+     * Component.
      * <p>
      * For example: if a Component is 100x100 pixels on a high-resolution
      * (200%) monitor, then this return a MultiResolutionImage that is
      * backed by a 200x200 pixel BufferedImage.
      * </p>
      */
-    private Image createImage(Component c, int virtualWidth, int virtualHeight) {
+    private BackingStoreMultiResolutionImage createImage(
+            Component c, int virtualWidth, int virtualHeight) {
         GraphicsConfiguration gc = c.getGraphicsConfiguration();
         int scaledWidth, scaledHeight;
-        double scaleX, scaleY;
         if (gc != null) {
             AffineTransform at = gc.getDefaultTransform();
-            scaleX = at.getScaleX();
-            scaleY = at.getScaleY();
+            scaledWidth = Math.round((float) at.getScaleX() * virtualWidth);
+            scaledHeight = Math.round((float) at.getScaleY() * virtualHeight);
         } else {
-            scaleX = scaleY = 1.0;
+            scaledWidth = virtualWidth;
+            scaledHeight = virtualHeight;
         }
-        scaledWidth = Math.round((float) scaleX * virtualWidth);
-        scaledHeight = Math.round((float) scaleY * virtualHeight);
 
         Image img = c.createImage(scaledWidth, scaledHeight);
-        if (scaledWidth == virtualWidth && scaledHeight == virtualHeight) {
-            return img;
-        }
-
         return new BackingStoreMultiResolutionImage(virtualWidth, virtualHeight, scaledWidth, scaledHeight, img);
     }
 
