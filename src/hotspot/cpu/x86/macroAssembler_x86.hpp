@@ -209,8 +209,6 @@ class MacroAssembler: public Assembler {
   void align(uint modulus, uint target);
 
   void post_call_nop();
-  // A 5 byte nop that is safe for patching (see patch_verified_entry)
-  void fat_nop();
 
   // Stack frame creation/removal
   void enter();
@@ -990,6 +988,9 @@ public:
   void pop_f(XMMRegister r);
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
+
+  void push_ppx(Register src);
+  void pop_ppx(Register dst);
 
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }

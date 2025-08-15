@@ -137,6 +137,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dsinh:             return java_lang_math_sinh;
       case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dcbrt:             return java_lang_math_cbrt;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
@@ -148,7 +149,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
-      case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
+      case vmIntrinsics::_Reference_get0:    return java_lang_ref_reference_get0;
       case vmIntrinsics::_Object_init:
         if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -199,6 +200,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_sinh        : return vmIntrinsics::_dsinh;
   case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
   case java_lang_math_cbrt        : return vmIntrinsics::_dcbrt;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
@@ -210,7 +212,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_exp         : return vmIntrinsics::_dexp;
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
-  case java_lang_ref_reference_get: return vmIntrinsics::_Reference_get;
+  case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
@@ -304,6 +306,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_sinh    : tty->print("java_lang_math_sinh"    ); break;
     case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_cbrt    : tty->print("java_lang_math_cbrt"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
@@ -320,7 +323,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;
     case java_util_zip_CRC32C_updateBytes     : tty->print("java_util_zip_CRC32C_updateBytes"); break;
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
-    case java_lang_ref_reference_get          : tty->print("java_lang_ref_reference_get"); break;
+    case java_lang_ref_reference_get0         : tty->print("java_lang_ref_reference_get0"); break;
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;

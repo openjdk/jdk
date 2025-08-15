@@ -48,7 +48,9 @@ public class HeadlessException extends UnsupportedOperationException {
     private static final long serialVersionUID = 167183644944358563L;
 
     /**
-     * Constructs new {@code HeadlessException} with empty message.
+     * Constructs a new {@code HeadlessException} with {@code null} as its detail message.
+     * The default headless message may replace {@code null} in some cases, as outlined below.
+     * <p>
      * For such {@code HeadlessException} the default headless error message
      * may be auto-generated for some platforms.
      * The text of the default headless message may depend on

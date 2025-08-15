@@ -38,7 +38,7 @@ import static sun.java2d.pipe.BufferedOpCodes.SYNC;
  * the queue, thus ensuring that only one thread communicates with the native
  * OpenGL libraries for the entire process.
  */
-public class MTLRenderQueue extends RenderQueue {
+public final class MTLRenderQueue extends RenderQueue {
 
     private static MTLRenderQueue theInstance;
     private final QueueFlusher flusher;
@@ -128,6 +128,7 @@ public class MTLRenderQueue extends RenderQueue {
         }
     }
 
+    @Override
     public void flushAndInvokeNow(Runnable r) {
         // assert lock.isHeldByCurrentThread();
         try {
@@ -153,7 +154,7 @@ public class MTLRenderQueue extends RenderQueue {
         refSet.clear();
     }
 
-    private class QueueFlusher implements Runnable {
+    private final class QueueFlusher implements Runnable {
         private boolean needsFlush;
         private Runnable task;
         private Error error;
@@ -192,6 +193,7 @@ public class MTLRenderQueue extends RenderQueue {
             flushNow();
         }
 
+        @Override
         public synchronized void run() {
             boolean timedOut = false;
             while (true) {

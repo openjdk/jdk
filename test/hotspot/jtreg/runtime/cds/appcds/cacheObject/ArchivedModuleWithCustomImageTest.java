@@ -133,6 +133,7 @@ public class ArchivedModuleWithCustomImageTest {
             customJava.toString(),
             "-XX:SharedArchiveFile=./ArchivedModuleWithCustomImageTest.jsa",
             "-Xshare:on",
+            "-Xlog:cds=off",
             "--show-module-resolution",
             "-version"};
         printCommand(showModuleCmd2);

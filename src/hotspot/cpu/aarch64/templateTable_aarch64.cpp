@@ -1759,7 +1759,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
 
 void TemplateTable::branch(bool is_jsr, bool is_wide)
 {
-  __ profile_taken_branch(r0, r1);
+  __ profile_taken_branch(r0);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
   const ByteSize inv_offset = MethodCounters::invocation_counter_offset() +
@@ -1809,7 +1809,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // r0: MDO
-    // w1: MDO bumped taken-count
     // r2: target offset
     __ cmp(r2, zr);
     __ br(Assembler::GT, dispatch); // count only if backward branch
@@ -1820,12 +1819,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbnz(rscratch1, has_counters);
     __ push(r0);
-    __ push(r1);
     __ push(r2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
             InterpreterRuntime::build_method_counters), rmethod);
     __ pop(r2);
-    __ pop(r1);
     __ pop(r0);
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbz(rscratch1, dispatch); // No MethodCounters allocated, OutOfMemory
