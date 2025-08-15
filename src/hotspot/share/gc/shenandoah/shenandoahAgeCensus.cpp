@@ -47,7 +47,7 @@ ShenandoahAgeCensus::ShenandoahAgeCensus() {
     // Sentinel value
     _tenuring_threshold[i] = MAX_COHORTS;
   }
-  if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+  if (ShenandoahGenerationalAdaptiveTenuring) {
     size_t max_workers = ShenandoahHeap::heap()->max_workers();
     _local_age_table = NEW_C_HEAP_ARRAY(AgeTable*, max_workers, mtGC);
     CENSUS_NOISE(_local_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, max_workers, mtGC);)
@@ -127,7 +127,7 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop, AgeTable* pv1, AgeTable
   prepare_for_census_update();
   assert(_global_age_table[_epoch]->is_clear(), "Dirty decks");
   CENSUS_NOISE(assert(_global_noise[_epoch].is_clear(), "Dirty decks");)
-  if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+  if (ShenandoahGenerationalAdaptiveTenuring) {
     assert(pv1 == nullptr && pv2 == nullptr, "Error, check caller");
     // Seed cohort 0 with population that may have been missed during
     // regular census.
@@ -173,7 +173,7 @@ void ShenandoahAgeCensus::reset_global() {
 
 // Reset the local age tables, clearing any partial census.
 void ShenandoahAgeCensus::reset_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring || ShenandoahGenerationalCensusAtEvac) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     assert(_local_age_table == nullptr, "Error");
     return;
   }
@@ -200,7 +200,7 @@ bool ShenandoahAgeCensus::is_clear_global() {
 
 // Is local census information clear?
 bool ShenandoahAgeCensus::is_clear_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring || ShenandoahGenerationalCensusAtEvac) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     assert(_local_age_table == nullptr, "Error");
     return true;
   }
