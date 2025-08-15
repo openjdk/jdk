@@ -20,7 +20,6 @@
 		// {{INDEXER_SETTINGS}}
 
 		// Java extension
-		"jdk.advanced.disable.nbjavac": true,
 		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
 		"jdk.java.onSave.organizeImports": false, // prevents unnecessary changes
 
