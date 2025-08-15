@@ -25,38 +25,35 @@
 package jdk.jpackage.internal.model;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
- * The directory in which to run an application launcher when it is started from
- * a shortcut.
+ * Collection of functions to create instances of types defined in this package from strings.
  */
-public enum LauncherShortcutStartupDirectory {
+public final class ParseUtils {
 
-    /**
-     * Platform-specific default value.
-     * <p>
-     * On Windows, it indicates that the startup directory should be the package's
-     * installation directory.
-     * <p>
-     * On Linux, it indicates that a shortcut doesn't have the startup directory
-     * configured explicitly.
-     */
-    DEFAULT("true"),
-
-    /**
-     * The 'app' directory in the installed application app image. This is the
-     * directory that is referenced with {@link ApplicationLayout#appDirectory()}
-     * method.
-     */
-    APP_DIR("app-dir");
-
-    LauncherShortcutStartupDirectory(String stringValue) {
-        this.stringValue = Objects.requireNonNull(stringValue);
+    private ParseUtils() {
     }
 
-    public String asStringValue() {
-        return stringValue;
+    public static LauncherShortcut parseLauncherShortcutForMainLauncher(String str) {
+        return parse(str, LauncherShortcutStartupDirectory.APP_DIR).map(LauncherShortcut::new).orElseThrow(IllegalArgumentException::new);
     }
 
-    private final String stringValue;
+    public static LauncherShortcut parseLauncherShortcutForAddLauncher(String str) {
+        return parse(str, LauncherShortcutStartupDirectory.values()).map(LauncherShortcut::new).orElseGet(() -> {
+            if (Boolean.valueOf(str)) {
+                return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
+            } else {
+                return new LauncherShortcut();
+            }
+        });
+    }
+
+    private static Optional<LauncherShortcutStartupDirectory> parse(String str, LauncherShortcutStartupDirectory... recognizedValues) {
+        Objects.requireNonNull(str);
+        return Stream.of(recognizedValues).filter(v -> {
+            return str.equals(v.asStringValue());
+        }).findFirst();
+    }
 }
