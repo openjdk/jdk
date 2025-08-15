@@ -103,10 +103,6 @@ final class DateTimePrintContext {
      * The formatter, not null.
      */
     private final DateTimeFormatter formatter;
-    /**
-     * Whether the current formatter is optional.
-     */
-    private int optional;
 
     /**
      * Creates a new instance of the context.
@@ -114,8 +110,7 @@ final class DateTimePrintContext {
      * @param temporal  the temporal object being output, not null
      * @param formatter  the formatter controlling the format, not null
      */
-    DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
-        super();
+    public DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
         this.temporal = adjust(temporal, formatter);
         this.formatter = formatter;
     }
@@ -354,29 +349,15 @@ final class DateTimePrintContext {
 
     //-----------------------------------------------------------------------
     /**
-     * Starts the printing of an optional segment of the input.
-     */
-    void startOptional() {
-        this.optional++;
-    }
-
-    /**
-     * Ends the printing of an optional segment of the input.
-     */
-    void endOptional() {
-        this.optional--;
-    }
-
-    /**
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
      * @return the result, null if not found and optional is true
      * @throws DateTimeException if the type is not available and the section is not optional
      */
-    <R> R getValue(TemporalQuery<R> query) {
+    <R> R getValue(TemporalQuery<R> query, boolean optional) {
         R result = temporal.query(query);
-        if (result == null && optional == 0) {
+        if (result == null && !optional) {
             throw new DateTimeException("Unable to extract " +
                     query + " from temporal " + temporal);
         }
@@ -392,8 +373,8 @@ final class DateTimePrintContext {
      * @return the value, null if not found and optional is true
      * @throws DateTimeException if the field is not available and the section is not optional
      */
-    Long getValue(TemporalField field) {
-        if (optional > 0 && !temporal.isSupported(field)) {
+    Long getValue(TemporalField field, boolean optional) {
+        if (optional && !temporal.isSupported(field)) {
             return null;
         }
         return temporal.getLong(field);
