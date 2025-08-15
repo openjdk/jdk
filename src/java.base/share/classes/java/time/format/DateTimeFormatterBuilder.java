@@ -61,17 +61,6 @@
  */
 package java.time.format;
 
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.INSTANT_SECONDS;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.NANO_OF_SECOND;
-import static java.time.temporal.ChronoField.OFFSET_SECONDS;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static java.time.temporal.ChronoField.YEAR;
-import static java.time.temporal.ChronoField.ERA;
-
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -121,6 +110,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
@@ -129,6 +120,8 @@ import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.TimeZoneNameUtility;
+
+import static java.time.temporal.ChronoField.*;
 
 /**
  * Builder to create date-time formatters.
@@ -444,7 +437,7 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendValue(TemporalField field) {
         Objects.requireNonNull(field, "field");
-        appendValue(new NumberPrinterParser(field, 1, 19, SignStyle.NORMAL));
+        appendValue(NumberPrinterParser.of(field, 1, 19, SignStyle.NORMAL));
         return this;
     }
 
@@ -501,7 +494,7 @@ public final class DateTimeFormatterBuilder {
         if (width < 1 || width > 19) {
             throw new IllegalArgumentException("The width must be from 1 to 19 inclusive but was " + width);
         }
-        NumberPrinterParser pp = new NumberPrinterParser(field, width, width, SignStyle.NOT_NEGATIVE);
+        NumberPrinterParser pp = NumberPrinterParser.of(field, width, width, SignStyle.NOT_NEGATIVE);
         appendValue(pp);
         return this;
     }
@@ -554,7 +547,7 @@ public final class DateTimeFormatterBuilder {
             throw new IllegalArgumentException("The maximum width must exceed or equal the minimum width but " +
                     maxWidth + " < " + minWidth);
         }
-        NumberPrinterParser pp = new NumberPrinterParser(field, minWidth, maxWidth, signStyle);
+        NumberPrinterParser pp = NumberPrinterParser.of(field, minWidth, maxWidth, signStyle);
         appendValue(pp);
         return this;
     }
@@ -750,9 +743,9 @@ public final class DateTimeFormatterBuilder {
         if (field == NANO_OF_SECOND) {
             if (minWidth == maxWidth && decimalPoint == false) {
                 // adjacent parsing
-                appendValue(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+                appendValue(NanosPrinterParser.of(minWidth, maxWidth, decimalPoint));
             } else {
-                appendInternal(new NanosPrinterParser(minWidth, maxWidth, decimalPoint));
+                appendInternal(NanosPrinterParser.of(minWidth, maxWidth, decimalPoint));
             }
         } else {
             if (minWidth == maxWidth && decimalPoint == false) {
@@ -3058,7 +3051,7 @@ public final class DateTimeFormatterBuilder {
          * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
          *  -1 if fixed width due to active adjacent parsing
          */
-        protected NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
+        private NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
@@ -3076,7 +3069,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, -1);
+            return NumberPrinterParser.of(field, minWidth, maxWidth, signStyle, -1);
         }
 
         /**
@@ -3086,7 +3079,7 @@ public final class DateTimeFormatterBuilder {
          * @return a new updated printer-parser, not null
          */
         NumberPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
+            return NumberPrinterParser.of(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
         @Override
@@ -3149,7 +3142,7 @@ public final class DateTimeFormatterBuilder {
                     " exceeds the maximum print width of " + maxWidth);
         }
 
-        protected boolean notSupported(DateTimePrintContext context, boolean optional) {
+        boolean notSupported(DateTimePrintContext context, boolean optional) {
             return optional && !context.isSupported(field);
         }
 
@@ -3162,6 +3155,17 @@ public final class DateTimeFormatterBuilder {
          */
         long getLong(DateTimePrintContext context) {
             return context.getLong(field);
+        }
+
+        /**
+         * Gets the int value to output.
+         *
+         * @param context  the context
+         * @param value  the value of the field, not null
+         * @return the value
+         */
+        int getInt(DateTimePrintContext context) {
+            return context.get(field);
         }
 
         /**
@@ -3300,6 +3304,205 @@ public final class DateTimeFormatterBuilder {
                 return "Value(" + field + "," + minWidth + ")";
             }
             return "Value(" + field + "," + minWidth + "," + maxWidth + "," + signStyle + ")";
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param field  the field to format, not null
+         * @param minWidth  the minimum field width, from 1 to 19
+         * @param maxWidth  the maximum field width, from minWidth to 19
+         * @param signStyle  the positive/negative sign style, not null
+         */
+        static NumberPrinterParser of(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle) {
+            return of(field, minWidth, maxWidth, signStyle, 0);
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param field  the field to format, not null
+         * @param minWidth  the minimum field width, from 1 to 19
+         * @param maxWidth  the maximum field width, from minWidth to 19
+         * @param signStyle  the positive/negative sign style, not null
+         */
+        static NumberPrinterParser of(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
+            // validated by caller
+            if (subsequentWidth == 0) {
+                if (minWidth == 2 && maxWidth == 2 && signStyle == SignStyle.NOT_NEGATIVE) {
+                    if (field instanceof ChronoField chronoField) {
+                        switch (chronoField) {
+                            case MONTH_OF_YEAR:
+                                return FixWidth2NotNegative.PP_MONTH;
+                            case DAY_OF_MONTH:
+                                return FixWidth2NotNegative.PP_DAY_OF_MONTH;
+                            case HOUR_OF_DAY:
+                                return FixWidth2NotNegative.PP_HOUR;
+                            case MINUTE_OF_HOUR:
+                                return FixWidth2NotNegative.PP_MINUTE;
+                            case SECOND_OF_MINUTE:
+                                return FixWidth2NotNegative.PP_SECOND;
+                            default:
+                                break;
+                        }
+                    }
+                } else if (minWidth == 4 && maxWidth == 4 && signStyle == SignStyle.EXCEEDS_PAD) {
+                    if (field instanceof ChronoField chronoField) {
+                        switch (chronoField) {
+                            case YEAR:
+                                return FixWidth4ExceedsPad.PP_YEAR;
+                            case YEAR_OF_ERA:
+                                return FixWidth4ExceedsPad.PP_YEAR_OF_ERA;
+                            default:
+                                break;
+                        }
+                    }
+                } else if (minWidth == 4 && maxWidth == 19 && signStyle == SignStyle.EXCEEDS_PAD) {
+                    if (field instanceof ChronoField chronoField) {
+                        switch (chronoField) {
+                            case YEAR:
+                                return FixWidth49ExceedsPad.PP_YEAR;
+                            case YEAR_OF_ERA:
+                                return FixWidth49ExceedsPad.PP_YEAR_OF_ERA;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, subsequentWidth);
+        }
+
+        static void appendtFixWidth4NotNegative(StringBuilder buf, int value) {
+            int value2 = value / 100;
+            DecimalDigits.appendPair(buf, value / 100);
+            DecimalDigits.appendPair(buf, value - value2 * 100);
+        }
+
+        static abstract class FixWidth4ExceedsPad extends NumberPrinterParser {
+            FixWidth4ExceedsPad(ChronoField field) {
+                super(field, 4, 4, SignStyle.EXCEEDS_PAD);
+            }
+
+            @Override
+            public final boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+                if (notSupported(context, optional)) {
+                    return false;
+                }
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                    return super.format(context, buf, optional);
+                }
+                int value = getInt(context);
+                if (value < 0) {
+                    buf.append('-');
+                    value = -value;
+                }
+                appendtFixWidth4NotNegative(buf, value);
+                return true;
+            }
+
+            static final FixWidth4ExceedsPad PP_YEAR = new FixWidth4ExceedsPad(ChronoField.YEAR) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYear();}
+                @Override
+                protected int getInt(DateTimePrintContext context) {return context.getYear();}
+            };
+            static final FixWidth4ExceedsPad PP_YEAR_OF_ERA = new FixWidth4ExceedsPad(YEAR_OF_ERA) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYearOfEra();}
+                @Override
+                protected int getInt(DateTimePrintContext context) {return context.getYearOfEra();}
+            };
+        }
+
+        static abstract class FixWidth49ExceedsPad extends NumberPrinterParser {
+            FixWidth49ExceedsPad(ChronoField field) {
+                super(field, 4, 19, SignStyle.EXCEEDS_PAD);
+            }
+
+            @Override
+            public final boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+                if (notSupported(context, optional)) {
+                    return false;
+                }
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                    return super.format(context, buf, optional);
+                }
+                int value = getInt(context);
+                if (value < 0) {
+                    buf.append('-');
+                    value = -value;
+                }
+                if (value < 10000) {
+                    appendtFixWidth4NotNegative(buf, value);
+                } else {
+                    buf.append(value);
+                }
+                return true;
+            }
+
+            static final FixWidth4ExceedsPad PP_YEAR = new FixWidth4ExceedsPad(ChronoField.YEAR) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYear();}
+                @Override
+                protected int getInt(DateTimePrintContext context) {return context.getYear();}
+            };
+            static final FixWidth4ExceedsPad PP_YEAR_OF_ERA = new FixWidth4ExceedsPad(YEAR_OF_ERA) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYearOfEra();}
+                @Override
+                protected int getInt(DateTimePrintContext context) {return context.getYearOfEra();}
+            };
+        }
+
+        static abstract class FixWidth2NotNegative extends NumberPrinterParser {
+            FixWidth2NotNegative(ChronoField field) {
+                super(field, 2, 2, SignStyle.NOT_NEGATIVE);
+            }
+
+            @Override
+            public final boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                    return super.format(context, buf, optional);
+                }
+                if (notSupported(context, optional)) {
+                    return false;
+                }
+                DecimalDigits.appendPair(buf, getInt(context));
+                return true;
+            }
+
+            static final FixWidth2NotNegative PP_MONTH = new FixWidth2NotNegative(MONTH_OF_YEAR) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportMonth();}
+                @Override
+                int getInt(DateTimePrintContext context) {return context.getMonthValue();}
+            };
+            static final FixWidth2NotNegative PP_DAY_OF_MONTH = new FixWidth2NotNegative(DAY_OF_MONTH) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportDayOfMonth();}
+                @Override
+                int getInt(DateTimePrintContext context) {return context.getDayOfMonth();}
+            };
+            static final FixWidth2NotNegative PP_HOUR = new FixWidth2NotNegative(HOUR_OF_DAY) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportDayOfMonth();}
+                @Override
+                int getInt(DateTimePrintContext context) {return context.getHour();}
+            };
+            static final FixWidth2NotNegative PP_MINUTE = new FixWidth2NotNegative(MINUTE_OF_HOUR) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportMinute();}
+                @Override
+                int getInt(DateTimePrintContext context) {return context.getMinute();}
+            };
+            static final FixWidth2NotNegative PP_SECOND = new FixWidth2NotNegative(SECOND_OF_MINUTE) {
+                @Override
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportSecond();}
+                @Override
+                int getInt(DateTimePrintContext context) {return context.getSecond();}
+            };
         }
     }
 
@@ -3469,7 +3672,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * Prints and parses a NANO_OF_SECOND field with optional padding.
      */
-    static final class NanosPrinterParser extends NumberPrinterParser {
+    static class NanosPrinterParser extends NumberPrinterParser {
         private final boolean decimalPoint;
 
         /**
@@ -3479,8 +3682,7 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum width to output, from 0 to 9
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
-        private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
-            this(minWidth, maxWidth, decimalPoint, 0);
+        static NanosPrinterParser of(int minWidth, int maxWidth, boolean decimalPoint) {
             if (minWidth < 0 || minWidth > 9) {
                 throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
             }
@@ -3491,6 +3693,10 @@ public final class DateTimeFormatterBuilder {
                 throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
                         maxWidth + " < " + minWidth);
             }
+            if (minWidth == 3 && maxWidth == 3 && !decimalPoint) {
+                return PP_FIX_3;
+            }
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, 0);
         }
 
         /**
@@ -3558,13 +3764,17 @@ public final class DateTimeFormatterBuilder {
         };
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            if(notSupported(context, optional)) {
+        public final boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            if (optional && !context.isSupportNano()) {
                 return false;
             }
 
-            long value = getValue(context);
-            int val = field.range().checkValidIntValue(value, field);
+            int val = context.getNano();
+            format(context, buf, val);
+            return true;
+        }
+
+        void format(DateTimePrintContext context, StringBuilder buf, int val) {
             DecimalStyle decimalStyle = context.getDecimalStyle();
             int stringSize = DecimalDigits.stringSize(val);
             char zero = decimalStyle.getZeroDigit();
@@ -3605,7 +3815,6 @@ public final class DateTimeFormatterBuilder {
                     buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
                 }
             }
-            return true;
         }
 
         @Override
@@ -3654,6 +3863,22 @@ public final class DateTimeFormatterBuilder {
             String decimal = (decimalPoint ? ",DecimalPoint" : "");
             return "Fraction(" + field + "," + minWidth + "," + maxWidth + decimal + ")";
         }
+
+        static final NanosPrinterParser PP_FIX_3 = new NanosPrinterParser(3, 3, false, 0) {
+            @Override
+            void format(DateTimePrintContext context, StringBuilder buf, int val) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                    super.format(context, buf, val);
+                    return;
+                }
+
+                val /= 1_000_000;
+                int d0 = val / 100;
+                int d12 = val - val * 100;
+                buf.append('0' + d0);
+                DecimalDigits.appendPair(buf, d12);
+            }
+        };
     }
 
     //-----------------------------------------------------------------------
@@ -3753,7 +3978,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
 
-            long value = getValue(context);
+            long value = getLong(context);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             BigDecimal fraction = convertToFraction(value);
             if (fraction.scale() == 0) {  // scale is zero if value is zero
@@ -3963,7 +4188,7 @@ public final class DateTimeFormatterBuilder {
          */
         private NumberPrinterParser numberPrinterParser() {
             if (numberPrinterParser == null) {
-                numberPrinterParser = new NumberPrinterParser(field, 1, 19, SignStyle.NORMAL);
+                numberPrinterParser = NumberPrinterParser.of(field, 1, 19, SignStyle.NORMAL);
             }
             return numberPrinterParser;
         }
@@ -4089,7 +4314,7 @@ public final class DateTimeFormatterBuilder {
             }
             // parser restricts most fields to 2 digits, so definitely int
             // correctly parsed nano is also guaranteed to be valid
-            long yearParsed = newContext.getParsed(YEAR);
+            long yearParsed = newContext.getParsed(ChronoField.YEAR);
             int month = newContext.getParsed(MONTH_OF_YEAR).intValue();
             int day = newContext.getParsed(DAY_OF_MONTH).intValue();
             int hour = newContext.getParsed(HOUR_OF_DAY).intValue();
@@ -5469,7 +5694,7 @@ public final class DateTimeFormatterBuilder {
                         return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE,
                                 this.subsequentWidth);
                     } else {
-                        return new NumberPrinterParser(field, count, 19,
+                        return NumberPrinterParser.of(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD,
                                 this.subsequentWidth);
                     }
@@ -5486,7 +5711,7 @@ public final class DateTimeFormatterBuilder {
                 default:
                     throw new IllegalStateException("unreachable");
             }
-            return new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
+            return NumberPrinterParser.of(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
                     this.subsequentWidth);
         }
 
