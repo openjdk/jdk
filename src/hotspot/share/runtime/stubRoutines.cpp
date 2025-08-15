@@ -194,8 +194,8 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print_cr("%s\t not generated", buffer_name);
-      return nullptr;
     }
+    return nullptr;
   }
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
