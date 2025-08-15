@@ -29,6 +29,6 @@ import jdk.jpackage.internal.model.MacPackage;
 final class MacBuildEnvFromParams {
 
     static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
-        return BuildEnvFromParams.create(params, MacPackage::guessRuntimeLayout);
+        return BuildEnvFromParams.create(params, MacPackagingPipeline.APPLICATION_LAYOUT::resolveAt, MacPackage::guessRuntimeLayout);
     });
 }
