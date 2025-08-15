@@ -149,7 +149,7 @@ endef
 
 ################################################################################
 
-PHASE_MAKEDIRS := $(TOPDIR)/make
+PHASE_MAKEDIRS += $(TOPDIR)/make
 
 # Helper macro for DeclareRecipesForPhase
 # Declare a recipe for calling the module and phase specific makefile.
