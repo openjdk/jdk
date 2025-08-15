@@ -2602,19 +2602,24 @@ void AdapterHandlerLibrary::initialize() {
     BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
     _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args);
 
-    assert(no_arg_blob != nullptr &&
-           obj_arg_blob != nullptr &&
-           int_arg_blob != nullptr &&
-           obj_int_arg_blob != nullptr &&
-           obj_obj_arg_blob != nullptr, "Initial adapters must be properly created");
+    // we should always get an entry back but we don't have any
+    // associated blob on Zero
+    assert(_no_arg_handler != nullptr &&
+           _obj_arg_handler != nullptr &&
+           _int_arg_handler != nullptr &&
+           _obj_int_arg_handler != nullptr &&
+           _obj_obj_arg_handler != nullptr, "Initial adapter handlers must be properly created");
   }
 
   // Outside of the lock
+#ifndef ZERO
+  // no blobs to register when we are on Zero
   post_adapter_creation(no_arg_blob, _no_arg_handler);
   post_adapter_creation(obj_arg_blob, _obj_arg_handler);
   post_adapter_creation(int_arg_blob, _int_arg_handler);
   post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler);
   post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler);
+#endif // ZERO
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
@@ -2709,12 +2714,15 @@ const char* AdapterHandlerEntry::_entry_names[] = {
 
 #ifdef ASSERT
 void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached_entry) {
+  // we can only check for the same code if there is any
+#ifndef ZERO
   AdapterBlob* comparison_blob = nullptr;
   AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, true);
   assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
   assert(comparison_entry->compare_code(cached_entry), "code must match");
   // Release the one just created
   AdapterHandlerEntry::deallocate(comparison_entry);
+# endif // ZERO
 }
 #endif /* ASSERT*/
 
@@ -2792,8 +2800,13 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
 void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob) {
   ttyLocker ttyl;
   ResourceMark rm;
-  int insts_size = adapter_blob->code_size();
+  int insts_size;
+  // on Zero the blob may be null
   handler->print_adapter_on(tty);
+  if (adapter_blob == nullptr) {
+    return;
+  }
+  insts_size = adapter_blob->code_size();
   st->print_cr("i2c argument handler for: %s %s (%d bytes generated)",
                 handler->fingerprint()->as_basic_args_string(),
                 handler->fingerprint()->as_string(), insts_size);
@@ -2834,6 +2847,11 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
                                          sig_bt,
                                          regs,
                                          handler);
+#ifdef ZERO
+  // On zero there is no code to save and no need to create a blob and
+  // or relocate the handler.
+  adapter_blob = nullptr;
+#else
 #ifdef ASSERT
   if (VerifyAdapterSharing) {
     handler->save_code(buf->code_begin(), buffer.insts_size());
@@ -2869,12 +2887,15 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
   handler->relocate(adapter_blob->content_begin());
+#endif // ZERO
+
 #ifndef PRODUCT
   // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     print_adapter_handler_info(tty, handler, adapter_blob);
   }
 #endif
+
   return true;
 }
 

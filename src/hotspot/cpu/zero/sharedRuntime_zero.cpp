@@ -56,10 +56,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
                                             AdapterHandlerEntry* handler) {
-  // VM expects i2c entry to be always filled. The rest can be unset.
+  // foil any attempt to call the i2c, c2i or unverified c2i entries
   handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            nullptr,
-                            nullptr,
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
                             nullptr);
 }
 
