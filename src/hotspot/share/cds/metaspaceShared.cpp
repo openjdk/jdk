@@ -1395,7 +1395,7 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
-    log_error(aot)("Opening of static archive %s failed", static_archive);
+    log_info(cds)("Opening of static archive %s failed", static_archive);
     return nullptr;
   }
   return mapinfo;
