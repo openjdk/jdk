@@ -130,6 +130,8 @@ class StringCoding {
      */
     static int encodeISOArray(byte[] sa, int sp,
                               byte[] da, int dp, int len) {
+        // This method should tolerate invalid arguments, matching the lenient behavior of the VM intrinsic.
+        // Hence, using operator expressions instead of `Preconditions`, which throw on failure.
         int sl;
         if ((sp | dp | len) < 0 ||
                 // Halving the length of `sa` to obtain the number of characters:
@@ -169,6 +171,8 @@ class StringCoding {
      */
     static int encodeAsciiArray(char[] sa, int sp,
                                 byte[] da, int dp, int len) {
+        // This method should tolerate invalid arguments, matching the lenient behavior of the VM intrinsic.
+        // Hence, using operator expressions instead of `Preconditions`, which throw on failure.
         if ((sp | dp | len) < 0 ||
                 sp >= sa.length ||      // Implicit null check on `sa`
                 dp >= da.length) {      // Implicit null check on `da`
