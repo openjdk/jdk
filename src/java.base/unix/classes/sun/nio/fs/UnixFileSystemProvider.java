@@ -389,29 +389,32 @@ public abstract class UnixFileSystemProvider
         if (!(obj2 instanceof UnixPath file2))
             return false;
 
-        // check existence while following linkx
-        boolean exists1 = exists(file1);
-        boolean exists2 = exists(file2);
+        // try to retrieve attributes following links
+        UnixFileAttributes attrs1 = null;
+        UnixFileAttributes attrs2 = null;
+        try {
+            if ((attrs1 = UnixFileAttributes.getIfExists(file1)) != null)
+                attrs2 = UnixFileAttributes.getIfExists(file2);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(file1, file2);
+            return false;    // keep compiler happy
+        }
 
-        if (exists1 && exists2) {
+        if (attrs1 != null && attrs2 != null)
             // both exist, compare their device IDs and inode numbers
-            UnixFileAttributes attrs1;
-            UnixFileAttributes attrs2;
-            try {
-                attrs1 = UnixFileAttributes.get(file1, true);
-            } catch (UnixException x) {
-                x.rethrowAsIOException(file1);
-                return false;    // keep compiler happy
-            }
-            try {
-                attrs2 = UnixFileAttributes.get(file2, true);
-            } catch (UnixException x) {
-                x.rethrowAsIOException(file2);
-                return false;    // keep compiler happy
-            }
             return attrs1.isSameFile(attrs2);
-        } else if (exists(file1, LinkOption.NOFOLLOW_LINKS) &&
-                   exists(file2, LinkOption.NOFOLLOW_LINKS)) {
+
+        // try to retrieve attributes not following links
+        attrs1 = attrs2 = null;
+        try {
+            if ((attrs1 = UnixFileAttributes.getIfExists(file1, false)) != null)
+                attrs2 = UnixFileAttributes.getIfExists(file2, false);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(file1, file2);
+            return false;    // keep compiler happy
+        }
+
+        if (attrs1 != null && attrs2 != null) {
             // both exist if links are not followed, so see whether
             // the two paths both contain a common symbolic link
             Set<UnixFileKey> keys1 = getLinkKeys(file1);
@@ -419,14 +422,8 @@ public abstract class UnixFileSystemProvider
             for (UnixFileKey k : keys1)
                 if (keys2.contains(k))
                     return true;
-            return false;
-        } else if (exists1 || exists2) {
-            // only one exists, they cannot be equal
-            return false;
         }
 
-        // neither exist and comparison of normalized paths is problematic,
-        // so return false
         return false;
     }
 

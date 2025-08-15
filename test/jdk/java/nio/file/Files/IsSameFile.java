@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -429,7 +430,7 @@ public class IsSameFile {
     //
     // L1 -> L2 -> L3 -> L1...
     //
-    // This is a loop, but isSameFile(LX,LY) should be true for all X, Y
+    // This is a loop and should throw FileSystemException.
     //
     private Stream<Arguments> linkLoopSource() throws IOException {
         deleteFiles();
@@ -453,6 +454,6 @@ public class IsSameFile {
     @MethodSource("linkLoopSource")
     @DisabledOnOs(OS.WINDOWS)
     public void linkLoop(boolean expect, Path x, Path y) throws IOException {
-        test(expect, x, y);
+        assertThrows(FileSystemException.class, () -> Files.isSameFile(x, y));
     }
 }
