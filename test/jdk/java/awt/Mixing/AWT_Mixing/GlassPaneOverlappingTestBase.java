@@ -130,6 +130,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         testedComponent.setBounds(0, 0,
                                 testedComponent.getPreferredSize().width,
                                 testedComponent.getPreferredSize().height + 20);
+
                         Component focusOwner = FocusManager.getCurrentManager()
                                 .getFocusOwner();
                         if (focusOwner == f ) {
@@ -138,6 +139,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         }else{
                             f.requestFocusInWindow();
                         }
+
                     }
                 });
             } catch (InterruptedException ex) {
@@ -148,6 +150,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             Point lLoc = testedComponent.getLocationOnScreen();
             lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
             try {
+
                 boolean await = latch.await(1, TimeUnit.SECONDS);
                 if (!await) {
                     throw new RuntimeException(
