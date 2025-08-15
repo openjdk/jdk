@@ -113,18 +113,44 @@ public class Misc {
         assertTrue(isSameFile(thisFile, thisFile));
 
         /**
-         * Test: Neither files exist
+         * Test: Neither file exists
          */
-        assertTrue(!isSameFile(thisFile, thatFile));
-        assertTrue(!isSameFile(thatFile, thisFile));
+        if (Platform.isWindows()) {
+            try {
+                isSameFile(thisFile, thatFile);
+                throw new RuntimeException("IOException not thrown");
+            } catch (IOException x) {
+            }
+            try {
+                isSameFile(thatFile, thisFile);
+                throw new RuntimeException("IOException not thrown");
+            } catch (IOException x) {
+            }
+        } else {
+            assertTrue(!isSameFile(thisFile, thatFile));
+            assertTrue(!isSameFile(thatFile, thisFile));
+        }
 
         createFile(thisFile);
         try {
             /**
              * Test: One file exists
              */
-            assertTrue(!isSameFile(thisFile, thatFile));
-            assertTrue(!isSameFile(thatFile, thisFile));
+            if (Platform.isWindows()) {
+                try {
+                    isSameFile(thisFile, thatFile);
+                    throw new RuntimeException("IOException not thrown");
+                } catch (IOException x) {
+                }
+                try {
+                    isSameFile(thatFile, thisFile);
+                    throw new RuntimeException("IOException not thrown");
+                } catch (IOException x) {
+                }
+            } else {
+                assertTrue(!isSameFile(thisFile, thatFile));
+                assertTrue(!isSameFile(thatFile, thisFile));
+            }
 
             /**
              * Test: Both file exists
