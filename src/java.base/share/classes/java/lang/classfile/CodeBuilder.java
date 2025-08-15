@@ -330,6 +330,11 @@ public sealed interface CodeBuilder
 
     /**
      * A builder to add catch blocks.
+     * <p>
+     * The order of catch blocks is significant.  When an exception is thrown
+     * by the try block, the first catch block whose exception type is {@linkplain
+     * Class#isAssignableFrom(Class) the same class as or a superclass of} the
+     * class of exception thrown is branched to (JVMS {@jvms 2.10}).
      *
      * @see #trying
      * @see ExceptionCatch
@@ -348,13 +353,16 @@ public sealed interface CodeBuilder
          * If the type of exception is {@code null} then the catch block catches
          * all exceptions.
          *
+         * @apiNote
+         * If the type of exception to catch is already handled by previous
+         * catch blocks, this block will never be executed.
+         *
          * @param exceptionType the type of exception to catch, may be {@code null}
          * @param catchHandler handler that receives a {@link BlockCodeBuilder} to
          *                     generate the body of the catch block
          * @return this builder
-         * @throws IllegalArgumentException if an existing catch block catches
-         *         an exception of the given type or {@code exceptionType}
-         *         represents a primitive type
+         * @throws IllegalArgumentException if {@code exceptionType} represents
+         *         a primitive type
          * @see #catchingMulti
          * @see #catchingAll
          */
@@ -372,12 +380,16 @@ public sealed interface CodeBuilder
          * If list of exception types is empty then the catch block catches all
          * exceptions.
          *
+         * @apiNote
+         * If every type of exception to catch is already handled by previous
+         * catch blocks, this block will never be executed.
+         *
          * @param exceptionTypes the types of exception to catch
          * @param catchHandler handler that receives a {@link BlockCodeBuilder}
          *                     to generate the body of the catch block
          * @return this builder
-         * @throws IllegalArgumentException if an existing catch block catches
-         *         one or more exceptions of the given types
+         * @throws IllegalArgumentException if any exception type represents a
+         *         primitive type
          * @see #catching
          * @see #catchingAll
          */
@@ -392,10 +404,12 @@ public sealed interface CodeBuilder
          * The caught exception will be on top of the operand stack when the
          * catch block is entered.
          *
+         * @apiNote
+         * Since this block intercepts all exceptions, all subsequent catch
+         * blocks will never be executed.
+         *
          * @param catchAllHandler handler that receives a {@link BlockCodeBuilder}
          *                        to generate the body of the catch block
-         * @throws IllegalArgumentException if an existing catch block catches
-         *         all exceptions
          * @see #catching
          * @see #catchingMulti
          */
