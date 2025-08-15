@@ -957,7 +957,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
             # Switching the initialization mode with gcc from 'pattern' to 'zero'
             # avoids the use of unsupported `__builtin_clear_padding` for variable
             # length aggregates
-            if test "x$TOOLCHAIN_TYPE" = xgcc ; then
+            if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
               INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
               FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
                 IF_TRUE: [
