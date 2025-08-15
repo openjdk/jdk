@@ -660,13 +660,13 @@ class SharedRuntime: AllStatic {
 
   // template is required here as we need to know the exact signature at compile-time
   template <typename... TT>
-  static void debug_print(const char *format, TT... args) {
+  static void debug_print(const char *str, TT... args) {
     // these three lines are the manual expansion of JRT_LEAF ... JRT_END, does not work well with templates
     DEBUG_ONLY(NoHandleMark __hm;)
     os::verify_stack_alignment();
     DEBUG_ONLY(NoSafepointVerifier __nsv;)
 
-    tty->print("%s\n", format);
+    tty->print("%s\n", str);
     debug_print_rec(args...);
   }
 

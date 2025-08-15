@@ -1317,10 +1317,11 @@ public:
 
 #ifndef PRODUCT
 private:
-  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn, Node* parm0 = nullptr, Node* parm1 = nullptr,
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
                               Node* parm2 = nullptr, Node* parm3 = nullptr,
                               Node* parm4 = nullptr, Node* parm5 = nullptr,
-                              Node* parm6 = nullptr);
+                              Node* parm6 = nullptr) const;
 
 public:
   // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
