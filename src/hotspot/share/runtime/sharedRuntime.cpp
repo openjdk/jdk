@@ -80,7 +80,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -2450,7 +2450,7 @@ class ArchivedAdapterTable : public OffsetCompactHashtable<
 #endif // INCLUDE_CDS
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = HashTable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals>;
@@ -2778,7 +2778,12 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
     adapter_blob->get_offsets(offsets);
     address i2c_entry = adapter_blob->content_begin();
     assert(offsets[0] == 0, "sanity check");
-    handler->set_entry_points(i2c_entry, i2c_entry + offsets[1], i2c_entry + offsets[2], i2c_entry + offsets[3]);
+    handler->set_entry_points(
+      i2c_entry,
+      (offsets[1] != -1) ? (i2c_entry + offsets[1]) : nullptr,
+      (offsets[2] != -1) ? (i2c_entry + offsets[2]) : nullptr,
+      (offsets[3] != -1) ? (i2c_entry + offsets[3]) : nullptr
+    );
   }
   return adapter_blob;
 }
@@ -2842,9 +2847,12 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
   assert(AdapterBlob::ENTRY_COUNT == 4, "sanity");
   address i2c_entry = handler->get_i2c_entry();
   entry_offset[0] = 0; // i2c_entry offset
-  entry_offset[1] = handler->get_c2i_entry() - i2c_entry;
-  entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
-  entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
+  entry_offset[1] = (handler->get_c2i_entry() != nullptr) ?
+                    (handler->get_c2i_entry() - i2c_entry) : -1;
+  entry_offset[2] = (handler->get_c2i_unverified_entry() != nullptr) ?
+                    (handler->get_c2i_unverified_entry() - i2c_entry) : -1;
+  entry_offset[3] = (handler->get_c2i_no_clinit_check_entry() != nullptr) ?
+                    (handler->get_c2i_no_clinit_check_entry() - i2c_entry) : -1;
 
   adapter_blob = AdapterBlob::create(&buffer, entry_offset);
   if (adapter_blob == nullptr) {
