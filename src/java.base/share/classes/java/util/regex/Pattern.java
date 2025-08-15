@@ -4248,6 +4248,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             info.maxLength += buffer.length;
             return next.study(info);
         }
+
+        int length() {
+            return buffer.length;
+        }
     }
 
     /**
@@ -4539,6 +4543,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int j;
             for (j = 0; j < cmin; j++) {
                 if (atom.match(matcher, i, seq)) {
+                    int k = matcher.last - i;
+                    if (k == 0) { // Zero length match
+                        // We have a Curly quantifier that is
+                        // performing a matching zero-length match.
+                        // Repeating it will not change the result
+                        // or consume any input on the string
+                        // so we short circuit and advance to the next node.
+                        return next.match(matcher, i, seq);
+                    }
                     i = matcher.last;
                     continue;
                 }
@@ -4685,6 +4698,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.groupIndex = group;
             this.capture = capture;
         }
+
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int[] groups = matcher.groups;
             int[] locals = matcher.locals;
@@ -4707,6 +4721,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (capture) {
                         groups[groupIndex] = i;
                         groups[groupIndex+1] = matcher.last;
+                    }
+                    int k = matcher.last - i;
+                    if (k == 0) { // Zero length match
+                        // We have a Curly quantifier that is
+                        // performing a matching zero-length match.
+                        // Repeating it will not change the result
+                        // or consume any input on the string
+                        // so we short circuit and advance to the next node.
+                        return next.match(matcher, i, seq);
                     }
                     i = matcher.last;
                 } else {
