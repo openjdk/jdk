@@ -401,6 +401,13 @@ the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
 
+#### JVMTI_STRESS_AGENT
+
+Executes JTReg tests with JVM TI stress agent. The stress agent is the part of
+test library and located in `test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp`.
+The value of this argument is set as JVM TI agent options.
+This mode uses ProblemList-jvmti-stress-agent.txt as an additional exclude list.
+
 #### TEST_MODE
 
 The test mode (`agentvm` or `othervm`).
