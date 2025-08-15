@@ -56,11 +56,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
                                             AdapterHandlerEntry* handler) {
+  // VM expects i2c entry to be always filled. The rest can be unset.
   handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            nullptr,
+                            nullptr,
                             nullptr);
-  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,

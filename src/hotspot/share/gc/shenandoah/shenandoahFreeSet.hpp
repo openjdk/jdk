@@ -345,7 +345,7 @@ private:
   // object.  No other objects are packed into these regions.
   //
   // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
+  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
   // region is entirely empty.

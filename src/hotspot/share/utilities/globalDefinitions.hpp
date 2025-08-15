@@ -343,7 +343,7 @@ inline T byte_size_in_proper_unit(T s) {
 }
 
 #define PROPERFMT             "%zu%s"
-#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit<size_t>(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
@@ -1332,7 +1332,7 @@ typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
 //----------------------------------------------------------------------------------------------------
-// Default hash/equals functions used by ResourceHashtable
+// Default hash/equals functions used by HashTable
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);

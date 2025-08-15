@@ -520,8 +520,6 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/HotSpotDiagnosticMXBean/DumpThreads.java     8364314 generic-all
-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
@@ -582,8 +580,6 @@ java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-a
 java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generic-all
 
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
-
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
