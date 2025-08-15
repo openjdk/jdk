@@ -1109,21 +1109,7 @@ public class RepaintManager
             return img;
         }
 
-        // The only reason we need baseImage is to call .getWidth(..) and
-        // getHeight(..). Image.getScaledInstance is notoriously slow, but
-        // that doesn't matter here because we never actually scale any pixels.
-        Image baseImage = img.getScaledInstance(virtualWidth, virtualHeight,
-                Image.SCALE_DEFAULT);
-
-        return new BaseMultiResolutionImage(baseImage, img) {
-            @Override
-            public Graphics getGraphics() {
-                Graphics graphics = img.getGraphics();
-                if (graphics instanceof Graphics2D g2d)
-                    g2d.scale(scaleX, scaleY);
-                return graphics;
-            }
-        };
+        return new BackingStoreMultiResolutionImage(virtualWidth, virtualHeight, scaledWidth, scaledHeight, img);
     }
 
 
