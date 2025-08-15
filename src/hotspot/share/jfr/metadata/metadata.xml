@@ -774,7 +774,7 @@
   </Event>
   
   <Event name="UnsafeAllocateMemory" category="Java Virtual Machine, Memory" label="Unsafe Native Memory Allocation" description="Native memory allocation via Unsafe.allocateMemory"
-    thread="true" stackTrace="true" startTime="false">
+    thread="true" stackTrace="true" startTime="false" throttle="true">
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
     <Field type="boolean" name="success" label="Succes" />
   </Event>

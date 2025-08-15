@@ -585,6 +585,7 @@
     <event name="jdk.UnsafeAllocateMemory">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="throttle">10/s</setting>
     </event>
 
     <event name="jdk.CompilerConfiguration">
