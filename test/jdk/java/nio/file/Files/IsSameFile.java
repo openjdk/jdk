@@ -24,6 +24,7 @@
 /* @test
  * @bug 8154364
  * @summary Test of Files.isSameFile
+ * @requires (os.family != "windows")
  * @library .. /test/lib
  * @build IsSameFile jdk.test.lib.util.FileUtils
  * @run junit IsSameFile
