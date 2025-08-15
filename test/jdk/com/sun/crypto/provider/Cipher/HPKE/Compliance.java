@@ -99,7 +99,16 @@ public class Compliance {
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey(null).authKey() == null);
 
         Asserts.assertTrue(spec.toString().contains("kem_id=32, kdf_id=1, aead_id=2"));
-        Asserts.assertTrue(spec.info(new byte[3]).toString().contains("info=000000"));
+        Asserts.assertTrue(spec.toString().contains("info=(empty),"));
+        Asserts.assertTrue(spec.info(new byte[3]).toString().contains("info=000000,"));
+        Asserts.assertTrue(spec.info("info".getBytes(StandardCharsets.UTF_8))
+                .toString().contains("info=696e666f (\"info\"),"));
+        Asserts.assertTrue(spec.info("\"info\"".getBytes(StandardCharsets.UTF_8))
+                .toString().contains("info=22696e666f22,"));
+        Asserts.assertTrue(spec.info("'info'".getBytes(StandardCharsets.UTF_8))
+                .toString().contains("info=27696e666f27 (\"'info'\"),"));
+        Asserts.assertTrue(spec.info("i\\n\\f\\o".getBytes(StandardCharsets.UTF_8))
+                .toString().contains("info=695c6e5c665c6f (\"i\\n\\f\\o\"),"));
         Asserts.assertTrue(spec.toString().contains("mode_base}"));
         Asserts.assertTrue(spec.psk(psk, psk_id).toString().contains("mode_psk}"));
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).toString().contains("mode_auth}"));

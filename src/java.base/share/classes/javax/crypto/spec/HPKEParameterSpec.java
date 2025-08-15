@@ -26,6 +26,7 @@ package javax.crypto.spec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.AsymmetricKey;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
@@ -399,9 +400,27 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
                 "kem_id=" + kem_id +
                 ", kdf_id=" + kdf_id +
                 ", aead_id=" + aead_id +
-                ", info=" + HexFormat.of().formatHex(info) +
+                ", info=" + bytesToString(info) +
                 ", " + (psk == null
                         ? (kS == null ? "mode_base" : "mode_auth")
                         : (kS == null ? "mode_psk" : "mode_auth_psk")) + "}";
+    }
+
+    // Returns a human-readable format of a byte array.
+    private static String bytesToString(byte[] input) {
+        if (input.length == 0) {
+            return "(empty)";
+        } else {
+            for (byte b : input) {
+                // Returns HEX + string for pure ASCII with no control characters.
+                // Cannot contain `"` to avoid character escaping.
+                if (b < 0x20 || b > 0x7E || b == '"') {
+                    return HexFormat.of().formatHex(input);
+                }
+            }
+            // Otherwise, only returns HEX.
+            return HexFormat.of().formatHex(input)
+                    + " (\"" + new String(input, StandardCharsets.US_ASCII) + "\")";
+        }
     }
 }
