@@ -110,11 +110,13 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
-  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");            // E
 
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
+
+  ADD_EXCL("jdk/internal/loader/BootLoader",             "UNNAMED_MODULE");        // A
   ADD_EXCL("jdk/internal/loader/BuiltinClassLoader",     "packageToModule");       // A
   ADD_EXCL("jdk/internal/loader/ClassLoaders",           "BOOT_LOADER",            // A
                                                          "APP_LOADER",             // A

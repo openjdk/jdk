@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -34,8 +34,8 @@
 #include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
-#include "oops/trainingData.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/globalDefinitions.hpp"

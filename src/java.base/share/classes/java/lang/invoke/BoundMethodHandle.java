@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  *
  * All bound arguments are encapsulated in dedicated species.
  */
+@AOTSafeClassInitializer
 /*non-public*/
 abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
@@ -233,6 +235,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     // concrete BMH classes required to close bootstrap loops
     //
 
+    @AOTSafeClassInitializer
     private  // make it private to force users to access the enclosing class first
     static final class Species_L extends BoundMethodHandle {
 
@@ -312,6 +315,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     // BMH species meta-data
     //
 
+    @AOTSafeClassInitializer
     /*non-public*/
     static final class SpeciesData
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
@@ -402,6 +406,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         Species_L.BMH_SPECIES = BoundMethodHandle.SPECIALIZER.findSpecies("L");
     }
 
+    @AOTSafeClassInitializer
     /*non-public*/
     static final class Specializer
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData> {

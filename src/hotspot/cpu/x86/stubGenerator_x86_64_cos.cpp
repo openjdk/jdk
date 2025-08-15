@@ -185,11 +185,11 @@ address StubGenerator::generate_libmCos() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
 #endif
 
-  __ push(rbx);
+  __ push_ppx(rbx);
   __ subq(rsp, 16);
   __ movsd(Address(rsp, 8), xmm0);
 
@@ -609,11 +609,11 @@ address StubGenerator::generate_libmCos() {
 
   __ bind(B1_4);
   __ addq(rsp, 16);
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
 #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
 #endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
