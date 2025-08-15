@@ -32,8 +32,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/ostream.hpp"
 
-#include <stdlib.h> // for environment variables
-
 static JfrOSInterface* _instance = nullptr;
 
 JfrOSInterface& JfrOSInterface::instance() {
