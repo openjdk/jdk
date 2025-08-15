@@ -640,13 +640,14 @@ class SharedRuntime: AllStatic {
   static void print_ic_miss_histogram();
 
   // Runtime methods for printf-style debug nodes
-  static void debug_print_value(jfloat x);
-  static void debug_print_value(jdouble x);
-  static void debug_print_value(jchar x);
-  static void debug_print_value(jshort x);
   static void debug_print_value(jboolean x);
+  static void debug_print_value(jbyte x);
+  static void debug_print_value(jshort x);
+  static void debug_print_value(jchar x);
   static void debug_print_value(jint x);
   static void debug_print_value(jlong x);
+  static void debug_print_value(jfloat x);
+  static void debug_print_value(jdouble x);
   static void debug_print_value(oopDesc* x);
 
   template <typename T, typename... Rest>

@@ -266,32 +266,36 @@ void SharedRuntime::print_ic_miss_histogram() {
 }
 
 // Runtime methods for printf-style debug nodes
+void SharedRuntime::debug_print_value(jboolean x) {
+  tty->print("[%s] ", x ? "true" : "false");
+}
+
+void SharedRuntime::debug_print_value(jshort x) {
+  tty->print("[%" PRId8 "] ", x);
+}
+
+void SharedRuntime::debug_print_value(jbyte x) {
+  tty->print("[%" PRId16 "] ", x);
+}
+
+void SharedRuntime::debug_print_value(jchar x) {
+  tty->print("['%c' (U+%04X)] ", x, x);
+}
+
+void SharedRuntime::debug_print_value(jint x) {
+  tty->print("[%" PRId32 "] ", x);
+}
+
+void SharedRuntime::debug_print_value(jlong x) {
+  tty->print("[%" PRId64 "] ", x);
+}
+
 void SharedRuntime::debug_print_value(jfloat x) {
   tty->print("[%f] ", x);
 }
 
 void SharedRuntime::debug_print_value(jdouble x) {
   tty->print("[%lf] ", x);
-}
-
-void SharedRuntime::debug_print_value(jchar x) {
-  tty->print("[%c] ", x);
-}
-
-void SharedRuntime::debug_print_value(jshort x) {
-  tty->print("[%d] ", x);
-}
-
-void SharedRuntime::debug_print_value(jboolean x) {
-  tty->print("[%d] ", x);
-}
-
-void SharedRuntime::debug_print_value(jint x) {
-  tty->print("[%d] ", x);
-}
-
-void SharedRuntime::debug_print_value(jlong x) {
-  tty->print("[%ld] ", x);
 }
 
 void SharedRuntime::debug_print_value(oopDesc* x) {
