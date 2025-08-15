@@ -161,6 +161,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
     @Override
     @IntrinsicCandidate
     protected void mult(long[] a, long[] b, long[] r) {
+        //System.out.println("No intrinsic :(");
         long aa0 = a[0];
         long aa1 = a[1];
         long aa2 = a[2];
@@ -200,16 +201,14 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         d4 = aa0 * bb4;
         dd4 = Math.unsignedMultiplyHigh(aa0, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
-
-        n0 = n * modulus[0];
-        nn0 = Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        n0 &= LIMB_MASK;
+        
+        n0 = -n & LIMB_MASK;
+        nn0 = (n + (-n >> BITS_PER_LIMB));
         n1 = n * modulus[1];
         nn1 = Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         n1 &= LIMB_MASK;
-        n2 = n * modulus[2];
-        nn2 = Math.unsignedMultiplyHigh(n, modulus[2]) << shift1 | (n2 >>> shift2);
-        n2 &= LIMB_MASK;
+        n2 = 0;
+        nn2 = 0;
         n3 = n * modulus[3];
         nn3 = Math.unsignedMultiplyHigh(n, modulus[3]) << shift1 | (n3 >>> shift2);
         n3 &= LIMB_MASK;
@@ -221,8 +220,6 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         d0 += n0;
         dd1 += nn1;
         d1 += n1;
-        dd2 += nn2;
-        d2 += n2;
         dd3 += nn3;
         d3 += n3;
         dd4 += nn4;
@@ -253,15 +250,11 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 = Math.unsignedMultiplyHigh(aa1, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        n0 = n * modulus[0];
-        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        d0 += n0 & LIMB_MASK;
+        dd0 += (n + (-n >> BITS_PER_LIMB));
+        d0 += -n & LIMB_MASK;
         n1 = n * modulus[1];
         dd1 += Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         d1 += n1 & LIMB_MASK;
-        n2 = n * modulus[2];
-        dd2 += Math.unsignedMultiplyHigh(n, modulus[2]) << shift1 | (n2 >>> shift2);
-        d2 += n2 & LIMB_MASK;
         n3 = n * modulus[3];
         dd3 += Math.unsignedMultiplyHigh(n, modulus[3]) << shift1 | (n3 >>> shift2);
         d3 += n3 & LIMB_MASK;
@@ -294,15 +287,11 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 = Math.unsignedMultiplyHigh(aa2, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        n0 = n * modulus[0];
-        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        d0 += n0 & LIMB_MASK;
+        dd0 += (n + (-n >> BITS_PER_LIMB));
+        d0 += -n & LIMB_MASK;
         n1 = n * modulus[1];
         dd1 += Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         d1 += n1 & LIMB_MASK;
-        n2 = n * modulus[2];
-        dd2 += Math.unsignedMultiplyHigh(n, modulus[2]) << shift1 | (n2 >>> shift2);
-        d2 += n2 & LIMB_MASK;
         n3 = n * modulus[3];
         dd3 += Math.unsignedMultiplyHigh(n, modulus[3]) << shift1 | (n3 >>> shift2);
         d3 += n3 & LIMB_MASK;
@@ -335,15 +324,11 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 = Math.unsignedMultiplyHigh(aa3, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        n0 = n * modulus[0];
-        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        d0 += n0 & LIMB_MASK;
+        dd0 += (n + (-n >> BITS_PER_LIMB));
+        d0 += -n & LIMB_MASK;;
         n1 = n * modulus[1];
         dd1 += Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         d1 += n1 & LIMB_MASK;
-        n2 = n * modulus[2];
-        dd2 += Math.unsignedMultiplyHigh(n, modulus[2]) << shift1 | (n2 >>> shift2);
-        d2 += n2 & LIMB_MASK;
         n3 = n * modulus[3];
         dd3 += Math.unsignedMultiplyHigh(n, modulus[3]) << shift1 | (n3 >>> shift2);
         d3 += n3 & LIMB_MASK;
@@ -376,15 +361,11 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 = Math.unsignedMultiplyHigh(aa4, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        n0 = n * modulus[0];
-        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        d0 += n0 & LIMB_MASK;
+        dd0 += (n + (-n >> BITS_PER_LIMB));
+        d0 += -n & LIMB_MASK;;
         n1 = n * modulus[1];
         dd1 += Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         d1 += n1 & LIMB_MASK;
-        n2 = n * modulus[2];
-        dd2 += Math.unsignedMultiplyHigh(n, modulus[2]) << shift1 | (n2 >>> shift2);
-        d2 += n2 & LIMB_MASK;
         n3 = n * modulus[3];
         dd3 += Math.unsignedMultiplyHigh(n, modulus[3]) << shift1 | (n3 >>> shift2);
         d3 += n3 & LIMB_MASK;
