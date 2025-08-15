@@ -100,6 +100,11 @@ public:
     return _old_heuristics;
   }
 
+  // Use this only for unit testing.  Do not use for production.
+  inline void set_capacity(size_t bytes) {
+    ShenandoahHeap::heap()->free_set()->resize_old_collector_capacity(bytes / ShenandoahHeapRegion::region_size_bytes());
+  }
+
   // See description in field declaration
   void set_promoted_reserve(size_t new_val);
   size_t get_promoted_reserve() const;
