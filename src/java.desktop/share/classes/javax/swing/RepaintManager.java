@@ -1110,8 +1110,8 @@ public class RepaintManager
             // focus on the scaling & shearing of the AffineTransform, but
             // don't include translation:
             transform = new AffineTransform(
-                    gcTransform.getScaleX(), gcTransform.getShearY(),
-                    gcTransform.getShearX(), gcTransform.getScaleY(),
+                    gcTransform.getScaleX(), gcTransform.getScaleY(),
+                    gcTransform.getShearX(), gcTransform.getShearY(),
                     0, 0
             );
             Rectangle virtualBounds = new Rectangle(0, 0,
