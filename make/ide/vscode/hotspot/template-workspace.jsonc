@@ -12,11 +12,16 @@
 	],
 	"extensions": {
 		"recommendations": [
+			"oracle.oracle-java",
 			// {{INDEXER_EXTENSIONS}}
 		]
 	},
 	"settings": {
 		// {{INDEXER_SETTINGS}}
+
+		// Java extension
+		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
+		"jdk.java.onSave.organizeImports": false, // prevents unnecessary changes
 
 		// Additional conventions
 		"files.associations": {
