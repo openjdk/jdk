@@ -130,15 +130,14 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         testedComponent.setBounds(0, 0,
                                 testedComponent.getPreferredSize().width,
                                 testedComponent.getPreferredSize().height + 20);
-                        boolean focus = f.requestFocusInWindow();
-                        if (!focus) {
-                            Component focusOwner =
-                                    FocusManager.getCurrentManager()
-                                            .getFocusOwner();
-                            if (focusOwner == f) {
-                                //frame already had focus.
-                                latch.countDown();
-                            }
+
+                        Component focusOwner = FocusManager.getCurrentManager()
+                                .getFocusOwner();
+                        if (focusOwner == f ) {
+                            //frame already had focus.
+                            latch.countDown();
+                        }else{
+                            f.requestFocusInWindow();
                         }
 
                     }
@@ -151,7 +150,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             Point lLoc = testedComponent.getLocationOnScreen();
             lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
             try {
-                boolean await = latch.await(50, TimeUnit.MILLISECONDS);
+
+                boolean await = latch.await(1, TimeUnit.SECONDS);
                 if (!await) {
                     throw new RuntimeException(
                             "Ancestor frame didn't receive " +
