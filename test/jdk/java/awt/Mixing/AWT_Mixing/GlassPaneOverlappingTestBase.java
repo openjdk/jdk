@@ -157,6 +157,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             }
             return wasLWClicked;
         } else {
+            latch.countDown();
             return true;
         }
     }
