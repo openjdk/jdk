@@ -23,11 +23,16 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -60,19 +65,55 @@ public class AltServiceUsageTest implements HttpServerAdapters {
     private HttpTestServer originServer;
     private HttpTestServer altServer;
 
+    private DatagramChannel udpNotResponding;
+
     @BeforeClass
     public void beforeClass() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        altServer = HttpServerAdapters.HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+
+        // attempt to create an HTTP/3 server, an HTTP/2 server, and a
+        // DatagramChannel bound to the same port as the HTTP/2 server
+        int count = 0;
+        InetSocketAddress altServerAddress = null, originServerAddress = null;
+        while (count++ < 10) {
+
+            createServers();
+            altServerAddress = altServer.getAddress();
+            originServerAddress = originServer.getAddress();
+
+            if (originServerAddress.equals(altServerAddress)) break;
+            udpNotResponding = DatagramChannel.open();
+            try {
+                udpNotResponding.bind(originServerAddress);
+                break;
+            } catch (IOException x) {
+                System.out.printf("Failed to bind udpNotResponding to %s: %s%n",
+                        originServerAddress, x);
+                safeStop(altServer);
+                safeStop(originServer);
+                udpNotResponding.close();
+            }
+        }
+        if (count > 10) {
+            throw new AssertionError("Couldn't reserve UDP port at " + originServerAddress);
+        }
+
+        System.out.println("HTTP/3 service started at " + altServerAddress);
+        System.out.println("HTTP/2 service started at " + originServerAddress);
+        System.err.println("**** All servers started. Test will start shortly ****");
+    }
+
+    private void createServers() throws IOException {
+        altServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         altServer.addHandler(new All200OKHandler(), "/foo/");
         altServer.addHandler(new RequireAltUsedHeader(), "/bar/");
         altServer.addHandler(new All200OKHandler(), "/maxAgeAltSvc/");
         altServer.start();
 
-        originServer = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
+        originServer = HttpTestServer.create(HTTP_2, sslContext);
         originServer.addHandler(new H3AltServicePublisher(altServer.getAddress()), "/foo/");
         originServer.addHandler(new H3AltSvcPublisherWith421(altServer.getAddress()), "/foo421/");
         originServer.addHandler(new H3AltServicePublisher(altServer.getAddress()), "/bar/");
@@ -84,6 +125,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
     public void afterClass() throws Exception {
         safeStop(originServer);
         safeStop(altServer);
+        udpNotResponding.close();
     }
 
     private static void safeStop(final HttpTestServer server) {
@@ -100,7 +142,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         }
     }
 
-    private static class H3AltServicePublisher implements HttpServerAdapters.HttpTestHandler {
+    private static class H3AltServicePublisher implements HttpTestHandler {
         private static final String RESPONSE_CONTENT = "apple";
 
         private final String altSvcHeader;
@@ -163,7 +205,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         }
     }
 
-    private static final class All200OKHandler implements HttpServerAdapters.HttpTestHandler {
+    private static final class All200OKHandler implements HttpTestHandler {
         private static final String RESPONSE_CONTENT = "orange";
 
         @Override
@@ -176,7 +218,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         }
     }
 
-    private static final class RequireAltUsedHeader implements HttpServerAdapters.HttpTestHandler {
+    private static final class RequireAltUsedHeader implements HttpTestHandler {
         private static final String RESPONSE_CONTENT = "tomato";
 
         @Override
