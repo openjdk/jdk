@@ -26,7 +26,8 @@
  * @bug 8313672
  * @summary Test CCP notification for value update of AndL through LShiftI and
  *          ConvI2L.
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:RepeatCompilation=20 -XX:-TieredCompilation
  *                   -XX:+StressIGVN -Xcomp
  *                   -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test

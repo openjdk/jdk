@@ -26,7 +26,7 @@
  * @bug 8257575
  * @summary C2: "failed: only phis" assert failure in loop strip mining verfication
  *
- * @run main/othervm -XX:LoopUnrollLimit=0 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestEliminatedLoadPinnedOnBackedge::notInlined
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=0 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestEliminatedLoadPinnedOnBackedge::notInlined
  *                    -XX:CompileCommand=inline,TestEliminatedLoadPinnedOnBackedge::inlined TestEliminatedLoadPinnedOnBackedge
  *
  */

@@ -25,9 +25,11 @@
  * @test
  * @bug 8306933
  * @summary C2: "assert(false) failed: infinite loop" failure
- * @run main/othervm -Xcomp -XX:CompileOnly=TestInfiniteLoopCompilationFailure::test -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -Xcomp -XX:CompileOnly=TestInfiniteLoopCompilationFailure::test -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=675320863 TestInfiniteLoopCompilationFailure
- * @run main/othervm -Xcomp -XX:CompileOnly=TestInfiniteLoopCompilationFailure::test -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -Xcomp -XX:CompileOnly=TestInfiniteLoopCompilationFailure::test -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN TestInfiniteLoopCompilationFailure
  */
 

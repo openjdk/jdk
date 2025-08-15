@@ -29,6 +29,7 @@
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
@@ -42,6 +43,7 @@
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
@@ -56,6 +58,7 @@
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
@@ -70,6 +73,7 @@
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN

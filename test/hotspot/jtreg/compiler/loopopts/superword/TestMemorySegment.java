@@ -197,7 +197,7 @@ public class TestMemorySegment {
             }
         }
         if (args.length > 1 && args[1].equals("AlignVector")) {
-            framework.addFlags("-XX:+AlignVector");
+            framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector");
         }
         framework.setDefaultWarmup(100);
         framework.start();

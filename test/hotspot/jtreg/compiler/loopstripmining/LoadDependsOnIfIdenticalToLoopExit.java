@@ -26,7 +26,7 @@
  * @bug 8229450
  * @summary shared an identical bool node with a strip-mined loop
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 -XX:CompileCommand=dontinline,LoadDependsOnIfIdenticalToLoopExit::not_inlined -XX:CompileCommand=compileonly,LoadDependsOnIfIdenticalToLoopExit::test1 LoadDependsOnIfIdenticalToLoopExit
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 -XX:CompileCommand=dontinline,LoadDependsOnIfIdenticalToLoopExit::not_inlined -XX:CompileCommand=compileonly,LoadDependsOnIfIdenticalToLoopExit::test1 LoadDependsOnIfIdenticalToLoopExit
  *
  */
 

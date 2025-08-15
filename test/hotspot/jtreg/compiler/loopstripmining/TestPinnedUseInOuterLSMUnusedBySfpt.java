@@ -26,7 +26,7 @@
  * @bug 8263303
  * @summary C2 compilation fails with assert(found_sfpt) failed: no node in loop that's not input to safepoint
  *
- * @run main/othervm -XX:-BackgroundCompilation -XX:LoopUnrollLimit=0 TestPinnedUseInOuterLSMUnusedBySfpt
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-BackgroundCompilation -XX:LoopUnrollLimit=0 TestPinnedUseInOuterLSMUnusedBySfpt
  *
  */
 
