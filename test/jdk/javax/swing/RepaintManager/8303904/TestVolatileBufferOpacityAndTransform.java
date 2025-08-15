@@ -128,9 +128,6 @@ public class TestVolatileBufferOpacityAndTransform {
      * at 200%.)
      */
     private void testTransform(Component c) {
-        // ... but instead the current approach is ot put this in the
-        // RepaintManager:
-
         // we put the MultiResolutionImage logic in RepaintManager:
         Image i = RepaintManager.currentManager(c).
                 getOffscreenBuffer(c, 10, 10);
