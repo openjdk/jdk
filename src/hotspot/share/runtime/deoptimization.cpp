@@ -561,7 +561,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #endif // !PRODUCT
 
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
-    guarantee(expressions != nullptr && expressions->length() > 0, "must have exception to throw");
+    guarantee(expressions != nullptr && expressions->length() == 1, "should have only exception on stack");
+    guarantee(exec_mode != Unpack_exception, "rethrow_exception set with Unpack_exception");
     ScopeValue* topOfStack = expressions->top();
     exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
     guarantee(exceptionObject() != nullptr, "exception oop can not be null");
@@ -737,6 +738,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (exceptionObject() != nullptr) {
     current->set_exception_oop(exceptionObject());
     exec_mode = Unpack_exception;
+    assert(array->element(0)->rethrow_exception(), "must be");
   }
 #endif
 
@@ -844,6 +846,7 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+#ifdef ASSERT
 // Return true if the execution after the provided bytecode continues at the
 // next bytecode in the code. This is not the case for gotos, returns, and
 // throws.
@@ -867,6 +870,7 @@ static bool falls_through(Bytecodes::Code bc) {
       return true;
   }
 }
+#endif
 #endif
 
 // Return BasicType of value being returned
@@ -932,116 +936,114 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
                    RegisterMap::ProcessFrames::include,
                    RegisterMap::WalkContinuation::skip);
     rm.set_include_argument_oops(false);
-    bool is_top_frame = true;
     int callee_size_of_parameters = 0;
-    int callee_max_locals = 0;
-    for (int i = 0; i < cur_array->frames(); i++) {
-      vframeArrayElement* el = cur_array->element(i);
+    for (int frame_idx = 0; frame_idx < cur_array->frames(); frame_idx++) {
+      bool is_top_frame = (frame_idx == 0);
+      vframeArrayElement* el = cur_array->element(frame_idx);
       frame* iframe = el->iframe();
       guarantee(iframe->is_interpreted_frame(), "Wrong frame type");
+      methodHandle mh(thread, iframe->interpreter_frame_method());
+      bool reexecute = el->should_reexecute();
+
+      int cur_invoke_parameter_size = 0;
+      int top_frame_expression_stack_adjustment = 0;
+      int max_bci = mh->code_size();
+      BytecodeStream str(mh, iframe->interpreter_frame_bci());
+      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+      Bytecodes::Code cur_code = str.next();
+
+      if (!reexecute && !Bytecodes::is_invoke(cur_code)) {
+        // We can only compute OopMaps for the before state, so we need to roll forward
+        // to the next bytecode.
+        assert(is_top_frame, "must be");
+        assert(falls_through(cur_code), "must be");
+        assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
+        assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+
+        // Need to subtract off the size of the result type of
+        // the bytecode because this is not described in the
+        // debug info but returned to the interpreter in the TOS
+        // caching register
+        BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
+        if (bytecode_result_type != T_ILLEGAL) {
+          top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
+        }
+        assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
+
+        cur_code = str.next();
+        // Reflect the fact that we have rolled forward and now need
+        // top_frame_expression_stack_adjustment
+        reexecute = true;
+      }
+
+      assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
+      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
 
       // Get the oop map for this bci
       InterpreterOopMap mask;
-      int cur_invoke_parameter_size = 0;
-      bool try_next_mask = false;
-      int next_mask_expression_stack_size = -1;
-      int top_frame_expression_stack_adjustment = 0;
-      methodHandle mh(thread, iframe->interpreter_frame_method());
-      OopMapCache::compute_one_oop_map(mh, iframe->interpreter_frame_bci(), &mask);
-      BytecodeStream str(mh, iframe->interpreter_frame_bci());
-      int max_bci = mh->code_size();
-      // Get to the next bytecode if possible
-      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+      OopMapCache::compute_one_oop_map(mh, str.bci(), &mask);
       // Check to see if we can grab the number of outgoing arguments
       // at an uncommon trap for an invoke (where the compiler
       // generates debug info before the invoke has executed)
-      Bytecodes::Code cur_code = str.next();
-      Bytecodes::Code next_code = Bytecodes::_shouldnotreachhere;
       if (Bytecodes::is_invoke(cur_code)) {
-        Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
+        Bytecode_invoke invoke(mh, str.bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
-        if (i != 0 && invoke.has_member_arg()) {
+        if (!is_top_frame && invoke.has_member_arg()) {
           callee_size_of_parameters++;
-        }
-      }
-      if (str.bci() < max_bci) {
-        next_code = str.next();
-        if (next_code >= 0) {
-          // The interpreter oop map generator reports results before
-          // the current bytecode has executed except in the case of
-          // calls. It seems to be hard to tell whether the compiler
-          // has emitted debug information matching the "state before"
-          // a given bytecode or the state after, so we try both
-          if (!Bytecodes::is_invoke(cur_code) && falls_through(cur_code)) {
-            // Get expression stack size for the next bytecode
-            InterpreterOopMap next_mask;
-            OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
-            next_mask_expression_stack_size = next_mask.expression_stack_size();
-            if (Bytecodes::is_invoke(next_code)) {
-              Bytecode_invoke invoke(mh, str.bci());
-              next_mask_expression_stack_size += invoke.size_of_parameters();
-            }
-            // Need to subtract off the size of the result type of
-            // the bytecode because this is not described in the
-            // debug info but returned to the interpreter in the TOS
-            // caching register
-            BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
-            if (bytecode_result_type != T_ILLEGAL) {
-              top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
-            }
-            assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
-            try_next_mask = true;
-          }
         }
       }
 
       // Verify stack depth and oops in frame
-      // This assertion may be dependent on the platform we're running on and may need modification (tested on x86 and sparc)
-      if (!(
-            /* SPARC */
-            (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + callee_size_of_parameters) ||
-            /* x86 */
-            (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + callee_max_locals) ||
-            (try_next_mask &&
-             (iframe->interpreter_frame_expression_stack_size() == (next_mask_expression_stack_size -
-                                                                    top_frame_expression_stack_adjustment))) ||
-            (is_top_frame && (exec_mode == Unpack_exception) && iframe->interpreter_frame_expression_stack_size() == 0) ||
-            (is_top_frame && (exec_mode == Unpack_uncommon_trap || exec_mode == Unpack_reexecute || el->should_reexecute()) &&
-             (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + cur_invoke_parameter_size))
-            )) {
-        {
-          // Print out some information that will help us debug the problem
-          tty->print_cr("Wrong number of expression stack elements during deoptimization");
-          tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
-          tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
-          if (try_next_mask) {
-            tty->print_cr("  Next code %s", Bytecodes::name(next_code));
-          }
-          tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
-                        iframe->interpreter_frame_expression_stack_size());
-          tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
-          tty->print_cr("  try_next_mask = %d", try_next_mask);
-          tty->print_cr("  next_mask_expression_stack_size = %d", next_mask_expression_stack_size);
-          tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
-          tty->print_cr("  callee_max_locals = %d", callee_max_locals);
-          tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
-          tty->print_cr("  exec_mode = %d", exec_mode);
-          tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
-          tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
-          tty->print_cr("  Interpreted frames:");
-          for (int k = 0; k < cur_array->frames(); k++) {
-            vframeArrayElement* el = cur_array->element(k);
-            tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
-          }
-          cur_array->print_on_2(tty);
+      auto match = [&]() {
+        int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
+#if INCLUDE_JVMCI
+        if (is_top_frame && el->rethrow_exception()) {
+          return iframe_expr_ssize == 1;
         }
+#endif
+        // This should only be needed for C1
+        if (is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) {
+          return true;
+        }
+        if (reexecute) {
+          int expr_ssize_before = iframe_expr_ssize + top_frame_expression_stack_adjustment;
+          int oopmap_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
+          return expr_ssize_before == oopmap_expr_invoke_ssize;
+        } else {
+          int oopmap_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
+          return iframe_expr_ssize == oopmap_expr_callee_ssize;
+        }
+      };
+      if (!match()) {
+        // Print out some information that will help us debug the problem
+        tty->print_cr("Wrong number of expression stack elements during deoptimization");
+        tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
+        tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
+        tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
+                      iframe->interpreter_frame_expression_stack_size());
+        tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
+        tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
+        tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
+        tty->print_cr("  exec_mode = %d", exec_mode);
+        tty->print_cr("  original should_reexecute = %s", el->should_reexecute() ? "true" : "false");
+        tty->print_cr("  reexecute = %s%s", reexecute ? "true" : "false",
+                      (reexecute != el->should_reexecute()) ? " (changed)" : "");
+#if INCLUDE_JVMCI
+        tty->print_cr("  rethrow_exception = %s", el->rethrow_exception() ? "true" : "false");
+#endif
+        tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
+        tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
+        tty->print_cr("  Interpreted frames:");
+        for (int k = 0; k < cur_array->frames(); k++) {
+          vframeArrayElement* el = cur_array->element(k);
+          tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
+        }
+        cur_array->print_on_2(tty);
         guarantee(false, "wrong number of expression stack elements during deopt");
       }
       VerifyOopClosure verify;
       iframe->oops_interpreted_do(&verify, &rm, false);
       callee_size_of_parameters = mh->size_of_parameters();
-      callee_max_locals = mh->max_locals();
-      is_top_frame = false;
     }
   }
 #endif // !PRODUCT
