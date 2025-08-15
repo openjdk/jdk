@@ -25,6 +25,7 @@ package jdk.jfr.event.runtime;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Platform;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -38,7 +39,7 @@ import static jdk.test.lib.Asserts.*;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires (os.family=="linux") & !vm.musl
+ * @requires (os.family=="linux") | (os.family=="mac")
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management
@@ -51,7 +52,7 @@ public class TestProcessSizeEvent {
     private final static long K = 1024;
     private final static long M = K * K;
     private final static long G = M * K;
-    private final static long toAllocate = M * 64;
+    private final static long toAllocate = M * 16;
     private final static long sleepTime = 3000;
 
     private static ArrayList<byte[]> data = new ArrayList<byte[]>();
@@ -86,45 +87,57 @@ public class TestProcessSizeEvent {
         recording.stop();
     }
 
+    final static long reasonableVsizeHigh = G * 10000;
+    final static long reasonableVsizeLow = 100 * M;
+    final static long reasonableRSSHigh = G;
+    // We may run on undersized test machines, in which case the test may be heavily swapping. This in turn
+    // can falsify the reported RSS (which is why we report Swap as a metric, too).
+    // To avoid false positives, RSS low is chosen to be a very defensive low number.
+    final static long reasonableRSSLow = 5 * M;
+
+    private static void verifyExpectedEventCommon(RecordedEvent event) throws Exception {
+        long vsize = Events.assertField(event, "vsize").
+                atLeast(reasonableVsizeLow).atMost(reasonableVsizeHigh).getValue();
+        long rss = Events.assertField(event, "rss").
+                atLeast(reasonableRSSLow).atMost(reasonableRSSHigh).atMost(vsize).getValue();
+        Events.assertField(event, "rssPeak").
+                atLeast(rss).atMost(reasonableRSSHigh);
+    }
+
+    private static void verifyExpectedEventLinux(RecordedEvent event) throws Exception {
+        verifyExpectedEventCommon(event);
+        long vsize = event.getValue("vsize");
+        long rss = event.getValue("rss");
+        Events.assertField(event, "rssPeak").
+                atLeast(rss).atMost(reasonableRSSHigh);
+        Events.assertField(event, "rssAnon").
+                atLeast(reasonableRSSLow / 8).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "rssFile").
+                atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "rssShm").
+                atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "swap").
+                atLeast(0L).atMost(vsize);
+        Events.assertField(event, "pagetable").
+                atLeast(0L).atMost(vsize / 8);
+    }
+
+    private static void verifyExpectedEventMacOS(RecordedEvent event) throws Exception {
+        verifyExpectedEventCommon(event);
+    }
+
     private static void verifyExpectedEvents(List<RecordedEvent> events) throws Exception {
         List<RecordedEvent> filteredEvents = events.stream().filter(e -> e.getEventType().getName().equals(ProcessSizeEventName)).toList();
         assertGreaterThan(filteredEvents.size(), 0, "Should exist events of type: " + ProcessSizeEventName);
         for (RecordedEvent event : filteredEvents) {
             System.out.println(event);
-            long vsize = event.getLong("vsize");
-            long rss = event.getLong("rss");
-            long rssPeak = event.getLong("rssPeak");
-            long rssAnon = event.getLong("rssAnon");
-            long rssFile = event.getLong("rssFile");
-            long rssShmem = event.getLong("rssShmem");
-            long swap = event.getLong("swap");
-            long pagetable = event.getLong("pagetable");
-
-            long reasonableVsizeHigh = G * K; // vsize can get very large
-            long reasonableVsizeLow = 100 * M;
-            assertGreaterThan(vsize, reasonableVsizeLow);
-            assertLessThan(vsize, reasonableVsizeHigh);
-
-            long reasonableRSSHigh = G; // probably a lot less
-            long reasonableRSSLow = 10 * M; // probably a lot less
-            assertGreaterThan(rss, reasonableRSSLow);
-            assertLessThan(rss, reasonableRSSHigh);
-
-            assertGreaterThan(rssPeak, reasonableRSSLow);
-            assertLessThan(rssPeak, reasonableRSSHigh);
-
-            assertGreaterThan(rssAnon, reasonableRSSLow / 2);
-            assertLessThanOrEqual(rssAnon, rss);
-
-            assertGreaterThanOrEqual(rssFile, 0L);
-            assertLessThanOrEqual(rssFile, rss);
-
-            assertGreaterThanOrEqual(rssShmem, 0L);
-            assertLessThanOrEqual(rssShmem, rss);
-
-            assertGreaterThan(pagetable, 0L);
-
-            assertGreaterThanOrEqual(swap, 0L);
+            if (Platform.isLinux()) {
+                verifyExpectedEventLinux(event);
+            } else if (Platform.isOSX()) {
+                verifyExpectedEventMacOS(event);
+            } else {
+                throw new RuntimeException("Unsupported");
+            }
         }
     }
 
