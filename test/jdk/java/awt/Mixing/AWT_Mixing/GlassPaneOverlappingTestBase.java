@@ -149,9 +149,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
             try {
                 if (!latch.await(1, TimeUnit.SECONDS)) {
-                    throw new RuntimeException(
-                            "Ancestor frame didn't receive " +
-                                    "focus");
+                    throw new RuntimeException("Ancestor frame didn't receive focus");
                 }
                 clickAndBlink(robot, lLoc);
             } catch (InterruptedException e) {
