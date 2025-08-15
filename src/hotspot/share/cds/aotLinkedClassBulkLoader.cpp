@@ -126,7 +126,7 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
         }
       });
 
-    SystemDictionary::preload_class(loader_data, ik, CHECK);
+    SystemDictionary::preload_class(loader, ik, CHECK);
 
     if (ik->is_hidden()) {
       DEBUG_ONLY({

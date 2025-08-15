@@ -1154,11 +1154,35 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   }
 }
 
-void SystemDictionary::preload_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS) {
+// This is much more lightweight than SystemDictionary::resolve_or_null
+// - There's only a single Java thread at this point. No need for placeholder.
+// - All supertypes of ik have been loaded
+// - There's no circularity (checked in AOT assembly phase)
+// - There's no need to call java.lang.ClassLoader::load_class() because the boot/platform/app
+//   loaders are well-behaved
+void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRAPS) {
+  precond(Universe::is_bootstrapping());
+  precond(java_platform_loader() != nullptr && java_system_loader() != nullptr);
+  precond(class_loader() == nullptr || class_loader() == java_platform_loader() ||class_loader() == java_system_loader());
   precond(CDSConfig::is_using_preloaded_classes());
   precond(MetaspaceShared::is_shared_static((void*)ik));
   precond(!ik->is_loaded());
 
+#ifdef ASSERT
+  // preload_class() must be called in the correct order -- all super types must have
+  // already been loaded.
+  if (ik->java_super() != nullptr) {
+    assert(ik->java_super()->is_loaded(), "must be");
+  }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  int num_interfaces = interfaces->length();
+  for (int index = 0; index < num_interfaces; index++) {
+    assert(interfaces->at(index)->is_loaded(), "must be");
+  }
+#endif
+
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   oop java_mirror = ik->archived_java_mirror();
   precond(java_mirror != nullptr);
 
@@ -1166,6 +1190,9 @@ void SystemDictionary::preload_class(ClassLoaderData* loader_data, InstanceKlass
   PackageEntry* pkg_entry = ik->package();
   assert(pkg_entry != nullptr || ClassLoader::package_from_class_name(ik->name()) == nullptr,
          "non-empty packages must have been archived");
+
+  // TODO: the following assert requires JDK-8365580
+  // assert(is_shared_class_visible(ik->name(), ik, pkg_entry, class_loader), "must be");
 
   ik->restore_unshareable_info(loader_data, pd, pkg_entry, CHECK);
   load_shared_class_misc(ik, loader_data);
