@@ -104,6 +104,9 @@ public class RemovedFiles {
                 Path.of("."),
                 Files.writeString(Path.of("c"), "c"));
         SecurityTools.keytool("-genkeypair -storepass changeit -keystore ks -alias w -dname CN=w -keyalg ec");
+
+        // Sign the JAR using an already disabled signature algorithm SHA1withECDSA.
+        // The file can still be signed but verification will treat it as unsigned.
         SecurityTools.jarsigner("-storepass changeit -keystore ks c.jar w -sigalg SHA1withECDSA")
                         .shouldContain("the -sigalg option is considered a security risk and is disabled.");
 
