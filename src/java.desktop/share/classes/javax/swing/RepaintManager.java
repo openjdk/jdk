@@ -1094,15 +1094,25 @@ public class RepaintManager
             Component c, int virtualWidth, int virtualHeight) {
         GraphicsConfiguration gc = c.getGraphicsConfiguration();
         int scaledWidth, scaledHeight;
-        if (gc != null) {
-            AffineTransform at = gc.getDefaultTransform();
+        AffineTransform at = gc == null ? new AffineTransform() : gc.getDefaultTransform();
+        if ( (at.getType() == AffineTransform.TYPE_GENERAL_SCALE ||
+                at.getType() == AffineTransform.TYPE_UNIFORM_SCALE ||
+                at.getType() == AffineTransform.TYPE_IDENTITY) &&
+                at.getScaleX() > 0 && at.getScaleY() > 0) {
             scaledWidth = Math.round((float) at.getScaleX() * virtualWidth);
             scaledHeight = Math.round((float) at.getScaleY() * virtualHeight);
+
+            // this is extremely unlikely, but since these dimensions are used
+            // to construct a BufferedImage: they cannot be zero or else an
+            // exception is thrown.
+            scaledWidth = Math.max(1, scaledWidth);
+            scaledHeight = Math.max(1, scaledHeight);
         } else {
+            // this is unexpected. Let's fail gracefully by acting like
+            // we're on a 100% resolution monitor.
             scaledWidth = virtualWidth;
             scaledHeight = virtualHeight;
         }
-
         Image img = c.createImage(scaledWidth, scaledHeight);
         return new BackingStoreMultiResolutionImage(virtualWidth, virtualHeight, scaledWidth, scaledHeight, img);
     }
