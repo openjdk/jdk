@@ -3091,11 +3091,11 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long valueLong = context.getValue(field, optional);
-            if (valueLong == null) {
+            if (notSupported(context, optional)) {
                 return false;
             }
-            long value = getValue(context, valueLong);
+
+            long value = getLong(context);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             int size = DecimalDigits.stringSize(value);
             if (value < 0) {
@@ -3103,9 +3103,7 @@ public final class DateTimeFormatterBuilder {
             }
 
             if (size > maxWidth) {
-                throw new DateTimeException("Field " + field +
-                    " cannot be printed as the value " + value +
-                    " exceeds the maximum print width of " + maxWidth);
+                throw maxWidthError(value);
             }
 
             if (value >= 0) {
@@ -3122,9 +3120,7 @@ public final class DateTimeFormatterBuilder {
             } else {
                 switch (signStyle) {
                     case NORMAL, EXCEEDS_PAD, ALWAYS -> buf.append(decimalStyle.getNegativeSign());
-                    case NOT_NEGATIVE -> throw new DateTimeException("Field " + field +
-                                             " cannot be printed as the value " + value +
-                                             " cannot be negative according to the SignStyle");
+                    case NOT_NEGATIVE -> throw notNegativeError(value);
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
@@ -3141,15 +3137,31 @@ public final class DateTimeFormatterBuilder {
             return true;
         }
 
+        private DateTimeException notNegativeError(long value) {
+            return new DateTimeException("Field " + field +
+                    " cannot be printed as the value " + value +
+                    " cannot be negative according to the SignStyle");
+        }
+
+        private DateTimeException maxWidthError(long value) {
+            return new DateTimeException("Field " + field +
+                    " cannot be printed as the value " + value +
+                    " exceeds the maximum print width of " + maxWidth);
+        }
+
+        protected boolean notSupported(DateTimePrintContext context, boolean optional) {
+            return optional && !context.isSupported(field);
+        }
+
         /**
-         * Gets the value to output.
+         * Gets the long value to output.
          *
          * @param context  the context
          * @param value  the value of the field, not null
          * @return the value
          */
-        long getValue(DateTimePrintContext context, long value) {
-            return value;
+        long getLong(DateTimePrintContext context) {
+            return context.getLong(field);
         }
 
         /**
@@ -3355,7 +3367,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        long getValue(DateTimePrintContext context, long value) {
+        long getLong(DateTimePrintContext context) {
+            long value = context.getLong(field);
             long absValue = Math.abs(value);
             int baseValue = this.baseValue;
             if (baseDate != null) {
@@ -3546,10 +3559,11 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long value = context.getValue(field, optional);
-            if (value == null) {
+            if(notSupported(context, optional)) {
                 return false;
             }
+
+            long value = getValue(context);
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             int stringSize = DecimalDigits.stringSize(val);
@@ -3735,10 +3749,11 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long value = context.getValue(field, optional);
-            if (value == null) {
+            if(notSupported(context, optional)) {
                 return false;
             }
+
+            long value = getValue(context);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             BigDecimal fraction = convertToFraction(value);
             if (fraction.scale() == 0) {  // scale is zero if value is zero
@@ -3883,10 +3898,12 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long value = context.getValue(field, optional);
-            if (value == null) {
+            if(optional && !context.isSupported(field)) {
                 return false;
             }
+
+            long value = context.getLong(field);
+
             String text;
             Chronology chrono = context.getTemporal().query(TemporalQueries.chronology());
             if (chrono == null || chrono == IsoChronology.INSTANCE) {
@@ -3979,16 +3996,12 @@ public final class DateTimeFormatterBuilder {
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
-            Long inSecs = context.getValue(INSTANT_SECONDS, optional);
-            Long inNanos = null;
-            if (context.getTemporal().isSupported(NANO_OF_SECOND)) {
-                inNanos = context.getTemporal().getLong(NANO_OF_SECOND);
-            }
-            if (inSecs == null) {
+            if (optional && !context.isSupported(INSTANT_SECONDS)) {
                 return false;
             }
-            long inSec = inSecs;
-            int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
+
+            long inSec = context.getLong(INSTANT_SECONDS);
+            int inNano = context.isSupported(NANO_OF_SECOND) ? context.get(NANO_OF_SECOND) : 0;
             if (fractionalDigits == 0) {
                 inNano = 0;
             }
@@ -4163,11 +4176,11 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
-            if (offsetSecs == null) {
+            if (optional && !context.isSupported(OFFSET_SECONDS)) {
                 return false;
             }
-            int totalSecs = Math.toIntExact(offsetSecs);
+
+            int totalSecs = context.get(OFFSET_SECONDS);
             if (totalSecs == 0) {
                 buf.append(noOffsetText);
             } else {
@@ -4462,17 +4475,17 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
-            if (offsetSecs == null) {
+            if (optional && !context.isSupported(OFFSET_SECONDS)) {
                 return false;
             }
+
+            int totalSecs = context.get(OFFSET_SECONDS);
             String key = "timezone.gmtZeroFormat";
             String gmtText = DateTimeTextProvider.getLocalizedResource(key, context.getLocale());
             if (gmtText == null) {
                 gmtText = "GMT";  // Default to "GMT"
             }
             buf.append(gmtText);
-            int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
                 int absHours = Math.abs((totalSecs / 3600) % 100);  // anything larger than 99 silently dropped
                 int absMinutes = Math.abs((totalSecs / 60) % 60);
@@ -5535,12 +5548,13 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            Long hod = context.getValue(HOUR_OF_DAY, optional);
-            if (hod == null) {
+            if(optional && !context.isSupported(HOUR_OF_DAY)) {
                 return false;
             }
-            Long moh = context.getValue(MINUTE_OF_HOUR, optional);
-            long value = Math.floorMod(hod, 24) * 60 + (moh != null ? Math.floorMod(moh, 60) : 0);
+
+            long hod = context.getLong(HOUR_OF_DAY);
+            long moh = optional && !context.isSupported(MINUTE_OF_HOUR) ? 0 : context.getLong(MINUTE_OF_HOUR);
+            long value = Math.floorMod(hod, 24) * 60 + Math.floorMod(moh, 60);
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);
             final long val = value;
