@@ -228,6 +228,14 @@ public class MixingPanelsResizing {
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String args[]) throws Exception {
+        try {
+            UIManager.setLookAndFeel(
+                    UIManager.getCrossPlatformLookAndFeelClassName());
+        }
+        catch (Exception e) {
+            throw  new RuntimeException(e);
+        }
+
         if (!Toolkit.getDefaultToolkit().isDynamicLayoutActive()) {
             System.out.println("Dynamic layout is not active. Test passes.");
             return;
