@@ -161,7 +161,6 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
     @Override
     @IntrinsicCandidate
     protected void mult(long[] a, long[] b, long[] r) {
-        //System.out.println("No intrinsic :(");
         long aa0 = a[0];
         long aa1 = a[1];
         long aa2 = a[2];
