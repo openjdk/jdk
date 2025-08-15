@@ -31,8 +31,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 class ConstantPool;
 class constantPoolHandle;
@@ -53,7 +53,7 @@ template <typename T> class GrowableArray;
 // if all of its supertypes are loaded from the CDS archive.
 class AOTConstantPoolResolver :  AllStatic {
   static const int TABLE_SIZE = 15889; // prime number
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared> ;
+  using ClassesTable = HashTable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared> ;
   static ClassesTable* _processed_classes;
 
 #ifdef ASSERT
