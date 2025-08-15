@@ -116,7 +116,6 @@ public class MixingPanelsResizing {
                 jbutton.setForeground(jbColor);
                 jbutton.setBackground(jbColor);
 
-
                 JPanel jPanel = new JPanel();
                 jbutton2 = new JButton("SwingButton2");
                 jPanel.add(jbutton2);
