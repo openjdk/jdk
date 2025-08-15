@@ -51,8 +51,11 @@
  * @test
  * @bug 8054307
  * @summary Verify `StringCoding::hasNegatives` intrinsic Java wrapper checks
- *          by enabling the ones in the compiler intrinsic using
+ *          by enabling the ones in the VM intrinsic using
  *          `-XX:+VerifyIntrinsicChecks`
+ * @comment This does not check out-of-range conditions. The
+ *          `-XX:+VerifyIntrinsicChecks` version of this test simply ensures
+ *          that the VM intrinsic will produce no spurious errors.
  * @key randomness
  * @library /compiler/patches
  * @library /test/lib

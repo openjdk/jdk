@@ -35,8 +35,11 @@
  * @test
  * @bug 6896617 8274242
  * @summary Verify `sun.nio.cs.ISO_8859_1.Encoder::encodeISOArray` intrinsic
- *          Java wrapper checks by enabling the ones in the compiler intrinsic
- *          using `-XX:+VerifyIntrinsicChecks`
+ *          Java wrapper checks by enabling the ones in the VM intrinsic using
+ *          `-XX:+VerifyIntrinsicChecks`
+ * @comment This does not check out-of-range conditions. The
+ *          `-XX:+VerifyIntrinsicChecks` version of this test simply ensures
+ *          that the VM intrinsic will produce no spurious errors.
  * @key randomness
  * @library /test/lib
  * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
