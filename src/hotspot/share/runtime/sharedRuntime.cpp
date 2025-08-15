@@ -270,11 +270,11 @@ void SharedRuntime::debug_print_value(jboolean x) {
   tty->print("[%s] ", x ? "true" : "false");
 }
 
-void SharedRuntime::debug_print_value(jshort x) {
+void SharedRuntime::debug_print_value(jbyte x) {
   tty->print("[%" PRId8 "] ", x);
 }
 
-void SharedRuntime::debug_print_value(jbyte x) {
+void SharedRuntime::debug_print_value(jshort x) {
   tty->print("[%" PRId16 "] ", x);
 }
 
