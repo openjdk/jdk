@@ -162,7 +162,7 @@ gdata_init(jboolean is_debugger_enabled, jboolean is_verbose) {
     data.events_excluded = nullptr;
   } else {
     data.events_excluded_size = 4;
-    data.events_excluded = new jint[] {
+    data.events_excluded = new jint[4] {
       JVMTI_EVENT_BREAKPOINT,
       JVMTI_EVENT_FIELD_ACCESS,
       JVMTI_EVENT_FIELD_MODIFICATION,
