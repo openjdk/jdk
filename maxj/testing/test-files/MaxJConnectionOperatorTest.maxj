@@ -1,0 +1,192 @@
+package maxjconnection;
+
+/**
+ * MaxJ Connection Operator Test (&lt;==)
+ *
+ * This tests the MaxJ connection operator which is used for
+ * hardware signal assignments and state machine connections.
+ *
+ * @author MaxJ Connection Test
+ */
+public class MaxJConnectionOperatorTest {
+
+    // Mock hardware signal classes for testing
+    public static class Signal {
+        public int value;
+        public Signal next;
+        public boolean valid;
+    }
+
+    public static class Output {
+        public boolean valid;
+        public boolean stall;
+    }
+
+    /**
+     * Tests basic MaxJ connection operator usage.
+     * This syntax is commonly used in MaxJ state machines.
+     *
+     * @param input input signal
+     * @param state current state
+     * @return processed output
+     */
+    public int testBasicConnections(Signal input, Signal state) {
+        Output output = new Output();
+        int result = 0;
+
+        // Basic MaxJ connection syntax
+        output.valid <== true;
+        state.next <== input;
+
+        // Connection in conditional context
+        IF (input.value === 5) {
+            output.valid <== true;
+            state.next.value <== 10;
+        } ELSE {
+            output.valid <== false;
+            state.next.value <== 0;
+        }
+
+        return result;
+    }
+
+    /**
+     * Tests connection operator in switch statements.
+     * Demonstrates hardware state machine patterns.
+     *
+     * @param currentState current state value
+     * @param inputData input data
+     * @return next state value
+     */
+    public int testConnectionsInSwitch(int currentState, int inputData) {
+        Signal nextState = new Signal();
+        Output dataOutput = new Output();
+        Signal dataRegister = new Signal();
+
+        SWITCH (currentState) {
+            CASE (0) {
+                // State machine connections
+                dataOutput.valid <== false;
+                nextState.value <== 1;
+                dataRegister.next.value <== 0;
+            }
+
+            CASE (1) {
+                dataOutput.valid <== true;
+                dataRegister.next.value <== inputData;
+
+                IF (inputData === 42) {
+                    nextState.value <== 2;
+                } ELSE {
+                    nextState.value <== 1;
+                }
+            }
+
+            CASE (2) {
+                dataOutput.valid <== false;
+                nextState.value <== 0;
+                dataRegister.next.value <== dataRegister.value # inputData;
+            }
+
+            OTHERWISE {
+                dataOutput.valid <== false;
+                nextState.value <== 0;
+                dataRegister.next.value <== 0;
+            }
+        }
+
+        return nextState.value;
+    }
+
+    /**
+     * Tests complex connection patterns.
+     * Combines connection operator with other MaxJ operators.
+     *
+     * @param mode operating mode
+     * @param data input data array
+     * @return connection result
+     */
+    public boolean testComplexConnections(int mode, int[] data) {
+        Signal[] registers = new Signal[3];
+        Output[] outputs = new Output[3];
+        boolean result = false;
+
+        for (int i = 0; i < registers.length; i++) {
+            registers[i] = new Signal();
+            outputs[i] = new Output();
+        }
+
+        SWITCH (mode) {
+            CASE (1) {
+                // Pipeline connections
+                for (int i = 0; i < data.length && i < 3; i++) {
+                    registers[i].next.value <== data[i];
+                    outputs[i].valid <== (data[i] === i);
+
+                    IF (i > 0) {
+                        registers[i].next.value <== registers[i-1].value # data[i];
+                    } ELSE {
+                        registers[i].next.value <== data[i];
+                    }
+                }
+                result = true;
+            }
+
+            CASE (2) {
+                // Conditional connections
+                IF (data.length === 3) {
+                    registers[0].next.value <== data[0] # data[1] # data[2];
+                    outputs[0].valid <== true;
+                } ELSE {
+                    registers[0].next.value <== 0;
+                    outputs[0].valid <== false;
+                }
+                result = outputs[0].valid;
+            }
+
+            OTHERWISE {
+                // Default connections
+                for (int i = 0; i < 3; i++) {
+                    registers[i].next.value <== 0;
+                    outputs[i].valid <== false;
+                }
+                result = false;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Tests that connection operator doesn't conflict with comparison operators.
+     * Important: &lt;== vs &lt;= vs &lt; vs ==
+     *
+     * @param a first value
+     * @param b second value
+     * @return comparison results
+     */
+    public boolean testOperatorDistinction(int a, int b) {
+        Signal signal = new Signal();
+
+        // Standard Java comparisons should still work
+        boolean lessThan = (a < b);
+        boolean lessEqual = (a <= b);
+        boolean equal = (a == b);
+
+        // MaxJ operators should work
+        boolean maxjEqual = (a === b);
+
+        // MaxJ connection (this is the key test!)
+        signal.next.value <== a;
+        signal.value <== b;
+
+        // Combined test
+        IF (maxjEqual === true) {
+            signal.next.value <== a # b;
+            return true;
+        } ELSE {
+            signal.next.value <== 0;
+            return lessThan || lessEqual || equal;
+        }
+    }
+}

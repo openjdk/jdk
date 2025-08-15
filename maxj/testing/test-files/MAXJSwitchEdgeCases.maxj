@@ -1,0 +1,93 @@
+/**
+ * MAXJ Switch Edge Cases Test
+ * Tests various edge cases and nested scenarios
+ */
+public class MAXJSwitchEdgeCases {
+
+    /**
+     * Test nested MAXJ switches
+     * @param outer outer switch value
+     * @param inner inner switch value
+     */
+    public void testNestedSwitches(int outer, int inner) {
+        SWITCH (outer) {
+            CASE 1 {
+                System.out.println("Outer case 1");
+                SWITCH (inner) {
+                    CASE 10 {
+                        System.out.println("Inner case 10");
+                    }
+                    CASE 20 {
+                        System.out.println("Inner case 20");
+                    }
+                    OTHERWISE {
+                        System.out.println("Inner default");
+                    }
+                }
+            }
+            CASE 2 {
+                System.out.println("Outer case 2");
+            }
+            OTHERWISE {
+                System.out.println("Outer default");
+            }
+        }
+    }
+
+    /**
+     * Test MAXJ switch with expressions as case values
+     */
+    public void testExpressionCases() {
+        int base = 10;
+        int value = 25;
+
+        SWITCH (value) {
+            CASE base + 5 {
+                System.out.println("Case 15");
+            }
+            CASE base * 2 {
+                System.out.println("Case 20");
+            }
+            CASE base + 15 {
+                System.out.println("Case 25");
+            }
+            OTHERWISE {
+                System.out.println("No match");
+            }
+        }
+    }
+
+    /**
+     * Test MAXJ switch with string values
+     */
+    public void testStringSwitch(String input) {
+        SWITCH (input) {
+            CASE "hello" {
+                System.out.println("Greeting");
+            }
+            CASE "goodbye" {
+                System.out.println("Farewell");
+            }
+            OTHERWISE {
+                System.out.println("Unknown: " + input);
+            }
+        }
+    }
+
+    /**
+     * Test empty cases
+     */
+    public void testEmptyCases(int value) {
+        SWITCH (value) {
+            CASE 1 {
+                // Empty case - should compile fine
+            }
+            CASE 2 {
+                System.out.println("Case 2");
+            }
+            OTHERWISE {
+                // Empty default
+            }
+        }
+    }
+}
