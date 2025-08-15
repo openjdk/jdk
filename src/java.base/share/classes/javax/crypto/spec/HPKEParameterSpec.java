@@ -412,13 +412,13 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
             return "(empty)";
         } else {
             for (byte b : input) {
-                // Returns HEX + string for pure ASCII with no control characters.
-                // Cannot contain `"` to avoid character escaping.
                 if (b < 0x20 || b > 0x7E || b == '"') {
+                    // Non-ASCII and control characters are not friendly to human
+                    // eyes. `"` also excluded to avoid character escaping.
                     return HexFormat.of().formatHex(input);
                 }
             }
-            // Otherwise, only returns HEX.
+            // Simple readable string
             return HexFormat.of().formatHex(input)
                     + " (\"" + new String(input, StandardCharsets.US_ASCII) + "\")";
         }
