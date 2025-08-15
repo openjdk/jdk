@@ -65,14 +65,14 @@ private:
   // remaining in a PLAB when it is retired.
   size_t _promoted_expended;
 
-  // Represents the quantity of live bytes we expect to promote in place during the next
-  // evacuation cycle. This value is used by the young heuristic to trigger mixed collections.
+  // Represents the quantity of live bytes we expect to promote during the next evacuation
+  // cycle. This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
 
   // When a region is selected to be promoted in place, the remaining free memory is filled
   // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects. This field records the total amount of padding used for such regions.
+  // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
 
   // During construction of the collection set, we keep track of regions that are eligible

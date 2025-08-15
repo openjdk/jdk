@@ -528,7 +528,7 @@ inline void assert_no_in_place_promotions() {
 // that this allows us to more accurately budget memory to hold the results of evacuation.  Memory for evacuation
 // of aged regions must be reserved in the old generation.  Memory for evacuation of all other regions must be
 // reserved in the young generation.
-size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
+size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_reserve) {
 
   // There should be no regions configured for subsequent in-place-promotions carried over from the previous cycle.
   assert_no_in_place_promotions();
@@ -540,7 +540,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
 
-  size_t old_consumed = 0;
   size_t promo_potential = 0;
   size_t candidates = 0;
 
@@ -625,8 +624,10 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
     // Note that we keep going even if one region is excluded from selection.
     // Subsequent regions may be selected if they have smaller live data.
   }
+
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
+  size_t old_consumed = 0;
   if (candidates > 0) {
     size_t selected_regions = 0;
     size_t selected_live = 0;
@@ -635,7 +636,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       ShenandoahHeapRegion* const region = sorted_regions[i]._region;
       size_t region_live_data = sorted_regions[i]._live_data;
       size_t promotion_need = (size_t) (region_live_data * ShenandoahPromoEvacWaste);
-      if (old_consumed + promotion_need <= old_available) {
+      if (old_consumed + promotion_need <= old_promotion_reserve) {
         old_consumed += promotion_need;
         candidate_regions_for_promotion_by_copy[region->index()] = true;
         selected_regions++;
@@ -651,7 +652,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
     }
     log_debug(gc)("Preselected %zu regions containing %zu live bytes,"
                  " consuming: %zu of budgeted: %zu",
-                 selected_regions, selected_live, old_consumed, old_available);
+                 selected_regions, selected_live, old_consumed, old_promotion_reserve);
   }
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
