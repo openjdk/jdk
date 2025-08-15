@@ -1082,53 +1082,35 @@ public class RepaintManager
     }
 
     /**
-     * Return an Image that can be used to paint a Component that takes into
+     * Return an Image that can be used to paint a Component that may take into
      * account the AffineTransform of the Component's GraphicConfiguration.
-     * This method calls {@link Component#createImage(int, int)}, but the
-     * width and height it requests may vary depending on the monitor.
      * <p>
      * For example: if a Component is 100x100 pixels on a high-resolution
      * (200%) monitor, then this return a MultiResolutionImage that is
      * backed by a 200x200 pixel BufferedImage.
      * </p>
-     * <p>
-     * If the Component is on a 100% resolution monitor (or if it is not on
-     * a monitor at all), then this returns a BufferedImage.
-     * </p>
      */
     private Image createImage(Component c, int virtualWidth, int virtualHeight) {
         GraphicsConfiguration gc = c.getGraphicsConfiguration();
-        AffineTransform transform;
         int scaledWidth, scaledHeight;
-        if (gc == null) {
-            transform = null;
-            scaledWidth = virtualWidth;
-            scaledHeight = virtualHeight;
+        double scaleX, scaleY;
+        if (gc != null) {
+            AffineTransform at = gc.getDefaultTransform();
+            scaleX = at.getScaleX();
+            scaleY = at.getScaleY();
         } else {
-            AffineTransform gcTransform = gc.getDefaultTransform();
-
-            // focus on the scaling & shearing of the AffineTransform, but
-            // don't include translation:
-            transform = new AffineTransform(
-                    gcTransform.getScaleX(), gcTransform.getScaleY(),
-                    gcTransform.getShearX(), gcTransform.getShearY(),
-                    0, 0
-            );
-            Rectangle virtualBounds = new Rectangle(0, 0,
-                    virtualWidth, virtualHeight);
-            Rectangle scaledBounds = transform.createTransformedShape(
-                    virtualBounds).getBounds();
-            scaledWidth = scaledBounds.width;
-            scaledHeight = scaledBounds.height;
+            scaleX = scaleY = 1.0;
         }
+        scaledWidth = Math.round((float) scaleX * virtualWidth);
+        scaledHeight = Math.round((float) scaleY * virtualHeight);
 
         Image img = c.createImage(scaledWidth, scaledHeight);
         if (scaledWidth == virtualWidth && scaledHeight == virtualHeight) {
             return img;
         }
 
-        // The only reason we need baseImage is to call i.getWidth(..) and
-        // i.getHeight(..). Image.getScaledInstance is notoriously slow, but
+        // The only reason we need baseImage is to call .getWidth(..) and
+        // getHeight(..). Image.getScaledInstance is notoriously slow, but
         // that doesn't matter here because we never actually scale any pixels.
         Image baseImage = img.getScaledInstance(virtualWidth, virtualHeight,
                 Image.SCALE_DEFAULT);
@@ -1138,7 +1120,7 @@ public class RepaintManager
             public Graphics getGraphics() {
                 Graphics graphics = img.getGraphics();
                 if (graphics instanceof Graphics2D g2d)
-                    g2d.transform(transform);
+                    g2d.scale(scaleX, scaleY);
                 return graphics;
             }
         };
