@@ -884,19 +884,29 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-size_t os::rss() {
-  size_t rss = 0;
+bool os::win32::query_process_memory_info(os::win32::process_info_t* info) {
   PROCESS_MEMORY_COUNTERS_EX pmex;
-  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  ZeroMemory(&pmex, sizeof(pmex));
   pmex.cb = sizeof(pmex);
-  BOOL ret = GetProcessMemoryInfo(
-      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  const BOOL ret = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmex, sizeof(pmex));
   if (ret) {
-    rss = pmex.WorkingSetSize;
+    info->working_set_size = pmex.WorkingSetSize;
+    info->working_set_size_peak = pmex.PeakWorkingSetSize;
+    info->commit_charge = pmex.PagefileUsage;
+    info->commit_charge_peak = pmex.PeakPagefileUsage;
+    info->pagefaults = pmex.PageFaultCount;
+    return true;
   }
-  return rss;
+  return false;
 }
 
+size_t os::rss() {
+  os::win32::process_info_t pi;
+  if (os::win32::query_process_memory_info(&pi)) {
+    return pi.working_set_size;
+  }
+  return 0;
+}
 
 int os::active_processor_count() {
   // User has overridden the number of active processors
@@ -2141,19 +2151,13 @@ void os::print_memory_info(outputStream* st) {
   }
 
   // extended memory statistics for a process
-  PROCESS_MEMORY_COUNTERS_EX pmex;
-  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
-  pmex.cb = sizeof(pmex);
-  int r2 = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) &pmex, sizeof(pmex));
+  os::win32::process_info_t pi;
+  if (os::win32::query_process_memory_info(&pi)) {
+    st->print("\ncurrent process WorkingSet (physical memory assigned to process): %zuM, peak: %zuM",
+              pi.working_set_size / M, pi.working_set_size_peak / M);
 
-  if (r2 != 0) {
-    st->print("\ncurrent process WorkingSet (physical memory assigned to process): " INT64_FORMAT "M, ",
-             (int64_t) pmex.WorkingSetSize >> 20);
-    st->print("peak: " INT64_FORMAT "M\n", (int64_t) pmex.PeakWorkingSetSize >> 20);
-
-    st->print("current process commit charge (\"private bytes\"): " INT64_FORMAT "M, ",
-             (int64_t) pmex.PrivateUsage >> 20);
-    st->print("peak: " INT64_FORMAT "M", (int64_t) pmex.PeakPagefileUsage >> 20);
+    st->print("current process commit charge (\"private bytes\"): %zuM, peak: %zuM",
+              pi.commit_charge / M, pi.commit_charge_peak / M);
   } else {
     st->print("\nGetProcessMemoryInfo did not succeed so we miss some memory values.");
   }
@@ -6215,29 +6219,45 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
 
 #if INCLUDE_JFR
 
-void os::jfr_report_memory_info() {
-  PROCESS_MEMORY_COUNTERS_EX pmex;
-  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
-  pmex.cb = sizeof(pmex);
+#define JFR_WARN_ONCE(text) { \
+  static bool first_warning = true; \
+  if (first_warning) { \
+    log_warning(jfr)(text); \
+    first_warning = false; \
+  } \
+}
 
-  BOOL ret = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) &pmex, sizeof(pmex));
-  if (ret != 0) {
-    // Send the RSS JFR event
+void os::jfr_report_memory_info() {
+  os::win32::process_info_t pi;
+  if (os::win32::query_process_memory_info(&pi)) {
     EventResidentSetSize event;
-    event.set_size(pmex.WorkingSetSize);
-    event.set_peak(pmex.PeakWorkingSetSize);
+    event.set_size(pi.working_set_size);
+    event.set_peak(pi.working_set_size_peak);
     event.commit();
   } else {
-    // Log a warning
-    static bool first_warning = true;
-    if (first_warning) {
-      log_warning(jfr)("Error fetching RSS values: GetProcessMemoryInfo failed");
-      first_warning = false;
-    }
+    JFR_WARN_ONCE("Error fetching RSS values: GetProcessMemoryInfo failed");
   }
 }
 
-void os::jfr_report_process_size() {}
+void os::jfr_report_process_size() {
+  os::win32::process_info_t pi;
+  if (os::win32::query_process_memory_info(&pi)) {
+    EventProcessSize e;
+    e.set_vsize(0);
+    e.set_rss(pi.working_set_size);
+    e.set_rssPeak(pi.working_set_size_peak);
+    e.set_rssAnon(0);
+    e.set_rssFile(0);
+    e.set_rssShmem(0);
+    e.set_committed(pi.commit_charge);
+    e.set_pagetable(0);
+    e.set_swap(0);
+    e.commit();
+  } else {
+    JFR_WARN_ONCE("Error fetching RSS values: GetProcessMemoryInfo failed");
+  }
+}
+
 void os::jfr_report_libc_statistics() {}
 int os::num_process_threads() { return -1; }
 

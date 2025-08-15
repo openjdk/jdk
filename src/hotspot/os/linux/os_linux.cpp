@@ -2695,6 +2695,7 @@ void os::jfr_report_process_size() {
     e.set_rssAnon(info.rssanon * K);
     e.set_rssFile(info.rssfile * K);
     e.set_rssShmem(info.rssshmem * K);
+    e.set_committed(0);
     e.set_pagetable(info.vmpte * K);
     e.set_swap(info.vmswap * K);
     e.commit();

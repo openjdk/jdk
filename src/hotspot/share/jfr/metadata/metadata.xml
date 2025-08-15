@@ -1331,6 +1331,7 @@
     <Field type="ulong" contentType="bytes" name="rssAnon" label="Anon RSS" description="Resident Set Size, Anonymous" />
     <Field type="ulong" contentType="bytes" name="rssFile" label="File RSS" description="Resident Set Size, File Buffers" />
     <Field type="ulong" contentType="bytes" name="rssShmem" label="Shmem RSS" description="Resident Set Size, Shared Memory" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Size of the commit charge of the process" />
     <Field type="ulong" contentType="bytes" name="swap" label="Swap" description="Process memory swapped out" />
     <Field type="ulong" contentType="bytes" name="pagetable" label="Page Table Size" description="Size of Page Table Entries" />
   </Event>

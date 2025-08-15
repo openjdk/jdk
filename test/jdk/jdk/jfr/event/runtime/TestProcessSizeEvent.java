@@ -39,7 +39,7 @@ import static jdk.test.lib.Asserts.*;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires (os.family=="linux") | (os.family=="mac")
+ * @requires (os.family != "aix")
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management
@@ -95,35 +95,33 @@ public class TestProcessSizeEvent {
     // To avoid false positives, RSS low is chosen to be a very defensive low number.
     final static long reasonableRSSLow = 5 * M;
 
-    private static void verifyExpectedEventCommon(RecordedEvent event) throws Exception {
+    private static void verifyExpectedEventLinux(RecordedEvent event) throws Exception {
         long vsize = Events.assertField(event, "vsize").
                 atLeast(reasonableVsizeLow).atMost(reasonableVsizeHigh).getValue();
         long rss = Events.assertField(event, "rss").
                 atLeast(reasonableRSSLow).atMost(reasonableRSSHigh).atMost(vsize).getValue();
-        Events.assertField(event, "rssPeak").
-                atLeast(rss).atMost(reasonableRSSHigh);
+        Events.assertField(event, "rssPeak").atLeast(rss).atMost(reasonableRSSHigh);
+        Events.assertField(event, "rssPeak").atLeast(rss).atMost(reasonableRSSHigh);
+        Events.assertField(event, "rssAnon").atLeast(reasonableRSSLow / 8).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "rssFile").atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "rssShmem").atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
+        Events.assertField(event, "swap").atLeast(0L).atMost(vsize);
+        Events.assertField(event, "pagetable").atLeast(0L).atMost(vsize / 8);
     }
 
-    private static void verifyExpectedEventLinux(RecordedEvent event) throws Exception {
-        verifyExpectedEventCommon(event);
-        long vsize = event.getValue("vsize");
-        long rss = event.getValue("rss");
-        Events.assertField(event, "rssPeak").
-                atLeast(rss).atMost(reasonableRSSHigh);
-        Events.assertField(event, "rssAnon").
-                atLeast(reasonableRSSLow / 8).atMost(reasonableRSSHigh).atMost(rss);
-        Events.assertField(event, "rssFile").
-                atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
-        Events.assertField(event, "rssShm").
-                atLeast(0L).atMost(reasonableRSSHigh).atMost(rss);
-        Events.assertField(event, "swap").
-                atLeast(0L).atMost(vsize);
-        Events.assertField(event, "pagetable").
-                atLeast(0L).atMost(vsize / 8);
+    private static void verifyExpectedEventWindows(RecordedEvent event) throws Exception {
+        long rss = Events.assertField(event, "rss").
+                atLeast(reasonableRSSLow).atMost(reasonableRSSHigh).getValue();
+        Events.assertField(event, "rssPeak").atLeast(rss).atMost(reasonableRSSHigh);
+        Events.assertField(event, "committed").atLeast(4 * K).atMost(reasonableVsizeHigh);
     }
 
     private static void verifyExpectedEventMacOS(RecordedEvent event) throws Exception {
-        verifyExpectedEventCommon(event);
+        long vsize = Events.assertField(event, "vsize").
+                atLeast(reasonableVsizeLow).atMost(reasonableVsizeHigh).getValue();
+        long rss = Events.assertField(event, "rss").
+                atLeast(reasonableRSSLow).atMost(reasonableRSSHigh).atMost(vsize).getValue();
+        Events.assertField(event, "rssPeak").atLeast(rss).atMost(reasonableRSSHigh);
     }
 
     private static void verifyExpectedEvents(List<RecordedEvent> events) throws Exception {
@@ -131,13 +129,10 @@ public class TestProcessSizeEvent {
         assertGreaterThan(filteredEvents.size(), 0, "Should exist events of type: " + ProcessSizeEventName);
         for (RecordedEvent event : filteredEvents) {
             System.out.println(event);
-            if (Platform.isLinux()) {
-                verifyExpectedEventLinux(event);
-            } else if (Platform.isOSX()) {
-                verifyExpectedEventMacOS(event);
-            } else {
-                throw new RuntimeException("Unsupported");
-            }
+            if (Platform.isLinux()) verifyExpectedEventLinux(event);
+            else if (Platform.isWindows()) verifyExpectedEventWindows(event);
+            else if (Platform.isOSX()) verifyExpectedEventMacOS(event);
+            else throw new RuntimeException("Unsupported OS");
         }
     }
 

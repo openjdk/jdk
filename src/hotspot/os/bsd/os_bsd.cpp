@@ -2490,6 +2490,7 @@ void os::jfr_report_process_size() {
     e.set_rssAnon(0);
     e.set_rssFile(0);
     e.set_rssShmem(0);
+    e.set_committed(0);
     e.set_pagetable(0);
     e.set_swap(0);
     e.commit();
