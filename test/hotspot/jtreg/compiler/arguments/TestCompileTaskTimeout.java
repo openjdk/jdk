@@ -26,7 +26,7 @@ package compiler.arguments;
 /*
  * @test TestCompileTaskTimeout
  * @bug 8308094
- * @requires vm.compiler2.enabled & vm.debug & vm.flagless & os.name == "Linux"
+ * @requires vm.debug & vm.flagless & os.name == "Linux"
  * @summary Check functionality of CompileTaskTimeout
  * @library /test/lib
  * @run driver compiler.arguments.TestCompileTaskTimeout
@@ -37,7 +37,15 @@ import jdk.test.lib.process.ProcessTools;
 public class TestCompileTaskTimeout {
 
     public static void main(String[] args) throws Throwable {
-        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "-version")
+        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "--version")
+                    .shouldHaveExitValue(134)
+                    .shouldContain("timed out after");
+
+        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "-XX:TieredStopAtLevel=3", "--version")
+                    .shouldHaveExitValue(134)
+                    .shouldContain("timed out after");
+
+        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "-XX:-TieredCompilation", "--version")
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
 
