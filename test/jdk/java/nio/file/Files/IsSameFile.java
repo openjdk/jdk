@@ -49,8 +49,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -422,7 +420,6 @@ public class IsSameFile {
 
     @ParameterizedTest
     @MethodSource("multiLinkNoTargetSource")
-    @DisabledOnOs(OS.WINDOWS)
     public void multiLinkNoTarget(boolean expect, Path x, Path y)
         throws IOException {
         test(expect, x, y);
@@ -453,7 +450,6 @@ public class IsSameFile {
 
     @ParameterizedTest
     @MethodSource("linkLoopSource")
-    @DisabledOnOs(OS.WINDOWS)
     public void linkLoop(boolean expect, Path x, Path y) throws IOException {
         assertThrows(FileSystemException.class, () -> Files.isSameFile(x, y));
     }
