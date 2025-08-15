@@ -115,14 +115,14 @@ public class MixingPanelsResizing {
                 awtPanel.add(jbutton);
                 jbutton.setForeground(jbColor);
                 jbutton.setBackground(jbColor);
-                jbutton.setOpaque(true);
+
 
                 JPanel jPanel = new JPanel();
                 jbutton2 = new JButton("SwingButton2");
                 jPanel.add(jbutton2);
                 jbutton2.setForeground(jb2Color);
                 jbutton2.setBackground(jb2Color);
-                jbutton2.setOpaque(true);
+
                 awtButton2 = new Button("AWT Button2");
                 jPanel.add(awtButton2);
                 awtButton2.setForeground(awt2Color);
