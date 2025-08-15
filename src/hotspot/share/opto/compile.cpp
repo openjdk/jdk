@@ -5378,6 +5378,7 @@ static Node* pick_cfg_candidate(const Unique_Node_List& candidates) {
       if (n->is_Root()) continue;
       for (uint k = 0; k < n->req(); k++) {
         Node* in = n->in(k);
+        if (in == nullptr) continue;
 
         // we should not go through cycles in the CFG
         if (n->is_Loop() && k == LoopNode::LoopBackControl) continue;
