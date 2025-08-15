@@ -415,10 +415,11 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
                 if (b < 0x20 || b > 0x7E || b == '"') {
                     // Non-ASCII and control characters are not friendly to human
                     // eyes. `"` also excluded to avoid character escaping.
+                    // Only return HEX format.
                     return HexFormat.of().formatHex(input);
                 }
             }
-            // Simple readable string
+            // Human-readable. Return both HEX and string formats.
             return HexFormat.of().formatHex(input)
                     + " (\"" + new String(input, StandardCharsets.US_ASCII) + "\")";
         }
