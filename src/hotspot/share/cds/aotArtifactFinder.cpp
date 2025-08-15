@@ -30,13 +30,14 @@
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/trainingData.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // All the classes that should be included in the AOT cache (in at least the "allocated" state)
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
@@ -46,7 +47,7 @@ static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
 static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes = nullptr;
 
 static const int TABLE_SIZE = 15889; // prime number
-using ClassesTable = ResourceHashtable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
+using ClassesTable = HashTable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 static ClassesTable* _seen_classes;       // all classes that have been seen by AOTArtifactFinder
 static ClassesTable* _aot_inited_classes; // all classes that need to be AOT-initialized.
 
@@ -188,7 +189,11 @@ void AOTArtifactFinder::end_scanning_for_oops() {
 
 void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
   if (CDSConfig::is_initing_classes_at_dump_time()) {
-    assert(ik->is_initialized(), "must be");
+    if (RegeneratedClasses::is_regenerated_object(ik)) {
+      precond(RegeneratedClasses::get_original_object(ik)->is_initialized());
+    } else {
+      precond(ik->is_initialized());
+    }
     add_cached_instance_class(ik);
 
     bool created;
@@ -241,6 +246,11 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     for (int i = 0; i < len; i++) {
       InstanceKlass* intf = interfaces->at(i);
       add_cached_instance_class(intf);
+    }
+
+    InstanceKlass* nest_host = ik->nest_host_or_null();
+    if (nest_host != nullptr) {
+      add_cached_instance_class(nest_host);
     }
 
     if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {

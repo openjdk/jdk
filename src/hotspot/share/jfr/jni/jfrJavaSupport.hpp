@@ -69,7 +69,6 @@ class JfrJavaSupport : public AllStatic {
   static void get_field_local_ref(JfrJavaArguments* args, TRAPS);
 
   static jstring new_string(const char* c_str, TRAPS);
-  static jobjectArray new_string_array(int length, TRAPS);
 
   static jobject new_java_lang_Boolean(bool value, TRAPS);
   static jobject new_java_lang_Integer(jint value, TRAPS);

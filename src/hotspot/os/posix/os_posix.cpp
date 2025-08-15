@@ -59,6 +59,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -76,6 +77,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <spawn.h>
+#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -711,7 +713,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::commit_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -729,31 +731,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  struct rlimit rlim;
-  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
-  // if there was an error when calling getrlimit, assume that there is no limitation
-  // on virtual memory.
-  bool result;
-  if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
-    result = false;
-  } else {
-    *limit = (size_t)rlim.rlim_cur;
-    result = true;
-  }
 #ifdef _LP64
-  return result;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
-  } else {
-    *limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -767,15 +757,15 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -788,10 +778,29 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    actual_limit = lower_limit;
   }
-  return true;
+
+  return actual_limit;
 #endif
+}
+
+size_t os::reserve_memory_limit() {
+  struct rlimit rlim;
+  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+
+  // If there was an error calling getrlimit, conservatively assume no limit.
+  if (getrlimit_res != 0) {
+    return SIZE_MAX;
+  }
+
+  // If the current limit is not infinity, there is a limit.
+  if (rlim.rlim_cur != RLIM_INFINITY) {
+    return (size_t)rlim.rlim_cur;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {
@@ -1058,6 +1067,95 @@ bool os::same_files(const char* file1, const char* file2) {
     is_same = true;
   }
   return is_same;
+}
+
+static char saved_jvm_path[MAXPATHLEN] = {0};
+
+// Find the full path to the current module, libjvm.so
+void os::jvm_path(char *buf, jint buflen) {
+  // Error checking.
+  if (buflen < MAXPATHLEN) {
+    assert(false, "must use a large-enough buffer");
+    buf[0] = '\0';
+    return;
+  }
+  // Lazy resolve the path to current module.
+  if (saved_jvm_path[0] != 0) {
+    strcpy(buf, saved_jvm_path);
+    return;
+  }
+
+  const char* fname;
+#ifdef AIX
+  Dl_info dlinfo;
+  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
+  assert(ret != 0, "cannot locate libjvm");
+  if (ret == 0) {
+    return;
+  }
+  fname = dlinfo.dli_fname;
+#else
+  char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
+  bool ret = dll_address_to_library_name(
+                                         CAST_FROM_FN_PTR(address, os::jvm_path),
+                                         dli_fname, sizeof(dli_fname), nullptr);
+  assert(ret, "cannot locate libjvm");
+  if (!ret) {
+    return;
+  }
+  fname = dli_fname;
+#endif // AIX
+  char* rp = nullptr;
+  if (fname[0] != '\0') {
+    rp = os::realpath(fname, buf, buflen);
+  }
+  if (rp == nullptr) {
+    return;
+  }
+
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
+
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
+
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      // If the path exists within JAVA_HOME, add the VM variant directory and JVM
+      // library name to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath(fname, buf, buflen);
+        if (rp == nullptr) {
+          return;
+        }
+      }
+    }
+  }
+
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 // Called when creating the thread.  The minimum stack sizes have already been calculated
@@ -1509,7 +1607,16 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
+double os::elapsed_process_cpu_time() {
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_SELF, &usage);
+  if (retval == 0) {
+    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+         (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
+  } else {
+    return -1;
+  }
+}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.

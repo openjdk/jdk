@@ -27,8 +27,6 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build WeakReferenceTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar weakref.jar

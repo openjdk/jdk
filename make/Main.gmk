@@ -417,12 +417,14 @@ $(eval $(call SetupTarget, create-source-revision-tracker, \
 ))
 
 BOOTCYCLE_TARGET := product-images
+BOOTCYCLE_SPEC := $(dir $(SPEC))bootcycle-spec.gmk
+
 bootcycle-images:
         ifneq ($(COMPILE_TYPE), cross)
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
 	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
-	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
+	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(BOOTCYCLE_SPEC) main
         else
 	  $(call LogWarn, Boot cycle build disabled when cross compiling)
         endif
@@ -1012,7 +1014,7 @@ else
   else ifeq ($(EXTERNAL_BUILDJDK), false)
     # When not cross compiling, the BUILD_JDK is the interim jdk image, and
     # the javac launcher is needed.
-    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.compiler-gendata: jdk.compiler-launchers java.base-launchers
     jdk.javadoc-gendata: jdk.compiler-launchers
   endif
 
@@ -1405,7 +1407,7 @@ CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native lib
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
-CLEAN_PHASES := gensrc java native include
+CLEAN_PHASES += gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
 # Construct targets of the form clean-$module-$phase

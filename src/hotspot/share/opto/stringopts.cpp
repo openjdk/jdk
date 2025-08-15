@@ -256,6 +256,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
@@ -1466,9 +1473,14 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
 
   Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
   Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
-  // Check if destination address is aligned to HeapWordSize
-  const TypeInt* tdst = __ gvn().type(start)->is_int();
-  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Check if src array address is aligned to HeapWordSize
+  bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+  // If true, then check if dst array address is aligned to HeapWordSize
+  if (aligned) {
+    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
+                                  tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  }
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);

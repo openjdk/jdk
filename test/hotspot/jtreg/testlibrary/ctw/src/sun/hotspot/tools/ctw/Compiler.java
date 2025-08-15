@@ -28,7 +28,9 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.ConstantPool;
 import jdk.test.whitebox.WhiteBox;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -79,26 +81,53 @@ public class Compiler {
             preloadClasses(aClass.getName(), id, constantPool);
         }
 
-        // Make sure the class is initialized.
-        UNSAFE.ensureClassInitialized(aClass);
+        // Attempt to initialize the class. If initialization is not possible
+        // due to NCDFE, accept this, and try compile anyway.
+        try {
+            UNSAFE.ensureClassInitialized(aClass);
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to init class : %s%n",
+                id, aClass.getName(), e);
+        }
         compileClinit(aClass, id);
+
+        // Getting constructor/methods with unresolvable signatures would fail with NCDFE.
+        // Try to get as much as possible, and compile everything else.
+        // TODO: Would be good to have a Whitebox method that returns the subset of resolvable
+        // constructors/methods without throwing NCDFE. This would extend the testing scope.
+        Constructor[] constructors = new Constructor[0];
+        Method[] methods = new Method[0];
+
+        try {
+            constructors = aClass.getDeclaredConstructors();
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to get constructors : %s%n",
+                id, aClass.getName(), e);
+        }
+
+        try {
+            methods = aClass.getDeclaredMethods();
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to get methods : %s%n",
+                id, aClass.getName(), e);
+        }
 
         // Populate profile for all methods to expand the scope of
         // compiler optimizations. Do this before compilations start.
-        for (Executable e : aClass.getDeclaredConstructors()) {
+        for (Executable e : constructors) {
             WHITE_BOX.markMethodProfiled(e);
         }
-        for (Executable e : aClass.getDeclaredMethods()) {
+        for (Executable e : methods) {
             WHITE_BOX.markMethodProfiled(e);
         }
 
         // Now schedule the compilations.
         long methodCount = 0;
-        for (Executable e : aClass.getDeclaredConstructors()) {
+        for (Executable e : constructors) {
             ++methodCount;
             executor.execute(new CompileMethodCommand(id, e));
         }
-        for (Executable e : aClass.getDeclaredMethods()) {
+        for (Executable e : methods) {
             ++methodCount;
             executor.execute(new CompileMethodCommand(id, e));
         }
@@ -127,9 +156,12 @@ public class Compiler {
                 if (constantPool.getTagAt(i) == ConstantPool.Tag.CLASS) {
                     constantPool.getClassAt(i);
                 }
+            } catch (NoClassDefFoundError e) {
+                CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to preload : %s%n",
+                    id, className, e);
             } catch (Throwable t) {
-                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
-                         id, className, t));
+                CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING preloading failed : %s%n",
+                    id, className, t);
                 t.printStackTrace(CompileTheWorld.ERR);
             }
         }
@@ -170,17 +202,22 @@ public class Compiler {
 
         @Override
         public final void run() {
+            // Make sure method is not compiled at any level before starting
+            // progressive compilations. No deopt in-between tiers is needed,
+            // as long as we increase the compilation levels one by one.
+            WHITE_BOX.deoptimizeMethod(method);
+
             int compLevel = Utils.INITIAL_COMP_LEVEL;
             if (Utils.TIERED_COMPILATION) {
                 for (int i = compLevel; i <= Utils.TIERED_STOP_AT_LEVEL; ++i) {
-                    WHITE_BOX.deoptimizeMethod(method);
                     compileAtLevel(i);
                 }
             } else {
                 compileAtLevel(compLevel);
             }
 
-            // Make the method eligible for sweeping sooner
+            // Ditch all the compiled versions of the code, make the method
+            // eligible for sweeping sooner.
             WHITE_BOX.deoptimizeMethod(method);
         }
 

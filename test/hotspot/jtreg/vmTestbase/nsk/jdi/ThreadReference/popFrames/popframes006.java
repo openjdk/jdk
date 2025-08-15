@@ -106,20 +106,20 @@ public class popframes006 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
-        ThreadReference thrRef =
-            debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
         Field doExit = null;
         try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // debuggee field used to indicate that popping has been done

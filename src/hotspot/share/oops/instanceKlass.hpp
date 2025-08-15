@@ -276,6 +276,7 @@ class InstanceKlass: public Klass {
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>*          _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
@@ -398,6 +399,9 @@ class InstanceKlass: public Klass {
   Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
 
+  Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
+  void set_fieldinfo_search_table(Array<u1>* table) { _fieldinfo_search_table = table; }
+
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
 
@@ -438,6 +442,9 @@ public:
   // Call this only if you know that the nest host has been initialized.
   InstanceKlass* nest_host_not_null() {
     assert(_nest_host != nullptr, "must be");
+    return _nest_host;
+  }
+  InstanceKlass* nest_host_or_null() {
     return _nest_host;
   }
   // Used to construct informative IllegalAccessError messages at a higher level,
@@ -757,6 +764,14 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
+  bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
+  void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
+
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
+  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
+  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
@@ -777,8 +792,8 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  jmethodID get_jmethod_id(const methodHandle& method_h);
-  void ensure_space_for_methodids(int start_offset = 0);
+  jmethodID get_jmethod_id(Method* method);
+  void make_methods_jmethod_ids();
   jmethodID jmethod_id_or_null(Method* method);
   void update_methods_jmethod_cache();
 
@@ -1052,10 +1067,10 @@ private:
     Atomic::store(&_init_thread, thread);
   }
 
-  inline jmethodID* methods_jmethod_ids_acquire() const;
-  inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
-  // This nulls out jmethodIDs for all methods in 'klass'
-  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID* methods_jmethod_ids_acquire() const;
+  void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out obsolete jmethodIDs for all methods in 'klass'.
+  static void clear_obsolete_jmethod_ids(InstanceKlass* klass);
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:

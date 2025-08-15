@@ -62,7 +62,7 @@ import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Directive.UsesDirective;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Flags.Flag;
+import com.sun.tools.javac.code.FlagsEnum;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
@@ -205,7 +205,7 @@ public class Modules extends JCTree.Visitor {
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
 
-        lintOptions = !options.isExplicitlyDisabled(Option.XLINT, LintCategory.OPTIONS);
+        lintOptions = !options.isLintDisabled(LintCategory.OPTIONS);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -825,7 +825,7 @@ public class Modules extends JCTree.Visitor {
                 }
                 if (tree.isStaticPhase) {
                     if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {
-                        log.error(tree.pos(), Errors.ModNotAllowedHere(EnumSet.of(Flag.STATIC)));
+                        log.error(tree.pos(), Errors.ModNotAllowedHere(EnumSet.of(FlagsEnum.STATIC)));
                     } else {
                         flags.add(RequiresFlag.STATIC_PHASE);
                     }

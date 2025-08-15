@@ -1,0 +1,5 @@
+    @Test(dataProvider = "$type$SaturatingBinaryOpAssocProvider")
+    static void [[TEST]]Assoc$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb, IntFunction<$type$[]> fc) {
+[[KERNEL]]
+        assertArraysEqualsAssociative(rl, rr, a, b, c, $vectorteststype$::[[TEST]]);
+    }

@@ -1860,7 +1860,7 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  Mutex* lock = Atomic::load(&_extra_data_lock);
+  Mutex* lock = Atomic::load_acquire(&_extra_data_lock);
   if (lock == nullptr) {
     // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
     lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
@@ -1996,6 +1996,9 @@ void MethodData::release_C_heap_structures() {
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
   _extra_data_lock = nullptr;
+#if INCLUDE_JVMCI
+  _failed_speculations = nullptr;
+#endif
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {

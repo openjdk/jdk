@@ -27,7 +27,6 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAbort.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zDirector.hpp"
@@ -126,12 +125,6 @@ size_t ZCollectedHeap::unused() const {
   return _heap.unused();
 }
 
-bool ZCollectedHeap::is_maximal_no_gc() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return _heap.is_in((uintptr_t)p);
 }
@@ -142,7 +135,7 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
-  const zaddress addr = ZAllocator::eden()->alloc_tlab(size_in_bytes);
+  const zaddress addr = ZHeap::heap()->alloc_tlab(size_in_bytes);
 
   if (!is_null(addr)) {
     *actual_size = requested_size;
@@ -158,7 +151,7 @@ oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool d
 
 HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(size));
-  return (HeapWord*)ZAllocator::eden()->alloc_object(size_in_bytes);
+  return (HeapWord*)ZHeap::heap()->alloc_object(size_in_bytes);
 }
 
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

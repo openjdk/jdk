@@ -30,7 +30,7 @@
 
 // VM_operations for the G1 collector.
 
-class VM_G1CollectFull : public VM_GC_Operation {
+class VM_G1CollectFull : public VM_GC_Collect_Operation {
 protected:
   bool skip_operation() const override;
 
@@ -38,13 +38,14 @@ public:
   VM_G1CollectFull(uint gc_count_before,
                    uint full_gc_count_before,
                    GCCause::Cause cause) :
-    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true) { }
+    VM_GC_Collect_Operation(gc_count_before, cause, full_gc_count_before, true) { }
   VMOp_Type type() const override { return VMOp_G1CollectFull; }
   void doit() override;
 };
 
-class VM_G1TryInitiateConcMark : public VM_GC_Operation {
+class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _transient_failure;
+  bool _mark_in_progress;
   bool _cycle_already_in_progress;
   bool _whitebox_attached;
   bool _terminating;
@@ -59,6 +60,7 @@ public:
   virtual bool doit_prologue();
   virtual void doit();
   bool transient_failure() const { return _transient_failure; }
+  bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
   bool whitebox_attached() const { return _whitebox_attached; }
   bool terminating() const { return _terminating; }
@@ -89,6 +91,7 @@ public:
   bool doit_prologue() override;
   void doit_epilogue() override;
   void doit() override;
+  bool is_gc_operation() const override { return true; }
 };
 
 class VM_G1PauseRemark : public VM_G1PauseConcurrent {
