@@ -39,9 +39,8 @@ class BackingStoreMultiResolutionImage
 
     private final int width;
     private final int height;
-    // TODO: don't leave public
-    public final int scaledWidth;
-    public final int scaledHeight;
+    private final int scaledWidth;
+    private final int scaledHeight;
     private final Image rvImage;
 
     public BackingStoreMultiResolutionImage(int width, int height,
@@ -51,6 +50,14 @@ class BackingStoreMultiResolutionImage
         this.scaledWidth = scaledWidth;
         this.scaledHeight = scaledHeight;
         this.rvImage = rvImage;
+    }
+
+    int getScaledWidth() {
+        return scaledWidth;
+    }
+
+    int getScaledHeight() {
+        return scaledHeight;
     }
 
     @Override

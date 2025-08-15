@@ -774,8 +774,9 @@ public class JViewport extends JComponent implements Accessible
                 if (backingStoreImage instanceof BackingStoreMultiResolutionImage) {
                     BackingStoreMultiResolutionImage mrImage
                             = (BackingStoreMultiResolutionImage) backingStoreImage;
-                    recreateBackingStoreImage = (mrImage.scaledWidth != scaledWidth
-                            || mrImage.scaledHeight != scaledHeight);
+                    recreateBackingStoreImage =
+                            (mrImage.getScaledWidth() != scaledWidth ||
+                            mrImage.getScaledHeight() != scaledHeight);
                 } else {
                     recreateBackingStoreImage = (width != scaledWidth
                             || height != scaledHeight);
