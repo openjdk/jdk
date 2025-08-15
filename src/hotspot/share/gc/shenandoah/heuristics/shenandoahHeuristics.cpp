@@ -153,27 +153,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
 
-  size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
-  size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
-  size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
-
-  log_info(gc, ergo)("Collectable Garbage: %zu%s (%zu%%), "
-                     "Immediate: %zu%s (%zu%%), %zu regions, "
-                     "CSet: %zu%s (%zu%%), %zu regions",
-
-                     byte_size_in_proper_unit(collectable_garbage),
-                     proper_unit_for_byte_size(collectable_garbage),
-                     collectable_garbage_percent,
-
-                     byte_size_in_proper_unit(immediate_garbage),
-                     proper_unit_for_byte_size(immediate_garbage),
-                     immediate_percent,
-                     immediate_regions,
-
-                     byte_size_in_proper_unit(collection_set->garbage()),
-                     proper_unit_for_byte_size(collection_set->garbage()),
-                     cset_percent,
-                     collection_set->count());
+  collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
