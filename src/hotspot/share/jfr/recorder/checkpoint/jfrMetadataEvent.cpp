@@ -64,11 +64,11 @@ static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread)
   chunkwriter.write_unbuffered(data_address, length);
 }
 
-void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
+size_t JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   assert(chunkwriter.is_valid(), "invariant");
   check_internal_types();
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
-    return;
+    return 0;
   }
   JavaThread* const jt = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
@@ -87,6 +87,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   chunkwriter.write_padded_at_offset((u4)size_written, metadata_offset);
   chunkwriter.set_last_metadata_offset(metadata_offset);
   last_metadata_id = metadata_id;
+  return 1;
 }
 
 void JfrMetadataEvent::update(jbyteArray metadata) {
