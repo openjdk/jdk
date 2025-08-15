@@ -5456,18 +5456,11 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
         if (igvn != nullptr) {
           igvn->replace_input_of(use, j, call_control_proj);
         } else if (gvn != nullptr) {
-          // TODO we need to clarify exactly what we need to do if we don't have IGVN yet
-          gvn->hash_delete(use);
           use->set_req(j, call_control_proj);
-          igvn_worklist()->push(use);
         }
       }
     }
   }
-
-  igvn_worklist()->push(c);
-  igvn_worklist()->push(call_control_proj);
-  igvn_worklist()->push(control);
 
   return c;
 }
