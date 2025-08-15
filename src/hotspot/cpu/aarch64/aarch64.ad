@@ -7092,12 +7092,7 @@ instruct loadConH(vRegF dst, immH con) %{
             "fmov   $dst, rscratch1"
          %}
   ins_encode %{
-    uint32_t imm = (uint32_t)$con$$constant;
-    if (imm == 0) {
-      __ movw(rscratch1, zr);
-    } else {
-      __ movw(rscratch1, imm);
-    }
+    __ movw(rscratch1, (uint32_t)$con$$constant);
     __ fmovs($dst$$FloatRegister, rscratch1);
   %}
   ins_pipe(pipe_class_default);
