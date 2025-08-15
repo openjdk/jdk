@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @compile ../ReferenceTracker.java
@@ -34,6 +35,7 @@
  *                     -Djdk.internal.httpclient.debug=true
  *                     H3BasicTest
  */
+// -Dseed=-163464189156654174
 
 import java.io.IOException;
 import java.net.*;
@@ -46,6 +48,7 @@ import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.*;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -57,15 +60,21 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
 public class H3BasicTest implements HttpServerAdapters {
+
+    private static final Random RANDOM = RandomFactory.getRandom();
 
     private static final String CLASS_NAME = H3BasicTest.class.getSimpleName();
 
@@ -93,10 +102,18 @@ public class H3BasicTest implements HttpServerAdapters {
 
             // server that supports both HTTP/2 and HTTP/3, with HTTP/3 on an altSvc port.
             https2AltSvcServer = new Http2TestServer(true, 0, serverExec, sslContext);
-            https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+            if (RANDOM.nextBoolean()) {
+                https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+            } else {
+                https2AltSvcServer.enableH3AltServiceOnSamePort();
+            }
             https2AltSvcServer.addHandler(new Http2EchoHandler(), "/");
             https2Port = https2AltSvcServer.getAddress().getPort();
-            System.out.println("HTTP/2 server started at localhost:" + https2Port);
+            if (https2AltSvcServer.supportsH3DirectConnection()) {
+                System.out.println("HTTP/2 server (same HTTP/3 origin) started at localhost:" + https2Port);
+            } else {
+                System.out.println("HTTP/2 server (different HTTP/3 origin) started at localhost:" + https2Port);
+            }
 
             http3URIString = "https://localhost:" + http3Port + "/foo/";
             pingURIString = "https://localhost:" + http3Port + "/ping/";
@@ -225,10 +242,18 @@ public class H3BasicTest implements HttpServerAdapters {
 
     static final AtomicInteger count = new AtomicInteger();
     static Http3DiscoveryMode config(boolean http3only) {
-        if (http3only) return Http3DiscoveryMode.HTTP_3_URI_ONLY;
-        return switch (count.getAndIncrement() %3) {
-            case 1 -> Http3DiscoveryMode.ANY;
-            case 2 -> Http3DiscoveryMode.ALT_SVC;
+        if (http3only) return HTTP_3_URI_ONLY;
+        // if the server supports H3 direct connection, we can
+        // additionally use HTTP_3_URI_ONLY; Otherwise we can
+        // only use ALT_SVC - or ANY (given that we should have
+        // preloaded an ALT_SVC in warmup)
+        int bound = https2AltSvcServer.supportsH3DirectConnection() ? 4 : 3;
+        int rand = RANDOM.nextInt(bound);
+        count.getAndIncrement();
+        return switch (rand) {
+            case 1 -> ANY;
+            case 2 -> ALT_SVC;
+            case 3 -> HTTP_3_URI_ONLY;
             default -> null;
         };
     }
@@ -304,6 +329,12 @@ public class H3BasicTest implements HttpServerAdapters {
         HttpClient client = getClient();
         var http3Only = altSvc == false;
         var config = config(http3Only);
+
+        // in the warmup phase, we want to make sure
+        // to preload the ALT_SVC, otherwise the first
+        // request that uses ALT_SVC might go through HTTP/2
+        if (altSvc) config = ALT_SVC;
+
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofString(SIMPLE_STRING))
                                      .setOption(H3_DISCOVERY, config)

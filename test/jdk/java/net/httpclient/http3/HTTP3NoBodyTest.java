@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http3.Http3TestServer
@@ -46,6 +47,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,6 +57,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.RandomFactory;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
@@ -65,6 +68,8 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 @Test
 public class HTTP3NoBodyTest {
+    private static final Random RANDOM = RandomFactory.getRandom();
+
     static int http3Port, https2Port;
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
@@ -90,10 +95,18 @@ public class HTTP3NoBodyTest {
 
             // server that supports both HTTP/2 and HTTP/3, with HTTP/3 on an altSvc port.
             https2AltSvcServer = new Http2TestServer(true, 0, serverExec, sslContext);
-            https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+            if (RANDOM.nextBoolean()) {
+                https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+            } else {
+                https2AltSvcServer.enableH3AltServiceOnSamePort();
+            }
             https2AltSvcServer.addHandler(new Handler(), "/");
             https2Port = https2AltSvcServer.getAddress().getPort();
-            System.out.println("HTTP/2 server started at localhost:" + https2Port);
+            if (https2AltSvcServer.supportsH3DirectConnection()) {
+                System.out.println("HTTP/2 server (same HTTP/3 origin) started at localhost:" + https2Port);
+            } else {
+                System.out.println("HTTP/2 server (different HTTP/3 origin) started at localhost:" + https2Port);
+            }
 
             http3URIString = "https://localhost:" + http3Port + "/foo/";
             https2URIString = "https://localhost:" + https2Port + "/bar/";
@@ -180,9 +193,17 @@ public class HTTP3NoBodyTest {
     static final AtomicInteger count = new AtomicInteger();
     static Http3DiscoveryMode config(boolean http3only) {
         if (http3only) return HTTP_3_URI_ONLY;
-        return switch (count.getAndIncrement() %3) {
+        // if the server supports H3 direct connection, we can
+        // additionally use HTTP_3_URI_ONLY; Otherwise we can
+        // only use ALT_SVC - or ANY (given that we should have
+        // preloaded an ALT_SVC in warmup)
+        int bound = https2AltSvcServer.supportsH3DirectConnection() ? 4 : 3;
+        int rand = RANDOM.nextInt(bound);
+        count.getAndIncrement();
+        return switch (rand) {
             case 1 -> ANY;
             case 2 -> ALT_SVC;
+            case 3 -> HTTP_3_URI_ONLY;
             default -> null;
         };
     }
@@ -196,6 +217,11 @@ public class HTTP3NoBodyTest {
         System.err.println("Request to " + uri);
         var http3Only = altSvc == false;
         var config = config(http3Only);
+
+        // in the warmup phase, we want to make sure
+        // to preload the ALT_SVC, otherwise the first
+        // request that uses ALT_SVC might go through HTTP/2
+        if (altSvc) config = ALT_SVC;
 
         // Do a simple warmup request
 
