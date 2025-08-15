@@ -833,7 +833,6 @@
                                                                           \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::stw_instruction_and_data_patch))  \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
-  AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
   declare_constant(ObjectMonitor::NO_OWNER)                               \
   declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
