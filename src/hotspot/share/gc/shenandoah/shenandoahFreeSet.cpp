@@ -230,9 +230,7 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
 
 // This is used for unit testing.  Do not use in production code.
 void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
-  shenandoah_assert_not_heaplocked();
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahHeapLocker locker(heap->lock());
+  shenandoah_assert_heaplocked();
   size_t original_old_regions = _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
   size_t unaffiliated_mutator_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator);
   size_t unaffiliated_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector);
@@ -2623,6 +2621,7 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
 void ShenandoahFreeSet::transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId source,
                                                        ShenandoahFreeSetPartitionId dest,
                                                        size_t num_regions) {
+  assert(dest != source, "precondition");
   shenandoah_assert_heaplocked();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t transferred_regions = 0;
@@ -2651,6 +2650,7 @@ void ShenandoahFreeSet::transfer_empty_regions_from_to(ShenandoahFreeSetPartitio
       transferred_regions++;
     }
   }
+
   // All transferred regions are empty.
   assert(used_transfer == 0, "empty regions should have no used");
   _partitions.expand_interval_if_range_modifies_either_boundary(dest, dest_low_idx,
@@ -2668,14 +2668,17 @@ void ShenandoahFreeSet::transfer_empty_regions_from_to(ShenandoahFreeSetPartitio
   _partitions.increase_region_counts(dest, transferred_regions);
   _partitions.increase_empty_region_counts(dest, transferred_regions);
 
-  if ((source == ShenandoahFreeSetPartitionId::OldCollector) && (dest == ShenandoahFreeSetPartitionId::Mutator)) {
+  if (source == ShenandoahFreeSetPartitionId::OldCollector) {
+    assert((dest == ShenandoahFreeSetPartitionId::Collector) || (dest == ShenandoahFreeSetPartitionId::Mutator), "sanity");
     _total_young_regions += transferred_regions;
-  } else if ((source == ShenandoahFreeSetPartitionId::Mutator) && (dest == ShenandoahFreeSetPartitionId::OldCollector)) {
-    _total_young_regions -= transferred_regions;
-  } else if ((source == ShenandoahFreeSetPartitionId::OldCollector) && (dest == ShenandoahFreeSetPartitionId::Collector)) {
-    _total_young_regions += transferred_regions;
-  } else if ((source == ShenandoahFreeSetPartitionId::Collector) && (dest == ShenandoahFreeSetPartitionId::OldCollector)) {
-    _total_young_regions -= transferred_regions;
+  } else {
+    assert((source == ShenandoahFreeSetPartitionId::Collector) || (source == ShenandoahFreeSetPartitionId::Mutator), "sanity");
+    if (dest == ShenandoahFreeSetPartitionId::OldCollector) {
+      _total_young_regions -= transferred_regions;
+    } else {
+      assert((dest == ShenandoahFreeSetPartitionId::Collector) || (dest == ShenandoahFreeSetPartitionId::Mutator), "sanity");
+      // No adjustments to total_young_regions if transferring within young
+    }
   }
 
   // _total_global_regions unaffected by transfer
