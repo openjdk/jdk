@@ -361,8 +361,8 @@ UNSAFE_LEAF(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong siz
   size_t sz = (size_t)size;
 
   assert(is_aligned(sz, HeapWordSize), "sz not aligned");
-
   void* x = os::malloc(sz, mtOther);
+  JFR_ONLY(EventUnsafeAllocateMemory::commit(size, x != nullptr);)
 
   return addr_to_java(x);
 } UNSAFE_END

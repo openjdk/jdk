@@ -772,7 +772,13 @@
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Total amount of reserved bytes for the JVM" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Total amount of committed bytes for the JVM" />
   </Event>
-
+  
+  <Event name="UnsafeAllocateMemory" category="Java Virtual Machine, Memory" label="Unsafe Native Memory Allocation" description="Native memory allocation via Unsafe.allocateMemory"
+    thread="true" stackTrace="true" startTime="false">
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+    <Field type="boolean" name="success" label="Succes" />
+  </Event>
+  
   <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"
          description="Who requested the recording and why"
          startTime="false">
