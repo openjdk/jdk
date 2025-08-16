@@ -492,6 +492,8 @@ public interface JavaLangAccess {
      */
     String concat(String prefix, Object value, String suffix);
 
+    int encodeUTF8(String s, int sp, int sl, byte[] dst, int dp);
+
     /*
      * Get the class data associated with the given class.
      * @param c the class
