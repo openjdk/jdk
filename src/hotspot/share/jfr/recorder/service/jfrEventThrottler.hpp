@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   static JfrEventThrottler* for_event(JfrEventId event_id);
 
  public:
+  static JfrEventThrottler* create_throttler(JfrEventId event_id);
   static void configure(JfrEventId event_id, int64_t event_sample_size, int64_t period_ms);
   static bool accept(JfrEventId event_id, int64_t timestamp = 0);
 };
