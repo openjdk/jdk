@@ -907,6 +907,26 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
+     * Appends the 2 width string representation of the {@code int}
+     * argument to this sequence.
+     *
+     * @param   i   an {@code int}.
+     * @return  a reference to this object.
+     */
+    void appendTwoDigitNumber(int i) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
+        if (isLatin1(coder)) {
+            DecimalDigits.uncheckedPutPairLatin1(value, count, i);
+        } else {
+            DecimalDigits.uncheckedPutPairUTF16(value, count, i);
+        }
+        this.value = value;
+        this.count = count + 2;
+    }
+
+    /**
      * Appends the string representation of the {@code int}
      * argument to this sequence.
      * <p>
