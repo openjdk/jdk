@@ -651,7 +651,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
     // Send the blocking thread a signal to terminate and write an error file.
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
       if (cur_thread->safepoint_state()->is_running()) {
-        VMError::set_safepoint_timed_out_thread(p2i(cur_thread));
+        VMError::set_safepoint_timed_out_thread(cur_thread);
         if (!os::signal_thread(cur_thread, SIGILL, "blocking a safepoint")) {
           break; // Could not send signal. Report fatal error.
         }

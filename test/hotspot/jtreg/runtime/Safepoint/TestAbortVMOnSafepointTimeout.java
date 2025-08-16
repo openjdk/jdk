@@ -88,7 +88,7 @@ public class TestAbortVMOnSafepointTimeout {
         } else {
             output.shouldContain("SIGILL");
             if (Platform.isLinux()) {
-                output.shouldContain("(sent by safepoint timeout handler");
+                output.shouldContain("(sent by safepoint timeout handler)");
             }
         }
         output.shouldNotHaveExitValue(0);
