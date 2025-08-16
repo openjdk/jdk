@@ -67,14 +67,14 @@ class JVMCIEnv;
 #define JVMCI_ERROR_NULL(...) JVMCI_ERROR_(nullptr, __VA_ARGS__)
 #define JVMCI_ERROR_OK(...)   JVMCI_ERROR_(JVMCI::ok, __VA_ARGS__)
 
-#define JVMCI_THROW(name) { JVMCIENV->throw_##name(); return; }
-#define JVMCI_THROW_NULL(name) { JVMCIENV->throw_##name(); return nullptr; }
-#define JVMCI_THROW_0(name) { JVMCIENV->throw_##name(); return 0; }
-#define JVMCI_THROW_MSG_NULL(name, msg) { JVMCIENV->throw_##name(msg); return nullptr; }
-#define JVMCI_THROW_MSG_(name, msg, value) { JVMCIENV->throw_##name(msg); return (value); }
-#define JVMCI_THROW_MSG_0(name, msg) { JVMCIENV->throw_##name(msg); return 0; }
-#define JVMCI_THROW_MSG(name, msg) { JVMCIENV->throw_##name(msg); return; }
-#define JVMCI_THROW_(name, value) { JVMCIENV->throw_##name(); return (value); }
+#define JVMCI_THROW(name)                  { JVMCIENV->throw_##name(nullptr, __FILE__, __LINE__); return; }
+#define JVMCI_THROW_NULL(name)             { JVMCIENV->throw_##name(nullptr, __FILE__, __LINE__); return nullptr; }
+#define JVMCI_THROW_0(name)                { JVMCIENV->throw_##name(nullptr, __FILE__, __LINE__); return 0; }
+#define JVMCI_THROW_MSG_NULL(name, msg)    { JVMCIENV->throw_##name(msg,     __FILE__, __LINE__); return nullptr; }
+#define JVMCI_THROW_MSG_(name, msg, value) { JVMCIENV->throw_##name(msg,     __FILE__, __LINE__); return (value); }
+#define JVMCI_THROW_MSG_0(name, msg)       { JVMCIENV->throw_##name(msg,     __FILE__, __LINE__); return 0; }
+#define JVMCI_THROW_MSG(name, msg)         { JVMCIENV->throw_##name(msg,     __FILE__, __LINE__); return; }
+#define JVMCI_THROW_(name, value)          { JVMCIENV->throw_##name(nullptr, __FILE__, __LINE__); return (value); }
 
 #define JVMCI_CATCH                              \
   JVMCIENV); if (JVMCI_HAS_PENDING_EXCEPTION) {  \
