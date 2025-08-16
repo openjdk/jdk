@@ -26,8 +26,8 @@
 #define SHARE_JFR_UTILITIES_JFRTRYLOCK_HPP
 
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
 class JfrTryLock {

@@ -29,8 +29,8 @@
 #if defined(LINUX)
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
@@ -41,9 +41,8 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/ticks.hpp"
-
 #include "signals_posix.hpp"
+#include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
 
