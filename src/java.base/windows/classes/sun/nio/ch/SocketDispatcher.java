@@ -91,6 +91,6 @@ class SocketDispatcher extends NativeDispatcher {
     private static native void close0(int fdVal) throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }
