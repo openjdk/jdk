@@ -31,15 +31,13 @@
 #include "utilities/quickSort.hpp"
 
 // Determine collection set candidates (from marking): For all regions determine
-// whether they should be a collection set candidate, calculate their efficiency,
-// sort and put them into the candidates.
+// whether they should be a collection set candidate. Calculate their efficiency,
+// sort, and put them into the collection set candidates.
+//
 // Threads calculate the GC efficiency of the regions they get to process, and
 // put them into some work area without sorting. At the end that array is sorted and
 // moved to the destination.
 class G1BuildCandidateRegionsTask : public WorkerTask {
-
-  using CandidateInfo = G1CollectionSetCandidateInfo;
-
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
   // on claiming array elements, worker threads claim parts of this array in chunks;
@@ -47,13 +45,39 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // up their chunks completely.
   // Final sorting will remove them.
   class G1BuildCandidateArray : public StackObj {
-
     uint const _max_size;
     uint const _chunk_size;
 
-    CandidateInfo* _data;
+    G1HeapRegion** _data;
 
     uint volatile _cur_claim_idx;
+
+    static int compare_region_gc_efficiency(G1HeapRegion** rr1, G1HeapRegion** rr2) {
+      G1HeapRegion* r1 = *rr1;
+      G1HeapRegion* r2 = *rr2;
+      // Make sure that null entries are moved to the end.
+      if (r1 == nullptr) {
+        if (r2 == nullptr) {
+          return 0;
+        } else {
+          return 1;
+        }
+      } else if (r2 == nullptr) {
+        return -1;
+      }
+
+      G1Policy* p = G1CollectedHeap::heap()->policy();
+      double gc_efficiency1 = p->predict_gc_efficiency(r1);
+      double gc_efficiency2 = p->predict_gc_efficiency(r2);
+
+      if (gc_efficiency1 > gc_efficiency2) {
+        return -1;
+      } else if (gc_efficiency1 < gc_efficiency2) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
 
     // Calculates the maximum array size that will be used.
     static uint required_array_size(uint num_regions, uint chunk_size, uint num_workers) {
@@ -68,15 +92,15 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     G1BuildCandidateArray(uint max_num_regions, uint chunk_size, uint num_workers) :
       _max_size(required_array_size(max_num_regions, chunk_size, num_workers)),
       _chunk_size(chunk_size),
-      _data(NEW_C_HEAP_ARRAY(CandidateInfo, _max_size, mtGC)),
+      _data(NEW_C_HEAP_ARRAY(G1HeapRegion*, _max_size, mtGC)),
       _cur_claim_idx(0) {
       for (uint i = 0; i < _max_size; i++) {
-        _data[i] = CandidateInfo();
+        _data[i] = nullptr;
       }
     }
 
     ~G1BuildCandidateArray() {
-      FREE_C_HEAP_ARRAY(CandidateInfo, _data);
+      FREE_C_HEAP_ARRAY(G1HeapRegion*, _data);
     }
 
     // Claim a new chunk, returning its bounds [from, to[.
@@ -92,8 +116,8 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     // Set element in array.
     void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
-      assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr);
+      assert(_data[idx] == nullptr, "Value must not have been set.");
+      _data[idx] = hr;
     }
 
     void sort_by_gc_efficiency() {
@@ -101,15 +125,15 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
-        assert(_data[i]._r == nullptr, "must be");
+        assert(_data[i] == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionSetCandidateInfo::compare_region_gc_efficiency);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)compare_region_gc_efficiency);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
-        assert(_data[i]._r == nullptr, "must be");
+        assert(_data[i] == nullptr, "must be");
       }
     }
 
-    CandidateInfo* array() const { return _data; }
+    G1HeapRegion** array() const { return _data; }
   };
 
   // Per-region closure. In addition to determining whether a region should be
@@ -193,7 +217,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // available (for forward progress in evacuation) or the waste accumulated by the
   // removed regions is above the maximum allowed waste.
   // Updates number of candidates and reclaimable bytes given.
-  void prune(CandidateInfo* data) {
+  void prune(G1HeapRegion** data) {
     G1Policy* p = G1CollectedHeap::heap()->policy();
 
     uint num_candidates = Atomic::load(&_num_regions_added);
@@ -211,7 +235,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     uint max_to_prune = num_candidates - min_old_cset_length;
 
     while (true) {
-      G1HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
+      G1HeapRegion* r = data[num_candidates - num_pruned - 1];
       size_t const reclaimable = r->reclaimable_bytes();
       if (num_pruned >= max_to_prune ||
           wasted_bytes + reclaimable > allowed_waste) {
