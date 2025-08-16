@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,8 +744,7 @@ class SubRegistry {
         }
         map.put(provider.getClass(), provider);
         poset.add(provider);
-        if (provider instanceof RegisterableService) {
-            RegisterableService rs = (RegisterableService)provider;
+        if (provider instanceof RegisterableService rs) {
             try {
                 rs.onRegistration(registry, category);
             } catch (Throwable t) {
@@ -768,8 +767,7 @@ class SubRegistry {
         if (provider == oprovider) {
             map.remove(provider.getClass());
             poset.remove(provider);
-            if (provider instanceof RegisterableService) {
-                RegisterableService rs = (RegisterableService)provider;
+            if (provider instanceof RegisterableService rs) {
                 rs.onDeregistration(registry, category);
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,15 +262,13 @@ public final class NimbusStyle extends SynthStyle {
             // We know component.get() is non-null here, as if the component
             // were GC'ed, we wouldn't be processing its style.
             Object o = component.get().getClientProperty("Nimbus.Overrides");
-            if (o instanceof UIDefaults) {
+            if (o instanceof UIDefaults d) {
                 Object i = component.get().getClientProperty(
                         "Nimbus.Overrides.InheritDefaults");
                 boolean inherit = i instanceof Boolean ? (Boolean)i : true;
-                UIDefaults d = (UIDefaults)o;
                 TreeMap<String, Object> map = new TreeMap<String, Object>();
                 for (Object obj : d.keySet()) {
-                    if (obj instanceof String) {
-                        String key = (String)obj;
+                    if (obj instanceof String key) {
                         if (key.startsWith(prefix)) {
                             map.put(key, d.get(key));
                         }

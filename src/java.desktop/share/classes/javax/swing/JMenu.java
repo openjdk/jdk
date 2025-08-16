@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -781,8 +781,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         }
 
         Component c = getMenuComponent(pos);
-        if (c instanceof JMenuItem) {
-            JMenuItem mi = (JMenuItem) c;
+        if (c instanceof JMenuItem mi) {
             return mi;
         }
 
@@ -932,8 +931,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         if (c == this)
             return true;
         // Are we in the PopupMenu?
-        if (c instanceof JPopupMenu) {
-            JPopupMenu comp = (JPopupMenu) c;
+        if (c instanceof JPopupMenu comp) {
             if (comp == this.getPopupMenu())
                 return true;
         }
@@ -948,8 +946,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             // Hmmm, what about Non-menu containers?
 
             // Recursive call for the Menu case
-            if (comp instanceof JMenu) {
-                JMenu subMenu = (JMenu) comp;
+            if (comp instanceof JMenu subMenu) {
                 if (subMenu.isMenuComponent(c))
                     return true;
             }

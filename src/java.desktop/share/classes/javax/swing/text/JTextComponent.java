@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -884,8 +884,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 if (dropLocation == null) {
                     boolean visible;
 
-                    if (caret instanceof DefaultCaret) {
-                        DefaultCaret dc = (DefaultCaret)caret;
+                    if (caret instanceof DefaultCaret dc) {
                         visible = dc.isActive();
                         retVal = new Object[] {Integer.valueOf(dc.getMark()),
                                                Integer.valueOf(dc.getDot()),
@@ -3046,11 +3045,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Returns the paragraph element for the specified index.
          */
         private Element getParagraphElement(int index) {
-            if (model instanceof PlainDocument ) {
-                PlainDocument sdoc = (PlainDocument)model;
+            if (model instanceof PlainDocument sdoc) {
                 return sdoc.getParagraphElement(index);
-            } else if (model instanceof StyledDocument) {
-                StyledDocument sdoc = (StyledDocument)model;
+            } else if (model instanceof StyledDocument sdoc) {
                 return sdoc.getParagraphElement(index);
             } else {
                 Element para;
@@ -4019,8 +4016,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                                         UIResource {
         public void exportToClipboard(JComponent comp, Clipboard clipboard,
                                       int action) throws IllegalStateException {
-            if (comp instanceof JTextComponent) {
-                JTextComponent text = (JTextComponent)comp;
+            if (comp instanceof JTextComponent text) {
                 int p0 = text.getSelectionStart();
                 int p1 = text.getSelectionEnd();
                 if (p0 != p1) {
@@ -5026,8 +5022,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             super.install(c);
 
             Document doc = c.getDocument();
-            if (doc instanceof StyledDocument) {
-                StyledDocument sDoc = (StyledDocument)doc;
+            if (doc instanceof StyledDocument sDoc) {
                 Element elem = sDoc.getCharacterElement(c.composedTextStart.getOffset());
                 AttributeSet attr = elem.getAttributes();
                 bg = sDoc.getBackground(attr);

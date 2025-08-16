@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,8 +344,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     public int getFlowSpan(int index) {
         View child = getView(index);
         int adjust = 0;
-        if (child instanceof Row) {
-            Row row = (Row) child;
+        if (child instanceof Row row) {
             adjust = row.getLeftInset() + row.getRightInset();
         }
         return (layoutSpan == Integer.MAX_VALUE) ? layoutSpan
@@ -363,8 +362,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     public int getFlowStart(int index) {
         View child = getView(index);
         int adjust = 0;
-        if (child instanceof Row) {
-            Row row = (Row) child;
+        if (child instanceof Row row) {
             adjust = row.getLeftInset();
         }
         return tabBase + adjust;

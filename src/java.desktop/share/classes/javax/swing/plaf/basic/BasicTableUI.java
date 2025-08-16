@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,7 +720,7 @@ public class BasicTableUI extends TableUI
                 return sender != null &&
                        ((JTable)sender).getColumnModel().getSelectionModel()
                            instanceof DefaultListSelectionModel;
-            } else if (key == ADD_TO_SELECTION && sender instanceof JTable) {
+            } else if (key == ADD_TO_SELECTION && sender instanceof JTable table) {
                 // This action is typically bound to SPACE.
                 // If the table is already in an editing mode, SPACE should
                 // simply enter a space character into the table, and not
@@ -728,12 +728,10 @@ public class BasicTableUI extends TableUI
                 // then hitting SPACE should just enter a space character
                 // into the cell and begin editing. In both of these cases
                 // this action will be disabled.
-                JTable table = (JTable)sender;
                 int leadRow = getAdjustedLead(table, true);
                 int leadCol = getAdjustedLead(table, false);
                 return !(table.isEditing() || table.isCellSelected(leadRow, leadCol));
-            } else if (key == FOCUS_HEADER && sender instanceof JTable) {
-                JTable table = (JTable)sender;
+            } else if (key == FOCUS_HEADER && sender instanceof JTable table) {
                 return table.getTableHeader() != null;
             }
 
@@ -2220,8 +2218,7 @@ public class BasicTableUI extends TableUI
          *
          */
         protected Transferable createTransferable(JComponent c) {
-            if (c instanceof JTable) {
-                JTable table = (JTable) c;
+            if (c instanceof JTable table) {
                 int[] rows;
                 int[] cols;
 

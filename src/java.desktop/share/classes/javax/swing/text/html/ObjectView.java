@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,7 @@ public class ObjectView extends ComponentView  {
                                        getContextClassLoader());
             if (Component.class.isAssignableFrom(c)) {
                 Object o = c.newInstance();
-                if (o instanceof Component) {
-                    Component comp = (Component) o;
+                if (o instanceof Component comp) {
                     setParameters(comp, attr);
                     return comp;
                 }
@@ -147,9 +146,8 @@ public class ObjectView extends ComponentView  {
         for (int i=0; i < props.length; i++) {
             //      System.err.println("checking on props[i]: "+props[i].getName());
             Object v = attr.getAttribute(props[i].getName());
-            if (v instanceof String) {
+            if (v instanceof String value) {
                 // found a property parameter
-                String value = (String) v;
                 Method writer = props[i].getWriteMethod();
                 if (writer == null) {
                     // read-only property. ignore

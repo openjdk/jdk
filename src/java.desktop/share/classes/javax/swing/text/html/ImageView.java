@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -449,8 +449,7 @@ public class ImageView extends View {
     }
 
     private void paintHighlights(Graphics g, Shape shape) {
-        if (container instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent)container;
+        if (container instanceof JTextComponent tc) {
             Highlighter h = tc.getHighlighter();
             if (h instanceof LayeredHighlighter) {
                 ((LayeredHighlighter)h).paintLayeredHighlights
