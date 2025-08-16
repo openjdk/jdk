@@ -2403,6 +2403,21 @@ Node* UMaxVNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+Node* VectorSliceNode::Identity(PhaseGVN* phase) {
+  if (origin()->is_Con()) {
+    jint index = origin()->get_int();
+    uint vlen = vect_type()->length_in_bytes();
+    if (vlen == (uint)index) {
+      return vec2();
+    }
+    if (index == 0) {
+      return vec1();
+    }
+  }
+  return this;
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
