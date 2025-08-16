@@ -41,7 +41,7 @@ import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.PlatformRecording;
+import jdk.jfr.internal.management.EventSource;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.management.StreamBarrier;
 
@@ -55,7 +55,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
     private static final Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
     private final RepositoryFiles repositoryFiles;
-    private final PlatformRecording recording;
     private final StreamBarrier barrier = new StreamBarrier();
     private final AtomicLong streamId = new AtomicLong();
     private ChunkParser currentParser;
@@ -66,11 +65,10 @@ public final class EventDirectoryStream extends AbstractEventStream {
 
     public EventDirectoryStream(
             Path p,
-            PlatformRecording recording,
+            EventSource eventSource,
             List<Configuration> configurations,
             boolean allowSubDirectories) throws IOException {
-        super(configurations);
-        this.recording = recording;
+        super(configurations, eventSource);
         this.repositoryFiles = new RepositoryFiles(p, allowSubDirectories);
         this.streamId.incrementAndGet();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Stream " + streamId + " started.");
@@ -131,7 +129,7 @@ public final class EventDirectoryStream extends AbstractEventStream {
         Dispatcher lastDisp = null;
         Dispatcher disp = dispatcher();
         Path path;
-        boolean validStartTime = isRecordingStream() || disp.startTime != null;
+        boolean validStartTime = eventSource.requiresStartTime() || disp.startTime != null;
         if (validStartTime) {
             path = repositoryFiles.firstPath(disp.startNanos, true);
         } else {
@@ -169,6 +167,19 @@ public final class EventDirectoryStream extends AbstractEventStream {
                                      "ns (epoch), parser at " + lastFlush + "ns (epoch).");
                         return;
                     }
+
+                    if(!barrier.used()) {
+                        RecordingState state = eventSource.getState();
+                        if (state == RecordingState.CLOSED) {
+                            return;
+                        } else if (state == RecordingState.STOPPED) {
+                            long stopTime = eventSource.getStopTime();
+                            if (lastFlush > stopTime) {
+                                logStreamEnd("stopped at " + stopTime + "ns (epoch), parser at " + lastFlush + "ns (epoch).");
+                                return;
+                            }
+                        }
+                    }
                 }
                 long endNanos = currentParser.getStartNanos() + currentParser.getChunkDuration();
                 long endMillis = Instant.ofEpochSecond(0, endNanos).toEpochMilli();
@@ -181,9 +192,13 @@ public final class EventDirectoryStream extends AbstractEventStream {
                     return;
                 }
 
-                if (isRecordingStream()) {
-                    if (recording.getState() == RecordingState.STOPPED && !barrier.used()) {
-                        logStreamEnd("recording stopped externally.");
+                if(!barrier.used()) {
+                    RecordingState state = eventSource.getState();
+                    if (state == RecordingState.CLOSED){
+                        logStreamEnd("Event source is closed externally");
+                        return;
+                    }else if(state == RecordingState.STOPPED) {
+                        logStreamEnd("Event source is stopped externally");
                         return;
                     }
                 }
@@ -224,10 +239,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
     private void logStreamEnd(String text) {
         String msg = "Stream " + streamId + " ended, " + text;
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, msg);
-    }
-
-    protected boolean isRecordingStream() {
-        return recording != null;
     }
 
     private void processOrdered(Dispatcher c) throws IOException {

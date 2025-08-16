@@ -45,7 +45,7 @@ public final class EventFileStream extends AbstractEventStream {
     private RecordedEvent[] cacheSorted;
 
     public EventFileStream(Path file) throws IOException {
-        super(Collections.emptyList());
+        super(Collections.emptyList(), new FileEventSource());
         this.input = new RecordingInput(file.toFile());
         this.input.setStreamed();
     }
@@ -69,11 +69,6 @@ public final class EventFileStream extends AbstractEventStream {
         } catch (IOException e) {
             // ignore
         }
-    }
-
-    @Override
-    protected boolean isRecordingStream() {
-        return false;
     }
 
     @Override
