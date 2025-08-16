@@ -358,9 +358,7 @@ public:
 
     if (old_method->is_old()) {
 
-      Method* new_method = (old_method->is_deleted()) ?
-                            Universe::throw_no_such_method_error() :
-                            old_method->get_new_method();
+      Method* new_method = old_method->get_new_method();
       java_lang_invoke_ResolvedMethodName::set_vmtarget(mem_name, new_method);
 
       ResourceMark rm;
