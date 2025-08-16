@@ -911,7 +911,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * argument to this sequence.
      *
      * @param   i   an {@code int}.
-     * @return  a reference to this object.
      */
     void appendPair(int i) {
         byte coder = this.coder;
