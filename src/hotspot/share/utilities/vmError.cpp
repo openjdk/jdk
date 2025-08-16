@@ -1507,6 +1507,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("Compiler Memory Statistic")
   CompilationMemoryStatistic::print_final_report(st);
+  st->cr();
 
   // STEP("printing periodic trim state")
   NativeHeapTrimmer::print_state(st);

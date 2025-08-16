@@ -1030,7 +1030,7 @@ TEST_VM(os, trim_native_heap) {
   EXPECT_TRUE(os::can_trim_native_heap());
   os::size_change_t sc;
   sc.before = sc.after = (size_t)-1;
-  EXPECT_TRUE(os::trim_native_heap(&sc));
+  EXPECT_TRUE(os::trim_native_heap(sc));
   tty->print_cr("%zu->%zu", sc.before, sc.after);
   // Regardless of whether we freed memory, both before and after
   // should be somewhat believable numbers (RSS).
@@ -1040,8 +1040,6 @@ TEST_VM(os, trim_native_heap) {
   ASSERT_GT(max, sc.before);
   ASSERT_LE(min, sc.after);
   ASSERT_GT(max, sc.after);
-  // Should also work
-  EXPECT_TRUE(os::trim_native_heap());
 }
 #else
 TEST_VM(os, trim_native_heap) {

@@ -74,6 +74,9 @@ public class TestJavaThreadStatisticsEvent {
             long daemonCount = Events.assertField(event, "daemonCount").atLeast(0L).getValue();
             long activeCount = Events.assertField(event, "activeCount").atLeast(daemonCount).getValue();
             long peakCount = Events.assertField(event, "peakCount").atLeast(activeCount).atLeast(1L).getValue();
+            Events.assertField(event, "nonJavaThreadCount").atLeast(1L).getValue();
+            Events.assertField(event, "osThreadCount").atLeast(activeCount).atLeast(1L).atMost(200L).getValue();
+
             Events.assertField(event, "accumulatedCount").atLeast(peakCount).getValue();
         }
         assertTrue(isAnyFound, "Correct event not found");
