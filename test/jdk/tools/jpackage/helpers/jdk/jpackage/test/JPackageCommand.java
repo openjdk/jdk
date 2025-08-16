@@ -1174,10 +1174,15 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                     "Check for unexpected value of <app-store> property in app image file");
             }
 
-            TKit.assertStringListEquals(
-                    addLauncherNames().stream().sorted().toList(),
-                    aif.addLaunchers().keySet().stream().sorted().toList(),
-                    "Check additional launcher names");
+            // Don't compare the add launchers configured on the command line with the
+            // add launchers listed in the `.jpackage.xml` file if the latter comes from
+            // a predefined app image.
+            if (!hasArgument("--app-image")) {
+                TKit.assertStringListEquals(
+                        addLauncherNames().stream().sorted().toList(),
+                        aif.addLaunchers().keySet().stream().sorted().toList(),
+                        "Check additional launcher names");
+            }
         }
     }
 

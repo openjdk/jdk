@@ -29,8 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class BuildEnvBuilder {
@@ -40,8 +42,6 @@ final class BuildEnvBuilder {
     }
 
     BuildEnv create() throws ConfigException {
-        Objects.requireNonNull(appImageDir);
-
         var exceptionBuilder = I18N.buildConfigException("ERR_BuildRootInvalid", root);
         if (Files.isDirectory(root)) {
             try (var rootDirContents = Files.list(root)) {
@@ -57,8 +57,8 @@ final class BuildEnvBuilder {
             throw exceptionBuilder.create();
         }
 
-        return BuildEnv.withAppImageDir(BuildEnv.create(root, Optional.ofNullable(resourceDir),
-                verbose, ResourceLocator.class), appImageDir);
+        return BuildEnv.create(root, Optional.ofNullable(resourceDir), verbose,
+                ResourceLocator.class, resolvedAppImageLayout());
     }
 
     BuildEnvBuilder verbose(boolean v) {
@@ -76,14 +76,26 @@ final class BuildEnvBuilder {
         return this;
     }
 
-    BuildEnvBuilder appImageDirFor(Application app) {
-        appImageDir = defaultAppImageDir(root).resolve(app.appImageDirName());
+    BuildEnvBuilder appImageLayout(AppImageLayout v) {
+        appImageLayout = v;
         return this;
     }
 
-    BuildEnvBuilder appImageDirForPackage() {
-        appImageDir = defaultAppImageDir(root);
+    BuildEnvBuilder appImageDirFor(Application app) {
+        appImageDir = defaultAppImageDir(root).resolve(app.appImageDirName());
+        appImageLayout = app.imageLayout();
         return this;
+    }
+
+    BuildEnvBuilder appImageDirFor(Package pkg) {
+        appImageDir = defaultAppImageDir(root);
+        appImageLayout = pkg.appImageLayout();
+        return this;
+    }
+
+    private AppImageLayout resolvedAppImageLayout() {
+        Objects.requireNonNull(appImageLayout);
+        return Optional.ofNullable(appImageDir).map(appImageLayout.unresolve()::resolveAt).orElse(appImageLayout);
     }
 
     private static Path defaultAppImageDir(Path root) {
@@ -91,6 +103,7 @@ final class BuildEnvBuilder {
     }
 
     private Path appImageDir;
+    private AppImageLayout appImageLayout;
     private Path resourceDir;
     private boolean verbose;
 

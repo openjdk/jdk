@@ -24,19 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
+import jdk.jpackage.internal.model.MacPackage;
 
-// Must be public to allow access from AppImageLayout.toPathGroup()
-public interface MacApplicationLayoutMixin {
+final class MacBuildEnvFromParams {
 
-    /**
-     * Returns path to the root Java runtime directory in the application image.
-     * <p>
-     * The root Java runtime directory should have "Contents/Home" subdirectory.
-     *
-     * @return the path to the root Java runtime directory in the application image
-     */
-    Path runtimeRootDirectory();
-
-    record Stub(Path runtimeRootDirectory) implements MacApplicationLayoutMixin {}
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
+        return BuildEnvFromParams.create(params, MacPackagingPipeline.APPLICATION_LAYOUT::resolveAt, MacPackage::guessRuntimeLayout);
+    });
 }
