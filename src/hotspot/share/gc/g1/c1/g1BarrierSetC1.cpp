@@ -23,12 +23,15 @@
  */
 
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_MacroAssembler.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef ASSERT
@@ -40,11 +43,6 @@
 void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
   bs->gen_pre_barrier_stub(ce, this);
-}
-
-void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
-  G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->gen_post_barrier_stub(ce, this);
 }
 
 void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
@@ -114,6 +112,87 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
   __ branch_destination(slow->continuation());
 }
 
+class LIR_OpG1PostBarrier : public LIR_Op {
+ friend class LIR_OpVisitState;
+
+private:
+  LIR_Opr       _addr;
+  LIR_Opr       _new_val;
+  LIR_Opr       _thread;
+  LIR_Opr       _tmp1;
+  LIR_Opr       _tmp2;
+
+public:
+  LIR_OpG1PostBarrier(LIR_Opr addr,
+                      LIR_Opr new_val,
+                      LIR_Opr thread,
+                      LIR_Opr tmp1,
+                      LIR_Opr tmp2)
+    : LIR_Op(lir_none, lir_none, nullptr),
+      _addr(addr),
+      _new_val(new_val),
+      _thread(thread),
+      _tmp1(tmp1),
+      _tmp2(tmp2)
+    {}
+
+  virtual void visit(LIR_OpVisitState* state) {
+    state->do_input(_addr);
+    state->do_input(_new_val);
+    state->do_input(_thread);
+
+    // Use temps to enforce different registers.
+    state->do_temp(_addr);
+    state->do_temp(_new_val);
+    state->do_temp(_thread);
+    state->do_temp(_tmp1);
+    state->do_temp(_tmp2);
+
+    if (_info != nullptr) {
+      state->do_info(_info);
+    }
+  }
+
+  virtual void emit_code(LIR_Assembler* ce) {
+    if (_info != nullptr) {
+      ce->add_debug_info_for_null_check_here(_info);
+    }
+
+    Register addr = _addr->as_pointer_register();
+    Register new_val = _new_val->as_pointer_register();
+    Register thread = _thread->as_pointer_register();
+    Register tmp1 = _tmp1->as_pointer_register();
+    Register tmp2 = _tmp2->as_pointer_register();
+
+    // This may happen for a store of x.a = x - we do not need a post barrier for those
+    // as the cross-region test will always exit early anyway.
+    // The post barrier implementations can assume that addr and new_val are different
+    // then.
+    if (addr == new_val) {
+      ce->masm()->block_comment(err_msg("same addr/new_val due to self-referential store with imprecise card mark %s", addr->name()));
+      return;
+    }
+
+    G1BarrierSetAssembler* bs_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
+    bs_asm->g1_write_barrier_post_c1(ce->masm(), addr, new_val, thread, tmp1, tmp2);
+  }
+
+  virtual void print_instr(outputStream* out) const {
+    _addr->print(out);     out->print(" ");
+    _new_val->print(out);  out->print(" ");
+    _thread->print(out);   out->print(" ");
+    _tmp1->print(out);     out->print(" ");
+    _tmp2->print(out);     out->print(" ");
+    out->cr();
+  }
+
+#ifndef PRODUCT
+  virtual const char* name() const  {
+    return "lir_g1_post_barrier";
+  }
+#endif // PRODUCT
+};
+
 void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
   LIRGenerator* gen = access.gen();
   DecoratorSet decorators = access.decorators();
@@ -150,29 +229,11 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
   }
   assert(addr->is_register(), "must be a register at this point");
 
-  LIR_Opr xor_res = gen->new_pointer_register();
-  LIR_Opr xor_shift_res = gen->new_pointer_register();
-  if (two_operand_lir_form) {
-    __ move(addr, xor_res);
-    __ logical_xor(xor_res, new_val, xor_res);
-    __ move(xor_res, xor_shift_res);
-    __ unsigned_shift_right(xor_shift_res,
-                            LIR_OprFact::intConst(checked_cast<jint>(G1HeapRegion::LogOfHRGrainBytes)),
-                            xor_shift_res,
-                            LIR_Opr::illegalOpr());
-  } else {
-    __ logical_xor(addr, new_val, xor_res);
-    __ unsigned_shift_right(xor_res,
-                            LIR_OprFact::intConst(checked_cast<jint>(G1HeapRegion::LogOfHRGrainBytes)),
-                            xor_shift_res,
-                            LIR_Opr::illegalOpr());
-  }
-
-  __ cmp(lir_cond_notEqual, xor_shift_res, LIR_OprFact::intptrConst(NULL_WORD));
-
-  CodeStub* slow = new G1PostBarrierStub(addr, new_val);
-  __ branch(lir_cond_notEqual, slow);
-  __ branch_destination(slow->continuation());
+  __ append(new LIR_OpG1PostBarrier(addr,
+                                    new_val,
+                                    gen->getThreadPointer() /* thread */,
+                                    gen->new_pointer_register() /* tmp1 */,
+                                    gen->new_pointer_register() /* tmp2 */));
 }
 
 void G1BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
@@ -207,20 +268,9 @@ class C1G1PreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   }
 };
 
-class C1G1PostBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
-  virtual OopMapSet* generate_code(StubAssembler* sasm) {
-    G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->generate_c1_post_barrier_runtime_stub(sasm);
-    return nullptr;
-  }
-};
-
 bool G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1G1PreBarrierCodeGenClosure pre_code_gen_cl;
-  C1G1PostBarrierCodeGenClosure post_code_gen_cl;
   _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID, "g1_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
-  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID, "g1_post_barrier_slow",
-                                                               false, &post_code_gen_cl);
-  return _pre_barrier_c1_runtime_code_blob != nullptr && _post_barrier_c1_runtime_code_blob != nullptr;
+  return _pre_barrier_c1_runtime_code_blob != nullptr;
 }
