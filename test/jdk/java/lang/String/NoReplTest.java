@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8286287 8288589
- * @summary Tests for *NoRepl() shared secret methods.
+ * @summary Tests for *NoReplacement() shared secret methods.
  * @run testng NoReplTest
  * @modules jdk.charsets
  */
@@ -45,11 +45,11 @@ public class NoReplTest {
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
 
     /**
-     * Verifies newStringNoRepl() throws a CharacterCodingException.
+     * Verifies `uncheckedNewStringNoReplacement()` throws a `CharacterCodingException`.
      * The method is invoked by `Files.readString()` method.
      */
     @Test
-    public void newStringNoReplTest() throws IOException {
+    public void uncheckedNewStringNoReplacementTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try (var fos = Files.newOutputStream(f)) {
             fos.write(MALFORMED_UTF16);
@@ -67,11 +67,11 @@ public class NoReplTest {
     }
 
     /**
-     * Verifies getBytesNoRepl() throws a CharacterCodingException.
+     * Verifies `uncheckedGetBytesNoReplacement()` throws a `CharacterCodingException`.
      * The method is invoked by `Files.writeString()` method.
      */
     @Test
-    public void getBytesNoReplTest() throws IOException {
+    public void uncheckedGetBytesNoReplacementTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try {
             Files.writeString(f, MALFORMED_WINDOWS_1252, WINDOWS_1252);
