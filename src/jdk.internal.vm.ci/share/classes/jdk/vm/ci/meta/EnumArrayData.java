@@ -22,39 +22,41 @@
  */
 package jdk.vm.ci.meta;
 
+import java.util.List;
+
 /**
- * Represents an enum constant within {@link AnnotationData}.
+ * Represents an array of enum constants within {@link AnnotationData}.
  */
-public final class EnumData {
+public final class EnumArrayData {
     public final ResolvedJavaType enumType;
-    public final String name;
+    public final List<String> names;
 
     /**
-     * Creates an enum constant.
+     * Creates an array of enum constants.
      *
      * @param type the {@linkplain Enum enum type}
-     * @param name the {@linkplain Enum#name() name} of the enum
+     * @param name the names of the enum constants
      */
-    public EnumData(ResolvedJavaType enumType, String name) {
+    public EnumArrayData(ResolvedJavaType enumType, List<String> names) {
         this.enumType = enumType;
-        this.name = name;
+        this.names = names;
     }
 
     @Override
     public String toString() {
-        return name;
+        return names.toString();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof EnumData that) {
-            return this.enumType.equals(that.enumType) && this.name.equals(that.name);
+        if (obj instanceof EnumArrayData that) {
+            return this.enumType.equals(that.enumType) && this.names.equals(that.names);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return this.enumType.hashCode() ^ this.name.hashCode();
+        return this.enumType.hashCode() ^ this.names.hashCode();
     }
 }

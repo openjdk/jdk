@@ -48,6 +48,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.List;
 
+import sun.reflect.annotation.EnumValue;
+import sun.reflect.annotation.EnumValueArray;
+
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
  */
@@ -200,7 +203,7 @@ public class VMSupport {
             }
         }
         Map<Class<? extends Annotation>, Annotation> annotations =
-                AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, selectAnnotationClasses);
+                AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses);
         if (forClass && annotations.size() != selectAnnotationClasses.length) {
             Class<?> superClass = declaringClass.getSuperclass();
             nextSuperClass:
@@ -211,6 +214,7 @@ public class VMSupport {
                             jla.getRawClassAnnotations(superClass),
                             jla.getConstantPool(superClass),
                             superClass,
+                            false,
                             selectAnnotationClasses);
 
                 for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
@@ -295,6 +299,21 @@ public class VMSupport {
             } else if (valueType == Class.class) {
                 dos.writeByte('c');
                 dos.writeUTF(((Class<?>) value).getName());
+            } else if (valueType == EnumValue.class) {
+                EnumValue enumValue = (EnumValue) value;
+                dos.writeByte('e');
+                dos.writeUTF(enumValue.enumType.getName());
+                dos.writeUTF(enumValue.constName);
+            } else if (valueType == EnumValueArray.class) {
+                EnumValueArray enumValueArray = (EnumValueArray) value;
+                List<String> array = enumValueArray.constNames;
+                dos.writeByte('[');
+                dos.writeByte('e');
+                dos.writeUTF(enumValueArray.enumType.getName());
+                writeLength(dos, array.size());
+                for (String s : array) {
+                    dos.writeUTF(s);
+                }
             } else if (valueType.isEnum()) {
                 dos.writeByte('e');
                 dos.writeUTF(valueType.getName());
@@ -418,9 +437,10 @@ public class VMSupport {
      * @param <T> type to which a type name is {@linkplain #resolveType(String) resolved}
      * @param <A> type of the object representing a decoded annotation
      * @param <E> type of the object representing a decoded enum constant
+     * @param <EA> type of the object representing a decoded array of enum constants
      * @param <X> type of the object representing a decoded error
      */
-    public interface AnnotationDecoder<T, A, E, X> {
+    public interface AnnotationDecoder<T, A, E, EA, X> {
         /**
          * Resolves a name in {@link Class#getName()} format to an object of type {@code T}.
          */
@@ -443,6 +463,14 @@ public class VMSupport {
         E newEnumValue(T enumType, String name);
 
         /**
+         * Creates an object representing a decoded enum constant.
+         *
+         * @param enumType the enum type
+         * @param name the name of the enum constant
+         */
+        EA newEnumValueArray(T enumType, List<String> names);
+
+        /**
          * Creates an object representing a decoded error value.
          *
          * @param description of the error
@@ -460,7 +488,7 @@ public class VMSupport {
      * @return an immutable list of {@code A} objects
      */
     @SuppressWarnings("unchecked")
-    public static <T, A, E, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, X> decoder) {
+    public static <T, A, E, EA, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, EA, X> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
             DataInputStream dis = new DataInputStream(bais);
@@ -471,7 +499,7 @@ public class VMSupport {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static <T, A, E, X> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
+    private static <T, A, E, EA, X> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
         String typeName = dis.readUTF();
         T type = decoder.resolveType(typeName);
         int n = readLength(dis);
@@ -504,7 +532,7 @@ public class VMSupport {
         Object read() throws IOException;
     }
 
-    private static <T, A, E, X> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
+    private static <T, A, E, EA, X> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
         byte componentTag = dis.readByte();
         return switch (componentTag) {
             case 'B' -> readArray(dis, dis::readByte);
@@ -519,7 +547,7 @@ public class VMSupport {
             case 'c' -> readArray(dis, () -> readClass(dis, decoder));
             case 'e' -> {
                 T enumType = decoder.resolveType(dis.readUTF());
-                yield readArray(dis, () -> readEnum(dis, decoder, enumType));
+                yield readEnumArray(dis, decoder, enumType);
             }
             case '@' -> readArray(dis, () -> decodeAnnotation(dis, decoder));
             default -> throw new InternalError("Unsupported component tag: " + componentTag);
@@ -530,15 +558,25 @@ public class VMSupport {
      * Reads an enum encoded at the current read position of {@code dis} and
      * returns it as an object of type {@code E}.
      */
-    private static <T, A, E, X> E readEnum(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder, T enumType) throws IOException {
+    private static <T, A, E, EA, X> E readEnum(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder, T enumType) throws IOException {
         return decoder.newEnumValue(enumType, dis.readUTF());
+    }
+
+    /**
+     * Reads an enum encoded at the current read position of {@code dis} and
+     * returns it as an object of type {@code E}.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T, A, E, EA, X> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder, T enumType) throws IOException {
+        List<String> names = (List<String>) readArray(dis, dis::readUTF);
+        return decoder.newEnumValueArray(enumType, names);
     }
 
     /**
      * Reads a class encoded at the current read position of {@code dis} and
      * returns it as an object of type {@code T}.
      */
-    private static <T, A, E, X> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
+    private static <T, A, E, EA, X> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, EA, X> decoder) throws IOException {
         return decoder.resolveType(dis.readUTF());
     }
 
@@ -549,7 +587,7 @@ public class VMSupport {
      * @param reader reads array elements from {@code dis}
      * @return an immutable list of {@code A} objects
      */
-    private static List<Object> readArray(DataInputStream dis, IOReader reader) throws IOException {
+    private static List<?> readArray(DataInputStream dis, IOReader reader) throws IOException {
         Object[] array = new Object[readLength(dis)];
         for (int i = 0; i < array.length; i++) {
             array[i] = reader.read();
