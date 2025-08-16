@@ -1314,6 +1314,23 @@ public:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+#ifndef PRODUCT
+private:
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
+                              Node* parm2 = nullptr, Node* parm3 = nullptr,
+                              Node* parm4 = nullptr, Node* parm5 = nullptr,
+                              Node* parm6 = nullptr) const;
+
+public:
+  // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+    return make_debug_print_call(str, call_addr, gvn, in...);
+  }
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

@@ -264,6 +264,46 @@ void SharedRuntime::print_ic_miss_histogram() {
     tty->print_cr("Total IC misses: %7d", tot_misses);
   }
 }
+
+// Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
+void SharedRuntime::debug_print_value(jboolean x) {
+  tty->print("boolean %d\n", x);
+}
+
+void SharedRuntime::debug_print_value(jbyte x) {
+  tty->print("byte %d\n", x);
+}
+
+void SharedRuntime::debug_print_value(jshort x) {
+  tty->print("short %d\n", x);
+}
+
+void SharedRuntime::debug_print_value(jchar x) {
+  tty->print("char %c %d\n", isprint(x) ? x : ' ', x);
+}
+
+void SharedRuntime::debug_print_value(jint x) {
+  tty->print("int %d\n", x);
+}
+
+void SharedRuntime::debug_print_value(jlong x) {
+  tty->print_raw("long ");
+  tty->print_jlong(x);
+  tty->print_cr("");
+}
+
+void SharedRuntime::debug_print_value(jfloat x) {
+  tty->print("float %f\n", x);
+}
+
+void SharedRuntime::debug_print_value(jdouble x) {
+  tty->print("double %lf\n", x);
+}
+
+void SharedRuntime::debug_print_value(oopDesc* x) {
+  x->print();
+}
+
 #endif // PRODUCT
 
 
