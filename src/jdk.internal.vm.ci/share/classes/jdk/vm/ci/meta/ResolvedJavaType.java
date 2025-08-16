@@ -26,6 +26,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.util.List;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.annotation.Annotated;
 
 /**
  * Represents a resolved Java type. Types include primitives, objects, {@code void}, and arrays

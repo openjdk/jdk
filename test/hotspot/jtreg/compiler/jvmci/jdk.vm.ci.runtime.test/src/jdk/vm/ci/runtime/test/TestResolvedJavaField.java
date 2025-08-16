@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,15 @@
  * @library ../../../../../
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -194,10 +197,10 @@ public class TestResolvedJavaField extends FieldUniverse {
     }
 
     @Test
-    public void getAnnotationDataTest() throws Exception {
-        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
+    public void getAnnotationValueTest() throws Exception {
+        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
         for (Field f : fields.keySet()) {
-            TestResolvedJavaType.getAnnotationDataTest(f);
+            TestResolvedJavaType.getAnnotationValueTest(f);
         }
     }
 

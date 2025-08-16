@@ -23,19 +23,14 @@
 
 package jdk.vm.ci.hotspot;
 
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
-
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
-import static jdk.vm.ci.common.InitTimer.timer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -43,6 +38,12 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+
+import static jdk.vm.ci.common.InitTimer.timer;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 /**
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
@@ -1447,46 +1448,46 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code type} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
+            return getEncodedClassAnnotationValues(type, type.getKlassPointer(),
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+                                                  Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
+            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                                                       Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and
      * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
+            return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex,
                             a.types, a.types.length, a.buffer());
         }
     }
 
-    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
-                    Object filterTypes, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+                                                  Object filterTypes, int filterLength, long filterKlassPointers);
 
     /**
-     * Helper for passing {@Klass*} values to native code.
+     * Helper for passing {@code Klass*} values to native code.
      */
     static final class KlassPointers implements AutoCloseable {
         final ResolvedJavaType[] types;
@@ -1498,20 +1499,23 @@ final class CompilerToVM {
         }
 
         /**
-         * Gets the buffer in which to pass the {@Klass*} values to JNI.
+         * Gets the buffer in which to pass the {@code Klass*} values to JNI.
          *
-         * @return a {@Klass*} value if {@code types.length == 1} otherwise the address of a native
-         *         buffer holding an array of {@Klass*} values
+         * @return 0L if {@code types.length == 0}, a {@code Klass*} value if {@code types.length == 1}
+         *         otherwise the address of a native buffer holding an array of {@code Klass*} values
          */
         long buffer() {
-            int length = types.length;
+            long length = types.length;
+            if (length == 0) {
+                return 0L;
+            }
             if (length == 1) {
                 return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
             } else {
                 pointersArray = unsafe.allocateMemory(length * Long.BYTES);
                 long pos = pointersArray;
-                for (int i = 0; i < types.length; i++) {
-                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
+                for (ResolvedJavaType type : types) {
+                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) type;
                     unsafe.putLong(pos, hsType.getKlassPointer());
                     pos += Long.BYTES;
                 }
@@ -1521,7 +1525,7 @@ final class CompilerToVM {
 
         @Override
         public void close() {
-            if (types.length != 1 && pointersArray != 0) {
+            if (types.length > 1 && pointersArray != 0) {
                 unsafe.freeMemory(pointersArray);
                 pointersArray = 0;
             }
