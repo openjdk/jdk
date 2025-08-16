@@ -58,9 +58,13 @@ public:
   inline bool mark_strong(oop obj, bool& was_upgraded);
   inline bool mark_weak(oop obj);
 
+  // Marks the object in the marking bitmap, ignoring TAMS.
+  inline bool mark_strong_ignore_tams(oop obj, bool& was_upgraded);
+
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
   inline bool is_marked(oop obj) const;
   inline bool is_marked(HeapWord* raw_obj) const;
+  inline bool is_marked_ignore_tams(HeapWord* raw_obj) const;
   inline bool is_marked_strong(oop obj) const;
   inline bool is_marked_strong(HeapWord* raw_obj) const;
   inline bool is_marked_weak(oop obj) const;
@@ -84,6 +88,8 @@ public:
 
   bool is_bitmap_clear() const;
   bool is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const;
+
+  size_t count_live_objects(HeapWord* start, HeapWord* end) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

@@ -49,6 +49,9 @@ public:
   static oopDesc* load_reference_barrier_phantom_narrow(oopDesc* src, narrowOop* load_addr);
 
   static void clone_barrier(oopDesc* src);
+
+  static oopDesc* cmpxchg_oop(oopDesc** addr, oopDesc* expected, oopDesc* new_val);
+  static narrowOop cmpxchg_oop_narrow(narrowOop* addr, narrowOop expected, narrowOop new_val);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP

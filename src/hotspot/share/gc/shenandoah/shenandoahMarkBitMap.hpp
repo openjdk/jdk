@@ -123,6 +123,10 @@ private:
 
   void clear_large_range (idx_t beg, idx_t end);
 
+  idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
+  idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
+  idx_t count_one_bits(idx_t beg, idx_t end) const;
+
   // Verify bit is less than size().
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
   // Verify bit is not greater than size().
@@ -177,6 +181,7 @@ public:
   void clear_large_range_of_words(idx_t beg, idx_t end);
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
 
+  size_t count_marked(const HeapWord* start, const HeapWord* end) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
