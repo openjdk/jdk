@@ -30,7 +30,7 @@
  *
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm TestThreadDumpMonitorContention
+ * @run main/othervm/timeout=480 TestThreadDumpMonitorContention
  */
 
 import java.io.BufferedReader;

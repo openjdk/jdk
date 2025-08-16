@@ -25,7 +25,7 @@
  * @bug 6834246 6842687
  * @summary Stress test connections through the loopback interface
  * @run main StressLoopback
- * @run main/othervm -Djdk.net.useFastTcpLoopback StressLoopback
+ * @run main/othervm/timeout=480 -Djdk.net.useFastTcpLoopback StressLoopback
  * @key randomness
  */
 

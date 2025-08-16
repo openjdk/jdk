@@ -53,7 +53,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents002a
- * @run main/othervm/timeout=420
+ * @run main/othervm/timeout=1680
  *      nsk.jdwp.VirtualMachine.HoldEvents.holdevents002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -62,4 +62,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

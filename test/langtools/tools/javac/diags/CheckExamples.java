@@ -31,7 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.resources:open
  *          jdk.compiler/com.sun.tools.javac.util
  * @build Example CheckExamples DocCommentProcessor
- * @run main/othervm CheckExamples
+ * @run main/othervm/timeout=480 CheckExamples
  */
 
 /*

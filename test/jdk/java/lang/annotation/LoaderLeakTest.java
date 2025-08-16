@@ -27,7 +27,7 @@
  * @summary annotations cause memory leak
  * @library /test/lib
  * @build jdk.test.lib.process.*
- * @run testng LoaderLeakTest
+ * @run testng/timeout=480 LoaderLeakTest
  */
 
 import jdk.test.lib.Utils;

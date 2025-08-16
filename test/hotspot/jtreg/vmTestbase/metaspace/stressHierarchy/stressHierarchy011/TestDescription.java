@@ -35,7 +35,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @comment generate and compile metaspace.stressHierarchy.common.HumongousClass
  * @run driver metaspace.stressHierarchy.common.GenClassesBuilder
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -XX:MaxMetaspaceSize=450m
  *      -Xss10m
  *      -Xbootclasspath/a:.

@@ -41,7 +41,7 @@ import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
  * @requires os.family == "windows"
  * @build jdk.jpackage.test.*
  * @build WinNoRestartTest
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinNoRestartTest
  */
 

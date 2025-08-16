@@ -26,7 +26,7 @@
  * @bug 6868611 8198004
  * @summary FileSystemView throws NullPointerException
  * @author Pavel Porvatov
- * @run main bug6868611
+ * @run main/timeout=480 bug6868611
  */
 
 import javax.swing.*;

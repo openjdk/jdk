@@ -34,7 +34,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @run main CheckAttributedTree -q -r -et ERRONEOUS .
+ * @run main/timeout=480 CheckAttributedTree -q -r -et ERRONEOUS .
  */
 
 import java.awt.BorderLayout;

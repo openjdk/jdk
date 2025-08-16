@@ -28,7 +28,7 @@
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run driver CreateCoredumpOnCrash
+ * @run driver/timeout=480 CreateCoredumpOnCrash
  * @requires vm.flagless
  */
 

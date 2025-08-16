@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox NegativeCyclicDependencyTest
- * @run main NegativeCyclicDependencyTest
+ * @run main/timeout=480 NegativeCyclicDependencyTest
  */
 
 import javax.tools.JavaCompiler;

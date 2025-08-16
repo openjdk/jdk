@@ -32,7 +32,7 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.util
  * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples DocCommentProcessor
- * @run main/othervm RunExamples
+ * @run main/othervm/timeout=480 RunExamples
  */
 /*
  *      See CR 7127924 for info on why othervm is used.
