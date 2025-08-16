@@ -68,6 +68,7 @@ void MemTracker::initialize() {
   STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
 
   if (level > NMT_off) {
+    VirtualMemorySummary::initialize();
     _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
