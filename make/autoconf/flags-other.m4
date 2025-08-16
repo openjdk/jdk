@@ -115,7 +115,11 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
     # Force preprocessor to run, just to make sure
     BASIC_ASFLAGS="-x assembler-with-cpp"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    BASIC_ASFLAGS="-nologo -c"
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      BASIC_ASFLAGS="-nologo"
+    else
+      BASIC_ASFLAGS="-nologo -c"
+    fi
   fi
   AC_SUBST(BASIC_ASFLAGS)
 
