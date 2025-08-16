@@ -28,12 +28,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,13 +52,14 @@ import java.util.stream.Stream;
 /*
  * @test
  * @bug 8336479
+ * @modules java.base/java.io:+open
  * @summary Tests for Process.close
- * @run junit/othervm -Djava.util.logging.config.file=${test.src}/ProcessLogging-FINE.properties
- *       jdk.java.lang.Process.ProcessCloseTest
+ * @run junit/othervm jdk.java.lang.Process.ProcessCloseTest
  */
 
 public class ProcessCloseTest {
 
+    private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
     private static List<String> JAVA_ARGS;
 
     private static List<String> setupJavaEXE() {
@@ -234,7 +243,6 @@ public class ProcessCloseTest {
     }
     /**
      * Commands on a Process that can be sequenced in the parent.
-     *
      * See ChildCommands for commands that can be sent to the child process.
      */
     enum ProcessCommand {
@@ -242,6 +250,9 @@ public class ProcessCloseTest {
         PROCESS_EXPECT_EXIT_FAIL(ProcessCommand::processExpectExitFail),
         PROCESS_CLOSE(ProcessCommand::processClose),
         PROCESS_DESTROY(ProcessCommand::processDestroy),
+        PROCESS_FORCE_OUT_CLOSE_EXCEPTION(ProcessCommand::processForceOutCloseException),
+        PROCESS_FORCE_IN_CLOSE_EXCEPTION(ProcessCommand::processForceInCloseException),
+        PROCESS_FORCE_ERROR_CLOSE_EXCEPTION(ProcessCommand::processForceErrorCloseException),
         WRITER_WRITE(ProcessCommand::writerWrite),
         WRITER_CLOSE(ProcessCommand::writerClose),
         STDOUT_PRINT_ALL_LINES(ProcessCommand::stdoutPrintAllLines),
@@ -317,7 +328,6 @@ public class ProcessCloseTest {
 
         private static String readLine(InputStream in) {
             StringBuilder sb = new StringBuilder();
-            byte[] bytes = new byte[1];
             try {
                 int ch;
                 while ((ch = in.read()) != -1) {
@@ -378,11 +388,30 @@ public class ProcessCloseTest {
         }
 
         private static void processClose(Process p) {
-            p.close();
+            try {
+                p.close();
+            } catch (IOException ioe) {
+                Assertions.fail(ioe);
+            }
         }
 
         private static void processDestroy(Process p) {
             p.destroy();
+        }
+
+        private static void processForceOutCloseException(Process p) {
+            var out = p.getOutputStream();
+            closeOutputStreamPrematurely(out);
+        }
+
+        private static void processForceInCloseException(Process p) {
+            var in = p.getInputStream();
+            closeInputStreamPrematurely(in);
+        }
+
+        private static void processForceErrorCloseException(Process p) {
+            var err = p.getErrorStream();
+            closeInputStreamPrematurely(err);
         }
     }
 
@@ -439,6 +468,163 @@ public class ProcessCloseTest {
         }
     }
 
+    static Stream<Arguments> closeExceptions() {
+        return Stream.of(
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
+                                ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
+                                ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor",
+                                "Bad file descriptor",
+                                "Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
+                                ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor",
+                                "Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
+                                ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor",
+                                "Bad file descriptor")),
+                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
+                                ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor",
+                                "Bad file descriptor")),
+                Arguments.of(List.of("echo", "xyz1"),
+                        List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
+                        ExitStatus.RACY, List.of("Bad file descriptor"))
+        );
+    }
+    /**
+     * Test AutoCloseable for the process and out, in, and err streams.
+     * @param args The command line arguments
+     * @param commands the commands to the process
+     * @param exitStatus The expected final exit status
+     */
+    @ParameterizedTest()
+    @MethodSource("closeExceptions")
+    void testStreamsCloseThrowing(List<String> args, List<ProcessCommand> commands,
+                                  ExitStatus exitStatus, List<String> expectedMessages) {
+        ProcessBuilder pb = new ProcessBuilder(args);
+        Process proc = null;
+        IOException expectedIOE = null;
+        try (Process p = pb.start()) {
+            proc = p;
+            System.err.printf("Program: %s; pid: %d\n", args, p.pid());
+            commands.forEach(c -> {
+                System.err.printf("    %s\n", c);
+                c.command.accept(p);
+            });
+        } catch (IOException ioe) {
+            expectedIOE = ioe;
+        }
+        Assertions.assertNotNull(expectedIOE, "Missing IOException");
+        // Check each exception that it is expected
+        Assertions.assertEquals(expectedMessages.getFirst(), expectedIOE.getMessage(),
+                "Unexpected exception message");
+        var suppressedEx = expectedIOE.getSuppressed();
+        Assertions.assertEquals(expectedMessages.size() - 1, suppressedEx.length,
+                "Number of suppressed exceptions");
+        for (int i = 1; i < expectedMessages.size(); i++) {
+            Assertions.assertEquals(expectedMessages.get(i),
+                    suppressedEx[i - 1].getMessage(),
+                    "Unexpected suppressed exception message");
+        }
+        Assertions.assertNotNull(proc, "Process is null");
+        ProcessCommand.processExpectExit(proc, exitStatus);
+    }
+
+    /*
+     * Invasive hack to force closing a FileDescriptor to throw an exception on FileDescriptor.close().
+     * The output stream is pealed back to get the FileDescriptor containing the fd or handle.
+     * On Linux, the existing fd is closed to prevent a leak and the fd is replaced by a bad fd.
+     * On Windows, the existing handle is closed
+     * @param an OutputStream from Process.getOutputStream
+     */
+    private static void closeOutputStreamPrematurely(OutputStream out) {
+        try {
+            Field fosOutField = FilterOutputStream.class.getDeclaredField("out");
+            fosOutField.setAccessible(true);
+            FileOutputStream pipeOut = (FileOutputStream) fosOutField.get(out);
+
+            Field fosFdField = FileOutputStream.class.getDeclaredField("fd");
+            fosFdField.setAccessible(true);
+            FileDescriptor fileDescriptor = (FileDescriptor) fosFdField.get(pipeOut);
+            closeFDPrematurely(fileDescriptor);
+        } catch (Exception ex) {
+            Assertions.fail("Failed to setup OutputStream FileDescriptor for bad close", ex);
+        }
+    }
+
+    /*
+     * Invasive hack to force closing a FileDescriptor to throw an exception on FileDescriptor.close().
+     * The output stream is pealed back to get the FileDescriptor containing the fd or handle.
+     * On Linux, the existing fd is closed to prevent a leak and the fd is replaced by a bad fd.
+     * On Windows, the existing handle is closed
+     * @param an OutputStream from Process.getOutputStream
+     */
+    private static void closeInputStreamPrematurely(InputStream in) {
+        try {
+            Field fisInField = FilterInputStream.class.getDeclaredField("in");
+            fisInField.setAccessible(true);
+            FileInputStream pipeIn = (FileInputStream) fisInField.get(in);
+
+            Field fisFdField = FileInputStream.class.getDeclaredField("fd");
+            fisFdField.setAccessible(true);
+            FileDescriptor fileDescriptor = (FileDescriptor) fisFdField.get(pipeIn);
+            closeFDPrematurely(fileDescriptor);
+        } catch (Exception ex) {
+            Assertions.fail("Failed to setup InputStream FileDescriptor for bad close", ex);
+        }
+    }
+
+    /**
+     * Close the FileDescriptor and reset the fd or handle to cause an IOException when closed again.
+     * On Linux, the FileDescriptor fd is closed to prevent a leak and the fd is restored to the same fd.
+     * On Windows, the existing handle is closed and the handle is restored.
+     * Closing the fd or the handle again throws an IOException
+     * @param fileDescriptor FileDescriptor from a process input or output stream
+     * @throws Exception if setup or invoking close fails
+     */
+    private static void closeFDPrematurely(FileDescriptor fileDescriptor) throws Exception {
+        Method fdCloseMethod = FileDescriptor.class.getDeclaredMethod("close");
+        fdCloseMethod.setAccessible(true);
+
+        if (OS_WINDOWS) {
+            Field fdHandleField = FileDescriptor.class.getDeclaredField("handle");
+            fdHandleField.setAccessible(true);
+            final long handle = (long) fdHandleField.get(fileDescriptor);
+            System.err.printf("FileDescriptor.handle: %08x%n", handle);
+            // Close the known handle
+            // And restore the handle so normal close() will throw an exception
+            fdCloseMethod.invoke(fileDescriptor);
+            fdHandleField.set(fileDescriptor, handle);
+            System.err.printf("FileDescriptor.handle to close again and fail: %08x%n", handle);
+        } else {
+            // Linux
+            Field fdFdField = FileDescriptor.class.getDeclaredField("fd");
+            fdFdField.setAccessible(true);
+            final int fd = (int) fdFdField.get(fileDescriptor);
+            System.err.printf("FileDescriptor.fd: %08x%n", fd);
+            // Close the known fd
+            // And restore the fd so normal close() will throw an exception
+            fdCloseMethod.invoke(fileDescriptor);
+            fdFdField.set(fileDescriptor, fd);
+            System.err.printf("FileDescriptor.fd to close again and fail: %08x%n", fd);
+        }
+    }
+
     // Copy of ProcessExamples in java/lang/snippet-files/ProcessExamples.java
     @Test
     void example() {
@@ -469,8 +655,8 @@ public class ProcessCloseTest {
      */
     public static void main(String... childCommands)  {
         List<String> args = List.of(childCommands);
-        List<ChildCommand> cmds = args.stream().map(ChildCommand::valueOf).toList();
-        cmds.forEach(c -> c.command.run());
+        List<ChildCommand> commands = args.stream().map(ChildCommand::valueOf).toList();
+        commands.forEach(c -> c.command.run());
     }
 
 }

@@ -633,7 +633,8 @@ public abstract class Process implements AutoCloseable {
      * they are discarded or ignored.
      * Streams should be {@code closed} when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
-     * Any {@code IOException} that occurs when closing a stream is ignored.
+     * Any {@code IOException} that occurs when closing a stream is
+     * re-thrown after the process is destroyed.
      * <p>
      * The process may already have exited or be in the process of exiting;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
@@ -648,30 +649,41 @@ public abstract class Process implements AutoCloseable {
      * The {@code inputReader} and {@code inputStream} from the process are closed.
      * The {@code errorReader} and {@code errorStream} from the process are closed.
      * The process is destroyed.
+     * @throws IOException if any of the stream closes throws an exception
      * @since 26
      */
-    public void close() {
+    public void close() throws IOException {
         synchronized(this) {
             if (closed) {
                 return;
             }
             closed = true;
             // Close each stream
-            quietClose(outputWriter != null ? outputWriter : getOutputStream());
-            quietClose(inputReader != null ? inputReader : getInputStream());
-            quietClose(errorReader != null ? errorReader : getErrorStream());
+            IOException ioe = quietClose(outputWriter != null ? outputWriter : getOutputStream(), null);
+            ioe = quietClose(inputReader != null ? inputReader : getInputStream(), ioe);
+            ioe = quietClose(errorReader != null ? errorReader : getErrorStream(), ioe);
 
             destroy();      // no-op if process is not alive
+            if (ioe != null) {
+                throw ioe;
+            }
         }
     }
 
-    // Quietly close and log exception
-    private void quietClose(Closeable c) {
+    // Quietly close.
+    // If an IOException occurs and it is the first, return it.
+    // Otherwise, add the exception as a suppressed exception to the first.
+    private IOException quietClose(Closeable c, IOException firstIOE) {
         try {
             c.close();
+            return firstIOE;
         } catch (IOException ioe) {
-            LOGGER.get().log(System.Logger.Level.DEBUG,
-                    "Exception closing process: pid: " + pid() , ioe);
+            if (firstIOE == null) {
+                return ioe;
+            } else {
+                firstIOE.addSuppressed(ioe);
+                return firstIOE;
+            }
         }
     }
 
