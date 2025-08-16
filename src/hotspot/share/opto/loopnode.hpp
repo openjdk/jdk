@@ -146,11 +146,13 @@ public:
   }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const Type* Value(PhaseGVN* phase) const override;
+
   virtual int Opcode() const;
   bool can_be_counted_loop(PhaseValues* phase) const {
     return req() == 3 && in(0) != nullptr &&
-      in(1) != nullptr && phase->type(in(1)) != Type::TOP &&
-      in(2) != nullptr && phase->type(in(2)) != Type::TOP;
+      in(1) != nullptr && phase->type(in(1), in(1)) != Type::TOP &&
+      in(2) != nullptr && phase->type(in(2), in(2)) != Type::TOP;
   }
   bool is_valid_counted_loop(BasicType bt) const;
 #ifndef PRODUCT
@@ -634,6 +636,14 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   bool is_expanded(PhaseGVN *phase) const;
+
+  OuterStripMinedLoopNode* outer_counted_loop() const {
+    return proj_out(true)->unique_ctrl_out()->as_OuterStripMinedLoop();
+  }
+
+  CountedLoopNode* inner_counted_loop() const {
+    return outer_counted_loop()->inner_counted_loop();
+  }
 };
 
 // -----------------------------IdealLoopTree----------------------------------
@@ -991,16 +1001,6 @@ private:
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
-  // Helper function for directing control inputs away from CFG split points.
-  Node *find_non_split_ctrl( Node *ctrl ) const {
-    if (ctrl != nullptr) {
-      if (ctrl->is_MultiBranch()) {
-        ctrl = ctrl->in(0);
-      }
-      assert(ctrl->is_CFG(), "CFG");
-    }
-    return ctrl;
-  }
 
   void cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
 
@@ -1138,6 +1138,17 @@ public:
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
     lazy_update(old_node, new_node);
+  }
+
+  // Helper function for directing control inputs away from CFG split points.
+  Node *find_non_split_ctrl( Node *ctrl ) const {
+    if (ctrl != nullptr) {
+      if (ctrl->is_MultiBranch()) {
+        ctrl = ctrl->in(0);
+      }
+      assert(ctrl->is_CFG(), "CFG");
+    }
+    return ctrl;
   }
 
 private:
@@ -1772,6 +1783,9 @@ public:
   static volatile int _long_loop_candidates;
   static volatile int _long_loop_nests;
   static volatile int _long_loop_counted_loops;
+  static volatile int _loop_conditional_constants;
+  static volatile int _loop_conditional_test;
+  static volatile int _loop_conditional_progress;
 #endif
 
 #ifdef ASSERT
@@ -1855,6 +1869,8 @@ public:
   ConNode* integercon(jlong l, BasicType bt);
 
   ConNode* zerocon(BasicType bt);
+
+  void conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds);
 };
 
 

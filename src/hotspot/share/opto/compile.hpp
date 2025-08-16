@@ -362,6 +362,8 @@ class Compile : public Phase {
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
 
+  bool                  _run_loop_conditional_propagation; // Switched off to prevent further runs of loop conditional propagation
+
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
   void*                 _barrier_set_state;     // Potential GC barrier state for Compile
@@ -641,6 +643,9 @@ public:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
   bool              has_scoped_access() const    { return _has_scoped_access; }
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
+
+  bool              run_loop_conditional_propagation() const           { return _run_loop_conditional_propagation; }
+  void          set_run_loop_conditional_propagation(bool z)           { _run_loop_conditional_propagation = z; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(CompileCommandEnum option) const {
