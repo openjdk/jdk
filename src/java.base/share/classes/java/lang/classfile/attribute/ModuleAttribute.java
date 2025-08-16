@@ -170,6 +170,8 @@ public sealed interface ModuleAttribute
      * @param opens the opened packages
      * @param uses the consumed services
      * @param provides the provided services
+     * @throws IllegalArgumentException if {@code moduleFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleAttribute of(ModuleEntry moduleName, int moduleFlags,
                               Utf8Entry moduleVersion,
@@ -230,6 +232,8 @@ public sealed interface ModuleAttribute
          *
          * @param flagsMask the module flags
          * @return this builder
+         * @throws IllegalArgumentException if {@code flagsMask} is not in the
+         * range {@code [0, 65535]}
          */
         ModuleAttributeBuilder moduleFlags(int flagsMask);
 

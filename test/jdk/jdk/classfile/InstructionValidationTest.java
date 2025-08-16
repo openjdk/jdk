@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8341277 8361102
- * @summary Testing ClassFile instruction argument validation.
+ * @bug 8341277 8361102 8361182 8361614
+ * @summary Testing ClassFile (pseudo-)instruction argument validation.
  * @run junit InstructionValidationTest
  */
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.*;
@@ -277,5 +279,63 @@ class InstructionValidationTest {
             assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, Integer.MAX_VALUE));
             cob.return_();
         });
+    }
+
+    @Test
+    void testCharacterRange() {
+        assertDoesNotThrow(() -> CharacterRangeInfo.of(0, 0, -234, 59494648, 0));
+        assertDoesNotThrow(() -> CharacterRangeInfo.of(0, 0, -234, 59494648, 65535));
+        assertThrows(IllegalArgumentException.class, () -> CharacterRangeInfo.of(0, 0, -234, 59494648, -1));
+        assertThrows(IllegalArgumentException.class, () -> CharacterRangeInfo.of(0, 0, -234, 59494648, 65536));
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            var dummyLabel = cob.startLabel();
+            assertDoesNotThrow(() -> CharacterRange.of(dummyLabel, dummyLabel, -234, 59494648, 0));
+            assertDoesNotThrow(() -> CharacterRange.of(dummyLabel, dummyLabel, -234, 59494648, 65535));
+            assertThrows(IllegalArgumentException.class, () -> CharacterRange.of(dummyLabel, dummyLabel, -234, 59494648, -1));
+            assertThrows(IllegalArgumentException.class, () -> CharacterRange.of(dummyLabel, dummyLabel, -234, 59494648, 65536));
+            assertThrows(IllegalArgumentException.class, () -> cob.characterRange(dummyLabel, dummyLabel, -234, 59494648, -1));
+            assertThrows(IllegalArgumentException.class, () -> cob.characterRange(dummyLabel, dummyLabel, -234, 59494648, 65536));
+            cob.return_();
+        }));
+    }
+
+    @Test
+    void testLineNumber() {
+        assertDoesNotThrow(() -> LineNumberInfo.of(0, 25));
+        assertThrows(IllegalArgumentException.class, () -> LineNumberInfo.of(0, -1));
+        assertThrows(IllegalArgumentException.class, () -> LineNumberInfo.of(0, 65536));
+        assertDoesNotThrow(() -> LineNumber.of(25));
+        assertThrows(IllegalArgumentException.class, () -> LineNumber.of(-1));
+        assertThrows(IllegalArgumentException.class, () -> LineNumber.of(65536));
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            assertThrows(IllegalArgumentException.class, () -> cob.lineNumber(-1));
+            assertThrows(IllegalArgumentException.class, () -> cob.lineNumber(65536));
+            cob.return_();
+        }));
+    }
+
+    @Test
+    void testTypeAnnotationLocalVarTargetInfo() {
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            var label = cob.startLabel();
+            assertDoesNotThrow(() -> TypeAnnotation.LocalVarTargetInfo.of(label, label, 256));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.LocalVarTargetInfo.of(label, label, -1));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.LocalVarTargetInfo.of(label, label, 65536));
+            cob.return_();
+        }));
+    }
+
+    @Test
+    void testTypeAnnotationTypeArgumentTarget() {
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            var label = cob.startLabel();
+            assertDoesNotThrow(() -> TypeAnnotation.TargetInfo.ofTypeArgument(TypeAnnotation.TargetType.CAST, label, 0));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.TargetInfo.ofCastExpr(label, -1));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.TargetInfo.ofMethodInvocationTypeArgument(label, Integer.MIN_VALUE));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.TargetInfo.ofMethodReferenceTypeArgument(label, 256));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.TargetInfo.ofConstructorInvocationTypeArgument(label, 300));
+            assertThrows(IllegalArgumentException.class, () -> TypeAnnotation.TargetInfo.ofConstructorReferenceTypeArgument(label, -2));
+            cob.return_();
+        }));
     }
 }

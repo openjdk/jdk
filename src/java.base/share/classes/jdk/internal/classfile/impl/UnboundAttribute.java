@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,7 +474,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundModuleResolutionAttribute(int flags) {
             super(Attributes.moduleResolution());
-            resolutionFlags = flags;
+            resolutionFlags = Util.checkU2(flags, "resolution flags");
         }
 
         @Override
@@ -888,7 +888,14 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                             int characterRangeStart,
                                             int characterRangeEnd,
                                             int flags)
-            implements CharacterRangeInfo { }
+            implements CharacterRangeInfo {
+
+        public UnboundCharacterRangeInfo {
+            Util.checkU2(startPc, "start pc");
+            Util.checkU2(endPc, "end pc");
+            Util.checkU2(flags, "flags");
+        }
+    }
 
     public record UnboundInnerClassInfo(ClassEntry innerClass,
                                         Optional<ClassEntry> outerClass,
@@ -899,11 +906,17 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             requireNonNull(innerClass);
             requireNonNull(outerClass);
             requireNonNull(innerName);
+            Util.checkFlags(flagsMask);
         }
     }
 
     public record UnboundLineNumberInfo(int startPc, int lineNumber)
-            implements LineNumberInfo { }
+            implements LineNumberInfo {
+        public UnboundLineNumberInfo {
+            Util.checkU2(startPc, "start pc");
+            Util.checkU2(lineNumber, "line number");
+        }
+    }
 
     public record UnboundLocalVariableInfo(int startPc, int length,
                                            Utf8Entry name,
@@ -931,6 +944,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             implements MethodParameterInfo {
         public UnboundMethodParameterInfo {
             requireNonNull(name);
+            Util.checkFlags(flagsMask);
         }
     }
 
@@ -940,6 +954,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             implements ModuleExportInfo {
         public UnboundModuleExportInfo {
             requireNonNull(exportedPackage);
+            Util.checkFlags(exportsFlagsMask);
             exportsTo = List.copyOf(exportsTo);
         }
     }
@@ -957,6 +972,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             implements ModuleOpenInfo {
         public UnboundModuleOpenInfo {
             requireNonNull(openedPackage);
+            Util.checkFlags(opensFlagsMask);
             opensTo = List.copyOf(opensTo);
         }
     }
@@ -975,6 +991,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             implements ModuleRequireInfo {
         public UnboundModuleRequiresInfo {
             requireNonNull(requires);
+            Util.checkFlags(requiresFlagsMask);
             requireNonNull(requiresVersion);
         }
     }
@@ -1028,7 +1045,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         {
             super(Attributes.module());
             this.moduleName = requireNonNull(moduleName);
-            this.moduleFlags = moduleFlags;
+            this.moduleFlags = Util.checkFlags(moduleFlags);
             this.moduleVersion = moduleVersion;
             this.requires = List.copyOf(requires);
             this.exports = List.copyOf(exports);
