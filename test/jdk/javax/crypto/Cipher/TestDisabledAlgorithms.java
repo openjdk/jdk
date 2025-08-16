@@ -38,7 +38,6 @@ import java.security.Security;
 import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {

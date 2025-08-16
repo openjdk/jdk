@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8244336
+ * @modules java.base/sun.security.util
  * @summary Check that invalid property values for
  *         "jdk.crypto.disabledAlgorithms" are rejected
  * @library /test/lib
@@ -41,6 +42,7 @@ import java.security.MessageDigest;
 import java.security.Security;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 public class InvalidCryptoDisabledAlgos {
 
@@ -48,7 +50,8 @@ public class InvalidCryptoDisabledAlgos {
         System.out.println("Invalid Property Value = " + args[0]);
         Security.setProperty("jdk.crypto.disabledAlgorithms", args[0]);
         // Trigger the check to parse and validate property value
-        Utils.runAndCheckException(() -> MessageDigest.getInstance("SHA-512"),
+        Utils.runAndCheckException(() -> CryptoAlgorithmConstraints.permits(
+                "x", "y"),
                 t -> Asserts.assertTrue(
                         t instanceof ExceptionInInitializerError &&
                         t.getCause() instanceof IllegalArgumentException));

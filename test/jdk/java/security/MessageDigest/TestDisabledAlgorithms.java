@@ -35,7 +35,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {

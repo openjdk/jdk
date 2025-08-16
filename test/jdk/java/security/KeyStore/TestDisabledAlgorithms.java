@@ -39,7 +39,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms {

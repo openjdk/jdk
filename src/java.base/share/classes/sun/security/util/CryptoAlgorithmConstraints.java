@@ -29,7 +29,6 @@ import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -64,8 +63,8 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public static boolean permits(String service, String algo) {
-        String serviceDesc = service + "." + algo;
-        return CryptoHolder.CONSTRAINTS.cachedCheckAlgorithm(serviceDesc);
+        return CryptoHolder.CONSTRAINTS.cachedCheckAlgorithm(
+                service + "." + algo);
     }
 
     private final Set<String> disabledServices; // syntax is <service>.<algo>
@@ -86,16 +85,12 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         debug("Before " + Arrays.deepToString(disabledServices.toArray()));
         for (String dk : disabledServices) {
             int idx = dk.indexOf(".");
-            if (idx == -1) {
-                // wrong syntax
+            if (idx < 1 || idx == dk.length() - 1) {
+                // wrong syntax: missing "." or empty service or algorithm
                 throw new IllegalArgumentException("Invalid entry: " + dk);
             }
             String service = dk.substring(0, idx);
             String algo = dk.substring(idx + 1);
-            if (service.length() == 0 || algo.length() == 0) {
-                // missing service or algorithm
-                throw new IllegalArgumentException("Invalid entry: " + dk);
-            }
             if (SUPPORTED_SERVICES.stream().anyMatch(e -> e.equalsIgnoreCase
                     (service))) {
                 KnownOIDs oid = KnownOIDs.findMatch(algo);

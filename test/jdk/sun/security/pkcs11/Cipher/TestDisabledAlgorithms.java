@@ -37,7 +37,6 @@ import java.security.Provider;
 import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestDisabledAlgorithms extends PKCS11Test {
