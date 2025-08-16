@@ -1923,6 +1923,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2390,6 +2391,8 @@ public:
 };
 
 bool nmethod::is_unloading() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {
