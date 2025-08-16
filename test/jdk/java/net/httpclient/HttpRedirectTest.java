@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 import javax.net.ssl.SSLContext;
@@ -93,12 +96,14 @@ public class HttpRedirectTest implements HttpServerAdapters {
     HttpTestServer http2Server;
     HttpTestServer https1Server;
     HttpTestServer https2Server;
+    HttpTestServer http3Server;
     DigestEchoServer.TunnelingProxy proxy;
 
     URI http1URI;
     URI https1URI;
     URI http2URI;
     URI https2URI;
+    URI http3URI;
     InetSocketAddress proxyAddress;
     ProxySelector proxySelector;
     HttpClient client;
@@ -111,8 +116,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
             TimeUnit.SECONDS, new LinkedBlockingQueue<>()); // Used by the client
 
     public HttpClient newHttpClient(ProxySelector ps) {
-        HttpClient.Builder builder = HttpClient
-                .newBuilder()
+        HttpClient.Builder builder = newClientBuilderForH3()
                 .sslContext(context)
                 .executor(clientexec)
                 .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -123,6 +127,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     @DataProvider(name="uris")
     Object[][] testURIs() throws URISyntaxException {
         List<URI> uris = List.of(
+                http3URI.resolve("direct/orig/"),
                 http1URI.resolve("direct/orig/"),
                 https1URI.resolve("direct/orig/"),
                 https1URI.resolve("proxy/orig/"),
@@ -195,6 +200,13 @@ public class HttpRedirectTest implements HttpServerAdapters {
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/HttpRedirectTest/https2/");
 
+            // HTTPS/3
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
+            http3Server.addHandler(new HttpTestRedirectHandler("https", http3Server),
+                    "/HttpRedirectTest/http3/");
+            http3Server.start();
+            http3URI = new URI("https://" + http3Server.serverAuthority() + "/HttpRedirectTest/http3/");
+
             proxy = DigestEchoServer.createHttpsProxyTunnel(
                     DigestEchoServer.HttpAuthSchemeType.NONE);
             proxyAddress = proxy.getProxyAddress();
@@ -255,10 +267,18 @@ public class HttpRedirectTest implements HttpServerAdapters {
         }
     }
 
+    private HttpRequest.Builder newRequestBuilder(URI u) {
+        var builder = HttpRequest.newBuilder(u);
+        if (u.getRawPath().contains("/http3/")) {
+            builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "uris")
     public void testPOST(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .POST(HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // POST is not considered idempotent.
         testNonIdempotent(u, request, code, method);
@@ -268,7 +288,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     public void testPUT(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .PUT(HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // PUT is considered idempotent.
         testIdempotent(u, request, code, method);
@@ -278,7 +298,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     public void testFoo(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .method("FOO",
                         HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // FOO is considered idempotent.
@@ -289,7 +309,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     public void testGet(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .method("GET",
                         HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         CompletableFuture<HttpResponse<String>> respCf =
@@ -320,6 +340,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
         https1Server = stop(https1Server, HttpTestServer::stop);
         http2Server = stop(http2Server, HttpTestServer::stop);
         https2Server = stop(https2Server, HttpTestServer::stop);
+        http3Server = stop(http3Server, HttpTestServer::stop);
         client = null;
         try {
             executor.awaitTermination(2000, TimeUnit.MILLISECONDS);

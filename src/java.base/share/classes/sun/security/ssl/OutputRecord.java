@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 
 /**
@@ -151,6 +153,16 @@ abstract class OutputRecord
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to QuicEngine only
+    byte[] getHandshakeMessage() {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to QuicEngine only
+    QuicTLSEngine.KeySpace getHandshakeMessageKeySpace() {
         throw new UnsupportedOperationException();
     }
 

@@ -196,6 +196,8 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
+    exports jdk.internal.net.quic to
+        java.net.http;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
@@ -266,6 +268,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util to
         java.desktop,
+        java.net.http,
         java.prefs,
         java.security.jgss,
         java.smartcardio,
