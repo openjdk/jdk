@@ -61,21 +61,22 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * {@code UUID}.  The bit layout described above is valid only for a {@code
  * UUID} with a variant value of 2, which indicates the Leach-Salz variant.
  *
- * <p> The version field holds a value that describes the type of this {@code
- * UUID}.  There are four different basic types of UUIDs: time-based, DCE
- * security, name-based, and randomly generated UUIDs.  These types have a
- * version value of 1, 2, 3 and 4, respectively.
+ * <p> There are eight defined types of UUIDs, each identified by a version number:
+ * time-based (version 1), DCE security (version 2), name-based with MD5 (version 3),
+ * randomly generated (version 4), name-based with SHA-1 (version 5), reordered time-based (version 6),
+ * Unix epoch time-based (version 7), and custom-defined layout (version 8).
  *
  * <p> For more information including algorithms used to create {@code UUID}s,
  * see <a href="http://www.ietf.org/rfc/rfc4122.txt"> <i>RFC&nbsp;4122: A
  * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
  * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
- * @spec https://www.rfc-editor.org/info/rfc4122
- *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
+ * @spec https://www.rfc-editor.org/rfc/rfc9562.html
+ *      RFC 9562 Universally Unique IDentifiers (UUIDs)
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
+
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -93,6 +94,18 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     private final long leastSigBits;
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
+    /**
+     * Record a fixed point in nano-time corresponding to a fix point in System.currentTimeMillis()
+     * and use the delta from the current nano-time as the current nano-time.
+     */
+    private static final long ORIGIN_MS = System.currentTimeMillis();
+
+    private static final long ORIGIN_NS = System.nanoTime();
+
+    private static long monotonicMS() {
+        return ORIGIN_MS + (System.nanoTime() - ORIGIN_NS) / 1_000_000;
+    }
 
     /*
      * The random number generator used by this class to create random
@@ -178,6 +191,79 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
         md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
         return new UUID(md5Bytes);
+    }
+
+    /**
+     * Static factory to create a version 7 (Unix epoch time-based) {@code UUID} with the current
+     * Unix timestamp in milliseconds.
+     *
+     * The {@code UUID} embeds the current Unix Epoch timestamp in milliseconds using
+     * {@link System#currentTimeMillis()} into the first 6 bytes, sets the version and
+     * variant bits as per the specification and fills the remaining bytes with random
+     * data from a cryptographically strong pseudo-random number generator.
+     *
+     * @return a {@code UUID} generated with the current Unix timestamp
+     *
+     * @spec https://www.rfc-editor.org/rfc/rfc9562.html
+     *       RFC 9562 Universally Unique IDentifiers (UUIDs)
+     *
+     * @since 26
+     */
+    public static UUID unixEpochTimeMillis() {
+        long timestamp = monotonicMS();
+        return unixEpochTimeMillis(timestamp);
+    }
+
+    /**
+     * Static factory to create a version 7 (time-based) {@code UUID} with a user-supplied
+     * Unix timestamp in milliseconds.
+     *
+     * The {@code UUID} embeds the provided Unix Epoch timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per the specification,
+     * and fills the remaining bytes with random data from a cryptographically strong
+     * pseudo-random number generator.
+     *
+     * @apiNote The timestamp must be a Unix Epoch timestamp in milliseconds in order
+     * to be compliant with <a href="https://datatracker.ietf.org/doc/html/rfc9562">RFC 9562</a>.
+     *
+     * @param timestamp
+     *        A Unix epoch timestamp in milliseconds which must fit in to 48 bits
+     *
+     * @return a {@code UUID} generated using the provided timestamp
+     *
+     * @throws IllegalArgumentException if the timestamp is negative or exceeds 48 bits
+     *
+     * @spec https://www.rfc-editor.org/rfc/rfc9562.html
+     *       RFC 9562 Universally Unique IDentifiers (UUIDs)
+     *
+     * @since 26
+     * */
+    public static UUID unixEpochTimeMillis(long timestamp) {
+        if ((timestamp >> 48) != 0) {
+            throw new IllegalArgumentException("Timestamp must be an unsigned 48-bit Unix Epoch time in milliseconds.");
+        }
+
+        SecureRandom ng = Holder.numberGenerator;
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+
+        // Embed the timestamp into the first 6 bytes
+        randomBytes[0] = (byte)(timestamp >>> 40);
+        randomBytes[1] = (byte)(timestamp >>> 32);
+        randomBytes[2] = (byte)(timestamp >>> 24);
+        randomBytes[3] = (byte)(timestamp >>> 16);
+        randomBytes[4] = (byte)(timestamp >>> 8);
+        randomBytes[5] = (byte)(timestamp);
+
+        // Set version to 7
+        randomBytes[6] &= 0x0f;
+        randomBytes[6] |= 0x70;
+
+        // Set variant to IETF
+        randomBytes[8] &= 0x3f;
+        randomBytes[8] |= (byte) 0x80;
+
+        return new UUID(randomBytes);
     }
 
     private static final byte[] NIBBLES;
@@ -322,6 +408,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
      * <li>4    Randomly generated UUID
+     * <li>7    Unix Epoch time-based UUID
      * </ul>
      *
      * @return  The version number of this {@code UUID}
