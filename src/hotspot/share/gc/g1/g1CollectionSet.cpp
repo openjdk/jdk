@@ -127,11 +127,6 @@ void G1CollectionSet::start_incremental_building() {
   update_incremental_marker();
 }
 
-void G1CollectionSet::finalize_incremental_building() {
-  assert(_inc_build_state == Active, "Precondition");
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
-}
-
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
   _collection_set_cur_length = 0;
@@ -284,9 +279,10 @@ void G1CollectionSet::print(outputStream* st) {
 // pinned by JNI) to allow faster future evacuation. We already "paid" for this work
 // when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
-  Ticks start_time = Ticks::now();
+  assert(_inc_build_state == Active, "Precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
-  finalize_incremental_building();
+  Ticks start_time = Ticks::now();
 
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
