@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,12 @@ file system locations may be directories, JAR files or JMOD files.
 :   Prints version information.
 
 <a id="option-Werror">`-Werror`</a>
-:   Terminates compilation when warnings occur.
+:   Terminates compilation when any warnings occur; this includes warnings in all lint
+    categories, as well as non-lint warnings.
+
+<a id="option-Werror-custom">`-Werror:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
+:   Enables and/or disables specific categories of lint warnings that should terminate compilation.
+    See [`-Xlint`](#option-Xlint-custom) below for the list of lint category keys.
 
 ### Extra Options
 
