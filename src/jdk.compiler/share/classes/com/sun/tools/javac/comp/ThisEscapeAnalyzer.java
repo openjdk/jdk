@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
@@ -57,6 +58,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
@@ -67,6 +69,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Lint.LintCategory.THIS_ESCAPE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.Position.NOPOS;
 
 /**
  * Looks for possible 'this' escapes and generates corresponding warnings.
@@ -156,7 +159,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     private final Types types;
     private final Resolve rs;
     private final Log log;
-    private       Lint lint;
+    private final LintMapper lintMapper;
 
 // These fields are scoped to the entire compilation unit
 
@@ -167,10 +170,6 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     /** Maps symbols of all methods to their corresponding declarations.
      */
     private final Map<Symbol, MethodInfo> methodMap = new LinkedHashMap<>();
-
-    /** Contains symbols of fields and constructors that have warnings suppressed.
-     */
-    private final Set<Symbol> suppressed = new HashSet<>();
 
     /** Contains classes whose outer instance (if any) is non-public.
      */
@@ -231,7 +230,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         rs = Resolve.instance(context);
-        lint = Lint.instance(context);
+        lintMapper = LintMapper.instance(context);
     }
 
 //
@@ -262,8 +261,8 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(checkInvariants(false, false));
         Assert.check(methodMap.isEmpty());      // we are not prepared to be used more than once
 
-        // Short circuit if warnings are totally disabled
-        if (!lint.isEnabled(THIS_ESCAPE))
+        // Short circuit if this calculation is unnecessary
+        if (!lintMapper.lintAt(env.toplevel.sourcefile, env.tree.pos()).get().isEnabled(THIS_ESCAPE))
             return;
 
         // Determine which packages are exported by the containing module, if any.
@@ -278,11 +277,9 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
-        // Track which constructors and fields have warnings suppressed.
         // Record classes whose outer instance (if any) is non-public.
         new TreeScanner() {
 
-            private Lint lint = ThisEscapeAnalyzer.this.lint;
             private JCClassDecl currentClass;
             private boolean nonPublicOuter;
 
@@ -290,8 +287,6 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             public void visitClassDef(JCClassDecl tree) {
                 JCClassDecl currentClassPrev = currentClass;
                 boolean nonPublicOuterPrev = nonPublicOuter;
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
                 try {
                     currentClass = tree;
 
@@ -306,57 +301,29 @@ public class ThisEscapeAnalyzer extends TreeScanner {
                 } finally {
                     currentClass = currentClassPrev;
                     nonPublicOuter = nonPublicOuterPrev;
-                    lint = lintPrev;
-                }
-            }
-
-            @Override
-            public void visitVarDef(JCVariableDecl tree) {
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
-                try {
-
-                    // Track warning suppression of fields
-                    if (tree.sym.owner.kind == TYP && !lint.isEnabled(THIS_ESCAPE))
-                        suppressed.add(tree.sym);
-
-                    // Recurse
-                    super.visitVarDef(tree);
-                } finally {
-                    lint = lintPrev;
                 }
             }
 
             @Override
             public void visitMethodDef(JCMethodDecl tree) {
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
-                try {
 
-                    // Track warning suppression of constructors
-                    if (TreeInfo.isConstructor(tree) && !lint.isEnabled(THIS_ESCAPE))
-                        suppressed.add(tree.sym);
+                // Gather some useful info
+                boolean constructor = TreeInfo.isConstructor(tree);
+                boolean extendableClass = currentClassIsExternallyExtendable();
+                boolean nonPrivate = (tree.sym.flags() & (Flags.PUBLIC | Flags.PROTECTED)) != 0;
+                boolean finalish = (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
 
-                    // Gather some useful info
-                    boolean constructor = TreeInfo.isConstructor(tree);
-                    boolean extendableClass = currentClassIsExternallyExtendable();
-                    boolean nonPrivate = (tree.sym.flags() & (Flags.PUBLIC | Flags.PROTECTED)) != 0;
-                    boolean finalish = (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
+                // Determine if this is a constructor we should analyze
+                boolean analyzable = extendableClass && constructor && nonPrivate;
 
-                    // Determine if this is a constructor we should analyze
-                    boolean analyzable = extendableClass && constructor && nonPrivate;
+                // Determine if it's safe to "invoke" the method in an analysis (i.e., it can't be overridden)
+                boolean invokable = !extendableClass || constructor || finalish;
 
-                    // Determine if it's safe to "invoke" the method in an analysis (i.e., it can't be overridden)
-                    boolean invokable = !extendableClass || constructor || finalish;
+                // Add this method or constructor to our map
+                methodMap.put(tree.sym, new MethodInfo(currentClass, tree, constructor, analyzable, invokable));
 
-                    // Add this method or constructor to our map
-                    methodMap.put(tree.sym, new MethodInfo(currentClass, tree, constructor, analyzable, invokable));
-
-                    // Recurse
-                    super.visitMethodDef(tree);
-                } finally {
-                    lint = lintPrev;
-                }
+                // Recurse
+                super.visitMethodDef(tree);
             }
 
             // Determines if the current class could be extended in some other package/module
@@ -401,7 +368,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         for (Warning warning : warningList) {
             LintWarning key = LintWarnings.PossibleThisEscape;
             for (StackFrame frame : warning.stack) {
-                log.warning(frame.site.pos(), key);
+                log.warning(frame.warningPos(), key);
                 key = LintWarnings.PossibleThisEscapeLocation;
             }
         }
@@ -1746,9 +1713,16 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             this.suppressible = initializer != null || (method.constructor && method.declaringClass == targetClass);
         }
 
+        DiagnosticPosition warningPos() {
+            return site.pos().withLintPosition(NOPOS);      // disable normal Lint suppression
+        }
+
+        Lint lint() {
+            return lintMapper.lintAt(topLevelEnv.toplevel.sourcefile, site.pos()).get();
+        }
+
         boolean isSuppressed() {
-            return suppressible &&
-              suppressed.contains(initializer instanceof JCVariableDecl v ? v.sym : method.declaration.sym);
+            return suppressible && !lint().isEnabled(THIS_ESCAPE);
         }
 
         int comparePos(StackFrame that) {
