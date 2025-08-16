@@ -69,10 +69,6 @@ public class SwingUtilities3 {
     private static final Object DELEGATE_REPAINT_MANAGER_KEY =
         new StringBuilder("DelegateRepaintManagerKey");
 
-    private static Color disabledForeground;
-    private static Color acceleratorSelectionForeground;
-    private static Color acceleratorForeground;
-
     /**
       * Registers delegate RepaintManager for {@code JComponent}.
       */
@@ -204,7 +200,10 @@ public class SwingUtilities3 {
 
 
     public static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
-                             MenuItemLayoutHelper.LayoutResult lr) {
+                             MenuItemLayoutHelper.LayoutResult lr,
+                             Color disabledForeground,
+                             Color acceleratorSelectionForeground,
+                             Color acceleratorForeground) {
         if (!lh.getAccText().isEmpty()) {
             ButtonModel model = lh.getMenuItem().getModel();
             g.setFont(lh.getAccFontMetrics().getFont());
@@ -241,18 +240,6 @@ public class SwingUtilities3 {
                                 lh.getAccFontMetrics().getAscent());
             }
         }
-    }
-
-    public static void setDisabledForeground(Color disabledFg) {
-        disabledForeground = disabledFg;
-    }
-
-    public static void setAcceleratorSelectionForeground(Color acceleratorSelectionFg) {
-        acceleratorSelectionForeground = acceleratorSelectionFg;
-    }
-
-    public static void setAcceleratorForeground(Color acceleratorFg) {
-        acceleratorForeground = acceleratorFg;
     }
 
     public static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
