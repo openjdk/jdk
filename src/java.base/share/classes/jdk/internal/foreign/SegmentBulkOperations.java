@@ -51,54 +51,91 @@ public final class SegmentBulkOperations {
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
     private static final long LONG_MASK = ~7L; // The last three bits are zero
 
-    // All the threshold values below MUST be a power of two and should preferably be
-    // greater or equal to 2^3.
+    // All the threshold values below MUST be a power of two and greater or equal to 2^3.
     private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
+    /**
+     * Fills the provided {@code dst} segment with the provided {@code value}.
+     * <p>
+     * This implementation relies on a scheme where operations with as large units of
+     * memory as possible are used and where the cleanup of the remaining "tail" is
+     * made by applying the same large operation but skewed so it will precisely fill the
+     * remaining tail.
+     * Said tail scheme is simpler and faster than trying to apply a combination of
+     * operations with different units of memory to clean up the tail.
+     * <p>
+     * This method is using Java for segments that are smaller than the configurable
+     * {@code NATIVE_THRESHOLD_FILL} meaning it does not have to pay the price for
+     * transitioning to native code.
+     *
+     * @param dst   segment to fill
+     * @param value to fill the segment with
+     */
     @ForceInline
-    public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
+    public static void fill(AbstractMemorySegmentImpl dst, byte value) {
         dst.checkReadOnly(false);
-        if (dst.length == 0) {
-            // Implicit state check
-            dst.sessionImpl().checkValidState();
-        } else if (dst.length < NATIVE_THRESHOLD_FILL) {
-            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
+        final long len = dst.length;
+        /* The multiplication below is equivalent to (but faster than):
+             long u = Byte.toUnsignedLong(value);
+             long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u; */
+        final long longValue = 0x01010101_01010101L * Byte.toUnsignedLong(value);
 
-            // Handle smaller segments directly without transitioning to native code
-            final long u = Byte.toUnsignedLong(value);
-            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+        // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
+        switch (64 - Long.numberOfLeadingZeros(len)) {
+            case 0 -> dst.sessionImpl().checkValidState(); // Explicit state check
+            case 1 -> SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value);
+            case 2 -> fill2(dst, len, (short) longValue);
+            case 3 -> fill3(dst, len, (int) longValue);
+            case 4 -> fill4(dst, len, longValue);
+            default -> fill5AndUpwards(dst, len, longValue);
+        }
+    }
 
-            int offset = 0;
-            // 0...0X...X000
-            final int limit = (int) (dst.length & (NATIVE_THRESHOLD_FILL - 8));
-            for (; offset < limit; offset += Long.BYTES) {
-                SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, longValue, !Architecture.isLittleEndian());
+    /** This case covers [2, 3] bytes */
+    @ForceInline
+    private static void fill2(AbstractMemorySegmentImpl dst, long len, short value) {
+        final MemorySessionImpl sessionImpl = dst.sessionImpl();
+        final long offset = dst.unsafeGetOffset();
+        SCOPED_MEMORY_ACCESS.putShortUnaligned(sessionImpl, dst.unsafeGetBase(), offset, value);
+        // `putByte()` below is enough as 3 is the maximum number of bytes covered
+        SCOPED_MEMORY_ACCESS.putByte(sessionImpl, dst.unsafeGetBase(), offset + len - Byte.BYTES, (byte) value);
+    }
+
+    /** This case covers [4, 7] bytes */
+    @ForceInline
+    private static void fill3(AbstractMemorySegmentImpl dst, long len, int value) {
+        final MemorySessionImpl sessionImpl = dst.sessionImpl();
+        final long offset = dst.unsafeGetOffset();
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(sessionImpl, dst.unsafeGetBase(), offset, value);
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(sessionImpl, dst.unsafeGetBase(), offset + len - Integer.BYTES, value);
+    }
+
+    /** This case covers [8, 15] bytes */
+    @ForceInline
+    private static void fill4(AbstractMemorySegmentImpl dst, long len, long value) {
+        final MemorySessionImpl sessionImpl = dst.sessionImpl();
+        final long offset = dst.unsafeGetOffset();
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(sessionImpl, dst.unsafeGetBase(), offset, value);
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(sessionImpl, dst.unsafeGetBase(), offset + len - Long.BYTES, value);
+    }
+
+    /** This case covers [16, 2^63) bytes */
+    @ForceInline
+    private static void fill5AndUpwards(AbstractMemorySegmentImpl dst, long len, long value) {
+        final MemorySessionImpl sessionImpl = dst.sessionImpl();
+        final long offset = dst.unsafeGetOffset();
+        if (len < NATIVE_THRESHOLD_FILL) {
+            final int limit = (int) (len & (NATIVE_THRESHOLD_FILL - Long.BYTES));
+            for (int i = 0; i < limit; i += Long.BYTES) {
+                SCOPED_MEMORY_ACCESS.putLongUnaligned(sessionImpl, dst.unsafeGetBase(), offset + i, value);
             }
-            int remaining = (int) dst.length - limit;
-            // 0...0X00
-            if (remaining >= Integer.BYTES) {
-                SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (int) longValue, !Architecture.isLittleEndian());
-                offset += Integer.BYTES;
-                remaining -= Integer.BYTES;
-            }
-            // 0...00X0
-            if (remaining >= Short.BYTES) {
-                SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (short) longValue, !Architecture.isLittleEndian());
-                offset += Short.BYTES;
-                remaining -= Short.BYTES;
-            }
-            // 0...000X
-            if (remaining == 1) {
-                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, value);
-            }
-            // We have now fully handled 0...0X...XXXX
+            SCOPED_MEMORY_ACCESS.putLongUnaligned(sessionImpl, dst.unsafeGetBase(), offset + len - Long.BYTES, value);
         } else {
             // Handle larger segments via native calls
-            SCOPED_MEMORY_ACCESS.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), dst.length, value);
+            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl, dst.unsafeGetBase(), offset, len, (byte) value);
         }
-        return dst;
     }
 
     @ForceInline
