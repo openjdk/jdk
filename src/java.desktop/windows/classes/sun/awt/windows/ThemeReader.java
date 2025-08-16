@@ -180,22 +180,18 @@ public final class ThemeReader {
 
     private static native void paintBackground(int[] buffer, long theme,
                                                int part, int state,
-                                               int rectRight, int rectBottom,
                                                int w, int h, int stride);
 
     public static void paintBackground(int[] buffer, String widget,
-           int part, int state, int x, int y, int w, int h, int stride, int dpi) {
+           int part, int state, int w, int h, int stride, int dpi) {
         readLock.lock();
         try {
-            /* For widgets and parts in the lists, we get the part size
-            for the current screen DPI to scale them better. */
-            Dimension d = (partSizeWidgets.contains(widget)
-                          && partSizeWidgetParts.contains(Integer.valueOf(part)))
-                          ? getPartSize(getTheme(widget, dpi), part, state)
-                          : new Dimension(w, h);
-
-            paintBackground(buffer, getTheme(widget, dpi), part, state,
-                            d.width, d.height, w, h, stride);
+            // getTheme is not guaranteed to retrieve the theme handle for the desired DPI
+            // if assets for it aren't already loaded by the theming system. In that case,
+            // the closest loaded asset will be used and scaled to fit the provided height
+            // and width by paintBackground. The resulting image won't be as crisp as the
+            // native resolution asset, but it will be the correct size.
+            paintBackground(buffer, getTheme(widget, dpi), part, state, w, h, stride);
         } finally {
             readLock.unlock();
         }
