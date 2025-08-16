@@ -726,6 +726,7 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
     if (try_lock(current) == TryLockResult::Success) {
       assert(!has_successor(current), "invariant");
       assert(has_owner(current), "invariant");
+      node->TState = ObjectWaiter::TS_RUN;
       return true;
     }
   }
