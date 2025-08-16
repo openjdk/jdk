@@ -3487,7 +3487,7 @@ public final class DateTimeFormatterBuilder {
             };
             static final FixWidth2NotNegative PP_HOUR = new FixWidth2NotNegative(HOUR_OF_DAY) {
                 @Override
-                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportDayOfMonth();}
+                boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportHour();}
                 @Override
                 int getInt(DateTimePrintContext context) {return context.getHour();}
             };
