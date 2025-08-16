@@ -83,7 +83,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
-                    <footer role="contentinfo"> """,
+                    <footer> """,
                 """
                     bottom text"""
         );
@@ -113,7 +113,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
     }
@@ -150,7 +150,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                 """
                     <main role="main">A sample doc file""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text"""
                 );

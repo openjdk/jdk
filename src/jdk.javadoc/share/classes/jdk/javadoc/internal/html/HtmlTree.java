@@ -586,8 +586,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree FOOTER() {
-        return new HtmlTree(HtmlTag.FOOTER)
-                .setRole(HtmlAttr.Role.CONTENTINFO);
+        return new HtmlTree(HtmlTag.FOOTER);
     }
 
     /**
