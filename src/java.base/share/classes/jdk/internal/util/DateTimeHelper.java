@@ -57,16 +57,18 @@ public final class DateTimeHelper {
             if (year < 0) {
                 buf.append('-');
             }
-            buf.repeat('0', absYear < 10 ? 3 : absYear < 100 ? 2 : 1);
-            buf.append(absYear);
+            DecimalDigits.appendPair(buf, absYear / 100);
+            DecimalDigits.appendPair(buf, absYear % 100);
         } else {
             if (year > 9999) {
                 buf.append('+');
             }
             buf.append(year);
         }
-        buf.append(month < 10 ? "-0" : "-").append(month)
-           .append(day < 10 ? "-0" : "-").append(day);
+        buf.append('-');
+        DecimalDigits.appendPair(buf, month);
+        buf.append('-');
+        DecimalDigits.appendPair(buf, day);
     }
 
     /**
@@ -74,14 +76,14 @@ public final class DateTimeHelper {
      * Requires extra capacity of 18 to avoid StringBuilder reallocation.
      */
     public static void formatTo(StringBuilder buf, LocalTime time) {
-        int hour   = time.getHour(),
-            minute = time.getMinute(),
-            second = time.getSecond(),
+        int second = time.getSecond(),
             nano   = time.getNano();
-        buf.append(hour < 10 ? "0" : "").append(hour)
-           .append(minute < 10 ? ":0" : ":").append(minute);
+        DecimalDigits.appendPair(buf, time.getHour());
+        buf.append(':');
+        DecimalDigits.appendPair(buf, time.getMinute());
         if ((second | nano) > 0) {
-            buf.append(second < 10 ? ":0" : ":").append(second);
+            buf.append(':');
+            DecimalDigits.appendPair(buf, second);
             if (nano > 0) {
                 buf.append('.');
                 int zeros = 9 - DecimalDigits.stringSize(nano);
