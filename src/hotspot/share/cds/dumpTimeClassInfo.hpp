@@ -129,6 +129,7 @@ public:
   int                          _clsfile_crc32;
   GrowableArray<DTVerifierConstraint>* _verifier_constraints;
   GrowableArray<char>*                 _verifier_constraint_flags;
+  GrowableArray<Symbol*>*              _old_verifier_dependencies;
   GrowableArray<DTLoaderConstraint>*   _loader_constraints;
   GrowableArray<int>*                  _enum_klass_static_fields;
 
@@ -146,14 +147,16 @@ public:
     _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = nullptr;
     _verifier_constraint_flags = nullptr;
+    _old_verifier_dependencies = nullptr;
     _loader_constraints = nullptr;
     _enum_klass_static_fields = nullptr;
   }
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
-  void add_verification_constraint(InstanceKlass* k, Symbol* name,
+  void add_verification_constraint(Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
+  void add_old_verification_dependency(Symbol* name);
   void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);
   void add_enum_klass_static_field(int archived_heap_root_index);
   int  enum_klass_static_field(int which_field);
@@ -173,6 +176,22 @@ public:
 
   int num_verifier_constraints() const {
     return array_length_or_zero(_verifier_constraint_flags);
+  }
+
+  Symbol* verifier_constraint_name_at(int i) const {
+    return _verifier_constraints->at(i).name();
+  }
+
+  Symbol* verifier_constraint_from_name_at(int i) const {
+    return _verifier_constraints->at(i).from_name();
+  }
+
+  int num_old_verifier_dependencies() const {
+    return array_length_or_zero(_old_verifier_dependencies);
+  }
+
+  Symbol* old_verifier_dependency_at(int i) const {
+    return _old_verifier_dependencies->at(i);
   }
 
   int num_loader_constraints() const {
