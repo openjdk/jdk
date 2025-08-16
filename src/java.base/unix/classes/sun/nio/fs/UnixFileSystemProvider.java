@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.spi.FileTypeDetector;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -348,8 +349,38 @@ public abstract class UnixFileSystemProvider
         return access(file, X_OK) == 0;
     }
 
+    // if path is a symbolic link, then add its key to the set and
+    // continue recursively down any singly linked list of targets
+    private void getLinkKeys(UnixPath path, Set<UnixFileKey> keys)
+        throws IOException {
+        try {
+            UnixFileAttributes attrs = UnixFileAttributes.get(path, false);
+            if (attrs.isSymbolicLink()) {
+                if (!keys.add(attrs.fileKey()))
+                    return; // if key already present, then there is a loop so bail out
+                UnixPath target = UnixPath.toUnixPath(readSymbolicLink(path));
+                if (exists(target, LinkOption.NOFOLLOW_LINKS))
+                    getLinkKeys(target, keys);
+            }
+        } catch (UnixException x) {
+            x.rethrowAsIOException(path);
+        }
+    }
+
+    // retrieve the file keys of any symbolic links in this path
+    private Set<UnixFileKey> getLinkKeys(UnixPath path) throws IOException {
+        Set<UnixFileKey> keys = new HashSet<>();
+        UnixPath p = path;
+        while (p != null && exists(p, LinkOption.NOFOLLOW_LINKS)) {
+            getLinkKeys(p, keys);
+            p = p.getParent();
+        }
+        return keys;
+    }
+
     @Override
     public boolean isSameFile(Path obj1, Path obj2) throws IOException {
+        // toUnixPath verifies its argument is a non-null UnixPath
         UnixPath file1 = UnixPath.toUnixPath(obj1);
         if (file1.equals(obj2))
             return true;
@@ -358,21 +389,42 @@ public abstract class UnixFileSystemProvider
         if (!(obj2 instanceof UnixPath file2))
             return false;
 
-        UnixFileAttributes attrs1;
-        UnixFileAttributes attrs2;
+        // try to retrieve attributes following links
+        UnixFileAttributes attrs1 = null;
+        UnixFileAttributes attrs2 = null;
         try {
-             attrs1 = UnixFileAttributes.get(file1, true);
+            if ((attrs1 = UnixFileAttributes.getIfExists(file1)) != null)
+                attrs2 = UnixFileAttributes.getIfExists(file2);
         } catch (UnixException x) {
-            x.rethrowAsIOException(file1);
+            x.rethrowAsIOException(file1, file2);
             return false;    // keep compiler happy
         }
+
+        if (attrs1 != null && attrs2 != null)
+            // both exist, compare their device IDs and inode numbers
+            return attrs1.isSameFile(attrs2);
+
+        // try to retrieve attributes not following links
+        attrs1 = attrs2 = null;
         try {
-            attrs2 = UnixFileAttributes.get(file2, true);
+            if ((attrs1 = UnixFileAttributes.getIfExists(file1, false)) != null)
+                attrs2 = UnixFileAttributes.getIfExists(file2, false);
         } catch (UnixException x) {
-            x.rethrowAsIOException(file2);
+            x.rethrowAsIOException(file1, file2);
             return false;    // keep compiler happy
         }
-        return attrs1.isSameFile(attrs2);
+
+        if (attrs1 != null && attrs2 != null) {
+            // both exist if links are not followed, so see whether
+            // the two paths both contain a common symbolic link
+            Set<UnixFileKey> keys1 = getLinkKeys(file1);
+            Set<UnixFileKey> keys2 = getLinkKeys(file2);
+            for (UnixFileKey k : keys1)
+                if (keys2.contains(k))
+                    return true;
+        }
+
+        return false;
     }
 
     @Override
