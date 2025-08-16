@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2943,7 +2943,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated as a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &ge; 0 and &le; length of the text
          * @return the letter, word, or sentence.
          *
          */
@@ -2957,7 +2957,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated as a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &ge; 0 and &le; length of the text
          * @return the letter, word, or sentence.
          */
         public String getAfterIndex(int part, int index) {
@@ -2970,7 +2970,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * between words is treated a word.
          *
          * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-         * @param index an index within the text
+         * @param index an index with range &ge; 0 and &le; length of the text
          * @return the letter, word, or sentence.
          */
         public String getBeforeIndex(int part, int index) {
@@ -2988,7 +2988,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 ((AbstractDocument)model).readLock();
             }
             try {
-                if (index < 0 || index >= model.getLength()) {
+                if (index < 0 || index > model.getLength()) {
                     return null;
                 }
                 switch (part) {
