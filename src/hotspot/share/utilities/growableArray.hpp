@@ -93,12 +93,6 @@ public:
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
-
-  void  clear()                 { _len = 0; }
-  void  trunc_to(int length)    {
-    assert(length <= _len,"cannot increase length");
-    _len = length;
-  }
 };
 
 template <typename E> class GrowableArrayIterator;
@@ -189,11 +183,6 @@ public:
     return GrowableArrayIterator<E>(this, length());
   }
 
-  E pop() {
-    assert(_len > 0, "empty list");
-    return _data[--_len];
-  }
-
   void at_put(int i, const E& elem) {
     assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     _data[i] = elem;
@@ -245,59 +234,6 @@ public:
       if (predicate(_data[i])) return i;
     }
     return -1;
-  }
-
-  // Order preserving remove operations.
-
-  void remove(const E& elem) {
-    // Assuming that element does exist.
-    bool removed = remove_if_existing(elem);
-    if (removed) return;
-    ShouldNotReachHere();
-  }
-
-  bool remove_if_existing(const E& elem) {
-    // Returns TRUE if elem is removed.
-    for (int i = 0; i < _len; i++) {
-      if (_data[i] == elem) {
-        remove_at(i);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    for (int j = index + 1; j < _len; j++) {
-      _data[j-1] = _data[j];
-    }
-    _len--;
-  }
-
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
-  }
-
-  // Remove all elements in the range [start - end). The order is preserved.
-  void remove_range(int start, int end) {
-    assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
-
-    for (int i = start, j = end; j < length(); i++, j++) {
-      at_put(i, at(j));
-    }
-    trunc_to(length() - (end - start));
-  }
-
-  // The order is changed.
-  void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    if (index < --_len) {
-      // Replace removed element with last one.
-      _data[index] = _data[_len];
-    }
   }
 
   void sort(int f(E*, E*)) {
@@ -427,6 +363,11 @@ public:
 
   void push(const E& elem) { append(elem); }
 
+  E pop() {
+    assert(this->_len > 0, "empty list");
+    return this->_data[--this->_len];
+  }
+
   E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
@@ -514,9 +455,71 @@ public:
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
 
+  void trunc_to(int length) {
+    assert(length <= this->_len,"cannot increase length");
+    this->_len = length;
+  }
+
+  // Order preserving remove operations.
+
+  void remove_at(int index) {
+    assert(0 <= index && index < this->_len,
+           "illegal index %d for length %d", index, this->_len);
+    for (int j = index + 1; j < this->_len; j++) {
+      this->_data[j-1] = this->_data[j];
+    }
+    this->_len--;
+  }
+
+  void remove(const E& elem) {
+    // Assuming that element does exist.
+    bool removed = this->remove_if_existing(elem);
+    if (removed) return;
+    ShouldNotReachHere();
+  }
+
+  bool remove_if_existing(const E& elem) {
+    // Returns TRUE if elem is removed.
+    for (int i = 0; i < this->_len; i++) {
+      if (this->_data[i] == elem) {
+        this->remove_at(i);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Remove all elements up to the index (exclusive). The order is preserved.
+  void remove_till(int idx) {
+    remove_range(0, idx);
+  }
+
+  // Remove all elements in the range [start - end). The order is preserved.
+  void remove_range(int start, int end) {
+    assert(0 <= start, "illegal start index %d", start);
+    assert(start < end && end <= this->_len,
+           "erase called with invalid range (%d, %d) for length %d",
+           start, end, this->_len);
+
+    for (int i = start, j = end; j < this->length(); i++, j++) {
+      this->at_put(i, this->at(j));
+    }
+    this->_len -= (end - start);
+  }
+
+  // Replaces the designated element with the last element and shrinks by 1.
+  void delete_at(int index) {
+    assert(0 <= index && index < this->_len, "illegal index %d for length %d", index, this->_len);
+    if (index < --this->_len) {
+      // Replace removed element with last one.
+      this->_data[index] = this->_data[this->_len];
+    }
+  }
+
   // Reduce capacity to length.
   void shrink_to_fit();
 
+  void clear() { this->_len = 0; }
   void clear_and_deallocate();
 };
 

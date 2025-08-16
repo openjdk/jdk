@@ -127,9 +127,11 @@ TEST_F(ZArrayTest, slice) {
 
       const auto check_reversed = [](ZArraySlice<const int> original, ZArraySlice<int> reversed) {
         ASSERT_EQ(original.length(), reversed.length());
+        int ri = reversed.length();
         for (int e : original) {
-          ASSERT_EQ(e, reversed.pop());
+          ASSERT_EQ(e, reversed.at(--ri));
         }
+        ASSERT_EQ(ri, 0);
       };
 
       ZArraySlice<int> a_reversed = reverse(a, reverse);
