@@ -89,10 +89,10 @@ void StackOverflow::create_stack_guard_pages() {
   assert(is_aligned(low_addr, os::vm_page_size()), "Stack base should be the start of a page");
   assert(is_aligned(len, os::vm_page_size()), "Stack size should be a multiple of page size");
 
-  bool must_commit = os::must_commit_stack_guard_pages();
+  bool must_allocate = os::must_allocate_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len %zu\n", low_addr, len);
 
-  if (must_commit && !os::create_stack_guard_pages((char *) low_addr, len)) {
+  if (must_allocate && !os::create_stack_guard_pages((char *) low_addr, len)) {
     log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
     return;
   }
@@ -115,7 +115,7 @@ void StackOverflow::remove_stack_guard_pages() {
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
 
-  if (os::must_commit_stack_guard_pages()) {
+  if (os::must_allocate_stack_guard_pages()) {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
