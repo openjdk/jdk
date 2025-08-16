@@ -101,14 +101,14 @@ public class TaskbarPositionTest implements ActionListener {
     };
 
     public TaskbarPositionTest() {
-        frame = new JFrame("Use CTRL-down to show a JPopupMenu");
+        frame = new JFrame("Use SHIFT-down to show a JPopupMenu");
         frame.setContentPane(panel = createContentPane());
         frame.setJMenuBar(createMenuBar());
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         // CTRL-down will show the popup.
         panel.getInputMap().put(KeyStroke.getKeyStroke(
-                KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK), "OPEN_POPUP");
+                KeyEvent.VK_DOWN, InputEvent.SHIFT_DOWN_MASK), "OPEN_POPUP");
         panel.getActionMap().put("OPEN_POPUP", new PopupHandler());
 
         frame.pack();
@@ -253,10 +253,10 @@ public class TaskbarPositionTest implements ActionListener {
             item.addActionListener(this);
         }
 
-        JTextField field = new JTextField("CTRL+down for Popup");
-        // CTRL-down will show the popup.
+        JTextField field = new JTextField("SHIFT+down for Popup");
+        // SHIFT-down will show the popup.
         field.getInputMap().put(KeyStroke.getKeyStroke(
-                KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK), "OPEN_POPUP");
+                KeyEvent.VK_DOWN, InputEvent.SHIFT_DOWN_MASK), "OPEN_POPUP");
         field.getActionMap().put("OPEN_POPUP", new PopupHandler());
 
         JPanel panel = new JPanel();
@@ -406,10 +406,10 @@ public class TaskbarPositionTest implements ActionListener {
             robot.waitForIdle();
 
             // Open its popup
-            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
-            robot.keyRelease(KeyEvent.VK_CONTROL);
+            robot.keyRelease(KeyEvent.VK_SHIFT);
 
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, fullScreenBounds));
