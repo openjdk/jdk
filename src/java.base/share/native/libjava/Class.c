@@ -93,6 +93,8 @@ Java_java_lang_Class_registerNatives(JNIEnv *env, jclass cls)
                             sizeof(methods)/sizeof(JNINativeMethod));
 }
 
+#define JAVA_CLASSNAME_MAX_LEN 65535
+
 JNIEXPORT jclass JNICALL
 Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
                               jboolean initialize, jobject loader, jclass caller)
@@ -109,6 +111,12 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
     }
 
     len = (*env)->GetStringUTFLength(env, classname);
+    if (len > JAVA_CLASSNAME_MAX_LEN) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "Class name exceeds maximum length of %d", JAVA_CLASSNAME_MAX_LEN);
+        JNU_ThrowClassNotFoundException(env, msg);
+        return 0;
+    }
     unicode_len = (*env)->GetStringLength(env, classname);
     if (len >= (jsize)sizeof(buf)) {
         clname = malloc(len + 1);
