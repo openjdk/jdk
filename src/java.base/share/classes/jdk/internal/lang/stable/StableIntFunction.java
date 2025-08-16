@@ -28,8 +28,8 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.Objects;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 /**
  * Implementation of a stable IntFunction.
@@ -43,19 +43,18 @@ import java.util.function.Supplier;
  * @param <R> the return type
  */
 public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
-                                   IntFunction<? extends R> original) implements IntFunction<R> {
+                                   UnderlyingHolder<IntFunction<? extends R>> underlyingHolder) implements IntFunction<R> {
 
     @ForceInline
     @Override
     public R apply(int index) {
         final StableValueImpl<R> delegate;
         try {
-            delegate =  delegates[index];
+            delegate = delegates[index];
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
-        return delegate.orElseSet(new Supplier<R>() {
-                    @Override public R get() { return original.apply(index); }});
+        return delegate.orElseSet(index, underlyingHolder);
     }
 
     @Override
@@ -73,8 +72,8 @@ public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
         return StableUtil.renderElements(this, "StableIntFunction", delegates);
     }
 
-    public static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new StableIntFunction<>(StableUtil.array(size), original);
+    public static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> underlying) {
+        return new StableIntFunction<>(StableUtil.array(size), new UnderlyingHolder<>(underlying, size));
     }
 
 }

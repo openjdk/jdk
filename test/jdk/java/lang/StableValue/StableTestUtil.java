@@ -21,6 +21,9 @@
  * questions.
  */
 
+import jdk.internal.lang.stable.UnderlyingHolder;
+
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -114,6 +117,16 @@ final class StableTestUtil {
         @Override
         public final String toString() {
             return cnt.toString();
+        }
+    }
+
+    static UnderlyingHolder<?> underlyingHolder(Object o) {
+        try {
+            final Field field = o.getClass().getDeclaredField("underlyingHolder");
+            field.setAccessible(true);
+            return (UnderlyingHolder<?>) field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 
