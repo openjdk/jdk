@@ -2065,20 +2065,16 @@ class MutableBigInteger {
                  * initial estimate.
                  */
                 // Refine the estimate, avoiding to compute non-significant bits
-                final int trailingZeros = this.getLowestSetBit();
                 // rootSh is always less than rootLen, so correctBits >= 1
                 for (int correctBits = rootLen - rootSh; correctBits < rootSh; correctBits <<= 1) {
                     s.leftShift(correctBits);
                     rootSh -= correctBits;
-
                     // Remove useless bits from the radicand
                     MutableBigInteger x = new MutableBigInteger(this);
-                    int removedBits = rootSh * n;
-                    x.rightShift(removedBits);
-                    if (removedBits > trailingZeros)
-                        x.add(ONE); // round up to ensure s is an upper bound of the root
+                    x.rightShift(rootSh * n);
 
                     newtonRecurrenceNthRoot(x, s, n, s.toBigInteger().pow(n - 1));
+                    s.add(ONE); // round up to ensure s is an upper bound of the root
                 }
 
                 // Shift the approximate root back into the original range.
