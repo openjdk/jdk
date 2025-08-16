@@ -182,6 +182,8 @@ class PhiNode : public TypeNode {
 
   bool is_split_through_mergemem_terminating() const;
 
+  bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
+
 public:
   // Node layout (parallels RegionNode):
   enum { Region,                // Control input is the Phi's region.
