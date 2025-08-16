@@ -168,8 +168,9 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
        index < pos_idx && head != nullptr;
-       index++, head = (MallocSiteHashtableEntry*)head->next()) {}
-  assert(head != nullptr, "Invalid position index");
+       index++, head = ((MallocSiteHashtableEntry*)head->next() == nullptr) ? head :
+      (MallocSiteHashtableEntry*)head->next()) {}
+
   return head->data();
 }
 

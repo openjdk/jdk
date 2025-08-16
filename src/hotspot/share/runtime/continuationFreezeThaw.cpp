@@ -1047,7 +1047,8 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   assert(!allocated_old_in_freeze_fast || (!UseZGC && !UseG1GC), "Unexpected allocation");
 
   DEBUG_ONLY(bool empty_chunk = true);
-  if (unextended_sp < _freeze_size || chunk->is_gc_mode() || (!allocated_old_in_freeze_fast && chunk->requires_barriers())) {
+  if (unextended_sp < _freeze_size || (chunk != nullptr &&
+      (chunk->is_gc_mode() || (!allocated_old_in_freeze_fast && chunk->requires_barriers())))) {
     // ALLOCATE NEW CHUNK
 
     if (lt.develop_is_enabled()) {

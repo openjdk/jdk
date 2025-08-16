@@ -1313,7 +1313,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   // The array must be consistent with vector type
-  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, false))) {
+  if (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, false)) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
