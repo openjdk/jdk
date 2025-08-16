@@ -543,7 +543,8 @@ void KlassTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    bool is_excluded = !holder()->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder(), nullptr);
+    bool is_excluded = !holder()->is_loaded() ||
+                       (CDSConfig::is_at_cds_safepoint() && SystemDictionaryShared::should_be_excluded(holder()));
     if (is_excluded) {
       ResourceMark rm;
       log_debug(aot, training)("Cleanup KTD %s", name()->as_klass_external_name());
@@ -562,7 +563,7 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    if (SystemDictionaryShared::check_for_exclusion(holder()->method_holder(), nullptr)) {
+    if (CDSConfig::is_at_cds_safepoint() && SystemDictionaryShared::should_be_excluded(holder()->method_holder())) {
       log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
       if (_final_profile != nullptr && _final_profile->method() != _holder) {
         log_warning(aot, training)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
