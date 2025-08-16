@@ -44,6 +44,8 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import org.junit.Assert;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base class for code installation tests.
@@ -87,16 +89,24 @@ public class CodeInstallationTest {
         }
     }
 
-    protected Method getMethod(String name, Class<?>... args) {
+    protected Method getMethod(Class<?> clazz, String name, Class<?>... args) {
         try {
-            return getClass().getMethod(name, args);
+            return clazz.getMethod(name, args);
         } catch (NoSuchMethodException e) {
             Assert.fail("method not found");
             return null;
         }
     }
 
+    protected Method getMethod(String name, Class<?>... args) {
+        return getMethod(getClass(), name, args);
+    }
+
     protected HotSpotNmethod test(TestCompiler compiler, Method method, Object... args) {
+        return test(compiler, method, null, args);
+    }
+
+    protected HotSpotNmethod test(TestCompiler compiler, Method method, Object obj, Object... args) {
         try {
             HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
             TestAssembler asm = createAssembler();
@@ -113,8 +123,13 @@ public class CodeInstallationTest {
                 System.out.println(str);
             }
 
-            Object expected = method.invoke(null, args);
-            Object actual = installed.executeVarargs(args);
+            Object expected = method.invoke(obj, args);
+            List<Object> newArgs = new ArrayList<>();
+            if (obj != null) {
+                newArgs.add(obj);
+            }
+            newArgs.addAll(List.of(args));
+            Object actual = installed.executeVarargs(newArgs.toArray(new Object[newArgs.size()]));
             Assert.assertEquals(expected, actual);
             return (HotSpotNmethod) installed;
         } catch (Exception e) {

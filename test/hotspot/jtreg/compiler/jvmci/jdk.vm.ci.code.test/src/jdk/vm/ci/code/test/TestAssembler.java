@@ -301,6 +301,10 @@ public abstract class TestAssembler {
         sites.add(new Call(target, code.position(), size, direct, debugInfo));
     }
 
+    protected void recordCall(int posBefore, int posAfter, InvokeTarget target, boolean direct, boolean bind, DebugInfo debugInfo) {
+        sites.add(new Call(target, posBefore, posAfter - posBefore, direct, debugInfo, bind));
+    }
+
     protected void recordMark(Object id) {
         sites.add(new Mark(code.position(), id));
     }
@@ -351,7 +355,7 @@ public abstract class TestAssembler {
         DataPatch[] finishedDataPatches = dataPatches.toArray(new DataPatch[0]);
         int dataSectionAlignment = 8; // CodeBuffer::SECT_CONSTS code section alignment
         return new HotSpotCompiledNmethod(method.getName(), finishedCode, finishedCode.length, finishedSites, new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], finishedData, dataSectionAlignment,
-                        finishedDataPatches, false, frameSize, deoptRescue, method, -1, id, 0L, false);
+                finishedDataPatches, false, frameSize, deoptRescue, method, -1, id, 0L, false);
     }
 
     /**
@@ -398,6 +402,7 @@ public abstract class TestAssembler {
             throw new AssertionError(errorMessage.formatted(args));
         }
     }
+
     protected static class Buffer {
 
         private ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.nativeOrder());
@@ -470,6 +475,10 @@ public abstract class TestAssembler {
      * Emit a call to a fixed address <code>addr</code>.
      */
     public abstract void emitCall(long addr);
+
+    public void emitJavaCall(int[] pos, DebugInfo info, int markId) {
+        throw new UnsupportedOperationException("Java calls are not supported.");
+    }
 
     /**
      * Emit code which is necessary to call a method with {@link CallingConvention} <code>cc</code>

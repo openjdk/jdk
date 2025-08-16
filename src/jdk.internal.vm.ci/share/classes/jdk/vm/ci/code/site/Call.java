@@ -49,11 +49,23 @@ public final class Call extends Infopoint {
      */
     public final boolean direct;
 
+    /**
+     * Specifies if the target method should be attached to the call site.
+     * This permits the compiler to override the bytecode based call site resolution for cases were special semantics are needed.
+     */
+    public final boolean bind;
+
+
     public Call(InvokeTarget target, int pcOffset, int size, boolean direct, DebugInfo debugInfo) {
+        this(target, pcOffset, size, direct, debugInfo, false);
+    }
+
+    public Call(InvokeTarget target, int pcOffset, int size, boolean direct, DebugInfo debugInfo, boolean bind) {
         super(pcOffset, debugInfo, InfopointReason.CALL);
         this.size = size;
         this.target = target;
         this.direct = direct;
+        this.bind = bind;
     }
 
     @Override
