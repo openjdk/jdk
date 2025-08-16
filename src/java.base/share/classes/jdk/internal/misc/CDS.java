@@ -47,11 +47,13 @@ import jdk.internal.util.StaticProperty;
 
 public class CDS {
     // Must be in sync with cdsConfig.hpp
-    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
-    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
-    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
-    private static final int IS_USING_ARCHIVE                = 1 << 4;
+    private static final int IS_DUMPING_AOT_LINKED_CLASSES   = 1 << 0;
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 1;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 2;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 3;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 4;
+    private static final int IS_USING_ARCHIVE                = 1 << 5;
+
     private static final int configStatus = getCDSConfigStatus();
 
     /**
@@ -80,6 +82,10 @@ public class CDS {
       */
     public static boolean isDumpingStaticArchive() {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
+    }
+
+    public static boolean isDumpingAOTLinkedClasses() {
+        return (configStatus & IS_DUMPING_AOT_LINKED_CLASSES) != 0;
     }
 
     public static boolean isSingleThreadVM() {
