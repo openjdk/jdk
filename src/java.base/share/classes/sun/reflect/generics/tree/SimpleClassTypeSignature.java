@@ -41,7 +41,7 @@ public class SimpleClassTypeSignature implements FieldTypeSignature {
     public static SimpleClassTypeSignature make(String n,
                                                 boolean dollar,
                                                 TypeArgument[] tas){
-        return new SimpleClassTypeSignature(n, dollar, tas);
+        return new SimpleClassTypeSignature(n.intern(), dollar, tas);
     }
 
     /*
