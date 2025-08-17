@@ -153,6 +153,80 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   }
 }
 
+inline HeapWord* PSPromotionManager::allocate_in_young_gen(Klass* klass,
+                                                           size_t obj_size,
+                                                           uint age) {
+  HeapWord* result = _young_lab.allocate(obj_size);
+  if (result != nullptr) {
+    return result;
+  }
+  if (_young_gen_is_full) {
+    return nullptr;
+  }
+  // Do we allocate directly, or flush and refill?
+  if (obj_size > (YoungPLABSize / 2)) {
+    // Allocate this object directly
+    result = young_space()->cas_allocate(obj_size);
+    promotion_trace_event(cast_to_oop(result), klass, obj_size, age, false, nullptr);
+  } else {
+    // Flush and fill
+    _young_lab.flush();
+
+    HeapWord* lab_base = young_space()->cas_allocate(YoungPLABSize);
+    if (lab_base != nullptr) {
+      _young_lab.initialize(MemRegion(lab_base, YoungPLABSize));
+      // Try the young lab allocation again.
+      result = _young_lab.allocate(obj_size);
+      promotion_trace_event(cast_to_oop(result), klass, obj_size, age, false, &_young_lab);
+    } else {
+      _young_gen_is_full = true;
+    }
+  }
+  if (result == nullptr && !_young_gen_is_full && !_young_gen_has_alloc_failure) {
+    _young_gen_has_alloc_failure = true;
+  }
+  return result;
+}
+
+inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
+                                                         size_t obj_size,
+                                                         uint age) {
+#ifndef PRODUCT
+  if (ParallelScavengeHeap::heap()->promotion_should_fail()) {
+    return nullptr;
+  }
+#endif  // #ifndef PRODUCT
+
+  HeapWord* result = _old_lab.allocate(obj_size);
+  if (result != nullptr) {
+    return result;
+  }
+  if (_old_gen_is_full) {
+    return nullptr;
+  }
+  // Do we allocate directly, or flush and refill?
+  if (obj_size > (OldPLABSize / 2)) {
+    // Allocate this object directly
+    result = old_gen()->allocate(obj_size);
+    promotion_trace_event(cast_to_oop(result), klass, obj_size, age, true, nullptr);
+  } else {
+    // Flush and fill
+    _old_lab.flush();
+
+    HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
+    if (lab_base != nullptr) {
+      _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
+      // Try the old lab allocation again.
+      result = _old_lab.allocate(obj_size);
+      promotion_trace_event(cast_to_oop(result), klass, obj_size, age, true, &_old_lab);
+    }
+  }
+  if (result == nullptr) {
+    _old_gen_is_full = true;
+  }
+  return result;
+}
+
 //
 // This method is pretty bulky. It would be nice to split it up
 // into smaller submethods, but we need to be careful not to hurt
@@ -186,77 +260,17 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   if (!promote_immediately) {
     // Try allocating obj in to-space (unless too old)
     if (age < PSScavenge::tenuring_threshold()) {
-      new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
-      if (new_obj == nullptr && !_young_gen_is_full) {
-        // Do we allocate directly, or flush and refill?
-        if (new_obj_size > (YoungPLABSize / 2)) {
-          // Allocate this object directly
-          new_obj = cast_to_oop(young_space()->cas_allocate(new_obj_size));
-          promotion_trace_event(new_obj, klass, new_obj_size, age, false, nullptr);
-        } else {
-          // Flush and fill
-          _young_lab.flush();
-
-          HeapWord* lab_base = young_space()->cas_allocate(YoungPLABSize);
-          if (lab_base != nullptr) {
-            _young_lab.initialize(MemRegion(lab_base, YoungPLABSize));
-            // Try the young lab allocation again.
-            new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
-            promotion_trace_event(new_obj, klass, new_obj_size, age, false, &_young_lab);
-          } else {
-            _young_gen_is_full = true;
-          }
-        }
-        if (new_obj == nullptr && !_young_gen_is_full && !_young_gen_has_alloc_failure) {
-          _young_gen_has_alloc_failure = true;
-        }
-      }
+      new_obj = cast_to_oop(allocate_in_young_gen(klass, new_obj_size, age));
     }
   }
 
   // Otherwise try allocating obj tenured
   if (new_obj == nullptr) {
-#ifndef PRODUCT
-    if (ParallelScavengeHeap::heap()->promotion_should_fail()) {
+    new_obj = cast_to_oop(allocate_in_old_gen(klass, new_obj_size, age));
+    if (new_obj == nullptr) {
       return oop_promotion_failed(o, test_mark);
     }
-#endif  // #ifndef PRODUCT
-
-    new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
     new_obj_is_tenured = true;
-
-    if (new_obj == nullptr) {
-      if (!_old_gen_is_full) {
-        // Do we allocate directly, or flush and refill?
-        if (new_obj_size > (OldPLABSize / 2)) {
-          // Allocate this object directly
-          new_obj = cast_to_oop(old_gen()->allocate(new_obj_size));
-          promotion_trace_event(new_obj, klass, new_obj_size, age, true, nullptr);
-        } else {
-          // Flush and fill
-          _old_lab.flush();
-
-          HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
-          if(lab_base != nullptr) {
-            _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
-            // Try the old lab allocation again.
-            new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
-            promotion_trace_event(new_obj, klass, new_obj_size, age, true, &_old_lab);
-          }
-        }
-      }
-
-      // This is the promotion failed test, and code handling.
-      // The code belongs here for two reasons. It is slightly
-      // different than the code below, and cannot share the
-      // CAS testing code. Keeping the code here also minimizes
-      // the impact on the common case fast path code.
-
-      if (new_obj == nullptr) {
-        _old_gen_is_full = true;
-        return oop_promotion_failed(o, test_mark);
-      }
-    }
   }
 
   assert(new_obj != nullptr, "allocation should have succeeded");
@@ -287,17 +301,16 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
-    // So, the is->objArray() test would be very infrequent.
+    // So, the objArray test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        new_obj->is_objArray() &&
+        klass->is_objArray_klass() &&
         PSChunkLargeArrays) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
       push_contents(new_obj);
 
-      if (StringDedup::is_enabled() &&
-          java_lang_String::is_instance(new_obj) &&
+      if (StringDedup::is_enabled_string(klass) &&
           psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
         _string_dedup_requests.add(o);
       }
@@ -305,7 +318,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
     assert(o->forwardee() == forwardee, "invariant");
 
