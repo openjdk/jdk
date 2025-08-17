@@ -3374,7 +3374,7 @@ public final class DateTimeFormatterBuilder {
 
         static void appendFixWidth4NotNegative(StringBuilder buf, int value) {
             int value2 = value / 100;
-            DecimalDigits.appendPair(buf, value / 100);
+            DecimalDigits.appendPair(buf, value2);
             DecimalDigits.appendPair(buf, value - value2 * 100);
         }
 
@@ -3440,13 +3440,13 @@ public final class DateTimeFormatterBuilder {
                 return true;
             }
 
-            static final FixWidth4ExceedsPad PP_YEAR = new FixWidth4ExceedsPad(ChronoField.YEAR) {
+            static final FixWidth49ExceedsPad PP_YEAR = new FixWidth49ExceedsPad(ChronoField.YEAR) {
                 @Override
                 boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYear();}
                 @Override
                 protected int getInt(DateTimePrintContext context) {return context.getYear();}
             };
-            static final FixWidth4ExceedsPad PP_YEAR_OF_ERA = new FixWidth4ExceedsPad(YEAR_OF_ERA) {
+            static final FixWidth49ExceedsPad PP_YEAR_OF_ERA = new FixWidth49ExceedsPad(YEAR_OF_ERA) {
                 @Override
                 boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYearOfEra();}
                 @Override
@@ -3872,7 +3872,7 @@ public final class DateTimeFormatterBuilder {
 
                 val /= 1_000_000;
                 int d0 = val / 100;
-                int d12 = val - val * 100;
+                int d12 = val - d0 * 100;
                 buf.append('0' + d0);
                 DecimalDigits.appendPair(buf, d12);
             }
