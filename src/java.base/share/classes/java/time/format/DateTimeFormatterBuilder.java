@@ -111,8 +111,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
@@ -3384,7 +3382,7 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, subsequentWidth);
         }
 
-        static void appendtFixWidth4NotNegative(StringBuilder buf, int value) {
+        static void appendFixWidth4NotNegative(StringBuilder buf, int value) {
             int value2 = value / 100;
             DecimalDigits.appendPair(buf, value / 100);
             DecimalDigits.appendPair(buf, value - value2 * 100);
@@ -3408,7 +3406,7 @@ public final class DateTimeFormatterBuilder {
                     buf.append('-');
                     value = -value;
                 }
-                appendtFixWidth4NotNegative(buf, value);
+                appendFixWidth4NotNegative(buf, value);
                 return true;
             }
 
@@ -3445,7 +3443,7 @@ public final class DateTimeFormatterBuilder {
                     value = -value;
                 }
                 if (value < 10000) {
-                    appendtFixWidth4NotNegative(buf, value);
+                    appendFixWidth4NotNegative(buf, value);
                 } else {
                     buf.append(value);
                 }
