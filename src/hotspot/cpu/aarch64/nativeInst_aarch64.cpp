@@ -77,7 +77,7 @@ address NativeCall::destination() const {
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
 void NativeCall::set_destination_mt_safe(address dest) {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+  // MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
@@ -144,8 +144,8 @@ intptr_t NativeMovConstReg::data() const {
 }
 
 void NativeMovConstReg::set_data(intptr_t x) {
-  //MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   if (maybe_cpool_ref(instruction_address())) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
     *(intptr_t*)addr = x;
   } else {
@@ -236,7 +236,6 @@ void NativeJump::set_jump_destination(address dest) {
   if (dest == (address) -1)
     dest = instruction_address();
 
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   MacroAssembler::pd_patch_instruction(instruction_address(), dest);
   ICache::invalidate_range(instruction_address(), instruction_size);
 };
@@ -260,7 +259,6 @@ address NativeGeneralJump::jump_destination() const {
 }
 
 void NativeGeneralJump::set_jump_destination(address dest) {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   NativeMovConstReg* move = nativeMovConstReg_at(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
@@ -374,7 +372,6 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
 void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
   MacroAssembler a(&cbuf);
 
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   if (!a.far_branches()) {
     // If not using far branches, patch this call directly to dest.
     set_destination(dest);
