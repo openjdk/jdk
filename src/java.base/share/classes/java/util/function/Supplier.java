@@ -69,19 +69,18 @@ public interface Supplier<T> {
      * thrown by the computing thread. The competing threads will then observe the newly
      * computed value (if any) and will then never execute the {@code underlying} supplier.
      * <p>
-     * If the provided {@code underlying} supplier returns {@code null}, no cached value
-     * is recorded and a new attempt will be made to compute a value is
-     * made upon accessing returned supplier again. Hence, a lazy supplier
-     * cannot contain {@code null} values. Clients that want to use nullable values
-     * can wrap the value into an {@linkplain Optional} holder.
-     * <p>
      * If the provided {@code underlying} supplier throws an exception, it is rethrown
-     * to the initial caller and no contents is recorded.
+     * to the initial caller and no value is recorded.
+     * <p>
+     * If the provided {@code underlying} supplier returns {@code null},
+     * a {@linkplain NullPointerException} is thrown. Hence, a lazy supplier
+     * cannot contain a {@code null} value. Clients that want to use a nullable value
+     * can wrap the value into an {@linkplain Optional} holder.
      * <p>
      * If the provided {@code underlying} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
      * <p>
-     * Finality confers certain performance optimization available to the VM.
+     * Finality confers certain performance optimization opportunities to the VM.
      *
      * @param underlying supplier used to compute a cached value
      * @param <T>        the type of results supplied by the returned supplier
