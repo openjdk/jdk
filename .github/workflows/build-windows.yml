@@ -48,7 +48,7 @@ on:
       msvc-toolset-version:
         required: true
         type: string
-      msvc-toolset-architecture:
+      architecture:
         required: true
         type: string
       configure-arguments:
@@ -90,6 +90,8 @@ jobs:
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
+        with:
+          architecture: ${{ inputs.architecture }}
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -109,7 +111,7 @@ jobs:
         id: toolchain-check
         run: |
           set +e
-          if [ "${{ inputs.msvc-toolset-architecture }}" = "ARM64" ]; then
+          if [ "${{ inputs.architecture }}" = "ARM64" ]; then
             vcvars="vcvarsarm64.bat"
           else
             vcvars="vcvars64.bat"
@@ -128,7 +130,7 @@ jobs:
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
-            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
+            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.architecture }}
         if: steps.toolchain-check.outputs.toolchain-installed != 'true'
 
       - name: 'Configure'
