@@ -132,10 +132,10 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                                 testedComponent.getPreferredSize().height + 20);
                         Component focusOwner = FocusManager.getCurrentManager()
                                 .getFocusOwner();
-                        if (focusOwner == f ) {
-                            //frame already had focus.
+                        if (focusOwner == f) {
+                            // frame already had focus
                             latch.countDown();
-                        }else{
+                        } else {
                             f.requestFocusInWindow();
                         }
 
@@ -149,12 +149,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             Point lLoc = testedComponent.getLocationOnScreen();
             lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
             try {
-
-                boolean await = latch.await(1, TimeUnit.SECONDS);
-                if (!await) {
-                    throw new RuntimeException(
-                            "Ancestor frame didn't receive " +
-                                    "focus");
+                if (!latch.await(1, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Ancestor frame didn't receive focus");
                 }
                 clickAndBlink(robot, lLoc);
             } catch (InterruptedException e) {
@@ -162,6 +158,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             }
             return wasLWClicked;
         } else {
+            latch.countDown();
             return true;
         }
     }

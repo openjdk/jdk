@@ -160,6 +160,8 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
                 }
             });
             ancestor.requestFocus();
+        } else {
+            latch.countDown();
         }
         try {
             boolean await = latch.await(1, TimeUnit.SECONDS);
