@@ -67,6 +67,8 @@ void JfrMethodProcessor::update_methods(const InstanceKlass* ik) {
     const uint32_t idx = _methods->at(i).methods_array_index();
     Method* const method = ik_methods->at(idx);
     assert(method != nullptr, "invariant");
+    assert(method->name() == _methods->at(i).name(), "invariant");
+    assert(method->signature() == _methods->at(i).signature(), "invariant");
     _methods->at(i).set_method(method);
     // This is to keep the method from being unloaded during redefine / retransform.
     // Equivalent functionality to that provided by the methodHandle. Unfortunately,

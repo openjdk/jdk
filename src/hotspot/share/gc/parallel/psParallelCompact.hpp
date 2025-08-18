@@ -683,12 +683,15 @@ public:
   // Convenient access to type names.
   typedef ParallelCompactData::RegionData RegionData;
 
+  // By the end of full-gc, all live objs are compacted into the first three spaces, old, eden, and from.
   typedef enum {
-    old_space_id, eden_space_id,
-    from_space_id, to_space_id, last_space_id
+    old_space_id,
+    eden_space_id,
+    from_space_id,
+    to_space_id,
+    last_space_id
   } SpaceId;
 
-public:
   // Inline closure decls
   //
   class IsAliveClosure: public BoolObjectClosure {
@@ -758,8 +761,8 @@ private:
 public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
-  static bool invoke(bool maximum_heap_compaction);
-  static bool invoke_no_policy(bool maximum_heap_compaction);
+  static bool invoke(bool clear_all_soft_refs);
+  static bool invoke_no_policy(bool clear_all_soft_refs);
 
   template<typename Func>
   static void adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe);
