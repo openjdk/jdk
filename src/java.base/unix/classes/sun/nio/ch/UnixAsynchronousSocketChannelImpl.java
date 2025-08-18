@@ -101,7 +101,7 @@ class UnixAsynchronousSocketChannelImpl
 
         // set non-blocking
         try {
-            IOUtil.configureBlocking(fd, false);
+            NIOUtil.configureBlocking(fd, false);
         } catch (IOException x) {
             nd.close(fd);
             throw x;
@@ -123,7 +123,7 @@ class UnixAsynchronousSocketChannelImpl
         super(port, fd, remote);
 
         this.fdVal = IOUtil.fdVal(fd);
-        IOUtil.configureBlocking(fd, false);
+        NIOUtil.configureBlocking(fd, false);
 
         try {
             port.register(fdVal, this);
@@ -765,6 +765,6 @@ class UnixAsynchronousSocketChannelImpl
     private static native void checkConnect(int fdVal) throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }
