@@ -23,11 +23,14 @@
 
 package compiler.loopopts.superword;
 
-import compiler.lib.ir_framework.*;
-import jdk.test.lib.Utils;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 
-import java.util.Random;
-import java.lang.foreign.*;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.Scenario;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 
 /*
  * @test
@@ -50,8 +53,10 @@ public class TestMemorySegmentByteSizeLongLoopLimit {
     public static void main(String[] args) {
         TestFramework f = new TestFramework();
         f.addFlags("-XX:+IgnoreUnrecognizedVMOptions");
-        f.addScenarios(new Scenario(0, "-XX:-ShortRunningLongLoop"),
-                       new Scenario(1, "-XX:+ShortRunningLongLoop"));
+        f.addScenarios(new Scenario(0, "-XX:-AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(1, "-XX:+AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(2, "-XX:-AlignVector", "-XX:+ShortRunningLongLoop"),
+                       new Scenario(3, "-XX:+AlignVector", "-XX:+ShortRunningLongLoop"));
         f.start();
     }
 
