@@ -35,6 +35,8 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          java.base/java.lang:open
+ *          java.base/java.lang.reflect:open
  *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
@@ -48,12 +50,19 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.runtime.test.TestResolvedJavaField.TestClassLoader;
+import org.junit.Assert;
+import org.junit.Test;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -68,17 +77,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import jdk.internal.vm.test.AnnotationTestInput;
-import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.test.TestResolvedJavaField.TestClassLoader;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link ResolvedJavaField}.
@@ -196,11 +200,42 @@ public class TestResolvedJavaField extends FieldUniverse {
         return null;
     }
 
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code field}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaField}.
+     */
+    private static void getTypeAnnotationValuesTest(Field field) {
+        ResolvedJavaField javaField = metaAccess.lookupJavaField(field);
+        TestResolvedJavaType.assertTypeAnnotationsEquals(getTypeAnnotations(field), javaField.getTypeAnnotationValues());
+    }
+
+    private static final Method fieldGetTypeAnnotationBytes = lookupMethod(Field.class, "getTypeAnnotationBytes0");
+    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
+
+    private static TypeAnnotation[] getTypeAnnotations(Field f) {
+        byte[] rawAnnotations = invokeMethod(fieldGetTypeAnnotationBytes, f);
+        Class<?> container = f.getDeclaringClass();
+        jdk.internal.reflect.ConstantPool cp = invokeMethod(classGetConstantPool, container);
+        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container);
+    }
+
     @Test
-    public void getAnnotationValueTest() throws Exception {
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
+    public void getTypeAnnotationValuesTest() throws Exception {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            getTypeAnnotationValuesTest(f);
+        }
         for (Field f : fields.keySet()) {
-            TestResolvedJavaType.getAnnotationValueTest(f);
+            getTypeAnnotationValuesTest(f);
+        }
+    }
+
+    @Test
+    public void getAnnotationValuesTest() throws Exception {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            TestResolvedJavaType.getAnnotationValuesTest(f);
+        }
+        for (Field f : fields.keySet()) {
+            TestResolvedJavaType.getAnnotationValuesTest(f);
         }
     }
 

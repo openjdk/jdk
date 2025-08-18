@@ -66,7 +66,7 @@ public final class TypeAnnotationParser {
             Type type,
             TypeAnnotationTarget filter) {
         TypeAnnotation[] tas = parseTypeAnnotations(rawAnnotations,
-                cp, decl, container);
+                cp, decl, false, container);
 
         List<TypeAnnotation> l = new ArrayList<>(tas.length);
         for (TypeAnnotation t : tas) {
@@ -107,7 +107,7 @@ public final class TypeAnnotationParser {
         ArrayList[] l = new ArrayList[size]; // array of ArrayList<TypeAnnotation>
 
         TypeAnnotation[] tas = parseTypeAnnotations(rawAnnotations,
-                cp, decl, container);
+                cp, decl, false, container);
 
         for (TypeAnnotation t : tas) {
             TypeAnnotationTargetInfo ti = t.getTargetInfo();
@@ -342,14 +342,15 @@ public final class TypeAnnotationParser {
             return EMPTY_TYPE_ANNOTATION_ARRAY;
         }
         return parseTypeAnnotations(rawBytes, javaLangAccess.getConstantPool(container),
-                                    decl, container);
+                                    decl, false, container);
     }
 
     /* Parse type annotations encoded as an array of bytes */
-    private static TypeAnnotation[] parseTypeAnnotations(byte[] rawAnnotations,
-            ConstantPool cp,
-            AnnotatedElement baseDecl,
-            Class<?> container) {
+    public static TypeAnnotation[] parseTypeAnnotations(byte[] rawAnnotations,
+           ConstantPool cp,
+           AnnotatedElement baseDecl,
+           boolean eagerResolution,
+           Class<?> container) {
         if (rawAnnotations == null)
             return EMPTY_TYPE_ANNOTATION_ARRAY;
 
@@ -359,7 +360,7 @@ public final class TypeAnnotationParser {
 
         // Parse each TypeAnnotation
         for (int i = 0; i < annotationCount; i++) {
-             TypeAnnotation ta = parseTypeAnnotation(buf, cp, baseDecl, container);
+             TypeAnnotation ta = parseTypeAnnotation(buf, cp, baseDecl, eagerResolution, container);
              if (ta != null)
                  typeAnnotations.add(ta);
         }
@@ -413,14 +414,15 @@ public final class TypeAnnotationParser {
     private static final byte CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = (byte)0x4A;
     private static final byte METHOD_REFERENCE_TYPE_ARGUMENT = (byte)0x4B;
 
-    private static TypeAnnotation parseTypeAnnotation(ByteBuffer buf,
-            ConstantPool cp,
-            AnnotatedElement baseDecl,
-            Class<?> container) {
+    public static TypeAnnotation parseTypeAnnotation(ByteBuffer buf,
+           ConstantPool cp,
+           AnnotatedElement baseDecl,
+           boolean eagerResolution,
+           Class<?> container) {
         try {
             TypeAnnotationTargetInfo ti = parseTargetInfo(buf);
             LocationInfo locationInfo = LocationInfo.parseLocationInfo(buf);
-            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, true, false);
+            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, eagerResolution, false);
             if (ti == null) // Inside a method for example
                 return null;
             return new TypeAnnotation(ti, locationInfo, a, baseDecl);

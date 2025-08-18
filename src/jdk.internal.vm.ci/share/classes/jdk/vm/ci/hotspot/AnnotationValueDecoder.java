@@ -33,6 +33,8 @@ import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
 import jdk.vm.ci.meta.annotation.EnumArrayElement;
 import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.annotation.MissingType;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import sun.reflect.annotation.TypeAnnotation;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +46,7 @@ import java.util.stream.Collectors;
  * and employs {@link AnnotationValue} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
+final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, TypeAnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
 
     private final HotSpotResolvedJavaType accessingClass;
 
@@ -66,6 +68,11 @@ final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType
     @Override
     public AnnotationValue newAnnotation(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
         return new AnnotationValue(type, elements);
+    }
+
+    @Override
+    public TypeAnnotationValue newTypeAnnotation(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, AnnotationValue annotation) {
+        return new TypeAnnotationValue(targetInfo, locationInfo, annotation);
     }
 
     @Override
