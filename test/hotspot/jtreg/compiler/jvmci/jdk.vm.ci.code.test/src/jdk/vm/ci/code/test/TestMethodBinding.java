@@ -41,7 +41,6 @@
 package jdk.vm.ci.code.test;
 
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
-import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
 
 import jdk.vm.ci.code.*;
 import jdk.vm.ci.hotspot.HotSpotReferenceMap;
@@ -53,16 +52,12 @@ import org.junit.Test;
 import jdk.vm.ci.meta.JavaType;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TestMethodBinding extends CodeInstallationTest {
 
 
-    static class MethodProvider {
-        public static int invokeStatic() {
-            return 1 + 2;
-        }
+    public static int invokeStatic() {
+        return 1 + 2;
     }
 
     @Test
@@ -71,19 +66,14 @@ public class TestMethodBinding extends CodeInstallationTest {
         Class<?>[] staticArgumentTypes = new Class<?>[]{};
         Object[] staticArguments = new Object[]{};
 
-        test(getMethod(MethodProvider.class, "invokeStatic"), returnType, staticArgumentTypes, staticArguments, config.MARKID_INVOKESTATIC);
+        test(getMethod("invokeStatic"), returnType, staticArgumentTypes, staticArguments);
     }
 
 
-    public void test(Method method, Class<?> returnClazz, Class<?>[] types, Object[] values, int markId) {
+    public void test(Method method, Class<?> returnClazz, Class<?>[] types, Object[] values) {
         try {
             ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(method);
-            Object obj = null;
-            List<Object> args = new ArrayList<>(List.of(values));
-            if (!resolvedMethod.isStatic()) {
-                obj = values[0];
-                args.removeFirst();
-            }
+            assert resolvedMethod.isStatic() : "method should be static";
             test(asm -> {
                 JavaType[] argTypes = new JavaType[types.length];
                 int i = 0;
@@ -94,19 +84,14 @@ public class TestMethodBinding extends CodeInstallationTest {
                 CallingConvention cc = codeCache.getRegisterConfig().getCallingConvention(JavaCall, returnType, argTypes, asm.valueKindFactory);
                 asm.emitCallPrologue(cc, values);
 
-                asm.recordMark(markId);
+                asm.recordMark(config.MARKID_INVOKESTATIC);
                 int[] pos = new int[2];
                 // duringCall has to be false to trigger our bind logic in SharedRuntime::find_callee_info_helper
                 // we are allowed to do this because the call has no side-effect
                 BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, 0, false, false, new JavaValue[0], new JavaKind[0], 0, 0, 0);
                 DebugInfo info = new DebugInfo(frame, new VirtualObject[0]);
-                if (resolvedMethod.isStatic()) {
-                    info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
-                } else {
-                    assert values.length == 1 : "Only a receiver argument is allowed";
-                    info.setReferenceMap(new HotSpotReferenceMap(new Location[]{Location.register(((RegisterValue) cc.getArgument(0)).getRegister())}, new Location[]{null}, new int[]{asm.config.heapWordSize}, 8));
-                }
-                asm.emitJavaCall(pos, info, markId);
+                info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
+                asm.emitJavaCall(pos, info);
 
                 asm.recordCall(pos[0], pos[1], resolvedMethod, true, true, info);
                 asm.emitCallEpilogue(cc);
@@ -118,7 +103,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                     assert false : "Unimplemented return type: " + returnClazz;
                 }
 
-            }, method, obj, args.toArray(new Object[args.size()]));
+            }, method, values);
         } catch (Throwable e) {
             e.printStackTrace();
             throw e;

@@ -476,7 +476,7 @@ public abstract class TestAssembler {
      */
     public abstract void emitCall(long addr);
 
-    public void emitJavaCall(int[] pos, DebugInfo info, int markId) {
+    public void emitJavaCall(int[] pos, DebugInfo info) {
         throw new UnsupportedOperationException("Java calls are not supported.");
     }
 

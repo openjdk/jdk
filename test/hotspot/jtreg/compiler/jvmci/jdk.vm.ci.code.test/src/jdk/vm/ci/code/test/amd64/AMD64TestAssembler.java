@@ -523,10 +523,7 @@ public class AMD64TestAssembler extends TestAssembler {
         }
     }
 
-    public void emitJavaCall(int[] pos, DebugInfo info, int markId) {
-        if (markId == config.MARKID_INVOKEVIRTUAL || markId == config.MARKID_INVOKEINTERFACE) {
-            emitLoadLong(AMD64.rax, 0);
-        }
+    public void emitJavaCall(int[] pos, DebugInfo info) {
         int displacementPos = code.position() + 1;
         if (displacementPos % 4 != 0) {
             nop(4 - displacementPos % 4);
