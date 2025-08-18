@@ -394,9 +394,9 @@ class ConsoleIOContext extends IOContext {
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefix =
-                            prefixOpt.orElse("").substring(cursor - anchor[0]);
+                            prefixOpt.orElse("");
 
-                    if (!prefix.isEmpty() && !command) {
+                    if (prefix.length() > cursor - anchor[0] && !command) {
                         //the completion will fill in the prefix, which will invalidate
                         //the documentation, avoid adding documentation tasks into the
                         //todo list:
@@ -405,6 +405,7 @@ class ConsoleIOContext extends IOContext {
 
                     ordinaryCompletion =
                             new OrdinaryCompletionTask(ordinaryCompletionToShow,
+                                                       anchor[0],
                                                        prefix,
                                                        !command && !doc.isEmpty(),
                                                        hasBoth);
@@ -609,15 +610,18 @@ class ConsoleIOContext extends IOContext {
 
     private final class OrdinaryCompletionTask implements CompletionTask {
         private final List<? extends CharSequence> toShow;
+        private final int anchor;
         private final String prefix;
         private final boolean cont;
         private final boolean showSmart;
 
         public OrdinaryCompletionTask(List<? extends CharSequence> toShow,
+                                      int anchor,
                                       String prefix,
                                       boolean cont,
                                       boolean showSmart) {
             this.toShow = toShow;
+            this.anchor = anchor;
             this.prefix = prefix;
             this.cont = cont;
             this.showSmart = showSmart;
@@ -630,7 +634,14 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Result perform(String text, int cursor) throws IOException {
-            in.putString(prefix);
+            String existingPrefix = in.getBuffer().substring(anchor, cursor);
+
+            if (prefix.startsWith(existingPrefix)) {
+                in.putString(prefix.substring(existingPrefix.length()));
+            } else {
+                in.getBuffer().backspace(existingPrefix.length());
+                in.putString(prefix);
+            }
 
             boolean showItems = toShow.size() > 1 || showSmart;
 
@@ -639,7 +650,7 @@ class ConsoleIOContext extends IOContext {
                 printColumns(toShow);
             }
 
-            if (!prefix.isEmpty())
+            if (prefix.length() > existingPrefix.length())
                 return showItems ? Result.FINISH : Result.SKIP_NOREPAINT;
 
             return cont ? Result.CONTINUE : Result.FINISH;
