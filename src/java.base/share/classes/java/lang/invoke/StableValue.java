@@ -133,7 +133,7 @@ import java.util.function.Supplier;
  * public class Component {
  *
  *     private final Supplier<Logger> logger =
- *             // @link substring="ofLazy" target="Supplier#ofLazy(Supplier)" :
+ *             // @link substring="ofLazyFinal" target="Supplier#ofLazyFinal(Supplier)" :
  *             Supplier.ofLazyFinal( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
