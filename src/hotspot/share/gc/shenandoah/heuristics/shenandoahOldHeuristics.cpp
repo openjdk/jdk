@@ -102,13 +102,11 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   const size_t old_evacuation_reserve = _old_generation->get_evacuation_reserve();
   const size_t old_evacuation_budget = (size_t) ((double) old_evacuation_reserve / ShenandoahOldEvacWaste);
   size_t unfragmented_available = _old_generation->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes();
-  size_t fragmented_available;
-  size_t excess_fragmented_available;
+  size_t fragmented_available = 0;
+  size_t excess_fragmented_available = 0;
 
   if (unfragmented_available > old_evacuation_budget) {
     unfragmented_available = old_evacuation_budget;
-    fragmented_available = 0;
-    excess_fragmented_available = 0;
   } else {
     assert(_old_generation->available() >= old_evacuation_budget, "Cannot budget more than is available");
     fragmented_available = _old_generation->available() - unfragmented_available;
@@ -141,7 +139,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // If region r is evacuated to fragmented memory (to free memory within a partially used region), then we need
     // to decrease the capacity of the fragmented memory by the scaled loss.
 
-    size_t live_data_for_evacuation = r->get_live_data_bytes();
+    const size_t live_data_for_evacuation = r->get_live_data_bytes();
     size_t lost_available = r->free();
 
     if ((lost_available > 0) && (excess_fragmented_available > 0)) {
@@ -169,7 +167,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
       // We were not able to account for the lost free memory within fragmented memory, so we need to take this
       // allocation out of unfragmented memory.  Unfragmented memory does not need to account for loss of free.
       if (live_data_for_evacuation > unfragmented_available) {
-        // There is not room to evacuate this region or any that come after it in within the candidates array.
+        // There is no room to evacuate this region or any that come after it in within the candidates array.
+        log_info(gc, ergo)("Not enough unfragmented memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+          unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= live_data_for_evacuation;
@@ -187,7 +187,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
         evacuation_need = 0;
       }
       if (evacuation_need > unfragmented_available) {
-        // There is not room to evacuate this region or any that come after it in within the candidates array.
+        // There is no room to evacuate this region or any that come after it in within the candidates array.
+        log_info(gc, ergo)("Not enough memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+          unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= evacuation_need;
