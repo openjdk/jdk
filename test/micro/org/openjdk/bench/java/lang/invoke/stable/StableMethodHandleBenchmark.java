@@ -21,9 +21,9 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
-import org.openjdk.bench.java.lang.stable.StableValueBenchmark.Dcl;
+import java.lang.invoke.stable.StableValueBenchmark.Dcl;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 
 /**
  * Benchmark measuring StableValue performance
@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.StableValue;
 public class StableMethodHandleBenchmark {
 
     private static final MethodHandle FINAL_MH = identityHandle();
-    private static final java.util.concurrent.atomic.StableValue<MethodHandle> STABLE_MH;
+    private static final StableValue<MethodHandle> STABLE_MH;
 
     private static /* intentionally not final */ MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);

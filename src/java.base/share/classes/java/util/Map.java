@@ -27,7 +27,7 @@ package java.util;
 
 import jdk.internal.javac.PreviewFeature;
 
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;

@@ -21,23 +21,23 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.StableValue;
-import java.util.function.IntFunction;
+import java.lang.invoke.StableValue;
+import java.util.function.Supplier;
 
 /**
  * Benchmark measuring StableValue performance
@@ -51,35 +51,45 @@ import java.util.function.IntFunction;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-public class StableIntFunctionSingleBenchmark {
+@OperationsPerInvocation(2)
+public class StableSupplierBenchmark {
 
-    private static final int SIZE = 100;
-    private static final IntFunction<Integer> IDENTITY = i -> i;
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 23;
 
-    private static final List<Integer> STABLE = List.ofLazy(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = STABLE::get;
+    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
+    private static final Supplier<Integer> SUPPLIER = Supplier.ofLazyFinal(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofLazyFinal(() -> VALUE);
 
-    private final List<Integer> stable = List.ofLazy(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = stable::get;
+    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
+    private final Supplier<Integer> supplier = Supplier.ofLazyFinal(() -> VALUE);
+    private final Supplier<Integer> supplier2 = Supplier.ofLazyFinal(() -> VALUE2);
 
     @Benchmark
-    public int list() {
-        return stable.get(1);
+    public int stable() {
+        return stable.get() + stable2.get();
     }
 
     @Benchmark
-    public int intFunction() {
-        return intFunction.apply(1);
+    public int supplier() {
+        return supplier.get() + supplier2.get();
     }
 
     @Benchmark
-    public int staticList() {
-        return STABLE.get(1);
+    public int staticStable() {
+        return STABLE.get() + STABLE2.get();
     }
 
     @Benchmark
-    public int staticIntFunction() {
-        return INT_FUNCTION.apply(1);
+    public int staticSupplier() {
+        return SUPPLIER.get() + SUPPLIER2.get();
+    }
+
+    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
+        m.trySet(value);
+        return m;
     }
 
 }

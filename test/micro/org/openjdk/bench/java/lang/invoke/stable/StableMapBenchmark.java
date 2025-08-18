@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -38,7 +38,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.StableValue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -55,7 +54,8 @@ import java.util.stream.IntStream;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-public class StableFunctionSingleBenchmark {
+@OperationsPerInvocation(100)
+public class StableMapBenchmark {
 
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
@@ -68,22 +68,38 @@ public class StableFunctionSingleBenchmark {
 
     @Benchmark
     public int map() {
-        return map.get(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += map.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int function() {
-        return function.apply(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += function.apply(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int staticSMap() {
-        return MAP.get(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += MAP.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int staticIntFunction() {
-        return FUNCTION.apply(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += FUNCTION.apply(i);
+        }
+        return sum;
     }
 
 }

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -40,7 +40,6 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.StableValue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -76,8 +75,8 @@ public class VarHandleHolderBenchmark {
     private static final VarHandle VH_X = VAR_HANDLE_FUNCTION.apply("x");
     private static final VarHandle VH_Y = VAR_HANDLE_FUNCTION.apply("y");
 
-    private static final Supplier<VarHandle> SV_X = Supplier.ofLazy(() -> VAR_HANDLE_FUNCTION.apply("x"));
-    private static final Supplier<VarHandle> SV_Y = Supplier.ofLazy(() -> VAR_HANDLE_FUNCTION.apply("y"));
+    private static final Supplier<VarHandle> SV_X = Supplier.ofLazyFinal(() -> VAR_HANDLE_FUNCTION.apply("x"));
+    private static final Supplier<VarHandle> SV_Y = Supplier.ofLazyFinal(() -> VAR_HANDLE_FUNCTION.apply("y"));
 
     private static final Map<String, VarHandle> U_MAP = Map.of(
             "x", VH_X,

@@ -29,7 +29,7 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -43,10 +43,10 @@ public record PresetStableValue<T>(T contents) implements StableValue<T> {
         Objects.requireNonNull(contents);
         return false;
     }
-    @ForceInline @Override public T           get() { return contents; }
-    @ForceInline @Override public Optional<T> toOptional() { return Optional.of(contents); }
-    @ForceInline @Override public boolean     isSet() { return true; }
-    @ForceInline @Override public T           orElseSet(Supplier<? extends T> supplier) {
+    @ForceInline @Override public T       get() { return contents; }
+    @ForceInline @Override  public T      orElse(T other) { return contents; }
+    @ForceInline @Override public boolean isSet() { return true; }
+    @ForceInline @Override public T       orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
         return contents;
     }

@@ -21,13 +21,14 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -58,23 +59,25 @@ public class StableValueBenchmark {
     private static final Holder HOLDER2 = new Holder(VALUE2);
     private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
     private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
+    private static final List<StableValue<Integer>> LIST = StableValue.ofList(10);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final StableValue<Integer> stableNull = StableValue.of();
-    private final StableValue<Integer> stableNull2 = StableValue.of();
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
     private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
     private final Supplier<Integer> supplier2 = () -> VALUE2;
+    private final List<StableValue<Integer>> list = StableValue.ofList(10);
 
 
     @Setup
     public void setup() {
-        stableNull.trySet(null);
-        stableNull2.trySet(null);
+        LIST.get(2).trySet(VALUE);
+        LIST.get(3).trySet(VALUE2);
+        list.get(2).trySet(VALUE);
+        list.get(3).trySet(VALUE2);
     }
 
     @Benchmark
@@ -93,8 +96,8 @@ public class StableValueBenchmark {
     }
 
     @Benchmark
-    public int stableNull() {
-        return (stableNull.get() == null ? VALUE : VALUE2) + (stableNull2.get() == null ? VALUE : VALUE2);
+    public int list() {
+        return list.get(2).get() + list.get(3).get();
     }
 
     // Reference case
@@ -128,6 +131,10 @@ public class StableValueBenchmark {
         return STABLE.get() + STABLE2.get();
     }
 
+    @Benchmark
+    public int staticList() {
+        return LIST.get(2).get() + LIST.get(3).get();
+    }
 
     private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
         m.trySet(value);
@@ -161,14 +168,12 @@ public class StableValueBenchmark {
 
     }
 
-
     // Handles null values
     public static class Dcl<V> implements Supplier<V> {
 
         private final Supplier<V> supplier;
 
         private volatile V value;
-        private boolean bound;
 
         public Dcl(Supplier<V> supplier) {
             this.supplier = supplier;
@@ -178,15 +183,10 @@ public class StableValueBenchmark {
         public V get() {
             V v = value;
             if (v == null) {
-                if (!bound) {
-                    synchronized (this) {
-                        v = value;
-                        if (v == null) {
-                            if (!bound) {
-                                value = v = supplier.get();
-                                bound = true;
-                            }
-                        }
+                synchronized (this) {
+                    v = value;
+                    if (v == null) {
+                        value = v = supplier.get();
                     }
                 }
             }

@@ -30,7 +30,7 @@ import jdk.internal.lang.stable.StableSupplier;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 
 /**
  * Represents a supplier of results.
@@ -56,7 +56,7 @@ public interface Supplier<T> {
     T get();
 
     /**
-     * {@return a new lazy stable supplier}
+     * {@return a new lazy, stable, and final supplier}
      * <p>
      * The returned {@linkplain Supplier supplier} is a caching supplier that records
      * the value of the provided {@code underlying} supplier upon being first accessed via
@@ -80,6 +80,8 @@ public interface Supplier<T> {
      * <p>
      * If the provided {@code underlying} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
+     * <p>
+     * Finality confers certain performance optimization available to the VM.
      *
      * @param underlying supplier used to compute a cached value
      * @param <T>        the type of results supplied by the returned supplier
@@ -88,7 +90,7 @@ public interface Supplier<T> {
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-    static <T> Supplier<T> ofLazy(Supplier<? extends T> underlying) {
+    static <T> Supplier<T> ofLazyFinal(Supplier<? extends T> underlying) {
         Objects.requireNonNull(underlying);
         return StableSupplier.of(underlying);
     }

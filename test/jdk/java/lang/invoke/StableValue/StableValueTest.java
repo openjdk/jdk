@@ -24,6 +24,7 @@
 /* @test
  * @summary Basic tests for StableValue implementations
  * @enablePreview
+ * @compile StableTestUtil.java
  * @run junit StableValueTest
  */
 
@@ -34,11 +35,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -66,17 +66,17 @@ final class StableValueTest {
     void preSet(StableValue<Integer> stable) {
         assertTrue(stable.isSet());
         assertEquals(VALUE, stable.get());
-        assertEquals(VALUE, stable.toOptional().orElseThrow());
+        assertEquals(VALUE, stable.orElse(null));
         assertEquals(VALUE, stable.orElseSet(() -> VALUE2));
         assertFalse(stable.trySet(VALUE2));
     }
 
     @ParameterizedTest
     @MethodSource("stableValues")
-    void toOptional(StableValue<Integer> stable) {
-        assertTrue(stable.toOptional().isEmpty());
+    void orElse(StableValue<Integer> stable) {
+        assertNull(stable.orElse(null));
         stable.trySet(VALUE);
-        assertEquals(VALUE, stable.toOptional().orElseThrow());
+        assertEquals(VALUE, stable.orElse(null));
     }
 
     @ParameterizedTest

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.util.concurrent.atomic;
+package java.lang.invoke;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
@@ -38,7 +38,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -52,7 +51,7 @@ import java.util.function.Supplier;
  * Its contents, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()},  or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * Once set, the contents can never change and can be retrieved by calling
- * {@linkplain #get() orElseThrow()} , {@linkplain #toOptional() toOptional()},
+ * {@linkplain #get() orElseThrow()} , {@linkplain #orElse(Object) () orElse()},
  * or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
@@ -126,7 +125,7 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A stable supplier is created via the
- * {@linkplain Supplier#ofLazy(Supplier) Supplier.ofLazy()} factory, by
+ * {@linkplain Supplier#ofLazyFinal(Supplier) Supplier.ofLazy()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
@@ -135,7 +134,7 @@ import java.util.function.Supplier;
  *
  *     private final Supplier<Logger> logger =
  *             // @link substring="ofLazy" target="Supplier#ofLazy(Supplier)" :
- *             Supplier.ofLazy( () -> Logger.getLogger(Component.class) );
+ *             Supplier.ofLazyFinal( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -171,7 +170,7 @@ import java.util.function.Supplier;
  *
  * int result = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
  *
- * }
+ *}
  * <p>
  * Similarly, a <em>lazy stable map</em> is an unmodifiable map whose keys are known at
  * construction. The lazy stable map's values are computed when they are first accessed,
@@ -220,8 +219,8 @@ import java.util.function.Supplier;
  *         }
  *     }
  *
- *     private static final Supplier<Foo> FOO = Supplier.ofLazy(Foo::new);
- *     private static final Supplier<Bar> BAR = Supplier.ofLazy(() -> new Bar(FOO.get()));
+ *     private static final Supplier<Foo> FOO = Supplier.ofLazyFinal(Foo::new);
+ *     private static final Supplier<Bar> BAR = Supplier.ofLazyFinal(() -> new Bar(FOO.get()));
  *
  *     public static Foo foo() {
  *         return FOO.get();
@@ -297,7 +296,7 @@ import java.util.function.Supplier;
  * A successful read operation can be either:
  * <ul>
  *     <li>a {@link #get()} that does not throw,</li>
- *     <li>a {@link #toOptional() toOptional(other)} that does not return the {@code other} value</li>
+ *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value</li>
  *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}, or</li>
  *     <li>an {@link #isSet()} that returns {@code true}</li>
  * </ul>
@@ -324,8 +323,7 @@ import java.util.function.Supplier;
  *           (directly or indirectly) synchronize on a {@code StableValue}. Hence,
  *           synchronizing on {@code this} may lead to deadlock.
  *           <p>
- *           Except for a {@code StableValue}'s contents itself,
- *           an {@linkplain #toOptional() toOptional(other)} parameter, and
+ *           Except for an {@linkplain #orElse(Object) orElse(other)} parameter, or and
  *           an {@linkplain #equals(Object) equals(obj)} parameter; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
@@ -387,9 +385,11 @@ public sealed interface StableValue<T>
     boolean trySet(T contents);
 
     /**
-     * {@return the contents if set, otherwise, returns {@linkplain Optional#empty()}}
+     * {@return the contents if set, otherwise, returns {@code other}}
+     *
+     * @param other value to return if no contents is set
      */
-    Optional<T> toOptional();
+    T orElse(T other);
 
     /**
      * {@return the contents if set, otherwise, throws {@code NoSuchElementException}}

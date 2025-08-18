@@ -7,7 +7,7 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.RandomAccess;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 
 @ValueBased
 public class PresetStableList<E>

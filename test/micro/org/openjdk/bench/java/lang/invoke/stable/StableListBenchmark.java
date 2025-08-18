@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,13 +35,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.StableValue;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.function.IntFunction;
 
 /**
  * Benchmark measuring StableValue performance
@@ -56,40 +52,40 @@ import java.util.stream.IntStream;
 })
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(100)
-public class StableFunctionBenchmark {
+public class StableListBenchmark {
 
     private static final int SIZE = 100;
-    private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
+    private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = MAP::get;
+    private static final List<Integer> LIST = List.ofLazy(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = LIST::get;
 
-    private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
-    private final Function<Integer, Integer> function = map::get;
+    private final List<Integer> list = List.ofLazy(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = list::get;
 
     @Benchmark
-    public int map() {
+    public int list() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += map.get(i);
+            sum += list.get(i);
         }
         return sum;
     }
 
     @Benchmark
-    public int function() {
+    public int intFunction() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += function.apply(i);
+            sum += intFunction.apply(i);
         }
         return sum;
     }
 
     @Benchmark
-    public int staticSMap() {
+    public int staticList() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += MAP.get(i);
+            sum += LIST.get(i);
         }
         return sum;
     }
@@ -98,7 +94,7 @@ public class StableFunctionBenchmark {
     public int staticIntFunction() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += FUNCTION.apply(i);
+            sum += INT_FUNCTION.apply(i);
         }
         return sum;
     }

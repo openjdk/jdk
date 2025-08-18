@@ -32,7 +32,7 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -101,8 +101,9 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
-    public Optional<T> toOptional() {
-        return Optional.ofNullable((T) contentsAcquire());
+    public T orElse(T other) {
+        final Object t = contentsAcquire();
+        return t == null ? other : (T) t;
     }
 
     @ForceInline

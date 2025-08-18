@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 class LocaleISOData {
 
     static final Supplier<String[]> ISO_639 =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public String[] get() {
                     return getISO2Table(isoLanguageTable);
@@ -39,7 +39,7 @@ class LocaleISOData {
             });
 
     static final Supplier<String[]> ISO_3166_1_ALPHA2 =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public String[] get() {
                     return getISO2Table(isoCountryTable);
@@ -47,7 +47,7 @@ class LocaleISOData {
             });
 
     static final Supplier<Set<String>> ISO_3166_1_ALPHA3 =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public Set<String> get() {
                     return computeISO3166_1Alpha3Countries();
@@ -55,7 +55,7 @@ class LocaleISOData {
             });
 
     static final Supplier<Set<String>> ISO_3166_3 =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public Set<String> get() {
                     return Set.of(ISO3166_3);

@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.internal.lang.stable;
 
 import jdk.internal.ValueBased;
@@ -11,7 +36,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.RandomAccess;
-import java.util.concurrent.atomic.StableValue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 @ValueBased
@@ -21,22 +47,24 @@ public class StandardStableList<E>
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final Object TOMB_STONE = new Object();
 
     @Stable
     private final Object[] elements;
-    private final Object[] mutexes;
+    @Stable
+    private final Mutexes mutexes;
 
     private StandardStableList(int length) {
         this.elements = new Object[length];
-        this.mutexes = new Object[length];
         super();
+        this.mutexes = new Mutexes(length);
     }
 
     @ForceInline
     @Override
     public ElementStableValue<E> get(int index) {
         Objects.checkIndex(index, elements.length);
-        return new ElementStableValue<>(elements, mutexes, offsetFor(index));
+        return new ElementStableValue<>(elements, this, offsetFor(index));
     }
 
     @Override
@@ -45,13 +73,9 @@ public class StandardStableList<E>
     }
 
     // Todo: Views
-    // Todo: Consider having just a StandardStableList field and an offset
-    public record ElementStableValue<T>(@Stable Object[] elements,
-                                        Object[] mutexes,
-                                        long offset)
-            implements StableValue<T> {
-
-        private static final Object TOMB_STONE = new Object();
+    public record ElementStableValue<T>(@Stable Object[] elements, // Fast track this one
+                                        StandardStableList<T> list,
+                                        long offset)  implements StableValue<T> {
 
         @ForceInline
         @Override
@@ -60,10 +84,10 @@ public class StandardStableList<E>
             if (contentsAcquire() != null) {
                 return false;
             }
-            // Prevent reentry via an orElseSet(supplier)
+            // Prevent reentry via orElseSet(supplier)
             preventReentry();
             // Mutual exclusion is required here as `orElseSet` might also
-            // attempt to modify `this.contents`
+            // attempt to modify `this.elements`
             final Object mutex = acquireMutex();
             if (mutex == TOMB_STONE) {
                 return false;
@@ -78,8 +102,9 @@ public class StandardStableList<E>
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public Optional<T> toOptional() {
-            return Optional.ofNullable((T) contentsAcquire());
+        public T orElse(T other) {
+            final Object t = contentsAcquire();
+            return t == null ? other:(T)t;
         }
 
         @SuppressWarnings("unchecked")
@@ -145,20 +170,17 @@ public class StandardStableList<E>
 
         @ForceInline
         private Object acquireMutex() {
-            final Object candidate = new Object();
-            final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
-            return witness == null ? candidate : witness;
+            return list.mutexes.acquireMutex(offset);
         }
 
         @ForceInline
         private void disposeOfMutex() {
-            UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+            list.mutexes.disposeOfMutex(offset);
         }
 
         @ForceInline
         private Object mutexVolatile() {
-            // Can be plain semantics?
-            return UNSAFE.getReferenceVolatile(mutexes, offset);
+            return list.mutexes.mutexVolatile(offset);
         }
 
         // This method is not annotated with @ForceInline as it is always called
@@ -180,7 +202,8 @@ public class StandardStableList<E>
          */
         @ForceInline
         private boolean set(T newValue) {
-            assert Thread.holdsLock(mutexVolatile());
+            Object mutex;
+            assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@" + offset + ") didn't hold " + mutex;
             // We know we hold the monitor here so plain semantic is enough
             if (UNSAFE.getReference(elements, offset) == null) {
                 UNSAFE.putReferenceRelease(elements, offset, newValue);
@@ -198,6 +221,45 @@ public class StandardStableList<E>
     @ForceInline
     private static long offsetFor(long index) {
         return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
+    }
+
+    private static class Mutexes {
+
+        // Inflated on demand
+        private volatile Object[] mutexes;
+        // Used to detect we have computed all elements and no longer need the `mutexes` array
+        private volatile AtomicInteger counter;
+
+        private Mutexes(int length) {
+            this.mutexes = new Object[length];
+            this.counter = new AtomicInteger(length);
+        }
+
+        @ForceInline
+        private Object acquireMutex(long offset) {
+            final Object candidate = new Object();
+            final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
+            return witness == null ? candidate : witness;
+        }
+
+        @ForceInline
+        private void disposeOfMutex(long offset) {
+            UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+            // Todo: the null check is redundant as this method is invoked at most
+            //       `size()` times.
+            if (counter != null && counter.decrementAndGet() == 0) {
+                // We don't need these anymore
+                counter = null;
+                mutexes = null;
+            }
+        }
+
+        @ForceInline
+        private Object mutexVolatile(long offset) {
+            // Can be plain semantics?
+            return UNSAFE.getReferenceVolatile(mutexes, offset);
+        }
+
     }
 
     public static <T> List<StableValue<T>> ofList(int size) {

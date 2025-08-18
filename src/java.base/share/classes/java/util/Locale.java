@@ -48,7 +48,6 @@ import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.MessageFormat;
 import java.text.ParsePosition;
-import java.util.concurrent.atomic.StableValue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.spi.LocaleNameProvider;
@@ -985,7 +984,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -2317,7 +2316,7 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultFormatLocale;
 
     private final transient Supplier<String> languageTag =
-            Supplier.ofLazy(new Supplier<>() {
+            Supplier.ofLazyFinal(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();

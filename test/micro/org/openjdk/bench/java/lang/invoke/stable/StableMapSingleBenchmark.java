@@ -21,23 +21,25 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.StableValue;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Benchmark measuring StableValue performance
@@ -51,45 +53,35 @@ import java.util.function.Supplier;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(2)
-public class StableSupplierBenchmark {
+public class StableMapSingleBenchmark {
 
-    private static final int VALUE = 42;
-    private static final int VALUE2 = 23;
+    private static final int SIZE = 100;
+    private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = Supplier.ofLazy(() -> VALUE);
-    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofLazy(() -> VALUE);
+    private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
+    private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final Supplier<Integer> supplier = Supplier.ofLazy(() -> VALUE);
-    private final Supplier<Integer> supplier2 = Supplier.ofLazy(() -> VALUE2);
+    private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
+    private final Function<Integer, Integer> function = map::get;
 
     @Benchmark
-    public int stable() {
-        return stable.get() + stable2.get();
+    public int map() {
+        return map.get(1);
     }
 
     @Benchmark
-    public int supplier() {
-        return supplier.get() + supplier2.get();
+    public int function() {
+        return function.apply(1);
     }
 
     @Benchmark
-    public int staticStable() {
-        return STABLE.get() + STABLE2.get();
+    public int staticSMap() {
+        return MAP.get(1);
     }
 
     @Benchmark
-    public int staticSupplier() {
-        return SUPPLIER.get() + SUPPLIER2.get();
-    }
-
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
+    public int staticIntFunction() {
+        return FUNCTION.apply(1);
     }
 
 }

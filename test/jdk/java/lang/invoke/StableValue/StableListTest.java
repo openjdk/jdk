@@ -35,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
+import java.lang.invoke.StableValue;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -376,7 +377,7 @@ final class StableListTest {
         StandardStableValue<Integer>[] array = StableUtil.array(SIZE);
         assertEquals(SIZE, array.length);
         // Check, every StableValue is distinct
-        Map<java.util.concurrent.atomic.StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
         for (var e: array) {
             idMap.put(e, true);
         }

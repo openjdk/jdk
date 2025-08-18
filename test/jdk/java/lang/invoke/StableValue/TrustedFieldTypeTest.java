@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 
 import static org.junit.jupiter.api.Assertions.*;
 

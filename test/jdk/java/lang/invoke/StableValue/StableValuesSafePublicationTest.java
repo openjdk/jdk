@@ -25,6 +25,7 @@
  * @summary Basic tests for making sure StableValue publishes values safely
  * @modules java.base/jdk.internal.misc
  * @enablePreview
+ * @compile StableTestUtil.java
  * @run junit StableValuesSafePublicationTest
  */
 
@@ -38,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.StableValue;
+import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,7 +84,7 @@ final class StableValuesSafePublicationTest {
                 StableValue<Holder> s = stables[i];
                 Holder h;
                 // Wait until the StableValue has a holder value
-                while ((h = s.toOptional().orElse(null)) == null) {}
+                while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
                 int a = h.a;
                 int b = h.b;
                 int c = h.c;
@@ -177,7 +178,7 @@ final class StableValuesSafePublicationTest {
                     if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
                                 Stream.of(STABLES.get())
-                                        .map(s -> s.toOptional().orElse(null))
+                                        .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
                         fail("Giving up! Set stables seen by a new thread: " + nonNulls);
