@@ -22,15 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package build.tools.generatecharacter;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 public class CaseFolding {
 
@@ -42,32 +41,58 @@ public class CaseFolding {
         var templateFile = Paths.get(args[0]);
         var caseFoldingTxt = Paths.get(args[1]);
         var genSrcFile = Paths.get(args[2]);
-        var supportedTypes = "^.*; [CTS]; .*$";
+
+        // java.lang
+        var supportedTypes = "^.*; [CF]; .*$";  // full/1:M case folding
         var caseFoldingEntries = Files.lines(caseFoldingTxt)
-            .filter(line -> !line.startsWith("#") && line.matches(supportedTypes))
-            .map(line -> {
-                String[] cols = line.split("; ");
-                return new String[] {cols[0], cols[1], cols[2]};
-            })
-            .filter(cols -> {
-                //  the folding case doesn't map back to the original char.
-                var cp1 = Integer.parseInt(cols[0], 16);
-                var cp2 = Integer.parseInt(cols[2], 16);
-                return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
-            })
-            .map(cols -> String.format("        entry(0x%s, 0x%s)", cols[0], cols[2]))
-            .collect(Collectors.joining(",\n", "", ""));
+                .filter(line -> !line.startsWith("#") && line.matches(supportedTypes))
+                .map(line -> {
+                    var fields = line.split("; ");
+                    var cp = Integer.parseInt(fields[0], 16);
+                    fields = fields[2].trim().split(" ");
+                    var folding = new int[fields.length];
+                    for (int i = 0; i < folding.length; i++) {
+                        folding[i] = Integer.parseInt(fields[i], 16);
+                    }
+                    var foldingChars = Arrays.stream(folding)
+                            .mapToObj(Character::toChars)
+                            .flatMapToInt(chars -> IntStream.range(0, chars.length).map(i -> (int) chars[i]))
+                            .toArray();
+                    return String.format("\t\tnew CaseFoldingEntry(0x%04x, %s)",
+                            cp,
+                            Arrays.stream(foldingChars)
+                                    .mapToObj(c -> String.format("0x%04x", c))
+                                    .collect(Collectors.joining(", ", "new char[] {", "}"))
+                    );
+                })
+                .collect(Collectors.joining(",\n", "", ""));
+        // util.regex
+        var expandedSupportedTypes = "^.*; [CTS]; .*$";
+        var expanded_caseFoldingEntries = Files.lines(caseFoldingTxt)
+                .filter(line -> !line.startsWith("#") && line.matches(expandedSupportedTypes))
+                .map(line -> {
+                    String[] cols = line.split("; ");
+                    return new String[]{cols[0], cols[1], cols[2]};
+                })
+                .filter(cols -> {
+                    // the folding case doesn't map back to the original char.
+                    var cp1 = Integer.parseInt(cols[0], 16);
+                    var cp2 = Integer.parseInt(cols[2], 16);
+                    return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
+                })
+                .map(cols -> String.format("        entry(0x%s, 0x%s)", cols[0], cols[2]))
+                .collect(Collectors.joining(",\n", "", ""));
 
         // hack, hack, hack! the logic does not pick 0131. just add manually to support 'I's.
         // 0049; T; 0131; # LATIN CAPITAL LETTER I
         final String T_0x0131_0x49 = String.format("        entry(0x%04x, 0x%04x),\n", 0x0131, 0x49);
 
-        // Generate .java file
         Files.write(
-            genSrcFile,
-            Files.lines(templateFile)
-                .map(line -> line.contains("%%%Entries") ? T_0x0131_0x49 + caseFoldingEntries : line)
-                .collect(Collectors.toList()),
-            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                genSrcFile,
+                Files.lines(templateFile)
+                        .map(line -> line.contains("%%%Entries") ? caseFoldingEntries : line)
+                        .map(line -> line.contains("%%%Expanded_Case_Map_Entries") ? T_0x0131_0x49 + expanded_caseFoldingEntries : line)
+                        .collect(Collectors.toList()),
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }
