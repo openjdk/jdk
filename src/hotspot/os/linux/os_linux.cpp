@@ -5033,7 +5033,6 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
-
   if (user_sys_cpu_time) {
     return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
   } else {
