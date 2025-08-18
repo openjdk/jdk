@@ -89,6 +89,7 @@ public class JSplitPaneOverlapping extends OverlappingTestBase {
 
         frame.getContentPane().add(splitPane);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

@@ -97,6 +97,7 @@ public class ViewportOverlapping extends OverlappingTestBase {
         f.setSize(400, 400);
         f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
 

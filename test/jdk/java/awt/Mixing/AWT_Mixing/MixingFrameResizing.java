@@ -65,6 +65,7 @@ public class MixingFrameResizing extends OverlappingTestBase {
         frame = new JFrame("Mixing : Frame Resizing test");
         frame.setLayout(new SpringLayout());
         frame.setSize(50, 50);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         propagateAWTControls(frame);
         Util.waitTillShown(frame);

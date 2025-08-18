@@ -172,6 +172,7 @@ public abstract class OverlappingTestBase {
                     frame.setSize(size, size);
                     frame.setUndecorated(true);
                     frame.setVisible(true);
+                    frame.setLocationRelativeTo(null);
                     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                     p[0] = frame.getLocation();
                 }

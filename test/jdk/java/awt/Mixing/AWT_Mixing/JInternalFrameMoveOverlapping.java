@@ -117,6 +117,7 @@ public class JInternalFrameMoveOverlapping extends OverlappingTestBase {
         JFrame frame = new JFrame("Test Window");
         frame.setSize(300, 300);
         frame.setContentPane(desktopPane);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         locTopFrame = topFrame.getLocationOnScreen();

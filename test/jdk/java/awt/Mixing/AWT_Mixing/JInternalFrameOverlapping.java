@@ -75,6 +75,7 @@ public class JInternalFrameOverlapping extends OverlappingTestBase {
         JFrame frame = new JFrame("Test Window");
         frame.setSize(300, 300);
         frame.setContentPane(desktopPane);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         JInternalFrame bottomFrame = new JInternalFrame("bottom frame", false, false, false, false);
         bottomFrame.setSize(220, 220);

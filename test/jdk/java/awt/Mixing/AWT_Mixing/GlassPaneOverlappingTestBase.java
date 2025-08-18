@@ -92,6 +92,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         testedComponent.setBounds(0, 0, testedComponent.getPreferredSize().width, testedComponent.getPreferredSize().height);
         glassPane.add(testedComponent);
 
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
 

@@ -89,6 +89,7 @@ public class OpaqueOverlapping extends OverlappingTestBase {
         panel.add(light);
         frame.add(panel);
         frame.setBounds(50, 50, 400, 400);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         currentAwtControl.addMouseListener(new MouseAdapter() {

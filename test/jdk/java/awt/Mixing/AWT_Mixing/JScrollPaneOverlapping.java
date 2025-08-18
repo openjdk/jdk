@@ -95,6 +95,7 @@ public class JScrollPaneOverlapping extends OverlappingTestBase {
         });
 
         f.getContentPane().add(scrollPane);
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
         propagateAWTControls(p);
 //        JButton b = new JButton("Space extender");

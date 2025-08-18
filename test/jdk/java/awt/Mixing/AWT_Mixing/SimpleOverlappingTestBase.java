@@ -125,6 +125,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
 
         propagateAWTControls(f);
 
+        f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
 
