@@ -46,7 +46,7 @@ public class StandardStableList<E>
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    static final Object TOMB_STONE = new Mutexes.MutexObject(-100);
+    static final Object TOMB_STONE = new Mutexes.MutexObject(-100, Thread.currentThread().threadId());
 
     @Stable
     private final Object[] elements;
@@ -55,8 +55,8 @@ public class StandardStableList<E>
 
     private StandardStableList(int length) {
         this.elements = new Object[length];
-        super();
         this.mutexes = new Mutexes(length);
+        super();
     }
 
     @ForceInline
@@ -80,9 +80,10 @@ public class StandardStableList<E>
         @Override
         public boolean trySet(T contents) {
             Objects.requireNonNull(contents);
-            if (contentsAcquire() != null) {
-                return false;
-            }
+            return !isSet() && trySetSlowPath(contents);
+        }
+
+        boolean trySetSlowPath(T contents) {
             // Prevent reentry via orElseSet(supplier)
             preventReentry();
             // Mutual exclusion is required here as `orElseSet` might also
@@ -92,6 +93,10 @@ public class StandardStableList<E>
                 return false;
             }
             synchronized (mutex) {
+                // Maybe we were not the winner?
+                if (acquireMutex() == TOMB_STONE) {
+                    return false;
+                }
                 final boolean outcome = set(contents);
                 disposeOfMutex();
                 return outcome;
@@ -140,7 +145,9 @@ public class StandardStableList<E>
                 return (T) contentsAcquire();
             }
             synchronized (mutex) {
-                final Object t = UNSAFE.getReference(elements, offset);  // Plain semantics suffice here
+                // If there was another winner that succeeded,
+                // the contents is guaranteed to be set
+                final Object t = contentsPlain();  // Plain semantics suffice here
                 if (t == null) {
                      final T newValue = supplier.get();
                     Objects.requireNonNull(newValue);
@@ -167,6 +174,10 @@ public class StandardStableList<E>
             return UNSAFE.getReferenceAcquire(elements, offset);
         }
 
+        private Object contentsPlain() {
+            return UNSAFE.getReference(elements, offset);
+        }
+
         @ForceInline
         private Object acquireMutex() {
             return list.mutexes.acquireMutex(offset);
@@ -182,8 +193,6 @@ public class StandardStableList<E>
             return list.mutexes.mutexVolatile(offset);
         }
 
-        // This method is not annotated with @ForceInline as it is always called
-        // in a slow path.
         private void preventReentry() {
             final Object mutex = mutexVolatile();
             if (mutex == null || mutex == TOMB_STONE || !Thread.holdsLock(mutex)) {
@@ -204,7 +213,7 @@ public class StandardStableList<E>
         @ForceInline
         private boolean set(T newValue) {
             Object mutex;
-            assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@" + offset + ") didn't hold " + mutex;
+            assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@ offset " + offset + ") didn't hold " + mutex;
             // We know we hold the monitor here so plain semantic is enough
             if (UNSAFE.getReference(elements, offset) == null) {
                 UNSAFE.putReferenceRelease(elements, offset, newValue);
@@ -238,7 +247,7 @@ public class StandardStableList<E>
 
         @ForceInline
         private Object acquireMutex(long offset) {
-            final Object candidate = new MutexObject(offset);
+            final Object candidate = new MutexObject(offset, Thread.currentThread().threadId());
             final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
             check(witness, offset);
             return witness == null ? candidate : witness;
@@ -267,12 +276,15 @@ public class StandardStableList<E>
             if (mutex == null || mutex == TOMB_STONE) {
                 return mutex;
             }
-            assert (mutex instanceof MutexObject(long offset)) && offset == realOffset : mutex+", realOffset = "+realOffset;
+            assert (mutex instanceof MutexObject(long offset, long tid)) && offset == realOffset :
+                    mutex +
+                    ", realOffset = " + realOffset+
+                    ", realThread = " + Thread.currentThread().threadId();
             return mutex;
         }
 
         // Todo: remove this after stabilization
-        record MutexObject(long offset) { }
+        record MutexObject(long offset, long tid) { }
 
     }
 

@@ -68,16 +68,17 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @Stable
     private Object contents;
 
-    // Only allow creation via the factory `StableValueImpl::newInstance`
+    // Only allow creation via the factory `StandardStableValue::newInstance`
     private StandardStableValue() {}
 
     @ForceInline
     @Override
     public boolean trySet(T contents) {
         Objects.requireNonNull(contents);
-        if (contentsAcquire() != null) {
-            return false;
-        }
+        return !isSet() && trySetSlowPath(contents);
+    }
+
+    boolean trySetSlowPath(T contents) {
         // Prevent reentry via an orElseSet(supplier)
         preventReentry();
         // Mutual exclusion is required here as `orElseSet` might also
