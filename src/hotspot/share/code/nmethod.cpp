@@ -2146,13 +2146,13 @@ void nmethod::purge(bool unregister_nmethod) {
     delete ec;
     ec = next;
   }
-  if (_pc_desc_container != nullptr) {
-    delete _pc_desc_container;
-  }
+
+  delete _pc_desc_container;
   delete[] _compiled_ic_data;
 
   os::free(_immutable_data);
   _immutable_data = nullptr;
+  _immutable_data_size = 0;
 
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
