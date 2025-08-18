@@ -458,6 +458,12 @@ class, named Virtual, is currently part of the JDK build in the
 <code>test/jtreg_test_thread_factory/</code> directory. This class gets
 compiled during the test image build. The implementation of the Virtual
 class creates a new virtual thread for executing each test class.</p>
+<h4 id="jvmti_stress_agent">JVMTI_STRESS_AGENT</h4>
+<p>Executes JTReg tests with JVM TI stress agent. The stress agent is
+the part of test library and located in
+<code>test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp</code>. The
+value of this argument is set as JVM TI agent options. This mode uses
+ProblemList-jvmti-stress-agent.txt as an additional exclude list.</p>
 <h4 id="test_mode">TEST_MODE</h4>
 <p>The test mode (<code>agentvm</code> or <code>othervm</code>).</p>
 <p>Defaults to <code>agentvm</code>.</p>
