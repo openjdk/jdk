@@ -62,4 +62,24 @@ public class StringCompareToIgnoreCase {
     public int supLower() {
         return supUpper.compareToIgnoreCase(supLower);
     }
+
+    @Benchmark
+    public int upperLowerCF() {
+        return upper.compareToCaseFold(upperLower);
+    }
+
+    @Benchmark
+    public int lowerrCF() {
+        return upper.compareToCaseFold(lower);
+    }
+
+    @Benchmark
+    public int supUpperLowerCF() {
+        return supUpper.compareToCaseFold(supUpperLower);
+    }
+
+    @Benchmark
+    public int supLowerCF() {
+        return supUpper.compareToCaseFold(supLower);
+    }
 }

@@ -2040,6 +2040,75 @@ public final class String
     }
 
     /**
+     * Compares this {@code String} to another {@code String} for equality,
+     * using <em>Unicode case folding</em>.
+     * <p>
+     * Two strings are considered equal by this method if their case-folded
+     * forms are identical. Case folding is defined by the Unicode Standard in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
+     * including 1:M mappings. For example, {@code "Maße".equalsCaseFold("MASSE")}
+     * returns {@code true}, since the character {@code U+00DF} (sharp s) folds
+     * to {@code "ss"}.
+     * <p>
+     * Case folding is locale-independent and language-neutral, unlike
+     * locale-sensitive transformations such as {@link #toLowerCase()} or
+     * {@link #toUpperCase()}. It is intended for caseless matching,
+     * searching, and indexing.
+     *
+     * @apiNote
+     * This method is the Unicode-compliant alternative to
+     * {@link #equalsIgnoreCase(String)}. It implements full case folding as
+     * defined by the Unicode Standard, which may differ from the simpler
+     * per-character mapping performed by {@code equalsIgnoreCase}.
+     * For example:
+     * <pre>{@code
+     * String a = "Maße";
+     * String b = "MASSE";
+     * boolean equalCaseFold = a.equalsCaseFold(b);       // returns true
+     * boolean equalIgnoreCase = a.equalsIgnoreCase(b);   // returns false
+     * }</pre>
+     *
+     * @param  anotherString
+     *         The {@code String} to compare this {@code String} against
+     *
+     * @return  {@code true} if the given object is a {@code String}
+     *          that represents the same sequence of characters as this
+     *          string under Unicode case folding; {@code false} otherwise.
+     *
+     * @see     #compareToCaseFold(String)
+     * @see     #equalsIgnoreCase(String)
+     * @see     java.text.Collator
+     * @since   26
+     */
+    public boolean equalsCaseFold(String anotherString) {
+        if (this == anotherString) {
+            return true;
+        }
+        if (anotherString == null) {
+            return false;
+        }
+        byte[] v1 = this.value;
+        byte[] v2 = anotherString.value;
+        var ltr1 = this.coder
+                == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v1)
+                        : StringCaseFoldedCharIterator.ofUTF16(v1);
+        var ltr2 = anotherString.coder
+                == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v2)
+                        : StringCaseFoldedCharIterator.ofUTF16(v2);
+        while (ltr1.hasNext() && ltr2.hasNext()) {
+            int ch1 = ltr1.nextChar();
+            int ch2 = ltr2.nextChar();
+            if (ch1 != ch2) {
+                return false;
+            }
+        }
+        if (ltr1.hasNext() || ltr2.hasNext()) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Compares two strings lexicographically.
      * The comparison is based on the Unicode value of each character in
      * the strings. The character sequence represented by this
@@ -2158,6 +2227,85 @@ public final class String
      */
     public int compareToIgnoreCase(String str) {
         return CASE_INSENSITIVE_ORDER.compare(this, str);
+    }
+
+    /**
+     * A Comparator that orders {@code String} objects as by
+     * {@link #compareToCaseFold(String) compareToCaseFold()}.
+     *
+     * @see     #compareToCaseFold(String)
+     * @since   26
+     */
+    public static final Comparator<String> CASE_FOLD_ORDER
+            = new CaseFoldComparator();
+
+    private static class CaseFoldComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String s1, String s2) {
+            byte[] v1 = s1.value;
+            byte[] v2 = s2.value;
+            var ltr1 = s1.coder == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v1)
+                                          : StringCaseFoldedCharIterator.ofUTF16(v1);
+            var ltr2 = s2.coder == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v2)
+                                          : StringCaseFoldedCharIterator.ofUTF16(v2);
+            while (ltr1.hasNext() && ltr2.hasNext()) {
+                int ch1 = ltr1.nextChar();
+                int ch2 = ltr2.nextChar();
+                if (ch1 != ch2) {
+                    return ch1 - ch2;
+                }
+            }
+            if (ltr1.hasNext()) return 1;
+            if (ltr2.hasNext()) return -1;
+            return 0;
+        }
+    }
+
+    /**
+     * Compares two strings lexicographically using Unicode case folding.
+     * <p>
+     * This method returns an integer whose sign is that of calling {@code compareTo}
+     * on the case folded versions of the strings. Unicode Case folding eliminates
+     * differences in case according to the Unicode Standard, using the mappings
+     * defined in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
+     * including 1:M mappings, such as {@code"ß"} → {@code }"ss"}.
+     * <p>
+     * Case folding is a locale-independent, language-neutral form of case mapping,
+     * primarily intended for caseless matching. Unlike {@link #compareToIgnoreCase(String)},
+     * which applies a simpler locale-insensitive uppercase mapping. This method
+     * follows the Unicode-defined <em>full</em> case folding, providing stable and
+     * consistent results across all environments.
+     * <p>
+     * Note that this method does <em>not</em> take locale into account, and may
+     * produce results that differ from locale-sensitive ordering. For locale-aware
+     * comparisons, use {@link java.text.Collator}.
+     *
+     * @apiNote
+     * This method is the Unicode-compliant alternative to
+     * {@link #compareToIgnoreCase(String)}. It implements full case folding
+     * as defined by the Unicode Standard, which may differ from the simpler
+     * per-character mapping performed by {@code compareToIgnoreCase}.
+     * For example:
+     * <pre>{@code
+     * String a = "Maße";
+     * String b = "MASSE";
+     * int cmpCaseFold = a.compareToCaseFold(b);     // returns 0
+     * int cmpIgnoreCase = a.compareToIgnoreCase(b); // returns > 0
+     * }</pre>
+     *
+     * @param   str   the {@code String} to be compared.
+     * @return  a negative integer, zero, or a positive integer as the specified
+     *          String is greater than, equal to, or less than this String,
+     *          ignoring case considerations by case folding.
+     * @see     #equalsCaseFold(String)
+     * @see     #compareToIgnoreCase(String)
+     * @see     java.text.Collator
+     * @since   26
+     */
+    public int compareToCaseFold(String str) {
+        return CASE_FOLD_ORDER.compare(this, str);
     }
 
     /**
