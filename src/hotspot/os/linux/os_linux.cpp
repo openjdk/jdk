@@ -5023,9 +5023,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // We don't really need to know the command string, just find the last
   // occurrence of ")" and then start parsing from there. See bug 4726580.
   s = strrchr(stat, ')');
-  if (s == nullptr) {
-    return -1;
-  }
+  if (s == nullptr) return -1;
 
   // Skip blank chars
   do { s++; } while (s && isspace((unsigned char) *s));
@@ -5034,9 +5032,8 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
-  if (count != 13) {
-    return -1;
-  }
+  if (count != 13) return -1;
+
   if (user_sys_cpu_time) {
     return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
   } else {
