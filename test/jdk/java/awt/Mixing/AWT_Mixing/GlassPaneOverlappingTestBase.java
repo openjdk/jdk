@@ -141,7 +141,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         } else {
                             f.requestFocusInWindow();
                         }
-
                     }
                 });
             } catch (InterruptedException ex) {
