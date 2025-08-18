@@ -2161,6 +2161,64 @@ public final class String
     }
 
     /**
+     * A Comparator that orders {@code String} objects as by
+     * {@link #compareToCaseFold(String) compareToCaseFold()}.
+     *
+     * @see     #compareToCaseFold(String)
+     * @since   26
+     */
+    public static final Comparator<String> CASE_FOLD_ORDER
+            = new CaseFoldComparator();
+
+    private static class CaseFoldComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String s1, String s2) {
+            byte[] v1 = s1.value;
+            byte[] v2 = s2.value;
+            var ltr1 = s1.coder == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v1)
+                                          : StringCaseFoldedCharIterator.ofUTF16(v1);
+            var ltr2 = s2.coder == LATIN1 ? StringCaseFoldedCharIterator.ofLatin1(v2)
+                                          : StringCaseFoldedCharIterator.ofUTF16(v2);
+            while (ltr1.hasNext() && ltr2.hasNext()) {
+                int ch1 = ltr1.nextChar();
+                int ch2 = ltr2.nextChar();
+                if (ch1 != ch2) {
+                    return ch1 - ch2;
+                }
+            }
+            if (ltr1.hasNext()) return 1;
+            if (ltr2.hasNext()) return -1;
+            return 0;
+        }
+    }
+
+    /**
+     * Compares two strings lexicographically using Unicode case folding.
+     * <p>
+     * This method returns an integer whose sign is that of calling {@code compareTo}
+     * on the case folded versions of the strings.  Unicode Case folding eliminates
+     * differences in case according to the Unicode Standard, using the mappings
+     * defined in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
+     * including one-to-many mappings, such as {@code"ß"} → {@code }"ss"}.
+     * <p>
+     * Note that this method does <em>not</em> take locale into account, and may
+     * produce results that differ from locale-sensitive ordering. For locale-aware
+     * comparisons, use {@link java.text.Collator}.
+     * @param   str   the {@code String} to be compared.
+     * @return  a negative integer, zero, or a positive integer as the specified
+     *          String is greater than, equal to, or less than this String,
+     *          ignoring case considerations by case folding.
+     * @see     java.text.Collator
+     * @see     #toCaseFold()
+     * @since   26
+     */
+    public int compareToCaseFold(String str) {
+        return CASE_FOLD_ORDER.compare(this, str);
+    }
+
+    /**
      * Tests if two string regions are equal.
      * <p>
      * A substring of this {@code String} object is compared to a substring
@@ -3789,6 +3847,48 @@ public final class String
      */
     public String toUpperCase() {
         return toUpperCase(Locale.getDefault());
+    }
+
+    /**
+     * Returns a case-folded copy of this {@code String}, using the Unicode
+     * case folding mappings defined in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">
+     * Unicode Case Folding Properties</a>.
+     *
+     * <p>Case folding is a locale-independent, language-neutral form of
+     * case mapping, primarily intended for caseless matching.
+     * Unlike {@link #toLowerCase()} or {@link #toUpperCase()}, which are
+     * designed for locale-sensitive or display-oriented transformations,
+     * case folding provides a stable and consistent mapping across all
+     * environments. It may include one-to-many mappings; for example,
+     * the German sharp s ({@code U+00DF}) folds to the sequence
+     * {@code "ss"}.
+     *
+     * <p>This method performs the <em>"Full"</em> case folding as defined in
+     * the Unicode CaseFolding data file. The result is suitable for use in
+     * case-insensitive string comparison, searching, or indexing.
+     *
+     * @apiNote
+     * Case folding is intended for caseless matching, not for locale-sensitive
+     * presentation. For example:
+     *
+     * <pre>{@code
+     * String a = "Maße";
+     * String b = "MASSE";
+     * if (a.toCaseFold().equals(b.toCaseFold())) {
+     *     // true, matches according to Unicode caseless rules
+     * }
+     * }</pre>
+     *
+     * @return a {@code String} containing the case-folded form of this string
+     * @see #toLowerCase()
+     * @see #toUpperCase()
+     * @since 26
+     */
+
+    public String toCaseFold() {
+        return isLatin1() ? StringLatin1.toCaseFold(this, value)
+                          : StringUTF16.toCaseFold(this, value);
     }
 
     /**

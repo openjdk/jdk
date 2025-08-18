@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.java.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -558,6 +559,54 @@ final class StringLatin1 {
             }
         }
         return StringUTF16.newString(result, 0, resultOffset);
+    }
+
+    private static String toCaseFoldEx(String str, byte[] value, int first) {
+        byte[] result = StringUTF16.newBytesFor(value.length);
+        int resultOffset = 0;
+        for (int i = 0; i < first; i++) {
+            StringUTF16.putChar(result, resultOffset++, value[i] & 0xff);
+        }
+        for (int i = first; i < value.length; i++) {
+            int cp = value[i] & 0xff;
+            char[] folded = CaseFolding.fold(cp);
+            if (folded.length == 1) {
+                StringUTF16.putChar(result, resultOffset++, folded[0]);
+            } else {
+                byte[] result2 = StringUTF16.newBytesFor((result.length >> 1) + folded.length - 1);
+                System.arraycopy(result, 0, result2, 0, resultOffset << 1);
+                result = result2;
+                for (int x = 0; x < folded.length; ++x) {
+                    StringUTF16.putChar(result, resultOffset++, folded[x]);
+                }
+            }
+        }
+        return StringUTF16.newString(result, 0, resultOffset);
+    }
+
+    public static String toCaseFold(String str, byte[] value) {
+        int first;
+        final int len = value.length;
+        // Now check if there are any characters that need to be changed
+        for (first = 0 ; first < len; first++) {
+            var cp = value[first] & 0xff;
+            if (!CaseFolding.isFolded(value[first] & 0xff)) {
+                break;
+            }
+        }
+        if (first == len)
+            return str;
+        byte[] result = new byte[len];
+        System.arraycopy(value, 0, result, 0, first);  // Just copy the first few
+        // fold characters
+        for (int i = first; i < len; i++) {
+            var folded = CaseFolding.fold(value[i] & 0xff);
+            if (folded.length > 1 || !canEncode(folded[0])) {
+                return toCaseFoldEx(str, value, first);
+            }
+            result[i] = (byte)(folded[0] & 0xff);
+        }
+        return new String(result, LATIN1);
     }
 
     public static String trim(byte[] value) {
