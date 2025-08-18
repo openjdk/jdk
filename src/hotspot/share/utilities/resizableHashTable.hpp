@@ -22,28 +22,28 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
-#define SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
+#ifndef SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
+#define SHARE_UTILITIES_RESIZEABLEHASHTABLE_HPP
 
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 template<
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
     MemTag MEM_TAG>
-class ResizeableResourceHashtableStorage : public AnyObj {
-  using Node = ResourceHashtableNode<K, V>;
+class ResizeableHashTableStorage : public AnyObj {
+  using Node = HashTableNode<K, V>;
 
 protected:
   unsigned _table_size;
   Node** _table;
 
-  ResizeableResourceHashtableStorage(unsigned table_size) {
+  ResizeableHashTableStorage(unsigned table_size) {
     _table_size = table_size;
     _table = alloc_table(table_size);
   }
 
-  ~ResizeableResourceHashtableStorage() {
+  ~ResizeableHashTableStorage() {
     if (ALLOC_TYPE == C_HEAP) {
       FREE_C_HEAP_ARRAY(Node*, _table);
     }
@@ -76,15 +76,15 @@ template<
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
-class ResizeableResourceHashtable : public ResourceHashtableBase<
-    ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
+class ResizeableHashTable : public HashTableBase<
+    ResizeableHashTableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
     K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> {
   unsigned _max_size;
 
-  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
+  using BASE = HashTableBase<ResizeableHashTableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
                                      K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS>;
-  using Node = ResourceHashtableNode<K, V>;
-  NONCOPYABLE(ResizeableResourceHashtable);
+  using Node = HashTableNode<K, V>;
+  NONCOPYABLE(ResizeableHashTable);
 
   // Calculate next "good" hashtable size based on requested count
   int calculate_resize(bool use_large_table_sizes) const {
@@ -111,7 +111,7 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
   }
 
 public:
-  ResizeableResourceHashtable(unsigned size, unsigned max_size)
+  ResizeableHashTable(unsigned size, unsigned max_size)
   : BASE(size), _max_size(max_size) {
     assert(size <= 0x3fffffff && max_size <= 0x3fffffff, "avoid overflow in resize");
   }
@@ -180,4 +180,4 @@ public:
 #endif // ASSERT
 };
 
-#endif // SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP
+#endif // SHARE_UTILITIES_RESIZABLEHASHTABLE_HPP

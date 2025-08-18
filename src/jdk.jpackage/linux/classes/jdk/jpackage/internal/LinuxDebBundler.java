@@ -351,8 +351,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_LICENSE_TEXT", licenseText);
         data.put("APPLICATION_ARCH", pkg.arch());
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
-                AppImageLayout.toPathGroup(pkg.packageLayout().resolveAt(
-                        env.appImageDir())).sizeInBytes() >> 10));
+                AppImageLayout.toPathGroup(env.appImageLayout()).sizeInBytes() >> 10));
         data.put("APPLICATION_HOMEPAGE", pkg.aboutURL().map(
                 value -> "Homepage: " + value).orElse(""));
         data.put("APPLICATION_VERSION_WITH_RELEASE", ((LinuxDebPackage) pkg).versionWithRelease());

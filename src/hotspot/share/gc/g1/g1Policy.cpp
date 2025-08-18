@@ -508,12 +508,9 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
-  const GrowableArray<G1HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
   double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
-  for (GrowableArrayIterator<G1HeapRegion*> it = survivor_regions->begin();
-       it != survivor_regions->end();
-       ++it) {
-    survivor_regions_evac_time += predict_region_copy_time_ms(*it, _g1h->collector_state()->in_young_only_phase());
+  for (G1HeapRegion* r : _g1h->survivor()->regions()) {
+    survivor_regions_evac_time += predict_region_copy_time_ms(r, _g1h->collector_state()->in_young_only_phase());
   }
 
   return survivor_regions_evac_time;
@@ -574,7 +571,6 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
-  _collection_set->abandon_all_candidates();
   _pending_cards_at_gc_start = 0;
 }
 
@@ -1462,16 +1458,13 @@ uint G1Policy::calc_max_old_cset_length() const {
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   start_adding_survivor_regions();
 
-  for (GrowableArrayIterator<G1HeapRegion*> it = survivors->regions()->begin();
-       it != survivors->regions()->end();
-       ++it) {
-    G1HeapRegion* curr = *it;
-    set_region_survivor(curr);
+  for (G1HeapRegion* r : survivors->regions()) {
+    set_region_survivor(r);
 
     // The region is a non-empty survivor so let's add it to
     // the incremental collection set for the next evacuation
     // pause.
-    _collection_set->add_survivor_regions(curr);
+    _collection_set->add_survivor_regions(r);
   }
   stop_adding_survivor_regions();
 
