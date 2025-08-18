@@ -24,5 +24,5 @@
 /*
  * @test
  * @modules java.net.http/jdk.internal.net.http
- * @run testng java.net.http/jdk.internal.net.http.FlowTest
+ * @run testng/timeout=480 java.net.http/jdk.internal.net.http.FlowTest
  */

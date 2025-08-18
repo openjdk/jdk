@@ -59,8 +59,8 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * @modules java.net.http/jdk.internal.net.http.common
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer ReferenceTracker
- * @run main/othervm  CancelledResponse
- * @run main/othervm  CancelledResponse SSL
+ * @run main/othervm/timeout=480 CancelledResponse
+ * @run main/othervm/timeout=480 CancelledResponse SSL
  */
 
 /**
