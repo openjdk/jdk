@@ -67,9 +67,6 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
      * The instance of {@code PropertyChangeListener}.
      */
     private PropertyChangeListener changeListener;
-    private static Color disabledForeground;
-    private static Color acceleratorSelectionForeground;
-    private static Color acceleratorForeground;
 
     final WindowsMenuItemUIAccessor accessor =
         new  WindowsMenuItemUIAccessor() {
@@ -174,7 +171,8 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
                                             arrowIcon, background, foreground,
-                                            defaultTextIconGap, menuItem,
+                                            disabledForeground, acceleratorSelectionForeground, 
+                                            acceleratorForeground, defaultTextIconGap, menuItem,
                                             getPropertyPrefix());
             return;
         }
@@ -185,6 +183,9 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
                               JComponent c, Icon checkIcon, Icon arrowIcon,
                               Color background, Color foreground,
+                              Color disabledForeground,
+                              Color acceleratorSelectionForeground,
+                              Color acceleratorForeground,
                               int defaultTextIconGap, JMenuItem menuItem, String prefix) {
         // Save original graphics font and color
         Font holdf = g.getFont();
