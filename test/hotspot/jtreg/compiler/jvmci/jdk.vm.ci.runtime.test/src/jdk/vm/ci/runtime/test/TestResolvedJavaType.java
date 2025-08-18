@@ -35,6 +35,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules java.base/jdk.internal.reflect
+ *          java.base/java.lang:open
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
@@ -56,22 +57,23 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.meta.annotation.Annotated;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
 import jdk.vm.ci.meta.annotation.EnumArrayElement;
 import jdk.vm.ci.meta.annotation.EnumElement;
 import jdk.vm.ci.meta.annotation.MissingType;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
 import sun.reflect.annotation.ExceptionProxy;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 import java.io.DataInputStream;
@@ -1213,12 +1215,40 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void getAnnotationValueTest() {
-        getAnnotationValueTest(AnnotationTestInput.AnnotatedClass.class);
-        getAnnotationValueTest(int.class);
-        getAnnotationValueTest(void.class);
+    public void getTypeAnnotationValuesTest() {
+        getTypeAnnotationValuesTest(AnnotationTestInput.AnnotatedClass.class);
+        getTypeAnnotationValuesTest(int.class);
+        getTypeAnnotationValuesTest(void.class);
         for (Class<?> c : classes) {
-            getAnnotationValueTest(c);
+            getTypeAnnotationValuesTest(c);
+        }
+    }
+
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code cls}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaType}.
+     */
+    private static void getTypeAnnotationValuesTest(Class<?> cls) {
+        ResolvedJavaType rt = metaAccess.lookupJavaType(cls);
+        assertTypeAnnotationsEquals(getTypeAnnotations(cls), rt.getTypeAnnotationValues());
+    }
+
+    private static final Method classGetRawTypeAnnotations = lookupMethod(Class.class, "getRawTypeAnnotations");
+    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
+
+    private static TypeAnnotation[] getTypeAnnotations(Class<?> c) {
+        byte[] rawAnnotations = invokeMethod(classGetRawTypeAnnotations, c);
+        ConstantPool cp = invokeMethod(classGetConstantPool, c);
+        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, c);
+    }
+
+    @Test
+    public void getAnnotationValuesTest() {
+        getAnnotationValuesTest(AnnotationTestInput.AnnotatedClass.class);
+        getAnnotationValuesTest(int.class);
+        getAnnotationValuesTest(void.class);
+        for (Class<?> c : classes) {
+            getAnnotationValuesTest(c);
         }
 
         // Primitive classes have no annotations but we cannot directly
@@ -1310,7 +1340,7 @@ public class TestResolvedJavaType extends TypeUniverse {
      *
      * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
      */
-    public static List<AnnotationValue> getAnnotationValueTest(AnnotatedElement annotatedElement) {
+    public static List<AnnotationValue> getAnnotationValuesTest(AnnotatedElement annotatedElement) {
         Annotated annotated = toAnnotated(annotatedElement);
         ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
@@ -1325,10 +1355,21 @@ public class TestResolvedJavaType extends TypeUniverse {
         values = annotated.getDeclaredAnnotationValues(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
         assertTrue(values.toString(), values.isEmpty());
 
-        return testGetAnnotationValue(annotated, List.of(annotatedElement.getDeclaredAnnotations()));
+        return testGetAnnotationValues(annotated, List.of(annotatedElement.getDeclaredAnnotations()));
     }
 
-    private static List<AnnotationValue> testGetAnnotationValue(Annotated annotated, List<Annotation> annotations) throws AssertionError {
+    public static void assertTypeAnnotationsEquals(
+            TypeAnnotation[] typeAnnotations,
+            List<TypeAnnotationValue> typeAnnotationValues) throws AssertionError {
+        assertEquals(typeAnnotations.length, typeAnnotationValues.size());
+        for (int i = 0; i < typeAnnotations.length; i++) {
+            TypeAnnotation typeAnnotation = typeAnnotations[i];
+            TypeAnnotationValue typeAnnotationValue = typeAnnotationValues.get(i);
+            assertTypeAnnotationEquals(typeAnnotation, typeAnnotationValue);
+        }
+    }
+
+    private static List<AnnotationValue> testGetAnnotationValues(Annotated annotated, List<Annotation> annotations) throws AssertionError {
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         List<AnnotationValue> res = new ArrayList<>(annotations.size());
 
@@ -1382,10 +1423,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static UnresolvedJavaType asType(Class<?> valueType) {
-        return UnresolvedJavaType.create(MetaUtil.toInternalName(valueType.getName()));
-    }
-
     private static void assertAnnotationsEquals(Annotation a, AnnotationValue av) {
         Map<String, Object> values = AnnotationSupport.memberValues(a);
         for (Map.Entry<String, Object> e : values.entrySet()) {
@@ -1403,6 +1440,15 @@ public class TestResolvedJavaType extends TypeUniverse {
                 av.get(name, elementType);
             }
         }
+    }
+    private static void assertTypeAnnotationEquals(TypeAnnotation ta, TypeAnnotationValue tav) {
+        TypeAnnotation.TypeAnnotationTargetInfo tiLeft = ta.getTargetInfo();
+        TypeAnnotation.TypeAnnotationTargetInfo tiRight = tav.getTargetInfo();
+        assertTrue(tiLeft + " != " + tiRight, TypeAnnotationValue.equal(tiLeft, tiRight));
+        TypeAnnotation.LocationInfo liLeft = ta.getLocationInfo();
+        TypeAnnotation.LocationInfo liRight = tav.getLocationInfo();
+        assertTrue(liLeft + " != " + liRight, TypeAnnotationValue.equal(liLeft, liRight));
+        assertAnnotationsEquals(ta.getAnnotation(), tav.getAnnotation());
     }
 
     /**

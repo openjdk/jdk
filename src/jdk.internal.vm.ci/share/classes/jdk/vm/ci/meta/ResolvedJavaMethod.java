@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.annotation.Annotated;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -30,6 +31,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.List;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
@@ -487,4 +489,15 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * responsibility to ensure the same speculation log is used throughout a compilation.
      */
     SpeculationLog getSpeculationLog();
+
+    /**
+     * Gets the type annotations for this method that back the implementation
+     * of {@link Method#getAnnotatedReturnType()}, {@link Method#getAnnotatedReceiverType()},
+     * {@link Method#getAnnotatedExceptionTypes()} and {@link Method#getAnnotatedParameterTypes()}.
+     *
+     * @throws UnsupportedOperationException if this operation is not supported
+     */
+    default List<TypeAnnotationValue> getTypeAnnotationValues() {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
 }

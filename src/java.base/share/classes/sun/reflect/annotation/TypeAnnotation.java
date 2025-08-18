@@ -36,9 +36,9 @@ import java.util.List;
  * annotations on declarations in the class file to actual Annotations in
  * AnnotatedType instances.
  *
- * TypeAnnotaions contain a base Annotation, location info (which lets you
+ * TypeAnnotations contain a base Annotation, location info (which lets you
  * distinguish between '@A Inner.@B Outer' in for example nested types),
- * target info and the declaration the TypeAnnotaiton was parsed from.
+ * target info and the declaration the TypeAnnotation was parsed from.
  */
 public final class TypeAnnotation {
     private final TypeAnnotationTargetInfo targetInfo;
@@ -143,9 +143,17 @@ public final class TypeAnnotation {
         private LocationInfo() {
             this(0, new Location[0]);
         }
-        private LocationInfo(int depth, Location[] locations) {
+        public LocationInfo(int depth, Location[] locations) {
             this.depth = depth;
             this.locations = locations;
+        }
+
+        public int getDepth() {
+            return depth;
+        }
+
+        public Location getLocationAt(int index) {
+            return locations[index];
         }
 
         public static final LocationInfo BASE_LOCATION = new LocationInfo();
@@ -239,8 +247,8 @@ public final class TypeAnnotation {
 
     @Override
     public String toString() {
-        return annotation.toString() + " with Targetnfo: " +
-            targetInfo.toString() + " on base declaration: " +
-            baseDeclaration.toString();
+        return annotation + " with TargetInfo: " +
+            targetInfo + " on base declaration: " +
+            baseDeclaration;
     }
 }

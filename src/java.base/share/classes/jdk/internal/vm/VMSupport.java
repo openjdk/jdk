@@ -31,6 +31,8 @@ import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy;
 import sun.reflect.annotation.EnumValue;
 import sun.reflect.annotation.EnumValueArray;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 import java.io.ByteArrayInputStream;
@@ -184,14 +186,17 @@ public class VMSupport {
     }
 
     /**
-     * Parses {@code rawAnnotations} into a list of {@link Annotation}s and then
-     * serializes them to a byte array with {@link #encodeAnnotations(Collection)}.
+     * Parses {@code rawAnnotations} into a list of {@link Annotation}s (isTypeAnnotations == false)
+     * or {@link TypeAnnotation}s (isTypeAnnotations == true) and then
+     * serializes them to a byte array with {@link #encodeAnnotations(Collection)} or
+     * {@link #encodeTypeAnnotations(TypeAnnotation[])}.
      */
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
+                                           boolean isTypeAnnotations,
                                            Class<?> declaringClass,
                                            ConstantPool cp,
                                            Class<? extends Annotation>[] selectAnnotationClasses) {
-        if (selectAnnotationClasses != null) {
+        if (!isTypeAnnotations && selectAnnotationClasses != null) {
             if (selectAnnotationClasses.length == 0) {
                 throw new IllegalArgumentException("annotation class selection must be null or non-empty");
             }
@@ -201,7 +206,11 @@ public class VMSupport {
                 }
             }
         }
-        return encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
+        if (isTypeAnnotations) {
+            return encodeTypeAnnotations(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, declaringClass));
+        } else {
+            return encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
+        }
     }
 
     /**
@@ -400,17 +409,53 @@ public class VMSupport {
     }
 
     /**
+     * Encodes typeAnnotations to a byte array. The byte array can be decoded with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
+     */
+    public static byte[] encodeTypeAnnotations(TypeAnnotation[] typeAnnotations) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+            try (DataOutputStream dos = new DataOutputStream(baos)) {
+                writeLength(dos, typeAnnotations.length);
+                for (TypeAnnotation ta : typeAnnotations) {
+                    encodeTypeAnnotation(dos, ta);
+                }
+            }
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static void encodeTypeAnnotation(DataOutputStream dos, TypeAnnotation ta) throws Exception {
+        TypeAnnotation.TypeAnnotationTargetInfo ti = ta.getTargetInfo();
+        TypeAnnotation.TypeAnnotationTarget target = ti.getTarget();
+        dos.writeUTF(target.name());
+        dos.writeInt(ti.getCount());
+        dos.writeInt(ti.getSecondaryIndex());
+        TypeAnnotation.LocationInfo li = ta.getLocationInfo();
+        int depth = li.getDepth();
+        dos.writeInt(depth);
+        for (int i = 0; i < depth; i++) {
+            TypeAnnotation.LocationInfo.Location loc = li.getLocationAt(i);
+            dos.write(loc.tag);
+            dos.writeShort(loc.index);
+        }
+        encodeAnnotation(dos, ta.getAnnotation());
+    }
+
+    /**
      * Helper for {@link #decodeAnnotations(byte[], AnnotationDecoder)} to convert a byte
      * array (ostensibly produced by {@link VMSupport#encodeAnnotations}) into objects.
      *
      * @param <T> type to which a type name is {@linkplain #resolveType(String) resolved}
      * @param <A> type of the object representing a decoded annotation
+     * @param <TA> type of the object representing a decoded type annotation
      * @param <E> type of the object representing a decoded enum constant
      * @param <EA> type of the object representing a decoded array of enum constants
      * @param <MT> type of the object representing a missing type
      * @param <ETM> type of the object representing a decoded element type mismatch
      */
-    public interface AnnotationDecoder<T, A, E, EA, MT, ETM> {
+    public interface AnnotationDecoder<T, A, TA, E, EA, MT, ETM> {
         /**
          * Resolves a name in {@link Class#getName()} format to an object of type {@code T}.
          */
@@ -423,6 +468,11 @@ public class VMSupport {
          * @param elements elements of the annotation
          */
         A newAnnotation(T type, Map.Entry<String, Object>[] elements);
+
+        /**
+         * Creates an object representing a decoded type annotation.
+         */
+        TA newTypeAnnotation(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, A annotation);
 
         /**
          * Creates an object representing a decoded enum.
@@ -468,7 +518,7 @@ public class VMSupport {
      * @return an immutable list of {@code A} objects
      */
     @SuppressWarnings("unchecked")
-    public static <T, A, E, EA, MT, ETM> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) {
+    public static <T, A, TA, E, EA, MT, ETM> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
             DataInputStream dis = new DataInputStream(bais);
@@ -479,7 +529,7 @@ public class VMSupport {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static <T, A, E, EA, MT, ETM> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
+    private static <T, A, TA, E, EA, MT, ETM> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
         String typeName = dis.readUTF();
         T type = decoder.resolveType(typeName);
         int n = readLength(dis);
@@ -508,12 +558,13 @@ public class VMSupport {
         }
         return decoder.newAnnotation(type, (Map.Entry<String, Object>[]) elements);
     }
+
     @FunctionalInterface
     interface IOReader {
         Object read() throws IOException;
     }
 
-    private static <T, A, E, EA, MT, ETM> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
+    private static <T, A, TA, E, EA, MT, ETM> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
         byte componentTag = dis.readByte();
         return switch (componentTag) {
             case 'B' -> readArray(dis, dis::readByte);
@@ -540,7 +591,7 @@ public class VMSupport {
      * returns it as an object of type {@code E}.
      */
     @SuppressWarnings("unchecked")
-    private static <T, A, E, EA, MT, ETM> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder, T enumType) throws IOException {
+    private static <T, A, TA, E, EA, MT, ETM> EA readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder, T enumType) throws IOException {
         List<String> names = (List<String>) readArray(dis, dis::readUTF);
         return decoder.newEnumArray(enumType, names);
     }
@@ -549,7 +600,7 @@ public class VMSupport {
      * Reads a class encoded at the current read position of {@code dis} and
      * returns it as an object of type {@code T}.
      */
-    private static <T, A, E, EA, MT, ETM> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, EA, MT, ETM> decoder) throws IOException {
+    private static <T, A, TA, E, EA, MT, ETM> T readClass(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
         return decoder.resolveType(dis.readUTF());
     }
 
@@ -593,5 +644,46 @@ public class VMSupport {
             length = (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0);
         }
         return length;
+    }
+
+    /**
+     * Decodes type annotations serialized in {@code encoded} to objects.
+     *
+     * @param <T> type to which a type name is resolved
+     * @param <A> type of the object representing a decoded annotation
+     * @param <E> type of the object representing a decoded enum constant
+     * @param <MT> type of the object representing a missing type
+     * @param <ETM> type of the object representing a decoded element type mismatch
+     * @return an immutable list of {@code A} objects
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, A, TA, E, EA, MT, ETM> List<TA> decodeTypeAnnotations(byte[] encoded, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
+            DataInputStream dis = new DataInputStream(bais);
+            return (List<TA>) readArray(dis, () -> decodeTypeAnnotation(dis, decoder));
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static <T, A, TA, E, EA, MT, ETM> TA decodeTypeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
+        TypeAnnotation.TypeAnnotationTarget target = TypeAnnotation.TypeAnnotationTarget.valueOf(dis.readUTF());
+        int count = dis.readInt();
+        int secondaryIndex = dis.readInt();
+        TypeAnnotation.TypeAnnotationTargetInfo ti = new TypeAnnotation.TypeAnnotationTargetInfo(target, count, secondaryIndex);
+        int depth = dis.readInt();
+        TypeAnnotation.LocationInfo li;
+        if (depth == 0) {
+            li = TypeAnnotation.LocationInfo.BASE_LOCATION;
+        } else {
+            TypeAnnotation.LocationInfo.Location[] locs = new TypeAnnotation.LocationInfo.Location[depth];
+            for (int i = 0; i != depth; i++) {
+                locs[i] = new TypeAnnotation.LocationInfo.Location(dis.readByte(), dis.readShort());
+            }
+            li = new TypeAnnotation.LocationInfo(depth, locs);
+        }
+        A annotation = decodeAnnotation(dis, decoder);
+        return decoder.newTypeAnnotation(ti, li, annotation);
     }
 }

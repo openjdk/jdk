@@ -3015,6 +3015,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
 C2V_END
 
 static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, AnnotationArray* annotations_array,
+                                              jboolean is_type_annotations,
                                               jint filter_length, jlong filter_klass_pointers,
                                               JavaThread* THREAD, JVMCI_TRAPS) {
   // Get a ConstantPool object for annotation parsing
@@ -3049,6 +3050,7 @@ static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, Annotatio
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_oop(annotations);
+  args.push_int(is_type_annotations);
   args.push_oop(Handle(THREAD, holder->java_mirror()));
   args.push_oop(jcp);
   args.push_oop(filter_classes);
@@ -3079,26 +3081,29 @@ static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, Annotatio
   return JVMCIENV->get_jbyteArray(ba_dest);
 }
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass),
+C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jboolean is_type_annotations,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, klass));
-  return get_encoded_annotation_values(holder, holder->class_annotations(), filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations = is_type_annotations ? holder->class_type_annotations() : holder->class_annotations();
+  return get_encoded_annotation_values(holder, raw_annotations, is_type_annotations, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
+C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), jboolean is_type_annotations,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  return get_encoded_annotation_values(method->method_holder(), method->annotations(), filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations = is_type_annotations ? method->type_annotations() : method->annotations();
+  return get_encoded_annotation_values(method->method_holder(), raw_annotations, is_type_annotations, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
+C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index, jboolean is_type_annotations,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(holder, index);
-  return get_encoded_annotation_values(holder, fd.annotations(), filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations = is_type_annotations ? fd.type_annotations() : fd.annotations();
+  return get_encoded_annotation_values(holder, raw_annotations, is_type_annotations, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
@@ -3442,9 +3447,9 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getCode",                                      CC "(" HS_INSTALLED_CODE ")[B",                                                       FN_PTR(getCode)},
   {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" REFLECTION_EXECUTABLE,                                          FN_PTR(asReflectionExecutable)},
   {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" REFLECTION_FIELD,                                               FN_PTR(asReflectionField)},
-  {CC "getEncodedClassAnnotationValues",              CC "(" HS_KLASS2 OBJECT "IJ)[B",                                                      FN_PTR(getEncodedClassAnnotationValues)},
-  {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 OBJECT "IJ)[B",                                                     FN_PTR(getEncodedExecutableAnnotationValues)},
-  {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "I" OBJECT "IJ)[B",                                                  FN_PTR(getEncodedFieldAnnotationValues)},
+  {CC "getEncodedClassAnnotationValues",              CC "(" HS_KLASS2 "Z" OBJECT "IJ)[B",                                                  FN_PTR(getEncodedClassAnnotationValues)},
+  {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 "Z" OBJECT "IJ)[B",                                                 FN_PTR(getEncodedExecutableAnnotationValues)},
+  {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "IZ" OBJECT "IJ)[B",                                                 FN_PTR(getEncodedFieldAnnotationValues)},
   {CC "getFailedSpeculations",                        CC "(J[[B)[[B",                                                                       FN_PTR(getFailedSpeculations)},
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getFailedSpeculationsAddress)},
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},

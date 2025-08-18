@@ -22,12 +22,20 @@
  */
 package jdk.vm.ci.runtime.test;
 
-import static java.lang.reflect.Modifier.isFinal;
-import static java.lang.reflect.Modifier.isStatic;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.JVMCI;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
@@ -48,16 +56,8 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.JVMCI;
+import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * Context for type related tests.
@@ -247,6 +247,37 @@ public class TypeUniverse {
                 arrayClasses.put(c, arrayClass);
                 addClass(arrayClass);
             }
+        }
+    }
+
+    public static Method lookupMethod(Class<?> declaringClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            Method result = declaringClass.getDeclaredMethod(methodName, parameterTypes);
+            result.setAccessible(true);
+            return result;
+        } catch (ReflectiveOperationException | LinkageError cause) {
+            throw new AssertionError(cause);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E extends Throwable> RuntimeException rethrow(Throwable ex) throws E {
+        throw (E) ex;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T invokeMethod(Method method, Object receiver, Object... arguments) {
+        try {
+            method.setAccessible(true);
+            return (T) method.invoke(receiver, arguments);
+        } catch (InvocationTargetException ex) {
+            Throwable cause = ex.getCause();
+            if (cause != null) {
+                throw rethrow(cause);
+            }
+            throw new AssertionError(ex);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
         }
     }
 }

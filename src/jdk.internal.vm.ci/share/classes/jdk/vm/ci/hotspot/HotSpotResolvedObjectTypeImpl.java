@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
@@ -38,6 +39,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -1133,7 +1135,16 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, filter);
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, false, filter);
         return new AnnotationValueDecoder(this).decode(encoded);
+    }
+
+    @Override
+    public List<TypeAnnotationValue> getTypeAnnotationValues() {
+        if (isArray()) {
+            return List.of();
+        }
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, true, null);
+        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(this));
     }
 }

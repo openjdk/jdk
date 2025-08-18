@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
@@ -39,12 +40,14 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Map;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
@@ -790,8 +793,14 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, filter);
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, false, filter);
         return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
+    }
+
+    @Override
+    public List<TypeAnnotationValue> getTypeAnnotationValues() {
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, true, null);
+        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 
     @Override

@@ -35,6 +35,8 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          java.base/java.lang:open
+ *          java.base/java.lang.reflect:open
  *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -48,17 +50,37 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.ExceptionHandler;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.LocalVariableTable;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation1;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation2;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation3;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.NumbersDE;
+import org.junit.Assert;
+import org.junit.Test;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -80,31 +102,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import org.junit.Assert;
-import org.junit.Test;
-
-import jdk.internal.vm.test.AnnotationTestInput;
-import jdk.internal.vm.test.MemberAdded;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.Instruction;
-
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.ExceptionHandler;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.LocalVariableTable;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation1;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation2;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation3;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.NumbersDE;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -545,7 +547,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     }
 
     /**
-     * Encapsulates input for {@link TestResolvedJavaMethod#getAnnotationValueTest}.
+     * Encapsulates input for {@link TestResolvedJavaMethod#getAnnotationValuesTest}.
      */
     static class AnnotationValueTest {
 
@@ -587,20 +589,47 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
+     */
+    private static void getTypeAnnotationValuesTest(Executable executable) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
+        TestResolvedJavaType.assertTypeAnnotationsEquals(getTypeAnnotations(executable), method.getTypeAnnotationValues());
+    }
+
+    private static final Method executableGetTypeAnnotationBytes = lookupMethod(Executable.class, "getTypeAnnotationBytes");
+    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
+
+    private static TypeAnnotation[] getTypeAnnotations(Executable e) {
+        byte[] rawAnnotations = invokeMethod(executableGetTypeAnnotationBytes, e);
+        Class<?> container = e.getDeclaringClass();
+        jdk.internal.reflect.ConstantPool cp = invokeMethod(classGetConstantPool, container);
+        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container);
+    }
+
     @Test
-    public void getAnnotationValueTest() throws Exception {
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
+    public void getTypeAnnotationValuesTest() throws Exception {
+        getTypeAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        for (Method m : methods.keySet()) {
+            getTypeAnnotationValuesTest(m);
+        }
+    }
+
+    @Test
+    public void getAnnotationValuesTest() throws Exception {
+        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
         try {
-            TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"));
+            TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"));
             throw new AssertionError("expected " + NoClassDefFoundError.class.getName());
         } catch (NoClassDefFoundError e) {
             Assert.assertEquals("jdk/internal/vm/test/AnnotationTestInput$Missing", e.getMessage());
         }
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"));
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"));
-        TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
-        List<AnnotationValue> avList = TestResolvedJavaType.getAnnotationValueTest(AnnotationTestInput.class.getDeclaredMethod("addedMember"));
+        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"));
+        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"));
+        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
+        List<AnnotationValue> avList = TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("addedMember"));
         try {
             avList.getFirst().get("addedElement", Integer.class);
             throw new AssertionError("expected " + IllegalArgumentException.class.getName());
@@ -609,7 +638,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
 
         for (Method m : methods.keySet()) {
-            TestResolvedJavaType.getAnnotationValueTest(m);
+            TestResolvedJavaType.getAnnotationValuesTest(m);
         }
 
         ResolvedJavaMethod m = metaAccess.lookupJavaMethod(AnnotationValueTest.class.getDeclaredMethod("methodWithThreeAnnotations"));
