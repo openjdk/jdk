@@ -2036,14 +2036,12 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   andi(t0, cnt, ~(stride - 1));
   beqz(t0, SCALAR_TAIL);
 
-  vsetvli(t1, x0, Assembler::e32, Assembler::m2);
-  vmv_v_x(v_sum, x0);
-
   la(t1, ExternalAddress(adr_pows31));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
-  vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
+  vle32_v(v_coeffs, t1); // 31^^(stride - 1) ... 31^^0
+  vmv_v_x(v_sum, x0);
 
   bind(VEC_LOOP);
   arrays_hashcode_elload_v(v_src, v_tmp, ary, eltype);
