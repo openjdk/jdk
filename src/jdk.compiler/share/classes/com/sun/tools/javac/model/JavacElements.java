@@ -800,6 +800,7 @@ public class JavacElements implements Elements {
                 yield msym.module_info.classfile;
             }
             case TYP -> ((ClassSymbol) sym).classfile;
+            case ERR -> null;
             default -> sym.enclClass().classfile;
         };
     }

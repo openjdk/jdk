@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8224922
+ * @bug 8224922 8365689
  * @summary Verify the behavior of the Elements.getFileObjectOf
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,6 +33,8 @@
  * @run main TestFileObjectOf
  */
 
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import java.nio.file.Path;
@@ -592,4 +594,119 @@ public class TestFileObjectOf extends TestRunner {
 
     }
 
+    @Test //JDK-8365689
+    public void testUndefined(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                          """
+                          public class TestClass {
+                              void t() {
+                                  undefined1.call();
+                                  this.undefined2();
+                              }
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        //from source, implicit:
+        {
+            List<String> log;
+
+            log = new JavacTask(tb)
+                .options("-Xpkginfo:always",
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.classes"),
+                         "-processor", UndefinedPrintFiles.class.getName(),
+                         "-sourcepath", src.toString())
+                .outdir(classes)
+                .classes("java.lang.Object")
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+            List<String> expected = List.of(
+                "undefined1: " + "<null>",
+                "undefined2: " + "<null>"
+            );
+
+            if (!expected.equals(log))
+                throw new AssertionError("expected output not found: " + log);
+        }
+
+        tb.cleanDirectory(classes);
+
+        //from source, explicit:
+        {
+            List<String> log;
+
+            log = new JavacTask(tb)
+                .options("-Xpkginfo:always",
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.classes"),
+                         "-processor", UndefinedPrintFiles.class.getName())
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+            List<String> expected = List.of(
+                "undefined1: " + "<null>",
+                "undefined2: " + "<null>"
+            );
+
+            if (!expected.equals(log))
+                throw new AssertionError("expected output not found: " + log);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    @SupportedOptions("fromClass")
+    public static final class UndefinedPrintFiles extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (!roundEnv.processingOver())
+                return false;
+
+            Elements elements = processingEnv.getElementUtils();
+            Trees trees = Trees.instance(processingEnv);
+            TypeElement typeClass = elements.getTypeElement("TestClass");
+            TreePath tp = trees.getPath(typeClass);
+            new TreePathScanner<>() {
+                @Override
+                public Object visitIdentifier(IdentifierTree node, Object p) {
+                    if (node.getName().toString().startsWith("undefined")) {
+                        Element el = trees.getElement(getCurrentPath());
+                        handleDeclaration(el);
+                    }
+                    return super.visitIdentifier(node, p);
+                }
+
+                @Override
+                public Object visitMemberSelect(MemberSelectTree node, Object p) {
+                    if (node.getIdentifier().toString().startsWith("undefined")) {
+                        Element el = trees.getElement(getCurrentPath());
+                        handleDeclaration(el);
+                    }
+                    return super.visitMemberSelect(node, p);
+                }
+            }.scan(tp, null);
+
+            return false;
+        }
+
+        void handleDeclaration(Element el) {
+            Elements elements = processingEnv.getElementUtils();
+            JavaFileObject fileObjects = elements.getFileObjectOf(el);
+            System.out.println(el.getSimpleName() + ": " + (fileObjects != null ? fileObjects.toUri().toString() : "<null>"));
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latestSupported();
+        }
+
+    }
 }
