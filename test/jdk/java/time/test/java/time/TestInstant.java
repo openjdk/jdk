@@ -61,6 +61,8 @@ package test.java.time;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 
@@ -155,19 +157,30 @@ public class TestInstant extends AbstractTest {
 
     @DataProvider
     private Object[][] valid_instants() {
+        var I1 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02")).toInstant();
+        var I2 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02:02")).toInstant();
+        var I3 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02:02:02")).toInstant();
+        var I4 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("Z")).toInstant();
         return new Object[][] {
-            {"2017-01-01T00:00:00.000+02"},
-            {"2017-01-01T00:00:00.000+0200"},
-            {"2017-01-01T00:00:00.000+02:00"},
-            {"2017-01-01T00:00:00.000+020000"},
-            {"2017-01-01T00:00:00.000+02:00:00"},
-            {"2017-01-01T00:00:00.000Z"},
+            {"2017-01-01T00:00:00.000+02", I1},
+            {"2017-01-01T00:00:00.000+0200", I1},
+            {"2017-01-01T00:00:00.000+02:00", I1},
+            {"2017-01-01T00:00:00.000+020000", I1},
+            {"2017-01-01T00:00:00.000+02:00:00", I1},
+
+            {"2017-01-01T00:00:00.000+0202", I2},
+            {"2017-01-01T00:00:00.000+02:02", I2},
+
+            {"2017-01-01T00:00:00.000+020202", I3},
+            {"2017-01-01T00:00:00.000+02:02:02", I3},
+
+            {"2017-01-01T00:00:00.000Z", I4},
         };
     }
 
     @Test(dataProvider = "valid_instants")
-    public void test_parse_valid(String instant) {
-        Instant.parse(instant);
+    public void test_parse_valid(String instant, Instant expected) {
+        assertEquals(Instant.parse(instant), expected);
     }
 
     @DataProvider
