@@ -1282,6 +1282,7 @@ at least the following targets are known to work:
 | aarch64-linux-gnu        |
 | arm-linux-gnueabihf      |
 | ppc64le-linux-gnu        |
+| riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
 `BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
