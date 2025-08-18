@@ -577,6 +577,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 *   not all do, and it cannot be relied upon.
 * - each glyph maps to a single character, when multiple glyphs exist for a character they all map to it, but
 *   no two characters map to the same glyph
+*   This was only true for the old, ICU layout engine which inserted 0xffff glyphs for ligaturized characters!
 * - multiple glyphs mapping to the same character need not be in sequence (thai, tamil have split characters)
 * - glyphs may be arbitrarily reordered (Indic reorders glyphs)
 * - all glyphs share the same bidi level
@@ -730,8 +731,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
         while (gx != gxlimit &&
                ((glyphinfo[gp + advx] == 0) ||
-               (indices[gx] <= maxIndex) ||
-               (maxIndex - minIndex > clusterExtraGlyphs))) {
+               (indices[gx] <= maxIndex))) {
 
             ++clusterExtraGlyphs; // have an extra glyph in this cluster
             if (DEBUG) {
