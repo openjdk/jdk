@@ -207,6 +207,12 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   deaccount(header->free_info());
 
+  if (ZapCHeap) {
+    // To do this zapping, we need to know the block size.
+    // This is why we have to do it here, and not in os::free.
+    memset(memblock, freeBlockPad, header->size());
+  }
+
   header->mark_block_as_dead();
 
   return (void*)header;

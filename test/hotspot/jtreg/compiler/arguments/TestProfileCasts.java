@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,14 +22,28 @@
  */
 
 /**
- * Defines the API for JDK Flight Recorder.
- *
- * @moduleGraph
- * @since 9
+ * @test
+ * @bug 8358781
+ * @summary Regression test for -XX:-TypeProfileCasts crash
+ * @requires vm.debug
+ * @run main/othervm -XX:-TypeProfileCasts -XX:CompileThresholdScaling=0.01
+ *                   compiler.arguments.TestProfileCasts
  */
-module jdk.jfr {
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
+package compiler.arguments;
 
-    exports jdk.jfr.internal.management to jdk.management.jfr;
+public class TestProfileCasts {
+    static class Foo {
+    }
+
+    private static void test(Object o) {
+        if (o instanceof Foo) {
+        }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 100; i++) {
+            test(new Foo());
+            test(null);
+        }
+    }
 }
