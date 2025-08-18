@@ -45,7 +45,7 @@ class TemplateAssertionPredicate;
  * - Parse Predicate: Added during parsing to capture the current JVM state. This predicate represents a "placeholder"
  *                    above which Regular Predicates can be created later after parsing.
  *
- *                    There are initially four Parse Predicates for each loop:
+ *                    There are initially five Parse Predicates for each loop:
  *                    - Loop Parse Predicate:               The Parse Predicate added for Loop Predicates.
  *                    - Profiled Loop Parse Predicate:      The Parse Predicate added for Profiled Loop Predicates.
  *                    - Loop Limit Check Parse Predicate:   The Parse Predicate added for a Loop Limit Check Predicate.

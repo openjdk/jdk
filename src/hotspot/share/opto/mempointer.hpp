@@ -397,13 +397,21 @@
 //
 // Having proven the "MemPointer Lemma", we can now derive an interesting corrolary.
 //
+// With the "Linearity Corrolary" below, we can prove that some MemPointers can be treated as
+// linear in some summand variable v over some range r. This is useful when MemPointers are
+// used in loops, where v=iv scale_v=scale_iv and the range is the iv range from some initial
+// iv value to the last iv value just before the limit.
+// For an application, see: VPointer::make_speculative_aliasing_check_with
+//
 // MemPointer Linearity Corrolary:
 //   Given:
 //     (C0) pointer p and its MemPointer mp, which is constructed with safe decompositions.
-//     (C1) a summand "scale_v * v" that occurs in mp.
-//     (C2) a strided range r = [lo, lo + stride_v, .. hi] for v.
+//     (C1) a specific summand "scale_v * v" that occurs in mp.
+//     (C2) a strided range r = [lo, lo + stride_v, .. hi] for v (lo and hi are inclusive in the range).
 //     (C3) for all v in this strided range r we know that p is within bounds of its memory object.
-//     (C4) abs(scale_v * stride_v) < 2^31.
+//     (C4) abs(scale_v * stride_v) < 2^31
+//            Required for (S2) in application of MemPointer Lemma below, it is essencial in
+//            establishing linearity of mp.
 //
 //   Then:
 //     Both p and mp have a linear form for v in r:
@@ -440,7 +448,6 @@
 //     subtraction and multiplication:
 //       mp(v1) = summand_rest + scale_v * v1                                   + con
 //              = summand_rest + scale_v * (v0 + stride_v)                      + con
-//              = summand_rest + scale_v * v0              + scale_v * stride_v + con
 //              = summand_rest + scale_v * v0              + scale_v * stride_v + con
 //              = mp(v0)                                   + scale_v * stride_v
 //
@@ -669,11 +676,27 @@ public:
 //
 // The MemPointerSummand is designed to allow the simplification of
 // the MemPointer form as much as possible, to allow aliasing checks
-// to be as simple as possible. For example, the pointer:
+// to be as simple as possible. For example, the C2 IR pointer:
+//
+//   pointer = AddP(
+//               AddP(
+//                 base,
+//                 LShiftL(
+//                   ConvI2L(
+//                     AddI(AddI(i, LShiftI(j, 2)), con1)
+//                   ),
+//                   1
+//                 )
+//               ),
+//               con2
+//             )
+//
+// and more readable:
 //
 //   pointer = base + 2L * ConvI2L(i + 4 * j + con1) + con2
 //
-// is simplified to this MemPointer form:
+// is simplified to this MemPointer form, using only MemPointerSummands,
+// which ignore the possible overflow in ConvI2L:
 //
 //   pointer = base + 2L * ConvI2L(i) + 8L * ConvI2L(j) + con
 //   con = 2L * con1 + con2

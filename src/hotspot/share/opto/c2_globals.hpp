@@ -367,7 +367,10 @@
           "Use AutoVectorization predicate (for speculative compilation)")  \
                                                                             \
   product(bool, UseAutoVectorizationSpeculativeAliasingChecks, true, DIAGNOSTIC, \
-          "Use Multiversioning or Predicate to add aliasing runtime checks") \
+          "Allow the use Multiversioning or Predicate to add aliasing"      \
+          "runtime checks. Runtime checks will only be inserted if either"  \
+          "LoopMultiversioning or UseAutoVectorizationPredicate are"        \
+          "enabled.")                                                       \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \

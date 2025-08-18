@@ -487,6 +487,18 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // We have two VPointer vp1 and vp2, and would like to create a runtime check that
 // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
 // any iv value in the strided range r = [init, init + iv_stride, .. limit).
+// Remember that vp1 and vp2 both represent a region in memory, starting at a
+// "pointer", and extending for "size" bytes:
+//
+//   vp1(iv) = [p1(iv), size1)
+//   vp2(iv) = [p2(iv), size2)
+//
+//       |---size1--->           |-------size2------->
+//       |                       |
+//     p1(iv)                  p2(iv)
+//
+// In each iv value (intuitively: for each iteration), we check that there is no
+// overlap:
 //
 //   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
 //
