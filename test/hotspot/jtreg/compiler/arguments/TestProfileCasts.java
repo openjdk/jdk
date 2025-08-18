@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,34 +21,29 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+/**
+ * @test
+ * @bug 8358781
+ * @summary Regression test for -XX:-TypeProfileCasts crash
+ * @requires vm.debug
+ * @run main/othervm -XX:-TypeProfileCasts -XX:CompileThresholdScaling=0.01
+ *                   compiler.arguments.TestProfileCasts
+ */
+package compiler.arguments;
 
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ApplicationLayout;
-
-record AppImageDesc(AppImageLayout appImageLayout, Path path) {
-
-    AppImageDesc {
-        Objects.requireNonNull(appImageLayout);
-        Objects.requireNonNull(path);
+public class TestProfileCasts {
+    static class Foo {
     }
 
-    AppImageLayout resolvedAppImagelayout() {
-        return appImageLayout.resolveAt(path);
+    private static void test(Object o) {
+        if (o instanceof Foo) {
+        }
     }
 
-    Optional<ApplicationLayout> asResolvedApplicationLayout() {
-        return asApplicationLayout().map(v -> v.resolveAt(path));
-    }
-
-    Optional<ApplicationLayout> asApplicationLayout() {
-        if (appImageLayout instanceof ApplicationLayout layout) {
-            return Optional.of(layout);
-        } else {
-            return Optional.empty();
+    public static void main(String[] args) {
+        for (int i = 0; i < 100; i++) {
+            test(new Foo());
+            test(null);
         }
     }
 }

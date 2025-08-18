@@ -1407,7 +1407,7 @@ CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native lib
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
-CLEAN_PHASES := gensrc java native include
+CLEAN_PHASES += gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
 # Construct targets of the form clean-$module-$phase
