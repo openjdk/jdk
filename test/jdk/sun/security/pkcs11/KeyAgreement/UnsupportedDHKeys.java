@@ -61,7 +61,7 @@ public class UnsupportedDHKeys extends PKCS11Test {
     @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyPairGenerator", "DiffieHellman") == null) {
-            throw new SkippedException("No supported of DH KeyPairGenerator, skipping");
+            throw new SkippedException("DH (DiffieHellman) is not supported in KeyPairGenerator, skipping");
         }
 
         for (UnsupportedKeySize keySize : UnsupportedKeySize.values()) {
