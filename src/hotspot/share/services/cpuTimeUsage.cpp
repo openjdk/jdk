@@ -32,6 +32,8 @@
 #include "runtime/vmThread.hpp"
 #include "services/cpuTimeUsage.hpp"
 
+volatile bool CPUTimeUsage::Error::_has_error = false;
+
 class CPUTimeThreadClosure : public ThreadClosure {
 private:
     jlong _cpu_time = 0;
@@ -41,6 +43,8 @@ public:
       jlong cpu_time = os::thread_cpu_time(thread);
       if (cpu_time != -1) {
           _cpu_time += cpu_time;
+      } else {
+        CPUTimeUsage::Error::mark_error();
       }
     }
     jlong cpu_time() { return _cpu_time; };
@@ -74,11 +78,23 @@ jlong CPUTimeUsage::GC::total() {
 
 jlong CPUTimeUsage::GC::stringdedup() {
   if (UseStringDeduplication) {
-    return os::thread_cpu_time((Thread*)StringDedup::_processor->_thread);
+    jlong cpu_time = os::thread_cpu_time((Thread*)StringDedup::_processor->_thread);
+    if (cpu_time == -1) {
+      CPUTimeUsage::Error::mark_error();
+    }
+    return cpu_time;
   }
   return 0;
 }
 
 jlong CPUTimeUsage::Runtime::vm_thread() {
   return VMThread::perf_accumulated_vm_operation_time()->get_value();
+}
+
+bool CPUTimeUsage::Error::has_error() {
+  return Atomic::load(&_has_error);
+}
+
+void CPUTimeUsage::Error::mark_error() {
+  Atomic::store(&_has_error, true);
 }

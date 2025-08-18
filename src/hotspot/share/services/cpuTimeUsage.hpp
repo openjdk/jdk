@@ -51,6 +51,14 @@ namespace CPUTimeUsage {
     public:
         static jlong vm_thread();
     };
+
+    class Error : public AllStatic {
+    private:
+        static volatile bool _has_error;
+    public:
+        static bool has_error();
+        static void mark_error();
+    };
 }
 
 #endif // SHARE_SERVICES_CPUTIMEUSAGE_HPP

@@ -1194,19 +1194,16 @@ double os::elapsed_process_cpu_time() {
   FILETIME user;
 
   if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
-    log_warning(os)("Could not sample process CPU time");
     return -1;
   }
 
   SYSTEMTIME user_total;
   if (FileTimeToSystemTime(&user, &user_total) == 0) {
-    log_warning(os)("Could not sample process CPU time");
     return -1;
   }
 
   SYSTEMTIME kernel_total;
   if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
-    log_warning(os)("Could not sample process CPU time");
     return -1;
   }
 
@@ -4911,7 +4908,6 @@ jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
 
   if (GetThreadTimes(thread->osthread()->thread_handle(), &CreationTime,
                       &ExitTime, &KernelTime, &UserTime) == 0) {
-    log_warning(os)("Could not sample thread CPU time");
     return -1;
   } else if (user_sys_cpu_time) {
     return (FT2INT64(UserTime) + FT2INT64(KernelTime)) * 100;

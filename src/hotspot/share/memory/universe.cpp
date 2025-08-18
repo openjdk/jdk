@@ -81,6 +81,7 @@
 #include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/autoRestore.hpp"
@@ -1321,9 +1322,13 @@ static void log_cpu_time() {
   const double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
 
   const double elasped_time = os::elapsedTime();
+  const bool has_error = CPUTimeUsage::Error::has_error();
 
   if (gc_cpu_time < process_cpu_time) {
     cpuLog.print("=== CPU time Statistics =============================================================");
+    if (has_error) {
+      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
+    }
     cpuLog.print("                                                                            CPUs");
     cpuLog.print("                                                               s       %%  utilized");
     cpuLog.print("   Process");

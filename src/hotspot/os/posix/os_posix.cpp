@@ -1614,7 +1614,6 @@ double os::elapsed_process_cpu_time() {
     return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
          (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
   } else {
-    log_warning(os)("Could not sample process CPU time");
     return -1;
   }
 }
