@@ -52,6 +52,7 @@ public final class Call extends Infopoint {
     /**
      * Specifies if the target method should be attached to the call site.
      * This permits the compiler to override the bytecode based call site resolution for cases were special semantics are needed.
+     * If the call does not originate from the associated bci, {@link jdk.vm.ci.code.BytecodeFrame#duringCall} must not be set.
      */
     public final boolean bind;
 
