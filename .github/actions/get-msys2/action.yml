@@ -55,7 +55,7 @@ runs:
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
       run: |
-        if ('${{ inputs.architecture }}' == 'ARM64') {
+        if ('${{ inputs.architecture }}' -eq 'ARM64') {
           echo "${{ steps.msys2-arm64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
         } else {
           echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
