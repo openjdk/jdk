@@ -21,7 +21,7 @@
  * questions.
  */
 
-package java.lang.invoke.stable;
+package org.openjdk.bench.java.lang.invoke.stable;
 
 import org.openjdk.jmh.annotations.*;
 
