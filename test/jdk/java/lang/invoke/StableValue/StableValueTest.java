@@ -178,7 +178,6 @@ final class StableValueTest {
         assertEquals(pair.l().get(), pair.r().get());
     }
 
-    private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;
 
     @ParameterizedTest
     @MethodSource("factories")
@@ -194,7 +193,7 @@ final class StableValueTest {
                         // ... set ...
                         starter.await();
                         // Here we go!
-                        winners.put(i, TRY_SET.test(stable, i));
+                        winners.put(i, stable.trySet(i));
                     } catch (Throwable t) {
                         fail(t);
                     }

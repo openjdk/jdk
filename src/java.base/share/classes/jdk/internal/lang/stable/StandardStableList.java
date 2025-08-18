@@ -34,7 +34,6 @@ import java.util.AbstractList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.lang.invoke.StableValue;
@@ -47,7 +46,7 @@ public class StandardStableList<E>
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    static final Object TOMB_STONE = new Object();
+    static final Object TOMB_STONE = new Mutexes.MutexObject(-100);
 
     @Stable
     private final Object[] elements;
@@ -187,9 +186,11 @@ public class StandardStableList<E>
         // in a slow path.
         private void preventReentry() {
             final Object mutex = mutexVolatile();
-            if (mutex != null && Thread.holdsLock(mutexVolatile())) {
-                throw new IllegalStateException("Recursive initialization of a stable value is illegal. Index: " + indexFor(offset));
+            if (mutex == null || mutex == TOMB_STONE || !Thread.holdsLock(mutex)) {
+                // No reentry attempted
+                return;
             }
+            throw new IllegalStateException("Recursive initialization of a stable value is illegal. Index: " + indexFor(offset));
         }
 
         /**
@@ -237,8 +238,9 @@ public class StandardStableList<E>
 
         @ForceInline
         private Object acquireMutex(long offset) {
-            final Object candidate = new Object();
+            final Object candidate = new MutexObject(offset);
             final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
+            check(witness, offset);
             return witness == null ? candidate : witness;
         }
 
@@ -257,8 +259,20 @@ public class StandardStableList<E>
         @ForceInline
         private Object mutexVolatile(long offset) {
             // Can be plain semantics?
-            return UNSAFE.getReferenceVolatile(mutexes, offset);
+            return check(UNSAFE.getReferenceVolatile(mutexes, offset), offset);
         }
+
+        // Todo: remove this after stabilization
+        private Object check(Object mutex, long realOffset) {
+            if (mutex == null || mutex == TOMB_STONE) {
+                return mutex;
+            }
+            assert (mutex instanceof MutexObject(long offset)) && offset == realOffset : mutex+", realOffset = "+realOffset;
+            return mutex;
+        }
+
+        // Todo: remove this after stabilization
+        record MutexObject(long offset) { }
 
     }
 
