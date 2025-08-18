@@ -287,8 +287,8 @@ class CompilationPolicy : AllStatic {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
-  static void print_counters(const char* prefix, Method* m);
-  static void print_training_data(const char* prefix, Method* method);
+  static void print_counters_on(outputStream* st, const char* prefix, Method* m);
+  static void print_training_data_on(outputStream* st, const char* prefix, Method* method);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
@@ -318,6 +318,7 @@ class CompilationPolicy : AllStatic {
   static void set_c2_count(int x) { _c2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, FORCE_COMPILE, FORCE_RECOMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
+  static void print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level);
   static void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   static void compile(const methodHandle& mh, int bci, CompLevel level, TRAPS);

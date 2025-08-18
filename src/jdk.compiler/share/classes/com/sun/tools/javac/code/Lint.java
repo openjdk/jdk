@@ -528,14 +528,15 @@ public class Lint {
     // Given a @SuppressWarnings annotation, extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings) {
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
-        Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
-        for (Attribute value : values.values) {
-            Optional.of(value)
-              .filter(val -> val instanceof Attribute.Constant)
-              .map(val -> (String) ((Attribute.Constant) val).value)
-              .flatMap(LintCategory::get)
-              .filter(lc -> lc.annotationSuppression)
-              .ifPresent(result::add);
+        if (suppressWarnings.member(names.value) instanceof Attribute.Array values) {
+            for (Attribute value : values.values) {
+                Optional.of(value)
+                  .filter(val -> val instanceof Attribute.Constant)
+                  .map(val -> (String) ((Attribute.Constant) val).value)
+                  .flatMap(LintCategory::get)
+                  .filter(lc -> lc.annotationSuppression)
+                  .ifPresent(result::add);
+            }
         }
         return result;
     }
