@@ -28,6 +28,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/bufferNode.hpp"
+#include "gc/shenandoah/shenandoahCSetMap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 
 class ShenandoahHeap;
@@ -35,7 +36,9 @@ class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;
 
 class ShenandoahBarrierSet: public BarrierSet {
-private:
+  friend class ShenandoahHeap;
+
+  static ShenandoahCSetMap _cset_map;
   ShenandoahHeap* const _heap;
   ShenandoahCardTable* _card_table;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
@@ -93,6 +96,7 @@ public:
   void on_thread_attach(Thread* thread) override;
   void on_thread_detach(Thread* thread) override;
 
+  static inline oop resolve_forwarded_not_null(oop p, ShenandoahHeap* heap, CSetState cset_state);
   static inline oop resolve_forwarded_not_null(oop p);
   static inline oop resolve_forwarded_not_null_mutator(oop p);
   static inline oop resolve_forwarded(oop p);

@@ -43,6 +43,8 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
+ShenandoahCSetMap ShenandoahBarrierSet::_cset_map;
+
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),

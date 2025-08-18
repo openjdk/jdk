@@ -21,16 +21,27 @@
  * questions.
  */
 
-#include "gc/shenandoah/shenandoahForwardingTable.hpp"
+#include "code/vtableStubs.hpp"
+#include "gc/shenandoah/shenandoahForwardingTable.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/fastHash.hpp"
 
-bool ShenandoahForwardingTable::Entry::is_marked(ShenandoahMarkingContext* ctx) const {
-  return ctx->is_marked_ignore_tams(cast_from_oop<HeapWord*>(cast_to_oop(&_original))) ||
-         ctx->is_marked_ignore_tams(cast_from_oop<HeapWord*>(cast_to_oop(&_forwardee)));
+HeapWord* CompactFwdTableEntry::_heap_base = nullptr;
+bool ShenandoahForwardingTable::_compact = false;
+
+void ShenandoahForwardingTable::initialize_globals() {
+  MemRegion heap = ShenandoahHeap::heap()->reserved_region();
+  size_t heap_size_words = heap.word_size();
+  if (ShenandoahHeapRegion::region_size_words() > CompactFwdTableEntry::max_region_size_words() ||
+      heap.word_size() > CompactFwdTableEntry::max_heap_size_words()) {
+    _compact = false;
+  } else {
+    _compact = true;
+    CompactFwdTableEntry::set_heap_base(heap.start());
+  }
 }
 
 static bool different_entries(HeapWord* a, HeapWord* b, size_t entry_size_in_words) {
@@ -39,6 +50,7 @@ static bool different_entries(HeapWord* a, HeapWord* b, size_t entry_size_in_wor
   return aint / entry_size_in_words != bint / entry_size_in_words;
 }
 
+template<class Entry>
 bool ShenandoahForwardingTable::initialize(size_t num_entries) {
   // Try to find the minimum hashtable that satisfies a load-factor of 0.75.
   // We know that we have num_entries live words that we can not use and we
@@ -107,80 +119,95 @@ bool ShenandoahForwardingTable::initialize(size_t num_entries) {
   _num_actual_forwardings = 0;
   _num_live_words = unusable_entries;
 
-  assert((void*)(_table + _num_entries) == (void*)_region->end(), "table must be anchored at region end");
+  assert((void*)(reinterpret_cast<Entry*>(_table) + _num_entries) == (void*)_region->end(), "table must be anchored at region end");
   log_develop_debug(gc)("Initialized forwarding table: table: " PTR_FORMAT ", num_entries: %lu, requested entries: %lu", p2i(_table), _num_entries, num_entries);
   return true;
 }
 
+template<class Entry>
 void ShenandoahForwardingTable::clear() {
+  assert((void*)(reinterpret_cast<Entry*>(_table) + _num_entries) == (void*)_region->end(), "table must be anchored at region end");
+
   // Clear all entries, but be careful to skip existing object headers.
   // We still need them.
-  assert((void*)(_table + _num_entries) == (void*)_region->end(), "table must be anchored at region end");
-  ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
-  HeapWord* start = reinterpret_cast<HeapWord*>(_table);
-  HeapWord* end = _region->top();
-  assert(_region->bottom() <= start, "start must be in the region, bottom: " PTR_FORMAT ", table start: " PTR_FORMAT, p2i(_region->bottom()), p2i(start));
-  assert(start < _region->end(), "start must be before end");
-  while (start < end) {
-    HeapWord* next_marked = ctx->get_next_marked_addr(start, end);
-    assert(next_marked <= end, "next marked must be in the region");
-    log_develop_debug(gc)("Clearing [" PTR_FORMAT ", " PTR_FORMAT ")", p2i(start), p2i(next_marked));
-    Copy::fill_to_aligned_words(start, next_marked - start);
-    start = next_marked + 1;
+  class ClearFwdTableClosure {
+    HeapWord* _last;
+  public:
+    ClearFwdTableClosure(HeapWord* start) : _last(start) {}
+    HeapWord* last() const { return _last; }
+    void do_object(oop obj) {
+      HeapWord* current = cast_from_oop<HeapWord*>(obj);
+      if (_last != current) {
+        Copy::fill_to_aligned_words(_last, current - _last);
+      }
+      _last = current + 1;
+    }
+  } cl(_region->bottom());
+  ShenandoahHeap::heap()->marked_object_iterate(_region, &cl);
+
+  // Clear unused tail.
+  HeapWord* end = cl.last();
+  HeapWord* region_end = _region->end();
+  if (end != region_end) {
+    Copy::fill_to_aligned_words(end, region_end - end);
   }
-  log_develop_debug(gc)("Clearing [" PTR_FORMAT ", " PTR_FORMAT ")", p2i(end), p2i(_region->end()));
-  Copy::fill_to_aligned_words(end, _region->end() - end);
 }
 
-uint64_t ShenandoahForwardingTable::hash(HeapWord* original, Entry* table) {
-  return FastHash::get_hash64(reinterpret_cast<uint64_t>(original), reinterpret_cast<uint64_t>(table));
-}
-
+template<class Entry>
 void ShenandoahForwardingTable::enter_forwarding(HeapWord* original, HeapWord* forwardee) {
-  Entry* table = _table;
+  Entry* table = reinterpret_cast<Entry*>(_table);
   uint64_t hash = FastHash::get_hash64(reinterpret_cast<uint64_t>(original), reinterpret_cast<uint64_t>(table));
   uint64_t index = hash % _num_entries;
   log_develop_trace(gc)("Finding slot, start at index: " UINT64_FORMAT ", for original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(original), p2i(forwardee));
-  ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
-  while (table[index].original() != nullptr || table[index].is_marked(ctx)) {
-    log_develop_trace(gc)("Collision on" UINT64_FORMAT ": [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
-    index++;
-    if (index == _num_entries) {
-      index = 0;
+  HeapWord* region_base = _region->bottom();
+  //ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
+  while (table[index].is_used() /*|| table[index].is_marked(ctx)*/) {
+#ifndef PRODUCT
+    if (table[index].is_marked(ShenandoahHeap::heap()->marking_context())) {
+      assert(!table[index].is_original(region_base, original), "marked location must not look like the original entry");
     }
+#endif
+    log_develop_trace(gc)("Collision on" UINT64_FORMAT ": is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original(region_base)), p2i(table[index].forwardee()));
+    index = (index + 1) % _num_entries;
     assert(index != hash % _num_entries, "must find a usable slot, _num_entries: %lu, actual forwardings: %lu, live_words: %lu", _num_entries, _num_actual_forwardings, _num_live_words);
   }
-  assert(table[index].original() == nullptr, "must have found empty slot");
-  assert(table[index].forwardee() == nullptr, "must have found empty slot, found this instead: " PTR_FORMAT " at index: %lu and location: " PTR_FORMAT ", table: [" PTR_FORMAT ", " PTR_FORMAT "), marked slot 1: %s, marked slot 2: %s", p2i(table[index].forwardee()), index, p2i(&table[index]._forwardee), p2i(_table), p2i(_table + _num_entries), BOOL_TO_STR(ctx->is_marked_ignore_tams((HeapWord*)&table[index]._original)), BOOL_TO_STR(ctx->is_marked_ignore_tams((HeapWord*)&table[index]._forwardee)));
-  assert(!table[index].is_marked(ctx), "must have found unmarked slot");
-  new (&table[index]) Entry(original, forwardee);
+  assert(!table[index].is_used(), "must have found empty slot");
+  assert(!table[index].is_marked(ShenandoahHeap::heap()->marking_context()), "must have found unmarked slot");
+  new (&table[index]) Entry(region_base, original, forwardee);
   _num_actual_forwardings++;
   assert(_num_actual_forwardings <= _num_expected_forwardings, "must not exceed number of forwardings");
 }
 
+template<class Entry>
 void ShenandoahForwardingTable::log_stats() const {
+#ifndef PRODUCT
   log_info(gc)("Forwarding table load factor: %f", (float)(_num_actual_forwardings + _num_live_words) / (float) (_num_entries));
   log_info(gc)("Forwarding table size: %lu (== %lu bytes)", _num_entries, sizeof(Entry) * _num_entries);
   log_info(gc)("Forwarding table expected: %lu, actual: %lu, live words: %lu", _num_expected_forwardings, _num_actual_forwardings, _num_live_words);
+#endif
 }
 
+template<class Entry>
 void ShenandoahForwardingTable::fill_forwardings() {
-  ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
-  HeapWord* start = _region->bottom();
-  HeapWord* end = _region->top();
-  while (start < end) {
-    HeapWord* original = ctx->get_next_marked_addr(start, end);
-    if (original < end) {
-      HeapWord* forwardee = cast_from_oop<HeapWord*>(ShenandoahForwarding::get_forwardee_raw(cast_to_oop(original)));
-      enter_forwarding(original, forwardee);
+  class FillForwardingsClosure {
+    ShenandoahForwardingTable& _table;
+  public:
+    FillForwardingsClosure(ShenandoahForwardingTable& t) : _table(t) {}
+    void do_object(oop obj) {
+      HeapWord* original = cast_from_oop<HeapWord*>(obj);
+      HeapWord* forwardee = cast_from_oop<HeapWord*>(ShenandoahForwarding::get_forwardee_raw(obj));
+      _table.enter_forwarding<Entry>(original, forwardee);
     }
-    start = original + 1;
-  }
+  } cl(*this);
+
+  ShenandoahHeap::heap()->marked_object_iterate(_region, &cl);
   assert(_num_actual_forwardings == _num_expected_forwardings, "must enter exact number of forwardings, actual: %lu, expected: %lu", _num_actual_forwardings, _num_expected_forwardings);
-  log_stats();
+  log_stats<Entry>();
 }
 
 #ifndef PRODUCT
+
+template<class Entry>
 void ShenandoahForwardingTable::verify_forwardings() {
   ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
   HeapWord* start = _region->bottom();
@@ -189,7 +216,7 @@ void ShenandoahForwardingTable::verify_forwardings() {
     HeapWord* original = ctx->get_next_marked_addr(start, end);
     if (original < end) {
       HeapWord* expected_forwardee = cast_from_oop<HeapWord*>(ShenandoahForwarding::get_forwardee_raw(cast_to_oop(original)));
-      HeapWord* actual_forwardee = forwardee(original);
+      HeapWord* actual_forwardee = forwardee<Entry>(original);
       guarantee(actual_forwardee == expected_forwardee, "Forwardees in mark-word and table must match: original: " PTR_FORMAT ", mark-forwardee: " PTR_FORMAT ", found forwardee: " PTR_FORMAT, p2i(original), p2i(expected_forwardee), p2i(actual_forwardee));
     }
     start = original + 1;
@@ -197,34 +224,23 @@ void ShenandoahForwardingTable::verify_forwardings() {
 }
 #endif
 
+template<class Entry>
 bool ShenandoahForwardingTable::build(size_t num_entries) {
-  bool initialized = initialize(num_entries);
+  bool initialized = initialize<Entry>(num_entries);
   if (initialized) {
-    clear();
-    fill_forwardings();
-    verify_forwardings();
+    clear<Entry>();
+    fill_forwardings<Entry>();
+    verify_forwardings<Entry>();
   }
   return initialized;
 }
 
-HeapWord* ShenandoahForwardingTable::forwardee(HeapWord* original) const {
-  Entry* table = _table;
-  uint64_t hash = FastHash::get_hash64(reinterpret_cast<uint64_t>(original), reinterpret_cast<uint64_t>(table));
-  uint64_t index = hash % _num_entries;
-  log_develop_trace(gc)("Finding slot, start at index: " UINT64_FORMAT ", for original: " PTR_FORMAT, index, p2i(original));
-  ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
-  while (table[index].is_marked(ctx) || table[index].original() != original) {
-    //log_info(gc)("Collision on " UINT64_FORMAT ": [" PTR_FORMAT ", " PTR_FORMAT "): is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]._original), p2i(&table[index]._forwardee), BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original()), p2i(table[index].forwardee()));
-    index++;
-    if (index == _num_entries) {
-      index = 0;
-    }
-    assert(index != hash % _num_entries, "must find a usable slot");
+bool ShenandoahForwardingTable::build(size_t num_entries) {
+  if (_compact) {
+    return build<CompactFwdTableEntry>(num_entries);
+  } else {
+    return build<FwdTableEntry>(num_entries);
   }
-  assert(table[index].original() == original, "must have found original object");
-  assert(table[index].forwardee() != nullptr, "must have found a forwarding");
-  assert(!table[index].is_marked(ctx), "must have found unmarked slot");
-  return table[index].forwardee();
 }
 
 void ShenandoahForwardingTable::zap_region() {

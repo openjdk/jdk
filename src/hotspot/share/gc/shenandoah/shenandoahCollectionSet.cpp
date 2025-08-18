@@ -37,10 +37,8 @@
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
   _map_size(heap->num_regions()),
-  _region_size_bytes_shift(ShenandoahHeapRegion::region_size_bytes_shift()),
   _map_space(space),
-  _cset_map(_map_space.base() + ((uintx)heap_base >> _region_size_bytes_shift)),
-  _biased_cset_map(_map_space.base()),
+  _cset_map(ShenandoahHeapRegion::region_size_bytes_shift(), _map_space.base(), heap_base),
   _heap(heap),
   _has_old_regions(false),
   _garbage(0),
@@ -69,20 +67,20 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
 
   if (!_map_space.special()) {
     // Commit entire pages that cover the heap cset map.
-    char* bot_addr = align_down(_cset_map, page_size);
-    char* top_addr = align_up(_cset_map + _map_size, page_size);
+    char* bot_addr = align_down(_cset_map.cset_map(), page_size);
+    char* top_addr = align_up(_cset_map.cset_map() + _map_size, page_size);
     os::commit_memory_or_exit(bot_addr, pointer_delta(top_addr, bot_addr, 1), false,
                               "Unable to commit collection set bitmap: heap");
 
     // Commit the zero page, if not yet covered by heap cset map.
-    if (bot_addr != _biased_cset_map) {
-      os::commit_memory_or_exit(_biased_cset_map, page_size, false,
+    if (bot_addr != _cset_map.biased_cset_map()) {
+      os::commit_memory_or_exit(_cset_map.biased_cset_map(), page_size, false,
                                 "Unable to commit collection set bitmap: zero page");
     }
   }
 
-  Copy::zero_to_bytes(_cset_map, _map_size);
-  Copy::zero_to_bytes(_biased_cset_map, page_size);
+  Copy::zero_to_bytes(_cset_map.cset_map(), _map_size);
+  Copy::zero_to_bytes(_cset_map.biased_cset_map(), page_size);
 }
 
 void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
@@ -91,7 +89,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(!is_in(r), "Already in collection set");
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
-  _cset_map[r->index()] = IN_CSET;
+  _cset_map._cset_map[r->index()] = CSetState::IN_CSET;
   size_t live    = r->get_live_data_bytes();
   size_t garbage = r->garbage();
   size_t free    = r->free();
@@ -117,13 +115,14 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
 
 void ShenandoahCollectionSet::switch_to_forward_table(ShenandoahHeapRegion* r) {
   assert(is_in(r), "Must be in collection set");
-  Atomic::store(&_cset_map[r->index()], FWD_TABLE);
+  CSetState state = ShenandoahForwardingTable::use_compact() ? CSetState::FWDTABLE_COMPACT : CSetState::FWDTABLE_WIDE;
+  Atomic::store(&_cset_map._cset_map[r->index()], state);
 }
 
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
 
-  Copy::zero_to_bytes(_cset_map, _map_size);
+  Copy::zero_to_bytes(_cset_map._cset_map, _map_size);
 
 #ifdef ASSERT
   for (size_t index = 0; index < _heap->num_regions(); index ++) {

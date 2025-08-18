@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 
+#include "gc/shenandoah/shenandoahCSetMap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
@@ -45,11 +46,8 @@ class ShenandoahCollectionSet : public CHeapObj<mtGC> {
 
 private:
   size_t const          _map_size;
-  size_t const          _region_size_bytes_shift;
   ReservedSpace         _map_space;
-  char* const           _cset_map;
-  // Bias cset map's base address for fast test if an oop is in cset
-  char* const           _biased_cset_map;
+  ShenandoahCSetMap     _cset_map;
 
   ShenandoahHeap* const _heap;
 
@@ -80,9 +78,6 @@ private:
   shenandoah_padding(1);
 
 public:
-  static const char IN_CSET = 1;
-  static const char FWD_TABLE = 3;
-
   ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base);
 
   // Add region to collection set
@@ -103,13 +98,18 @@ public:
     _current_index = 0;
   }
 
+  ShenandoahCSetMap cset_map() const { return _cset_map; }
+
   inline bool is_in(ShenandoahHeapRegion* r) const;
   inline bool is_in(size_t region_idx)       const;
   inline bool is_in(oop obj)                 const;
   inline bool is_in_loc(void* loc)           const;
 
+  inline CSetState cset_state(ShenandoahHeapRegion* r) const;
+  inline CSetState cset_state(oop obj) const;
+
   inline bool use_forward_table(oop obj) const;
-  inline bool use_forward_table(ShenandoahHeapRegion* const region) const;
+  inline bool use_forward_table(ShenandoahHeapRegion* r) const;
 
   void print_on(outputStream* out) const;
 
@@ -142,10 +142,10 @@ public:
 
 private:
   char* map_address() const {
-    return _cset_map;
+    return _cset_map.cset_map();
   }
   char* biased_map_address() const {
-    return _biased_cset_map;
+    return _cset_map.biased_cset_map();
   }
 };
 

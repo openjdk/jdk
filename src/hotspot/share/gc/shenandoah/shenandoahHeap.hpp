@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahCSetMap.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationSizer.hpp"
@@ -790,6 +791,7 @@ public:
 //
 private:
   ShenandoahCollectionSet* _collection_set;
+  ShenandoahCSetMap _cset_map;
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
@@ -802,6 +804,8 @@ public:
   static address in_cset_fast_test_addr();
 
   ShenandoahCollectionSet* collection_set() const { return _collection_set; }
+
+  ShenandoahCSetMap cset_map() const { return _cset_map; }
 
   // Checks if object is in the collection set.
   inline bool in_collection_set(oop obj) const;
@@ -821,10 +825,10 @@ public:
 //
 public:
   template <class T>
-  inline void conc_update_with_forwarded(T* p);
+  inline void conc_update_with_forwarded(T* p, ShenandoahCSetMap cset_map);
 
   template <class T>
-  inline void non_conc_update_with_forwarded(T* p);
+  inline void non_conc_update_with_forwarded(T* p, ShenandoahCSetMap cset_map);
 
   static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
   static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);

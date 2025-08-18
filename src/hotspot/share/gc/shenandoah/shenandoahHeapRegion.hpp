@@ -503,9 +503,9 @@ public:
     _fwd_table.zap_region();
   }
 
-  oop forwardee(oop obj) const {
-    return cast_to_oop(_fwd_table.forwardee(cast_from_oop<HeapWord*>(obj)));
-  }
+  oop forwardee_compact(oop obj) const;
+
+  oop forwardee_wide(oop obj) const;
 
 private:
   void decrement_humongous_waste() const;

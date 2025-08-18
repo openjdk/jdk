@@ -26,6 +26,7 @@
 
 #include "code/nmethod.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shenandoah/shenandoahCSetMap.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -149,12 +150,11 @@ public:
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahSuperClosure {
+  ShenandoahCSetMap _cset_map;
 protected:
   Thread* const _thread;
 public:
-  inline ShenandoahEvacuateUpdateRootClosureBase() :
-    ShenandoahSuperClosure(),
-    _thread(STABLE_THREAD ? Thread::current() : nullptr) {}
+  inline ShenandoahEvacuateUpdateRootClosureBase();
 
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
@@ -196,7 +196,7 @@ public:
 
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
-private:
+  ShenandoahCSetMap _cset_map;
   template <class T>
   inline void work(T* p);
 
@@ -207,7 +207,12 @@ public:
   virtual void do_oop(oop* p)       { work(p); }
 };
 
-class ShenandoahUpdateRefsSuperClosure : public ShenandoahSuperClosure {};
+class ShenandoahUpdateRefsSuperClosure : public ShenandoahSuperClosure {
+protected:
+  ShenandoahCSetMap _cset_map;
+public:
+  inline ShenandoahUpdateRefsSuperClosure();
+};
 
 class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
 private:

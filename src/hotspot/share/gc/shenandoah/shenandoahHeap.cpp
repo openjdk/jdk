@@ -50,6 +50,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -312,6 +313,8 @@ jint ShenandoahHeap::initialize() {
                               "Cannot commit bitmap memory");
   }
 
+  ShenandoahForwardingTable::initialize_globals();
+
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions);
 
   if (ShenandoahVerify) {
@@ -393,6 +396,9 @@ jint ShenandoahHeap::initialize() {
 
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
+    _cset_map = _collection_set->_cset_map;
+    ShenandoahBarrierSet::_cset_map = _collection_set->_cset_map;
+
     os::trace_page_sizes_for_requested_size("Collection Set",
                                             cset_size, cset_page_size,
                                             cset_rs.base(),
@@ -568,6 +574,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
   _collection_set(nullptr),
+  _cset_map(),
   _evac_tracker(new ShenandoahEvacuationTracker())
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
@@ -1166,6 +1173,7 @@ public:
     bool upgraded = false;
     if (cast_from_oop<HeapWord*>(p) >= _tams) {
       _context->mark_strong_ignore_tams(p, upgraded);
+      assert(!upgraded, "should be first mark");
     }
     assert(_context->is_marked(p), "must be marked");
   }
@@ -1226,6 +1234,7 @@ private:
         }
         num_forwardings = cl.num_forwardings();
       }
+      assert(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(r) == r->top(), "TAMS must be set to top");
 
       // We checked above that we're not cancelled, therefore it
       // is safe to build the forwarding table now.
@@ -1236,6 +1245,7 @@ private:
         // turning on use_forward_table for the region.
         OrderAccess::fence();
         _sh->collection_set()->switch_to_forward_table(r);
+        /*
         if (_concurrent) {
           // We need to bring mutator threads to a safepoint, otherwise
           // they might see use_forward_table=false and then end up trying
@@ -1244,6 +1254,7 @@ private:
           _sh->rendezvous_threads("Switch to Forward Table");
         }
         r->zap_to_fwd_table();
+        */
       }
     }
   }

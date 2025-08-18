@@ -118,11 +118,11 @@ private:
       oop obj = CompressedOops::decode_not_null(o);
       assert(Universe::is_in_heap(obj), "ref: " PTR_FORMAT ", obj: " PTR_FORMAT ", use_fwd_table: %s, obj-mark: " INTPTR_FORMAT, p2i(p), p2i(obj), BOOL_TO_STR(_heap->collection_set()->use_forward_table(obj)), obj->mark().value());
       if (_heap->collection_set()->use_forward_table(obj)) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       }
       // log_info(gc)("load Klass* from obj: " PTR_FORMAT, p2i(obj));
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       }
       // Single threaded verification can use faster non-atomic stack and bitmap
       // methods.

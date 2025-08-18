@@ -29,6 +29,7 @@
 
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
+#include "gc/shenandoah/shenandoahForwardingTable.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -221,7 +222,15 @@ inline void ShenandoahHeapRegion::save_top_before_promote() {
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
   _top = _top_before_promoted;
   _top_before_promoted = nullptr;
- }
+}
+
+inline oop ShenandoahHeapRegion::forwardee_compact(oop obj) const {
+  return cast_to_oop(_fwd_table.forwardee<CompactFwdTableEntry>(cast_from_oop<HeapWord*>(obj)));
+}
+
+inline oop ShenandoahHeapRegion::forwardee_wide(oop obj) const {
+  return cast_to_oop(_fwd_table.forwardee<FwdTableEntry>(cast_from_oop<HeapWord*>(obj)));
+}
 
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

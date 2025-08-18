@@ -30,6 +30,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
@@ -51,6 +52,12 @@ ShenandoahSuperClosure::ShenandoahSuperClosure() :
 
 ShenandoahSuperClosure::ShenandoahSuperClosure(ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp), _heap(ShenandoahHeap::heap()) {}
+
+template <bool CONCURRENT, bool STABLE_THREAD>
+ ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::ShenandoahEvacuateUpdateRootClosureBase() :
+  ShenandoahSuperClosure(),
+  _cset_map(_heap->cset_map()),
+  _thread(STABLE_THREAD ? Thread::current() : nullptr) {}
 
 void ShenandoahSuperClosure::do_nmethod(nmethod* nm) {
   nm->run_nmethod_entry_barrier();
@@ -160,10 +167,11 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (_heap->in_collection_set(obj)) {
+    CSetState cset_state = _cset_map.cset_state(obj);
+    if (_cset_map.is_in(cset_state)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj, _heap, cset_state);
       if (resolved == obj) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
@@ -224,12 +232,16 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Update References
 //
+inline ShenandoahUpdateRefsSuperClosure::ShenandoahUpdateRefsSuperClosure() :
+  _cset_map(_heap->collection_set()->cset_map()) {
+}
 
 template <ShenandoahGenerationType GENERATION>
 ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
                                                                              ShenandoahReferenceProcessor* rp,
                                                                              ShenandoahObjToScanQueue* old_q) :
-  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
+  ShenandoahMarkRefsSuperClosure(q, rp, old_q),
+  _cset_map(_heap->collection_set()->cset_map()) {
   assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
 }
 
@@ -237,7 +249,7 @@ template<ShenandoahGenerationType GENERATION>
 template<class T>
 inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
   // Update the location
-  _heap->non_conc_update_with_forwarded(p);
+  _heap->non_conc_update_with_forwarded(p, _cset_map);
 
   // ...then do the usual thing
   ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
@@ -245,12 +257,44 @@ inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
 
 template<class T>
 inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
-  _heap->non_conc_update_with_forwarded(p);
+  _heap->non_conc_update_with_forwarded(p, _cset_map);
 }
 
 template<class T>
 inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
-  _heap->conc_update_with_forwarded(p);
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    CSetState cset_state = _cset_map.cset_state(obj);
+    oop fwd;
+    switch (cset_state) {
+      case CSetState::NOT_IN_CSET:
+        return;
+      case CSetState::IN_CSET:
+        fwd = ShenandoahForwarding::get_forwardee(obj);
+        break;
+      case CSetState::FWDTABLE_COMPACT:
+        fwd = _heap->heap_region_containing(obj)->forwardee_compact(obj);
+        break;
+        case CSetState::FWDTABLE_WIDE:
+        fwd = _heap->heap_region_containing(obj)->forwardee_wide(obj);
+        break;
+      default: ShouldNotReachHere();
+    }
+    // Corner case: when evacuation fails, there are objects in collection
+    // set that are not really forwarded. We can still go and try CAS-update them
+    // (uselessly) to simplify the common path.
+    shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
+    shenandoah_assert_not_in_cset_except(p, fwd, _heap->cancelled_gc());
+
+    // Sanity check: we should not be updating the cset regions themselves,
+    // unless we are recovering from the evacuation failure.
+    shenandoah_assert_not_in_cset_loc_except(p, !_heap->is_in(p) || _heap->cancelled_gc());
+
+    // Either we succeed in updating the reference, or something else gets in our way.
+    // We don't care if that is another concurrent GC update, or another mutator update.
+    ShenandoahHeap::atomic_update_oop(fwd, p, obj);
+  }
 }
 
 
