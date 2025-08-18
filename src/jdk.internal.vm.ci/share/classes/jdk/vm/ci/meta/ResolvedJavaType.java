@@ -22,11 +22,12 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.reflect.AnnotatedElement;
-import java.util.List;
-
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.annotation.Annotated;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+
+import java.lang.reflect.AnnotatedElement;
+import java.util.List;
 
 /**
  * Represents a resolved Java type. Types include primitives, objects, {@code void}, and arrays
@@ -425,5 +426,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     @Override
     default boolean isConcrete() {
         return isArray() || !isAbstract();
+    }
+
+    /**
+     * Gets the type annotations for this type that back the implementation
+     * of {@link Class#getAnnotatedSuperclass()} and {@link Class#getAnnotatedInterfaces()}.
+     *
+     * @throws UnsupportedOperationException if this operation is not supported
+     */
+    default List<TypeAnnotationValue> getTypeAnnotationValues() {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 }

@@ -31,6 +31,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -351,5 +352,10 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         return Map.of();
+    }
+
+    @Override
+    public List<TypeAnnotationValue> getTypeAnnotationValues() {
+        return List.of();
     }
 }

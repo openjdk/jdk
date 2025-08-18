@@ -1448,42 +1448,42 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code type} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, boolean isTypeAnnotations, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedClassAnnotationValues(type, type.getKlassPointer(),
-                            a.types, a.types.length, a.buffer());
+            return getEncodedClassAnnotationValues(type, type.getKlassPointer(), isTypeAnnotations,
+                            a.types, a.length(), a.buffer());
         }
     }
 
-    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer, boolean isTypeAnnotations,
                                                   Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, boolean isTypeAnnotations, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
-                            a.types, a.types.length, a.buffer());
+            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(), isTypeAnnotations,
+                            a.types, a.length(), a.buffer());
         }
     }
 
-    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer, boolean isTypeAnnotations,
                                                        Object filter, int filterLength, long filterKlassPointers);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and
      * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, boolean isTypeAnnotations, ResolvedJavaType[] filter) {
         try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex,
-                            a.types, a.types.length, a.buffer());
+            return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex, isTypeAnnotations,
+                            a.types, a.length(), a.buffer());
         }
     }
 
-    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex, boolean isTypeAnnotations,
                                                   Object filterTypes, int filterLength, long filterKlassPointers);
 
     /**
@@ -1498,6 +1498,10 @@ final class CompilerToVM {
             this.types = types;
         }
 
+        int length() {
+            return types == null ? 0 : types.length;
+        }
+
         /**
          * Gets the buffer in which to pass the {@code Klass*} values to JNI.
          *
@@ -1505,7 +1509,7 @@ final class CompilerToVM {
          *         otherwise the address of a native buffer holding an array of {@code Klass*} values
          */
         long buffer() {
-            long length = types.length;
+            long length = length();
             if (length == 0) {
                 return 0L;
             }
@@ -1525,7 +1529,7 @@ final class CompilerToVM {
 
         @Override
         public void close() {
-            if (types.length > 1 && pointersArray != 0) {
+            if (pointersArray != 0) {
                 unsafe.freeMemory(pointersArray);
                 pointersArray = 0;
             }

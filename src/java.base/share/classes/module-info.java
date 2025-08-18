@@ -300,7 +300,8 @@ module java.base {
     exports sun.nio.fs to
         jdk.net;
     exports sun.reflect.annotation to
-        jdk.compiler;
+        jdk.compiler,
+        jdk.internal.vm.ci;
     exports sun.reflect.generics.reflectiveObjects to
         java.desktop;
     exports sun.reflect.misc to

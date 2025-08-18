@@ -39,6 +39,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.ExceptionProxy;
+import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
 import java.lang.annotation.Annotation;
@@ -171,6 +172,33 @@ public class TestAnnotationEncodingDecoding {
         }
     }
 
+    public static final class TypeAnnotationConst {
+        final TypeAnnotation.TypeAnnotationTargetInfo targetInfo;
+        final TypeAnnotation.LocationInfo locationInfo;
+        final AnnotationConst annotation;
+
+        TypeAnnotationConst(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, AnnotationConst annotation) {
+            this.targetInfo = targetInfo;
+            this.locationInfo = locationInfo;
+            this.annotation = annotation;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TypeAnnotationConst that) {
+                return this.targetInfo.equals(that.targetInfo) &&
+                        this.locationInfo.equals(that.locationInfo) &&
+                        this.annotation.equals(that.annotation);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + targetInfo + ";" + locationInfo + "}" + annotation;
+        }
+    }
+
     public static final class ErrorConst {
         final String desc;
         public ErrorConst(String desc) {
@@ -252,7 +280,7 @@ public class TestAnnotationEncodingDecoding {
         }
     }
 
-    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, EnumArrayConst, ErrorConst, ErrorConst> {
+    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, TypeAnnotationConst, EnumConst, EnumArrayConst, ErrorConst, ErrorConst> {
         @Override
         public Class<?> resolveType(String name) {
             try {
@@ -265,6 +293,11 @@ public class TestAnnotationEncodingDecoding {
         @Override
         public AnnotationConst newAnnotation(Class<?> type, Map.Entry<String, Object>[] elements) {
             return new AnnotationConst(type, elements);
+        }
+
+        @Override
+        public TypeAnnotationConst newTypeAnnotation(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, AnnotationConst annotation) {
+            return new TypeAnnotationConst(targetInfo, locationInfo, annotation);
         }
 
         @Override
