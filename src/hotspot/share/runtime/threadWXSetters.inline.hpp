@@ -56,6 +56,7 @@ public:
   ThreadWXEnable(WXMode new_mode, Thread* thread) :
     _thread(thread), _this_wx_mode(nullptr) {
     NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    guarantee(new_mode != WXArmedForWrite, "need a pointer to heal");
     JavaThread *javaThread
       = _thread && _thread->is_Java_thread()
         ? JavaThread::cast(_thread) : nullptr;

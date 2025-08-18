@@ -121,7 +121,7 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // Enable WXWrite: the function is called directly from nmethod_entry_barrier
   // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(DefaultWXWriteMode, Thread::current()));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.

@@ -199,7 +199,7 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
 
   // Enable WXWrite: the function is called directly from nmethod_entry_barrier
   // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(DefaultWXWriteMode, Thread::current()));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   NativeNMethodBarrier barrier(nm);
   barrier.set_value(value);

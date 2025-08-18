@@ -248,15 +248,15 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr) && !CodeCache::contains(pc)) {
       WXMode *entry_mode = thread->_cur_wx_mode;
-      if (*entry_mode == WXArmedForWrite) {
+      if (entry_mode != nullptr && *entry_mode == WXArmedForWrite) {
         if (TraceWXHealing) {
           static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
           tty->print_cr("Healing WXMode %s at %p to WXWrite",
                         mode_names[*entry_mode], entry_mode);
         }
         *(thread->_cur_wx_mode) = WXWrite;
+        return thread->wx_enable_write();
       }
-      return thread->wx_enable_write();
     }
 
     // Enable WXWrite for the duration of this handler: this function
@@ -563,7 +563,9 @@ bool Thread::wx_enable_write() {
 // A wrapper around wx_enable_write() for when the current thread is
 // not known.
 void os::thread_wx_enable_write() {
-  Thread::current()->wx_enable_write();
+  if (!StressWXHealing) {
+    Thread::current()->wx_enable_write();
+  }
 }
 
 #endif // MACOS_W_XOR_X
