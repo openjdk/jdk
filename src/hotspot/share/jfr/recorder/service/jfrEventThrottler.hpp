@@ -29,8 +29,11 @@
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 
+class ThrottlerLookupTable;
+
 class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;
+  friend class ThrottlerLookupTable;
  private:
   JfrSamplerParams _last_params;
   int64_t _sample_size;
@@ -43,6 +46,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   static bool create();
   static void destroy();
   JfrEventThrottler(JfrEventId event_id);
+  static JfrEventThrottler* create_throttler(JfrEventId event_id);
   void configure(int64_t event_sample_size, int64_t period_ms);
 
   const JfrSamplerParams& update_params(const JfrSamplerWindow* expired);
@@ -50,7 +54,6 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   static JfrEventThrottler* for_event(JfrEventId event_id);
 
  public:
-  static JfrEventThrottler* create_throttler(JfrEventId event_id);
   static void configure(JfrEventId event_id, int64_t event_sample_size, int64_t period_ms);
   static bool accept(JfrEventId event_id, int64_t timestamp = 0);
 };

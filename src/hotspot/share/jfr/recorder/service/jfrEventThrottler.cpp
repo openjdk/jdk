@@ -98,9 +98,6 @@ void JfrEventThrottler::destroy() {
   _throttler_table.destroy();
 }
 
-// There is currently only two throttler instances, one for the jdk.ObjectAllocationSample event
-// and another for the SamplingLatency event.
-// When introducing many more throttlers, consider adding a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   JfrEventThrottler* const throttler = _throttler_table.at(event_id);
   assert(throttler != nullptr, "Event type %d has an unconfigured throttler", (int)event_id);
@@ -115,7 +112,7 @@ void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int6
 
 JfrEventThrottler* JfrEventThrottler::create_throttler(JfrEventId id) {
   JfrEventThrottler* p = new JfrEventThrottler(id);
-  if (p->initialize() == false) {
+  if (p != nullptr && p->initialize() == false) {
     delete p;
     p = nullptr;
   }
