@@ -894,9 +894,9 @@ public final class DateTimeFormatterBuilder {
      * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
      * <p>
      * When formatting, the instant will always be suffixed by 'Z' to indicate UTC.
-     * When parsing, the behaviour of
+     * When parsing, the lenient mode behaviour of
      * {@link DateTimeFormatterBuilder#appendOffset(String, String)
-     * appendOffset("+HH", "Z")} in lenient mode will be used to parse the offset,
+     * appendOffset("+HH", "Z")} will be used to parse the offset,
      * converting the instant to UTC as necessary.
      * <p>
      * An alternative to this method is to format/parse the instant as a single
