@@ -66,11 +66,12 @@ public class bug4655513 {
             Point dragEndLoc = Util.getCenterPoint(editor);
             robot.mouseMove(dragStartLoc.x, dragStartLoc.y);
             robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-            for (int y = dragStartLoc.y; y < dragEndLoc.y; y += 3) {
+            for (int y = dragStartLoc.y; y < dragEndLoc.y; y += 2) {
                 robot.mouseMove(dragStartLoc.x, y);
-                robot.delay(50);
+                robot.delay(20);
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(() -> {
@@ -79,7 +80,11 @@ public class bug4655513 {
                 }
             });
         } finally {
-            SwingUtilities.invokeAndWait(frame::dispose);
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
