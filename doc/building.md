@@ -1258,11 +1258,11 @@ toolchain and a sysroot environment which can easily be used together with the
 following command:
 
 ```
-bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64-linux-gnu && make
+bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64le-linux-gnu && make
 ```
 
-will configure and build the JDK for Linux/ppc64 assuming that `<devkit-path>`
-points to a Linux/x86_64 to Linux/ppc64 devkit.
+will configure and build the JDK for Linux/ppc64le assuming that `<devkit-path>`
+points to a Linux/x86_64 to Linux/ppc64le devkit.
 
 Devkits can be created from the `make/devkit` directory by executing:
 
@@ -1281,7 +1281,6 @@ at least the following targets are known to work:
 | x86_64-linux-gnu         |
 | aarch64-linux-gnu        |
 | arm-linux-gnueabihf      |
-| ppc64-linux-gnu          |
 | ppc64le-linux-gnu        |
 | s390x-linux-gnu          |
 
@@ -1401,7 +1400,6 @@ Architectures that are known to successfully cross-compile like this are:
 | mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
 | armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
 | ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
-| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
 | m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
 | alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
 | sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |

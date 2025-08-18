@@ -464,7 +464,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter riscv64 ppc64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif
