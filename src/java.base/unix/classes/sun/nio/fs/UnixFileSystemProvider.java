@@ -349,33 +349,27 @@ public abstract class UnixFileSystemProvider
         return access(file, X_OK) == 0;
     }
 
-    // if path is a symbolic link, then add its key to the set and
-    // continue recursively down any singly linked list of targets
-    private void getLinkKeys(UnixPath path, Set<UnixFileKey> keys)
-        throws IOException {
-        try {
-            UnixFileAttributes attrs = UnixFileAttributes.get(path, false);
-            if (attrs.isSymbolicLink()) {
-                if (!keys.add(attrs.fileKey()))
-                    return; // if key already present, then there is a loop so bail out
-                UnixPath target = UnixPath.toUnixPath(readSymbolicLink(path));
-                if (exists(target, LinkOption.NOFOLLOW_LINKS))
-                    getLinkKeys(target, keys);
+    // find the key of the last accessible link in the chain
+    private UnixFileKey lastFileKey(UnixPath path) throws UnixException {
+        var fileKeys = new HashSet<UnixFileKey>();
+        UnixFileKey lastFileKey = null;
+        while (path != null) {
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(path, false);
+            if (attrs == null) {
+                break;
             }
-        } catch (UnixException x) {
-            x.rethrowAsIOException(path);
+            UnixFileKey fileKey = attrs.fileKey();
+            if (!attrs.isSymbolicLink()) {
+                return fileKey;
+            }
+            if (!fileKeys.add(fileKey)) {
+                throw new UnixException(ELOOP);
+            }
+            lastFileKey = fileKey;
+            byte[] target = readlink(path);
+            path = new UnixPath(theFileSystem, target);
         }
-    }
-
-    // retrieve the file keys of any symbolic links in this path
-    private Set<UnixFileKey> getLinkKeys(UnixPath path) throws IOException {
-        Set<UnixFileKey> keys = new HashSet<>();
-        UnixPath p = path;
-        while (p != null && exists(p, LinkOption.NOFOLLOW_LINKS)) {
-            getLinkKeys(p, keys);
-            p = p.getParent();
-        }
-        return keys;
+        return lastFileKey;
     }
 
     @Override
@@ -404,24 +398,15 @@ public abstract class UnixFileSystemProvider
             // both exist, compare their device IDs and inode numbers
             return attrs1.isSameFile(attrs2);
 
-        // try to retrieve attributes not following links
-        attrs1 = attrs2 = null;
+        // find the last link in each path and compare them
         try {
-            if ((attrs1 = UnixFileAttributes.getIfExists(file1, false)) != null)
-                attrs2 = UnixFileAttributes.getIfExists(file2, false);
+            UnixFileKey key1 = lastFileKey(file1);
+            UnixFileKey key2 = lastFileKey(file2);
+            if (key1 != null && key2 != null && key1.equals(key2))
+                return true;
         } catch (UnixException x) {
             x.rethrowAsIOException(file1, file2);
             return false;    // keep compiler happy
-        }
-
-        if (attrs1 != null && attrs2 != null) {
-            // both exist if links are not followed, so see whether
-            // the two paths both contain a common symbolic link
-            Set<UnixFileKey> keys1 = getLinkKeys(file1);
-            Set<UnixFileKey> keys2 = getLinkKeys(file2);
-            for (UnixFileKey k : keys1)
-                if (keys2.contains(k))
-                    return true;
         }
 
         return false;
