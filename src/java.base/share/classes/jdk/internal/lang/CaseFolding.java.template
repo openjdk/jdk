@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.internal.java.lang;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+/**
+ * Utility class for {@code String.toCaseFold()} that handles Unicode case folding
+ * properties defined in CasingFolding.txt, including 1:M full case folding.
+ */
+ public final class CaseFolding {
+
+ 	public static boolean isFolded(int cp) {
+		return caseFoldingMap.get(cp) == null;
+	}
+
+    public static char[] fold(int cp) {
+        var entry = caseFoldingMap.get(cp);
+        if (entry != null)
+          return entry.folding;
+        return Character.toChars(cp);
+    }
+
+     private static class CaseFoldingEntry {
+        final int cp;
+        final char[] folding;
+        CaseFoldingEntry next = null;
+
+        CaseFoldingEntry(int cp, char[] folding) {
+            this.cp = cp;
+             this.folding = folding;
+        };
+
+        public String toString() {
+            return String.format("[%x %s]",
+                    cp,
+                    IntStream.range(0, folding.length)
+					         .mapToObj(i -> String.format("%x", (int)folding[i]))
+                             .collect(Collectors.joining(" ", "", "")));
+        }
+    }
+
+    private static class CaseFoldingMap {
+
+        private final CaseFoldingEntry[] entries;
+
+        CaseFoldingMap(CaseFoldingEntry[] entries) {
+            this.entries = new CaseFoldingEntry[entries.length << 1];
+            for (var entry : entries) {
+                add(entry);
+            }
+        }
+
+        public CaseFoldingEntry get(int cp) {
+            var entries = this.entries;
+            var index = cp % entries.length;
+            for (var e = entries[index]; e != null; e = e.next) {
+                if (e.cp == cp)
+                    return e;
+            }
+            return null;
+        }
+
+        public int getDepth(int cp) {
+            var entries = this.entries;
+            var index = cp % entries.length;
+            int depth = 0;
+            for (var e = entries[index]; e != null; e = e.next) {
+                if (e.cp == cp)
+                    break;
+                depth++;
+            }
+            return depth;
+        }
+
+        private void add(CaseFoldingEntry entry) {
+            int cp = entry.cp;
+            var entries = this.entries;
+            var index = cp % entries.length;
+            for (var e = entries[index]; e != null; e = e.next) {
+                if (e.cp == cp) {
+                    throw new IllegalArgumentException("Duplicated mapping entry : " +
+                            String.format("U+%04x", cp));
+                }
+            }
+            entry.next = entries[index];
+            entries[index] = entry;
+        }
+    }
+
+    private final static CaseFoldingEntry[] caseFoldingEntries = {
+%%%Entries
+    };
+
+    private final static CaseFoldingMap caseFoldingMap = new CaseFoldingMap(caseFoldingEntries);
+}
