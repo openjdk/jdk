@@ -30,35 +30,36 @@
 
 
 namespace CPUTimeUsage {
-    struct GCStatistics {
-        jlong total;
-        jlong gc_threads;
-        jlong vm_thread;
-        jlong stringdedup;
-    };
+  struct GCStatistics {
+    jlong total;
+    jlong gc_threads;
+    jlong vm_thread;
+    jlong stringdedup;
+  };
 
-    class GC : public AllStatic {
-    public:
-        static GCStatistics statisics();
+  class GC : public AllStatic {
+  public:
+    static GCStatistics statisics();
 
-        static jlong total();
-        static jlong gc_threads();
-        static jlong vm_thread();
-        static jlong stringdedup();
-    };
+    static jlong total();
+    static jlong gc_threads();
+    static jlong vm_thread();
+    static jlong stringdedup();
+  };
 
-    class Runtime : public AllStatic {
-    public:
-        static jlong vm_thread();
-    };
+  class Runtime : public AllStatic {
+  public:
+    static jlong vm_thread();
+  };
 
-    class Error : public AllStatic {
-    private:
-        static volatile bool _has_error;
-    public:
-        static bool has_error();
-        static void mark_error();
-    };
+  class Error : public AllStatic {
+  private:
+    static volatile bool _has_error;
+
+  public:
+    static bool has_error();
+    static void mark_error();
+  };
 }
 
 #endif // SHARE_SERVICES_CPUTIMEUSAGE_HPP

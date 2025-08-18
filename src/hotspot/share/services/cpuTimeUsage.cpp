@@ -36,18 +36,18 @@ volatile bool CPUTimeUsage::Error::_has_error = false;
 
 class CPUTimeThreadClosure : public ThreadClosure {
 private:
-    jlong _cpu_time = 0;
+  jlong _cpu_time = 0;
 
 public:
-    virtual void do_thread(Thread* thread) {
-      jlong cpu_time = os::thread_cpu_time(thread);
-      if (cpu_time != -1) {
-          _cpu_time += cpu_time;
-      } else {
-        CPUTimeUsage::Error::mark_error();
-      }
+  virtual void do_thread(Thread* thread) {
+    jlong cpu_time = os::thread_cpu_time(thread);
+    if (cpu_time != -1) {
+      _cpu_time += cpu_time;
+    } else {
+      CPUTimeUsage::Error::mark_error();
     }
-    jlong cpu_time() { return _cpu_time; };
+  }
+  jlong cpu_time() { return _cpu_time; };
 };
 
 jlong CPUTimeUsage::GC::vm_thread() {
