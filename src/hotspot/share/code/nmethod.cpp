@@ -2016,6 +2016,8 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     return false;
   }
 
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   {
     // Enter critical section.  Does not block for safepoint.
     ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
@@ -2391,8 +2393,6 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {
@@ -2410,6 +2410,8 @@ bool nmethod::is_unloading() {
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Note that if an nmethod has dead oops, everyone will agree that the
   // nmethod is_unloading. However, the is_cold heuristics can yield

@@ -394,7 +394,6 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;
@@ -509,6 +508,8 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
       // eventually.
       return nullptr;
     }
+
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     blob = new (size) VtableBlob(name, size);
     CodeCache_lock->unlock();
   }
