@@ -72,13 +72,14 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
     private static Color acceleratorForeground;
 
     final WindowsMenuItemUIAccessor accessor =
-        new  WindowsMenuItemUIAccessor() {
+        new WindowsMenuItemUIAccessor() {
 
             @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
