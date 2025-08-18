@@ -39,11 +39,12 @@ public class CmpDisjointButNonOrderedRangesLong {
     static double dFld2;
 
     public static void main(String[] strArr) {
-        TestFramework.runWithFlags("-Xcomp", "-XX:CompileCommand=compileonly,compiler.igvn.CmpDisjointButNonOrderedRangesLong::test");
+        TestFramework.run();
     }
 
     @Test
     @IR(failOn = {IRNode.PHI})
+    @Warmup(0)
     static int test() {
         long x = 7;
         if (bFld) {
