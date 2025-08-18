@@ -25,6 +25,10 @@
 
 package java.lang;
 
+import static java.lang.String.LATIN1;
+import static java.lang.String.UTF16;
+import static java.lang.String.checkIndex;
+import static java.lang.String.checkOffset;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Spliterator;
@@ -32,13 +36,10 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.java.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
-import static java.lang.String.checkIndex;
-import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
     public static char charAt(byte[] value, int index) {
@@ -190,6 +191,101 @@ final class StringLatin1 {
         }
         return len1 - len2;
     }
+
+    public static int compareToFC(byte[] value, byte[] other) {
+        int len1 = value.length;
+        int len2 = other.length;
+        char[] folded1 = null;
+        char[] folded2 = null;
+        int k1 = 0, k2 = 0, fk1 = 0, fk2 = 0;
+        while ((k1 < len1 || folded1 != null && fk1 < folded1.length) &&
+               (k2 < len2 || folded2 != null && fk2 < folded2.length)) {
+            char c1, c2;
+            if (folded1 != null && fk1 < folded1.length) {
+                c1 = folded1[fk1++];
+            } else {
+                int cp = codePointAt(value, k1++, len1);  // no surrogate
+                folded1 = CaseFolding.foldIfDefined(cp);
+                fk1 = 0;
+                if (folded1 == null) {
+                    c1 = (char)cp;
+                } else {
+                    c1 = folded1[fk1++];
+                }
+            }
+            if (folded2 != null && fk2 < folded2.length) {
+                c2 = folded2[fk2++];
+            } else {
+                int cp = codePointAt(other, k2++, len2);
+                folded2 = CaseFolding.foldIfDefined(cp);
+                fk2 = 0;
+                if (folded2 == null) {
+                    c2 = (char)cp;
+                } else {
+                    c2 = folded2[fk2++];
+                }
+            }
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+        }
+        if (k1 < len1 || folded1 != null && fk1 < folded1.length) {
+            return 1;
+        }
+        if (k2 < len2 || folded2 != null && fk2 < folded2.length) {
+            return -1;
+        }
+        return 0;
+    }
+
+    public static int compareToFC_UTF16(byte[] value, byte[] other) {
+        int len1 = value.length;
+        int len2 = StringUTF16.length(other);
+        char[] folded1 = null;
+        char[] folded2 = null;
+        int k1 = 0, k2 = 0, fk1 = 0, fk2 = 0;
+
+        while ((k1 < len1 || folded1 != null && fk1 < folded1.length) &&
+               (k2 < len2 || folded2 != null && fk2 < folded2.length)) {
+            char c1, c2;
+            if (folded1 != null && fk1 < folded1.length) {
+                c1 = folded1[fk1++];
+            } else {
+                int cp = codePointAt(value, k1++, len1);
+                folded1 = CaseFolding.foldIfDefined(cp);
+                fk1 = 0;
+                if (folded1 == null) {
+                    c1 = (char)cp;
+                } else {
+                    c1 = folded1[fk1++];
+                }
+            }
+            if (folded2 != null && fk2 < folded2.length) {
+                c2 = folded2[fk2++];
+            } else {
+                int cp = StringUTF16.codePointAt(other, k2, len2);
+                k2 += Character.charCount(cp);
+                folded2 = CaseFolding.foldIfDefined(cp);
+                fk2 = 0;
+                if (folded2 == null) {
+                    c2 = (char)cp;
+                } else {
+                    c2 = folded2[fk2++];
+                }
+            }
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+        }
+        if (k1 < len1 || folded1 != null && fk1 < folded1.length) {
+            return 1;
+        }
+        if (k2 < len2 || folded2 != null && fk2 < folded2.length) {
+            return -1;
+        }
+        return 0;
+    }
+
 
     public static int hashCode(byte[] value) {
         return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);

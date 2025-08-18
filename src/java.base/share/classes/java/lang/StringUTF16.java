@@ -26,6 +26,7 @@
 
 package java.lang;
 
+import static java.lang.String.UTF16;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Spliterator;
@@ -34,12 +35,11 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.java.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-
-import static java.lang.String.UTF16;
 
 /// UTF16 String operations.
 ///
@@ -590,6 +590,62 @@ final class StringUTF16 {
 
     public static int compareToCI_Latin1(byte[] value, byte[] other) {
         return -StringLatin1.compareToCI_UTF16(other, value);
+    }
+
+    public static int compareToFC_Latin1(byte[] value, byte[] other) {
+        return -StringLatin1.compareToFC_UTF16(other, value);
+    }
+
+    public static int compareToFC(byte[] value, byte[] other) {
+        int len1 = length(value);
+        int len2 = length(other);
+        char[] folded1 = null;
+        char[] folded2 = null;
+        int k1 = 0, k2 = 0, fk1 = 0, fk2 = 0;
+        while ((k1 < len1 || folded1 != null && fk1 < folded1.length) &&
+               (k2 < len2 || folded2 != null && fk2 < folded2.length)) {
+            int c1, c2;
+            if (folded1 != null && fk1 < folded1.length) {
+                c1 = Character.codePointAt(folded1, fk1);
+                fk1 += Character.charCount(c1);
+            } else {
+                int cp = codePointAt(value, k1, len1, true);
+                k1 += Character.charCount(cp);
+                folded1 = CaseFolding.foldIfDefined(cp);
+                fk1 = 0;
+                if (folded1 == null) {
+                    c1 = cp;
+                } else {
+                   c1 = Character.codePointAt(folded1, 0);
+                   fk1 += Character.charCount(c1);
+                }
+            }
+            if (folded2 != null && fk2 < folded2.length) {
+                c2 = Character.codePointAt(folded2, fk2);
+                fk2 += Character.charCount(c2);
+            } else {
+                int cp = codePointAt(other, k2, len2, true);
+                k2 += Character.charCount(cp);
+                folded2 = CaseFolding.foldIfDefined(cp);
+                fk2 = 0;
+                if (folded2 == null) {
+                    c2 = cp;
+                } else {
+                   c2 = Character.codePointAt(folded2, 0);
+                   fk2 += Character.charCount(c2);
+                }
+            }
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+        }
+        if (k1 < len1 || folded1 != null && fk1 < folded1.length) {
+            return 1;
+        }
+        if (k2 < len2 || folded2 != null && fk2 < folded2.length) {
+            return -1;
+        }
+        return 0;
     }
 
     public static int hashCode(byte[] value) {

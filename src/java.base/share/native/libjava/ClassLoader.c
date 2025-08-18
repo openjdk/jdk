@@ -167,12 +167,35 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     char buf[128];
     char* utfSource;
     char sourceBuf[1024];
+    jbyte *address;
 
     assert(data != NULL); // caller fails if data is null.
     assert(length >= 0);  // caller passes ByteBuffer.remaining() for length, so never neg.
     // caller passes ByteBuffer.position() for offset, and capacity() >= position() + remaining()
     assert((*env)->GetDirectBufferCapacity(env, data) >= (offset + length));
 
+    address = (*env)->GetDirectBufferAddress(env, data);
+    if (address == NULL) {
+        JNU_ThrowNullPointerException(env, 0);
+        return NULL;
+    }
+    address += offset;
+
+    // On AIX malloc(0) returns NULL which looks like an out-of-memory
+    // condition; so adjust it to malloc(1)
+    #ifdef _AIX
+        body = (jbyte *)malloc(length == 0 ? 1 : length);
+    #else
+        body = (jbyte *)malloc(length);
+    #endif
+
+    if (body == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
+    memcpy(body, address, length);
+
+/*
     body = (*env)->GetDirectBufferAddress(env, data);
 
     if (body == NULL) {
@@ -181,11 +204,12 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     }
 
     body += offset;
-
+*/
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            return result;
+//          return result;
+            goto free_body;
         }
         fixClassname(utfName);
     } else {
@@ -209,6 +233,8 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     if (utfName && utfName != buf)
         free(utfName);
 
+ free_body:
+    free(body);
     return result;
 }
 
