@@ -641,8 +641,13 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 temp.position(0);
                 conContext.inputRecord.handshakeHash.receive(temp);
             }
-            if (conContext.handshakeContext == null &&
-                    conContext.isNegotiated) {
+            if (conContext.handshakeContext == null) {
+                if (!conContext.isNegotiated) {
+                    throw new QuicTransportException(
+                            "Cannot process crypto message, broken: "
+                                    + conContext.isBroken,
+                            null, 0, QuicTransportErrors.INTERNAL_ERROR);
+                }
                 conContext.handshakeContext =
                         new PostHandshakeContext(conContext);
             }
