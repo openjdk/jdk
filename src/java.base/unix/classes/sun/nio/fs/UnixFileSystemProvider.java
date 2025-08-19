@@ -360,7 +360,7 @@ public abstract class UnixFileSystemProvider
             }
             UnixFileKey fileKey = attrs.fileKey();
             if (!attrs.isSymbolicLink()) {
-                return fileKey;
+                break;
             }
             if (!fileKeys.add(fileKey)) {
                 throw new UnixException(ELOOP);
@@ -383,33 +383,28 @@ public abstract class UnixFileSystemProvider
         if (!(obj2 instanceof UnixPath file2))
             return false;
 
-        // try to retrieve attributes following links
-        UnixFileAttributes attrs1 = null;
-        UnixFileAttributes attrs2 = null;
+        UnixFileKey key1;
         try {
-            if ((attrs1 = UnixFileAttributes.getIfExists(file1)) != null)
-                attrs2 = UnixFileAttributes.getIfExists(file2);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file1, file2);
-            return false;    // keep compiler happy
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(file1);
+            key1 = (attrs != null) ? attrs.fileKey() : lastFileKey(file1);
+        } catch (UnixException e) {
+            e.rethrowAsIOException(file1);
+            return false;
         }
 
-        if (attrs1 != null && attrs2 != null)
-            // both exist, compare their device IDs and inode numbers
-            return attrs1.isSameFile(attrs2);
+        if (key1 == null)
+            return false;
 
-        // find the last link in each path and compare them
+        UnixFileKey key2;
         try {
-            UnixFileKey key1 = lastFileKey(file1);
-            UnixFileKey key2 = lastFileKey(file2);
-            if (key1 != null && key2 != null && key1.equals(key2))
-                return true;
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file1, file2);
-            return false;    // keep compiler happy
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(file2);
+            key2 = (attrs != null) ? attrs.fileKey() : lastFileKey(file2);
+        } catch (UnixException e) {
+            e.rethrowAsIOException(file2);
+            return false;
         }
 
-        return false;
+        return key1.equals(key2);
     }
 
     @Override
