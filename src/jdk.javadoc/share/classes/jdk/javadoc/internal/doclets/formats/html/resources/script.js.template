@@ -328,11 +328,7 @@ document.addEventListener("readystatechange", (e) => {
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    // Make sure current element is visible in breadcrumb navigation on small displays
     const subnav = document.querySelector("ol.sub-nav-list");
-    if (subnav && subnav.lastElementChild) {
-        subnav.lastElementChild.scrollIntoView({ behavior: "instant", inline: "start", block: "nearest" });
-    }
     const keymap = new Map();
     const searchInput = document.getElementById("search-input")
                    || document.getElementById("page-search-input");
@@ -351,6 +347,49 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const mainnav = navbar.querySelector("ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
+    const themeButton = document.querySelector("button#theme-button");
+    const themePanel = document.querySelector("div#theme-panel");
+    var themePanelVisible = false;
+    themeButton.addEventListener("click", e => {
+        if (!themePanelVisible) {
+            let {x, y} = themeButton.getBoundingClientRect();
+            themePanel.style.display = "block";
+            if (window.innerHeight - 85 < y) {
+                themePanel.style.top = "";
+                themePanel.style.bottom = "4px";
+            } else {
+                themePanel.style.top = y + (expanded ? 0 : 36) + "px";
+                themePanel.style.bottom = "";
+            }
+            themePanel.style.left = x + (expanded ? 36 : 0) + "px";
+            themeButton.setAttribute("aria-expanded", "true");
+            themePanelVisible = true;
+            e.stopPropagation();
+        }
+    });
+    function closeThemePanel(e) {
+        if (themePanelVisible && (!e || !themePanel.contains(e.target))) {
+            themePanel.style.removeProperty("display");
+            themeButton.setAttribute("aria-expanded", "false");
+            themePanelVisible = false;
+        }
+    }
+    themePanel.querySelectorAll("input").forEach(input => {
+        input.removeAttribute("disabled");
+        input.addEventListener("change", e => {
+            setTheme(e.target.value);
+        })
+    });
+    const THEMES = ["theme-light", "theme-dark", "theme-os"];
+    function setTheme(theme) {
+        THEMES.forEach(t => {
+            if (t !== theme) document.body.classList.remove(t);
+        });
+        document.body.classList.add(theme);
+        localStorage.setItem("theme", theme);
+        document.getElementById(theme).checked = true;
+    }
+    setTheme(localStorage.getItem("theme") || THEMES[0]);
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
@@ -362,6 +401,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             return;
         }
         if (!isInput(e.target) && keymap.has(e.key)) {
+            closeThemePanel();
             var elem = keymap.get(e.key);
             if (elem === filterInput && !elem.offsetParent) {
                 elem = getVisibleFilterInput(true);
@@ -370,6 +410,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             elem.select();
             e.preventDefault();
         } else if (e.key === "Escape") {
+            closeThemePanel();
             if (expanded) {
                 collapse();
                 e.preventDefault();
@@ -389,6 +430,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
+        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
@@ -403,6 +445,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
     }
     function expand() {
+        closeThemePanel();
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");
@@ -457,6 +500,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         });
     }
     document.querySelector("main").addEventListener("click", collapse);
+    document.querySelector("body").addEventListener("click", closeThemePanel);
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute

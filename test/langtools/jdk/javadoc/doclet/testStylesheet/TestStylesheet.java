@@ -92,7 +92,8 @@ public class TestStylesheet extends JavadocTester {
                 "@import url('fonts/dejavu.css');",
                 """
                     .search-tag-result:target {
-                        background-color:var(--search-tag-highlight-color);
+                        background-color:var(--search-tag-background-color);
+                        color:var(--search-tag-text-color);
                     }""",
                 """
                     a[href]:hover, a[href]:active {
