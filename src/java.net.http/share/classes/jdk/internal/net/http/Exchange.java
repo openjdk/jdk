@@ -414,9 +414,10 @@ final class Exchange<T> {
                 // before the CF returned by ExchangeImpl.get completed. This deals
                 // with issues when the request is cancelled while the exchange impl
                 // is being created.
-                .thenApply((eimpl) -> {synchronized (Exchange.this) {exchImpl = eimpl;}
-                    checkCancelled(); return eimpl; })
-                .thenApply(Function.identity());
+                .thenApply((eimpl) -> {
+                    synchronized (Exchange.this) {exchImpl = eimpl;}
+                    checkCancelled(); return eimpl;
+                }).copy();
         // We should probably use a VarHandle to get/set exchangeCF
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
