@@ -267,23 +267,23 @@ void SharedRuntime::print_ic_miss_histogram() {
 
 // Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
 void SharedRuntime::debug_print_value(jboolean x) {
-  tty->print("boolean %d\n", x);
+  tty->print_cr("boolean %d", x);
 }
 
 void SharedRuntime::debug_print_value(jbyte x) {
-  tty->print("byte %d\n", x);
+  tty->print_cr("byte %d", x);
 }
 
 void SharedRuntime::debug_print_value(jshort x) {
-  tty->print("short %d\n", x);
+  tty->print_cr("short %d", x);
 }
 
 void SharedRuntime::debug_print_value(jchar x) {
-  tty->print("char %c %d\n", isprint(x) ? x : ' ', x);
+  tty->print_cr("char %c %d", isprint(x) ? x : ' ', x);
 }
 
 void SharedRuntime::debug_print_value(jint x) {
-  tty->print("int %d\n", x);
+  tty->print_cr("int %d", x);
 }
 
 void SharedRuntime::debug_print_value(jlong x) {
@@ -291,11 +291,11 @@ void SharedRuntime::debug_print_value(jlong x) {
 }
 
 void SharedRuntime::debug_print_value(jfloat x) {
-  tty->print("float %f\n", x);
+  tty->print_cr("float %f", x);
 }
 
 void SharedRuntime::debug_print_value(jdouble x) {
-  tty->print("double %lf\n", x);
+  tty->print_cr("double %lf", x);
 }
 
 void SharedRuntime::debug_print_value(oopDesc* x) {
