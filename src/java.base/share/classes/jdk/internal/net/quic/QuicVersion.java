@@ -37,6 +37,9 @@ public enum QuicVersion {
     QUIC_V1(1), // RFC-9000
     QUIC_V2(0x6b3343cf); // RFC 9369
 
+    // 32 bits unsigned integer representing the version as
+    // defined in RFC. This is the version number as sent
+    // in long headers packets (see RFC 9000).
     private final int versionNumber;
 
     private QuicVersion(final int versionNumber) {
