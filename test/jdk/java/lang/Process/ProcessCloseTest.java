@@ -83,14 +83,15 @@ public class ProcessCloseTest {
         return args;
     }
 
-    // Permutations
-    // Parent single thread vs concurrent close
-    // child waiting on stdin
-    // child sending on stdout and on stderr
-    // child exited and not exited
-    // parent abandoning stdin and stderr and either-or,
-    // parent waiting for exit before closing vs not waiting
-
+    /**
+     * {@return A Stream of Arguments}
+     * Each Argument consists of three elements.
+     * - A List of command line arguments to start a process.
+     *   `javaArgs can be used to launch a Java child with ChildCommands
+     * - A List of ProcessCommand actions to be invoked on that process
+     * - A expected final ExitStatus
+     * @return
+     */
     static Stream<Arguments> singleThreadTestCases() {
         return Stream.of(
                 Arguments.of(List.of("echo", "xyz0"),
@@ -628,11 +629,6 @@ public class ProcessCloseTest {
     // Copy of ProcessExamples in java/lang/snippet-files/ProcessExamples.java
     @Test
     void example() {
-        String haiku = """
-                Oh, the sunrise glow;
-                Paddling with the river flow;
-                Chilling still, go slow.
-                """;
         try (Process p = new ProcessBuilder("cat").start();
              Writer writer = p.outputWriter();
              Reader reader = p.inputReader()) {
@@ -648,6 +644,12 @@ public class ProcessCloseTest {
             System.err.println("Process failed: " + e);
         }
     }
+
+    String haiku = """
+                Oh, the sunrise glow;
+                Paddling with the river flow;
+                Chilling still, go slow.
+                """;
 
     /**
      * Child program that executes child actions as named by command line args.

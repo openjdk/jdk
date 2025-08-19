@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -145,10 +144,6 @@ import java.util.stream.Stream;
  * @since   1.0
  */
 public abstract class Process implements AutoCloseable {
-
-    // Logger for exceptions
-    private static final Supplier<System.Logger> LOGGER =
-            StableValue.supplier( () -> System.getLogger("java.lang.Process") );
 
     // Readers and Writers created for this process; so repeated calls return the same object
     // All updates must be done while synchronized on this Process.
@@ -633,12 +628,13 @@ public abstract class Process implements AutoCloseable {
      * they are discarded or ignored.
      * Streams should be {@code closed} when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
-     * Any {@code IOException} that occurs when closing a stream is
-     * re-thrown after the process is destroyed.
+     * If an {@code IOException} occurs when closing a stream it is
+     * re-thrown after the process is destroyed. Additional {@code IOExceptions}
+     * thrown by closing the remaining streams, if any, are added to the first
+     * {@code IOException} as {linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
      * The process may already have exited or be in the process of exiting;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
-     * Any {@code IOException} that occurs when destroying the process is ignored.
      * <p>
      * Example using try-with-resources writing text to a process, reading back the
      * response, and closing the streams and process:

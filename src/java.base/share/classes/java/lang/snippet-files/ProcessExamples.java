@@ -28,12 +28,6 @@ import java.io.Writer;
 
 public class ProcessExamples {
     // @start region=example
-    static final String haiku = """
-                Oh, the sunrise glow;
-                Paddling with the river flow;
-                Chilling still, go slow.
-                """;
-
     void example() {
         try (Process p = new ProcessBuilder("cat").start();
              Writer writer = p.outputWriter();
@@ -49,5 +43,12 @@ public class ProcessExamples {
         } catch (Exception e) {
             System.out.println("Process failed: " + e);
         }
-    }// @end region=example
+    }
+
+    static final String haiku = """
+                Oh, the sunrise glow;
+                Paddling with the river flow;
+                Chilling still, go slow.
+                """;
+    // @end region=example
 }
