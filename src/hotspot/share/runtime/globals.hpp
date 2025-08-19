@@ -483,6 +483,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects")                                             \
                                                                             \
+  develop(bool, ZapCHeap, trueInDebug,                                      \
+          "Zap allocated/freed C heap space")                               \
+                                                                            \
   develop(bool, ZapTLAB, trueInDebug,                                       \
           "Zap allocated TLABs")                                            \
   develop(bool, TestingAsyncLoggingDeathTest, false,                        \
