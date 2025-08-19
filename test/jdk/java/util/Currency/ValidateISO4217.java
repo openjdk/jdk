@@ -87,6 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * This class tests the latest ISO 4217 data and Java's currency data which is
@@ -220,13 +221,10 @@ public class ValidateISO4217 {
     private static void verifyOtherCurrencyCodes(){
         for (String currencyCode : otherCurrencyCodesList) {
             Currency currency = Currency.getInstance(currencyCode);
-            String numericCode = ""+currency.getNumericCode();
-            String fraction = ""+currency.getDefaultFractionDigits();
             List<String> currencyDetails = otherCurrencyCodeDetails.get(currencyCode);
-            if (currencyDetails != null) {
-                assertEquals(numericCode,currencyDetails.get(0));
-                assertEquals(fraction,currencyDetails.get(1));
-            }
+            assertNotNull(currencyDetails, "Missing details for " + currencyCode + " in otherCurrencyCodesList.txt");
+            assertEquals(String.valueOf(currency.getNumericCode()), currencyDetails.get(0), "Numeric code mismatch for " + currencyCode);
+            assertEquals(String.valueOf(currency.getDefaultFractionDigits()), currencyDetails.get(1), "Fraction digits mismatch for " + currencyCode);
         }
     }
 
