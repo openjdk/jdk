@@ -3123,7 +3123,9 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   default:
     ShouldNotReachHere();
   }
-  __ membar(__ AnyAny);
+  if(!UseLSE) {
+    __ membar(__ AnyAny);
+  }
 }
 
 #undef __
