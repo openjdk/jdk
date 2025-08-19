@@ -25,6 +25,7 @@
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
 #include "compilerThreadTimeout_linux.hpp"
+#include "oops/method.hpp"
 #include "runtime/osThread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,8 +41,11 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
   switch (signo) {
     case TIMEOUT_SIGNAL: {
       CompileTask* task = CompilerThread::current()->task();
+      const int SIZE = 512;
+      char method_name_buf[SIZE];
+      task->method()->name_and_sig_as_C_string(method_name_buf, SIZE);
       assert(false, "compile task %d (%s) timed out after " INTPTR_FORMAT " ms",
-             task->compile_id(), task->method()->name_and_sig_as_C_string(), CompileTaskTimeout);
+             task->compile_id(), method_name_buf, CompileTaskTimeout);
     }
     default: {
       assert(false, "unexpected signal %d", signo);
