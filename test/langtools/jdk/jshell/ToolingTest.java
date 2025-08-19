@@ -79,4 +79,43 @@ public class ToolingTest extends ReplToolTesting {
                 )
         );
     }
+
+	@Test
+    public void testDisassembleBuiltinInnerClass() {
+        test(
+            a -> assertCommand(a, "/open TOOLING",
+                        ""),
+            a -> assertCommandUserOutputContains(a, "javap(Base64.Decoder.class)",
+                        "Classfile jrt:/java.base/java/util/Base64$Decoder.class",
+                        "class java.util.Base64$Decoder",
+                        "SourceFile: \"Base64.java\"")
+        );
+    }
+
+    @Test
+    public void testDisassembleBuiltinAnonymousClass() {
+        test(
+            a -> assertCommand(a, "/open TOOLING",
+                        ""),
+            a -> assertCommandUserOutputContains(a, "javap(Class.forName(\"sun.util.PreHashedMap$1\"))", // arbitrary built-in anonymous class
+                        "Classfile jrt:/java.base/sun/util/PreHashedMap$1.class",
+                        "class sun.util.PreHashedMap$1 extends java.util.AbstractSet<java.lang.String>",
+                        "SourceFile: \"PreHashedMap.java\"")
+        );
+    }
+
+    @Test
+    public void testDisassembleNewAnonymousClass() {
+        test(
+            a -> assertCommand(a, "var c = new ArrayList<>(){ }.getClass()",
+                        "c ==> class $0"),
+            a -> assertCommand(a, "/open TOOLING",
+                        ""),
+            a -> assertCommandUserOutputContains(a, "javap(c)",
+                        "Classfile ", // Classfile /.../TOOLING-16063368030094702464.class
+                        "$0 extends java.util.ArrayList<java.lang.Object>", // public class REPL.$JShell$11$$JShell$anonymous$$0 extends java.util.ArrayList<java.lang.Object>
+                        "SourceFile: \"$JShell$" // SourceFile: "$JShell$11.java"
+            )
+        );
+    }
 }

@@ -9,8 +9,8 @@ void jpackage(String... args) { run("jpackage", args); }
 
 void javap(Class<?> type) throws Exception {
     try {
-        var name = type.getCanonicalName();
-        if (name == null) throw new IllegalArgumentException("Type not supported: " + type);
+        if (type.isPrimitive() || type.isHidden() || type.isArray()) throw new IllegalArgumentException("Type not supported: " + type);
+        var name = type.getName();
         if (type == Class.forName(name, false, ClassLoader.getSystemClassLoader())) {
             run("javap", "-c", "-v", "-s", name);
             return;
