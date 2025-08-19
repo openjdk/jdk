@@ -27,6 +27,8 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.Application;
@@ -94,6 +96,7 @@ final class MacApplicationBuilder {
         }
 
         validateAppVersion(app);
+        validateAppContentDirs(app);
 
         final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
                 validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
@@ -120,6 +123,18 @@ final class MacApplicationBuilder {
             CFBundleVersion.of(app.version());
         } catch (IllegalArgumentException ex) {
             throw I18N.buildConfigException(ex).advice("error.invalid-cfbundle-version.advice").create();
+        }
+    }
+
+    private static void validateAppContentDirs(Application app) {
+        for (var contentDir : app.contentDirs()) {
+            if (!CONTENTS_SUB_DIRS.stream()
+                    .anyMatch(subDir -> contentDir.getFileName().toString()
+                                                  .equalsIgnoreCase(subDir))) {
+                Log.info(MessageFormat.format(I18N.getString(
+                        "warning.non.standard.contents.sub.dir"),
+                        contentDir));
+            }
         }
     }
 
@@ -233,4 +248,8 @@ final class MacApplicationBuilder {
     private static final Defaults DEFAULTS = new Defaults("utilities");
 
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
+
+    // List of standard subdirectories of the "Contents" directory
+    private static final List<String> CONTENTS_SUB_DIRS = List.of("MacOS",
+            "Resources", "Frameworks", "PlugIns", "SharedSupport");
 }
