@@ -1843,31 +1843,28 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
 
   assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
-      "Stack shouldn't ne empty");
+      "Stack shouldn't be empty");
 
   if (is_reference_type(type)) {
     result = Handle(thread, oop_result);
   }
-  // Deferred transition to VM, so we can stash away the return oop before GC
   JvmtiThreadState *state;
-  {
-    ThreadInVMfromJava tiv(thread);
-    state = get_jvmti_thread_state(thread);
-  }
-
-  if (state == nullptr || !state->is_interp_only_mode()) {
-    // for any thread that actually wants method exit, interp_only_mode is set
-    return;
-  }
-  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT) && is_reference_type(type)) {
-    value.l = JNIHandles::make_local(thread, result());
-  }
-  // Do not allow NotifyFramePop to add new FramePop event request at
-  // depth 0 as it is already late in the method exiting dance.
-  state->set_top_frame_is_exiting();
-
+  // Deferred transition to VM, so we can stash away the return oop before GC
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
+    state = get_jvmti_thread_state(thread);
+
+    if (state == nullptr || !state->is_interp_only_mode()) {
+      // for any thread that actually wants method exit, interp_only_mode is set
+      return;
+    }
+    if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT) && is_reference_type(type)) {
+      value.l = JNIHandles::make_local(thread, result());
+    }
+    // Do not allow NotifyFramePop to add new FramePop event request at
+    // depth 0 as it is already late in the method exiting dance.
+    state->set_top_frame_is_exiting();
+
     post_method_exit_inner(thread, mh, state,false, current_frame, value);
   JRT_BLOCK_END
 
