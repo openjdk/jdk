@@ -51,6 +51,7 @@ import javax.lang.model.util.Elements;
 
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -599,10 +600,18 @@ public class TestFileObjectOf extends TestRunner {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                           """
+                          module m {
+                              requires undefined1; //as module
+                              exports undefined2; //as package
+                              exports test;
+                          }
+                          """,
+                          """
+                          package test;
                           public class TestClass {
                               void t() {
-                                  undefined1.call();
-                                  this.undefined2();
+                                  undefined3.call();
+                                  this.undefined4();
                               }
                           }
                           """);
@@ -614,7 +623,7 @@ public class TestFileObjectOf extends TestRunner {
             List<String> log;
 
             log = new JavacTask(tb)
-                .options("-Xpkginfo:always",
+                .options("-XDshould-stop.at=FLOW",
                          "-classpath", "",
                          "-processorpath", System.getProperty("test.classes"),
                          "-processor", UndefinedPrintFiles.class.getName(),
@@ -627,7 +636,9 @@ public class TestFileObjectOf extends TestRunner {
 
             List<String> expected = List.of(
                 "undefined1: " + "<null>",
-                "undefined2: " + "<null>"
+                "undefined2: " + "<null>",
+                "undefined3: " + "<null>",
+                "undefined4: " + "<null>"
             );
 
             if (!expected.equals(log))
@@ -641,7 +652,7 @@ public class TestFileObjectOf extends TestRunner {
             List<String> log;
 
             log = new JavacTask(tb)
-                .options("-Xpkginfo:always",
+                .options("-XDshould-stop.at=FLOW",
                          "-classpath", "",
                          "-processorpath", System.getProperty("test.classes"),
                          "-processor", UndefinedPrintFiles.class.getName())
@@ -653,7 +664,9 @@ public class TestFileObjectOf extends TestRunner {
 
             List<String> expected = List.of(
                 "undefined1: " + "<null>",
-                "undefined2: " + "<null>"
+                "undefined2: " + "<null>",
+                "undefined3: " + "<null>",
+                "undefined4: " + "<null>"
             );
 
             if (!expected.equals(log))
@@ -672,27 +685,52 @@ public class TestFileObjectOf extends TestRunner {
 
             Elements elements = processingEnv.getElementUtils();
             Trees trees = Trees.instance(processingEnv);
-            TypeElement typeClass = elements.getTypeElement("TestClass");
-            TreePath tp = trees.getPath(typeClass);
-            new TreePathScanner<>() {
-                @Override
-                public Object visitIdentifier(IdentifierTree node, Object p) {
-                    if (node.getName().toString().startsWith("undefined")) {
-                        Element el = trees.getElement(getCurrentPath());
-                        handleDeclaration(el);
+
+            Queue<Element> q = new ArrayDeque<>();
+            q.add(elements.getModuleElement("m"));
+
+            while (!q.isEmpty()) {
+                Element currentElement = q.remove();
+
+                switch (currentElement.getKind()) {
+                    case MODULE -> {
+                        ElementFilter.exportsIn(((ModuleElement) currentElement).getDirectives())
+                                     .stream()
+                                     .map(ed -> ed.getPackage())
+                                     .forEach(q::add);
                     }
-                    return super.visitIdentifier(node, p);
+                    case PACKAGE -> {
+                        currentElement.getEnclosedElements()
+                                      .stream()
+                                      .sorted((e1, e2) -> e1.getSimpleName().toString().compareTo(e2.getSimpleName().toString()))
+                                      .forEach(q::add);
+                        continue;
+                    }
+                    default -> {}
                 }
 
-                @Override
-                public Object visitMemberSelect(MemberSelectTree node, Object p) {
-                    if (node.getIdentifier().toString().startsWith("undefined")) {
-                        Element el = trees.getElement(getCurrentPath());
-                        handleDeclaration(el);
+                TreePath tp = trees.getPath(currentElement);
+
+                new TreePathScanner<>() {
+                    @Override
+                    public Object visitIdentifier(IdentifierTree node, Object p) {
+                        if (node.getName().toString().startsWith("undefined")) {
+                            Element el = trees.getElement(getCurrentPath());
+                            handleDeclaration(el);
+                        }
+                        return super.visitIdentifier(node, p);
                     }
-                    return super.visitMemberSelect(node, p);
-                }
-            }.scan(tp, null);
+
+                    @Override
+                    public Object visitMemberSelect(MemberSelectTree node, Object p) {
+                        if (node.getIdentifier().toString().startsWith("undefined")) {
+                            Element el = trees.getElement(getCurrentPath());
+                            handleDeclaration(el);
+                        }
+                        return super.visitMemberSelect(node, p);
+                    }
+                }.scan(tp, null);
+            }
 
             return false;
         }
