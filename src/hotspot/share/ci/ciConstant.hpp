@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // ciConstant
 //
@@ -119,6 +120,7 @@ public:
 
   // Debugging output
   void print();
+  void print_on(outputStream* out);
 };
 
 #endif // SHARE_CI_CICONSTANT_HPP
