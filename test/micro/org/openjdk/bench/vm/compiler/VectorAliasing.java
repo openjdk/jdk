@@ -50,6 +50,8 @@ public abstract class VectorAliasing {
     private long[] aL;
     private long[] bL;
 
+    private int iteration = 0;
+
     @Param("0")
     private int seed;
     private Random r = new Random(seed);
@@ -120,96 +122,147 @@ public abstract class VectorAliasing {
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_B_sameIndex_noalias() {
         copy_B(bB, aB);
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_B_sameIndex_alias() {
         copy_B(aB, aB);
     }
 
     @Benchmark
+    // Vectorizes if has at least one of: predicate or multiversioning
     public void bench_copy_array_B_differentIndex_noalias() {
         copy_B(bB, aB, 0, 0, aB.length);
     }
 
     @Benchmark
+    // never vectorizes, with our without runtime check
     public void bench_copy_array_B_differentIndex_alias() {
         copy_B(aB, aB, 0, 0, aB.length);
     }
 
+    @Benchmark
+    // Requires multiversioning for vectorization.
+    // With only the predicate, we will eventually deopt and compile without vectorization.
+    public void bench_copy_array_B_differentIndex_mixed() {
+        if ((iteration++) % 2 == 0) {
+            copy_B(bB, aB, 0, 0, aB.length); // noalias
+        } else {
+            copy_B(aB, aB, 0, 0, aB.length); // alias
+        }
+    }
+
     // No overlap -> expect vectoirzation.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_B_half() {
         copy_B(aB, aB, 0, aB.length / 2, aB.length / 2);
     }
 
     // Overlap, but never alias -> expect vectorization.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_B_partial_overlap() {
         copy_B(aB, aB, 0, aB.length / 4, aB.length / 4 * 3);
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_I_sameIndex_noalias() {
         copy_I(bI, aI);
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_I_sameIndex_alias() {
         copy_I(aI, aI);
     }
 
     @Benchmark
+    // Vectorizes if has at least one of: predicate or multiversioning
     public void bench_copy_array_I_differentIndex_noalias() {
         copy_I(bI, aI, 0, 0, aI.length);
     }
 
     @Benchmark
+    // never vectorizes, with our without runtime check
     public void bench_copy_array_I_differentIndex_alias() {
         copy_I(aI, aI, 0, 0, aI.length);
     }
 
+    @Benchmark
+    // Requires multiversioning for vectorization.
+    // With only the predicate, we will eventually deopt and compile without vectorization.
+    public void bench_copy_array_I_differentIndex_mixed() {
+        if ((iteration++) % 2 == 0) {
+            copy_I(bI, aI, 0, 0, aI.length); // noalias
+        } else {
+            copy_I(aI, aI, 0, 0, aI.length); // alias
+        }
+    }
+
     // No overlap -> expect vectoirzation.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_I_half() {
         copy_I(aI, aI, 0, aI.length / 2, aI.length / 2);
     }
 
     // Overlap, but never alias -> expect vectorization.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_I_partial_overlap() {
         copy_I(aI, aI, 0, aI.length / 4, aI.length / 4 * 3);
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_L_sameIndex_noalias() {
         copy_L(bL, aL);
     }
 
     @Benchmark
+    // Vectorizes with static analysis, since using same index -> iterations trivially independent.
     public void bench_copy_array_L_sameIndex_alias() {
         copy_L(aL, aL);
     }
 
     @Benchmark
+    // Vectorizes if has at least one of: predicate or multiversioning
     public void bench_copy_array_L_differentIndex_noalias() {
         copy_L(bL, aL, 0, 0, aL.length);
     }
 
     @Benchmark
+    // never vectorizes, with our without runtime check
     public void bench_copy_array_L_differentIndex_alias() {
         copy_L(aL, aL, 0, 0, aL.length);
     }
 
+    @Benchmark
+    // Requires multiversioning for vectorization.
+    // With only the predicate, we will eventually deopt and compile without vectorization.
+    public void bench_copy_array_L_differentIndex_mixed() {
+        if ((iteration++) % 2 == 0) {
+            copy_L(bL, aL, 0, 0, aL.length); // noalias
+        } else {
+            copy_L(aL, aL, 0, 0, aL.length); // alias
+        }
+    }
+
     // No overlap -> expect vectoirzation.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_L_half() {
         copy_L(aL, aL, 0, aL.length / 2, aL.length / 2);
     }
 
     // Overlap, but never alias -> expect vectorization.
+    // Vectorizes if has at least one of: predicate or multiversioning
     @Benchmark
     public void bench_copy_array_L_partial_overlap() {
         copy_L(aL, aL, 0, aL.length / 4, aL.length / 4 * 3);
@@ -221,6 +274,20 @@ public abstract class VectorAliasing {
         "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"
     })
     public static class VectorAliasingSuperWordWithoutSpeculativeAliasingChecks extends VectorAliasing {}
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UseSuperWord",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:-UseAutoVectorizationPredicate"
+    })
+    public static class VectorAliasingSuperWordWithoutAutoVectorizationPredicate extends VectorAliasing {}
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UseSuperWord",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:-LoopMultiversioning"
+    })
+    public static class VectorAliasingSuperWordWithoutMultiversioning extends VectorAliasing {}
 
     @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord",
