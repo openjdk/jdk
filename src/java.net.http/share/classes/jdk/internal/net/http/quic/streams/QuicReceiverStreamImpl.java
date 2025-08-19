@@ -261,12 +261,24 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         // processed on this stream is more than 1/4 of the credit window.
         if (!requestedStopSending
                 && currentLimit - processed < (desiredBufferSize - desiredBufferSize / 4)) {
-            this.reader.demand(desiredBufferSize);
+            demand(desiredBufferSize);
         } else {
             if (debug.on()) {
                 debug.log("ignoring STREAM_DATA_BLOCKED frame %s," +
                         " since current limit %d is large enough", streamDataBlocked, currentLimit);
             }
+        }
+    }
+
+    private void demand(final long additional) {
+        assert additional > 0 && additional < MAX_VL_INTEGER : "invalid demand: " + additional;
+        var received = dataReceived();
+        var maxStreamData = maxStreamData();
+
+        final long newMax = Math.clamp(received + additional, maxStreamData, MAX_VL_INTEGER);
+        if (newMax > maxStreamData) {
+            connection().requestSendMaxStreamData(streamId(), newMax);
+            updateMaxStreamData(newMax);
         }
     }
 
@@ -676,18 +688,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 return eof ? EOF : null;
             }
             return buffer;
-        }
-
-        private void demand(final long additional) {
-            assert additional > 0 && additional < MAX_VL_INTEGER : "invalid demand: " + additional;
-            var received = dataReceived();
-            var maxStreamData = maxStreamData();
-
-            final long newMax = Math.clamp(received + additional, maxStreamData, MAX_VL_INTEGER);
-            if (newMax > maxStreamData) {
-                connection().requestSendMaxStreamData(streamId(), newMax);
-                updateMaxStreamData(newMax);
-            }
         }
 
         private long unfulfilled() {
