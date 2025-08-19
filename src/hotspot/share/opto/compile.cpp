@@ -5479,5 +5479,4 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
 
   return call;
 }
-
-#endif
+#endif // !PRODUCT
