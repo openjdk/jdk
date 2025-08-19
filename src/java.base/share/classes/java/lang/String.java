@@ -759,6 +759,21 @@ public final class String
         return new String(dst, UTF16);
     }
 
+    /**
+     * {@return a new String created using the supplied latin1 bytes}
+     * @param src a byte array with the bytes for a latin1 string
+     */
+    static String newStringWithLatin1Bytes(byte[] src) {
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
+
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
         try {
             return newStringNoRepl1(src, cs);
