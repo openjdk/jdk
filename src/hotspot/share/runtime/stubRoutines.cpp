@@ -168,7 +168,28 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
                                     const char* assert_msg) {
   assert(StubInfo::is_stubgen(blob_id), "not a stubgen blob %s", StubInfo::name(blob_id));
   ResourceMark rm;
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  // Add extra space for large CodeEntryAlignment
+  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
+  BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
+  if (stubs_code == nullptr) {
+    // The compiler blob may be created late by a C2 compiler thread
+    // rather than during normal initialization by the initial thread.
+    // In that case we can tolerate an allocation failure because the
+    // compiler will have been shut down and we have no need of the
+    // blob.
+    if (Thread::current()->is_Compiler_thread()) {
+      assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
+      assert(DelayCompilerStubsGeneration, "sanity");
+      log_warning(stubs)("%s\t not generated:\t no space left in CodeCache", buffer_name);
+      return nullptr;
+    }
+    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
+  }
+  CodeBuffer buffer(stubs_code);
+  StubGenerator_generate(&buffer, blob_id);
   if (code_size == 0) {
+    assert(buffer.insts_size() == 0, "should not write into buffer when bob size declared as 0");
     LogTarget(Info, stubs) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
@@ -176,18 +197,9 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     }
     return nullptr;
   }
-  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
-  // Add extra space for large CodeEntryAlignment
-  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
-  BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
-  if (stubs_code == nullptr) {
-    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
-  }
-  CodeBuffer buffer(stubs_code);
-  StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200,
+  assert(buffer.insts_remaining() > 200,
          "increase %s, code_size: %d, used: %d, free: %d",
          assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
