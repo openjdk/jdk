@@ -1842,12 +1842,13 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Additionally, the result oop should be preserved while the thread is in java.
   BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
 
+  assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+      "Stack shouldn't ne empty");
+
   if (is_reference_type(type)) {
     result = Handle(thread, oop_result);
   }
   // Deferred transition to VM, so we can stash away the return oop before GC
-  // Note that this transition is not needed when throwing an exception, because
-  // there is no oop to retain.
   JvmtiThreadState *state;
   {
     ThreadInVMfromJava tiv(thread);
