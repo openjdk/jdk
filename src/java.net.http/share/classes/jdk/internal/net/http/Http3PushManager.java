@@ -80,7 +80,7 @@ import static jdk.internal.net.http.Http3ClientProperties.MAX_HTTP3_PUSH_STREAMS
  * a push promise. {@link #pushPromiseProcessed(long)} should be called when the body
  * has been fully processed.
  */
-public final class Http3PushManager {
+final class Http3PushManager {
 
     private final Logger debug = Utils.getDebugLogger(this::dbgTag);
 

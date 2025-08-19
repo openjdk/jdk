@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 import static java.lang.String.format;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 
-public class FieldLineLiteralsWriter implements BinaryRepresentationWriter {
+class FieldLineLiteralsWriter implements BinaryRepresentationWriter {
     private int state = NEW;
     private final QPACK.Logger logger;
     private final StringWriter nameWriter = new StringWriter();

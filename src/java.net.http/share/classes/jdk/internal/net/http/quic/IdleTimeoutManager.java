@@ -45,7 +45,7 @@ import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
  * Keeps track of activity on a {@code QuicConnectionImpl} and manages
  * the idle timeout of the QUIC connection
  */
-public final class IdleTimeoutManager {
+final class IdleTimeoutManager {
 
     private static final long NO_IDLE_TIMEOUT = 0;
 

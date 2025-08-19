@@ -106,7 +106,6 @@ import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder.OutgoingQuicPacket;
 import jdk.internal.net.http.quic.packets.RetryPacket;
 import jdk.internal.net.http.quic.packets.VersionNegotiationPacket;
-import jdk.internal.net.http.quic.streams.AbstractQuicStream;
 import jdk.internal.net.http.quic.streams.CryptoWriterQueue;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicBidiStreamImpl;
@@ -1996,7 +1995,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param streamId the stream ID
      * @return the stream identified by the given {@code streamId}, or {@code null}.
      */
-    protected AbstractQuicStream findStream(long streamId) {
+    protected QuicStream findStream(long streamId) {
         return streams.findStream(streamId);
     }
 
@@ -2018,7 +2017,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * stream ID, or null
      * @throws QuicTransportException if the streamID is higher than allowed
      */
-    protected AbstractQuicStream openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
+    protected QuicStream openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
         assert !isLocalStream(streamId);
         return streams.getOrCreateRemoteStream(streamId, frameType);
     }

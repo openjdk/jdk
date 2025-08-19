@@ -36,7 +36,7 @@ import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
-public sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseReader,
+sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseReader,
         FieldLineIndexedReader, FieldLineLiteralsReader, FieldLineNameRefPostBaseReader,
         FieldLineNameReferenceReader {
 

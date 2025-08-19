@@ -61,7 +61,7 @@ import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.ini
 /**
  *  Http3 specific aspects of HttpClientImpl
  */
-public final class Http3ClientImpl implements AutoCloseable {
+final class Http3ClientImpl implements AutoCloseable {
     // Setting this property disables HTTPS hostname verification. Use with care.
     private static final boolean disableHostnameVerification = Utils.isHostnameVerificationDisabled();
     // QUIC versions in their descending order of preference

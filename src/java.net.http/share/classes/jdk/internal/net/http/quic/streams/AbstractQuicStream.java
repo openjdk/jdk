@@ -37,7 +37,7 @@ import jdk.internal.net.http.quic.QuicConnectionImpl;
  * (unidirectional {@link StreamMode#READ_ONLY} stream), or
  * both (bidirectional {@link StreamMode#READ_WRITE} stream).
  */
-public abstract sealed class AbstractQuicStream implements QuicStream
+abstract sealed class AbstractQuicStream implements QuicStream
         permits QuicBidiStreamImpl, QuicSenderStreamImpl, QuicReceiverStreamImpl {
 
     private final QuicConnectionImpl connection;

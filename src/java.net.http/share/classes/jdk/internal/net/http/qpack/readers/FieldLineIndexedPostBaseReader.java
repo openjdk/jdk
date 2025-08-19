@@ -37,7 +37,7 @@ import static java.lang.String.format;
 import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
-public final class FieldLineIndexedPostBaseReader extends FieldLineReader {
+final class FieldLineIndexedPostBaseReader extends FieldLineReader {
     private final IntegerReader integerReader;
     private final QPACK.Logger logger;
 

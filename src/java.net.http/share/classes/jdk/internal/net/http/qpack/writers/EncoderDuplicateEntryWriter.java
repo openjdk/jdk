@@ -26,7 +26,7 @@ package jdk.internal.net.http.qpack.writers;
 
 import java.nio.ByteBuffer;
 
-public final class EncoderDuplicateEntryWriter implements BinaryRepresentationWriter {
+final class EncoderDuplicateEntryWriter implements BinaryRepresentationWriter {
 
     private final IntegerWriter intWriter;
 

@@ -360,7 +360,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * NIO {@link Selector}.
      * This implementation is tied to a {@link QuicNioSelector}.
      */
-    public static final class QuicSelectableEndpoint extends QuicEndpoint {
+    static final class QuicSelectableEndpoint extends QuicEndpoint {
         volatile SelectionKey key;
 
         private QuicSelectableEndpoint(QuicInstance quicInstance,
@@ -608,7 +608,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * Virtual Threads to poll the channel.
      * This implementation is tied to a {@link QuicVirtualThreadPoller}.
      */
-    public static final class QuicVirtualThreadedEndpoint extends QuicEndpoint {
+    static final class QuicVirtualThreadedEndpoint extends QuicEndpoint {
         Future<?> key;
         volatile QuicVirtualThreadPoller poller;
         boolean readingDone;
@@ -1734,7 +1734,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * first packet, then to the third, then to the seventh, etc...
      * We stop replying after 16*16/2.
      */
-    public sealed abstract class ClosedConnection implements QuicPacketReceiver, QuicTimedEvent
+    sealed abstract class ClosedConnection implements QuicPacketReceiver, QuicTimedEvent
             permits QuicEndpoint.ClosingConnection, QuicEndpoint.DrainingConnection {
 
         // default time we keep the ClosedConnection alive while closing/draining - if
@@ -1861,7 +1861,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * first packet, then to the third, then to the seventh, etc...
      * We stop replying after 16*16/2.
      */
-    public final class ClosingConnection extends ClosedConnection {
+    final class ClosingConnection extends ClosedConnection {
 
         final ByteBuffer closePacket;
 
@@ -1902,7 +1902,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * Represent a draining quic connection: if we receive any packet for this
      * connection we simply ignore them.
      */
-    public final class DrainingConnection extends ClosedConnection {
+    final class DrainingConnection extends ClosedConnection {
 
         DrainingConnection(List<QuicConnectionId> localConnIdManager, long maxIdleTimeMs) {
             super(localConnIdManager, maxIdleTimeMs);

@@ -26,7 +26,7 @@ package jdk.internal.net.http.qpack.writers;
 
 import java.nio.ByteBuffer;
 
-public interface BinaryRepresentationWriter {
+interface BinaryRepresentationWriter {
     boolean write(ByteBuffer destination);
 
     BinaryRepresentationWriter reset();

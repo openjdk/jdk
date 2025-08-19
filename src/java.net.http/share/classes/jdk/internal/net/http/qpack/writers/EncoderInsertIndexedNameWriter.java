@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 import static java.lang.String.format;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 
-public class EncoderInsertIndexedNameWriter implements BinaryRepresentationWriter {
+class EncoderInsertIndexedNameWriter implements BinaryRepresentationWriter {
     private int state = NEW;
     private final QPACK.Logger logger;
     private final IntegerWriter intWriter = new IntegerWriter();

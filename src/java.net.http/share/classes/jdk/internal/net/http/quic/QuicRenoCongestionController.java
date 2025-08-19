@@ -46,7 +46,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @spec https://www.rfc-editor.org/info/rfc9002
  *      RFC 9002: QUIC Loss Detection and Congestion Control
  */
-public class QuicRenoCongestionController implements QuicCongestionController {
+class QuicRenoCongestionController implements QuicCongestionController {
     // higher of 14720 and 2*maxDatagramSize; we use fixed maxDatagramSize
     private static final int INITIAL_WINDOW = Math.max(14720, 2 * QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE);
     private static final int MAX_BYTES_IN_FLIGHT = Math.clamp(
