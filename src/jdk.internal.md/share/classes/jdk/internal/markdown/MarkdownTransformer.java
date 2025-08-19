@@ -362,7 +362,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
             // leading reference affects the position of the label following it (JDK-8356411),
             var ref = tree.reference;
             var hasReference = !ref.isEmpty() && ref.getFirst().getKind() == DocTree.Kind.REFERENCE;
-            List<DCTree> transformed  = new ArrayList<>();
+            List<DCTree> transformed = new ArrayList<>();
             if (hasReference) {
                 transformed.add(ref.getFirst());
                 transformed.addAll(transform(ref.subList(1, ref.size())));
