@@ -50,6 +50,7 @@ public class TestIncludesAreSorted {
                     "share/classfile",
                     "share/code",
                     "share/compiler",
+                    "share/interpreter",
                     "share/jvmci",
                     "share/libadt",
                     "share/metaprogramming",
