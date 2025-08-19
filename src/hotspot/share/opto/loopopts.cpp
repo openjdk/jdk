@@ -41,6 +41,7 @@
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -66,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitThruPhiWins wins(region);
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -119,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -134,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -142,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -165,12 +166,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
@@ -226,6 +227,13 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         new_loop->_body.push(x);  // Collect body info
     }
   }
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("Split %d %s through %d Phi in %d %s",
+               n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
+  }
+#endif // !PRODUCT
 
   return phi;
 }
