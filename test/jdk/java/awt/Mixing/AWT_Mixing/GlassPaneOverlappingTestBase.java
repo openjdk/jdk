@@ -23,6 +23,7 @@
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -131,7 +132,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         testedComponent.setBounds(0, 0,
                                 testedComponent.getPreferredSize().width,
                                 testedComponent.getPreferredSize().height + 20);
-                        Component focusOwner = FocusManager.getCurrentManager()
+                        Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
                                 .getFocusOwner();
                         if (focusOwner == f) {
                             // frame already had focus
