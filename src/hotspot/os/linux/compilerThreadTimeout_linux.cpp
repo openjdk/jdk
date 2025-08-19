@@ -44,7 +44,7 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
       const int SIZE = 512;
       char method_name_buf[SIZE];
       task->method()->name_and_sig_as_C_string(method_name_buf, SIZE);
-      assert(false, "compile task %d (%s) timed out after " INTX_FORMAT " ms",
+      assert(false, "compile task %d (%s) timed out after %zd ms",
              task->compile_id(), method_name_buf, CompileTaskTimeout);
     }
     default: {
