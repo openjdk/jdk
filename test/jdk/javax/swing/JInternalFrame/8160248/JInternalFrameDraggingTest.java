@@ -70,10 +70,10 @@ public class JInternalFrameDraggingTest {
             BufferedImage img = robot.createScreenCapture(rect);
 
             int testRGB = BACKGROUND_COLOR.getRGB();
+            Color testColor = new Color(testRGB);
             for (int i = 1; i < size; i++) {
                 int rgbCW = img.getRGB(i, size / 2);
                 int rgbCH = img.getRGB(size / 2, i);
-                Color testColor = new Color(rgbCW);
                 Color rgbCWColor = new Color(rgbCW);
                 Color rgbCHColor = new Color(rgbCH);
 
