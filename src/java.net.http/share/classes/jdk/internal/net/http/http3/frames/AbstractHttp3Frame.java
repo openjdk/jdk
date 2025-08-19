@@ -79,7 +79,6 @@ public abstract non-sealed class AbstractHttp3Frame implements Http3Frame {
     }
 
     protected static long decodeRequiredType(final BuffersReader reader, final long expectedType) {
-        final long pos = reader.position();
         final long type = VariableLengthEncoder.decode(reader);
         if (type < 0) throw new BufferUnderflowException();
         // TODO: throw an exception instead?
