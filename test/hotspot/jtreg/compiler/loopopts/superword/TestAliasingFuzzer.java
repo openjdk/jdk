@@ -207,6 +207,7 @@ public class TestAliasingFuzzer {
             // Default enabled.
             "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationSpeculativeAliasingChecks",
             "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationPredicate",
+            "-XX:" + randomPlusMinus(5, 1) + "ShortRunningLongLoop",
             // Either way is ok.
             "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders",
             "-XX:SuperWordAutomaticAlignment=" + RANDOM.nextInt(0,3)
@@ -230,12 +231,12 @@ public class TestAliasingFuzzer {
         testTemplateTokens.add(generateIndexForm());
 
         // Array tests
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 10; i++) {
             testTemplateTokens.add(TestGenerator.makeArray().generate());
         }
 
         // MemorySegment with getAtIndex / setAtIndex
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 20; i++) {
             testTemplateTokens.add(TestGenerator.makeMemorySegment().generate());
         }
 

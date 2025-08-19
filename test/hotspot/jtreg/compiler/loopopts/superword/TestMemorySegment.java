@@ -80,6 +80,14 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-NoSpeculativeAliasingCheck-NoShortRunningLongLoop
+ * @bug 8329273 8348263 8342692 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoSpeculativeAliasingCheck NoShortRunningLongLoop
+ */
+
+/*
  * @test id=char-array
  * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
@@ -175,6 +183,46 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector
  */
 
+/*
+ * @test id=native-NoSpeculativeAliasingCheck
+ * @bug 8329273 8348263 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=native-AlignVector-NoSpeculativeAliasingCheck
+ * @bug 8329273 8348263 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=native-NoShortRunningLongLoop
+ * @bug 8329273 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native NoShortRunningLongLoop
+ */
+
+/*
+ * @test id=native-AlignVector-NoShortRunningLongLoop
+ * @bug 8329273 8348263 8342692
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector NoShortRunningLongLoop
+ */
+
+/*
+ * @test id=native-NoSpeculativeAliasingCheck-NoShortRunningLongLoop
+ * @bug 8329273 8348263 8342692 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native NoSpeculativeAliasingCheck NoShortRunningLongLoop
+ */
+
 // FAILS: mixed providers currently do not vectorize. Maybe there is some inlining issue.
 // /*
 //  * @test id=mixed-array
@@ -209,6 +257,9 @@ public class TestMemorySegment {
             switch (tag) {
                 case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
                 case "NoSpeculativeAliasingCheck" -> framework.addFlags("-XX:-UseAutoVectorizationSpeculativeAliasingChecks");
+                // Disabling the ShortRunningLongLoop optimization changes the shape of the loop.
+                // Testing both with and without it allows us to simulate long running loops with short running loops,
+                // i.e. we don't need to allocate massive amounts of memory.
                 case "NoShortRunningLongLoop" ->     framework.addFlags("-XX:-ShortRunningLongLoop");
                 default ->                           throw new RuntimeException("Bad tag: " + tag);
             }
@@ -816,39 +867,6 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
-                      "ShortRunningLongLoop", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8331659
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0",
-                  ".*multiversion.*", "> 0"},
-        phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
-                      "ShortRunningLongLoop", "false",
-                      "AlignVector", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // After JDK-8324751, we now insert a aliasing runtime check, but it will always fail, which is a suboptimal.
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0",
-                  ".*multiversion.*", "= 0"},
-        phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"ShortRunningLongLoop", "true",
-                      "AlignVector", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // If we don't create the loop nest for the long loop, then the issue with different Casts
-    // seems to disappear. We also don't need multiversioning because the pointers are seen
-    // as identical.
-    // TODO: enough?
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
@@ -865,40 +883,6 @@ class TestMemorySegmentImpl {
         return new Object[]{ a };
     }
 
-   @Test
-   @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "false",
-                      "ShortRunningLongLoop", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8331659
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0",
-                  ".*multiversion.*", "> 0"},
-        phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
-                      "ShortRunningLongLoop", "false",
-                      "AlignVector", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // After JDK-8324751, we now insert a aliasing runtime check, but it will always fail, which is a suboptimal.
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0",
-                  ".*multiversion.*", "= 0"},
-        phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"ShortRunningLongLoop", "true",
-                      "AlignVector", "false"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // If we don't create the loop nest for the long loop, then the issue with different Casts
-    // seems to disappear. We also don't need multiversioning because the pointers are seen
-    // as identical.
-    // TODO: enough?
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
