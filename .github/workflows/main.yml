@@ -446,6 +446,7 @@ jobs:
     with:
       platform: windows-x64
       bootjdk-platform: windows-x64
+      architecture: 'x86.x64'
       runs-on: windows-2025
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
@@ -459,6 +460,7 @@ jobs:
     with:
       platform: windows-aarch64
       bootjdk-platform: windows-aarch64
+      architecture: 'ARM64'
       runs-on: windows-11-arm
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
