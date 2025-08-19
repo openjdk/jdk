@@ -913,14 +913,6 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 // Uses LDAR to ensure memory ordering.
 void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
                                      LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  if (is_floating_point_type(type)) {
-    // Use LDAR instead of DMB+LD+DMB, except for floats/doubles (no LDAR equivalent).
-    if (!CompilerConfig::is_c1_only_no_jvmci()) {
-      __ membar(__ AnyAny);
-    }
-    mem2reg(src, dest, type, patch_code, info, false);
-    return;
-  }
   LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
@@ -938,21 +930,30 @@ void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
   int null_check_here = code_offset();
 
   __ lea(rscratch1, as_Address(from_addr));
-  Register dest_reg = (dest->is_single_cpu()
-                       ? dest->as_register() : dest->as_register_lo());
-  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
 
-  if (is_signed_subword_type(type)) {
-    switch (type) {
-      case T_BYTE: // LDAR is unsigned so need to sign-extend for byte
-        __ sxtb(dest_reg, dest_reg);
-        break;
-      case T_SHORT: // LDAR is unsigned so need to sign-extend for short
-        __ sxth(dest_reg, dest_reg);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+  Register dest_reg = rscratch2;
+  if (!is_floating_point_type(type)) {
+    dest_reg = (dest->is_single_cpu()
+                ? dest->as_register() : dest->as_register_lo());
+  }
+  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
+  switch (type) {
+    // LDAR is unsigned so need to sign-extend for byte and short
+    case T_BYTE:
+      __ sxtb(dest_reg, dest_reg);
+      break;
+    case T_SHORT:
+      __ sxth(dest_reg, dest_reg);
+      break;
+    // need to move from GPR to FPR after LDAR with FMOV for floating types
+    case T_FLOAT:
+      __ fmovs(dest->as_float_reg(), dest_reg);
+      break;
+    case T_DOUBLE:
+      __ fmovd(dest->as_double_reg(), dest_reg);
+      break;
+    default:
+      break;
   }
 
   if (is_reference_type(type)) {

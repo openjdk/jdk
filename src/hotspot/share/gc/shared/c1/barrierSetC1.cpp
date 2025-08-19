@@ -185,7 +185,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
     __ move_wide(access.resolved_addr()->as_address_ptr(), result);
   } else if (is_atomic && !needs_patching) {
     // volatile_field_load returns false if it itself provides trailing membar semantics.
-    //  Hence trailing DMB is no longer needed.
+    // Hence trailing DMB is no longer needed.
     needs_trailing_dmb &= gen->volatile_field_load(access.resolved_addr()->as_address_ptr(),
                                                    result, access.access_emit_info());
   } else {

@@ -1415,5 +1415,5 @@ bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   } else {
     __ volatile_load_mem_reg(address, result, info);
   }
-  return AlwaysAtomicAccesses || is_floating_point_type(address->type());
+  return AlwaysAtomicAccesses;
 }
