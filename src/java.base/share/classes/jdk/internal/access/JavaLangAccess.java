@@ -319,6 +319,18 @@ public interface JavaLangAccess {
     int countNonZeroAscii(String s);
 
     /**
+     * Constructs a new {@code String} with the supplied Latin1 bytes.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the byte array to the callee</b>, since the latter will not
+     * make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     */
+    String uncheckedNewStringWithLatin1Bytes(byte[] bytes);
+
+    /**
      * Constructs a new {@code String} by decoding the specified byte array
      * using the specified {@linkplain java.nio.charset.Charset charset}.
      * <p>

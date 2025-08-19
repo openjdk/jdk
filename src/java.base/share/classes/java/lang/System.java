@@ -2126,6 +2126,11 @@ public final class System {
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
+
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
+            }
+
             public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
