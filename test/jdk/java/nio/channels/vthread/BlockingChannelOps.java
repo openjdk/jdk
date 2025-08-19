@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test id=default
  * @bug 8284161
  * @summary Test virtual threads doing blocking I/O on NIO channels
@@ -29,7 +29,7 @@
  * @run junit BlockingChannelOps
  */
 
-/**
+/*
  * @test id=poller-modes
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
@@ -37,7 +37,7 @@
  * @run junit/othervm -Djdk.pollerMode=2 BlockingChannelOps
  */
 
-/**
+/*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
@@ -162,6 +162,22 @@ class BlockingChannelOps {
     }
 
     /**
+     * SocketChannel shutdownInput while virtual thread blocked in read.
+     */
+    @Test
+    void testSocketChannelReadAsyncShutdownInput() throws Exception {
+        VThreadRunner.run(() -> {
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
+                runAfterParkedAsync(sc::shutdownInput);
+                int n = sc.read(ByteBuffer.allocate(100));
+                assertEquals(-1, n);
+                assertTrue(sc.isOpen());
+            }
+        });
+    }
+
+    /**
      * Virtual thread interrupted while blocked in SocketChannel read.
      */
     @Test
@@ -190,8 +206,9 @@ class BlockingChannelOps {
     @Test
     void testSocketChannelWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            int attempts = 0;
+            while (!done && attempts++ < 10) {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
@@ -206,11 +223,38 @@ class BlockingChannelOps {
                         }
                     } catch (AsynchronousCloseException expected) {
                         // closed when blocked in write
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
                         // closed when not blocked in write, need to retry test
                     }
                 }
+            }
+        });
+    }
+
+
+    /**
+     * SocketChannel shutdownOutput while virtual thread blocked in write.
+     */
+    @Test
+    void testSocketChannelWriteAsyncShutdownOutput() throws Exception {
+        VThreadRunner.run(() -> {
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
+
+                // shutdown output when current thread blocks in write
+                runAfterParkedAsync(sc::shutdownOutput);
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sc.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
+                    }
+                } catch (ClosedChannelException e) {
+                    // expected
+                }
+                assertTrue(sc.isOpen());
             }
         });
     }
@@ -221,8 +265,9 @@ class BlockingChannelOps {
     @Test
     void testSocketChannelWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            int attempts = 0;
+            while (!done && attempts++ < 10) {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
@@ -240,7 +285,7 @@ class BlockingChannelOps {
                     } catch (ClosedByInterruptException e) {
                         // closed when blocked in write
                         assertTrue(Thread.interrupted());
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
                         // closed when not blocked in write, need to retry test
                     }
@@ -734,8 +779,9 @@ class BlockingChannelOps {
     @Test
     void testPipeWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            int attempts = 0;
+            while (!done && attempts++ < 10) {
                 Pipe p = Pipe.open();
                 try (Pipe.SinkChannel sink = p.sink();
                      Pipe.SourceChannel source = p.source()) {
@@ -751,7 +797,7 @@ class BlockingChannelOps {
                         }
                     } catch (AsynchronousCloseException e) {
                         // closed when blocked in write
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
                         // closed when not blocked in write, need to retry test
                     }
@@ -766,8 +812,9 @@ class BlockingChannelOps {
     @Test
     void testPipeWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            int attempts = 0;
+            while (!done && attempts++ < 10) {
                 Pipe p = Pipe.open();
                 try (Pipe.SinkChannel sink = p.sink();
                      Pipe.SourceChannel source = p.source()) {
@@ -786,7 +833,7 @@ class BlockingChannelOps {
                     } catch (ClosedByInterruptException expected) {
                         // closed when blocked in write
                         assertTrue(Thread.interrupted());
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
                         // closed when not blocked in write, need to retry test
                     }
