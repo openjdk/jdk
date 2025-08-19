@@ -34,6 +34,7 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 
 final class MacApplicationBuilder {
@@ -95,10 +96,26 @@ final class MacApplicationBuilder {
 
         validateAppVersion(app);
 
-        final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
-                validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
+        final var mixin = new MacApplicationMixin.Stub(
+                validatedIcon(),
+                validatedBundleName(),
+                validatedBundleIdentifier(),
+                validatedCategory(),
+                appStore,
+                createSigningConfig());
 
         return MacApplication.create(app, mixin);
+    }
+
+    static MacApplication overrideAppImageLayout(MacApplication app, AppImageLayout appImageLayout) {
+        final var mixin = new MacApplicationMixin.Stub(
+                app.icon(),
+                app.bundleName(),
+                app.bundleIdentifier(),
+                app.category(),
+                app.appStore(),
+                app.signingConfig());
+        return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
     }
 
     static boolean isValidBundleIdentifier(String id) {
