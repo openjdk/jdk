@@ -725,15 +725,20 @@ public abstract class HttpRequest {
          * content bytes read from the provided file {@code channel} starting
          * from the specified {@code offset}}
          * <p>
-         * The {@linkplain FileChannel file channel} will be read using
-         * {@link FileChannel#read(ByteBuffer, long) FileChannel.read(ByteBuffer buffer, long position)},
-         * which does not modify the channel's position. Thus, the same file
-         * channel may be shared between several publishers passed to
-         * concurrent requests.
+         * This method and the returned {@code BodyPublisher} do not modify the
+         * {@code channel}'s position.
          * <p>
-         * The file channel will not be closed upon completion. The caller is
-         * expected to manage the life cycle of the channel, and close it
-         * appropriately when not needed anymore.
+         * This method does not close the {@code channel}. The caller is
+         * expected to close the {@code channel} when no longer needed.
+         *
+         * @apiNote
+         * This method can be used to either publish just a portion of a file's
+         * content as the request body or to publish different portions of the
+         * file's content concurrently. The typical approach to concurrently
+         * publish different portions of a file's content is to create an
+         * instance of {@link FileChannel} and then create multiple {@code
+         * HttpRequest}s each of which use a {@code ofFileChannel
+         * BodyPublisher} with a different non-overlapping offset and length.
          *
          * @param channel a file channel
          * @param offset the offset of the first byte
@@ -744,8 +749,8 @@ public abstract class HttpRequest {
          * out of bounds} compared with the size of the file referred by the
          * channel
          *
-         * @throws IOException if the size of the file referred by the provided
-         * channel cannot be read while verifying the specified byte range
+         * @throws IOException if the {@linkplain FileChannel#size() channel's
+         * size} cannot be determined or the {@code channel} is closed
          *
          * @throws NullPointerException if {@code channel} is null
          *
