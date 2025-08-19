@@ -770,19 +770,8 @@ public class FloatingDecimal{
             }
         }
 
-        private static int insignificantDigits(long insignificant) {
-            int i;
-            for ( i = 0; insignificant >= 10L; i++ ) {
-                insignificant /= 10L;
-            }
-            return i;
-        }
-
         /**
          * Calculates
-         * <pre>
-         * insignificantDigitsForPow2(v) == insignificantDigits(1L<<v)
-         * </pre>
          */
         private static int insignificantDigitsForPow2(int p2) {
             if (p2 > 1 && p2 < insignificantDigitsNumber.length) {
@@ -1741,46 +1730,6 @@ public class FloatingDecimal{
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
         buf.dtoa(binExp, fractBits, nSignificantBits, isCompatibleFormat);
-        return buf;
-    }
-
-    private static BinaryToASCIIConverter getBinaryToASCIIConverter(float f) {
-        int fBits = Float.floatToRawIntBits( f );
-        boolean isNegative = (fBits&FloatConsts.SIGN_BIT_MASK) != 0;
-        int fractBits = fBits&FloatConsts.SIGNIF_BIT_MASK;
-        int binExp = (fBits&FloatConsts.EXP_BIT_MASK) >> SINGLE_EXP_SHIFT;
-        // Discover obvious special cases of NaN and Infinity.
-        if ( binExp == (FloatConsts.EXP_BIT_MASK>>SINGLE_EXP_SHIFT) ) {
-            if ( fractBits == 0L ){
-                return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
-            } else {
-                return B2AC_NOT_A_NUMBER;
-            }
-        }
-        // Finish unpacking
-        // Normalize denormalized numbers.
-        // Insert assumed high-order bit for normalized numbers.
-        // Subtract exponent bias.
-        int  nSignificantBits;
-        if ( binExp == 0 ){
-            if ( fractBits == 0 ){
-                // not a denorm, just a 0!
-                return isNegative ? B2AC_NEGATIVE_ZERO : B2AC_POSITIVE_ZERO;
-            }
-            int leadingZeros = Integer.numberOfLeadingZeros(fractBits);
-            int shift = leadingZeros-(31-SINGLE_EXP_SHIFT);
-            fractBits <<= shift;
-            binExp = 1 - shift;
-            nSignificantBits =  32 - leadingZeros; // recall binExp is  - shift count.
-        } else {
-            fractBits |= SINGLE_FRACT_HOB;
-            nSignificantBits = SINGLE_EXP_SHIFT+1;
-        }
-        binExp -= FloatConsts.EXP_BIAS;
-        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
-        buf.setSign(isNegative);
-        // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, ((long)fractBits)<<(EXP_SHIFT-SINGLE_EXP_SHIFT), nSignificantBits, true);
         return buf;
     }
 
