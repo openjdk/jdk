@@ -1299,13 +1299,18 @@ public final class String
             return encodeUTF8_UTF16(val, doReplace);
         }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
             return val.clone();
         }
 
-        int dp = 0;
         byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
+        if (positives > 0) {
+            System.arraycopy(val, 0, dst, 0, positives);
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
