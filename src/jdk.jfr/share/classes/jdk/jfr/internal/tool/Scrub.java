@@ -214,7 +214,7 @@ final class Scrub extends Command {
             }
             optionCount = options.size();
         }
-        return Filters.matchAny(filters);
+        return Filters.matchAll(filters);
     }
 
     private void ensureUsableOutput(Path input, Path output) throws UserSyntaxException, UserDataException {
