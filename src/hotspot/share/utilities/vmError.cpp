@@ -1339,14 +1339,14 @@ void VMError::report(outputStream* st, bool _verbose) {
 }
 
 void VMError::set_handshake_timed_out_thread(Thread* thread) {
-  // Atomic::replace_if_null() operation is used to discard all possible
-  // updates except the 1st one. Those can hypothetically happen
-  // if more than one thread times out.
-  // The default memory ordering guarantees visibility to other threads.
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
   Atomic::replace_if_null(&_handshake_timed_out_thread, thread);
 }
 
 void VMError::set_safepoint_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
   Atomic::replace_if_null(&_safepoint_timed_out_thread, thread);
 }
 
