@@ -90,8 +90,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _young_other_cost_per_region_ms_seq(TruncatedSeqLength),
     _non_young_other_cost_per_region_ms_seq(TruncatedSeqLength),
     _recent_prev_end_times_for_all_gcs_sec(NumPrevPausesForHeuristics),
-    _long_term_pause_time_ratio(0.0),
-    _short_term_pause_time_ratio(0.0) {
+    _long_term_gc_time_ratio(0.0),
+    _short_term_gc_time_ratio(0.0) {
 
   // Seed sequences with initial values.
   _recent_prev_end_times_for_all_gcs_sec.add(os::elapsedTime());
@@ -159,23 +159,27 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
   _alloc_rate_ms_seq.add(alloc_rate);
 }
 
-void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
-  double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-  double gc_pause_time_ms = _recent_gc_times_ms.sum() - _recent_gc_times_ms.oldest() + pause_time_ms;
-  _long_term_pause_time_ratio = gc_pause_time_ms / long_interval_ms;
-  _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
-
-  double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
-
+void G1Analytics::update_gc_time_ratios(double end_time_sec, double pause_time_ms) {
   // This estimates the wall-clock time "lost" by application mutator threads due to concurrent GC
   // activity. We do not account for contention on other shared resources such as memory bandwidth and
   // caches, therefore underestimate the impact of the concurrent GC activity on mutator threads.
   uint num_cpus = (uint)os::active_processor_count();
-  num_cpus = MIN2(num_cpus, MAX2(ConcGCThreads, ParallelGCThreads));
   double concurrent_gc_impact_time = _concurrent_gc_cpu_time_ms / num_cpus;
 
-  _short_term_pause_time_ratio = (pause_time_ms + concurrent_gc_impact_time) / short_interval_ms;
-  _short_term_pause_time_ratio = clamp(_short_term_pause_time_ratio, 0.0, 1.0);
+  double gc_time_ms = pause_time_ms + concurrent_gc_impact_time;
+
+  double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
+  double long_term_gc_time_ms = _recent_gc_times_ms.sum() - _recent_gc_times_ms.oldest() + gc_time_ms;
+
+  _long_term_gc_time_ratio = long_term_gc_time_ms / long_interval_ms;
+  _long_term_gc_time_ratio = clamp(_long_term_gc_time_ratio, 0.0, 1.0);
+
+  double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
+
+  _short_term_gc_time_ratio = gc_time_ms / short_interval_ms;
+  _short_term_gc_time_ratio = clamp(_short_term_gc_time_ratio, 0.0, 1.0);
+
+  update_recent_gc_times(end_time_sec, gc_time_ms);
 }
 
 void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
@@ -315,8 +319,8 @@ double G1Analytics::most_recent_gc_end_time_sec() const {
 }
 
 void G1Analytics::update_recent_gc_times(double end_time_sec,
-                                         double pause_time_ms) {
-  _recent_gc_times_ms.add(pause_time_ms);
+                                         double elapsed_ms) {
+  _recent_gc_times_ms.add(elapsed_ms);
   _recent_prev_end_times_for_all_gcs_sec.add(end_time_sec);
 }
 
