@@ -107,14 +107,14 @@ public class ToolingTest extends ReplToolTesting {
     @Test
     public void testDisassembleNewAnonymousClass() {
         test(
-            a -> assertCommand(a, "var c = new ArrayList<>(){ }.getClass()",
-                        "c ==> class $0"),
+            a -> assertCommand(a, "Object o() {return new ArrayList<>(){ };}", // must be in a method or it won't be anonymous
+                        "|  created method o()"),
             a -> assertCommand(a, "/open TOOLING",
                         ""),
-            a -> assertCommandUserOutputContains(a, "javap(c)",
+            a -> assertCommandUserOutputContains(a, "javap(o().getClass())",
                         "Classfile ", // Classfile /.../TOOLING-16063368030094702464.class
-                        "$0 extends java.util.ArrayList<java.lang.Object>", // public class REPL.$JShell$11$$JShell$anonymous$$0 extends java.util.ArrayList<java.lang.Object>
-                        "SourceFile: \"$JShell$" // SourceFile: "$JShell$11.java"
+                        " extends java.util.ArrayList<java.lang.Object>", // class REPL.$JShell$22$1 extends java.util.ArrayList<java.lang.Object>
+                        "SourceFile: \"$JShell$" // SourceFile: "$JShell$22.java"
             )
         );
     }
