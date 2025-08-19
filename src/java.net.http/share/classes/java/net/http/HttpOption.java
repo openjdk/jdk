@@ -136,11 +136,8 @@ public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
          * @implNote
          * If the {@linkplain Builder#version(Version) request preferred version} is {@linkplain
          * Version#HTTP_3 HTTP/3}, the {@code HttpClient} may give priority to HTTP/3 by
-         * first attempting to establish an HTTP/3 connection, before attempting a TLS
-         * connection over TCP: if, after an implementation specific timeout, no reply
-         * is obtained to the first initial QUIC packet, the TLS/TCP connection may be
-         * attempted. Otherwise, both connections may be started in parallel and the first
-         * that succeeds will be used.
+         * attempting to establish an HTTP/3 connection, before attempting a TLS
+         * connection over TCP.
          * <p>
          * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} may
          * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
