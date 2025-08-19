@@ -80,6 +80,7 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
 
         frame.add(cb);
         propagateAWTControls(frame);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

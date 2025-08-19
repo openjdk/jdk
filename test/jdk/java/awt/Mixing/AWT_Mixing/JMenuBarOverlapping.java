@@ -105,6 +105,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame.setJMenuBar(menuBar);
 
         propagateAWTControls(frame);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

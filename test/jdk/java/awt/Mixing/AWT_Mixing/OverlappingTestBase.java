@@ -34,6 +34,7 @@ import java.awt.Robot;
 import java.awt.Scrollbar;
 import java.awt.TextField;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -171,8 +172,8 @@ public abstract class OverlappingTestBase {
                     frame.getContentPane().setBackground(AWT_BACKGROUND_COLOR);
                     frame.setSize(size, size);
                     frame.setUndecorated(true);
-                    frame.setVisible(true);
                     frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
                     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                     p[0] = frame.getLocation();
                 }
@@ -260,6 +261,9 @@ public abstract class OverlappingTestBase {
                 embedder.setBackground(Color.RED);
                 embedder.setPreferredSize(new Dimension(150, 150));
                 container.add(embedder);
+                if(container instanceof Window){
+                    ((Window) container).setLocationRelativeTo(null);
+                }
                 container.setVisible(true); // create peer
 
                 long frameWindow = 0;
@@ -302,6 +306,7 @@ public abstract class OverlappingTestBase {
                 EmbeddedFrame eframe = (EmbeddedFrame) eframeCtor.newInstance(frameWindow);
                 setupControl(eframe);
                 eframe.setSize(new Dimension(150, 150));
+                eframe.setLocationRelativeTo(null);
                 eframe.setVisible(true);
 //                System.err.println(eframe.getSize());
             } catch (Exception ex) {
