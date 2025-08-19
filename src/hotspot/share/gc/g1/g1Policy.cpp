@@ -508,12 +508,9 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
-  const GrowableArray<G1HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
   double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
-  for (GrowableArrayIterator<G1HeapRegion*> it = survivor_regions->begin();
-       it != survivor_regions->end();
-       ++it) {
-    survivor_regions_evac_time += predict_region_copy_time_ms(*it, _g1h->collector_state()->in_young_only_phase());
+  for (G1HeapRegion* r : _g1h->survivor()->regions()) {
+    survivor_regions_evac_time += predict_region_copy_time_ms(r, _g1h->collector_state()->in_young_only_phase());
   }
 
   return survivor_regions_evac_time;
@@ -574,7 +571,6 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
-  _collection_set->abandon_all_candidates();
   _pending_cards_at_gc_start = 0;
 }
 
@@ -591,6 +587,7 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_in_young_gc_before_mixed(false);
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
   collector_state()->set_in_concurrent_start_gc(false);
+  collector_state()->set_mark_in_progress(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
   collector_state()->set_clear_bitmap_in_progress(false);
 
@@ -703,6 +700,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
   record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
+  collector_state()->set_mark_in_progress(false);
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
@@ -936,6 +934,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
          "If the last pause has been concurrent start, we should not have been in the marking window");
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
+    collector_state()->set_mark_in_progress(concurrent_operation_is_full_mark);
     collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
   }
 
@@ -1222,6 +1221,17 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
+static const char* requester_for_mixed_abort(GCCause::Cause cause) {
+  if (cause == GCCause::_wb_breakpoint) {
+    return "run_to breakpoint";
+  } else if (GCCause::is_codecache_requested_gc(cause)) {
+    return "codecache";
+  } else {
+    assert(G1CollectedHeap::heap()->is_user_requested_concurrent_full_gc(cause), "must be");
+    return "user";
+  }
+}
+
 void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
@@ -1254,8 +1264,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
     } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
-               (cause == GCCause::_codecache_GC_threshold) ||
-               (cause == GCCause::_codecache_GC_aggressive) ||
+               GCCause::is_codecache_requested_gc(cause) ||
                (cause == GCCause::_wb_breakpoint)) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.
@@ -1270,7 +1279,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
-                          (cause == GCCause::_wb_breakpoint) ? "run_to breakpoint" : "user");
+                          requester_for_mixed_abort(cause));
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles
@@ -1449,16 +1458,13 @@ uint G1Policy::calc_max_old_cset_length() const {
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   start_adding_survivor_regions();
 
-  for (GrowableArrayIterator<G1HeapRegion*> it = survivors->regions()->begin();
-       it != survivors->regions()->end();
-       ++it) {
-    G1HeapRegion* curr = *it;
-    set_region_survivor(curr);
+  for (G1HeapRegion* r : survivors->regions()) {
+    set_region_survivor(r);
 
     // The region is a non-empty survivor so let's add it to
     // the incremental collection set for the next evacuation
     // pause.
-    _collection_set->add_survivor_regions(curr);
+    _collection_set->add_survivor_regions(r);
   }
   stop_adding_survivor_regions();
 

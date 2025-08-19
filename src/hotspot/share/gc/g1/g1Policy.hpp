@@ -121,7 +121,6 @@ public:
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
   void set_region_eden(G1HeapRegion* hr) {
-    hr->set_eden();
     hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 

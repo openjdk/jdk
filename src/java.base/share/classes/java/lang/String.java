@@ -759,6 +759,21 @@ public final class String
         return new String(dst, UTF16);
     }
 
+    /**
+     * {@return a new String created using the supplied latin1 bytes}
+     * @param src a byte array with the bytes for a latin1 string
+     */
+    static String newStringWithLatin1Bytes(byte[] src) {
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
+
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
         try {
             return newStringNoRepl1(src, cs);
@@ -1019,7 +1034,7 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            int ret = StringCoding.encodeISOArray(val, sp, dst, dp, len);
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
@@ -1284,13 +1299,18 @@ public final class String
             return encodeUTF8_UTF16(val, doReplace);
         }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
             return val.clone();
         }
 
-        int dp = 0;
         byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
+        if (positives > 0) {
+            System.arraycopy(val, 0, dst, 0, positives);
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
