@@ -102,8 +102,7 @@ public class ValidateISO4217 {
     private static final File dataFile = new File(System.getProperty(
             "test.src", "."), "ISO4217-list-one.txt");
     // Code statuses
-    private static final File otherCurrencyCodeFile = new File(System.getProperty(
-            "test.src", "."),"otherCurrencyCodesList.txt");
+    private static final File OTHER_CURRENCY_CODE_FILE =  Paths.get(System.getProperty("test.src", "."), "otherCurrencyCodesList.txt").toFile();
     private static final byte UNDEFINED = 0;
     private static Map<String, List<String>> otherCurrencyCodeDetails = new HashMap<String, List<String>>();
     private static final byte DEFINED = 1;
@@ -194,7 +193,7 @@ public class ValidateISO4217 {
         List<String> currencyDetails;
         otherCurrencyCodesList = otherCodes.split("-");
         System.out.println("--" + otherCurrencyCodesList[0]);
-        try (FileReader fr = new FileReader(otherCurrencyCodeFile); BufferedReader in = new BufferedReader(fr)) {
+        try (FileReader fr = new FileReader(OTHER_CURRENCY_CODE_FILE); BufferedReader in = new BufferedReader(fr)) {
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.length() == 0 || line.charAt(0) == '#') {
@@ -205,14 +204,12 @@ public class ValidateISO4217 {
                 String otherCurrencyCode = tokens.nextToken();
                 if (otherCurrencyCode.length() != 3) {
                     continue;
-                } else {
-                    currencyDetails = new ArrayList<String>();
-                    currencyDetails.add(tokens.nextToken());
-                    currencyDetails.add(tokens.nextToken());
-                    otherCurrencyCodeDetails.put(otherCurrencyCode, currencyDetails);
-                    System.out.println("otherCurrencyCode = " + otherCurrencyCode + "--" + currencyDetails);
                 }
-
+                currencyDetails = new ArrayList<String>();
+                currencyDetails.add(tokens.nextToken());
+                currencyDetails.add(tokens.nextToken());
+                otherCurrencyCodeDetails.put(otherCurrencyCode, currencyDetails);
+                System.out.println("otherCurrencyCode = " + otherCurrencyCode + "--" + currencyDetails);
             }
         }
     }
