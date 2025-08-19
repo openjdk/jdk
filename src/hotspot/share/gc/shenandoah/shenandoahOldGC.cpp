@@ -69,12 +69,6 @@ void ShenandoahOldGC::op_final_mark() {
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
 
-    // Believe verification following old-gen concurrent mark needs to be different than verification following
-    // young-gen concurrent mark, so am commenting this out for now:
-    //   if (ShenandoahVerify) {
-    //     heap->verifier()->verify_after_concmark();
-    //   }
-
     if (VerifyAfterGC) {
       Universe::verify();
     }
@@ -146,7 +140,8 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   // We do not rebuild_free following increments of old marking because memory has not been reclaimed. However, we may
   // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
-  size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
+  log_info(gc, ergo)("Updating generation sizes at end of old mark, anticipated promotions: %zub", _old_generation->get_promotion_potential());
+  const size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
   heap->compute_old_generation_balance(allocation_runway, 0);
 
   ShenandoahGenerationalHeap::TransferResult result;

@@ -137,6 +137,7 @@ public:
   // See description in field declaration
   void set_region_balance(ssize_t balance) { _region_balance = balance; }
   ssize_t get_region_balance() const { return _region_balance; }
+
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; };
   size_t get_promotion_potential() const { return _promotion_potential; };
