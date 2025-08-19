@@ -29,7 +29,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.io.JdkConsoleImpl;
+import jdk.internal.io.JdkConsoleProviderImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
 import sun.nio.cs.UTF_8;
@@ -599,7 +599,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         // If not found, default to built-in Console
         if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
+            c = new ProxyingConsole(new JdkConsoleProviderImpl().console(istty, STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;
