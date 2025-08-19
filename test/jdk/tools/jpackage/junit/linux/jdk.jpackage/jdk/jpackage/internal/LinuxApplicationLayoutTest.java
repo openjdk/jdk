@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,31 +24,34 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.AppImageLayoutTest;
+import jdk.jpackage.internal.model.ApplicationLayoutTest;
+import org.junit.jupiter.api.Test;
 
-record AppImageDesc(AppImageLayout appImageLayout, Path path) {
+public class LinuxApplicationLayoutTest {
 
-    AppImageDesc {
-        Objects.requireNonNull(appImageLayout);
-        Objects.requireNonNull(path);
+    @Test
+    public void testResolveAt() {
+        AppImageLayoutTest.testResolveAt(createLayout());
     }
 
-    AppImageLayout resolvedAppImagelayout() {
-        return appImageLayout.resolveAt(path);
+    @Test
+    public void testResolveAtRepeat() {
+        AppImageLayoutTest.testResolveAtRepeat(createLayout());
     }
 
-    Optional<ApplicationLayout> asResolvedApplicationLayout() {
-        return asApplicationLayout().map(v -> v.resolveAt(path));
+    @Test
+    public void testUnresolve() {
+        AppImageLayoutTest.testUnresolve(createLayout());
     }
 
-    Optional<ApplicationLayout> asApplicationLayout() {
-        if (appImageLayout instanceof ApplicationLayout layout) {
-            return Optional.of(layout);
-        } else {
-            return Optional.empty();
-        }
+    @Test
+    public void testEmptyRootDirectory() {
+        AppImageLayoutTest.testEmptyRootDirectory(createLayout());
+    }
+
+    public static LinuxApplicationLayout createLayout() {
+        return LinuxApplicationLayout.create(ApplicationLayoutTest.createLayout(),
+                Path.of("libapplauncher.so"));
     }
 }
