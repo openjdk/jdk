@@ -457,6 +457,7 @@ final class WInputMethod extends InputMethodAdapter
     @Override
     public void removeNotify() {
         endCompositionNative(context, DISCARD_INPUT);
+        disableNativeIME(awtFocussedComponentPeer);
         awtFocussedComponent = null;
         awtFocussedComponentPeer = null;
     }
