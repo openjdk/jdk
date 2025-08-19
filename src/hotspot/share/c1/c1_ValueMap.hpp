@@ -121,7 +121,7 @@ class ValueMap: public CompilationResourceObj {
 
 #ifndef PRODUCT
   // debugging/printing
-  void print();
+  void print(outputStream* out = tty);
 
   static void reset_statistics();
   static void print_statistics();

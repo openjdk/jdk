@@ -32,6 +32,7 @@
 #include "ci/ciMethodData.hpp"
 #include "ci/ciStreams.hpp"
 #include "compiler/compileLog.hpp"
+#include "utilities/ostream.hpp"
 
 class MemoryBuffer;
 
@@ -401,7 +402,7 @@ class GraphBuilder {
   void check_args_for_profiling(Values* obj_args, int expected);
 
  public:
-  NOT_PRODUCT(void print_stats();)
+  NOT_PRODUCT(void print_stats(outputStream* out = tty);)
 
   // initialization
   static void initialize();

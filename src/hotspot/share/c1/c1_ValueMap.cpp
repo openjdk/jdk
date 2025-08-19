@@ -27,6 +27,7 @@
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/ostream.hpp"
 
 #ifndef PRODUCT
 
@@ -220,23 +221,23 @@ void ValueMap::kill_all() {
 
 #ifndef PRODUCT
 
-void ValueMap::print() {
-  tty->print_cr("(size %d, entries %d, nesting %d)", size(), entry_count(), nesting());
+void ValueMap::print(outputStream* out) {
+  out->print_cr("(size %d, entries %d, nesting %d)", size(), entry_count(), nesting());
 
   int entries = 0;
   for (int i = 0; i < size(); i++) {
     if (entry_at(i) != nullptr) {
-      tty->print("  %2d: ", i);
+      out->print("  %2d: ", i);
       for (ValueMapEntry* entry = entry_at(i); entry != nullptr; entry = entry->next()) {
         Value value = entry->value();
-        tty->print("%s %c%d (%s%d) -> ", value->name(), value->type()->tchar(), value->id(), is_killed(value) ? "x" : "", entry->nesting());
+        out->print("%s %c%d (%s%d) -> ", value->name(), value->type()->tchar(), value->id(), is_killed(value) ? "x" : "", entry->nesting());
         entries++;
       }
-      tty->print_cr("null");
+      out->print_cr("null");
     }
   }
 
-  _killed_values.print();
+  _killed_values.print_on(out);
   assert(entry_count() == entries, "entry_count incorrect");
 }
 
