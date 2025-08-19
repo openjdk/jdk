@@ -44,7 +44,9 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test
- * @summary Basic test to verify HTTP3 requests from HttpClient with security manager enabled
+ * @summary Basic test to verify that simple GET/POST/HEAD
+ *          requests work as expected with HTTP/3, using IPv4
+ *          or IPv6
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
@@ -76,7 +78,7 @@ public class H3SimpleTest implements HttpServerAdapters {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        // create a H3 only server
+        // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
         h3Server.start();
