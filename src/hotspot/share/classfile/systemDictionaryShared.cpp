@@ -261,7 +261,6 @@ class SystemDictionaryShared::ExclusionCheckCandidates
       return;
     }
 
-
     InstanceKlass* super = k->java_super();
     if (super != nullptr) {
       add_candidate(super);
