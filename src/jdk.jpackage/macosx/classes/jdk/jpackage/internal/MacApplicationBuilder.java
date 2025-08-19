@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -130,9 +129,8 @@ final class MacApplicationBuilder {
         for (var contentDir : app.contentDirs()) {
             if (!CONTENTS_SUB_DIRS.stream()
                     .anyMatch(subDir -> contentDir.getFileName().toString()
-                                                  .equalsIgnoreCase(subDir))) {
-                Log.info(MessageFormat.format(I18N.getString(
-                        "warning.non.standard.contents.sub.dir"),
+                                                  .equals(subDir))) {
+                Log.info(I18N.format("warning.non.standard.contents.sub.dir",
                         contentDir));
             }
         }
