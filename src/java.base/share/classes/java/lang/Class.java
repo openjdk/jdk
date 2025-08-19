@@ -4157,7 +4157,7 @@ public final class Class<T> implements java.io.Serializable,
     // Checks whether the class name exceeds the maximum allowed length.
     private static boolean classNameLengthIsValid(String name) {
         Objects.requireNonNull(name);
-        return name.length() <= JAVA_CLASSNAME_MAX_LEN;
+        return getUtf8Length(name) <= JAVA_CLASSNAME_MAX_LEN;
     }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
@@ -4166,5 +4166,20 @@ public final class Class<T> implements java.io.Serializable,
             throw new ClassNotFoundException(
             "Class name exceeds maximum length of " + JAVA_CLASSNAME_MAX_LEN);
         }
+    }
+
+    // Calculates the length of string encoded in Modified UTF-8.
+    private static int getUtf8Length(String str) {
+        int slen = str.length();
+        int extra = 0;
+        for (int i = 0; i < slen; i++) {
+            int ch = string.charAt(i);
+            if (ch > 0x007f || ch == 0x0000) {
+                extra++;
+                if (ch > 0x07ff)
+                    extra++;
+            }
+        }
+        return slen + extra;
     }
 }
