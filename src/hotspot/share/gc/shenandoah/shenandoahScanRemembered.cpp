@@ -281,6 +281,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   // 4. Every allocation under TAMS updates the object start array.
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
+  assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
 #ifdef ASSERT
 #define WALK_FORWARD_IN_BLOCK_START true
 #else
@@ -290,6 +291,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
+    assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
     // Check assumptions in previous block comment if this assert fires
     guarantee(false, "Should never need forward walk in block start");
   }

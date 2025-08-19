@@ -1110,7 +1110,14 @@ bool Klass::is_valid(Klass* k) {
   if (!Metaspace::contains(k)) return false;
 
   if (!Symbol::is_valid(k->name())) return false;
-  return ClassLoaderDataGraph::is_valid(k->class_loader_data());
+
+  // YSR_DEBUGGING
+  if (SafepointSynchronize::is_at_safepoint()) {
+    return ClassLoaderDataGraph::is_valid(k->class_loader_data());
+  } else {
+    MutexLocker x(ClassLoaderDataGraph_lock, Mutex::_no_safepoint_check_flag);
+    return ClassLoaderDataGraph::is_valid(k->class_loader_data());
+  }
 }
 
 Method* Klass::method_at_vtable(int index)  {
