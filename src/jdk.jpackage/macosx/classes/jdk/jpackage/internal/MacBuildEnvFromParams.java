@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal;
 
-package sun.java2d.cmm;
+import jdk.jpackage.internal.model.MacPackage;
 
-/**
- * A class to pass information about a profile to be loaded from a file to the
- * static getInstance(int cspace) method of ICC_Profile. Loading of the profile
- * data and initialization of the CMM is to be deferred as long as possible.
- */
-public final class ProfileDeferralInfo {
+final class MacBuildEnvFromParams {
 
-    /**
-     * Need to have this info for ICC_ColorSpace without causing a deferred
-     * profile to be loaded.
-     */
-    public final int colorSpaceType, numComponents, profileClass;
-
-    /**
-     * The profile file name, such as "CIEXYZ.pf", "sRGB.pf", etc.
-     */
-    public final String filename;
-
-    public ProfileDeferralInfo(String fn, int type, int ncomp, int pclass) {
-        filename = fn;
-        colorSpaceType = type;
-        numComponents = ncomp;
-        profileClass = pclass;
-    }
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
+        return BuildEnvFromParams.create(params, MacPackagingPipeline.APPLICATION_LAYOUT::resolveAt, MacPackage::guessRuntimeLayout);
+    });
 }
