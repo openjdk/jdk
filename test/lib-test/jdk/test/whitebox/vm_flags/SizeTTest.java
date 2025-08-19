@@ -35,7 +35,7 @@
 import jdk.test.lib.Platform;
 
 public class SizeTTest {
-    private static final String FLAG_NAME = "NUMASpaceResizeRate";
+    private static final String FLAG_NAME = "LargePageHeapSizeThreshold";
     private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
         (1L << 32L) - 1L, 1L << 32L};
     private static final Long[] EXPECTED_64 = TESTS;
