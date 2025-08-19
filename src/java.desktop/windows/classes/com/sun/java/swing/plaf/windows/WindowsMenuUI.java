@@ -140,7 +140,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon, arrowIcon,
                                             background, foreground,
-                                            disabledForeground, acceleratorSelectionForeground, 
+                                            disabledForeground, acceleratorSelectionForeground,
                                             acceleratorForeground, defaultTextIconGap, menuItem,
                                             getPropertyPrefix());
             return;

@@ -85,7 +85,7 @@ public final class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItem
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
                     arrowIcon, background, foreground,
-                    disabledForeground, acceleratorSelectionForeground, 
+                    disabledForeground, acceleratorSelectionForeground,
                     acceleratorForeground, defaultTextIconGap,
                     menuItem, getPropertyPrefix());
             return;
