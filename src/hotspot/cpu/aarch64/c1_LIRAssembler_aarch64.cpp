@@ -938,45 +938,21 @@ void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
   int null_check_here = code_offset();
 
   __ lea(rscratch1, as_Address(from_addr));
-  switch (type) {
-    case T_BOOLEAN:
-      __ ldarb(dest->as_register(), rscratch1);
-      break;
-    case T_BYTE: // LDAR is unsigned so need to sign-extend for byte
-      __ ldarb(dest->as_register(), rscratch1);
-      __ sxtb(dest->as_register(), dest->as_register());
-      break;
-    case T_CHAR:
-      __ ldarh(dest->as_register(), rscratch1);
-      break;
-    case T_SHORT: // LDAR is unsigned so need to sign-extend for short
-      __ ldarh(dest->as_register(), rscratch1);
-      __ sxth(dest->as_register(), dest->as_register());
-      break;
-    case T_INT:
-      __ ldarw(dest->as_register(), rscratch1);
-      break;
-    case T_ADDRESS:
-      __ ldar(dest->as_register(), rscratch1);
-      break;
-    case T_LONG:
-      __ ldar(dest->as_register_lo(), rscratch1);
-      break;
-    case T_ARRAY:
-    case T_OBJECT:
-      if (UseCompressedOops) {
-        __ ldarw(dest->as_register(), rscratch1);
-      } else {
-        __ ldar(dest->as_register(), rscratch1);
-      }
-      break;
-    case T_METADATA:
-      // We get here to store a method pointer to the stack to pass to
-      // a dtrace runtime call. This can't work on 64 bit with
-      // compressed klass ptrs: T_METADATA can be a compressed klass
-      // ptr or a 64 bit method pointer.
-    default:
-      ShouldNotReachHere();
+  Register dest_reg = (dest->is_single_cpu()
+                       ? dest->as_register() : dest->as_register_lo());
+  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
+
+  if (is_signed_subword_type(type)) {
+    switch (type) {
+      case T_BYTE: // LDAR is unsigned so need to sign-extend for byte
+        __ sxtb(dest_reg, dest_reg);
+        break;
+      case T_SHORT: // LDAR is unsigned so need to sign-extend for short
+        __ sxth(dest_reg, dest_reg);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   }
 
   if (is_reference_type(type)) {

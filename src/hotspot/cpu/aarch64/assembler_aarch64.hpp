@@ -1274,6 +1274,13 @@ public:
                          sz, 0b000, ordered);
   }
 
+  void load_store_volatile(Register data, BasicType type, Register addr,
+                          bool is_load) {
+    load_store_exclusive(dummy_reg, data, dummy_reg, addr,
+                         (Assembler::operand_size)exact_log2(type2aelembytes(type)),
+                         is_load ? 0b110: 0b100, 1);
+  }
+
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
   void NAME(Register Rs, Register Rt1, Register Rt2, Register Rn) {     \
     guarantee(Rs != Rn && Rs != Rt1 && Rs != Rt2, "unpredictable instruction"); \
