@@ -124,7 +124,7 @@ class ValueMap: public CompilationResourceObj {
   void print(outputStream* out = tty);
 
   static void reset_statistics();
-  static void print_statistics();
+  static void print_statistics(outputStream* out = tty);
 #endif
 };
 

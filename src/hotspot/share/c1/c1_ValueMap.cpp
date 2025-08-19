@@ -247,13 +247,13 @@ void ValueMap::reset_statistics() {
   _number_of_kills = 0;
 }
 
-void ValueMap::print_statistics() {
+void ValueMap::print_statistics(outputStream* out) {
   float hit_rate = 0;
   if (_number_of_finds != 0) {
     hit_rate = (float)_number_of_hits / _number_of_finds;
   }
 
-  tty->print_cr("finds:%3d  hits:%3d   kills:%3d  hit rate: %1.4f", _number_of_finds, _number_of_hits, _number_of_kills, hit_rate);
+  out->print_cr("finds:%3d  hits:%3d   kills:%3d  hit rate: %1.4f", _number_of_finds, _number_of_hits, _number_of_kills, hit_rate);
 }
 
 #endif
