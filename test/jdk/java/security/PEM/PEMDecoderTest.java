@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8298420
+ * @bug 8298420 8365288
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
