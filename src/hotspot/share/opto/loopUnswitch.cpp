@@ -563,19 +563,6 @@ bool PhaseIdealLoop::try_resume_optimizations_for_delayed_slow_loop(IdealLoopTre
   // that this loop will be reachable and it is worth optimizing further.
   if (opaque->is_delayed_slow_loop()) { return false; }
 
-  // If explicitly asked for (e.g. for benchmarking) we do not continue with
-  // optimizations. That means the slow_loop should still be correct, but
-  // a bit slower, as there is no unrolling etc.
-  if (!LoopMultiversioningOptimizeSlowLoop) {
-#ifndef PRODUCT
-    if (TraceLoopOpts) {
-      tty->print("WARNING: Resumption of Optimization disabled (-XX:-LoopMultiversioningOptimizeSlowLoop)");
-      lpt->dump_head();
-    }
-#endif
-    return false;
-  }
-
   // Clear away the "delayed" status, i.e. resume optimizations.
   cl->set_no_multiversion();
   cl->set_multiversion_slow_loop();

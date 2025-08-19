@@ -356,10 +356,6 @@
   product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
           "Enable loop multiversioning (for speculative compilation)")      \
                                                                             \
-  product(bool, LoopMultiversioningOptimizeSlowLoop, true, DIAGNOSTIC,      \
-          "When using loop multiversioning, and a speculative runtime"      \
-          " check is added, resume optimization for the stalled slow_loop") \
-                                                                            \
   develop(bool, TraceLoopMultiversioning, false,                            \
           "Trace loop multiversioning")                                     \
                                                                             \
