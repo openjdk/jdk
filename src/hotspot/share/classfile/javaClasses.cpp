@@ -55,15 +55,14 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbol.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -870,6 +869,7 @@ int java_lang_Class::_classRedefinedCount_offset;
 int java_lang_Class::_reflectionData_offset;
 int java_lang_Class::_modifiers_offset;
 int java_lang_Class::_is_primitive_offset;
+int java_lang_Class::_raw_access_flags_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1036,15 +1036,15 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
     // If java.base was already defined then patch this particular class with java.base.
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
-      assert(javabase_entry != nullptr && javabase_entry->module() != nullptr,
+      assert(javabase_entry != nullptr && javabase_entry->module_oop() != nullptr,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(current, javabase_entry->module());
+      Handle javabase_handle(current, javabase_entry->module_oop());
       set_module(mirror(), javabase_handle());
     }
   } else {
     assert(Universe::is_module_initialized() ||
            (ModuleEntryTable::javabase_defined() &&
-            (module() == ModuleEntryTable::javabase_moduleEntry()->module())),
+            (module() == ModuleEntryTable::javabase_moduleEntry()->module_oop())),
            "Incorrect java.lang.Module specification while creating mirror");
     set_module(mirror(), module());
   }
@@ -1073,6 +1073,10 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
+  // Set the raw access_flags, this is used by reflection instead of modifier flags.
+  // The Java code for array classes gets the access flags from the element type.
+  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
+  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1378,6 +1382,8 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
   set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+  set_raw_access_flags(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+
   set_is_primitive(java_class);
   return java_class;
 }
@@ -1519,6 +1525,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false); \
   macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
+  macro(_raw_access_flags_offset,    k, "classFileAccessFlags",      char_signature,    false); \
   macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
   macro(_is_primitive_offset,        k, "primitive",           bool_signature,         false);
 
@@ -1562,6 +1569,16 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
+}
+
+int java_lang_Class::raw_access_flags(oop the_class_mirror) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->char_field(_raw_access_flags_offset);
+}
+
+void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  the_class_mirror->char_field_put(_raw_access_flags_offset, value);
 }
 
 
@@ -1869,8 +1886,9 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
-         JavaThread::current()->thread_state() == _thread_in_vm,
-         "Java Thread is not running in vm");
+         JavaThread::current()->thread_state() == _thread_in_vm ||
+         JavaThread::current() == java_lang_Thread::thread(java_thread),
+         "unsafe call to java_lang_Thread::get_thread_status()?");
   GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
@@ -1882,36 +1900,32 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
-  ThreadsListHandle tlh(JavaThread::current());
-  JavaThread* thread;
-  bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
-  if (is_virtual) {
-    oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
-    if (carrier_thread == nullptr) {
-      return nullptr;
-    }
-    thread = java_lang_Thread::thread(carrier_thread);
-  } else {
-    thread = java_lang_Thread::thread(java_thread);
-  }
-  if (thread == nullptr) {
+// Obtain stack trace for platform or mounted virtual thread.
+// If jthread is a virtual thread and it has been unmounted (or remounted to different carrier) the method returns null.
+// The caller (java.lang.VirtualThread) handles returned nulls via retry.
+oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
+  ThreadsListHandle tlh(THREAD);
+  JavaThread* java_thread = nullptr;
+  oop thread_oop;
+
+  bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  if (!has_java_thread) {
     return nullptr;
   }
 
-  class GetStackTraceClosure : public HandshakeClosure {
+  class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
-    const Handle _java_thread;
+    const Handle _thread_h;
     int _depth;
     bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle thread_h) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
-    ~GetStackTraceClosure() {
+    ~GetStackTraceHandshakeClosure() {
       delete _methods;
       delete _bcis;
     }
@@ -1930,21 +1944,22 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
         return;
       }
 
-      JavaThread* thread = JavaThread::cast(th);
+      JavaThread* java_thread = JavaThread::cast(th);
 
-      if (!thread->has_last_Java_frame()) {
+      if (!java_thread->has_last_Java_frame()) {
         return;
       }
 
       bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_java_thread())) {
-        // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
-        const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
-          return; // not mounted
+      if (java_lang_VirtualThread::is_instance(_thread_h())) {
+        // Ensure _thread_h is still mounted to java_thread.
+        const ContinuationEntry* ce = java_thread->vthread_continuation();
+        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
+          // Target thread has been unmounted.
+          return;
         }
       } else {
-        carrier = (thread->vthread_continuation() != nullptr);
+        carrier = (java_thread->vthread_continuation() != nullptr);
       }
 
       const int max_depth = MaxJavaStackTraceDepth;
@@ -1956,7 +1971,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
-      for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
+      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
@@ -1977,13 +1992,13 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
+  GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
   do {
-   Handshake::execute(&gstc, &tlh, thread);
-  } while (gstc.read_reset_retry());
+   Handshake::execute(&gsthc, &tlh, java_thread);
+  } while (gsthc.read_reset_retry());
 
   // Stop if no stack trace is found.
-  if (gstc._depth == 0) {
+  if (gsthc._depth == 0) {
     return nullptr;
   }
 
@@ -1993,12 +2008,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   if (k->should_be_initialized()) {
     k->initialize(CHECK_NULL);
   }
-  objArrayHandle trace = oopFactory::new_objArray_handle(k, gstc._depth, CHECK_NULL);
+  objArrayHandle trace = oopFactory::new_objArray_handle(k, gsthc._depth, CHECK_NULL);
 
-  for (int i = 0; i < gstc._depth; i++) {
-    methodHandle method(THREAD, gstc._methods->at(i));
+  for (int i = 0; i < gsthc._depth; i++) {
+    methodHandle method(THREAD, gsthc._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method,
-                                                      gstc._bcis->at(i),
+                                                      gsthc._bcis->at(i),
                                                       CHECK_NULL);
     trace->obj_at_put(i, element);
   }

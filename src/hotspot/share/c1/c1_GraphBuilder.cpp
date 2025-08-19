@@ -3296,6 +3296,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dsinh         : // fall through
   case vmIntrinsics::_dtanh         : // fall through
   case vmIntrinsics::_dcbrt         : // fall through
   case vmIntrinsics::_dlog          : // fall through
@@ -3340,7 +3341,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       break;
     }
 
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
     {
       {
         // With java.lang.ref.reference.get() we must go through the

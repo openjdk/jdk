@@ -1487,16 +1487,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  struct rusage usage;
-  int retval = getrusage(RUSAGE_THREAD, &usage);
-  if (retval == 0) {
-    return (double) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (double) (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000 * 1000);
-  } else {
-    // better than nothing, but not much
-    return elapsedTime();
-  }
-}
 
 void os::Linux::fast_thread_clock_init() {
   clockid_t clockid;
@@ -1693,6 +1683,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     // Successful loading
     return result;
+  }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
   }
 
   Elf32_Ehdr elf_head;
@@ -4877,9 +4872,8 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors
-  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
-  // turn might:
+  // might fork and exec without closing all appropriate file descriptors,
+  // and this in turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or

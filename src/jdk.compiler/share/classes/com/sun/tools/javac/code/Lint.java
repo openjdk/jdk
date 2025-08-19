@@ -183,9 +183,9 @@ public class Lint {
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isExplicitlyEnabled(Option.XLINT, lc)) {
+            if (options.isLintExplicitlyEnabled(lc)) {
                 values.add(lc);
-            } else if (options.isExplicitlyDisabled(Option.XLINT, lc)) {
+            } else if (options.isLintExplicitlyDisabled(lc)) {
                 values.remove(lc);
             }
         }
@@ -528,12 +528,15 @@ public class Lint {
     // Given a @SuppressWarnings annotation, extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings) {
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
-        Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
-        for (Attribute value : values.values) {
-            Optional.of((String)((Attribute.Constant)value).value)
-              .flatMap(LintCategory::get)
-              .filter(lc -> lc.annotationSuppression)
-              .ifPresent(result::add);
+        if (suppressWarnings.member(names.value) instanceof Attribute.Array values) {
+            for (Attribute value : values.values) {
+                Optional.of(value)
+                  .filter(val -> val instanceof Attribute.Constant)
+                  .map(val -> (String) ((Attribute.Constant) val).value)
+                  .flatMap(LintCategory::get)
+                  .filter(lc -> lc.annotationSuppression)
+                  .ifPresent(result::add);
+            }
         }
         return result;
     }

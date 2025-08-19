@@ -46,8 +46,8 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -500,6 +500,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      Exceptions::log_exception_stacktrace(h_exception, h_method, current_bci);
+    }
+
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
 //       // disabled for now - interpreter is not using shortcut yet

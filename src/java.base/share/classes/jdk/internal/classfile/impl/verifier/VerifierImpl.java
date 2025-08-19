@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,12 @@ import static jdk.internal.classfile.impl.verifier.VerificationFrame.FLAG_THIS_U
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.T_BOOLEAN;
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.T_LONG;
 
-/**
- * VerifierImpl performs selected checks and verifications of the class file
- * format according to {@jvms 4.8 Format Checking},
- * {@jvms 4.9 Constraints on Java Virtual Machine code},
- * {@jvms 4.10 Verification of class Files} and {@jvms 6.5 Instructions}
- *
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/java.base/share/native/include/classfile_constants.h.template">java.base/share/native/include/classfile_constants.h.template</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.hpp">hotspot/share/classfile/verifier.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.cpp">hotspot/share/classfile/verifier.cpp</a>
- */
+/// VerifierImpl performs selected checks and verifications of the class file
+/// format according to {@jvms 4.8 Format Checking},
+/// {@jvms 4.9 Constraints on Java Virtual Machine code},
+/// {@jvms 4.10 Verification of class Files} and {@jvms 6.5 Instructions}
+///
+/// From `verifier.cpp`.
 public final class VerifierImpl {
     static final int
             JVM_CONSTANT_Utf8                   = 1,
@@ -142,11 +138,8 @@ public final class VerifierImpl {
     }
 
     public static boolean is_eligible_for_verification(VerificationWrapper klass) {
-        String name = klass.thisClassName();
-        return !java_lang_Object.equals(name) &&
-                !java_lang_Class.equals(name) &&
-                !java_lang_String.equals(name) &&
-                !java_lang_Throwable.equals(name);
+        // 8330606 Not applicable here
+        return true;
     }
 
     static List<VerifyError> inference_verify(VerificationWrapper klass) {
@@ -323,7 +316,9 @@ public final class VerifierImpl {
         verify_exception_handler_table(code_length, code_data, ex_minmax);
         verify_local_variable_table(code_length, code_data);
 
-        VerificationTable stackmap_table = new VerificationTable(stackmap_data, current_frame, max_locals, max_stack, code_data, code_length, cp, this);
+        var reader = new VerificationTable.StackMapReader(stackmap_data, code_data, code_length, current_frame,
+                (char) max_locals, (char) max_stack, cp, this);
+        VerificationTable stackmap_table = new VerificationTable(reader, cp, this);
 
         var bcs = code.start();
         boolean no_control_flow = false;
@@ -1270,6 +1265,7 @@ public final class VerifierImpl {
             if (catch_type_index != 0) {
                 VerificationType catch_type = cp_index_to_type(catch_type_index, cp);
                 VerificationType throwable = VerificationType.reference_type(java_lang_Throwable);
+                // 8267118 Not applicable here
                 boolean is_subclass = throwable.is_assignable_from(catch_type, this);
                 if (!is_subclass) {
                     verifyError(String.format("Catch type is not a subclass of Throwable in exception handler %d", handler_pc));
@@ -1353,7 +1349,7 @@ public final class VerifierImpl {
     void verify_cp_type(int bci, int index, ConstantPoolWrapper cp, int types) {
         verify_cp_index(bci, cp, index);
         int tag = cp.tagAt(index);
-        if ((types & (1 << tag))== 0) {
+        if (tag > JVM_CONSTANT_ExternalMax || (types & (1 << tag))== 0) {
             verifyError(String.format("Illegal type at constant pool entry %d", index));
         }
     }
@@ -1432,10 +1428,11 @@ public final class VerifierImpl {
             if (low > high) {
                 verifyError("low must be less than or equal to high in tableswitch");
             }
-            keys = high - low + 1;
-            if (keys < 0) {
+            long keys64 = ((long) high - low) + 1;
+            if (keys64 > 65535) {  // Max code length
                 verifyError("too many keys in tableswitch");
             }
+            keys = (int) keys64;
             delta = 1;
         } else {
             // Make sure that the lookupswitch items are sorted
@@ -1492,6 +1489,7 @@ public final class VerifierImpl {
             case GETFIELD ->  {
                 stack_object_type = current_frame.pop_stack(
                     target_class_type);
+                // 8270398 Not applicable here
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
                 }
@@ -1643,12 +1641,29 @@ public final class VerifierImpl {
                              && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
                              && !ref_class_type.equals(VerificationType.reference_type(
                                         current_class().superclassName()))) {
-            boolean have_imr_indirect = cp.tagAt(index) == JVM_CONSTANT_InterfaceMethodref;
-            boolean subtype = ref_class_type.is_assignable_from(current_type(), this);
-            if (!subtype) {
+
+            // We know it is not current class, direct superinterface or immediate superclass. That means it
+            // could be:
+            // - a totally unrelated class or interface
+            // - an indirect superinterface
+            // - an indirect superclass (including Object)
+            // We use the assignability test to see if it is a superclass, or else an interface, and keep track
+            // of the latter. Note that subtype can be true if we are dealing with an interface that is not actually
+            // implemented as assignability treats all interfaces as Object.
+
+            boolean[] is_interface = {false}; // This can only be set true if the assignability check will return true
+                                              // and we loaded the class. For any other "true" returns (e.g. same class
+                                              // or Object) we either can't get here (same class already excluded above)
+                                              // or we know it is not an interface (i.e. Object).
+            boolean subtype = ref_class_type.is_reference_assignable_from(current_type(), this, is_interface);
+            if (!subtype) {  // Totally unrelated class
                 verifyError("Bad invokespecial instruction: current class isn't assignable to reference class.");
-            } else if (have_imr_indirect) {
-                verifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
+            } else {
+                // Indirect superclass (including Object), indirect interface, or unrelated interface.
+                // Any interface use is an error.
+                if (is_interface[0]) {
+                    verifyError("Bad invokespecial instruction: interface method to invoke is not in a direct superinterface.");
+                }
             }
 
         }
@@ -1817,7 +1832,7 @@ public final class VerifierImpl {
 
     void verify_return_value(VerificationType return_type, VerificationType type, int bci, VerificationFrame current_frame) {
         if (return_type.is_bogus()) {
-            verifyError("Method expects a return value");
+            verifyError("Method does not expect a return value");
         }
         boolean match = return_type.is_assignable_from(type, this);
         if (!match) {
