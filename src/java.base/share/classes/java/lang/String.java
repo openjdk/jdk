@@ -756,10 +756,18 @@ public final class String
         return new String(dst, UTF16);
     }
 
-    /*
-     * Throws CCE, instead of replacing, if malformed or unmappable.
-     * The byte array can be exclusively used to construct
-     * the string and is not modified or used for any other purpose.
+    /**
+     * {@return a new {@code String} created using the given byte array that is
+     * encoded in specified charset}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
+     *
+     * @param src byte array containing encoded characters
+     * @param cs charset the byte array encoded in
+     *
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
         try {
