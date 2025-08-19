@@ -37,6 +37,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8350988 8364407
  * @summary Test that Identity simplifications of Involution nodes are being performed as expected.
+ * @key randomness
  * @library /test/lib /
  * @compile ReverseBytesConstantsHelper.jasm
  * @run driver compiler.c2.gvn.InvolutionIdentityTests
@@ -128,7 +129,6 @@ public class InvolutionIdentityTests {
         assertResultD(ad);
         assertResultD(ind);
         assertResultD(nand);
-
     }
 
     @DontCompile

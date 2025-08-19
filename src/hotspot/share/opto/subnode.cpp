@@ -2072,8 +2072,9 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
 static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
   if (involution->in(1)->Opcode() == involution->Opcode()) {
     Node* original = involution->in(1)->in(1);
-    const TypeInt *type = phase->type(original)->isa_int();
-    // Operations on sub-int types might not be "real" involutions for values outside their type range.
+    const TypeInt* type = phase->type(original)->isa_int();
+    // Operations on sub-int types might not be "real" involutions for values outside their type range,
+    // for example, a ReverseBytesS node with an input larger than short.
     // Make sure not to drop potential truncations.
     if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
       return involution->in(1)->in(1);
