@@ -364,16 +364,6 @@ public interface JavaLangAccess {
     byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns a new string by decoding from the given UTF-8 bytes array.
-     *
-     * @param off the index of the first byte to decode
-     * @param len the number of bytes to decode
-     * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes.
-     */
-    String newStringUTF8NoRepl(byte[] bytes, int off, int len);
-
-    /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
      * UTF-16 representation.
      * <p>
