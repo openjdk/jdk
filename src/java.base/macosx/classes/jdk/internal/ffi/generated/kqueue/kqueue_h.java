@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,10 @@ public class kqueue_h {
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("kqueue");
 
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC,
+                Linker.Option.captureCallState(ERRNO_NAME));
+
+        public static final MethodHandle ADAPTED = CaptureStateUtil.adaptSystemCall(HANDLE, ERRNO_NAME);
     }
 
     /**
@@ -128,9 +131,8 @@ public class kqueue_h {
      * }
      */
     public static int kqueue() {
-        var mh$ = kqueue.HANDLE;
         try {
-            return (int)mh$.invokeExact();
+            return (int) kqueue.ADAPTED.invokeExact();
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -148,7 +150,8 @@ public class kqueue_h {
         );
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("kevent");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC,  Linker.Option.captureCallState(ERRNO_NAME));
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC,
+                Linker.Option.captureCallState(ERRNO_NAME));
         public static final MethodHandle ADAPTED =  CaptureStateUtil.adaptSystemCall(HANDLE, ERRNO_NAME);
     }
 

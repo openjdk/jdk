@@ -24,6 +24,7 @@
  */
 package sun.nio.ch;
 
+import jdk.internal.ffi.generated.*;
 import jdk.internal.ffi.generated.kqueue.kqueue_h;
 
 import java.io.IOException;
@@ -41,7 +42,12 @@ class KQueuePoller extends Poller {
     private final MemorySegment pollArray;
 
     KQueuePoller(boolean subPoller, boolean read) throws IOException {
-        this.kqfd = kqueue_h.kqueue();
+        int res = kqueue_h.kqueue();
+        if (res < 0) {
+            throw ErrnoUtils.IOExceptionWithErrnoString(-res,
+                    "kqueue failed");
+        }
+        this.kqfd = res;
         this.filter = (read) ? EVFILT_READ : EVFILT_WRITE;
         this.maxEvents = (subPoller) ? 64 : 512;
         this.pollArray = KQueue.allocatePollArray(maxEvents);

@@ -25,7 +25,6 @@
 
 package sun.nio.ch;
 
-import jdk.internal.ffi.generated.errno.errno_h;
 import jdk.internal.ffi.generated.kqueue.kevent;
 import jdk.internal.ffi.generated.kqueue.kqueue_h;
 import jdk.internal.ffi.generated.timespec.timespec;
@@ -45,7 +44,6 @@ import static jdk.internal.ffi.generated.errno.errno_h.EINTR;
 
 final class KQueue {
 
-    private static final int KQUEUE_ERROR_VALUE = -1;
     private static final BufferStack POOL = BufferStack.of(timespec.layout());
 
     private KQueue() { }
@@ -151,8 +149,8 @@ final class KQueue {
                 if (result == -EINTR()) {
                     return IOStatus.INTERRUPTED;
                 } else {
-                    throw ErrnoUtils.IOExceptionWithLastError(-result,
-                            "kqueue failed.", arena);
+                    throw ErrnoUtils.IOExceptionWithErrnoString(-result,
+                            "kqueue failed.");
                 }
             }
         } catch (Throwable e) {

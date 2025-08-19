@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -40,14 +39,16 @@ public final class ErrnoUtils {
 
     private static final long ERRNO_STRING_HOLDER_ARRAY_SIZE = 256L;
 
-    public static IOException IOExceptionWithLastError(int errno, String message, Arena arena) {
-        MemorySegment buf = arena.allocate(ERRNO_STRING_HOLDER_ARRAY_SIZE);
-        if (errno_h.strerror_r(errno, buf, ERRNO_STRING_HOLDER_ARRAY_SIZE) == 0) {
-            String errnoMsg = buf.getString(0, StandardCharsets.UTF_8);
-            return new IOException(message + " " + errnoMsg);
-        } else {
-            // failed to convert errno to string - output errno value
-            return new IOException(message + " Errno: " + errno);
+    public static IOException IOExceptionWithErrnoString(int errno, String message) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment buf = arena.allocate(ERRNO_STRING_HOLDER_ARRAY_SIZE);
+            if (errno_h.strerror_r(errno, buf, ERRNO_STRING_HOLDER_ARRAY_SIZE) == 0) {
+                String errnoMsg = buf.getString(0, StandardCharsets.UTF_8);
+                return new IOException(message + " " + errnoMsg);
+            } else {
+                // failed to convert errno to string - output errno value
+                return new IOException(message + " Errno: " + errno);
+            }
         }
     }
 }

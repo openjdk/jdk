@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import jdk.internal.ffi.generated.*;
 import jdk.internal.ffi.generated.kqueue.kqueue_h;
 
 import java.io.IOException;
@@ -88,8 +89,12 @@ final class KQueuePort
         throws IOException
     {
         super(provider, pool);
-
-        this.kqfd = kqueue_h.kqueue();
+        int res = kqueue_h.kqueue();
+        if (res < 0) {
+            throw ErrnoUtils.IOExceptionWithErrnoString(-res,
+                    "kqueue failed");
+        }
+        this.kqfd = res;
         this.pollArrayRegions = KQueue.allocatePollArray(MAX_KEVENTS_TO_POLL);
 
         // create socket pair for wakeup mechanism
