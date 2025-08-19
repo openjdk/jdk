@@ -30,9 +30,6 @@
 #include "runtime/frame.hpp"
 #include "runtime/frame.inline.hpp"
 
-// fp value used for frozen stub/native frame
-static intptr_t* const UNUSED_FP = reinterpret_cast<intptr_t*>(UCONST64(0xC0C0C0C0DEADBAAD));
-
 inline void patch_callee_link(const frame& f, intptr_t* fp) {
   *ContinuationHelper::Frame::callee_link_address(f) = fp;
 }
@@ -106,7 +103,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     // For stub/native frames the value is not used while frozen, and will be constructed again
     // when thawing the frame (see ThawBase::new_stack_frame). We use a special bad address to
     // help with debugging, particularly when inspecting frames and identifying invalid accesses.
-    fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : UNUSED_FP;
+    fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : (intptr_t*)badAddressVal;
 
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;
@@ -190,8 +187,8 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
 }
 
 inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
-  intptr_t** fp_addr = (intptr_t**)(sp - frame::sender_sp_offset);
-  *fp_addr = UNUSED_FP;
+  intptr_t* fp_addr = sp - frame::sender_sp_offset;
+  *fp_addr = badAddressVal;
 }
 
 //////// Thaw
