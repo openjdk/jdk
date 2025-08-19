@@ -431,8 +431,6 @@ protected:
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
-  void log_cpu_time() const;
-
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
