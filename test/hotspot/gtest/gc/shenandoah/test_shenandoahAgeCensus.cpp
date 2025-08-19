@@ -31,8 +31,6 @@ protected:
   static void build_mortality_rate_curve(ShenandoahAgeCensus& census, const double mortality_rates[], const size_t cohorts) {
     constexpr size_t initial_population = MinimumPopulationSize * 1000;
 
-    // Simulate the census for the first epoch with populations that will produce the
-    // expected mortality rate when presented with the populations for the subsequent epoch
     size_t population = initial_population;
     for (size_t i = 0; i < cohorts; i++) {
       population = population * (1.0 - mortality_rates[i]);
