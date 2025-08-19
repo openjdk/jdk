@@ -2256,6 +2256,13 @@ bool MacroAssembler::should_relocate_to_codecache(relocInfo::relocType rtype) {
 
 // Determine whether the target address is fixed and does not require relocation.
 bool MacroAssembler::should_use_fixed_address(relocInfo::relocType rtype) {
+  // For foreign calls, restoring code in a product run at a different location may
+  // invalidate a reachability decision made in a training run. In such cases,
+  // an 'adrp + add' can't be patchable to a 'movz + movk + movk'.
+  // To avoid this, disable reachability-based optimization during AOT code dumping.
+  if (AOTCodeCache::is_on_for_dump()) {
+    return false;
+  }
   return (rtype == relocInfo::runtime_call_type ||
           rtype == relocInfo::external_word_type ||
           rtype == relocInfo::runtime_call_w_cp_type);
@@ -2294,7 +2301,8 @@ void MacroAssembler::mov(Register r, Address dest) {
   } else {
 #ifdef ASSERT
     assert((should_use_fixed_address(dest.rspec().type()) && !is_adrp_reachable(dest.target())) ||
-           unqualified_type(dest.rspec().type()), "unhandled rtype");
+           unqualified_type(dest.rspec().type()) ||
+           AOTCodeCache::is_on_for_dump(), "unhandled rtype");
 #endif
     movptr(r, (uint64_t)dest.target());
   }
