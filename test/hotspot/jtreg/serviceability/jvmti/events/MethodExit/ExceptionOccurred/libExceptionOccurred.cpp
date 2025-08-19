@@ -60,6 +60,16 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   if (upcall_method == nullptr) {
     fatal(jni,"Can't find upCall method.");
   }
+  jstring upcall_result = (jstring) jni->CallStaticObjectMethod(main_class, upcall_method);
+  const char *str = jni->GetStringUTFChars(upcall_result, NULL);
+  if (str == NULL) {
+    fatal(jni ,"Failed to convert Java string to C string.");
+    return;
+  }
+  if (strcmp("MyNewString", str) != 0) {
+    fatal(jni, "The upCall result value is incorrect.");
+  }
+  jni->ReleaseStringUTFChars(upcall_result, str);
 }
 
 JNIEXPORT jint JNICALL

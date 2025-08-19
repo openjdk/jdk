@@ -49,9 +49,8 @@ public class ExceptionOccurred {
         try {
             enable();
             exceptionExit();
-            disableAndCheck();
         } catch (RuntimeException e){
-            //expected
+            disableAndCheck();
         }
     }
 }
