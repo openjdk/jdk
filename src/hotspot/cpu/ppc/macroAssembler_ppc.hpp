@@ -713,12 +713,6 @@ class MacroAssembler: public Assembler {
   enum { trampoline_stub_size = 6 * 4 };
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
 
-  void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
-                                 Register tmp1, Register tmp2, Register tmp3);
-
-  void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                   Register tmp1, Register tmp2, Register tmp3);
-
   void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
                                              Register tmp1, Register tmp2, Register tmp3);
 
