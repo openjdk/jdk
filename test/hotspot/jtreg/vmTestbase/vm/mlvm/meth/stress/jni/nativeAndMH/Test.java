@@ -76,7 +76,7 @@ public class Test extends MultiThreadedTest {
                 Test.class,
                 "calledFromNative",
                 MT_calledFromNative);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             throw new RuntimeException("TEST FAILED - Unable to lookup \"calledFromNative\"");
         }
     }
