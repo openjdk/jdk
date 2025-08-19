@@ -866,8 +866,7 @@ bool os::win32::available_memory(size_t& value) {
     value = static_cast<size_t>(ms.ullAvailPhys);
     return true;
   } else {
-    DWORD errcode  = ::GetLastError();
-    log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%lu.", errcode);
+    assert(false, "GlobalMemoryStatusEx failed in win32::available_memory().");
     return res == TRUE;
   }
 }
@@ -880,8 +879,7 @@ bool os::total_swap_space(size_t& value) {
     value = static_cast<size_t>(ms.ullTotalPageFile);
     return true;
   } else {
-    DWORD errcode  = ::GetLastError();
-    log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%lu.", errcode);
+    assert(false, "GlobalMemoryStatusEx failed in win32::total_swap_space().");
     return res == TRUE;
   }
 }
@@ -894,8 +892,7 @@ bool os::free_swap_space(size_t& value) {
     value = static_cast<size_t>(ms.ullAvailPageFile);
     return true;
   } else {
-    DWORD errcode  = ::GetLastError();
-    log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%lu.", errcode);
+    assert(false, "GlobalMemoryStatusEx failed in win32::free_swap_space().");
     return res == TRUE;
   }
 }
@@ -4166,6 +4163,10 @@ void os::win32::initialize_system_info() {
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
   BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res != TRUE)
+  {
+    assert(false, "GlobalMemoryStatusEx failed in win32::initialize_system_info().");
+  }
   _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
