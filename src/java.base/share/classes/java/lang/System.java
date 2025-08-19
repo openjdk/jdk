@@ -2144,10 +2144,6 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
-            }
-
             public byte[] getBytesUTF8NoRepl(String s) {
                 return String.getBytesUTF8NoRepl(s);
             }
