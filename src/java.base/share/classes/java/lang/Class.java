@@ -4156,9 +4156,9 @@ public final class Class<T> implements java.io.Serializable,
 
     // Checks whether the class name exceeds the maximum allowed length.
     private static boolean classNameLengthIsValid(String name) {
-	    Objects.requireNonNull(name);
-	    return name.length() <= JAVA_CLASSNAME_MAX_LEN;
-	}
+        Objects.requireNonNull(name);
+        return name.length() <= JAVA_CLASSNAME_MAX_LEN;
+    }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
