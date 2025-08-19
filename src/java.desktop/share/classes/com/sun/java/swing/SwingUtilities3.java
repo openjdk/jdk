@@ -248,7 +248,7 @@ public class SwingUtilities3 {
     }
 
     public static void setAcceleratorSelectionForeground(Color acceleratorSelectionFg) {
-        acceleratorForeground = acceleratorSelectionFg;
+        acceleratorSelectionForeground = acceleratorSelectionFg;
     }
 
     public static void setAcceleratorForeground(Color acceleratorFg) {

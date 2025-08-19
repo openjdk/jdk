@@ -40,10 +40,12 @@ import org.junit.jupiter.api.TestFactory;
 
 public class JUnitAdapter {
 
-    static {
-        if (System.getProperty("test.src") == null) {
-            // Was called by somebody else but not by jtreg
-            System.setProperty("test.src", Path.of("@@openJdkDir@@/test/jdk/tools/jpackage").toString());
+    public static class TestSrcInitializer {
+        static {
+            if (System.getProperty("test.src") == null) {
+                // Was called by somebody else but not by jtreg
+                System.setProperty("test.src", Path.of("@@openJdkDir@@/test/jdk/tools/jpackage").toString());
+            }
         }
     }
 
@@ -82,6 +84,10 @@ public class JUnitAdapter {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    static {
+        new TestSrcInitializer();
     }
 
     private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
