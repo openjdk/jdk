@@ -693,7 +693,7 @@ public final class String
      * The byte array can be exclusively used to construct
      * the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
+    private static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
