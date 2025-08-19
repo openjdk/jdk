@@ -159,23 +159,23 @@ public:
   enum class FailureHint {
     unknown = 0,
     // outside class space/metaspace
-    outside,                          // 1
+    outside,
     // inside but does not meet alignment requirements (esp. for Klass)
-    inside_but_misaligned,            // 2
+    inside_but_misaligned,
     // inside but in the uncommitted part of metaspace
     // (potentially released after class unloading, or never committed in the first place)
-    inside_but_unreadable,            // 3
+    inside_but_unreadable,
     // inside, but marked as a dead chunk
     // (likely released after class unloading)
-    inside_but_dead_chunk,            // 4
+    inside_but_dead_chunk,
     // inside, but marked as a dead block
     // (possibly prematurely returned block, e.g., after class redefinition)
-    inside_but_dead_block,            // 5
+    inside_but_dead_block,
     // inside, but the token is invalid (overwriter, maybe?)
-    inside_but_invalid_token,         // 6
+    inside_but_invalid_token,
     // a klass needs to be encodable but is not (either outside of encoding range,
     // so, not in class space nor in CDS archive range) or misaligned
-    nklass_not_encodable              // 7
+    nklass_not_encodable
   };
 
   // xxx_is_live functions returns true if the pointer given points to
