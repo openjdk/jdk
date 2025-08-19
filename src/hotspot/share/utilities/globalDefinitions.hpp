@@ -151,6 +151,7 @@ class oopDesc;
 #endif
 
 // Format pointers and padded integral values which change size between 32- and 64-bit.
+#define INTX_FORMAT              "%"          PRIdPTR
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
