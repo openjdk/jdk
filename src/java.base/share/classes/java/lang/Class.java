@@ -222,6 +222,7 @@ public final class Class<T> implements java.io.Serializable,
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
+    private static final int JAVA_CLASSNAME_MAX_LEN = 65535;
 
     private static native void registerNatives();
     static {
@@ -467,6 +468,7 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
+        validateClassNameLength(className);
         ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
                                               : ClassLoader.getClassLoader(caller);
         return forName0(className, true, loader, caller);
@@ -549,6 +551,7 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(String name, boolean initialize, ClassLoader loader)
         throws ClassNotFoundException
     {
+        validateClassNameLength(name);
         return forName0(name, initialize, loader, null);
     }
 
@@ -597,7 +600,9 @@ public final class Class<T> implements java.io.Serializable,
      */
     public static Class<?> forName(Module module, String name) {
         Objects.requireNonNull(module);
-        Objects.requireNonNull(name);
+        if (!classNameLengthIsValid(name)) {
+            return null;
+        }
 
         ClassLoader cl = module.getClassLoader();
         if (cl != null) {
@@ -4148,4 +4153,18 @@ public final class Class<T> implements java.io.Serializable,
      int getClassFileAccessFlags() {
          return classFileAccessFlags;
      }
+
+    // Checks whether the class name exceeds the maximum allowed length.
+    private static boolean classNameLengthIsValid(String name) {
+	    Objects.requireNonNull(name);
+	    return name.length() <= JAVA_CLASSNAME_MAX_LEN;
+	}
+
+    // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
+    private static void validateClassNameLength(String name) throws ClassNotFoundException {
+        if (!classNameLengthIsValid(name)) {
+            throw new ClassNotFoundException(
+            "Class name exceeds maximum length of " + JAVA_CLASSNAME_MAX_LEN);
+        }
+    }
 }
