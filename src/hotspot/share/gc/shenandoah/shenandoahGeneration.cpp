@@ -352,6 +352,10 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
 
+  ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::cast(heap)->age_census();
+  log_info(gc, ergo)("Old gen reserved for live objects in aged regions: %zu, total tenurable population: %zu",
+    consumed_by_advance_promotion, census->get_tenurable_bytes());
+
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
   // of old evacuation failure.
@@ -654,6 +658,12 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
                  " consuming: %zu of budgeted: %zu",
                  selected_regions, selected_live, old_consumed, old_promotion_reserve);
   }
+
+  const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
+  const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
+
+  log_info(gc, ergo)("Promotion potential: %zu, tenurable next cycle: %zu, tenurable this cycle: %zu, difference: %zu",
+                     promo_potential, tenurable_next_cycle, tenurable_this_cycle, (tenurable_next_cycle - tenurable_this_cycle));
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->old_generation()->set_promotion_potential(promo_potential);
