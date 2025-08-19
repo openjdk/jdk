@@ -34,9 +34,9 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
 
 /**
- * SSL/(D)TLS Alter description
+ * SSL/(D)TLS Alert description
  */
-enum Alert {
+public enum Alert {
     // Please refer to TLS Alert Registry for the latest (D)TLS Alert values:
     //     https://www.iana.org/assignments/tls-parameters/
     CLOSE_NOTIFY            ((byte)0,   "close_notify", false),
@@ -103,7 +103,7 @@ enum Alert {
         return null;
     }
 
-    static String nameOf(byte id) {
+    public static String nameOf(byte id) {
         for (Alert al : Alert.values()) {
             if (al.id == id) {
                 return al.description;

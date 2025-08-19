@@ -866,7 +866,24 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             c.connectionTerminator().terminate(tc);
 
         });
-        triggerClose("CRYPTO_ERROR", "150", "testtest");
+        triggerClose("CRYPTO_ERROR", "internal_error", "testtest");
+    }
+
+    /**
+     * Server closes the connection with an unknown crypto error
+     */
+    @Test
+    public void testConnectionCloseUnknownCryptoQUIC() throws Exception {
+        server.addHandler((c,s)-> {
+            TerminationCause tc = TerminationCause.forException(
+                    new QuicTransportException("ignored", null, 0,
+                            QuicTransportErrors.CRYPTO_ERROR.from() + 5, null)
+            );
+            tc.peerVisibleReason("testtest");
+            c.connectionTerminator().terminate(tc);
+
+        });
+        triggerClose("CRYPTO_ERROR", "5", "testtest");
     }
 
     /**

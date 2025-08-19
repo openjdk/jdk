@@ -24,6 +24,8 @@
  */
 package jdk.internal.net.quic;
 
+import sun.security.ssl.Alert;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -339,6 +341,8 @@ public enum QuicTransportErrors {
         Optional<QuicTransportErrors> c = Stream.of(values()).filter(e -> e.isFor(code)).findAny();
         if (c.isEmpty()) return "Unknown [0x"+Long.toHexString(code) + "]";
         if (c.get().hasCode()) return c.get().toString();
+        if (c.get() == CRYPTO_ERROR)
+            return c.get() + "|" + Alert.nameOf((byte)code);
         return c.get() + " [0x" + Long.toHexString(code) + "]";
 
     }
