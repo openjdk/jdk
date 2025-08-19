@@ -207,6 +207,12 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Return the most recently computed tenuring threshold
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
+  // Return the total size of the population above the given threshold for the current epoch
+  size_t get_tenurable_bytes(uint tenuring_threshold) const;
+
+  // As above, but use the current tenuring threshold by default
+  size_t get_tenurable_bytes() const { return get_tenurable_bytes(tenuring_threshold()); }
+
   // Reset the epoch, clearing accumulated census history
   // Note: this isn't currently used, but reserved for planned
   // future usage.

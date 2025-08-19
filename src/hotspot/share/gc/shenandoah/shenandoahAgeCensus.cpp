@@ -237,6 +237,18 @@ bool ShenandoahAgeCensus::is_clear_local() {
   return true;
 }
 
+size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) const {
+  assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
+  size_t total = 0;
+  const AgeTable* pv = _global_age_table[_epoch];
+  for (uint i = 0; i < MAX_COHORTS; i++) {
+    if (i>= tenuring_threshold) {
+      total += pv->sizes[i];
+    }
+  }
+  return total;
+}
+
 size_t ShenandoahAgeCensus::get_all_ages(uint snap) {
   assert(snap < MAX_SNAPSHOTS, "Out of bounds");
   size_t pop = 0;
