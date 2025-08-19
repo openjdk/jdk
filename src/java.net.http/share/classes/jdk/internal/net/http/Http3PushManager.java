@@ -94,12 +94,12 @@ public final class Http3PushManager {
     private final AtomicLong minPushId = new AtomicLong();
     // the max history we keep in the promiseMap. We start expunging old
     // entries from the map when the size of the map exceeds this value
-    private final long MAX_PUSH_HISTORY_SIZE = (3*MAX_HTTP3_PUSH_STREAMS)/2;
+    private static final long MAX_PUSH_HISTORY_SIZE = (3*MAX_HTTP3_PUSH_STREAMS)/2;
     // the maxPushId increments, we send on MAX_PUSH_ID frame
     // with a maxPushId incremented by that amount.
     // Ideally should be <= to MAX_PUSH_HISTORY_SIZE, to avoid
     // filling up the history right after the first MAX_PUSH_ID
-    private final long MAX_PUSH_ID_INCREMENTS = MAX_HTTP3_PUSH_STREAMS;
+    private static final long MAX_PUSH_ID_INCREMENTS = MAX_HTTP3_PUSH_STREAMS;
     private final Http3Connection connection;
 
     // number of pending promises
