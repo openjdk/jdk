@@ -82,7 +82,13 @@ TEST_F(ShenandoahAgeCensusTest, find_high_mortality_rate) {
   build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
   EXPECT_EQ(4u, census.tenuring_threshold());
 
-  // mr = 0.1 from 4 -> 5, not above mr threshold of 0.1, stay at 4
+  // mr = 0.1 from 4 -> 5, not above mr threshold of 0.1, stay at 4?
   build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
-  EXPECT_EQ(4u, census.tenuring_threshold());
+  EXPECT_EQ(5u, census.tenuring_threshold());
+
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(5u, census.tenuring_threshold());
+
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(5u, census.tenuring_threshold());
 }
