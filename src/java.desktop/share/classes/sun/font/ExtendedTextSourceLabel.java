@@ -713,8 +713,6 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
     while (gx != gxlimit) {
         // start of new cluster
-        int clusterExtraGlyphs = 0;
-
         minIndex = indices[gx];
         maxIndex = minIndex;
 
@@ -733,11 +731,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
                ((glyphinfo[gp + advx] == 0) ||
                (indices[gx] <= maxIndex))) {
 
-            ++clusterExtraGlyphs; // have an extra glyph in this cluster
             if (DEBUG) {
                 System.err.println("gp=" +gp +" adv=" + glyphinfo[gp + advx] +
-                                   " gx="+ gx+ " i[gx]="+indices[gx] +
-                                   " clusterExtraGlyphs="+clusterExtraGlyphs);
+                                   " gx="+ gx+ " i[gx]="+indices[gx]);
             }
 
             // adjust advance only if new glyph has non-zero advance
