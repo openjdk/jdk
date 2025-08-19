@@ -156,7 +156,7 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop, AgeTable* pv1, AgeTable
     assert(pv1 == nullptr && pv2 == nullptr, "Error, check caller");
     // Seed cohort 0 with population that may have been missed during
     // regular census.
-    _global_age_table[_epoch]->add(0, age0_pop);
+    _global_age_table[_epoch]->add(0u, age0_pop);
 
     // Merge data from local age tables into the global age table for the epoch,
     // clearing the local tables.
@@ -318,7 +318,7 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
     const size_t prev_pop = prev_pv->sizes[i-1];
     const double mr = mortality_rate(prev_pop, cur_pop);
     if (prev_pop > ShenandoahGenerationalTenuringCohortPopulationThreshold &&
-        mr > ShenandoahGenerationalTenuringMortalityRateThreshold) {
+        mr > 0 && ((mr - ShenandoahGenerationalTenuringMortalityRateThreshold) > 0.001)) {
       // This is the oldest cohort that has high mortality.
       // We ignore any cohorts that had a very low population count, or
       // that have a lower mortality rate than we care to age in young; these

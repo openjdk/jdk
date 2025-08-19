@@ -29,22 +29,17 @@ class ShenandoahAgeCensusTest : public ::testing::Test {
 protected:
   static constexpr size_t MinimumPopulationSize = 4*K;
   static void build_mortality_rate_curve(ShenandoahAgeCensus& census, const double mortality_rates[], const size_t cohorts) {
-    constexpr size_t current_population = MinimumPopulationSize * 10;
+    constexpr size_t initial_population = MinimumPopulationSize * 1000;
 
     // Simulate the census for the first epoch with populations that will produce the
     // expected mortality rate when presented with the populations for the subsequent epoch
-    for (size_t i = 1; i <= cohorts; i++) {
-      const size_t previous_population = current_population / (1.0 - mortality_rates[i]);
-      census.add(i, 0, 0, previous_population, 0);
+    size_t population = initial_population;
+    for (size_t i = 0; i < cohorts; i++) {
+      population = population * (1.0 - mortality_rates[i]);
+      census.add(i + 1, 0, 0, population, 0);
     }
 
-    const size_t previous_population = current_population / (1.0 - mortality_rates[0]);
-    census.update_census(previous_population);
-
-    for (size_t i = 1; i <= cohorts; i++) {
-      census.add(i, 0, 0, current_population, 0);
-    }
-    census.update_census(current_population);
+    census.update_census(initial_population);
   }
 };
 
@@ -62,12 +57,34 @@ TEST_F(ShenandoahAgeCensusTest, ignore_small_populations) {
   EXPECT_EQ(1u, census.tenuring_threshold());
 }
 
-TEST_VM_F(ShenandoahAgeCensusTest, find_high_mortality_rate) {
+TEST_F(ShenandoahAgeCensusTest, find_high_mortality_rate) {
   ShenandoahAgeCensus census(4);
   constexpr double mortality_rates[] = {
-    0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2,
-    0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    0.9, 0.7, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
-  build_mortality_rate_curve(census, mortality_rates, sizeof(mortality_rates) / sizeof(double));
+  size_t mortality_rates_count = sizeof(mortality_rates) / sizeof(double);
+
+  // Initial threshold, no data
+  EXPECT_EQ(16u, census.tenuring_threshold());
+
+  // No deaths in previous data, everybody seems to survive, set threshold to 1 (tenure everything).
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(1u, census.tenuring_threshold());
+
+  // mr = 0.7 from 1 -> 2, above mr threshold of 0.1
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
   EXPECT_EQ(2u, census.tenuring_threshold());
+
+  // mr = 0.5 from 2 -> 3, above mr threshold of 0.1
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(3u, census.tenuring_threshold());
+
+  // mr = 0.3 from 3 -> 4, above mr threshold of 0.1
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(4u, census.tenuring_threshold());
+
+  // mr = 0.1 from 4 -> 5, not above mr threshold of 0.1, stay at 4
+  build_mortality_rate_curve(census, mortality_rates, mortality_rates_count);
+  EXPECT_EQ(4u, census.tenuring_threshold());
 }
