@@ -287,9 +287,7 @@ void SharedRuntime::debug_print_value(jint x) {
 }
 
 void SharedRuntime::debug_print_value(jlong x) {
-  tty->print_raw("long ");
-  tty->print_jlong(x);
-  tty->print_cr("");
+  tty->print_cr("long " JLONG_FORMAT, x);
 }
 
 void SharedRuntime::debug_print_value(jfloat x) {
