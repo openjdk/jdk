@@ -31,7 +31,6 @@ import jdk.test.lib.Asserts;
  * @bug 8360192
  * @summary Tests that count bits nodes are handled correctly.
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.c2.gvn.TestCountBitsRange
  */
 public class TestCountBitsRange {
