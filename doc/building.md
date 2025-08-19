@@ -1401,6 +1401,7 @@ Architectures that are known to successfully cross-compile like this are:
 | mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
 | armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
 | ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
+| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
 | m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
 | alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
 | sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
