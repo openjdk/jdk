@@ -397,6 +397,29 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check:
+//   - Alignment:
+//       See VTransform::add_speculative_alignment_check
+//   - Aliasing:
+//       See VTransform::apply_speculative_aliasing_runtime_checks
+//   There is a two staged approach for compilation:
+//   - AutoVectorization Predicate:
+//       See VM flag UseAutoVectorizationPredicate and documentation in predicates.hpp
+//       We speculate that the checks pass, and only compile a vectorized  loop.
+//       We expect the checks to pass in almost all cases, and so we only need
+//       to compile and cache the vectorized loop.
+//       If the predicate ever fails, we deoptimize, and eventually compile
+//       without predicate. This means we will recompile with multiversioning.
+//    - Multiversioning:
+//       See VM Flag LoopMultiversioning and documentaiton in loopUnswitch.cpp
+//       If the predicate is not available or previously failed, then we compile
+//       a vectorized and a scalar loop. If the runtime check passes we take the
+//       vectorized loop, else the scalar loop.
+//       Multiversioning takes more compile time and code cache, but it also
+//       produces fast code for when the runtime check passes (vectorized) and
+//       when it fails (scalar performance).
 void VTransform::add_speculative_check(BoolNode* bol) {
   assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();

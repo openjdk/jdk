@@ -461,6 +461,9 @@ bool SuperWord::transform_loop() {
 //    inserting scalar promotion, vector creation from multiple scalars, and
 //    extraction of scalar values from vectors.
 //
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check. See VTransform::add_speculative_check
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
