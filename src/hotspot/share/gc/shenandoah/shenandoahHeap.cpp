@@ -749,55 +749,10 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
 
   if (req.is_gc_alloc()) {
     assert(wasted_bytes == 0 || req.type() == ShenandoahAllocRequest::_alloc_plab, "Only PLABs have waste");
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    increase_used(generation, actual_bytes + wasted_bytes);
-#endif
   } else {
     assert(req.is_mutator_alloc(), "Expected mutator alloc here");
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    // padding and actual size both count towards allocation counter
-    generation->increase_allocated(actual_bytes + wasted_bytes);
-
-    // Used within generation is actual bytes + alignment padding (wasted bytes)
-    increase_used(generation, actual_bytes + wasted_bytes);
-#endif
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
-      increase_humongous_waste(generation, wasted_bytes);
-    }
-#endif
   }
 }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::increase_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_used(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_used(bytes);
-  }
-}
-#endif
 
 size_t ShenandoahHeap::capacity() const {
   return committed();
@@ -2330,17 +2285,9 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  if (mode()->is_generational()) {
-    young_generation()->reset_bytes_allocated_since_gc_start();
-    old_generation()->reset_bytes_allocated_since_gc_start();
-  }
-  global_generation()->reset_bytes_allocated_since_gc_start();
-#else
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapLocker locker(heap->lock());
   free_set()->reset_bytes_allocated_since_gc_start();
-#endif
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

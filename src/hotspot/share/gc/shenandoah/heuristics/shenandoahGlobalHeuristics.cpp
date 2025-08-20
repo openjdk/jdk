@@ -138,9 +138,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     }
   }
   if (regions_transferred_to_old > 0) {
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    heap->generation_sizer()->force_transfer_to_old(regions_transferred_to_old);
-#endif
     assert(young_evac_reserve > regions_transferred_to_old * region_size_bytes, "young reserve cannot be negative");
     heap->young_generation()->set_evacuation_reserve(young_evac_reserve - regions_transferred_to_old * region_size_bytes);
     heap->old_generation()->set_evacuation_reserve(old_evac_reserve + regions_transferred_to_old * region_size_bytes);

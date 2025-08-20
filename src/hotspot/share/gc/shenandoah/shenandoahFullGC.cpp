@@ -253,21 +253,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase4_compact_objects(worker_slices);
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    result = phase5_epilog();
-#else
     phase5_epilog();
-#endif
   }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  if (heap->mode()->is_generational()) {
-    LogTarget(Info, gc, ergo) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      result.print_on("Full GC", &ls);
-    }
-  }
-#endif
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -999,25 +986,6 @@ public:
     r->set_live_data(live);
     r->reset_alloc_metadata();
   }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  void update_generation_usage() {
-    if (_is_generational) {
-      _heap->old_generation()->establish_usage(_old_regions, _old_usage, _old_humongous_waste);
-      _heap->young_generation()->establish_usage(_young_regions, _young_usage, _young_humongous_waste);
-    } else {
-      assert(_old_regions == 0, "Old regions only expected in generational mode");
-      assert(_old_usage == 0, "Old usage only expected in generational mode");
-      assert(_old_humongous_waste == 0, "Old humongous waste only expected in generational mode");
-    }
-
-    // In generational mode, global usage should be the sum of young and old. This is also true
-    // for non-generational modes except that there are no old regions.
-    _heap->global_generation()->establish_usage(_old_regions + _young_regions,
-                                                _old_usage + _young_usage,
-                                                _old_humongous_waste + _young_humongous_waste);
-  }
-#endif
 };
 
 void ShenandoahFullGC::compact_humongous_objects() {
@@ -1136,11 +1104,7 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   }
 }
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
-#else
 void ShenandoahFullGC::phase5_epilog() {
-#endif
   GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahGenerationalHeap::TransferResult result;
@@ -1158,13 +1122,6 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    post_compact.update_generation_usage();
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::balance_generations_after_gc(heap);
-    }
-#endif
-
     heap->collection_set()->clear();
     size_t young_cset_regions, old_cset_regions;
     size_t first_old, last_old, num_old;
@@ -1190,12 +1147,6 @@ void ShenandoahFullGC::phase5_epilog() {
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
   // abbreviated cycle.
   if (heap->mode()->is_generational()) {
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    result = ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
-#endif
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  return result;
-#endif
 }

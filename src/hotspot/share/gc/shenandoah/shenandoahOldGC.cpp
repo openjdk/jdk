@@ -146,23 +146,5 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
   heap->compute_old_generation_balance(allocation_runway, 0);
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  // Kelvin says the following comment is not correct.  We do rebuild_free following the end of old marking.
-
-  // We do not rebuild_free following increments of old marking because memory has not been reclaimed. However, we may
-  // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
-  ShenandoahGenerationalHeap::TransferResult result;
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    result = heap->balance_generations();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Old Mark", &ls);
-  }
-#endif
   return true;
 }

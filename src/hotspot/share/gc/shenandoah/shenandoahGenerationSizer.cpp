@@ -115,35 +115,6 @@ void ShenandoahGenerationSizer::heap_size_changed(size_t heap_size) {
   recalculate_min_max_young_length(heap_size / ShenandoahHeapRegion::region_size_bytes());
 }
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions) const {
-  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
-
-  if (src->free_unaffiliated_regions() < regions) {
-    // Source does not have enough free regions for this transfer. The caller should have
-    // already capped the transfer based on available unaffiliated regions.
-    return false;
-  }
-
-  if (dst->max_capacity() + bytes_to_transfer > max_size_for(dst)) {
-    // This transfer would cause the destination generation to grow above its configured maximum size.
-    return false;
-  }
-
-  if (src->max_capacity() - bytes_to_transfer < min_size_for(src)) {
-    // This transfer would cause the source generation to shrink below its configured minimum size.
-    return false;
-  }
-
-  src->decrease_capacity(bytes_to_transfer);
-  dst->increase_capacity(bytes_to_transfer);
-  const size_t new_size = dst->max_capacity();
-  log_info(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                     regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
-  return true;
-}
-#endif
-
 size_t ShenandoahGenerationSizer::max_size_for(ShenandoahGeneration* generation) const {
   switch (generation->type()) {
     case YOUNG:
@@ -171,34 +142,6 @@ size_t ShenandoahGenerationSizer::min_size_for(ShenandoahGeneration* generation)
       return 0;
   }
 }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-// Returns true iff transfer is successful
-bool ShenandoahGenerationSizer::transfer_to_old(size_t regions) const {
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  return transfer_regions(heap->young_generation(), heap->old_generation(), regions);
-}
-
-// This is used when promoting humongous or highly utilized regular regions in place.  It is not required in this situation
-// that the transferred regions be unaffiliated.
-void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahGeneration* old_gen = heap->old_generation();
-  ShenandoahGeneration* young_gen = heap->young_generation();
-  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
-
-  young_gen->decrease_capacity(bytes_to_transfer);
-  old_gen->increase_capacity(bytes_to_transfer);
-  const size_t new_size = old_gen->max_capacity();
-  log_info(gc, ergo)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                     regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
-}
-
-bool ShenandoahGenerationSizer::transfer_to_young(size_t regions) const {
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  return transfer_regions(heap->old_generation(), heap->young_generation(), regions);
-}
-#endif
 
 size_t ShenandoahGenerationSizer::min_young_size() const {
   return min_young_regions() * ShenandoahHeapRegion::region_size_bytes();

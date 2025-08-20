@@ -30,9 +30,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
-
-#undef KELVIN_HUMONGOUS_WASTE
-
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
@@ -319,12 +316,6 @@ public:
     
     _used[int(which_partition)] -= bytes;
     _available[int(which_partition)] += bytes;
-#undef KELVIN_USED_PARTITION
-#ifdef KELVIN_USED_PARTITION
-    extern const char* _shenandoah_partition_name(ShenandoahFreeSetPartitionId t);
-    log_info(gc)("ShenRegionPartitions %s decrease_used(%zu) to %zu, available grows to %zu",
-                 _shenandoah_partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
-#endif
   }
 
   inline size_t get_used(ShenandoahFreeSetPartitionId which_partition);
@@ -335,12 +326,6 @@ public:
     assert (which_partition < NumPartitions, "Partition must be valid");
     assert(_humongous_waste[int(which_partition)] >= bytes, "Cannot decrease waste beyond what is there");
     _humongous_waste[int(which_partition)] -= bytes;
-#undef KELVIN_HUMONGOUS_WASTE
-#ifdef KELVIN_HUMONGOUS_WASTE
-    extern const char* _shenandoah_humongous_partition_name(ShenandoahFreeSetPartitionId t);
-    log_info(gc)("FreeSet<%s>::decrease_humongous_waste(%zu) yields: %zu", _shenandoah_humongous_partition_name(which_partition),
-                 bytes, _humongous_waste[int(which_partition)]);
-#endif
   }
 
   inline size_t get_humongous_waste(ShenandoahFreeSetPartitionId which_partition);
@@ -485,17 +470,6 @@ private:
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_young_used = (_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator) +
                          _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
-#undef KELVIN_USED
-#ifdef KELVIN_USED
-    log_info(gc)(" recompute_total_young_used(): %zu from total regions M: %zu, C: %zu, allocatable regions M: %zu, C: %zu, "
-                 "M used: %zu, C used: %zu", _total_young_used,
-                 _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator),
-                 _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Collector),
-                 _partitions.get_region_counts(ShenandoahFreeSetPartitionId::Mutator),
-                 _partitions.get_region_counts(ShenandoahFreeSetPartitionId::Collector),
-                 _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator),
-                 _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
-#endif
   }
 
   // bytes used by old
@@ -504,9 +478,6 @@ private:
     shenandoah_assert_heaplocked();
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_old_used =_partitions.used_by(ShenandoahFreeSetPartitionId::OldCollector);
-#ifdef KELVIN_USED
-    log_info(gc)("   recompute_total_old_used(): %zu", _total_old_used);
-#endif
   }
   
   // bytes used by global
@@ -515,9 +486,6 @@ private:
   inline void recompute_total_global_used() {
     shenandoah_assert_heaplocked();
     _total_global_used = _total_young_used + _total_old_used;
-#ifdef KELVIN_USED
-    log_info(gc)("recompute_total_global_used(): %zu", _total_global_used);
-#endif
   }
 
   inline void recompute_total_used() {
@@ -550,11 +518,6 @@ private:
     _global_unaffiliated_regions =
       _young_unaffiliated_regions + _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
     _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
-#undef KELVIN_AFFILIATED
-#ifdef KELVIN_AFFILIATED
-    log_info(gc)("recompute_affiliated(young: %zu, old: %zu, global: %zu)",
-                 _young_affiliated_regions, _old_affiliated_regions, _global_affiliated_regions);
-#endif
 #ifdef ASSERT
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
@@ -641,15 +604,6 @@ private:
 
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  // Set max_capacity for young and old generations
-  void establish_generation_sizes(size_t young_region_count, size_t old_region_count,
-                                  size_t affiliated_young_regions, size_t affiliated_old_regions,
-                                  size_t young_used_bytes, size_t old_used_bytes);
-
-  void reestablish_generation_sizes(size_t young_region_count, size_t old_region_count);
-#endif
   size_t get_usable_free_words(size_t free_bytes) const;
 
   // log status, assuming lock has already been acquired by the caller.

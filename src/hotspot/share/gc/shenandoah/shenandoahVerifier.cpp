@@ -377,18 +377,9 @@ class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
   size_t _region_size_bytes, _min_free_size;
-#undef KELVIN_VERBOSE
-#ifdef KELVIN_VERBOSE
-  const char* _nm;
-#endif
 public:
-#ifdef KELVIN_VERBOSE
-  ShenandoahCalculateRegionStatsClosure(const char *name) :
-      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0), _nm(name)
-#else
   ShenandoahCalculateRegionStatsClosure() :
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
-#endif
   {
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
@@ -396,12 +387,6 @@ public:
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-#undef KELVIN_STATS
-#ifdef KELVIN_STATS
-    log_info(gc)("%s:ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s r: %zu used: %zu, garbage: %zu, is_trash: %s",
-                 _nm, r->affiliation_name(), r->index(), r->used(), r->garbage(), r->is_trash()? "yes": "no");
-#endif
-
     if (r->is_cset() || r->is_trash()) {
       // Count the entire cset or trashed (formerly cset) region as used
       // Note: Immediate garbage trash regions were never in the cset.
@@ -419,9 +404,6 @@ public:
       } else {
         size_t alloc_capacity = r->free();
         if (alloc_capacity < _min_free_size) {
-#ifdef KELVIN_STATS
-          log_info(gc)("KELVIN!!!!  overwriting alloc_capacity %zu with 0 because too small", alloc_capacity);
-#endif
           // this region has been retired already, count it as entirely consumed
           alloc_capacity = 0;
         }
@@ -434,10 +416,6 @@ public:
     }
     _committed += r->is_committed() ? _region_size_bytes : 0;
     _regions++;
-#ifdef KELVIN_STATS
-    log_info(gc)(" _used: %zu, _garbage: %zu, _committed: %zu, _humongous_waste: %zu, _trashed_regions: %zu, _trashed_used: %zu",
-                 _used, _garbage, _committed, _humongous_waste, _trashed_regions, _trashed_used);
-#endif
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
             r->used(), (r->is_humongous() ? "humongous" : "regular"), r->index(), _used);
   }
@@ -457,21 +435,11 @@ public:
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
  public:
-#ifdef KELVIN_VERBOSE
-  ShenandoahCalculateRegionStatsClosure _old = ShenandoahCalculateRegionStatsClosure("Old");
-  ShenandoahCalculateRegionStatsClosure _young = ShenandoahCalculateRegionStatsClosure("Young");
-  ShenandoahCalculateRegionStatsClosure _global = ShenandoahCalculateRegionStatsClosure("Global");
-#else
   ShenandoahCalculateRegionStatsClosure _old;
   ShenandoahCalculateRegionStatsClosure _young;
   ShenandoahCalculateRegionStatsClosure _global;
-#endif
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-#ifdef KELVIN_STATS
-    log_info(gc)("ShenandoahGenerationalStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
-                 r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
-#endif
     switch (r->affiliation()) {
       case FREE:
         return;
@@ -500,22 +468,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t generation_used = generation->used();
     size_t generation_used_regions = generation->used_regions();
-#ifdef KELVIN_DEPRECATE
-    // We no longer need to adjust for padding.  Probably want to
-    // remove this argument altogether.
-    if (adjust_for_padding && (generation->is_young() || generation->is_global())) {
-      size_t pad = heap->old_generation()->get_pad_for_promote_in_place();
-      generation_used += pad;
-    }
-#endif
 
-#undef KELVIN_EXTRA_NOISE
-#ifdef KELVIN_EXTRA_NOISE
-    log_info(gc)("%s: generation (%s) used size must be consistent: generation-used: %zu, regions-used from stats: %zu, stats.used_after_recycle: %zu, adjust_for_trash: %s",
-                 label, generation->name(), generation_used, stats.used(), stats.used_after_recycle(), adjust_for_trash? "yes": "no");
-    // kelvin once thought he needed to use stats.used_after_recycle()
-    // in the following assertion, but maybe not...
-#endif
     size_t stats_used = adjust_for_trash? stats.used_after_recycle(): stats.used();
     guarantee(stats_used == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used: " PROPERFMT ", regions-used: " PROPERFMT,
@@ -943,11 +896,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   {
     ShenandoahHeapLocker lock(_heap->lock());
 
-#ifdef KELVIN_VERBOSE
-    ShenandoahCalculateRegionStatsClosure cl = ShenandoahCalculateRegionStatsClosure("Global");
-#else
     ShenandoahCalculateRegionStatsClosure cl;
-#endif
     _heap->heap_region_iterate(&cl);
     size_t heap_used;
     if (_heap->mode()->is_generational() && (sizeness == _verify_size_adjusted_for_padding)) {

@@ -289,10 +289,6 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-#undef KELVIN_TRASH
-#ifdef KELVIN_TRASH
-  log_info(gc)("make_trash() on region %zu", index());
-#endif
   shenandoah_assert_heaplocked();
   reset_age();
   switch (state()) {
@@ -315,9 +311,6 @@ void ShenandoahHeapRegion::make_trash() {
 }
 
 void ShenandoahHeapRegion::make_trash_immediate() {
-#ifdef KELVIN_TRASH
-  log_info(gc)("make_trash_immediate() on region %zu", index());
-#endif
   make_trash();
 
   // On this path, we know there are no marked objects in the region,
@@ -911,14 +904,6 @@ void ShenandoahHeapRegion::decrement_humongous_waste() {
   size_t waste_bytes = free();
   if (waste_bytes > 0) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahGeneration* generation = heap->generation_for(affiliation());
-#undef KELVIN_HUMONGOUS_HEAP_REGION
-#ifdef KELVIN_HUMONGOUS_HEAP_REGION
-    log_info(gc)("Decrementing humongous waste by %zu in ShenHeapRegion", waste_bytes);
-#endif
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    heap->decrease_humongous_waste(generation, waste_bytes);
-#endif
     heap->free_set()->decrease_humongous_waste_for_regular_bypass(this, waste_bytes);
   }
 }

@@ -51,14 +51,6 @@ private:
   // given the number of heap regions depending on the kind of sizing algorithm.
   void recalculate_min_max_young_length(size_t heap_region_count);
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  // This will attempt to transfer regions from the `src` generation to `dst` generation.
-  // If the transfer would violate the configured minimum size for the source or the configured
-  // maximum size of the destination, it will not perform the transfer and will return false.
-  // Returns true if the transfer is performed.
-  bool transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions) const;
-#endif
-
 public:
   ShenandoahGenerationSizer();
 
@@ -83,15 +75,6 @@ public:
   size_t max_young_regions() const {
     return _max_desired_young_regions;
   }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  // True if transfer succeeds, else false. See transfer_regions.
-  bool transfer_to_young(size_t regions) const;
-  bool transfer_to_old(size_t regions) const;
-
-  // force transfer is used when we promote humongous objects.  May violate min/max limits on generation sizes
-  void force_transfer_to_old(size_t regions) const;
-#endif
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONSIZER_HPP

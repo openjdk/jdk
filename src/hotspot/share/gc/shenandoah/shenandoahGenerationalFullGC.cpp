@@ -105,35 +105,6 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
   heap->old_generation()->set_parsable(true);
 }
 
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {
-  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(heap);
-  ShenandoahOldGeneration* const old_gen = gen_heap->old_generation();
-
-  size_t old_usage = old_gen->used_regions_size();
-  size_t old_capacity = old_gen->max_capacity();
-
-  assert(old_usage % ShenandoahHeapRegion::region_size_bytes() == 0, "Old usage must align with region size");
-  assert(old_capacity % ShenandoahHeapRegion::region_size_bytes() == 0, "Old capacity must align with region size");
-
-  if (old_capacity > old_usage) {
-    size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->transfer_to_young(excess_old_regions);
-  } else if (old_capacity < old_usage) {
-    size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
-  }
-  log_info(gc, ergo)("FullGC done: young usage: " PROPERFMT ", old usage: " PROPERFMT,
-               PROPERFMTARGS(gen_heap->young_generation()->used()),
-               PROPERFMTARGS(old_gen->used()));
-}
-
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
-  return ShenandoahGenerationalHeap::heap()->balance_generations();
-}
-#endif
-
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
   LogTarget(Debug, gc) lt;
   if (lt.is_enabled()) {

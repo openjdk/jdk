@@ -70,9 +70,6 @@ protected:
   // Usage
 
   volatile size_t _used;
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  volatile size_t _bytes_allocated_since_gc_start;
-#endif
   size_t _max_capacity;
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
@@ -150,31 +147,8 @@ private:
       result = _free_set->global_used();
       break;
     }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-    size_t original_result = Atomic::load(&_used);
-#undef KELVIN_SCAFFOLDING
-#ifdef KELVIN_SCAFFOLDING
-    static int problem_count = 0;
-    if (result != original_result) {
-      if (problem_count++ > 6) {
-        assert(result == original_result, "Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
-               shenandoah_generation_name(_type), result, original_result);
-      } else {
-        log_info(gc)("Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
-                     shenandoah_generation_name(_type), result, original_result);
-      }
-    } else {
-      if (problem_count > 0) {
-        log_info(gc)("Used for generation %s is back in sync: %zu", shenandoah_generation_name(_type), result);
-      }
-      problem_count = 0;
-    }
-#endif
-#endif
     return result;
   }
-
 
   size_t available() const override;
   size_t available_with_reserve() const;
@@ -199,26 +173,6 @@ private:
       return 0;
     }
   }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  void reset_bytes_allocated_since_gc_start();
-  void increase_allocated(size_t bytes);
-
-  // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current
-  // capacity, returning the capacity of the generation following the change.
-  size_t increase_capacity(size_t increment);
-  size_t decrease_capacity(size_t decrement);
-
-  // Set the capacity of the generation, returning the value set
-  size_t set_capacity(size_t byte_size);
-
-  void set_used(size_t affiliated_region_count, size_t byte_count) {
-    Atomic::store(&_used, byte_count);
-    Atomic::store(&_affiliated_region_count, affiliated_region_count);
-#ifdef KELVIN_DEBUG
-    log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), affiliated_region_count, byte_count);
-#endif
-  }
-#endif
   
   void log_status(const char* msg) const;
 
@@ -279,33 +233,6 @@ private:
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  // Return the updated value of affiliated_region_count
-  size_t increment_affiliated_region_count();
-
-  // Return the updated value of affiliated_region_count
-  size_t decrement_affiliated_region_count();
-  // Same as decrement_affiliated_region_count, but w/o the need to hold heap lock before being called.
-  size_t decrement_affiliated_region_count_without_lock();
-
-  // Return the updated value of affiliated_region_count
-  size_t increase_affiliated_region_count(size_t delta);
-
-  // Return the updated value of affiliated_region_count
-  size_t decrease_affiliated_region_count(size_t delta);
-
-  size_t get_affiliated_region_count() const {
-    return Atomic::load(&_affiliated_region_count);
-  }
-
-  void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
-
-  void increase_used(size_t bytes);
-  void decrease_used(size_t bytes);
-
-  void increase_humongous_waste(size_t bytes);
-  void decrease_humongous_waste(size_t bytes);
-#else
   size_t get_affiliated_region_count() const {
     size_t result;
     switch (_type) {
@@ -341,7 +268,6 @@ private:
     }
     return result;
   }
-#endif
   
   size_t get_humongous_waste() const {
     size_t result;
@@ -358,14 +284,6 @@ private:
       result = _free_set->total_humongous_waste();
       break;
     }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-#ifdef KELVIN_SCAFFOLDING
-    if (result != _humongous_waste) {
-      log_info(gc)("Generation %s expects consistency between humongous waste in free set (%zu) and in generation (%zu)",
-                   shenandoah_generation_name(_type), result, _humongous_waste);
-    }
-#endif
-#endif
     return result;
   }
 

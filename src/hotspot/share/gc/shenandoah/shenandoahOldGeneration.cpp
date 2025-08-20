@@ -725,12 +725,6 @@ void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, boo
   // do this in batch, in a background GC thread than to try to carefully dirty only cards
   // that hold interesting pointers right now.
   _card_scan->mark_range_as_dirty(obj, words);
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  if (promotion) {
-    // This evacuation was a promotion, track this as allocation against old gen
-    increase_allocated(words * HeapWordSize);
-  }
-#endif
 }
 
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {

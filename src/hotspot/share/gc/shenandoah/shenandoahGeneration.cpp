@@ -148,20 +148,6 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return Atomic::load(&_bytes_allocated_since_gc_start);
-}
-
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
-}
-
-void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
-}
-#endif
-
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
   shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;
@@ -475,31 +461,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     size_t excess_regions = excess_old / region_size_bytes;
     regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
   }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  if (regions_to_xfer > 0) {
-    // kelvin is here: how does this affect freeset when transfer_to_young is deprecated?
-    // we are adjusting evacuation budget after choosing the collection set.
-
-    // momentarily, we will rebuild the free se.
-
-    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
-    assert(excess_old >= regions_to_xfer * region_size_bytes,
-           "Cannot transfer (%zu, %zu) more than excess old (%zu)",
-           regions_to_xfer, region_size_bytes, excess_old);
-    excess_old -= regions_to_xfer * region_size_bytes;
-    log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
-                       result? "Successfully": "Unsuccessfully", regions_to_xfer);
-  }
-#else
-  // kelvin conjecture: we do not need to transfer regions.  we just need to adjust excess_old.  that will
-  // cause regions to transfer after we rebuild the freeset.
   if (regions_to_xfer > 0) {
     excess_old -= regions_to_xfer * region_size_bytes;
     log_debug(gc, ergo)("Before start of evacuation, total_promotion reserve is young_advance_promoted_reserve: %zu "
                         "plus excess: old: %zu", young_advance_promoted_reserve_used, excess_old);
   }
-#endif
 
   // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
   // promotions than fit in reserved memory, they will be deferred until a future GC pass.
@@ -648,10 +614,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
             // This region was already not in the Collector or Mutator set, so no need to remove it.
             assert(free_set->membership(i) == ShenandoahFreeSetPartitionId::NotFree, "sanity");
           }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-          // Even when we do not fill the remnant, we count the remnant as used
-          young_gen->increase_used(remnant_bytes);
-#endif
         }
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
@@ -892,9 +854,6 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
   _used(0),
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  _bytes_allocated_since_gc_start(0),
-#endif
   _max_capacity(max_capacity),
   _free_set(nullptr),
   _heuristics(nullptr)
@@ -947,117 +906,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
-#ifdef KELVIN_OUT_WITH_THE_OLD
-size_t ShenandoahGeneration::increment_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
-  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
-  // a coherent value.
-  size_t result = Atomic::add(&_affiliated_region_count, (size_t) 1);
-#undef KELVIN_AFFILIATED
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: increment_affiliated_region_count() by 1: %zu", name(), result);
-#endif
-  return result;
-}
-
-size_t ShenandoahGeneration::decrement_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
-  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
-  // a coherent value.
-  auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used() <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-         "used + humongous cannot exceed regions");
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: decrement_affiliated_region_count() by 1: %zu", name(), affiliated_region_count);
-#endif
-  return affiliated_region_count;
-}
-
-size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
-  size_t result = Atomic::sub(&_affiliated_region_count, (size_t) 1);
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: decrement_affiliated_region_count_without_lock() by 1: %zu", name(), result);
-#endif
-  return result;
-}
-
-size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  size_t result = Atomic::add(&_affiliated_region_count, delta);
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: increase_affiliated_region_count() by %zu: %zu", name(), delta, result);
-#endif
-  return result;
-}
-
-size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  assert(Atomic::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
-
-  auto const affiliated_region_count = Atomic::sub(&_affiliated_region_count, delta);
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-         "used + humongous cannot exceed regions");
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: decrease_affiliated_region_count() by %zu: %zu", name(), delta, affiliated_region_count);
-#endif
-  return affiliated_region_count;
-}
-
-void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  Atomic::store(&_affiliated_region_count, num_regions);
-  Atomic::store(&_used, num_bytes);
-  _humongous_waste = humongous_waste;
-#ifdef KELVIN_AFFILIATED
-  log_info(gc)("%s: establish_usage(affiliated regions: %zu bytes: %zu, humongous_waste: %zu)",
-               name(), num_regions, num_bytes, humongous_waste);
-#endif
-}
-
-void ShenandoahGeneration::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes);
-#undef KELVIN_MONITOR_USED
-#ifdef KELVIN_MONITOR_USED
-  log_info(gc)("Generation %s increase_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
-#endif
-}
-
-void ShenandoahGeneration::decrease_used(size_t bytes) {
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used >= bytes), "cannot reduce bytes used by generation below zero");
-  Atomic::sub(&_used, bytes);
-#ifdef KELVIN_MONITOR_USED
-  log_info(gc)("Generation %s decrease_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
-#endif
-}
-
-void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
-  if (bytes > 0) {
-    Atomic::add(&_humongous_waste, bytes);
-#ifdef KELVIN_MONITOR_HUMONGOUS
-    log_info(gc)("Generation %s humongous waste increased by %zu to %zu",
-                 shenandoah_generation_name(_type), bytes, _humongous_waste);
-#endif
-  }
-}
-
-void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
-  if (bytes > 0) {
-    assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
-           "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
-    Atomic::sub(&_humongous_waste, bytes);
-#ifdef KELVIN_MONITOR_HUMONGOUS
-    log_info(gc)("Generation %s humongous waste decreased by %zu to %zu",
-                 shenandoah_generation_name(_type), bytes, _humongous_waste);
-#endif
-  }
-}
-#endif
-
 size_t ShenandoahGeneration::used_regions() const {
   size_t result;
   switch (_type) {
@@ -1073,26 +921,6 @@ size_t ShenandoahGeneration::used_regions() const {
       result = _free_set->global_affiliated_regions();
       break;
   }
-#ifdef KELVIN_OUT_WITH_THE_OLD
-  size_t original_result = Atomic::load(&_affiliated_region_count);
-#ifdef KELVIN_SCAFFOLDING
-  static int problem_count = 0;
-  if (result != original_result) {
-    log_info(gc)("Problem with used regions for generation %s, freeset thinks %zu, generation thinks: %zu",
-                 shenandoah_generation_name(_type), result, original_result);
-    if (problem_count++ > 8) {
-      assert(result == original_result, "Out of sync in used_regions for generation %s, freeset: %zu, generation: %zu",
-             shenandoah_generation_name(_type), result, original_result);
-    }
-  } else {
-    if (problem_count > 0) {
-      problem_count = 0;
-      log_info(gc)("used regions for generation %s is back in sync: %zu",
-                   shenandoah_generation_name(_type), result);
-    }
-  }
-#endif
-#endif
   return result;
 }
 
@@ -1111,11 +939,6 @@ size_t ShenandoahGeneration::max_capacity() const {
     total_regions = _free_set->total_global_regions();
     break;
   }
-#undef KELVIN_AVAILABLE
-#ifdef KELVIN_AVAILABLE
-  log_info(gc)("max_capacity(_type: %d) returns %zu (%zu * %zu)", _type, total_regions * ShenandoahHeapRegion::region_size_bytes(),
-               total_regions, ShenandoahHeapRegion::region_size_bytes());
-#endif
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
@@ -1134,10 +957,6 @@ size_t ShenandoahGeneration::free_unaffiliated_regions() const {
     free_regions = _free_set->global_unaffiliated_regions();
     break;
   }
-#undef KELVIN_UNAFFILIATED
-#ifdef KELVIN_UNAFFILIATED
-  log_info(gc)("free_unaffiliated_regions(_type == %d) returns %zu", _type, free_regions);
-#endif
   return free_regions;
 }
 
@@ -1174,60 +993,8 @@ size_t ShenandoahGeneration::soft_available() const {
 
 size_t ShenandoahGeneration::available(size_t capacity) const {
   size_t in_use = used();
-#ifdef KELVIN_AVAILABLE
-  log_info(gc)("ShenGen::available(%zu), with in_use: %zu", capacity, in_use);
-#endif
   return in_use > capacity ? 0 : capacity - in_use;
 }
-
-#ifdef KELVIN_OUT_WITH_THE_OLD
-size_t ShenandoahGeneration::increase_capacity(size_t increment) {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  // We do not enforce that new capacity >= heap->max_size_for(this).  The maximum generation size is treated as a rule of thumb
-  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
-  // in place.
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_max_capacity + increment <= ShenandoahHeap::heap()->max_capacity()), "Generation cannot be larger than heap size");
-  assert(increment % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
-  _max_capacity += increment;
-
-  // This detects arithmetic wraparound on _used
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() >= used()),
-         "Affiliated regions must hold more than what is currently used");
-  return _max_capacity;
-}
-
-size_t ShenandoahGeneration::set_capacity(size_t byte_size) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  _max_capacity = byte_size;
-  return _max_capacity;
-}
-
-size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  // We do not enforce that new capacity >= heap->min_size_for(this).  The minimum generation size is treated as a rule of thumb
-  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
-  // in place.
-  assert(decrement % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
-  assert(_max_capacity >= decrement, "Generation capacity cannot be negative");
-
-  _max_capacity -= decrement;
-
-  // This detects arithmetic wraparound on _used
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() >= used()),
-         "Affiliated regions must hold more than what is currently used");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used <= _max_capacity), "Cannot use more than capacity");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() <= _max_capacity),
-         "Cannot use more than capacity");
-  return _max_capacity;
-}
-#endif
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent();
