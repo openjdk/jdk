@@ -31,7 +31,8 @@
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
- *      -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
+ *      -Djdk.tls.useExtendedMasterSecret=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS12
  * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS12
  */
@@ -41,13 +42,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -101,8 +96,9 @@ public final class FipsModeTLS12 extends SecmodTest {
             // Test against JCE
             testTlsAuthenticationCodeGeneration();
 
-            // Self-integrity test (complete TLS 1.2 communication)
-            new testTLS12SunPKCS11Communication().run();
+            // Self-integrity test (complete TLS communication)
+            testTLS12SunPKCS11Communication.initSslContext();
+            testTLS12SunPKCS11Communication.run();
 
             System.out.println("Test PASS - OK");
         } else {
@@ -272,12 +268,14 @@ public final class FipsModeTLS12 extends SecmodTest {
     private static class testTLS12SunPKCS11Communication {
         public static void run() throws Exception {
             SSLEngine[][] enginesToTest = getSSLEnginesToTest();
-
+            boolean firstSession = true;
             for (SSLEngine[] engineToTest : enginesToTest) {
 
                 SSLEngine clientSSLEngine = engineToTest[0];
                 SSLEngine serverSSLEngine = engineToTest[1];
-
+                // Check that session resumption works
+                clientSSLEngine.setEnableSessionCreation(firstSession);
+                firstSession = false;
                 // SSLEngine code based on RedhandshakeFinished.java
 
                 boolean dataDone = false;
@@ -400,14 +398,6 @@ public final class FipsModeTLS12 extends SecmodTest {
         static private SSLEngine createSSLEngine(boolean client)
                 throws Exception {
             SSLEngine ssle;
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
-            tmf.init(ts);
-
-            SSLContext sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
-            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
@@ -430,6 +420,18 @@ public final class FipsModeTLS12 extends SecmodTest {
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
+        }
+
+        private static SSLContext sslCtx;
+        private static void initSslContext() throws NoSuchAlgorithmException, NoSuchProviderException, KeyStoreException, UnrecoverableKeyException, KeyManagementException {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
+            kmf.init(ks, passphrase);
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+            tmf.init(ts);
+
+            sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
+            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         }
     }
 
