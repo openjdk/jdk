@@ -6421,7 +6421,6 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails
 void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, tmp1, tmp2, tmp3, t0);
 
   Label push;
@@ -6481,7 +6480,6 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - tmp1, tmp2, tmp3: temporary registers
 // - slow: branched to if unlocking fails
 void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT

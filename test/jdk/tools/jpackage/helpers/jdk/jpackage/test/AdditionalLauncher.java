@@ -54,6 +54,10 @@ public final class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
+    public String name() {
+        return name;
+    }
+
     public AdditionalLauncher withVerifyActions(Action... actions) {
         verifyActions.addAll(List.of(actions));
         return this;
