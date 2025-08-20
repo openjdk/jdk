@@ -27,7 +27,6 @@ package javax.imageio.stream;
 
 import java.io.InputStream;
 import java.io.IOException;
-import com.sun.imageio.stream.StreamFinalizer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
@@ -50,7 +49,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     private MemoryCache cache = new MemoryCache();
 
     /** The referent to be registered with the Disposer. */
-    private final Object disposerReferent;
+    private final Object disposerReferent = new Object();
 
     /** The DisposerRecord that resets the underlying MemoryCache. */
     private final DisposerRecord disposerRecord;
@@ -71,12 +70,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
         this.stream = stream;
 
         disposerRecord = new StreamDisposerRecord(cache);
-        if (getClass() == MemoryCacheImageInputStream.class) {
-            disposerReferent = new Object();
-            Disposer.addRecord(disposerReferent, disposerRecord);
-        } else {
-            disposerReferent = new StreamFinalizer(this);
-        }
+        Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
     public int read() throws IOException {
@@ -174,21 +168,6 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
         disposerRecord.dispose(); // this resets the MemoryCache
         stream = null;
         cache = null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer: for performance reasons we instead use the
-        // Disposer mechanism for ensuring that the underlying
-        // MemoryCache is reset prior to garbage collection
     }
 
     private static class StreamDisposerRecord implements DisposerRecord {
