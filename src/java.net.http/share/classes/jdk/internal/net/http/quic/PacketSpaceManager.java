@@ -319,7 +319,7 @@ public sealed class PacketSpaceManager implements PacketSpace
      * - new data is available for sending, and we are not blocked
      * - need to send ack without delay
      */
-    public final class PacketTransmissionTask implements QuicTimedEvent {
+    final class PacketTransmissionTask implements QuicTimedEvent {
         private final SequentialScheduler handleScheduler =
                 SequentialScheduler.lockingScheduler(this::handleLoop);
         private final long id = QuicTimerQueue.newEventId();

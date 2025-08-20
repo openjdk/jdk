@@ -41,7 +41,7 @@ import jdk.internal.net.http.common.Deadline;
  * after it has been handled, or if it is no longer registered in any
  * queue.
  */
-public sealed interface QuicTimedEvent
+sealed interface QuicTimedEvent
         permits PacketSpaceManager.PacketTransmissionTask,
                 QuicTimerQueue.Marker,
                 QuicEndpoint.ClosedConnection,

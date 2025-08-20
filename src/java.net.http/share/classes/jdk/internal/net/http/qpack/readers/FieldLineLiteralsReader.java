@@ -37,7 +37,7 @@ import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.DynamicTable.ENTRY_SIZE;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
-public final class FieldLineLiteralsReader extends FieldLineReader {
+final class FieldLineLiteralsReader extends FieldLineReader {
     private boolean hideIntermediary;
     private boolean huffmanName, huffmanValue;
     private final StringBuilder name, value;

@@ -85,7 +85,7 @@ import static jdk.internal.net.http.http3.ConnectionSettings.UNLIMITED_MAX_FIELD
 /**
  * This class represents an HTTP/3 Request/Response stream.
  */
-public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
+final class Http3ExchangeImpl<T> extends Http3Stream<T> {
 
     private static final String COOKIE_HEADER = "Cookie";
     private final Logger debug = Utils.getDebugLogger(this::dbgTag);

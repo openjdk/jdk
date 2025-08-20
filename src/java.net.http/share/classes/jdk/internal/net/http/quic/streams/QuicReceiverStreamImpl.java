@@ -51,7 +51,7 @@ import static jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStr
 /**
  * A class that implements the receiver part of a quic stream.
  */
-public final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicReceiverStream {
+final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicReceiverStream {
 
     private static final int MAX_SMALL_FRAGMENTS =
             Utils.getIntegerProperty("jdk.httpclient.quic.maxSmallFragments", 100);

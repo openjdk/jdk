@@ -99,6 +99,12 @@ public class AckElicitingTest {
         public HandshakeState getHandshakeState() {
             throw new AssertionError("should not come here!");
         }
+
+        @Override
+        public boolean isTLSHandshakeComplete() {
+            return true;
+        }
+
         @Override
         public KeySpace getCurrentSendKeySpace() {
             throw new AssertionError("should not come here!");

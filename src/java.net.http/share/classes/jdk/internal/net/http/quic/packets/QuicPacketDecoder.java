@@ -1481,7 +1481,7 @@ public class QuicPacketDecoder {
      * advances the position on the buffer it is reading.
      *
      */
-    public class PacketReader {
+    class PacketReader {
         private static final int PACKET_NUMBER_MASK = 0x03;
         final ByteBuffer buffer;
         final int offset;

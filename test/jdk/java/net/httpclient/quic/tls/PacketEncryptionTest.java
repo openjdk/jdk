@@ -352,6 +352,8 @@ public class PacketEncryptionTest {
     @Test
     public void testDecryptChaCha() throws Exception {
         QuicTLSEngineImpl serverEngine = (QuicTLSEngineImpl) getQuicV1Engine(SSLContext.getDefault(), false);
+        // mark the TLS handshake as FINISHED
+        QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
         QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 
@@ -372,6 +374,8 @@ public class PacketEncryptionTest {
     public void testDecryptChaChaTwice() throws Exception {
         // verify that decrypting the same packet twice does not throw
         QuicTLSEngineImpl serverEngine = (QuicTLSEngineImpl) getQuicV1Engine(SSLContext.getDefault(), false);
+        // mark the TLS handshake as FINISHED
+        QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
         QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 
@@ -396,6 +400,8 @@ public class PacketEncryptionTest {
     @Test(expectedExceptions = AEADBadTagException.class)
     public void testDecryptChaChaBadTag() throws Exception {
         QuicTLSEngineImpl serverEngine = (QuicTLSEngineImpl) getQuicV1Engine(SSLContext.getDefault(), false);
+        // mark the TLS handshake as FINISHED
+        QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
         QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 

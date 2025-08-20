@@ -1475,7 +1475,7 @@ public class QuicPacketEncoder {
      * advances the position on the buffer it is writing.
      *
      */
-    public static class PacketWriter {
+    static class PacketWriter {
         final ByteBuffer buffer;
         final int offset;
         final int initialLimit;

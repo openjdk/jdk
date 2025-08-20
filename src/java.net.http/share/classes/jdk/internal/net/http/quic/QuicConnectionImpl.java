@@ -106,7 +106,6 @@ import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder.OutgoingQuicPacket;
 import jdk.internal.net.http.quic.packets.RetryPacket;
 import jdk.internal.net.http.quic.packets.VersionNegotiationPacket;
-import jdk.internal.net.http.quic.streams.AbstractQuicStream;
 import jdk.internal.net.http.quic.streams.CryptoWriterQueue;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicBidiStreamImpl;
@@ -150,8 +149,6 @@ import static jdk.internal.net.http.quic.frames.QuicFrame.MAX_VL_INTEGER;
 import static jdk.internal.net.http.quic.packets.QuicPacketNumbers.computePacketNumberLength;
 import static jdk.internal.net.http.quic.streams.QuicStreams.isUnidirectional;
 import static jdk.internal.net.http.quic.streams.QuicStreams.streamType;
-import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED;
-import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.NEED_RECV_HANDSHAKE_DONE;
 import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
 
 /**
@@ -1998,7 +1995,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param streamId the stream ID
      * @return the stream identified by the given {@code streamId}, or {@code null}.
      */
-    protected AbstractQuicStream findStream(long streamId) {
+    protected QuicStream findStream(long streamId) {
         return streams.findStream(streamId);
     }
 
@@ -2020,7 +2017,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * stream ID, or null
      * @throws QuicTransportException if the streamID is higher than allowed
      */
-    protected AbstractQuicStream openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
+    protected QuicStream openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
         assert !isLocalStream(streamId);
         return streams.getOrCreateRemoteStream(streamId, frameType);
     }
@@ -3275,7 +3272,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("Handshake state is now: %s", handshakeState);
             }
             if (flow.localHandshake.remaining() == 0
-                    && handshakeFinished(handshakeState)
+                    && quicTLSEngine.isTLSHandshakeComplete()
                     && !flow.handshakeCF.isDone()) {
                 if (stateHandle.markHandshakeComplete()) {
                     if (debug.on()) {
@@ -3295,12 +3292,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
         return true;
     }
-
-    private static boolean handshakeFinished(HandshakeState handshakeState) {
-        return handshakeState == NEED_RECV_HANDSHAKE_DONE
-                || handshakeState == HANDSHAKE_CONFIRMED;
-    }
-
 
     public QuicTransportParameters peerTransportParameters() {
         return peerTransportParameters;

@@ -436,7 +436,7 @@ public final class QuicConnectionStreams {
      *         a remote stream.
      * @throws QuicTransportException if the streamID is higher than allowed
      */
-    public AbstractQuicStream getOrCreateRemoteStream(long streamId, long frameType)
+    public QuicStream getOrCreateRemoteStream(long streamId, long frameType)
             throws QuicTransportException {
         final int streamType = streamType(streamId);
         if ((streamId & SRV_MASK) == localFlag) {
@@ -486,7 +486,7 @@ public final class QuicConnectionStreams {
      * @return the stream with the given stream ID if found, {@code null}
      * otherwise.
      */
-    public AbstractQuicStream findStream(long streamId) {
+    public QuicStream findStream(long streamId) {
         return streams.get(streamId);
     }
 

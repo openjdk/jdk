@@ -45,7 +45,7 @@ import jdk.internal.net.http.quic.streams.QuicSenderStream.SendingStreamState;
  * wake up the producer and consumer respectively, when data can be polled or
  * submitted from the queue.
  */
-public abstract class StreamWriterQueue {
+abstract class StreamWriterQueue {
     /**
      * The amount of data that a StreamWriterQueue is willing to buffer.
      * The queue will buffer excess data, but will not wake up the producer

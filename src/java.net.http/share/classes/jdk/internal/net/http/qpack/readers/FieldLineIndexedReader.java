@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.lang.String.format;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
-public final class FieldLineIndexedReader extends FieldLineReader {
+final class FieldLineIndexedReader extends FieldLineReader {
     private final IntegerReader integerReader;
     private final QPACK.Logger logger;
 
