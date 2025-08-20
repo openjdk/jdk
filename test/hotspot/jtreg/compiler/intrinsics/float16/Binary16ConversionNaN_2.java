@@ -141,7 +141,7 @@ public class Binary16ConversionNaN_2 {
     }
 
     private static float testRoundTrip(float f) {
-        short s =  Float.floatToFloat16(f);
+        short s = Float.floatToFloat16(f);
         return Float.float16ToFloat(s);
     }
 
