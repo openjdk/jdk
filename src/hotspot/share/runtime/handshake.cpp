@@ -202,7 +202,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   }
 
   if (target != nullptr) {
-    VMError::set_handshake_timed_out_thread(p2i(target));
+    VMError::set_handshake_timed_out_thread(target);
     if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
       // Give target a chance to report the error and terminate the VM.
       os::naked_sleep(3000);
