@@ -675,7 +675,7 @@ public:
   }
   void dec_init_deps_left(KlassTrainingData* ktd);
   int init_deps_left() const {
-    return Atomic::load(&_init_deps_left);
+    return Atomic::load_acquire(&_init_deps_left);
   }
   uint compute_init_deps_left(bool count_initialized = false);
 
@@ -707,7 +707,7 @@ public:
     return (int)align_metadata_size(align_up(sizeof(CompileTrainingData), BytesPerWord)/BytesPerWord);
   }
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
     return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
@@ -828,7 +828,7 @@ class MethodTrainingData : public TrainingData {
     return "{ method training data }";
   };
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static MethodTrainingData* allocate(Method* m, KlassTrainingData* ktd) {
     return TrainingData::allocate<MethodTrainingData>(m, ktd);

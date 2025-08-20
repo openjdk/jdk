@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -514,6 +515,12 @@ void before_exit(JavaThread* thread, bool halt) {
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
+
+  if (AOTVerifyTrainingData) {
+    EXCEPTION_MARK;
+    CompilationPolicy::flush_replay_training_at_init(THREAD);
+    TrainingData::verify();
+  }
 
   print_statistics();
 

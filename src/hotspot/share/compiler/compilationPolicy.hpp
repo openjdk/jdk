@@ -46,6 +46,7 @@ class Queue {
 
   QueueNode* _head;
   QueueNode* _tail;
+  int _processing;
 
   void push_unlocked(T* value) {
     QueueNode* n = new QueueNode(value, nullptr);
@@ -68,12 +69,17 @@ class Queue {
     T* value = nullptr;
     if (n != nullptr) {
       value = n->value();
+      ++_processing;
       delete n;
     }
     return value;
   }
+  void processing_done_unlocked() {
+    precond(_processing > 0);
+    --_processing;
+  }
 public:
-  Queue() : _head(nullptr), _tail(nullptr) { }
+  Queue() : _head(nullptr), _tail(nullptr), _processing(0) { }
   void push(T* value, Monitor* lock, TRAPS) {
     MonitorLocker locker(THREAD, lock);
     push_unlocked(value);
@@ -81,6 +87,7 @@ public:
   }
 
   bool is_empty_unlocked() const { return _head == nullptr; }
+  bool is_processing_unlocked() const { return _processing > 0; }
 
   T* pop(Monitor* lock, TRAPS) {
     MonitorLocker locker(THREAD, lock);
@@ -93,11 +100,14 @@ public:
 
   T* try_pop(Monitor* lock, TRAPS) {
     MonitorLocker locker(THREAD, lock);
-    T* value = nullptr;
-    if (!is_empty_unlocked()) {
-      value = pop_unlocked();
-    }
+    T* value = pop_unlocked();
     return value;
+  }
+
+  void processing_done(Monitor* lock, TRAPS) {
+    MonitorLocker locker(THREAD, lock);
+    processing_done_unlocked();
+    locker.notify_all();
   }
 
   void print_on(outputStream* st);
@@ -352,6 +362,7 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
+  static void flush_replay_training_at_init(TRAPS);
   static void replay_training_at_init(InstanceKlass* klass, TRAPS);
   static void replay_training_at_init_loop(TRAPS);
 

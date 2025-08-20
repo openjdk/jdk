@@ -138,6 +138,13 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
+ void CompilationPolicy::flush_replay_training_at_init(TRAPS) {
+    MonitorLocker locker(THREAD, TrainingReplayQueue_lock);
+    while (!_training_replay_queue.is_empty_unlocked() || _training_replay_queue.is_processing_unlocked()) {
+      locker.wait(); // let the replay training thread drain the queue
+    }
+ }
+
 void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS) {
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
@@ -186,6 +193,7 @@ void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
     InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
     if (ik != nullptr) {
       replay_training_at_init_impl(ik, THREAD);
+      _training_replay_queue.processing_done(TrainingReplayQueue_lock, THREAD);
     }
   }
 }
