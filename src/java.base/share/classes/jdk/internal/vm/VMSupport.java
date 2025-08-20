@@ -186,31 +186,58 @@ public class VMSupport {
     }
 
     /**
-     * Parses {@code rawAnnotations} into a list of {@link Annotation}s (isTypeAnnotations == false)
-     * or {@link TypeAnnotation}s (isTypeAnnotations == true) and then
-     * serializes them to a byte array with {@link #encodeAnnotations(Collection)} or
-     * {@link #encodeTypeAnnotations(TypeAnnotation[])}.
+     * Denotes a byte array that is parsed into a {@code Annotations[]}.
+     */
+    public static final int DECLARED_ANNOTATIONS = 0;
+
+    /**
+     * Denotes a byte array that is parsed into a {@code Annotations[][]}.
+     */
+    public static final int PARAMETER_ANNOTATIONS = 1;
+
+    /**
+     * Denotes a byte array that is parsed into a {@code TypeAnnotations[]}.
+     */
+    public static final int TYPE_ANNOTATIONS = 2;
+
+    /**
+     * Parses {@code rawAnnotations} according to {@code category} and returns the parse
+     * result encoded as a byte array.
+     * <pre>
+     *     category              | parse result type   | decoding method
+     *     ----------------------|--------------------|------------------------------------------
+     *     DECLARED_ANNOTATIONS  | Annotation[]        | {@link #decodeAnnotations(byte[], AnnotationDecoder)}
+     *     PARAMETER_ANNOTATIONS | Annotation[][]      | {@link #decodeAnnotations(byte[], AnnotationDecoder)}
+     *     TYPE_ANNOTATIONS      | TypeAnnotation[]    | {@link #decodeTypeAnnotations(byte[], AnnotationDecoder)}
+     * </pre>
+     *
+     * @param category {@link #DECLARED_ANNOTATIONS}, {@link #PARAMETER_ANNOTATIONS} or {@link #TYPE_ANNOTATIONS}
      */
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
-                                           boolean isTypeAnnotations,
+                                           int category,
                                            Class<?> declaringClass,
                                            ConstantPool cp,
                                            Class<? extends Annotation>[] selectAnnotationClasses) {
-        if (!isTypeAnnotations && selectAnnotationClasses != null) {
-            if (selectAnnotationClasses.length == 0) {
-                throw new IllegalArgumentException("annotation class selection must be null or non-empty");
-            }
-            for (Class<?> c : selectAnnotationClasses) {
-                if (!c.isAnnotation()) {
-                    throw new IllegalArgumentException(c + " is not an annotation interface");
+        return switch (category) {
+            case DECLARED_ANNOTATIONS -> {
+                if (selectAnnotationClasses != null) {
+                    if (selectAnnotationClasses.length == 0) {
+                        throw new IllegalArgumentException("annotation class selection must be null or non-empty");
+                    }
+                    for (Class<?> c : selectAnnotationClasses) {
+                        if (!c.isAnnotation()) {
+                            throw new IllegalArgumentException(c + " is not an annotation interface");
+                        }
+                    }
                 }
+                yield encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
             }
-        }
-        if (isTypeAnnotations) {
-            return encodeTypeAnnotations(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, declaringClass));
-        } else {
-            return encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
-        }
+            case PARAMETER_ANNOTATIONS ->
+                    encodeParameterAnnotations(AnnotationParser.parseParameterAnnotations(rawAnnotations, cp, declaringClass));
+            case TYPE_ANNOTATIONS ->
+                    encodeTypeAnnotations(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, declaringClass));
+            default -> throw new IllegalArgumentException("illegal category: " + category);
+        };
     }
 
     /**
@@ -223,6 +250,27 @@ public class VMSupport {
                 writeLength(dos, annotations.size());
                 for (Annotation a : annotations) {
                     encodeAnnotation(dos, a);
+                }
+            }
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Encodes parameter annotations to a byte array. The byte array can be decoded with {@link #decodeParameterAnnotations(byte[], AnnotationDecoder)}.
+     */
+    public static byte[] encodeParameterAnnotations(Annotation[][] parameterAnnotations) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+            try (DataOutputStream dos = new DataOutputStream(baos)) {
+                writeLength(dos, parameterAnnotations.length);
+                for (Annotation[] annotations : parameterAnnotations) {
+                    writeLength(dos, annotations.length);
+                    for (Annotation a : annotations) {
+                        encodeAnnotation(dos, a);
+                    }
                 }
             }
             return baos.toByteArray();
@@ -433,10 +481,9 @@ public class VMSupport {
         dos.writeInt(ti.getCount());
         dos.writeInt(ti.getSecondaryIndex());
         TypeAnnotation.LocationInfo li = ta.getLocationInfo();
-        int depth = li.getDepth();
-        dos.writeInt(depth);
-        for (int i = 0; i < depth; i++) {
-            TypeAnnotation.LocationInfo.Location loc = li.getLocationAt(i);
+        List<TypeAnnotation.LocationInfo.Location> locs = li.getLocations();
+        dos.writeInt(locs.size());
+        for (TypeAnnotation.LocationInfo.Location loc : locs) {
             dos.write(loc.tag);
             dos.writeShort(loc.index);
         }
@@ -528,12 +575,40 @@ public class VMSupport {
         }
     }
 
+    /**
+     * Decodes parameter annotations serialized in {@code encoded} to objects.
+     *
+     * @param <T> type to which a type name is resolved
+     * @param <A> type of the object representing a decoded annotation
+     * @param <E> type of the object representing a decoded enum constant
+     * @param <MT> type of the object representing a missing type
+     * @param <ETM> type of the object representing a decoded element type mismatch
+     * @return an immutable list of immutable lists of {@code A} objects
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, A, TA, E, EA, MT, ETM> List<List<A>> decodeParameterAnnotations(byte[] encoded, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
+            DataInputStream dis = new DataInputStream(bais);
+            return (List<List<A>>) readArray(dis, () -> decodeAnnotations(dis, decoder));
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+    @SuppressWarnings({"unchecked"})
+    private static <T, A, TA, E, EA, MT, ETM> List<A> decodeAnnotations(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
+        return (List<A>) readArray(dis, () -> decodeAnnotation(dis, decoder));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static final Map.Entry[] NO_ELEMENTS = {};
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static <T, A, TA, E, EA, MT, ETM> A decodeAnnotation(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
         String typeName = dis.readUTF();
         T type = decoder.resolveType(typeName);
         int n = readLength(dis);
-        Map.Entry[] elements = new Map.Entry[n];
+        Map.Entry[] elements = n == 0 ? NO_ELEMENTS : new Map.Entry[n];
         for (int i = 0; i < n; i++) {
             String name = dis.readUTF();
             byte tag = dis.readByte();
@@ -681,7 +756,7 @@ public class VMSupport {
             for (int i = 0; i != depth; i++) {
                 locs[i] = new TypeAnnotation.LocationInfo.Location(dis.readByte(), dis.readShort());
             }
-            li = new TypeAnnotation.LocationInfo(depth, locs);
+            li = new TypeAnnotation.LocationInfo(locs);
         }
         A annotation = decodeAnnotation(dis, decoder);
         return decoder.newTypeAnnotation(ti, li, annotation);

@@ -24,6 +24,9 @@ package jdk.vm.ci.meta.annotation;
 
 import sun.reflect.annotation.TypeAnnotation;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 public final class TypeAnnotationValue {
 
     private final TypeAnnotation.TypeAnnotationTargetInfo targetInfo;
@@ -52,14 +55,15 @@ public final class TypeAnnotationValue {
 
     @Override
     public String toString() {
-        return annotation + "<TargetInfo: " + targetInfo + ">";
+        String li = locationInfo.getLocations().stream().map(loc -> loc.tag + "@" + loc.index).collect(Collectors.joining(", "));
+        return annotation + "<TargetInfo: " + targetInfo + ", LocationInfo: " + li + ">";
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TypeAnnotationValue that) {
-            return equal(this.targetInfo, that.targetInfo) &&
-                    equal(this.locationInfo, that.locationInfo) &&
+            return this.targetInfo.equals(that.targetInfo) &&
+                    this.locationInfo.equals(that.locationInfo) &&
                     this.annotation.equals(that.annotation);
         }
         return false;
@@ -67,32 +71,6 @@ public final class TypeAnnotationValue {
 
     @Override
     public int hashCode() {
-        return 13 ^ targetInfo.getCount() ^
-                targetInfo.getSecondaryIndex() ^
-                targetInfo.getTarget().hashCode() ^
-                locationInfo.getDepth() ^
-                annotation.hashCode();
-    }
-
-    public static boolean equal(TypeAnnotation.TypeAnnotationTargetInfo left, TypeAnnotation.TypeAnnotationTargetInfo right) {
-        return left.getTarget() == right.getTarget() &&
-                left.getCount() == right.getCount() &&
-                left.getSecondaryIndex() == right.getSecondaryIndex();
-    }
-
-    public static boolean equal(TypeAnnotation.LocationInfo left, TypeAnnotation.LocationInfo right) {
-        if (left.getDepth() != right.getDepth()) {
-            return false;
-        }
-        for (int i = 0; i < left.getDepth(); i++) {
-            if (!equal(left.getLocationAt(i), right.getLocationAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean equal(TypeAnnotation.LocationInfo.Location left, TypeAnnotation.LocationInfo.Location right) {
-        return left.tag == right.tag && left.index == right.index;
+        return Objects.hash(targetInfo, locationInfo, annotation);
     }
 }

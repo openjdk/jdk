@@ -1135,7 +1135,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, false, filter);
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS, filter);
         return new AnnotationValueDecoder(this).decode(encoded);
     }
 
@@ -1144,7 +1144,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         if (isArray()) {
             return List.of();
         }
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, true, null);
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS, null);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(this));
     }
 }
