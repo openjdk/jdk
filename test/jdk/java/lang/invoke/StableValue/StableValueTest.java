@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.invoke.StableValue;
-import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -222,7 +221,7 @@ final class StableValueTest {
     }
 
     private static Stream<StableValue<Integer>> presetStableValues() {
-        final List<StableValue<Integer>> list = StableValue.ofList(VALUE, 1, 2, VALUE, 4, 5, 6, VALUE);
+        final List<StableValue<Integer>> list = StableValue.ofPresetList(VALUE, 1, 2, VALUE, 4, 5, 6, VALUE);
         return Stream.of(
                 StableValue.of(VALUE),
                 list.getFirst(),

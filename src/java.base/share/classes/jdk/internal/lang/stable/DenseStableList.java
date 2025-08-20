@@ -30,7 +30,6 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.AbstractList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -40,41 +39,130 @@ import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 @ValueBased
-public class StandardStableList<E>
-        extends AbstractList<StableValue<E>>
+public final class DenseStableList<E>
+        extends ImmutableCollections.AbstractImmutableList<StableValue<E>>
         implements List<StableValue<E>>, RandomAccess {
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    static final Object TOMB_STONE = new Mutexes.MutexObject(-100, Thread.currentThread().threadId());
+    static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
 
     @Stable
     private final Object[] elements;
     @Stable
     private final Mutexes mutexes;
+    @Stable
+    private final int preHash;
 
-    private StandardStableList(int length) {
+    private DenseStableList(int length) {
         this.elements = new Object[length];
         this.mutexes = new Mutexes(length);
         super();
+        int h = 1;
+        h = 31 * h + System.identityHashCode(this);
+        h = 31 * h;
+        this.preHash = h;
     }
 
     @ForceInline
     @Override
     public ElementStableValue<E> get(int index) {
         Objects.checkIndex(index, elements.length);
-        return new ElementStableValue<>(elements, this, offsetFor(index));
+        return new ElementStableValue<>(elements, offsetFor(index), this);
+    }
+
+    @Override public int     size() { return elements.length; }
+    @Override public boolean isEmpty() { return elements.length == 0;}
+
+    @Override
+    public int indexOf(Object o) {
+        Objects.requireNonNull(o);
+        if (o instanceof DenseStableList.ElementStableValue<?> s) {
+            final int size = size();
+            for (int i = 0; i < size; i++) {
+                if (Objects.equals(s, get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
-    public int size() {
-        return elements.length;
+    public int lastIndexOf(Object o) {
+        Objects.requireNonNull(o);
+        if (o instanceof DenseStableList.ElementStableValue<?> s) {
+            for (int i = size() - 1; i >= 0; i--) {
+                if (Objects.equals(s, get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
+    /*    // All mutating methods throw UnsupportedOperationException
+    @Override public boolean add(StableValue<E> e) { throw uoe(); }
+    @Override public boolean addAll(Collection<? extends StableValue<E>> c) { throw uoe(); }
+    @Override public void    clear() { throw uoe(); }
+    @Override public boolean remove(Object o) { throw uoe(); }
+    @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
+    @Override public boolean removeIf(Predicate<? super StableValue<E>> filter) { throw uoe(); }
+    @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+
+    static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }*/
+
+    /*    @Override public Object[] toArray() { return copyInto(new Object[size()]); }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T[] toArray(T[] a) {
+        final int size = size();
+        if (a.length < size) {
+            // Make a new array of a's runtime type, but my contents:
+            T[] n = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
+            return copyInto(n);
+        }
+        copyInto(a);
+        if (a.length > size) {
+            a[size] = null; // null-terminate
+        }
+        return a;
+    }
+
+    @Override
+    public int indexOf(Object o) {
+        final int size = size();
+        for (int i = 0; i < size; i++) {
+            if (Objects.equals(o, get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int lastIndexOf(Object o) {
+        for (int i = size() - 1; i >= 0; i--) {
+            if (Objects.equals(o, get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T[] copyInto(Object[] a) {
+        final int size = size();
+        for (int i = 0; i < size; i++) {
+            a[i] = get(i);
+        }
+        return (T[]) a;
+    }*/
 
     // Todo: Views
     public record ElementStableValue<T>(@Stable Object[] elements, // Fast track this one
-                                        StandardStableList<T> list,
-                                        long offset)  implements StableValue<T> {
+                                        long offset,
+                                        DenseStableList<T> list)  implements StableValue<T> {
 
         @ForceInline
         @Override
@@ -160,8 +248,23 @@ public class StandardStableList<E>
         }
 
         // Object methods
-        @Override public boolean equals(Object obj) { return this == obj; }
-        @Override public int     hashCode() { return System.identityHashCode(this); }
+
+        // The equals() method crucially returns true if two ESV refer to the same element
+        // (by definition, the elements' contents are then also the same).
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof ElementStableValue<?> that)) return false;
+            return list == that.list
+                    && offset == that.offset;
+        }
+
+        // Similar arguments are true for hashCode() where it must depend on the referring
+        // element.
+        @Override
+        public int hashCode() {
+            return list.preHash + Long.hashCode(offset);
+        }
+
         @Override public String toString() {
             final Object t = contentsAcquire();
             return t == this
@@ -233,7 +336,7 @@ public class StandardStableList<E>
         return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
     }
 
-    private static class Mutexes {
+    private static final class Mutexes {
 
         // Inflated on demand
         private volatile Object[] mutexes;
@@ -289,7 +392,9 @@ public class StandardStableList<E>
     }
 
     public static <T> List<StableValue<T>> ofList(int size) {
-        return new StandardStableList<>(size);
+        return new DenseStableList<>(size);
     }
 
 }
+
+

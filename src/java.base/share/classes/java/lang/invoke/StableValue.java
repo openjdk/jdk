@@ -29,7 +29,7 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.PresetStableList;
 import jdk.internal.lang.stable.PresetStableValue;
-import jdk.internal.lang.stable.StandardStableList;
+import jdk.internal.lang.stable.DenseStableList;
 import jdk.internal.lang.stable.StandardStableValue;
 
 import java.io.Serializable;
@@ -365,7 +365,7 @@ import java.util.function.Supplier;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits StandardStableValue, PresetStableValue, StandardStableList.ElementStableValue {
+        permits StandardStableValue, PresetStableValue, DenseStableList.ElementStableValue {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -499,7 +499,7 @@ public sealed interface StableValue<T>
      */
     static <T> List<StableValue<T>> ofList(int size) {
         Utils.checkNonNegativeArgument(size, "size");
-        return StandardStableList.ofList(size);
+        return DenseStableList.ofList(size);
     }
 
     /**
@@ -528,7 +528,9 @@ public sealed interface StableValue<T>
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
-    static <T> List<StableValue<T>> ofList(T... elements) {
+    // Note: This factory has another name than SV::ofList so that confusion
+    //       around if a first parameter is a size or an element can be avoided.
+    static <T> List<StableValue<T>> ofPresetList(T... elements) {
         // Protect against TOCTOU attacks
         final T[] copy = Arrays.copyOf(elements, elements.length);
         for (T t : copy) {
