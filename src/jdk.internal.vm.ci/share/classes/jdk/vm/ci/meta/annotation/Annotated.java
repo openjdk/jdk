@@ -35,17 +35,15 @@ import java.util.Map;
 public interface Annotated {
 
     /**
-     * Gets the annotations directly present on this element whose types are in {@code types}.
+     * Gets the annotations directly present on this element.
      * Class initialization is not triggered for enum types referenced by the returned
      * annotation. This method ignores inherited annotations.
      *
-     * @param types annotation types to select. If empty, then all declared annotations are returned.
      * @return an immutable map from annotation type to annotation of the annotations directly present
-     * on this element selected by {@code types}
-     * @throws IllegalArgumentException      if any type in {@code types} is not an annotation interface type
+     *         on this element
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
+    default Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         throw new UnsupportedOperationException(this.getClass().getName());
     }
 

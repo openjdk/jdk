@@ -37,7 +37,6 @@ import java.util.Map;
 import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
 import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
@@ -236,30 +235,29 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType annotationType) {
+        checkIsAnnotation(annotationType);
         if (!hasAnnotations()) {
-            checkIsAnnotation(annotationType);
             return null;
         }
-        return getAnnotationValues0(annotationType).get(annotationType);
+        return getAnnotationValues0().get(annotationType);
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
-        checkAreAnnotations(types);
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         if (!hasAnnotations()) {
             return Map.of();
         }
-        return getAnnotationValues0(types);
+        return getAnnotationValues0();
     }
 
-    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, VMSupport.DECLARED_ANNOTATIONS, filter);
+    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0() {
+        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, VMSupport.DECLARED_ANNOTATIONS);
         return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
     }
 
     @Override
     public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, VMSupport.TYPE_ANNOTATIONS, null);
+        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 }
