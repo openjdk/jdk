@@ -1742,22 +1742,44 @@ public class FloatingDecimal{
      * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
      * The returned object is a <code>ThreadLocal</code> variable of this class.
      *
-     * @param d The double precision value to convert.
+     * @param d      The double precision value to convert.
+     * @param compat    compatibility with releases < JDK 21
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
-        return getBinaryToASCIIConverter(d, true);
+    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean compat) {
+        return compat
+                ? getCompatBinaryToASCIIConverter(d, true)
+                : getBinaryToASCIIConverter(d);
     }
 
-    /**
-     * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
-     * The returned object is a <code>ThreadLocal</code> variable of this class.
-     *
-     * @param d The double precision value to convert.
-     * @param isCompatibleFormat
-     * @return The converter.
+    private static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
+        assert Double.isFinite(d);
+
+        FormattedFPDecimal dec = FormattedFPDecimal.split(d);
+        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
+
+        buf.nDigits = dec.getPrecision();
+        buf.decExponent = dec.getExp() + buf.nDigits;
+        buf.firstDigitIndex = 0;
+        buf.exactDecimalConversion = dec.getExact();
+        buf.decimalDigitsRoundedUp = dec.getAway();
+
+        long f = dec.getSignificand();
+        char[] digits = buf.digits;
+        for (int i = buf.nDigits - 1; i >= 0; --i) {
+            long q = f / 10;
+            digits[i] = (char) ((f - 10 * q) + '0');
+            f = q;
+        }
+        return buf;
+    }
+
+    /*
+     * The old implementation of getBinaryToASCIIConverter().
+     * Should be removed in the future, along with its dependent methods and
+     * fields (> 550 lines).
      */
-    static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
+    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;

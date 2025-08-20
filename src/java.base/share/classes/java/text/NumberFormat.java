@@ -103,10 +103,13 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <li> "cf"
  * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
  * Currency Format style</a>) - Overrides the Currency Format style used
+ * <li> "cu"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyIdentifier">
+ * Currency Type</a>) - Overrides the Currency used
  * </ul>
  * <p>
- * If both "nu" and "rg" are specified, the decimal digits from the "nu"
- * extension supersedes the implicit one from the "rg" extension.
+ * For both "nu" and "cu", if they are specified in addition to "rg", the respective
+ * values from the "nu" and "cu" extension supersede the implicit ones from the "rg" extension.
  * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
  * defines various keys and values, actual locale-sensitive service implementations
  * in a Java Runtime Environment might not support any particular Unicode locale
