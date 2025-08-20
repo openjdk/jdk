@@ -1802,7 +1802,7 @@ public interface Map<K, V> {
         // implementing class.
         Objects.requireNonNull(mapper);
         // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-        return new ImmutableCollections.StableMap<>(keys, mapper);
+        return new StableCollections.StableMap<>(keys, mapper);
     }
 
 }

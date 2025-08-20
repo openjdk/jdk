@@ -1246,7 +1246,7 @@ public interface List<E> extends SequencedCollection<E> {
         StableUtil.assertSizeNonNegative(size);
         Objects.requireNonNull(mapper);
         // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return new ImmutableCollections.StableList<>(size, mapper);
+        return new StableCollections.StableList<>(size, mapper);
     }
 
 }
