@@ -24,12 +24,11 @@
 
 #include "classfile/moduleEntry.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
@@ -41,6 +40,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -49,7 +49,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-// for strstr
 #include <string.h>
 
 static bool _enqueue_klasses = false;
