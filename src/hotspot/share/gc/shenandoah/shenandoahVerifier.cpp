@@ -391,7 +391,8 @@ public:
 #endif
   {
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    _min_free_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
+    // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
+    _min_free_size = PLAB::min_size() * HeapWordSize;
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {

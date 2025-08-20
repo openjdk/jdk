@@ -763,7 +763,12 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
     size_t fill_padding = _region_size_bytes - used_bytes;
     waste_bytes = fill_padding;
     increase_used(partition, fill_padding);
-#ifdef ASSERT
+#ifdef KELVIN_DEPRECATE
+    // Kelvin note: I'm counting the fill as used, but I'm no longer
+    // allocating the fill object.  This means ShenandoahVerify and
+    // FreeSet::assert_bounds() have to count retired region unused
+    // memory as if it is used.
+
     // Fill the unused memory so that verification will not be confused by inconsistent tallies of used
     size_t fill_words = fill_padding / HeapWordSize;
     ShenandoahHeapRegion*r = ShenandoahHeap::heap()->get_region(idx);
@@ -1055,7 +1060,6 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
     humongous_waste[i] = 0;
   }
 
-  size_t min_free_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
   for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
     size_t capacity = _free_set->alloc_capacity(i);
@@ -1079,7 +1083,8 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || (capacity < min_free_size), "Retired regions should be filled already");
+          assert(r->is_cset() || (capacity < PLAB::min_size() * HeapWordSize),
+                 "Expect retired remnant to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
           capacity = 0;
