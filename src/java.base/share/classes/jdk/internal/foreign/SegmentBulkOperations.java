@@ -110,102 +110,105 @@ public final class SegmentBulkOperations {
         src.checkAccess(srcOffset, len, true);
         dst.checkAccess(dstOffset, len, false);
 
+        // 0 < len < FILL_NATIVE_LIMIT : 0...0X...XXXX
+        // Strictly, we could check for !src.asSlice(srcOffset, len).overlaps(dst.asSlice(dstOffset, len) but
+        // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
+        // is an overlap, we could tolerate one particular direction of overlap (but not the other).
         if (len >= NATIVE_THRESHOLD_COPY || src.overlaps(dst)) {
             // For larger sizes, the transition to native code pays off
             SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
                     src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
                     dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, len);
         } else {
-            // 0 < len < FILL_NATIVE_LIMIT : 0...0X...XXXX
-            //
-            // Strictly, we could check for !src.asSlice(srcOffset, len).overlaps(dst.asSlice(dstOffset, len) but
-            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
-            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
-
-
-            if( len > 15) {
-                copy5AndUpwards(src, srcOffset, dst, dstOffset, len);
+            if (len > 15) {
+                copy5AndUpwards(src, srcOffset, src.sessionImpl(), dst, dstOffset, dst.sessionImpl(), len);
             } else {
-                // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
-                switch (64 - Long.numberOfLeadingZeros(len)) {
-                    case 0 -> { /* Do nothing */ }
-                    case 1 -> {
-                        final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
-                        SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v);
-                    }
-                    case 2 -> copy2(src, srcOffset, dst, dstOffset, len);
-                    case 3 -> copy3(src, srcOffset, dst, dstOffset, len);
-                    case 4 -> copy4(src, srcOffset, dst, dstOffset, len);
-                }
+                copy0through4(src, srcOffset, src.sessionImpl(), dst, dstOffset, dst.sessionImpl(), len);
             }
         }
+    }
+
+    @ForceInline
+    static void copy0through4(AbstractMemorySegmentImpl src, long srcOffset, MemorySessionImpl srcSession,
+                              AbstractMemorySegmentImpl dst, long dstOffset, MemorySessionImpl dstSession,
+                              long len) {
+        // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
+        switch (64 - Long.numberOfLeadingZeros(len)) {
+            case 0 -> { /* Do nothing */ }
+            case 1 -> copy1(src, srcOffset, srcSession, dst, dstOffset, dstSession);
+            case 2 -> copy2(src, srcOffset, srcSession, dst, dstOffset, dstSession, len);
+            case 3 -> copy3(src, srcOffset, srcSession, dst, dstOffset, dstSession, len);
+            case 4 -> copy4(src, srcOffset, srcSession, dst, dstOffset, dstSession, len);
+        }
+    }
+
+    @ForceInline
+    private static void copy1(AbstractMemorySegmentImpl src,
+                              long srcOffset,
+                              MemorySessionImpl srcSession,
+                              AbstractMemorySegmentImpl dst,
+                              long dstOffset,
+                              MemorySessionImpl dstSession) {
+        final byte v = SCOPED_MEMORY_ACCESS.getByte(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
+        SCOPED_MEMORY_ACCESS.putByte(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v);
     }
 
     /** This case covers [2, 3] bytes */
     @ForceInline
     private static void copy2(AbstractMemorySegmentImpl src,
                               long srcOffset,
+                              MemorySessionImpl srcSession,
                               AbstractMemorySegmentImpl dst,
                               long dstOffset,
+                              MemorySessionImpl dstSession,
                               long len) {
-
-        final MemorySessionImpl srcSession = src.sessionImpl();
-        final MemorySessionImpl dstSession = dst.sessionImpl();
 
         final short v = SCOPED_MEMORY_ACCESS.getShortUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
         SCOPED_MEMORY_ACCESS.putShortUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v);
-
-        // `putByte()` below is enough as 3 is the maximum number of bytes covered
-        final byte b = SCOPED_MEMORY_ACCESS.getByte(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Byte.BYTES);
-        SCOPED_MEMORY_ACCESS.putByte(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Byte.BYTES, b);
+        if (len == 3) {
+            copy1(src, srcOffset + Short.BYTES, srcSession, dst, dstOffset + Short.BYTES, dstSession);
+        }
     }
 
     /** This case covers [4, 7] bytes */
     @ForceInline
     private static void copy3(AbstractMemorySegmentImpl src,
                               long srcOffset,
+                              MemorySessionImpl srcSession,
                               AbstractMemorySegmentImpl dst,
                               long dstOffset,
+                              MemorySessionImpl dstSession,
                               long len) {
-
-        final MemorySessionImpl srcSession = src.sessionImpl();
-        final MemorySessionImpl dstSession = dst.sessionImpl();
 
         final int v0 = SCOPED_MEMORY_ACCESS.getIntUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
         SCOPED_MEMORY_ACCESS.putIntUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v0);
-
-        final int v1 = SCOPED_MEMORY_ACCESS.getIntUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Integer.BYTES);
-        SCOPED_MEMORY_ACCESS.putIntUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Integer.BYTES, v1);
+        copy0through4(src, srcOffset + Integer.BYTES, srcSession, dst, dstOffset + Integer.BYTES, dstSession, len - Integer.BYTES);
     }
 
     /** This case covers [8, 15] bytes */
     @ForceInline
     private static void copy4(AbstractMemorySegmentImpl src,
                               long srcOffset,
+                              MemorySessionImpl srcSession,
                               AbstractMemorySegmentImpl dst,
                               long dstOffset,
+                              MemorySessionImpl dstSession,
                               long len) {
-
-        final MemorySessionImpl srcSession = src.sessionImpl();
-        final MemorySessionImpl dstSession = dst.sessionImpl();
 
         final long v0 = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset);
         SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, v0);
-
-        final long v1 = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Long.BYTES);
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Long.BYTES, v1);
+        copy0through4(src, srcOffset + Long.BYTES, srcSession, dst, dstOffset + Long.BYTES, dstSession, len - Long.BYTES);
     }
 
     /** This case covers [16, 2^63) bytes */
     @ForceInline
     private static void copy5AndUpwards(AbstractMemorySegmentImpl src,
                                         long srcOffset,
+                                        MemorySessionImpl srcSession,
                                         AbstractMemorySegmentImpl dst,
                                         long dstOffset,
+                                        MemorySessionImpl dstSession,
                                         long len) {
-
-        final MemorySessionImpl srcSession = src.sessionImpl();
-        final MemorySessionImpl dstSession = dst.sessionImpl();
 
         final int limit = (int) (len & (NATIVE_THRESHOLD_COPY - Long.BYTES));
         int offset = 0;
@@ -213,15 +216,7 @@ public final class SegmentBulkOperations {
             final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
             SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
         }
-
-        // After the loop, the VM is not able to elide redundant stores so unfortunately,
-        // we have to do this if statement.
-        if ((int) len - offset > 0) {
-            // It is safe to copy the tail in a single `long` op because we know `len` is at least 8
-            final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(srcSession, src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + len - Long.BYTES);
-            SCOPED_MEMORY_ACCESS.putLongUnaligned(dstSession, dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + len - Long.BYTES, v);
-        }
-
+        copy0through4(src, srcOffset + offset, srcSession, dst, dstOffset + offset, srcSession, len - offset);
     }
 
     private static final @Stable int[] POWERS_OF_31 = new int[]{
