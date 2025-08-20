@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,17 @@
  * @bug 6581254 6986789 7196009 8062170
  * @summary Allow '~', '+', and quoted paths in config file
  * @author Valerie Peng
+ * @library /test/lib
  */
 
-import java.security.*;
-import java.io.*;
-import java.lang.reflect.*;
+import jtreg.SkippedException;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.security.Provider;
+import java.security.ProviderException;
+import java.security.Security;
 
 public class ConfigShortPath {
 
@@ -43,8 +49,7 @@ public class ConfigShortPath {
     public static void main(String[] args) throws Exception {
         Provider p = Security.getProvider("SunPKCS11");
         if (p == null) {
-            System.out.println("Skipping test - no PKCS11 provider available");
-            return;
+            throw new SkippedException("Skipping test - no PKCS11 provider available");
         }
 
         String osInfo = System.getProperty("os.name", "");
@@ -65,7 +70,7 @@ public class ConfigShortPath {
                 if (cause.getClass().getName().equals
                         ("sun.security.pkcs11.ConfigurationException")) {
                     // Error occurred during parsing
-                    if (cause.getMessage().indexOf("Unexpected") != -1) {
+                    if (cause.getMessage().contains("Unexpected")) {
                         throw (ProviderException) cause;
                     }
                 }
