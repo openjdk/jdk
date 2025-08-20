@@ -171,8 +171,75 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
   return r_index;
 }
 
+template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_left>
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t l_index, idx_t r_index) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(l_index, r_index);
+  assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
+
+  // The first word often contains an interesting bit, either due to
+  // density or because of features of the calling algorithm.  So it's
+  // important to examine that first word with a minimum of fuss,
+  // minimizing setup time for later words that will be wasted if the
+  // first word is indeed interesting.
+
+  // The benefit from aligned_left being true is relatively small.
+  // It saves an operation in the setup for the word search loop.
+  // It also eliminates the range check on the final result.
+  // However, callers often have a comparison with l_index, and
+  // inlining often allows the two comparisons to be combined; it is
+  // important when !aligned_left that return paths either return
+  // l_index or a value dominating a comparison with l_index.
+  // aligned_left is still helpful when the caller doesn't have a
+  // range check because features of the calling algorithm guarantee
+  // an interesting bit will be present.
+
+  if (l_index < r_index) {
+    // Get the word containing r_index, and shift out low bits.
+    idx_t index = to_words_align_down(r_index);
+    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(r_index);
+    if ((cword & 1) != 0) {
+      // The first bit is similarly often interesting. When it matters
+      // (density or features of the calling algorithm make it likely
+      // the first bit is set), going straight to the next clause compares
+      // poorly with doing this check first; count_trailing_zeros can be
+      // relatively expensive, plus there is the additional range check.
+      // But when the first bit isn't set, the cost of having tested for
+      // it is relatively small compared to the rest of the search.
+      return r_index;
+    } else if (cword != 0) {
+      // Flipped and shifted first word is non-zero.
+      idx_t result = r_index + count_trailing_zeros(cword);
+      if (aligned_left || (result > l_index)) return result;
+      // Result is beyond range bound; return l_index.
+    } else {
+      // Flipped and shifted first word is zero.  Word search through
+      // aligned up r_index for a non-zero flipped word.
+      idx_t limit = aligned_left
+                    ? to_words_align_down(l_index) // Minuscule savings when aligned.
+                    : to_words_align_up(l_index);
+      while (--index > limit) {
+        cword = map(index) ^ flip;
+        if (cword != 0) {
+          idx_t result = bit_index(index) + count_trailing_zeros(cword);
+          if (aligned_left || (result > l_index)) return result;
+          // Result is beyond range bound; return r_index.
+          assert((index - 1) == limit, "invariant");
+          break;
+        }
+      }
+      // No bits in range; return l_index.
+    }
+  }
+  return l_index;
+}
+
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {
   return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
+}
+
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_one_offset(idx_t l_offset, idx_t r_offset) const {
+  return get_last_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

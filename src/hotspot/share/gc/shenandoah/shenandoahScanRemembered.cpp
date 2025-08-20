@@ -235,15 +235,53 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
 HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
+  ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
 
 #ifdef ASSERT
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Do not use in non-generational mode");
-  ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
   assert(region->is_old(), "Do not use for young regions");
   // For HumongousRegion:s it's more efficient to jump directly to the
   // start region.
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
+
+  // if marking context is valid, we use the marking bit map to find the
+  // first marked object that intersects with this card, and if no such
+  // object exists, we return null
+  if (ctx != nullptr) {
+    if (ctx->is_marked(left)) {
+      oop obj = cast_to_oop(left);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+      return left;
+    }
+    // get the previous marked object, if any
+    if (region->bottom() < left) {
+      HeapWord* prev = ctx->get_last_marked_addr(region->bottom(), left);
+      if (prev != nullptr) {
+        oop obj = cast_to_oop(prev);
+        assert(oopDesc::is_oop(obj), "Should be an object");
+        HeapWord* obj_end = prev + obj->size();
+        if (obj_end > left) {
+          return prev;
+        }
+      }
+    }
+    // the prev marked object, if any, ends before left;
+    // find the next marked object if any on this card
+    assert(!ctx->is_marked(left), "Was dealt with above");
+    HeapWord* right = MIN2(region->top(), ctx->top_at_mark_start(region));
+    HeapWord* next = ctx->get_next_marked_addr(left, right);
+    if (next < right) {
+      oop obj = cast_to_oop(next);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+    }
+    return next;
+  }
+  assert(ctx == nullptr, "Should have returned above");
+
+  // The following code assumes that the region has only parsable objects
+  assert(ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(),
+         "The code that follows expects a parsable heap");
   if (starts_object(card_index) && get_first_start(card_index) == 0) {
     // This card contains a co-initial object; a fortiori, it covers
     // also the case of a card being the first in a region.
