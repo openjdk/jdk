@@ -620,7 +620,8 @@ public abstract class Process implements Closeable {
     /**
      * Close all writer and reader streams and terminate the process.
      * The streams are closed immediately and the process is terminated without waiting.
-     * This method is idempotent, if the stream is already closed invoking this method has no effect.
+     * This method is idempotent, if the process has already been closed
+     * invoking this method has no effect.
      * <p>
      * Before calling {@code close} the caller should read the streams for any
      * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
@@ -631,7 +632,7 @@ public abstract class Process implements Closeable {
      * If an {@code IOException} occurs when closing a stream it is
      * re-thrown after the process is destroyed. Additional {@code IOExceptions}
      * thrown by closing the remaining streams, if any, are added to the first
-     * {@code IOException} as {linkplain IOException#addSuppressed suppressed exceptions}.
+     * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
      * The process may already have exited or be in the process of exiting;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
