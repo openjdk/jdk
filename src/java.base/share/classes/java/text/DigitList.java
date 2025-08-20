@@ -43,6 +43,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.util.ArraysSupport;
 
@@ -211,11 +212,15 @@ final class DigitList implements Cloneable {
      * unlike BigDecimal("").
      */
     public BigDecimal getBigDecimal() {
+        int count = this.count;
         if (count == 0) {
             return BigDecimal.valueOf(0, -decimalAt);
         }
 
-        BigDecimal value = new BigDecimal(new String(digits, 0, count, StandardCharsets.ISO_8859_1));
+        char[] chars = new char[count];
+        SharedSecrets.getJavaLangAccess()
+                     .inflateBytesToChars(digits, 0, chars, 0, count);
+        BigDecimal value = new BigDecimal(chars, 0, count);
         if (decimalAt == count) {
             return value;
         } else {
