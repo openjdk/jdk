@@ -956,10 +956,10 @@ public class FloatingDecimal{
      * A buffered implementation of <code>ASCIIToBinaryConverter</code>.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        boolean     isNegative;
-        int         decExponent;
-        byte[]      digits;
-        int         nDigits;
+        final boolean isNegative;
+        final int     decExponent;
+        final byte[]  digits;
+        int           nDigits;
 
         ASCIIToBinaryBuffer( boolean negSign, int decExponent, byte[] digits, int n)
         {
@@ -1739,11 +1739,7 @@ public class FloatingDecimal{
         if (decExp < MIN_DECIMAL_EXPONENT) {
             return A2BC_POSITIVE_ZERO;
         }
-        byte[] buf = new byte[length];
-        for (int i = 0; i < length; i++) {
-            buf[i] = digits[i];
-        }
-        return new ASCIIToBinaryBuffer(false, decExp, buf, length);
+        return new ASCIIToBinaryBuffer(false, decExp, digits, length);
     }
 
     /**
