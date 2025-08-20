@@ -145,8 +145,8 @@ public class ConnectionIDSTest {
         for (var iter = duplicates.iterator(); iter.hasNext(); ) {
             var dup = iter.next();
             assertEquals(dup.first.token(), dup.second.token());
-            assertEquals(dup.first().bytes().length, dup.first().bytes().length);
-            assertEquals(dup.first().bytes(), dup.first.bytes());
+            assertEquals(dup.first.bytes().length, dup.second.bytes().length);
+            assertEquals(dup.first.bytes(), dup.second.bytes());
             long mask = 0x00FFFFFF00000000L;
             for (int i=0; i<3; i++) {
                 mask = mask << 8;
