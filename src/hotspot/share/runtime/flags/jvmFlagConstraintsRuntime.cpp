@@ -136,6 +136,16 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error LargePageSizeInBytesConstraintFunc(size_t value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose, "LargePageSizeInBytes ( %zu ) must be "
+                        "a power of 2\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
 #ifdef AARCH64
   if (value == nullptr) {
