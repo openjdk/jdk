@@ -93,19 +93,7 @@ public class ToolingTest extends ReplToolTesting {
     }
 
     @Test
-    public void testDisassembleBuiltinAnonymousClass() {
-        test(
-            a -> assertCommand(a, "/open TOOLING",
-                        ""),
-            a -> assertCommandUserOutputContains(a, "javap(Class.forName(\"sun.util.PreHashedMap$1\"))", // arbitrary built-in anonymous class
-                        "Classfile jrt:/java.base/sun/util/PreHashedMap$1.class",
-                        "class sun.util.PreHashedMap$1 extends java.util.AbstractSet<java.lang.String>",
-                        "SourceFile: \"PreHashedMap.java\"")
-        );
-    }
-
-    @Test
-    public void testDisassembleNewAnonymousClass() {
+    public void testDisassembleAnonymousClass() {
         test(
             a -> assertCommand(a, "Object o() {return new ArrayList<>(){ };}", // must be in a method or it won't be anonymous
                         "|  created method o()"),
