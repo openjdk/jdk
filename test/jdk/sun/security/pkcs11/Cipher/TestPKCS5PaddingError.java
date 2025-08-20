@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,15 +69,14 @@ public class TestPKCS5PaddingError extends PKCS11Test {
         try {
             byte[] plainText = new byte[200];
 
-            for (int i = 0; i < TEST_LIST.length; i++) {
-                CI currTest = TEST_LIST[i];
+            for (CI currTest : TEST_LIST) {
                 System.out.println("===" + currTest.transformation + "===");
                 try {
                     KeyGenerator kg =
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation,
-                               System.getProperty("test.provider.name", "SunJCE"));
+                            System.getProperty("test.provider.name", "SunJCE"));
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();
@@ -113,7 +112,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     System.out.println("DONE");
                 } catch (NoSuchAlgorithmException nsae) {
                     System.out.println("Skipping unsupported algorithm: " +
-                            nsae);
+                                       nsae);
                 }
             }
         } catch (Exception ex) {
