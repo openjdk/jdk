@@ -140,20 +140,20 @@ enum CompilerPhaseType {
 
 class CompilerPhaseTypeHelper {
   public:
-  static const char* const phase_descriptions[];
-  static const char* const phase_names[];
+  static const char* const _phase_descriptions[];
+  static const char* const _phase_names[];
 
   static const char* to_name(CompilerPhaseType cpt) {
-    return phase_names[cpt];
+    return _phase_names[cpt];
   }
   static const char* to_description(CompilerPhaseType cpt) {
-    return phase_descriptions[cpt];
+    return _phase_descriptions[cpt];
   }
 };
 
 static CompilerPhaseType find_phase(const char* str) {
   for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-    if (strcmp(CompilerPhaseTypeHelper::phase_names[i], str) == 0) {
+    if (strcmp(CompilerPhaseTypeHelper::_phase_names[i], str) == 0) {
       return (CompilerPhaseType)i;
     }
   }

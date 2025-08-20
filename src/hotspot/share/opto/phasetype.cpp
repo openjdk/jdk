@@ -24,13 +24,13 @@
 
 #include "phasetype.hpp"
 
-const char* const CompilerPhaseTypeHelper::phase_descriptions[] = {
+const char* const CompilerPhaseTypeHelper::_phase_descriptions[] = {
 #define array_of_labels(name, description) description,
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
 };
 
-const char* const CompilerPhaseTypeHelper::phase_names[] = {
+const char* const CompilerPhaseTypeHelper::_phase_names[] = {
 #define array_of_labels(name, description) #name,
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
