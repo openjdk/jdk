@@ -1835,8 +1835,8 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   Handle result;
   jvalue value;
   value.l = 0L;
-  // post_method_exist is called only when the method is not exit because of
-  // exception so result should be always initialized.
+  // post_method_exit is only called when the method exits normally,
+  // so result should be always initialized.
   // At this point we only have the address of a "raw result" and
   // we just call into the interpreter to convert this into a jvalue.
   // Additionally, the result oop should be preserved while the thread is in java.
