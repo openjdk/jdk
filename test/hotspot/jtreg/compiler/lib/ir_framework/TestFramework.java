@@ -365,7 +365,7 @@ public class TestFramework {
         return sets[idx].stream()
                 .flatMap(setElement -> crossProductHelper(idx + 1, sets)
                         .map(set -> {
-                            Set<String> newSet = new HashSet(set);
+                            Set<String> newSet = new HashSet<>(set);
                             newSet.add(setElement);
                             return newSet;
                         }));
