@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 /*
  * @test
  * @requires vm.debug == true & vm.compiler2.enabled & vm.flagless
+ * @requires (os.arch != "riscv64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"))
  * @summary Test test format violations.
  * @library /test/lib /
  * @run driver ir_framework.tests.TestBadFormat
