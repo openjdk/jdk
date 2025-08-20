@@ -39,7 +39,7 @@
 #
 # make TARGETS="aarch64-linux-gnu" BASE_OS=Fedora
 # or
-# make TARGETS="arm-linux-gnueabihf ppc64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=17
+# make TARGETS="arm-linux-gnueabihf ppc64le-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=17
 #
 # to build several devkits for a specific OS version at once.
 # You can find the final results under ../../build/devkit/result/<host>-to-<target>
@@ -50,7 +50,7 @@
 # makefile again for cross compilation. Ex:
 #
 # PATH=$PWD/../../build/devkit/result/x86_64-linux-gnu-to-x86_64-linux-gnu/bin:$PATH \
-#    make TARGETS="arm-linux-gnueabihf,ppc64-linux-gnu" BASE_OS=Fedora
+#    make TARGETS="arm-linux-gnueabihf ppc64le-linux-gnu" BASE_OS=Fedora
 #
 # This is the makefile which iterates over all host and target platforms.
 #
