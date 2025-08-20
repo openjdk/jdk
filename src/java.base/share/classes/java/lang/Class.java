@@ -92,6 +92,7 @@ import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
+import static jdk.internal.util.ModifiedUtf.utfLen;
 /**
  * Instances of the class {@code Class} represent classes and
  * interfaces in a running Java application. An enum class and a record
@@ -4157,7 +4158,13 @@ public final class Class<T> implements java.io.Serializable,
     // Checks whether the class name exceeds the maximum allowed length.
     private static boolean classNameLengthIsValid(String name) {
         Objects.requireNonNull(name);
-        return getUtf8Length(name) <= JAVA_CLASSNAME_MAX_LEN;
+        // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
+        // If the string is short enough, it definitely fits.
+        if (name.length() * 3 <= JAVA_CLASSNAME_MAX_LEN) {
+            return true;
+        }
+        // Compute exact Modified UTF-8 length.
+        return utfLen(name, 0) <= JAVA_CLASSNAME_MAX_LEN;
     }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
@@ -4168,18 +4175,4 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    // Calculates the length of string encoded in Modified UTF-8.
-    private static int getUtf8Length(String str) {
-        int slen = str.length();
-        int extra = 0;
-        for (int i = 0; i < slen; i++) {
-            int ch = string.charAt(i);
-            if (ch > 0x007f || ch == 0x0000) {
-                extra++;
-                if (ch > 0x07ff)
-                    extra++;
-            }
-        }
-        return slen + extra;
-    }
 }
