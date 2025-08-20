@@ -85,9 +85,11 @@ public class TestScenariosCrossProduct {
             TestFramework t4 = new TestFramework();
             t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWastFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
                                         Set.of("-XX:+UseNewCode2"));
+            t4.start();
+            Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0") ||
-                !e.getMessage().contains("The following scenarios have failed: #1") ||
+            if (!(e.getMessage().contains("The following scenarios have failed: #0") ||
+                  e.getMessage().contains("The following scenarios have failed: #1")) ||
                  e.getMessage().contains("The following scenarios have failed: #0, #1")) {
                 throw e;
             }
