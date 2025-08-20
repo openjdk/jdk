@@ -163,7 +163,7 @@ private:
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
 
-  size_t bytes_allocated_since_gc_start() const {
+  size_t bytes_allocated_since_gc_start() const override {
     if (_type == ShenandoahGenerationType::YOUNG) {
       return _free_set->get_bytes_allocated_since_gc_start();
     } else if (ShenandoahHeap::heap()->mode()->is_generational() && (_type == ShenandoahGenerationType::NON_GEN)) {
