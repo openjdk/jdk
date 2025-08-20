@@ -58,9 +58,9 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   if (!was_popped_by_exception) {
     fatal(jni, "Should have was_popped_by_esxception = true.");
   }
-  jclass main_class = jni->FindClass("ExceptionOccurred");
+  jclass main_class = jni->FindClass("TestMethodExitWithPendingException");
   if (main_class == nullptr) {
-    fatal(jni,"Can't find ExceptionOccurred class.");
+    fatal(jni,"Can't find TestMethodExitWithPendingException class.");
     return;
   }
   jmethodID upcall_method = jni->GetStaticMethodID(main_class,
@@ -107,14 +107,14 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_ExceptionOccurred_enable(JNIEnv *jni, jclass clazz) {
+Java_TestMethodExitWithPendingException_enable(JNIEnv *jni, jclass clazz) {
   jthread thread = get_current_thread(jvmti_env, jni);
   jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, thread);
 }
 
 
 JNIEXPORT void JNICALL
-Java_ExceptionOccurred_disableAndCheck(JNIEnv *jni, jclass clazz) {
+Java_TestMethodExitWithPendingException_disableAndCheck(JNIEnv *jni, jclass clazz) {
   jthread thread = get_current_thread(jvmti_env, jni);
   jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_EXIT, thread);
   if (!method_exit_posted) {

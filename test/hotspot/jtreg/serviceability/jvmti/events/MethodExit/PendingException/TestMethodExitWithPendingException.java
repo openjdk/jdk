@@ -27,9 +27,9 @@
  * if exception occured in the current thread.
  *
  * @bug 8365192
- * @run main/othervm/native -agentlib:ExceptionOccurred ExceptionOccurred
+ * @run main/othervm/native -agentlib:TestMethodExitWithPendingException TestMethodExitWithPendingException
  */
-public class ExceptionOccurred {
+public class TestMethodExitWithPendingException {
 
     private static native void enable();
     private static native void disableAndCheck();
@@ -45,7 +45,7 @@ public class ExceptionOccurred {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        System.loadLibrary("ExceptionOccurred");
+        System.loadLibrary("TestMethodExitWithPendingException");
         try {
             enable();
             exceptionExit();
