@@ -26,17 +26,33 @@
  * @summary Test the range defined in globals.hpp for BciProfileWidth
  * @bug 8358696
  * @requires vm.debug
- * @run main/othervm -XX:BciProfileWidth=0
- *      compiler.arguments.TestBciProfileWidth
- * @run main/othervm -XX:BciProfileWidth=1000
- *      compiler.arguments.TestBciProfileWidth
+ * @library /test/lib
+ * @run main/othervm compiler.arguments.TestBciProfileWidth
  */
 
 package compiler.arguments;
 
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Asserts;
+
 public class TestBciProfileWidth {
 
-    static public void main(String[] args) {
-        System.out.println("Passed");
+    public static void main(String args[]) throws Throwable {
+        checkBciProfileWidth(-1, true);
+        checkBciProfileWidth(10000, true);
+        checkBciProfileWidth(0, false);
+        checkBciProfileWidth(1000, false);
+    }
+
+    static void checkBciProfileWidth(int value, boolean fail) throws Throwable {
+        OutputAnalyzer out = ProcessTools.executeTestJava("-XX:BciProfileWidth=" + value);
+        String output = out.getOutput();
+        if (fail) {
+            String pattern = "int BciProfileWidth=" + value + " is outside the allowed range [ 0 ... 1000 ]";
+            Asserts.assertTrue(output.contains(pattern));
+        } else {
+            System.out.println("Passed");
+        }
     }
 }
