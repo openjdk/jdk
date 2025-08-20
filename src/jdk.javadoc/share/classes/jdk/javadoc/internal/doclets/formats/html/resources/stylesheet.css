@@ -1235,11 +1235,11 @@ li.ui-static-link a, li.ui-static-link a:visited {
     grid-template-columns: auto auto;
 }
 .ui-autocomplete > li,
-.ui-autocomplete > li > div {
+.ui-autocomplete > li > a {
     grid-column: 1 / 3;
 }
 .ui-autocomplete > li.result-item,
-.ui-autocomplete > li.result-item > div {
+.ui-autocomplete > li.result-item > a {
     display: grid;
     grid-template-columns: subgrid;
 }
@@ -1250,6 +1250,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
 }
 .ui-autocomplete .search-result-label {
     padding: 1px 4px;
+    color: var(--block-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -1263,6 +1264,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
 .ui-autocomplete .result-highlight {
     font-weight:bold;
 }
+.ui-menu .ui-state-active .search-result-label,
 .ui-menu .ui-state-active .search-result-desc {
     color: var(--selected-text-color);
 }
@@ -1843,9 +1845,9 @@ table.striped > tbody > tr > th {
         grid-template-columns: none;
     }
     .ui-autocomplete > li,
-    .ui-autocomplete > li > div,
+    .ui-autocomplete > li > a,
     .ui-autocomplete > li.result-item,
-    .ui-autocomplete > li.result-item > div {
+    .ui-autocomplete > li.result-item > a {
         grid-column: unset;
         display: block;
         grid-template-columns: none;
