@@ -43,10 +43,10 @@ protected:
   void set_metadata_token(uint32_t v) { _token = v; }
 
 public:
-  static constexpr uint32_t common_prefix        = BUILD_32(0x3E7A, 0);
-  static constexpr uint32_t common_prefix_mask   = BUILD_32(0xFFFF, 0);
-  static constexpr uint32_t instance_klass_token = BUILD_32(0x3E7A, 0x100);
-  static constexpr uint32_t array_klass_token    = BUILD_32(0x3E7A, 0x101);
+  static constexpr uint32_t common_prefix        = 0x3E7A0000;
+  static constexpr uint32_t common_prefix_mask   = 0xFFFF0000;
+  static constexpr uint32_t instance_klass_token = 0x3E7A0101;
+  static constexpr uint32_t array_klass_token    = 0x3E7A0102;
 
   unsigned get_metadata_token() const { return _token; }
   bool is_valid() const { return (get_metadata_token() & common_prefix) == common_prefix; }

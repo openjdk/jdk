@@ -278,7 +278,7 @@ static bool klass_is_sane(oop object) {
       return true;
     }
 
-    k =mark.klass_without_asserts();
+    k = mark.klass_without_asserts();
   } else {
     k = object->klass_without_asserts();
   }
