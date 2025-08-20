@@ -2793,8 +2793,6 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->stop_incremental_building();
 
   collection_set()->abandon_all_candidates();
-
-  young_regions_cset_group()->clear();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
