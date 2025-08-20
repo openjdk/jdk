@@ -303,7 +303,7 @@ bool os::total_swap_space(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    assert(false, "sysinfo failed in total_swap_space()?");
+    assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
     return false;
   }
   value = static_cast<size_t>(si.totalswap * si.mem_unit);
@@ -314,7 +314,7 @@ static bool host_free_swap_f(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    assert(false, "sysinfo failed in host_free_swap_f()?");
+    assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
     return false;
   }
   value = static_cast<size_t>(si.freeswap * si.mem_unit);
