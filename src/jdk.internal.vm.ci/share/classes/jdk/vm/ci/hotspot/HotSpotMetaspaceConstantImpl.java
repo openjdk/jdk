@@ -95,11 +95,6 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
     }
 
     private boolean canBeStoredInCompressibleMetaSpace() {
-        if (!HotSpotVMConfig.config().useClassMetaspaceForAllClasses && metaspaceObject instanceof HotSpotResolvedJavaType t && !t.isArray()) {
-            // As of JDK-8338526, interface and abstract types are not stored
-            // in compressible metaspace.
-            return !t.isInterface() && !t.isAbstract();
-        }
         return true;
     }
 
