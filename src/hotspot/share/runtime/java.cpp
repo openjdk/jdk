@@ -516,11 +516,13 @@ void before_exit(JavaThread* thread, bool halt) {
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
 
+  #if INCLUDE_CDS
   if (AOTVerifyTrainingData) {
     EXCEPTION_MARK;
     CompilationPolicy::flush_replay_training_at_init(THREAD);
     TrainingData::verify();
   }
+  #endif
 
   print_statistics();
 
