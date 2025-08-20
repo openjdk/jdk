@@ -138,13 +138,13 @@ enum CompilerPhaseType {
 };
 #undef table_entry
 
-static const char* phase_descriptions[] = {
+static constexpr const char* compiler_phase_descriptions[] = {
 #define array_of_labels(name, description) description,
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
 };
 
-static const char* phase_names[] = {
+static constexpr const char* compiler_phase_names[] = {
 #define array_of_labels(name, description) #name,
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
@@ -153,16 +153,16 @@ static const char* phase_names[] = {
 class CompilerPhaseTypeHelper {
   public:
   static const char* to_name(CompilerPhaseType cpt) {
-    return phase_names[cpt];
+    return compiler_phase_names[cpt];
   }
   static const char* to_description(CompilerPhaseType cpt) {
-    return phase_descriptions[cpt];
+    return compiler_phase_descriptions[cpt];
   }
 };
 
 static CompilerPhaseType find_phase(const char* str) {
   for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-    if (strcmp(phase_names[i], str) == 0) {
+    if (strcmp(compiler_phase_names[i], str) == 0) {
       return (CompilerPhaseType)i;
     }
   }
