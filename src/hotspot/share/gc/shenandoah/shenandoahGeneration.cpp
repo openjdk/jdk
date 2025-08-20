@@ -540,7 +540,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   // Sort the promotion-eligible regions in order of increasing live-data-bytes so that we can first reclaim regions that require
   // less evacuation effort.  This prioritizes garbage first, expanding the allocation pool early before we reclaim regions that
   // have more live data.
-  const idx_t num_regions = heap->num_regions();
+  const index_type num_regions = heap->num_regions();
 
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
@@ -548,14 +548,14 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   ShenandoahFreeSet* freeset = heap->free_set();
 
   // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
-  idx_t pip_low_collector_idx = freeset->max_regions();
-  idx_t pip_high_collector_idx = -1;
-  idx_t pip_low_mutator_idx = freeset->max_regions();
-  idx_t pip_high_mutator_idx = -1;
+  index_type pip_low_collector_idx = freeset->max_regions();
+  index_type pip_high_collector_idx = -1;
+  index_type pip_low_mutator_idx = freeset->max_regions();
+  index_type pip_high_mutator_idx = -1;
   size_t collector_regions_to_pip = 0;
   size_t mutator_regions_to_pip = 0;
 
-  for (idx_t i = 0; i < num_regions; i++) {
+  for (index_type i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
       // skip over regions that aren't regular young with some live data

@@ -25,7 +25,7 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 
-ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
+ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(index_type num_bits) :
     _num_bits(num_bits),
     _num_words(align_up(num_bits, BitsPerWord) / BitsPerWord),
     _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))
@@ -39,7 +39,7 @@ ShenandoahSimpleBitMap::~ShenandoahSimpleBitMap() {
   }
 }
 
-size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
+size_t ShenandoahSimpleBitMap::count_leading_ones(index_type start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
   uintx element_bits = _bitmap[array_idx];
@@ -66,7 +66,7 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
   return counted_ones + count_trailing_zeros<uintx>(complement);
 }
 
-size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
+size_t ShenandoahSimpleBitMap::count_trailing_ones(index_type last_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   size_t array_idx = last_idx >> LogBitsPerWord;
   uintx element_bits = _bitmap[array_idx];
@@ -93,11 +93,11 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
   return counted_ones + count_leading_zeros<uintx>(complement);
 }
 
-bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(idx_t start_idx, idx_t count) const {
+bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(index_type start_idx, index_type count) const {
   while (count > 0) {
     assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: %zd, count: %zd",
            start_idx, count);
-    assert(start_idx + count <= (idx_t) _num_bits, "precondition");
+    assert(start_idx + count <= (index_type) _num_bits, "precondition");
     size_t array_idx = start_idx >> LogBitsPerWord;
     uintx bit_number = start_idx & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
@@ -123,7 +123,7 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(idx_t start_idx, idx_t 
   return true;
 }
 
-bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(idx_t last_idx, idx_t count) const {
+bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(index_type last_idx, index_type count) const {
   while (count > 0) {
     assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
     assert(last_idx - count >= -1, "precondition");
@@ -152,11 +152,11 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(idx_t last_idx, idx_t 
   return true;
 }
 
-idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t end, size_t num_bits) const {
+index_type ShenandoahSimpleBitMap::find_first_consecutive_set_bits(index_type beg, index_type end, size_t num_bits) const {
   assert((beg >= 0) && (beg < _num_bits), "precondition");
 
   // Stop looking if there are not num_bits remaining in probe space.
-  idx_t start_boundary = end - num_bits;
+  index_type start_boundary = end - num_bits;
   if (beg > start_boundary) {
     return end;
   }
@@ -231,12 +231,12 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
   }
 }
 
-idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, idx_t end, const size_t num_bits) const {
+index_type ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const index_type beg, index_type end, const size_t num_bits) const {
 
   assert((end >= 0) && (end < _num_bits), "precondition");
 
   // Stop looking if there are not num_bits remaining in probe space.
-  idx_t last_boundary = beg + num_bits;
+  index_type last_boundary = beg + num_bits;
   if (end < last_boundary) {
     return beg;
   }

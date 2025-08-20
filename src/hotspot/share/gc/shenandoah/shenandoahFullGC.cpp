@@ -239,7 +239,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     worker_slices[i] = new ShenandoahHeapRegionSet();
   }
 
-  ShenandoahGenerationalHeap::TransferResult result;
   {
     // The rest of code performs region moves, where region status is undefined
     // until all phases run together.
@@ -1107,7 +1106,6 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
 void ShenandoahFullGC::phase5_epilog() {
   GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGenerationalHeap::TransferResult result;
 
   // Reset complete bitmap. We're about to reset the complete-top-at-mark-start pointer
   // and must ensure the bitmap is in sync.
