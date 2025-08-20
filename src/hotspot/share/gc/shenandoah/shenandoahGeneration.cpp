@@ -630,6 +630,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
     // Subsequent regions may be selected if they have smaller live data.
   }
 
+  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: %zu", promo_potential);
+
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
   size_t old_consumed = 0;
