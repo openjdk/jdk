@@ -2633,10 +2633,10 @@ class StubGenerator: public StubCodeGenerator {
     generate_aes_loadkeys(key, working_vregs, 11);
     __ bind(L_exit_loadkeys);
 
-    Label L_judge_used, L_encrypt_slow, L_main_loop;
+    Label L_slow_loop, L_encrypt_slow, L_main_loop;
 
     // Encrypt bytes left with last encryptedCounter
-    __ bind(L_judge_used);
+    __ bind(L_slow_loop);
     __ mv(t2, block_size);
     __ bge(used, t2, L_main_loop);
 
@@ -2651,7 +2651,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(used, used, 1);
     __ subi(len, len, 1);
     __ beqz(len, L_exit);
-    __ j(L_judge_used);
+    __ j(L_slow_loop);
 
     Label L_first_loop, L_loop, L_calculate_one_next;
 
@@ -2736,7 +2736,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(len32, L_loop);
 
     // Save the encrypted_counter and next counter according to ctr
-    Label L_save_v16, L_save_v17, L_save_v18;
     __ mv(used, block_size);
     __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
     __ vadd_vx(v16, v16, ctr, Assembler::VectorMask::v0_t);
