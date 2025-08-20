@@ -71,7 +71,7 @@ TEST_VM(AssemblerX86, validate) {
   VM_Version::set_evex_cpuFeatures();
   VM_Version::set_avx_cpuFeatures();
   VM_Version::set_apx_cpuFeatures();
-  BufferBlob* b = BufferBlob::create("x64Test", 500000);
+  BufferBlob* b = BufferBlob::create("x64Test", 5000000);
   CodeBuffer code(b);
   MacroAssembler _masm(&code);
   address entry = __ pc();

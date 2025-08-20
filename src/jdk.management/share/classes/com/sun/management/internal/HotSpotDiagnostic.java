@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
             throw new IllegalArgumentException("'outputFile' not absolute path");
 
         try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW)) {
-                dumpThreads(out, format);
+            dumpThreads(out, format);
         }
     }
 

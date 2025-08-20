@@ -666,8 +666,8 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
     ::memset(inner_ptr, 0, size);
-  } else {
-    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  } else if (ZapCHeap) {
+    ::memset(inner_ptr, uninitBlockPad, size);
   }
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
   return inner_ptr;
@@ -740,7 +740,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");
-    if (old_size < size) {
+    if (ZapCHeap && old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
     }
@@ -1042,7 +1042,7 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
     }
     print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
-    logical_p += unitsize;
+    logical_p = (const_address) ((uintptr_t)logical_p + unitsize);
     cols++;
     if (cols >= cols_per_line) {
        if (print_ascii && !ascii_form.is_empty()) {
@@ -1125,7 +1125,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 
 void os::print_jvmti_agent_info(outputStream* st) {
 #if INCLUDE_JVMTI
-  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::all();
   if (it.has_next()) {
     st->print_cr("JVMTI agents:");
   } else {

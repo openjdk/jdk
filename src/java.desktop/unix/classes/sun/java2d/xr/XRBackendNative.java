@@ -40,7 +40,7 @@ import static sun.java2d.xr.XRUtils.XDoubleToFixed;
  * @author Clemens Eisserer
  */
 
-public class XRBackendNative implements XRBackend {
+public final class XRBackendNative implements XRBackend {
 
     static {
         initIDs();
@@ -52,34 +52,45 @@ public class XRBackendNative implements XRBackend {
 
     private static native void initIDs();
 
+    @Override
     public native long createGC(int drawable);
 
+    @Override
     public native void freeGC(long gc);
 
+    @Override
     public native int createPixmap(int drawable, int depth,
                                    int width, int height);
 
     private native int createPictureNative(int drawable, long formatID);
 
+    @Override
     public native void freePicture(int picture);
 
+    @Override
     public native void freePixmap(int pixmap);
 
+    @Override
     public native void setGCExposures(long gc, boolean exposure);
 
+    @Override
     public native void setGCForeground(long gc, int pixel);
 
+    @Override
     public native void setPictureRepeat(int picture, int repeat);
 
+    @Override
     public native void copyArea(int src, int dst, long gc,
                                 int srcx, int srcy, int width, int height,
                                  int dstx, int dsty);
 
+    @Override
     public native void setGCMode(long gc, boolean copy);
 
     private static native void GCRectanglesNative(int drawable, long gc,
                                                   int[] rectArray, int rectCnt);
 
+    @Override
     public native void renderComposite(byte op, int src, int mask,
                                        int dst, int srcX, int srcY,
                                        int maskX, int maskY, int dstX, int dstY,
@@ -113,20 +124,24 @@ public class XRBackendNative implements XRBackend {
                                           int innerRadius, int outerRadius,
                                           int repeat);
 
+    @Override
     public native void setFilter(int picture, int filter);
 
     private static native void XRSetClipNative(long dst,
                                                int x1, int y1, int x2, int y2,
                                                Region clip, boolean isGC);
 
+    @Override
     public void GCRectangles(int drawable, long gc, GrowableRectArray rects) {
         GCRectanglesNative(drawable, gc, rects.getArray(), rects.getSize());
     }
 
+    @Override
     public int createPicture(int drawable, int formatID) {
         return createPictureNative(drawable, getFormatPtr(formatID));
     }
 
+    @Override
     public void setPictureTransform(int picture, AffineTransform transform) {
         XRSetTransformNative(picture,
                              XDoubleToFixed(transform.getScaleX()),
@@ -137,6 +152,7 @@ public class XRBackendNative implements XRBackend {
                              XDoubleToFixed(transform.getTranslateY()));
     }
 
+    @Override
     public void renderRectangle(int dst, byte op, XRColor color,
                                 int x, int y, int width, int height) {
         renderRectangle(dst, op, (short)color.red, (short)color.green,
@@ -170,6 +186,7 @@ public class XRBackendNative implements XRBackend {
         return 0L;
     }
 
+    @Override
     public int createLinearGradient(Point2D p1, Point2D p2, float[] fractions,
                               int[] pixels,  int repeat) {
 
@@ -182,6 +199,7 @@ public class XRBackendNative implements XRBackend {
         return gradient;
     }
 
+    @Override
     public int createRadialGradient(float centerX, float centerY,
                                    float innerRadius, float outerRadius,
                                    float[] fractions, int[] pixels, int repeat) {
@@ -196,12 +214,14 @@ public class XRBackendNative implements XRBackend {
               repeat);
     }
 
+    @Override
     public void setGCClipRectangles(long gc, Region clip) {
         XRSetClipNative(gc, clip.getLoX(), clip.getLoY(),
                         clip.getHiX(), clip.getHiY(),
                         clip.isRectangular() ? null : clip, true);
     }
 
+    @Override
     public void setClipRectangles(int picture, Region clip) {
         if (clip != null) {
             XRSetClipNative(picture, clip.getLoX(), clip.getLoY(),
@@ -212,6 +232,7 @@ public class XRBackendNative implements XRBackend {
         }
     }
 
+    @Override
     public void renderRectangles(int dst, byte op, XRColor color,
                                  GrowableRectArray rects) {
         XRenderRectanglesNative(dst, op,
@@ -229,6 +250,7 @@ public class XRBackendNative implements XRBackend {
         return glyphInfoPtrs;
     }
 
+    @Override
     public void XRenderAddGlyphs(int glyphSet, GlyphList gl,
                                  List<XRGlyphCacheEntry> cacheEntries,
                                  byte[] pixelData) {
@@ -237,6 +259,7 @@ public class XRBackendNative implements XRBackend {
                           glyphInfoPtrs.length, pixelData, pixelData.length);
     }
 
+    @Override
     public void XRenderFreeGlyphs(int glyphSet, int[] gids) {
         XRFreeGlyphsNative(glyphSet, gids, gids.length);
     }
@@ -256,12 +279,14 @@ public class XRBackendNative implements XRBackend {
                                    int[] eltArray, int[] glyphIDs, int eltCnt,
                                    int glyphCnt);
 
+    @Override
     public int XRenderCreateGlyphSet(int formatID) {
         return XRenderCreateGlyphSetNative(getFormatPtr(formatID));
     }
 
     private static native int XRenderCreateGlyphSetNative(long format);
 
+    @Override
     public void XRenderCompositeText(byte op, int src, int dst,
                                      int maskFormatID,
                                      int sx, int sy, int dx, int dy,
@@ -273,6 +298,7 @@ public class XRBackendNative implements XRBackend {
                                    glyphs.getSize());
     }
 
+    @Override
     public void putMaskImage(int drawable, long gc, byte[] imageData,
                              int sx, int sy, int dx, int dy,
                              int width, int height, int maskOff,

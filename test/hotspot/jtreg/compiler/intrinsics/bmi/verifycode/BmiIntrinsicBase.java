@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
     protected void checkEmittedCode(Executable executable) {
         final byte[] nativeCode = NMethod.get(executable, false).insts;
         final byte[] matchInstrPattern = (((BmiTestCase) testCase).getTestCaseX64() && Platform.isX64()) ? ((BmiTestCase_x64) testCase).getInstrPattern_x64() : ((BmiTestCase) testCase).getInstrPattern();
-        if (!((BmiTestCase) testCase).verifyPositive(nativeCode)) {
+        boolean use_apx = CPUInfo.hasFeature("apx_f");
+        if (!((BmiTestCase) testCase).verifyPositive(nativeCode, use_apx)) {
             throw new AssertionError(testCase.name() + " " + "CPU instructions expected not found in nativeCode: " + Utils.toHexString(nativeCode) + " ---- Expected instrPattern: " +
             Utils.toHexString(matchInstrPattern));
         } else {
@@ -124,6 +125,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         private final Method method;
         protected byte[] instrMask;
         protected byte[] instrPattern;
+        protected byte[] instrMaskAPX;
+        protected byte[] instrPatternAPX;
         protected boolean isLongOperation;
         protected String cpuFlag = "bmi1";
         protected String vmFlag = "UseBMI1Instructions";
@@ -160,6 +163,13 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             return countCpuInstructions(nativeCode, instrMask, instrPattern);
         }
 
+        protected int countCpuInstructionsAPX(byte[] nativeCode) {
+            if (instrMaskAPX == null || instrPatternAPX == null) {
+                return 0;
+            }
+            return countCpuInstructions(nativeCode, instrMaskAPX, instrPatternAPX);
+        }
+
         public static int countCpuInstructions(byte[] nativeCode, byte[] instrMask, byte[] instrPattern) {
             int count = 0;
             int patternSize = Math.min(instrMask.length, instrPattern.length);
@@ -181,8 +191,12 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             return count;
         }
 
-        public boolean verifyPositive(byte[] nativeCode) {
-            final int cnt = countCpuInstructions(nativeCode);
+        public boolean verifyPositive(byte[] nativeCode, boolean use_apx) {
+            int cnt = countCpuInstructions(nativeCode);
+            if (use_apx) {
+                System.out.println("CHECKING APX INST PATTERNS");
+                cnt += countCpuInstructionsAPX(nativeCode);
+            }
             if (Platform.isX86()) {
                 return cnt >= (isLongOperation ? 2 : 1);
             } else {

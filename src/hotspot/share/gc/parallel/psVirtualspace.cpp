@@ -23,32 +23,14 @@
  */
 
 #include "gc/parallel/psVirtualspace.hpp"
+#include "logging/log.hpp"
 #include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
-// PSVirtualSpace
-
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   _alignment(alignment)
 {
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
-// Deprecated.
-PSVirtualSpace::PSVirtualSpace():
-  _alignment(os::vm_page_size()),
-  _reserved_low_addr(nullptr),
-  _reserved_high_addr(nullptr),
-  _committed_low_addr(nullptr),
-  _committed_high_addr(nullptr),
-  _special(false) {
-}
-
-// Deprecated.
-void PSVirtualSpace::initialize(ReservedSpace rs) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
@@ -80,6 +62,8 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
          os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
+  } else {
+    log_warning(gc)("PSVirtualSpace::expand_by: to commit %zu bytes failed", bytes);
   }
 
   return result;

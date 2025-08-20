@@ -110,12 +110,10 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * defined by {@link Character#digit Character.digit}, are recognized.
  *
  * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
+ * The integer and fraction digit limits are set by either applying a {@link ##patterns
+ * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
+ * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
+ * on parsing behavior.
  *
  * <h3>Special Values</h3>
  * <ul>
@@ -413,6 +411,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
+ *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
@@ -647,17 +652,10 @@ public class DecimalFormat extends NumberFormat {
             return result;
         }
 
-        /* Detecting whether a double is negative is easy with the exception of
-         * the value -0.0.  This is a double which has a zero mantissa (and
-         * exponent), but a negative sign bit.  It is semantically distinct from
-         * a zero with a positive sign bit, and this distinction is important
-         * to certain kinds of computations.  However, it's a little tricky to
-         * detect, since (-0.0 == 0.0) and !(-0.0 < 0.0).  How then, you may
-         * ask, does it behave distinctly from +0.0?  Well, 1/(-0.0) ==
-         * -Infinity.  Proper detection of -0.0 is needed to deal with the
+        /* Proper detection of -0.0 is needed to deal with the
          * issues raised by bugs 4106658, 4106667, and 4147706.  Liu 7/6/98.
          */
-        boolean isNegative = ((number < 0.0) || (number == 0.0 && 1/number < 0.0)) ^ (multiplier < 0);
+        boolean isNegative = Double.doubleToRawLongBits(number) < 0 ^ multiplier < 0;
 
         if (multiplier != 1) {
             number *= multiplier;
@@ -3972,9 +3970,9 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMaximumIntegerDigits
+     * {@inheritDoc NumberFormat}
+     * @param newValue the maximum number of integer digits to be shown.
+     * @see #getMaximumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -3989,9 +3987,9 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMinimumIntegerDigits
+     * {@inheritDoc NumberFormat}
+     * @param newValue the minimum number of integer digits to be shown.
+     * @see #getMinimumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4006,9 +4004,9 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMaximumFractionDigits
+     * {@inheritDoc NumberFormat}
+     * @param newValue the maximum number of fraction digits to be shown.
+     * @see #getMaximumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4023,9 +4021,9 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMinimumFractionDigits
+     * {@inheritDoc NumberFormat}
+     * @param newValue the minimum number of fraction digits to be shown.
+     * @see #getMinimumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4040,11 +4038,11 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the maximum number of digits allowed in the integer portion of a
-     * number. The maximum number of integer digits can be set by either {@link #setMaximumIntegerDigits(int)}
-     * or {@link #applyPattern(String)}. See the {@link ##patterns Pattern Section} for
-     * comprehensive rules regarding maximum integer digits in patterns.
+     * {@inheritDoc NumberFormat}
+     * <p>Unlike the other digit limits, {@code maximumIntegerDigits} is not
+     * updated by {@code DecimalFormats} created or updated with a string pattern.
      * @see #setMaximumIntegerDigits
+     * @see ##patterns Pattern Section
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4053,8 +4051,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the minimum number of digits allowed in the integer portion of a
-     * number.
+     * {@inheritDoc NumberFormat}
      * @see #setMinimumIntegerDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4064,8 +4061,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the maximum number of digits allowed in the fraction portion of a
-     * number.
+     * {@inheritDoc NumberFormat}
      * @see #setMaximumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4075,8 +4071,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the minimum number of digits allowed in the fraction portion of a
-     * number.
+     * {@inheritDoc NumberFormat}
      * @see #setMinimumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */

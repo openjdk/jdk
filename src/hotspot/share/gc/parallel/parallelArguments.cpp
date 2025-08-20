@@ -66,11 +66,16 @@ void ParallelArguments::initialize() {
     }
   }
 
+  // True in product build, since tests using debug build often stress GC
+  if (FLAG_IS_DEFAULT(UseGCOverheadLimit)) {
+    FLAG_SET_DEFAULT(UseGCOverheadLimit, trueInProduct);
+  }
+
   if (InitialSurvivorRatio < MinSurvivorRatio) {
     if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
       if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
         jio_fprintf(defaultStream::error_stream(),
-          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %d vs %d\n", MinSurvivorRatio, InitialSurvivorRatio);
+          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %zu vs %zu\n", MinSurvivorRatio, InitialSurvivorRatio);
       }
       FLAG_SET_DEFAULT(MinSurvivorRatio, InitialSurvivorRatio);
     } else {
@@ -98,15 +103,15 @@ void ParallelArguments::initialize() {
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
-// The alignment used for boundary between young gen and old gen
-static size_t default_gen_alignment() {
+// The alignment used for spaces in young gen and old gen
+static size_t default_space_alignment() {
   return 64 * K * HeapWordSize;
 }
 
 void ParallelArguments::initialize_alignments() {
   // Initialize card size before initializing alignments
   CardTable::initialize_card_size();
-  SpaceAlignment = GenAlignment = default_gen_alignment();
+  SpaceAlignment = default_space_alignment();
   HeapAlignment = compute_heap_alignment();
 }
 
@@ -123,9 +128,8 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
 
   // Can a page size be something else than a power of two?
   assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
-  size_t new_alignment = align_up(page_sz, GenAlignment);
-  if (new_alignment != GenAlignment) {
-    GenAlignment = new_alignment;
+  size_t new_alignment = align_up(page_sz, SpaceAlignment);
+  if (new_alignment != SpaceAlignment) {
     SpaceAlignment = new_alignment;
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();

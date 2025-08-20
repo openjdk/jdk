@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,10 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "jfr/support/jfrKlassExtension.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 
 inline traceid JfrTraceId::load(const Klass* klass) {
@@ -77,7 +79,7 @@ inline traceid JfrTraceId::load_leakp(const Klass* klass, const Method* method) 
 }
 
 inline traceid JfrTraceId::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
-  return JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(klass, method);
+  return JfrTraceIdLoadBarrier::load_leakp_previous_epoch(klass, method);
 }
 
 template <typename T>
@@ -90,8 +92,15 @@ inline traceid JfrTraceId::load_raw(const Klass* klass) {
   return raw_load(klass);
 }
 
+inline traceid JfrTraceId::load_raw(const Klass* holder, const Method* method) {
+  assert(holder != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
+  assert(method->method_holder() == holder, "invariant");
+  return METHOD_ID(holder, method);
+}
+
 inline traceid JfrTraceId::load_raw(const Method* method) {
-  return (METHOD_ID(method->method_holder(), method));
+  return load_raw(method->method_holder(), method);
 }
 
 inline traceid JfrTraceId::load_raw(const ModuleEntry* module) {
@@ -154,6 +163,62 @@ inline void JfrTraceId::tag_as_event_host(const Klass* k) {
   assert(k != nullptr, "invariant");
   SET_EVENT_HOST_KLASS(k);
   assert(IS_EVENT_HOST_KLASS(k), "invariant");
+}
+
+inline bool JfrTraceId::has_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  return HAS_STICKY_BIT(k);
+}
+
+inline void JfrTraceId::set_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(!has_sticky_bit(k), "invariant");
+  SET_STICKY_BIT(k);
+  assert(has_sticky_bit(k), "invariant");
+}
+
+inline void JfrTraceId::clear_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invarriant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(JfrTraceId::has_sticky_bit(k), "invariant");
+  CLEAR_STICKY_BIT(k);
+  assert(!JfrTraceId::has_sticky_bit(k), "invariant");
+}
+
+inline bool JfrTraceId::has_sticky_bit(const Method* method) {
+  assert(method != nullptr, "invariant");
+  return METHOD_HAS_STICKY_BIT(method);
+}
+
+inline void JfrTraceId::set_sticky_bit(const Method* method) {
+  assert(method != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(!has_sticky_bit(method), "invariant");
+  assert(!method->is_old(), "invariant");
+  SET_METHOD_STICKY_BIT(method);
+  assert(has_sticky_bit(method), "invariant");
+}
+
+inline void JfrTraceId::clear_sticky_bit(const Method* method) {
+  assert(method != nullptr, "invarriant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(!method->is_old(), "invariant");
+  assert(JfrTraceId::has_sticky_bit(method), "invariant");
+  CLEAR_STICKY_BIT_METHOD(method);
+  assert(!JfrTraceId::has_sticky_bit(method), "invariant");
+}
+
+inline bool JfrTraceId::has_timing_bit(const InstanceKlass* scratch_klass) {
+  assert(scratch_klass != nullptr, "invariant");
+  return HAS_TIMING_BIT(scratch_klass);
+}
+
+inline void JfrTraceId::set_timing_bit(const InstanceKlass* scratch_klass) {
+  assert(scratch_klass != nullptr, "invariant");
+  assert(!has_timing_bit(scratch_klass), "invariant");
+  SET_TIMING_BIT(scratch_klass);
+  assert(has_timing_bit(scratch_klass), "invariant");
 }
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP

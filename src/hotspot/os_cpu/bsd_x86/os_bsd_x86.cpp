@@ -89,6 +89,7 @@
 #ifdef AMD64
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
+#define REG_BCP context_r13
 #else
 #define SPELL_REG_SP "esp"
 #define SPELL_REG_FP "ebp"
@@ -349,6 +350,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(fr.sp() + 1, fr.fp(), (address)*(fr.sp()));
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
+}
+
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get
 // turned off by -fomit-frame-pointer,
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -421,13 +429,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
-#if !defined(PRODUCT) && defined(_LP64)
     if ((sig == SIGSEGV || sig == SIGBUS) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
       // Verify that OS save/restore APX registers.
       stub = VM_Version::cpuinfo_cont_addr_apx();
       VM_Version::clear_apx_test_state();
     }
-#endif
 
     // We test if stub is already set (by the stack overflow code
     // above) so it is not overwritten by the code that follows. This

@@ -279,14 +279,15 @@ final class P11Mac extends MacSpi {
             if (len <= 0) {
                 return;
             }
-            if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+            if (!(byteBuffer instanceof DirectBuffer)) {
                 super.engineUpdate(byteBuffer);
                 return;
             }
             int ofs = byteBuffer.position();
             NIO_ACCESS.acquireSession(byteBuffer);
             try  {
-                token.p11.C_SignUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
+                final long address = NIO_ACCESS.getBufferAddress(byteBuffer);
+                token.p11.C_SignUpdate(session.id(), address + ofs, null, 0, len);
             } finally {
                 NIO_ACCESS.releaseSession(byteBuffer);
             }
