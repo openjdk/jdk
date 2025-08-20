@@ -216,7 +216,6 @@ public class FloatingDecimal{
         private int firstDigitIndex;
         private int nDigits;
         private final byte[] digits;
-        private final byte[] buffer = new byte[26];
 
         //
         // The fields below provide additional information about the result of
