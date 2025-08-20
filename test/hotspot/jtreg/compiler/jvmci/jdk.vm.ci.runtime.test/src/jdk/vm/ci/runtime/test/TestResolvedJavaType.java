@@ -1260,7 +1260,7 @@ public class TestResolvedJavaType extends TypeUniverse {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             AnnotationValue av = type.getDeclaredAnnotationValue(overrideType);
             Assert.assertNull(String.valueOf(av), av);
-            Map<ResolvedJavaType, AnnotationValue> avMap = type.getDeclaredAnnotationValues(overrideType, overrideType);
+            Map<ResolvedJavaType, AnnotationValue> avMap = type.getDeclaredAnnotationValues();
             Assert.assertEquals(0, avMap.size());
         }
 
@@ -1319,14 +1319,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         return method.getAnnotation(SIGNATURE_POLYMORPHIC_CLASS) != null;
     }
 
-    private static void getAnnotationValueExpectedToFail(Annotated annotated, ResolvedJavaType... annotationTypes) {
+    private static void getAnnotationValueExpectedToFail(Annotated annotated, ResolvedJavaType annotationType) {
         try {
-            if (annotationTypes.length == 1) {
-                annotated.getDeclaredAnnotationValue(annotationTypes[0]);
-            } else {
-                annotated.getDeclaredAnnotationValues(annotationTypes);
-            }
-            String s = Stream.of(annotationTypes).map(ResolvedJavaType::toJavaName).collect(Collectors.joining(", "));
+            annotated.getDeclaredAnnotationValue(annotationType);
+            String s = annotationType.toJavaName();
             throw new AssertionError("Expected IllegalArgumentException for retrieving (" + s + " from " + annotated);
         } catch (IllegalArgumentException iae) {
             assertTrue(iae.getMessage(), iae.getMessage().contains("not an annotation interface"));
@@ -1345,15 +1341,11 @@ public class TestResolvedJavaType extends TypeUniverse {
         ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
         ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         getAnnotationValueExpectedToFail(annotated, objectType);
-        getAnnotationValueExpectedToFail(annotated, suppressWarningsType, objectType);
-        getAnnotationValueExpectedToFail(annotated, suppressWarningsType, suppressWarningsType, objectType);
 
         // Check that querying a missing annotation returns null or an empty list
         assertNull(annotated.getDeclaredAnnotationValue(suppressWarningsType));
-        Map<ResolvedJavaType, AnnotationValue> values = annotated.getDeclaredAnnotationValues(suppressWarningsType, suppressWarningsType);
-        assertTrue(values.toString(), values.isEmpty());
-        values = annotated.getDeclaredAnnotationValues(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
-        assertTrue(values.toString(), values.isEmpty());
+        Map<ResolvedJavaType, AnnotationValue> values = annotated.getDeclaredAnnotationValues();
+        assertNull(values.toString(), values.get(suppressWarningsType));
 
         return testGetAnnotationValues(annotated, List.of(annotatedElement.getDeclaredAnnotations()));
     }
@@ -1388,26 +1380,7 @@ public class TestResolvedJavaType extends TypeUniverse {
             av2 = allAnnotationValues.get(annotationType);
             assertAnnotationsEquals(a, av2);
 
-            Map<ResolvedJavaType, AnnotationValue> annotationValues = annotated.getDeclaredAnnotationValues(annotationType, suppressWarningsType, suppressWarningsType);
-            assertEquals(1, annotationValues.size());
-
             res.add(av);
-        }
-        if (annotations.size() < 2) {
-            return res;
-        }
-        for (int i = 0; i < annotations.size(); i++) {
-            ResolvedJavaType[] types = annotations.//
-                    stream().map(a -> metaAccess.lookupJavaType(a.annotationType())).//
-                    toArray(ResolvedJavaType[]::new);
-            Map<ResolvedJavaType, AnnotationValue> annotationValues = annotated.getDeclaredAnnotationValues(types);
-            assertEquals(types.length, annotationValues.size());
-
-            for (int j = 0; j < annotationValues.size(); j++) {
-                Annotation a = annotations.get(j);
-                AnnotationValue av = annotationValues.get(metaAccess.lookupJavaType(a.annotationType()));
-                assertAnnotationsEquals(a, av);
-            }
         }
         return res;
     }

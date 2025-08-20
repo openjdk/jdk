@@ -73,10 +73,4 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
             throw new IllegalArgumentException(type.toJavaName() + " is not an annotation interface");
         }
     }
-
-    static void checkAreAnnotations(ResolvedJavaType... types) {
-        for (ResolvedJavaType type : types) {
-            checkIsAnnotation(type);
-        }
-    }
 }

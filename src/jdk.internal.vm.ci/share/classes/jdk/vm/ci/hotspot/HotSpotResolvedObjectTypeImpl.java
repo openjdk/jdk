@@ -1118,24 +1118,23 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType annotationType) {
+        checkIsAnnotation(annotationType);
         if (!mayHaveAnnotations(true)) {
-            checkIsAnnotation(annotationType);
             return null;
         }
-        return getAnnotationValues0(annotationType).get(annotationType);
+        return getAnnotationValues0().get(annotationType);
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         if (!mayHaveAnnotations(true)) {
-            checkAreAnnotations(types);
             return Map.of();
         }
-        return getAnnotationValues0(types);
+        return getAnnotationValues0();
     }
 
-    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS, filter);
+    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0() {
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS);
         return new AnnotationValueDecoder(this).decode(encoded);
     }
 
@@ -1144,7 +1143,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         if (isArray()) {
             return List.of();
         }
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS, null);
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(this));
     }
 }

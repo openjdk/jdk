@@ -706,7 +706,7 @@ class SerializeClosure;
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
-  template(encodeAnnotations_signature,                "([BILjava/lang/Class;Ljdk/internal/reflect/ConstantPool;[Ljava/lang/Class;)[B")\
+  template(encodeAnnotations_signature,                "([BILjava/lang/Class;Ljdk/internal/reflect/ConstantPool;)[B")\
   template(decodeAndThrowThrowable_signature,          "(IJZZ)V")                                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \

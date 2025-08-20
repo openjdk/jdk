@@ -691,12 +691,16 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         ResolvedJavaType a1 = metaAccess.lookupJavaType(Annotation1.class);
         ResolvedJavaType a2 = metaAccess.lookupJavaType(Annotation2.class);
         ResolvedJavaType a3 = metaAccess.lookupJavaType(Annotation3.class);
-        ResolvedJavaType a4 = metaAccess.lookupJavaType(AnnotationValueTest.class);
         ResolvedJavaType numbersDEType = metaAccess.lookupJavaType(NumbersDE.class);
 
         // Ensure NumbersDE is not initialized before Annotation2 is requested
         Assert.assertFalse(numbersDEType.isInitialized());
-        Assert.assertEquals(2, m.getDeclaredAnnotationValues(a1, a3).size());
+
+        Map<ResolvedJavaType, AnnotationValue> declaredAnnotationValues = m.getDeclaredAnnotationValues();
+        Assert.assertEquals(3, declaredAnnotationValues.size());
+        Assert.assertNotNull(declaredAnnotationValues.get(a1));
+        Assert.assertNotNull(declaredAnnotationValues.get(a2));
+        Assert.assertNotNull(declaredAnnotationValues.get(a3));
 
         // Ensure NumbersDE is not initialized after Annotation2 is requested
         Assert.assertNotNull(m.getDeclaredAnnotationValue(a2));

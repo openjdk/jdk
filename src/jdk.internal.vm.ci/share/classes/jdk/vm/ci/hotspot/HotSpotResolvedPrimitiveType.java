@@ -48,7 +48,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     static HotSpotResolvedPrimitiveType[] primitives;
 
-    private JavaKind kind;
+    private final JavaKind kind;
     HotSpotObjectConstantImpl mirror;
 
     /**
@@ -349,8 +349,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
-        checkAreAnnotations(types);
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         return Map.of();
     }
 

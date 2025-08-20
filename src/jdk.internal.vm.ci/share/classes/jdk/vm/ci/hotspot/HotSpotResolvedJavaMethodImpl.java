@@ -56,7 +56,6 @@ import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
 import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
@@ -780,24 +779,23 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
+        checkIsAnnotation(type);
         if (!hasAnnotations()) {
-            checkIsAnnotation(type);
             return null;
         }
-        return getAnnotationValues0(type).get(type);
+        return getAnnotationValues0().get(type);
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues(ResolvedJavaType... types) {
-        checkAreAnnotations(types);
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         if (!hasAnnotations()) {
             return Map.of();
         }
-        return getAnnotationValues0(types);
+        return getAnnotationValues0();
     }
 
-    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS, filter);
+    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0() {
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS);
         return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
     }
 
@@ -806,13 +804,13 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (!hasParameterAnnotations()) {
             return null;
         }
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.PARAMETER_ANNOTATIONS, null);
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.PARAMETER_ANNOTATIONS);
         return VMSupport.decodeParameterAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 
     @Override
     public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS, null);
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 

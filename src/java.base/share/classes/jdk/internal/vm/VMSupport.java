@@ -216,22 +216,10 @@ public class VMSupport {
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
                                            int category,
                                            Class<?> declaringClass,
-                                           ConstantPool cp,
-                                           Class<? extends Annotation>[] selectAnnotationClasses) {
+                                           ConstantPool cp) {
         return switch (category) {
-            case DECLARED_ANNOTATIONS -> {
-                if (selectAnnotationClasses != null) {
-                    if (selectAnnotationClasses.length == 0) {
-                        throw new IllegalArgumentException("annotation class selection must be null or non-empty");
-                    }
-                    for (Class<?> c : selectAnnotationClasses) {
-                        if (!c.isAnnotation()) {
-                            throw new IllegalArgumentException(c + " is not an annotation interface");
-                        }
-                    }
-                }
-                yield encodeAnnotations(AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, false, selectAnnotationClasses).values());
-            }
+            case DECLARED_ANNOTATIONS ->
+                    encodeAnnotations(AnnotationParser.parseAnnotations(rawAnnotations, cp, declaringClass, false).values());
             case PARAMETER_ANNOTATIONS ->
                     encodeParameterAnnotations(AnnotationParser.parseParameterAnnotations(rawAnnotations, cp, declaringClass));
             case TYPE_ANNOTATIONS ->
