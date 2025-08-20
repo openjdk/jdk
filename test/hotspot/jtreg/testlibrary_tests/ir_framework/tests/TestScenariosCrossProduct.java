@@ -61,7 +61,8 @@ public class TestScenariosCrossProduct {
             t2.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2")) {
+            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2")||
+                 e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3")) {
                 throw e;
             }
         }
@@ -74,7 +75,20 @@ public class TestScenariosCrossProduct {
             t3.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3")) {
+            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3") ||
+                 e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3, #4")) {
+                throw e;
+            }
+        }
+
+        try {
+            TestFramework t4 = new TestFramework();
+            t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWastFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
+                                        Set.of("-XX:+UseNewCode2"));
+        } catch (TestRunException e) {
+            if (!e.getMessage().contains("The following scenarios have failed: #0") ||
+                !e.getMessage().contains("The following scenarios have failed: #1") ||
+                 e.getMessage().contains("The following scenarios have failed: #0, #1")) {
                 throw e;
             }
         }
@@ -89,5 +103,10 @@ public class TestScenariosCrossProduct {
     @IR(applyIf = {"TLABRefillWasteFraction", "51"}, counts = {IRNode.CALL, "1"})
     @IR(applyIf = {"TLABRefillWasteFraction", "53"}, counts = {IRNode.CALL, "1"})
     public void fail2() {
+    }
+
+    @Test
+    @IR(applyIfAnd = {"TLABRefillWasteFraction", "50", "UseNewCode", "true"}, counts = {IRNode.CALL, "1"})
+    public void failPair() {
     }
 }
