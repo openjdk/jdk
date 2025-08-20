@@ -73,7 +73,7 @@ else ifeq ($(BASE_OS), Fedora)
     $(error Only "aarch64 armhfp ppc64le riscv64 s390x x86_64" architectures are supported for Fedora, but "$(ARCH)" was requested)
   endif
   ifeq ($(ARCH), riscv64)
-    ifeq ($(filter 36 37, $(BASE_OS_VERSION)), )
+    ifeq ($(filter 38 39 40 41, $(BASE_OS_VERSION)), )
       $(error Only Fedora 38-41 are supported for "$(ARCH)", but Fedora $(BASE_OS_VERSION) was requested)
     endif
     BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
