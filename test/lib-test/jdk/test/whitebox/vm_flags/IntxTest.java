@@ -39,7 +39,8 @@ public class IntxTest {
     private static final String FLAG_DEBUG_NAME = "BinarySwitchThreshold";
     private static final long COMPILE_THRESHOLD = VmFlagTest.WHITE_BOX.getIntxVMFlag("CompileThreshold");
     private static final Long[] TESTS = {0L, 100L, (long)(Integer.MAX_VALUE>>3)*100L};
-    public static void main(String[] args) throws Exception {
+
+     public static void main(String[] args) throws Exception {
         find_and_set_max_osrp();
         VmFlagTest.runTest(FLAG_NAME, TESTS,
             VmFlagTest.WHITE_BOX::setIntxVMFlag,

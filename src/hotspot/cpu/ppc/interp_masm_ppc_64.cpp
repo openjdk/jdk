@@ -1249,7 +1249,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
 }
 
 // Test ImethodDataPtr. If it is null, continue at the specified label.
-  void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue, bool may_be_far) {
+void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue, bool may_be_far) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   cmpdi(CR0, R28_mdx, 0);
   if (may_be_far) {
@@ -1257,7 +1257,6 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   } else {
     beq(CR0, zero_continue);
   }
-
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
