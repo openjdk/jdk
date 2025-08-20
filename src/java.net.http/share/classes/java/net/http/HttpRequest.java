@@ -732,13 +732,14 @@ public abstract class HttpRequest {
          * expected to close the {@code channel} when no longer needed.
          *
          * @apiNote
-         * This method can be used to either publish just a portion of a file's
-         * content as the request body or to publish different portions of the
-         * file's content concurrently. The typical approach to concurrently
-         * publish different portions of a file's content is to create an
-         * instance of {@link FileChannel} and then create multiple {@code
-         * HttpRequest}s each of which use a {@code ofFileChannel
-         * BodyPublisher} with a different non-overlapping offset and length.
+         * This method can be used to either publish just a region of a file as
+         * the request body or to publish different regions of a file
+         * concurrently. A typical usage would be to publish different regions
+         * of a file by creating a single instance of {@link FileChannel} and
+         * then send multiple concurrent {@code HttpRequest}s, each of which
+         * uses a new {@code ofFileChannel BodyPublisher} created from the same
+         * channel with a different, typically non-overlapping, range of bytes
+         * specified by offset and length.
          *
          * @param channel a file channel
          * @param offset the offset of the first byte
