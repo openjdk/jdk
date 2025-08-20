@@ -1836,7 +1836,7 @@ private:
       }
 
       // The almost last thing we do before releasing the lock is to set the _recycled_region_count to 0.  What happens next?
-      // 
+      //
       //  1. Any worker thread that attempted to buffer a new region while we were flushing the buffer will have seen
       //     that _recycled_region_count > MaxSavedRegions. All such worker threads will first wait for the lock, then
       //     discover that the _recycled_region_count is zero, then, while holding the lock, they will process the
@@ -2068,7 +2068,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
     ShenandoahHeapRegion* region = _heap->get_region(idx);
     if (region->is_trash()) {
       // Trashed regions represent immediate garbage identified by final mark and regions that had been in the collection
-      // partition but have not yet been "cleaned up" following update refs.  
+      // partition but have not yet been "cleaned up" following update refs.
       if (region->is_old()) {
         old_trashed_regions++;
       } else {
@@ -2432,7 +2432,7 @@ transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPa
     }
   }
   // _empty_region_counts is unaffected, because we transfer only non-empty regions here.
-  
+
   _partitions.decrease_used(which_collector, used_transfer);
   _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
                                                                 mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
@@ -2668,7 +2668,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   idx_t old_collector_high_idx = -1;
   idx_t old_collector_empty_low_idx = _partitions.max();
   idx_t old_collector_empty_high_idx = -1;
-  
+
   size_t used_to_collector = 0;
   size_t used_to_old_collector = 0;
   size_t regions_to_collector = 0;
@@ -2753,7 +2753,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
           }
           empty_regions_to_collector++;
         }
-        used_to_collector += 
+        used_to_collector +=
           _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                                                 ShenandoahFreeSetPartitionId::Collector, ac);
         collector_available += ac;

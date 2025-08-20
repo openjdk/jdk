@@ -86,10 +86,10 @@ private:
   //
   //  Unlike capacity, which represents the total amount of memory representing each partition as of the moment
   //  the freeset was most recently constructed:
-  // 
+  //
   //  _region_counts[p] represents the number of regions associated with the partition which currently have available memory.
   //                       When a region is retired from partition p, _region_counts[p] is decremented.
-  //  _total_region_counts[p] is _total_capacity[p] / RegionSizeBytes. 
+  //  _total_region_counts[p] is _total_capacity[p] / RegionSizeBytes.
   //  _empty_region_counts[p] is number of regions associated with p which are entirely empty
   //
   // capacity and used values are expressed in bytes.
@@ -310,10 +310,7 @@ public:
   inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
     shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "Partition must be valid");
-    assert (_used[int(which_partition)] >= bytes,
-            "Must not use (%zu) less than zero after decrease by %zu",
-            _used[int(which_partition)], bytes);
-    
+    assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
     _used[int(which_partition)] -= bytes;
     _available[int(which_partition)] += bytes;
   }
@@ -479,7 +476,7 @@ private:
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_old_used =_partitions.used_by(ShenandoahFreeSetPartitionId::OldCollector);
   }
-  
+
   // bytes used by global
   size_t _total_global_used;
   // Prerequisite: _total_young_used and _total_old_used are valid
@@ -513,7 +510,7 @@ private:
     _young_affiliated_regions = ((_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
                                  _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Collector)) -
                                  _young_unaffiliated_regions);
-    _old_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector) - 
+    _old_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector) -
                                _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
     _global_unaffiliated_regions =
       _young_unaffiliated_regions + _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);

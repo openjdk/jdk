@@ -173,7 +173,7 @@ private:
       return 0;
     }
   }
-  
+
   void log_status(const char* msg) const;
 
   // Used directly by FullGC
@@ -268,7 +268,7 @@ private:
     }
     return result;
   }
-  
+
   size_t get_humongous_waste() const {
     size_t result;
     switch (_type) {

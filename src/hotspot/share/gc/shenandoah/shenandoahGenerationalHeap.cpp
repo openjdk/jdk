@@ -617,7 +617,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
 
   const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const double max_old_reserve = ((ShenandoahOldEvacRatioPercent == 100)? bound_on_old_reserve: 
+  const double max_old_reserve = ((ShenandoahOldEvacRatioPercent == 100)? bound_on_old_reserve:
                                   MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent)
                                        / double(100 - ShenandoahOldEvacRatioPercent), bound_on_old_reserve));
 
