@@ -80,7 +80,7 @@ public class ToolingTest extends ReplToolTesting {
         );
     }
 
-	@Test
+    @Test
     public void testDisassembleBuiltinInnerClass() {
         test(
             a -> assertCommand(a, "/open TOOLING",
