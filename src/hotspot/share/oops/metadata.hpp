@@ -30,8 +30,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-#define BUILD_32(i16_h, i16_l) ( ((unsigned)i16_h << 16) | i16_l )
-
 // This is the base class for an internal Class related metadata
 class Metadata : public MetaspaceObj {
 
