@@ -1512,8 +1512,13 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
 
 // Implementation of CompilerToVM.registerNatives()
 // When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
-JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
+JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass,
+                                                jint declaredAnnotations, jint parameterAnnotations, jint typeAnnotations))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
+
+  assert(CompilerToVM::DECLARED_ANNOTATIONS == declaredAnnotations, "%d != %d", CompilerToVM::DECLARED_ANNOTATIONS, declaredAnnotations);
+  assert(CompilerToVM::PARAMETER_ANNOTATIONS == parameterAnnotations, "%d != %d", CompilerToVM::PARAMETER_ANNOTATIONS, parameterAnnotations);
+  assert(CompilerToVM::TYPE_ANNOTATIONS == typeAnnotations, "%d != %d", CompilerToVM::TYPE_ANNOTATIONS, typeAnnotations);
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);

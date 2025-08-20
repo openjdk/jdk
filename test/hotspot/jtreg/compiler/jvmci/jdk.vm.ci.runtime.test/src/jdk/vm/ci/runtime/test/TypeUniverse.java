@@ -33,6 +33,10 @@ import jdk.vm.ci.runtime.JVMCI;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -76,8 +80,25 @@ public class TypeUniverse {
 
     private static List<ConstantValue> constants;
 
-    public class InnerClass {
+    // Define a type-use annotation
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TypeQualifier {
+        String comment() default "";
+        int id() default -1;
+    }
 
+    // Define a parameter annotation
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface ParameterQualifier {
+        String value() default "";
+        int tag() default -1;
+    }
+
+    public class InnerClass {
+        public class InnerInnerClass {
+        }
     }
 
     public static class InnerStaticClass {
@@ -208,6 +229,28 @@ public class TypeUniverse {
         }
     }
 
+    // Annotates the class type String
+    public @TypeQualifier String[][] typeAnnotatedField1;
+    // Annotates the array type String[][]
+    public String @TypeQualifier [][]  typeAnnotatedField2;
+    // Annotates the array type String[]
+    String[] @TypeQualifier [] typeAnnotatedField3;
+
+    public @TypeQualifier(comment = "comment1", id = 42) TypeUniverse.InnerClass.InnerInnerClass typeAnnotatedField4;
+    public TypeUniverse.@TypeQualifier InnerClass.InnerInnerClass typeAnnotatedField5;
+    public TypeUniverse.InnerClass.@TypeQualifier(comment = "47", id = -10) InnerInnerClass typeAnnotatedField6;
+
+    public @TypeQualifier(comment = "comment2", id = 52) TypeUniverse.InnerClass.InnerInnerClass typeAnnotatedMethod1() { return null; }
+    public TypeUniverse.@TypeQualifier InnerClass.InnerInnerClass typeAnnotatedMethod2() { return null; }
+    public TypeUniverse.InnerClass.@TypeQualifier(comment = "57", id = -20) InnerInnerClass typeAnnotatedMethod3() { return null; }
+
+    public void annotatedParameters1(
+            @TypeQualifier(comment = "comment3", id = 62) TypeUniverse this,
+            @TypeQualifier(comment = "comment4", id = 72) @ParameterQualifier String annotatedParam1,
+            int notAnnotatedParam2,
+            @ParameterQualifier(value = "foo", tag = 123)  Thread annotatedParam3) {
+    }
+
     public synchronized Class<?> getArrayClass(Class<?> componentType) {
         Class<?> arrayClass = arrayClasses.get(componentType);
         if (arrayClass == null) {
@@ -231,6 +274,9 @@ public class TypeUniverse {
             }
             for (Class<?> sc : c.getInterfaces()) {
                 addClass(sc);
+            }
+            for (Class<?> enclosing = c.getEnclosingClass(); enclosing != null; enclosing = enclosing.getEnclosingClass()) {
+                addClass(enclosing);
             }
             for (Class<?> dc : c.getDeclaredClasses()) {
                 addClass(dc);

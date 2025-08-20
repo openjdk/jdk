@@ -74,6 +74,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -206,7 +207,9 @@ public class TestResolvedJavaField extends FieldUniverse {
      */
     private static void getTypeAnnotationValuesTest(Field field) {
         ResolvedJavaField javaField = metaAccess.lookupJavaField(field);
-        TestResolvedJavaType.assertTypeAnnotationsEquals(getTypeAnnotations(field), javaField.getTypeAnnotationValues());
+        TypeAnnotation[] typeAnnotations = getTypeAnnotations(field);
+        List<TypeAnnotationValue> typeAnnotationValues = javaField.getTypeAnnotationValues();
+        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
     }
 
     private static final Method fieldGetTypeAnnotationBytes = lookupMethod(Field.class, "getTypeAnnotationBytes0");
