@@ -996,6 +996,14 @@ void JvmtiClassFileReconstituter::write_u8(u8 x) {
 
 void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
                                                  unsigned char* bytecodes) {
+  // Method bytecodes can be rewritten during linking.
+  // Whilst the linking process rewriting bytescodes,
+  // is_rewritten() returns false. So we won't restore the original bytecodes.
+  // We hold a lock to guarantee we are not getting bytecodes
+  // at the same time the linking process are rewriting them.
+  Handle h_init_lock(Thread::current(), mh->method_holder()->init_lock());
+  ObjectLocker ol(h_init_lock, JavaThread::current());
+
   // use a BytecodeStream to iterate over the bytecodes. JVM/fast bytecodes
   // and the breakpoint bytecode are converted to their original bytecodes.
 
