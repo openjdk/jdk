@@ -28,6 +28,7 @@
 #include "opto/addnode.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 
 //
 // Adaptation for C2 of the escape analysis algorithm described in:
@@ -684,7 +685,7 @@ public:
   static int _no_escape_counter;
   static int _arg_escape_counter;
   static int _global_escape_counter;
-  void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
+  void dump(GrowableArray<PointsToNode*>& ptnodes_worklist, outputStream* out = tty);
   static void print_statistics();
   void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
 #endif

@@ -30,6 +30,7 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/ostream.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1703,7 +1704,7 @@ public:
 
   uint size() const { return _cnt; }
   void dump() const;
-  void dump_simple() const;
+  void dump_simple(outputStream* out = tty) const;
 };
 
 // Definition must appear after complete type definition of Node_List
