@@ -104,10 +104,7 @@ public final class IIORegistry extends ServiceRegistry {
         registerApplicationClasspathSpis();
     }
 
-    private static final IIORegistry registry;
-    static {
-        registry = new IIORegistry();
-    }
+    private static final IIORegistry registry = new IIORegistry();
 
     /**
      * Returns the default {@code IIORegistry} instance used by
