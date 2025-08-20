@@ -322,7 +322,7 @@ final class DigitList implements Cloneable {
         assert !fdConverter.isExceptional();
 
         byte[] chars = getDataChars(20);
-        int len = fdConverter.getChars(chars);;
+        int len = fdConverter.getChars(chars);
         set(isNegative, chars, len,
             hasBeenRoundedUp, valueExactAsDecimal,
             maximumDigits, fixedPoint);
