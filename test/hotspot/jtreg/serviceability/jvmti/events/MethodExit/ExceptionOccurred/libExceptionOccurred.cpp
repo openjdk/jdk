@@ -32,7 +32,7 @@ bool method_exit_posted = false;
 // 1) for ExceptionExit it verifies that method exit
 //    has been popped by exception and call 'upCall' mthod using JNI.
 // 2) for upCall method it verifies that event has correct
-//    return value and was not popped by execption.
+//    return value and was not popped by exception.
 // The event callback just exits for all other methods.
 static void JNICALL
 cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
