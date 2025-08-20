@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.annotation.Annotated;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
@@ -498,6 +499,20 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * @throws UnsupportedOperationException if this operation is not supported
      */
     default List<TypeAnnotationValue> getTypeAnnotationValues() {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    /**
+     * Returns a list of lists of {@code AnnotationValue}s that represents the
+     * {@code RuntimeVisibleParameterAnnotations} for the method represented by
+     * this object. Note that this differs from {@link Method#getParameterAnnotations()}
+     * in that it excludes entries for synthetic and mandated parameters.
+     *
+     * @return null if there are no parameter annotations for this method otherwise
+     *         an immutable list of immutable lists of parameter annotations
+     * @jvms 4.7.18
+     */
+    default List<List<AnnotationValue>> getParameterAnnotationValues() {
         throw new UnsupportedOperationException(getClass().getName());
     }
 }

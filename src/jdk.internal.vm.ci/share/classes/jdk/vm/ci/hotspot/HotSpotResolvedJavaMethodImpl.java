@@ -516,10 +516,14 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[][] getParameterAnnotations() {
-        if ((getConstMethodFlags() & config().constMethodHasParameterAnnotations) == 0 || isClassInitializer()) {
+        if (!hasParameterAnnotations() || isClassInitializer()) {
             return new Annotation[signature.getParameterCount(false)][0];
         }
         return runtime().reflection.getParameterAnnotations(this);
+    }
+
+    private boolean hasParameterAnnotations() {
+        return (getConstMethodFlags() & HotSpotVMConfig.config().constMethodHasParameterAnnotations) != 0;
     }
 
     @Override
@@ -793,13 +797,22 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, false, filter);
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS, filter);
         return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
     }
 
     @Override
+    public List<List<AnnotationValue>> getParameterAnnotationValues() {
+        if (!hasParameterAnnotations()) {
+            return null;
+        }
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.PARAMETER_ANNOTATIONS, null);
+        return VMSupport.decodeParameterAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
+    }
+
+    @Override
     public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, true, null);
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS, null);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 

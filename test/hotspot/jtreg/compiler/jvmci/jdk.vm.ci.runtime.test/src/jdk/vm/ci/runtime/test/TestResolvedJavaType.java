@@ -1423,7 +1423,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static void assertAnnotationsEquals(Annotation a, AnnotationValue av) {
+    public static void assertAnnotationsEquals(Annotation a, AnnotationValue av) {
         Map<String, Object> values = AnnotationSupport.memberValues(a);
         for (Map.Entry<String, Object> e : values.entrySet()) {
             String name = e.getKey();
@@ -1444,10 +1444,10 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static void assertTypeAnnotationEquals(TypeAnnotation ta, TypeAnnotationValue tav) {
         TypeAnnotation.TypeAnnotationTargetInfo tiLeft = ta.getTargetInfo();
         TypeAnnotation.TypeAnnotationTargetInfo tiRight = tav.getTargetInfo();
-        assertTrue(tiLeft + " != " + tiRight, TypeAnnotationValue.equal(tiLeft, tiRight));
+        assertEquals(tiLeft, tiRight);
         TypeAnnotation.LocationInfo liLeft = ta.getLocationInfo();
         TypeAnnotation.LocationInfo liRight = tav.getLocationInfo();
-        assertTrue(liLeft + " != " + liRight, TypeAnnotationValue.equal(liLeft, liRight));
+        assertEquals(liLeft, liRight);
         assertAnnotationsEquals(ta.getAnnotation(), tav.getAnnotation());
     }
 

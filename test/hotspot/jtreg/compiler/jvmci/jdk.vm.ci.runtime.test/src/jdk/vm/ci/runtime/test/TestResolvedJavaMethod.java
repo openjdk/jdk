@@ -595,7 +595,45 @@ public class TestResolvedJavaMethod extends MethodUniverse {
      */
     private static void getTypeAnnotationValuesTest(Executable executable) {
         ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
-        TestResolvedJavaType.assertTypeAnnotationsEquals(getTypeAnnotations(executable), method.getTypeAnnotationValues());
+        TypeAnnotation[] typeAnnotations = getTypeAnnotations(executable);
+        List<TypeAnnotationValue> typeAnnotationValues = method.getTypeAnnotationValues();
+        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
+    }
+
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
+     */
+    private static void getParameterAnnotationValuesTest(Executable executable) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
+        Annotation[][] parameterAnnotations = executable.getParameterAnnotations();
+        List<List<AnnotationValue>> parameterAnnotationValues = method.getParameterAnnotationValues();
+        if (parameterAnnotationValues != null) {
+            int parsedAnnotations = parameterAnnotationValues.size();
+            if (parsedAnnotations != parameterAnnotations.length) {
+                // Remove slots injected for implicit leading parameters
+                parameterAnnotations = Arrays.copyOfRange(parameterAnnotations, parameterAnnotations.length - parsedAnnotations, parameterAnnotations.length);
+            }
+            assertParameterAnnotationsEquals(parameterAnnotations, parameterAnnotationValues);
+        } else {
+            for (Annotation[] annotations : parameterAnnotations) {
+                Assert.assertEquals(0, annotations.length);
+            }
+        }
+    }
+
+    public static void assertParameterAnnotationsEquals(
+            Annotation[][] parameterAnnotations,
+            List<List<AnnotationValue>> parameterAnnotationValues) throws AssertionError {
+        assertEquals(parameterAnnotations.length, parameterAnnotationValues.size());
+        for (int i = 0; i < parameterAnnotations.length; i++) {
+            Annotation[] annotations = parameterAnnotations[i];
+            List<AnnotationValue> annotationValues = parameterAnnotationValues.get(i);
+            assertEquals(annotations.length, annotationValues.size());
+            for (int j = 0; j < annotations.length; j++) {
+                TestResolvedJavaType.assertAnnotationsEquals(annotations[j], annotationValues.get(j));
+            }
+        }
     }
 
     private static final Method executableGetTypeAnnotationBytes = lookupMethod(Executable.class, "getTypeAnnotationBytes");
@@ -610,6 +648,14 @@ public class TestResolvedJavaMethod extends MethodUniverse {
 
     @Test
     public void getTypeAnnotationValuesTest() throws Exception {
+        getParameterAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        for (Method m : methods.keySet()) {
+            getParameterAnnotationValuesTest(m);
+        }
+    }
+
+    @Test
+    public void getParameterAnnotationValuesTest() throws Exception {
         getTypeAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
         for (Method m : methods.keySet()) {
             getTypeAnnotationValuesTest(m);
