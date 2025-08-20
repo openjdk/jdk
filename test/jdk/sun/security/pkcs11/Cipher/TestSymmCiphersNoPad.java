@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,109 @@
  * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad
+ * @run main/othervm TestSymmCiphersNoPad ARCFOUR ARCFOUR 400
  */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad RC4 RC4 401
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad DES/CBC/NoPadding DES 400
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad DESede/CBC/NoPadding DESede 160
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad AES/CBC/NoPadding AES 4800
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad Blowfish/CBC/NoPadding Blowfish 24
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad AES/CTR/NoPadding AES 1600
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad AES/CTR/NoPadding AES 65
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad AES/CTS/NoPadding AES 1600
+ */
+
+/*
+ * @test
+ * @bug 4898484 6604496 8001284 8330842
+ * @summary basic test for symmetric ciphers with no padding
+ * @author Valerie Peng
+ * @library /test/lib ..
+ * @key randomness
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestSymmCiphersNoPad AES/CTS/NoPadding AES 65
+ */
+
+import jtreg.SkippedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,68 +148,51 @@ import javax.crypto.SecretKey;
 
 public class TestSymmCiphersNoPad extends PKCS11Test {
 
-    private static class CI { // class for holding Cipher Information
-        String transformation;
-        String keyAlgo;
-        int dataSize;
-
-        CI(String transformation, String keyAlgo, int dataSize) {
-            this.transformation = transformation;
-            this.keyAlgo = keyAlgo;
-            this.dataSize = dataSize;
-        }
-    }
-
-    private static final CI TEST_LIST[] = {
-        new CI("ARCFOUR", "ARCFOUR", 400),
-        new CI("RC4", "RC4", 401),
-        new CI("DES/CBC/NoPadding", "DES", 400),
-        new CI("DESede/CBC/NoPadding", "DESede", 160),
-        new CI("AES/CBC/NoPadding", "AES", 4800),
-        new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
-        new CI("AES/CTR/NoPadding", "AES", 1600),
-        new CI("AES/CTR/NoPadding", "AES", 65),
-        new CI("AES/CTS/NoPadding", "AES", 1600),
-        new CI("AES/CTS/NoPadding", "AES", 65),
-    };
-
     private static final StringBuffer debugBuf = new StringBuffer();
+
+    private final String transformation;
+    private final String keyAlgo;
+    private final int dataSize;
+
+    public TestSymmCiphersNoPad(String transformation,
+                                String keyAlgo,
+                                int dataSize) {
+        this.transformation = transformation;
+        this.keyAlgo = keyAlgo;
+        this.dataSize = dataSize;
+    }
 
     @Override
     public void main(Provider p) throws Exception {
-        boolean status = true;
         Random random = new Random();
         try {
-            for (int i = 0; i < TEST_LIST.length; i++) {
-                CI currTest = TEST_LIST[i];
-                System.out.println("===" + currTest.transformation + "===");
-                try {
-                    KeyGenerator kg =
-                        KeyGenerator.getInstance(currTest.keyAlgo, p);
-                    SecretKey key = kg.generateKey();
-                    Cipher c1 = Cipher.getInstance(currTest.transformation, p);
-                    Cipher c2 = Cipher.getInstance(currTest.transformation,
-                               System.getProperty("test.provider.name", "SunJCE"));
+            System.out.println("===" + transformation + "===");
+            try {
+                KeyGenerator kg =
+                        KeyGenerator.getInstance(keyAlgo, p);
+                SecretKey key = kg.generateKey();
+                Cipher c1 = Cipher.getInstance(transformation, p);
+                Cipher c2 = Cipher.getInstance(transformation,
+                        System.getProperty("test.provider.name", "SunJCE"));
 
-                    byte[] plainTxt = new byte[currTest.dataSize];
-                    random.nextBytes(plainTxt);
-                    System.out.println("Testing inLen = " + plainTxt.length);
+                byte[] plainTxt = new byte[dataSize];
+                random.nextBytes(plainTxt);
+                System.out.println("Testing inLen = " + plainTxt.length);
 
-                    c2.init(Cipher.ENCRYPT_MODE, key);
-                    AlgorithmParameters params = c2.getParameters();
-                    byte[] answer = c2.doFinal(plainTxt);
-                    test(c1, Cipher.ENCRYPT_MODE, key, params,
-                         plainTxt, answer);
-                    System.out.println("Encryption tests: DONE");
-                    c2.init(Cipher.DECRYPT_MODE, key, params);
-                    byte[] answer2 = c2.doFinal(answer);
-                    test(c1, Cipher.DECRYPT_MODE, key, params,
-                         answer, answer2);
-                    System.out.println("Decryption tests: DONE");
-                } catch (NoSuchAlgorithmException nsae) {
-                    System.out.println("Skipping unsupported algorithm: " +
-                                       nsae);
-                }
+                c2.init(Cipher.ENCRYPT_MODE, key);
+                AlgorithmParameters params = c2.getParameters();
+                byte[] answer = c2.doFinal(plainTxt);
+                test(c1, Cipher.ENCRYPT_MODE, key, params,
+                        plainTxt, answer);
+                System.out.println("Encryption tests: DONE");
+                c2.init(Cipher.DECRYPT_MODE, key, params);
+                byte[] answer2 = c2.doFinal(answer);
+                test(c1, Cipher.DECRYPT_MODE, key, params,
+                        answer, answer2);
+                System.out.println("Decryption tests: DONE");
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new SkippedException("Skipping unsupported algorithm: " +
+                                           nsae);
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
@@ -239,6 +323,6 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestSymmCiphersNoPad(), args);
+        main(new TestSymmCiphersNoPad(args[0], args[1], Integer.parseInt(args[2])), args);
     }
 }

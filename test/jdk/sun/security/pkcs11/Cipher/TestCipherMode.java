@@ -27,8 +27,28 @@
  * @summary
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestCipherMode
+ * @run main/othervm TestCipherMode AES/ECB/PKCS5Padding
  */
+
+/*
+ * @test
+ * @bug 8265500
+ * @summary
+ * @library /test/lib ..
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestCipherMode AES/GCM/NoPadding
+ */
+
+/*
+ * @test
+ * @bug 8265500
+ * @summary
+ * @library /test/lib ..
+ * @modules jdk.crypto.cryptoki
+ * @run main/othervm TestCipherMode RSA/ECB/PKCS1Padding
+ */
+
+import jtreg.SkippedException;
 
 import java.security.Provider;
 import java.security.Key;
@@ -45,16 +65,17 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class TestCipherMode extends PKCS11Test {
 
-    private static String[] TRANSFORMATIONS = {
-        "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding",
-        "RSA/ECB/PKCS1Padding"
-    };
-
-    private static byte[] BYTES16 =
-            Arrays.copyOf(TRANSFORMATIONS[0].getBytes(), 16);
+    private static final byte[] BYTES16 =
+            Arrays.copyOf("AES/ECB/PKCS5Padding".getBytes(), 16);
     private static SecretKey AES_KEY = new SecretKeySpec(BYTES16, "AES");
     private static PublicKey RSA_PUBKEY = null;
     private static PrivateKey RSA_PRIVKEY = null;
+
+    private final String transformation;
+
+    public TestCipherMode(String transformation) {
+        this.transformation = transformation;
+    }
 
     enum CipherMode {
         ENCRYPT(Cipher.ENCRYPT_MODE),
@@ -89,7 +110,8 @@ public class TestCipherMode extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestCipherMode(), args);
+
+        main(new TestCipherMode(args[0]), args);
     }
 
     @Override
@@ -97,9 +119,7 @@ public class TestCipherMode extends PKCS11Test {
 
         // test all cipher impls, e.g. P11Cipher, P11AEADCipher, and
         // P11RSACipher
-        for (String t : TRANSFORMATIONS) {
-            checkModes(t, p);
-        }
+        checkModes(transformation, p);
         System.out.println("All tests passed");
     }
 
@@ -107,8 +127,7 @@ public class TestCipherMode extends PKCS11Test {
         try {
             Cipher.getInstance(t, p);
         } catch (Exception e) {
-            System.out.println("Skip " + t + " due to " + e.getMessage());
-            return;
+            throw new SkippedException("Skip " + t + " due to " + e.getMessage());
         }
 
         for (CipherMode m : CipherMode.values()) {
