@@ -34,18 +34,22 @@
 
 volatile bool CPUTimeUsage::Error::_has_error = false;
 
+static inline jlong thread_cpu_time_or_zero(Thread* thread) {
+  jlong cpu_time = os::thread_cpu_time(thread);
+  if (cpu_time == -1) {
+    CPUTimeUsage::Error::mark_error();
+    return 0;
+  }
+  return cpu_time;
+}
+
 class CPUTimeThreadClosure : public ThreadClosure {
 private:
   jlong _cpu_time = 0;
 
 public:
   virtual void do_thread(Thread* thread) {
-    jlong cpu_time = os::thread_cpu_time(thread);
-    if (cpu_time != -1) {
-      _cpu_time += cpu_time;
-    } else {
-      CPUTimeUsage::Error::mark_error();
-    }
+    _cpu_time += thread_cpu_time_or_zero(thread);
   }
   jlong cpu_time() { return _cpu_time; };
 };
@@ -60,29 +64,13 @@ jlong CPUTimeUsage::GC::gc_threads() {
   return cl.cpu_time();
 }
 
-CPUTimeUsage::GCStatistics CPUTimeUsage::GC::statisics() {
-  jlong gc_threads_sample = gc_threads();
-  jlong vm_thread_sample = vm_thread();
-  jlong stringdedup_sample = stringdedup();
-  return {
-    gc_threads_sample + vm_thread_sample + stringdedup_sample,
-    gc_threads_sample,
-    vm_thread_sample,
-    stringdedup_sample
-  };
-}
-
 jlong CPUTimeUsage::GC::total() {
   return gc_threads() + vm_thread() + stringdedup();
 }
 
 jlong CPUTimeUsage::GC::stringdedup() {
   if (UseStringDeduplication) {
-    jlong cpu_time = os::thread_cpu_time((Thread*)StringDedup::_processor->_thread);
-    if (cpu_time == -1) {
-      CPUTimeUsage::Error::mark_error();
-    }
-    return cpu_time;
+    return thread_cpu_time_or_zero((Thread*)StringDedup::_processor->_thread);
   }
   return 0;
 }

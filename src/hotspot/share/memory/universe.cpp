@@ -1316,10 +1316,11 @@ static void log_cpu_time() {
   }
 
   const double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
-  CPUTimeUsage::GCStatistics gc_stats = CPUTimeUsage::GC::statisics();
-  const double gc_cpu_time = (double) gc_stats.total / NANOSECS_PER_SEC;
-  const double gc_threads_cpu_time = (double) gc_stats.gc_threads / NANOSECS_PER_SEC;
-  const double gc_vm_thread_cpu_time = (double) gc_stats.vm_thread / NANOSECS_PER_SEC;
+
+  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
 
   const double elasped_time = os::elapsedTime();
   const bool has_error = CPUTimeUsage::Error::has_error();
@@ -1339,8 +1340,7 @@ static void log_cpu_time() {
     cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
 
     if (UseStringDeduplication) {
-      double string_dedup_cpu_time = (double) gc_stats.stringdedup / NANOSECS_PER_SEC;
-      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, percent_of(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / elasped_time);
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
     }
     cpuLog.print("=====================================================================================");
   }
@@ -1349,6 +1349,18 @@ static void log_cpu_time() {
 void Universe::before_exit() {
   log_cpu_time();
   heap()->before_exit();
+
+  // Print GC/heap related information.
+  Log(gc, exit) log;
+  if (log.is_info()) {
+    LogStream ls_info(log.info());
+    Universe::print_on(&ls_info);
+    if (log.is_trace()) {
+      LogStream ls_trace(log.trace());
+      MutexLocker mcld(ClassLoaderDataGraph_lock);
+      ClassLoaderDataGraph::print_on(&ls_trace);
+    }
+  }
 }
 
 #ifndef PRODUCT

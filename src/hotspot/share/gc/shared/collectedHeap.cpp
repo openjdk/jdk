@@ -24,7 +24,6 @@
 
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -611,18 +610,6 @@ void CollectedHeap::before_exit() {
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();
-
-  // Print GC/heap related information.
-  Log(gc, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
-  }
 }
 
 #ifndef PRODUCT
