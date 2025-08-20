@@ -2676,8 +2676,8 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
 
 //------------------------------dump-------------------------------------------
 // call from debugger: dump Node's inputs (or outputs if d negative)
-void Node::dump(int d) const {
-  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$");
+void Node::dump(int d, outputStream* st) const {
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$", st);
 }
 
 //------------------------------dump_ctrl--------------------------------------
@@ -2973,12 +2973,12 @@ void Node_List::yank( Node *n ) {
 }
 
 //------------------------------dump-------------------------------------------
-void Node_List::dump() const {
+void Node_List::dump(outputStream* out) const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
     if (_nodes[i]) {
-      tty->print("%5d--> ", i);
-      _nodes[i]->dump();
+      out->print("%5d--> ", i);
+      _nodes[i]->dump(out);
     }
   }
 #endif
