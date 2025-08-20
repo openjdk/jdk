@@ -39,7 +39,7 @@ public class ExceptionOccurred {
     }
 
 
-    // Called from ExcptionExit MethodExit callback via JNI
+    // Called from ExceptionExit MethodExit callback via JNI
     static String upCall() {
         return "MyNewString";
     }
