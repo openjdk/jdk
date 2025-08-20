@@ -61,6 +61,8 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
+        // On s390x, generated code is ~6x larger in fastdebug and ~1.4x in release builds vs. other archs,
+        // hence we require slightly more minimum space.
         int minInitialSize = 800 + (Platform.isS390x() ? 800 : 0);
         for (int i = 0; i < 200; i++) {
             int initialCodeCacheSizeInKb = minInitialSize + rand.nextInt(400);
