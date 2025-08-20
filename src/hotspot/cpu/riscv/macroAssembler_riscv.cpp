@@ -5967,13 +5967,16 @@ void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
   // binary16 result NaN (tenth bit); OR in remaining
   // bits into lower 9 bits of binary 16 significand.
   //
-  // check j.l.Float.floatToFloat16 for more information.
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
   slli(tmp1, dst, 9+32);
   srli(tmp1, tmp1, 9+32+13);
   orr(tmp2, tmp2, tmp1);
+  // 9 bits
   slli(tmp1, dst, 19+32);
   srli(tmp1, tmp1, 19+32+4);
   orr(tmp2, tmp2, tmp1);
+  // 4 bits
   andi(tmp1, dst, 0xf);
   orr(dst, tmp2, tmp1);
 }
