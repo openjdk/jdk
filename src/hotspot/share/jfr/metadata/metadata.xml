@@ -40,10 +40,21 @@
          event.commit();
        }
 
+       void bar(char* text) {
+         EventText event;
+         event.set_text(text);
+         event.commit();
+       }
+
        $ make images
        $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...
        ...
        $ jfr print dump.jfr
+       $ jfr query 'SELECT text, COUNT(text) FROM Text GROUP BY text ORDER BY text ASC' dump.jfr
+       $ jfr query 'SELECT COUNT(duration), AVG(duration), MEDIAN(duration), P90(duration),
+                    P99(duration), P999(duration) FROM Duration' dump.jfr
+
+       The 'jfr query' command is only available in debug builds.
 
        Programmatic access:
        try (var rf = new RecordingFile(Path.of("dump.jfr"))) {
