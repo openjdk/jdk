@@ -54,7 +54,7 @@ protected:
         total += _cohort_populations[i];
       }
     }
-    return total;
+    return total * HeapWordSize;
   }
 
   static void get_cohort_populations(const double mortality_rates[], size_t cohort_populations[], const size_t cohorts) {

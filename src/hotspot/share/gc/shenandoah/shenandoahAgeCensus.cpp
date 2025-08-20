@@ -192,7 +192,7 @@ size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) c
       total += pv->sizes[i];
     }
   }
-  return total;
+  return total * HeapWordSize;
 }
 
 
