@@ -29,7 +29,10 @@ import java.lang.annotation.AnnotationFormatError;
 import java.lang.reflect.AnnotatedElement;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A TypeAnnotation contains all the information needed to transform type
@@ -131,29 +134,55 @@ public final class TypeAnnotation {
         }
 
         @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TypeAnnotationTargetInfo that) {
+                return target == that.target &&
+                        count == that.count &&
+                        secondaryIndex == that.secondaryIndex;
+
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(target, count, secondaryIndex);
+        }
+
+        @Override
         public String toString() {
             return "" + target + ": " + count + ", " + secondaryIndex;
         }
     }
 
     public static final class LocationInfo {
-        private final int depth;
         private final Location[] locations;
 
         private LocationInfo() {
-            this(0, new Location[0]);
+            this(new Location[0]);
         }
-        public LocationInfo(int depth, Location[] locations) {
-            this.depth = depth;
+        public LocationInfo(Location[] locations) {
             this.locations = locations;
         }
 
-        public int getDepth() {
-            return depth;
+        /**
+         * Gets an immutable view on the locations.
+         */
+        public List<Location> getLocations() {
+            return Collections.unmodifiableList(Arrays.asList(locations));
         }
 
-        public Location getLocationAt(int index) {
-            return locations[index];
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof LocationInfo that) {
+                return Arrays.equals(locations, that.locations);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(locations);
         }
 
         public static final LocationInfo BASE_LOCATION = new LocationInfo();
@@ -172,7 +201,7 @@ public final class TypeAnnotation {
                     throw new AnnotationFormatError("Bad Location encoding in Type Annotation");
                 locations[i] = new Location(tag, index);
             }
-            return new LocationInfo(depth, locations);
+            return new LocationInfo(locations);
         }
 
         public LocationInfo pushArray() {
@@ -192,11 +221,12 @@ public final class TypeAnnotation {
         }
 
         public LocationInfo pushLocation(byte tag, short index) {
-            int newDepth = this.depth + 1;
+            int depth = this.locations.length;
+            int newDepth = depth + 1;
             Location[] res = new Location[newDepth];
             System.arraycopy(this.locations, 0, res, 0, depth);
             res[newDepth - 1] = new Location(tag, (short)(index & 0xFF));
-            return new LocationInfo(newDepth, res);
+            return new LocationInfo(res);
         }
 
         /**
@@ -204,12 +234,13 @@ public final class TypeAnnotation {
          * if no matching location was found.
          */
         public LocationInfo popLocation(byte tag) {
+            int depth = locations.length;
             if (depth == 0 || locations[depth - 1].tag != tag) {
                 return null;
             }
             Location[] res = new Location[depth - 1];
             System.arraycopy(locations, 0, res, 0, depth - 1);
-            return new LocationInfo(depth - 1, res);
+            return new LocationInfo(res);
         }
 
         public TypeAnnotation[] filter(TypeAnnotation[] ta) {
@@ -222,9 +253,9 @@ public final class TypeAnnotation {
         }
 
         boolean isSameLocationInfo(LocationInfo other) {
-            if (depth != other.depth)
+            if (locations.length != other.locations.length)
                 return false;
-            for (int i = 0; i < depth; i++)
+            for (int i = 0; i < locations.length; i++)
                 if (!locations[i].isSameLocation(other.locations[i]))
                     return false;
             return true;
@@ -236,6 +267,19 @@ public final class TypeAnnotation {
 
             boolean isSameLocation(Location other) {
                 return tag == other.tag && index == other.index;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof Location that) {
+                    return isSameLocation(that);
+                }
+                return false;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(tag, index);
             }
 
             public Location(byte tag, short index) {
