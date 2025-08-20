@@ -405,6 +405,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       fill_with_object(copy, size);
       shenandoah_assert_correct(nullptr, copy_val);
       // For non-LAB allocations, the object has already been registered
+#undef KELVIN_FILL
+#ifdef KELVIN_FILL
+      log_info(gc)("try_evacuate_object() is filling abandoned copy at " PTR_FORMAT ", of size %zu",
+                   p2i(copy), size * HeapWordSize);
+#endif
     }
     shenandoah_assert_correct(nullptr, result);
     return result;

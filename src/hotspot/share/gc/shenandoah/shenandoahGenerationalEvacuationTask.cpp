@@ -210,6 +210,10 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated objects known to be larger than min_size");
       ShenandoahHeap::fill_with_object(obj_addr, fill_size);
       scanner->register_object_without_lock(obj_addr);
+#undef KELVIN_FILL
+#ifdef KELVIN_FILL
+      log_info(gc)("pip fills region %zu at " PTR_FORMAT ", %zu bytes", region->index(), p2i(obj_addr), fill_size * HeapWordSize);
+#endif
       obj_addr = next_marked_obj;
     }
   }

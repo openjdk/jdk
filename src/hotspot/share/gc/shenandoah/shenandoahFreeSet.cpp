@@ -186,9 +186,9 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 
 void ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
   shenandoah_assert_heaplocked();
-  size_t min_fill_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
+  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
   ShenandoahFreeSetPartitionId p =  _partitions.membership(idx);
-  if (bytes >= min_fill_size) {
+  if (bytes >= min_remnant_size) {
     assert((p == ShenandoahFreeSetPartitionId::Mutator) || (p == ShenandoahFreeSetPartitionId::Collector),
            "PIP region must be associated with young");
     _partitions.increase_used(p, bytes);
@@ -1084,7 +1084,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
           }
         } else {
           assert(r->is_cset() || (capacity < PLAB::min_size() * HeapWordSize),
-                 "Expect retired remnant to be smaller than min plab size");
+                 "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
           capacity = 0;
@@ -1354,6 +1354,11 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
   } else {
     if (available_in_region >= ShenandoahHeap::min_fill_size() * HeapWordSize) {
       size_t fill_words = available_in_region / HeapWordSize;
+#undef KELVIN_FILL
+#ifdef KELVIN_FILL
+      log_info(gc)("add_pip_region_to_old_collector(region %zu) filling at " PTR_FORMAT ", size: %zu",
+                   region->index(), p2i(region->top()), available_in_region);
+#endif
       ShenandoahHeap::heap()->old_generation()->card_scan()->register_object(region->top());
       region->allocate_fill(fill_words);
     }
@@ -2396,7 +2401,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
 
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
-      if (ac > PLAB::min_size() * HeapWordSize) {
+      if (ac >= PLAB::min_size() * HeapWordSize) {
         if (region->is_trash() || !region->is_old()) {
           // Both young and old collected regions (trashed) are placed into the Mutator set
           _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
@@ -2438,10 +2443,15 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
       } else {
         // This region does not have enough free to be part of the free set.  Count all of its memory as used.
         assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Region should have been retired");
+#ifdef KELVIN_DEPRECATE
+        // We no longer fill remnants in NOTFREE regions
+        // Furthermore, this code has a bug.  If region->is_old(), we
+        // should have registered old object when we created the fill word
         if (ac >= ShenandoahHeap::min_fill_size() * HeapWordSize) {
           size_t fill_words = ac / HeapWordSize;
           region->allocate_fill(fill_words);
         }
+#endif
         if (region->is_old()) {
           old_collector_used += region_size_bytes;
           total_old_collector_regions++;
@@ -2470,10 +2480,15 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
           size_t byte_size = obj->size() * HeapWordSize;
           size_t region_span = ShenandoahHeapRegion::required_regions(byte_size);
           humongous_waste_bytes = region_span * ShenandoahHeapRegion::region_size_bytes() - byte_size;
+#ifdef KELVIN_DEPRECATE
+          // We no longer fill remnant memory in NotFree regions.  The memory
+          // is still counted as used.  Furthermore, there's a bug
+          // here.  If the region is old, we need to register the fill object.
         } else if (!region->is_humongous() && (ac >= ShenandoahHeap::min_fill_size() * HeapWordSize)) {
           // Don't fill humongous continuations
           size_t fill_words = ac / HeapWordSize;
           region->allocate_fill(fill_words);
+#endif
         }
         if (region->is_old()) {
           old_collector_used += region_size_bytes;
@@ -3716,12 +3731,15 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
     _partitions.decrease_used(p, waste);
     _partitions.unretire_to_partition(r, p);
   }
+#ifdef KELVIN_DEPRECATE
+  // We no longer fill remnant memory in NotFree regions.  We do still count the remnant memory as used.
 #ifdef ASSERT
   else if (waste >= ShenandoahHeap::min_fill_size() * HeapWordSize) {
     // Fill the unused memory so that verification will not be confused by inconsistent tallies of used
     size_t fill_words = waste / HeapWordSize;
     r->allocate_fill(fill_words);
   }
+#endif
 #endif
   _total_humongous_waste -= waste;
   recompute_total_used();
