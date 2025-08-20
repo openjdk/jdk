@@ -28,6 +28,12 @@
 jvmtiEnv* jvmti_env;
 
 bool method_exit_posted = false;
+// This method exit callback actually works only for 2 methods:
+// 1) for ExceptionExit it verifies that method exit
+//    has been popped by exception and call 'upCall' mthod using JNI.
+// 2) for upCall method it verifies that event has correct
+//    return value and was not popped by execption.
+// The event callback just exits for all other methods.
 static void JNICALL
 cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
              jboolean was_popped_by_exception, jvalue return_value) {
@@ -49,17 +55,21 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   if (strcmp("exceptionExit", mname) != 0) {
     return;
   }
-
+  if (!was_popped_by_exception) {
+    fatal(jni, "Should have was_popped_by_esxception = true.");
+  }
   jclass main_class = jni->FindClass("ExceptionOccurred");
   if (main_class == nullptr) {
     fatal(jni,"Can't find ExceptionOccurred class.");
     return;
   }
-
-  jmethodID upcall_method = jni->GetStaticMethodID(main_class, "upCall", "()Ljava/lang/String;");
+  jmethodID upcall_method = jni->GetStaticMethodID(main_class,
+      "upCall", "()Ljava/lang/String;");
   if (upcall_method == nullptr) {
     fatal(jni,"Can't find upCall method.");
   }
+  // Call 'upCall' method while current thread has exception
+  // that has been thrown but hasn't been caught yet.
   jstring upcall_result = (jstring) jni->CallStaticObjectMethod(main_class, upcall_method);
   const char *str = jni->GetStringUTFChars(upcall_result, nullptr);
   if (str == nullptr) {
