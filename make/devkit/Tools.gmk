@@ -85,7 +85,7 @@ else ifeq ($(BASE_OS), Fedora)
       FEDORA_TYPE := fedora/linux
     endif
     ifeq ($(ARCH), armhfp)
-      ifneq ($(BASE_OS_VERSION),36)
+      ifneq ($(BASE_OS_VERSION), 36)
         $(error Fedora 36 is the last release supporting "armhfp", but $(BASE_OS) was requested)
       endif
     endif
