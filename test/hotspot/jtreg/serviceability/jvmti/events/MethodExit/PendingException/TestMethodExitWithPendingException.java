@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Test verifies that MethodExit event is correctly posted
- * if exception occured in the current thread.
+ * if method is called while there is a pending exception on this thread.
  *
  * @bug 8365192
  * @run main/othervm/native -agentlib:TestMethodExitWithPendingException TestMethodExitWithPendingException
