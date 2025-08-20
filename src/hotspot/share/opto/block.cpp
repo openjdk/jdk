@@ -35,6 +35,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow(uint i) {
@@ -358,16 +359,16 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
   st->cr();
 }
 
-void Block::dump() const {
-  dump(nullptr);
+void Block::dump(outputStream* out) const {
+  dump(nullptr, out);
 }
 
-void Block::dump(const PhaseCFG* cfg) const {
-  dump_head(cfg);
+void Block::dump(const PhaseCFG* cfg, outputStream* out) const {
+  dump_head(cfg, out);
   for (uint i=0; i< number_of_nodes(); i++) {
-    get_node(i)->dump();
+    get_node(i)->dump(out);
   }
-  tty->print("\n");
+  out->print("\n");
 }
 #endif
 

@@ -28,6 +28,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Optimization - Graph Style
@@ -365,8 +366,8 @@ public:
   void dump_bidx(const Block* orig, outputStream* st = tty) const;
   void dump_pred(const PhaseCFG* cfg, Block* orig, outputStream* st = tty) const;
   void dump_head(const PhaseCFG* cfg, outputStream* st = tty) const;
-  void dump() const;
-  void dump(const PhaseCFG* cfg) const;
+  void dump(outputStream* out = tty) const;
+  void dump(const PhaseCFG* cfg, outputStream* out = tty) const;
 #endif
 };
 
