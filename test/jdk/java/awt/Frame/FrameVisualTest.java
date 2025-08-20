@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+
 import javax.imageio.ImageIO;
 
 /*
@@ -47,8 +48,6 @@ public class FrameVisualTest {
     private static GraphicsConfiguration[] gcs;
     private static volatile Frame[] frames;
     private static volatile int index;
-
-    private static Frame f;
     private static Robot robot;
     private static volatile Point p;
     private static volatile Dimension d;
@@ -59,11 +58,12 @@ public class FrameVisualTest {
         robot = new Robot();
         robot.setAutoDelay(100);
         try {
-            EventQueue.invokeAndWait(() -> {
-                createAndShowUI();
-            });
+            EventQueue.invokeAndWait(() -> createAndShowUI());
+
+            robot.waitForIdle();
             robot.delay(1000);
-            System.out.println("frames.length: "+frames.length);
+
+            System.out.println("frames.length: " + frames.length);
             for (index = 0; index < frames.length; index++) {
                 EventQueue.invokeAndWait(() -> {
                     p = frames[index].getLocation();
@@ -73,16 +73,20 @@ public class FrameVisualTest {
                 BufferedImage img = robot.createScreenCapture(rect);
                 if (chkImgBackgroundColor(img)) {
                     try {
-                        ImageIO.write(img, "png", new File("Frame_" + index + ".png"));
+                        ImageIO.write(img, "png", new File("Frame_" + index +
+                                ".png"));
                     } catch (IOException ignored) {}
-                    throw new RuntimeException("Frame visual test failed with non-white background color");
+                    throw new RuntimeException("Frame visual test failed " +
+                            "with non-white background color");
                 }
             }
         } finally {
             for (index = 0; index < frames.length; index++) {
                 EventQueue.invokeAndWait(() -> {
                     if (frames[index] != null) {
+                        frames[index].setVisible(false);
                         frames[index].dispose();
+                        frames[index] = null;
                     }
                 });
             }
@@ -96,12 +100,12 @@ public class FrameVisualTest {
             frames[i].setSize(100, 100);
             frames[i].setUndecorated(true);
             frames[i].setBackground(Color.WHITE);
+            frames[i].setLocationRelativeTo(null);
             frames[i].setVisible(true);
         }
     }
 
     private static boolean chkImgBackgroundColor(BufferedImage img) {
-
         // scan for mid-line and if it is non-white color then return true.
         for (int x = 1; x < img.getWidth() - 1; ++x) {
             Color c = new Color(img.getRGB(x, img.getHeight() / 2));
