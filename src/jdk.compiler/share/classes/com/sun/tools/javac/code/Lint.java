@@ -230,7 +230,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile", false),
+        CLASSFILE("classfile", false, true),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -285,7 +285,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating", false),
+        INCUBATING("incubating", false, true),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -322,7 +322,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash", false),
+        OUTPUT_FILE_CLASH("output-file-clash", false, true),
 
         /**
          * Warn about issues regarding method overloads.
@@ -427,11 +427,7 @@ public class Lint {
         RESTRICTED("restricted");
 
         LintCategory(String option) {
-            this(option, true);
-        }
-
-        LintCategory(String option, boolean annotationSuppression) {
-            this(option, annotationSuppression, true);
+            this(option, true, true);
         }
 
         LintCategory(String option, boolean annotationSuppression, boolean suppressionTracking, String... aliases) {
@@ -480,8 +476,8 @@ public class Lint {
     }
 
     /**
-     * Determine whether warnings in the given category should be calculated, because either
-     * (a) the category is enabled, or (b) lint category {@code "suppression"} is enabled.
+     * Determine whether warnings in the given category should be calculated, because
+     * the category is either (a) enabled or (b) being tracked for unnecessary suppression.
      *
      * <p>
      * Use of this method is never required; it simply helps avoid potentially useless work.
@@ -497,7 +493,7 @@ public class Lint {
      * the SuppressWarnings annotation.
      *
      * <p>
-     * This method also optionally validates any warning suppressions currently in scope.
+     * This method also optionally validates any warning suppression currently in scope.
      * If you just want to know the configuration of this instance, set {@code validate} to false.
      * If you are using the result of this method to control whether a warning is actually
      * generated, then set {@code validate} to true to ensure that any suppression of the
@@ -520,7 +516,7 @@ public class Lint {
      * current entity being itself deprecated.
      *
      * <p>
-     * This method also optionally validates any warning suppressions currently in scope.
+     * This method also optionally validates any warning suppression currently in scope.
      * If you just want to know the configuration of this instance, set {@code validate} to false.
      * If you are using the result of this method to control whether a warning is actually
      * generated, then set {@code validate} to true to ensure that any suppression of the
@@ -610,13 +606,13 @@ public class Lint {
     }
 
     /**
-     * Determine whether we should bother tracking suppression validation for the given lint category.
+     * Determine whether we should be tracking suppression validation for the given lint category.
      *
      * <p>
-     * We need to track validation of suppression of a lint category if:
+     * We need to track validation of the suppression of a lint category if:
      * <ul>
      *  <li>It's supported by {@code "suppression"} suppression tracking
-     *  <li>Category {@code "suppression"} is currently enabled
+     *  <li>Lint category {@code "suppression"} is currently enabled
      * </ul>
      */
     private boolean needsSuppressionTracking(LintCategory lc) {

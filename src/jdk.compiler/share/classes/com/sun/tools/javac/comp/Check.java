@@ -2670,7 +2670,7 @@ public class Check {
             Predicate<MethodSymbol> methodSuppresses = m -> m.owner == site.tsym &&
               m.attribute(syms.suppressWarningsType.tsym) != null &&
               lint.augment(m).isSuppressed(LintCategory.OVERLOADS, true);
-            if (methodSuppresses.test(m1) | methodSuppresses.test(m2))      // use "|" to avoid an artificial preference
+            if (methodSuppresses.test(m1) | methodSuppresses.test(m2))  // use "|" to validate @SuppressWarnings on BOTH methods
                 return FIRST | SECOND;
 
             // Locate the warning at one of the methods, if possible
