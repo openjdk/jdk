@@ -391,6 +391,12 @@ public class JPEGImageReader extends ImageReader {
         tablesOnlyChecked = true;
     }
 
+    private void checkNegativeImageIndex(int imageIndex) {
+        if (imageIndex < minIndex) {
+            throw new IndexOutOfBoundsException("imageIndex < 0!");
+        }
+    }
+
     @Override
     public int getNumImages(boolean allowSearch) throws IOException {
         setThreadLock();
@@ -497,9 +503,7 @@ public class JPEGImageReader extends ImageReader {
         if (iis == null) {
             throw new IllegalStateException("Input not set");
         }
-        if (imageIndex < minIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        checkNegativeImageIndex(imageIndex);
         if (!tablesOnlyChecked) {
             checkTablesOnly();
         }
@@ -840,6 +844,7 @@ public class JPEGImageReader extends ImageReader {
 
     @Override
     public int getWidth(int imageIndex) throws IOException {
+        checkNegativeImageIndex(imageIndex);
         setThreadLock();
         try {
             if (currentImage != imageIndex) {
@@ -854,6 +859,7 @@ public class JPEGImageReader extends ImageReader {
 
     @Override
     public int getHeight(int imageIndex) throws IOException {
+        checkNegativeImageIndex(imageIndex);
         setThreadLock();
         try {
             if (currentImage != imageIndex) {
@@ -884,6 +890,7 @@ public class JPEGImageReader extends ImageReader {
     @Override
     public ImageTypeSpecifier getRawImageType(int imageIndex)
         throws IOException {
+        checkNegativeImageIndex(imageIndex);
         setThreadLock();
         try {
             if (currentImage != imageIndex) {
@@ -902,9 +909,7 @@ public class JPEGImageReader extends ImageReader {
     @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
-        if (imageIndex < minIndex) {
-            throw new IndexOutOfBoundsException("imageIndex < 0!");
-        }
+        checkNegativeImageIndex(imageIndex);
         setThreadLock();
         try {
             return getImageTypesOnThread(imageIndex);
