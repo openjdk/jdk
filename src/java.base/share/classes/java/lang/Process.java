@@ -143,7 +143,7 @@ import java.util.stream.Stream;
  *
  * @since   1.0
  */
-public abstract class Process implements AutoCloseable {
+public abstract class Process implements Closeable {
 
     // Readers and Writers created for this process; so repeated calls return the same object
     // All updates must be done while synchronized on this Process.
@@ -645,9 +645,10 @@ public abstract class Process implements AutoCloseable {
      * The {@code inputReader} and {@code inputStream} from the process are closed.
      * The {@code errorReader} and {@code errorStream} from the process are closed.
      * The process is destroyed.
-     * @throws IOException if any of the stream closes throws an exception
+     * @throws IOException if closing any of the streams throws an exception
      * @since 26
      */
+    @Override
     public void close() throws IOException {
         synchronized(this) {
             if (closed) {

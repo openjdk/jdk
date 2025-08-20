@@ -179,7 +179,7 @@ public class ProcessCloseTest {
                 System.err.printf("    %s\n", c);
                 c.command.accept(p);
             });
-        }  catch (IOException ioe) {
+        } catch (IOException ioe) {
             Assertions.fail(ioe);
         }
         ProcessCommand.processExpectExit(proc, exitStatus);
@@ -325,7 +325,8 @@ public class ProcessCloseTest {
 
         private static void stderrExpectEmpty(Process p) {
             String line = readLine(p.getErrorStream());
-            Assertions.assertEquals("", line, "Stderr Expected Polo");        }
+            Assertions.assertEquals("", line, "Stderr Expected Polo");
+        }
 
         private static String readLine(InputStream in) {
             StringBuilder sb = new StringBuilder();
@@ -377,14 +378,11 @@ public class ProcessCloseTest {
 
         // Process.processExpectExitNormal an expected status
         private static void processExpectExit(Process p, ExitStatus expected) {
-            while (true) {
-                try {
-                    int st = p.waitFor();
-                    expected.assertEquals(st);
-                    break;
-                } catch (InterruptedException ie) {
-                    // retry above
-                }
+            try {
+                int st = p.waitFor();
+                expected.assertEquals(st);
+            } catch (InterruptedException ie) {
+                Assertions.fail("Unexpected InterruptedException");
             }
         }
 
