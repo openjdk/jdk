@@ -3674,7 +3674,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private AnnotationData createAnnotationData(int classRedefinedCount) {
         Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
-            AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
+            AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this, true);
         Class<?> superClass = getSuperclass();
         Map<Class<? extends Annotation>, Annotation> annotations = null;
         if (superClass != null) {

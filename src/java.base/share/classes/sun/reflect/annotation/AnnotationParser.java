@@ -65,12 +65,13 @@ public class AnnotationParser {
     public static Map<Class<? extends Annotation>, Annotation> parseAnnotations(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
-                Class<?> container) {
+                Class<?> container,
+                boolean eagerResolution) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 
         try {
-            return parseAnnotations2(rawAnnotations, constPool, container, true, null);
+            return parseAnnotations2(rawAnnotations, constPool, container, eagerResolution, null);
         } catch(BufferUnderflowException e) {
             throw new AnnotationFormatError("Unexpected end of annotations.");
         } catch(IllegalArgumentException e) {
@@ -80,7 +81,7 @@ public class AnnotationParser {
     }
 
     /**
-     * Like {@link #parseAnnotations(byte[], jdk.internal.reflect.ConstantPool, Class)}
+     * Like {@link #parseAnnotations(byte[], jdk.internal.reflect.ConstantPool, Class, boolean)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
      * This method is used to parse select meta annotations in the construction

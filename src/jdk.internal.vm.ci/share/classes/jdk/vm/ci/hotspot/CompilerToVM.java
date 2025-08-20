@@ -1449,93 +1449,31 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code type} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, int category, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedClassAnnotationValues(type, type.getKlassPointer(), category,
-                            a.types, a.length(), a.buffer());
-        }
+    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, int category) {
+        return getEncodedClassAnnotationValues(type, type.getKlassPointer(), category);
     }
 
-    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer, int category,
-                                                  Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer, int category);
 
     /**
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, int category, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(), category,
-                            a.types, a.length(), a.buffer());
-        }
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, int category) {
+            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(), category);
     }
 
-    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer, int category,
-                                                       Object filter, int filterLength, long filterKlassPointers);
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer, int category);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and
      * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, int category, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex, category,
-                            a.types, a.length(), a.buffer());
-        }
+    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, int category) {
+        return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex, category);
     }
 
-    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex, int category,
-                                                  Object filterTypes, int filterLength, long filterKlassPointers);
-
-    /**
-     * Helper for passing {@code Klass*} values to native code.
-     */
-    static final class KlassPointers implements AutoCloseable {
-        final ResolvedJavaType[] types;
-        long pointersArray;
-        final Unsafe unsafe = UnsafeAccess.UNSAFE;
-
-        KlassPointers(ResolvedJavaType[] types) {
-            this.types = types;
-        }
-
-        int length() {
-            return types == null ? 0 : types.length;
-        }
-
-        /**
-         * Gets the buffer in which to pass the {@code Klass*} values to JNI.
-         *
-         * @return 0L if {@code types.length == 0}, a {@code Klass*} value if {@code types.length == 1}
-         *         otherwise the address of a native buffer holding an array of {@code Klass*} values
-         */
-        long buffer() {
-            long length = length();
-            if (length == 0) {
-                return 0L;
-            }
-            if (length == 1) {
-                return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
-            } else {
-                pointersArray = unsafe.allocateMemory(length * Long.BYTES);
-                long pos = pointersArray;
-                for (ResolvedJavaType type : types) {
-                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) type;
-                    unsafe.putLong(pos, hsType.getKlassPointer());
-                    pos += Long.BYTES;
-                }
-            }
-            return pointersArray;
-        }
-
-        @Override
-        public void close() {
-            if (pointersArray != 0) {
-                unsafe.freeMemory(pointersArray);
-                pointersArray = 0;
-            }
-        }
-    }
+    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex, int category);
 
     /**
      * @see HotSpotResolvedJavaMethod#getOopMapAt
