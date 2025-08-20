@@ -167,14 +167,17 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       assert(right <= region->top() && end_addr <= region->top(), "Busted bounds");
       const MemRegion mr(left, right);
 
-      // NOTE: We'll not call block_start() repeatedly
-      // on a very large object if its head card is dirty. If not,
-      // (i.e. the head card is clean) we'll call it each time we
-      // process a new dirty range on the object. This is always
-      // the case for large object arrays, which are typically more
+      // NOTE: We'll not call first_object_start() repeatedly
+      // on a very large object, i.e. one spanning multiple cards,
+      // if its head card is dirty. If not, (i.e. its head card is clean)
+      // we'll call it each time we process a new dirty range on the object.
+      // This is always the case for large object arrays, which are typically more
       // common.
-      HeapWord* p = _scc->block_start(dirty_l);
+      assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
+      HeapWord* p = _scc->first_object_start(dirty_l, ctx);
       oop obj = cast_to_oop(p);
+      assert(oopDesc::is_oop(obj), "Not an object");
+      assert(ctx==nullptr || ctx->is_marked(obj), "Error");
 
       // PREFIX: The object that straddles into this range of dirty cards
       // from the left may be subject to special treatment unless

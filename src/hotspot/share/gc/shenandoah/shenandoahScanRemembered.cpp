@@ -221,11 +221,18 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
   return _object_starts[card_index].offsets.last;
 }
 
-// Given a card_index, return the starting address of the first block in the heap
-// that straddles into this card. If this card is co-initial with an object, then
-// this would return the first address of the range that this card covers, which is
-// where the card's first object also begins.
-HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
+// Given a card_index, return the starting address of the first object in the heap
+// that intersects with this card. This must be a valid, parsable object, and must
+// be the first such object that intersects with this card. The object may start before,
+// at, or after the start of the card, and may end in or after the card. If no
+// such object exists, a null value is returned.
+// Expects to be called for a card in an region affiliated with the old generation in
+// generational heap, otherwise behavior is undefined.
+// If not null, ctx holds the complete marking context of the old generation. If null,
+// we expect that the marking context isn't available and the crossing maps are valid.
+// Note that crossing maps may be invalid following class unloading and before dead
+// or unloaded objects have been coalesced and filled (updating the crossing maps).
+HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
 
