@@ -279,7 +279,7 @@ final class SessionTicketExtension {
                 c.updateAAD(aad);
 
                 ByteBuffer out = ByteBuffer.allocate(
-                        data.remaining() - GCM_TAG_LEN / 8);
+                        c.getOutputSize(data.remaining()));
                 c.doFinal(data, out);
                 out.flip();
 
@@ -291,7 +291,7 @@ final class SessionTicketExtension {
                 return out;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Decryption failed." + e.getMessage());
+                    SSLLogger.fine("Decryption failed." + e);
                 }
             }
 
