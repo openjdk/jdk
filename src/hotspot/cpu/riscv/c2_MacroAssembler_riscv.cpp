@@ -2391,7 +2391,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
   Register tmp = stub.data<2>();
   __ bind(stub.entry());
 
-  __ float_to_float16_NaN(src, dst, t0, t1);
+  __ float_to_float16_NaN(dst, src, t0, tmp);
 
   __ j(stub.continuation());
 #undef __

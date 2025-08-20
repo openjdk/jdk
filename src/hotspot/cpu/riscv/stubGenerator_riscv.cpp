@@ -6358,7 +6358,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(NaN_SLOW);
 
-    __ float_to_float16_NaN(src, dst, t0, t1);
+    __ float_to_float16_NaN(dst, src, t0, t1);
 
     __ ret();
     return entry;

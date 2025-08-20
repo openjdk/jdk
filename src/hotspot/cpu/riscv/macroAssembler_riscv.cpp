@@ -5954,9 +5954,8 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   bind(done);
 }
 
-// this is a utility method to process the slow path of NaN when converting float to float16
-// check j.l.Float.floatToFloat16
-void MacroAssembler::float_to_float16_NaN(FloatRegister src, Register dst,
+// Helper routine processing the slow path of NaN when converting float to float16
+void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
                                           Register tmp1, Register tmp2) {
   fmv_x_w(dst, src);
 
@@ -5964,8 +5963,11 @@ void MacroAssembler::float_to_float16_NaN(FloatRegister src, Register dst,
   srai(tmp2, dst, 26);
   slli(tmp2, tmp2, 10);
 
-  // preserve the payloads of non-canonical NaNs.
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //
+  // check j.l.Float.floatToFloat16 for more information.
   slli(tmp1, dst, 9+32);
   srli(tmp1, tmp1, 9+32+13);
   orr(tmp2, tmp2, tmp1);
