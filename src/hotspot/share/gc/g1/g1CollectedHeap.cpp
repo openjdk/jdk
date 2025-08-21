@@ -1487,6 +1487,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_num_regions());
 
+  start_new_collection_set();
+
   allocation_failure_injector()->reset();
 
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
@@ -3157,5 +3159,5 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
 void G1CollectedHeap::prepare_group_cardsets_for_scan() {
   young_regions_cardset()->reset_table_scanner_for_groups();
 
-  collection_set()->prepare_groups_for_scan();
+  collection_set()->prepare_for_scan();
 }
