@@ -603,7 +603,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 
-double G1CollectionSet::select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected) {
+double G1CollectionSet::select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected, bool force_all) {
 
   assert(_optional_groups.num_regions() > 0,
          "Should only be called when there are optional regions");
@@ -614,7 +614,7 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   for (G1CSetCandidateGroup* group : _optional_groups) {
     double predicted_time_ms = group->predict_group_total_time_ms();
 
-    if (predicted_time_ms > time_remaining_ms) {
+    if (predicted_time_ms > time_remaining_ms && !force_all) {
       log_debug(gc, ergo, cset)("Prediction %.3fms for group with %u regions does not fit remaining time: %.3fms.",
                                 predicted_time_ms, group->length(), time_remaining_ms);
       break;
@@ -639,16 +639,14 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   return total_prediction_ms;
 }
 
-uint G1CollectionSet::select_optional_collection_set_regions(double time_remaining_ms) {
+uint G1CollectionSet::select_optional_collection_set_regions(double time_remaining_ms, bool force_all) {
   uint optional_regions_count = num_optional_regions();
   assert(optional_regions_count > 0,
          "Should only be called when there are optional regions");
 
   uint num_regions_selected = 0;
 
-  double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
-
-  time_remaining_ms -= total_prediction_ms;
+  double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected, force_all);
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_regions_selected, optional_regions_count, total_prediction_ms);
@@ -694,10 +692,10 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
 }
 
-bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
+bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time, bool force_all) {
   continue_incremental_building();
 
-  uint num_regions_selected = select_optional_collection_set_regions(remaining_pause_time);
+  uint num_regions_selected = select_optional_collection_set_regions(remaining_pause_time, force_all);
 
   stop_incremental_building();
 
