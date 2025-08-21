@@ -426,7 +426,7 @@ public abstract class Charset
     }
 
     /* The extended set of charsets */
-    private static final Supplier<List<CharsetProvider>> EXTENDED_PROVIDERS = StableValue.supplier(
+    private static final Supplier<List<CharsetProvider>> EXTENDED_PROVIDERS = Supplier.ofLazyFinal(
             new Supplier<>() { public List<CharsetProvider> get() { return extendedProviders0(); }});
 
     private static List<CharsetProvider> extendedProviders0() {
@@ -617,7 +617,7 @@ public abstract class Charset
         return Collections.unmodifiableSortedMap(m);
     }
 
-    private static final Supplier<Charset> defaultCharset = StableValue.supplier(
+    private static final Supplier<Charset> defaultCharset = Supplier.ofLazyFinal(
             new Supplier<>() { public Charset get() { return defaultCharset0(); }});
 
     private static Charset defaultCharset0() {
@@ -658,7 +658,7 @@ public abstract class Charset
     @Stable
     private final String[] aliases;
     @Stable
-    private final Supplier<Set<String>> aliasSet = StableValue.supplier(
+    private final Supplier<Set<String>> aliasSet = Supplier.ofLazyFinal(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
 
     /**

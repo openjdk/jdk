@@ -31,6 +31,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.invoke.StableValue;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -128,6 +129,12 @@ class ImmutableCollections {
                 }
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
+                }
+                public <E> List<StableValue<E>> denseStableList(int size) {
+                    return StableCollections.DenseStableList.ofList(size);
+                }
+                public <E> List<StableValue<E>> presetStableList(E[] array) {
+                    return StableCollections.PresetStableList.ofList(array);
                 }
             });
         }
@@ -450,7 +457,10 @@ class ImmutableCollections {
         final int size;
 
         SubList(AbstractImmutableList<E> root, int offset, int size) {
-            assert root instanceof List12 || root instanceof ListN || root instanceof StableCollections.StableList;
+            assert root instanceof List12
+                    || root instanceof ListN
+                    || root instanceof StableCollections.StableList
+                    || root instanceof StableCollections.DenseStableList;
             this.root = root;
             this.offset = offset;
             this.size = size;

@@ -25,13 +25,19 @@
 
 package java.util;
 
+import jdk.internal.ValueBased;
+import jdk.internal.lang.stable.InternalStableValue;
+import jdk.internal.lang.stable.PresetStableValue;
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.lang.invoke.StableValue;
 import java.lang.reflect.Array;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -46,9 +52,317 @@ import java.util.function.Supplier;
  */
 
 class StableCollections {
+
     /** No instances. */
     private StableCollections() { }
 
+    @ValueBased
+    static public class PresetStableList<E>
+            extends AbstractImmutableStableList<E>
+            implements List<StableValue<E>>, RandomAccess {
+
+        @Stable
+        private final E[] elements;
+
+        private PresetStableList(E[] elements) {
+            this.elements = elements;
+            super();
+        }
+
+        @ForceInline
+        @Override
+        public StableValue<E> get(int index) {
+            final E element = elements[index];
+            return new PresetStableValue<>(element);
+        }
+
+        @Override
+        public int size() {
+            return elements.length;
+        }
+
+        @SafeVarargs
+        @SuppressWarnings("varargs")
+        public static <E> List<StableValue<E>> ofList(E... elements) {
+            return new PresetStableList<>(elements);
+        }
+
+    }
+
+    @ValueBased
+    static final class DenseStableList<E>
+            extends AbstractImmutableStableList<E>
+            implements List<StableValue<E>>, RandomAccess {
+
+        // Unsafe allows StableValue to be used early in the boot sequence
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
+
+        @Stable
+        private final E[] elements;
+        @Stable
+        private final Mutexes mutexes;
+        @Stable
+        private final int preHash;
+
+
+        @SuppressWarnings("unchecked")
+        private DenseStableList(int length) {
+            this.elements = (E[]) new Object[length];
+            this.mutexes = new Mutexes(length);
+            super();
+            int h = 1;
+            h = 31 * h + System.identityHashCode(this);
+            h = 31 * h;
+            this.preHash = h;
+        }
+
+        @ForceInline
+        @Override
+        public ElementStableValue<E> get(int index) {
+            Objects.checkIndex(index, elements.length);
+            return new ElementStableValue<>(elements, offsetFor(index), this);
+        }
+
+        @Override public int     size() { return elements.length; }
+        @Override public boolean isEmpty() { return elements.length == 0;}
+
+
+        // The views subList() and reversed() in the base class suffice for this list type
+
+        public record ElementStableValue<T>(@Stable T[] elements,// Fast track this one
+                                            long offset,
+                                            DenseStableList<T> list)  implements InternalStableValue<T> {
+
+            @ForceInline
+            @Override
+            public boolean trySet(T contents) {
+                Objects.requireNonNull(contents);
+                return !isSet() && trySetSlowPath(contents);
+            }
+
+            boolean trySetSlowPath(T contents) {
+                // Prevent reentry via orElseSet(supplier)
+                preventReentry();
+                // Mutual exclusion is required here as `orElseSet` might also
+                // attempt to modify `this.elements`
+                final Object mutex = acquireMutex();
+                if (mutex == TOMB_STONE) {
+                    return false;
+                }
+                synchronized (mutex) {
+                    // Maybe we were not the winner?
+                    if (acquireMutex() == TOMB_STONE) {
+                        return false;
+                    }
+                    final boolean outcome = set(contents);
+                    disposeOfMutex();
+                    return outcome;
+                }
+            }
+
+            @ForceInline
+            @Override
+            public T orElse(T other) {
+                final T t = contentsAcquire();
+                return t == null ? other : t;
+            }
+
+            @ForceInline
+            @Override
+            public T get() {
+                final T t = contentsAcquire();
+                if (t == null) {
+                    throw new NoSuchElementException("No contents set");
+                }
+                return t;
+            }
+
+            @ForceInline
+            @Override
+            public boolean isSet() {
+                return contentsAcquire() != null;
+            }
+
+            @ForceInline
+            @Override
+            public T orElseSet(Supplier<? extends T> supplier) {
+                Objects.requireNonNull(supplier);
+                final T t = contentsAcquire();
+                return (t == null) ? orElseSetSlowPath(supplier) : t;
+            }
+
+            private T orElseSetSlowPath(Supplier<? extends T> supplier) {
+                preventReentry();
+                final Object mutex = acquireMutex();
+                if (mutex == TOMB_STONE) {
+                    return contentsAcquire();
+                }
+                synchronized (mutex) {
+                    // If there was another winner that succeeded,
+                    // the contents is guaranteed to be set
+                    final T t = contentsPlain();  // Plain semantics suffice here
+                    if (t == null) {
+                        final T newValue = supplier.get();
+                        Objects.requireNonNull(newValue);
+                        // The mutex is not reentrant so we know newValue should be returned
+                        set(newValue);
+                        return newValue;
+                    }
+                    return t;
+                }
+            }
+
+            // Object methods
+
+            // The equals() method crucially returns true if two ESV refer to the same element
+            // (by definition, the elements' contents are then also the same).
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof ElementStableValue<?> that)) return false;
+                return list == that.list
+                        && offset == that.offset;
+            }
+
+            // Similar arguments are true for hashCode() where it must depend on the referring
+            // element.
+            @Override
+            public int hashCode() {
+                return list.preHash + Long.hashCode(offset);
+            }
+
+            @Override public String toString() {
+                final T t = contentsAcquire();
+                return t == this
+                        ? "(this StableValue)"
+                        : StandardStableValue.render(t);
+            }
+
+            @SuppressWarnings("unchecked")
+            @ForceInline
+            private T contentsAcquire() {
+                return (T) UNSAFE.getReferenceAcquire(elements, offset);
+            }
+
+            @SuppressWarnings("unchecked")
+            private T contentsPlain() {
+                return (T) UNSAFE.getReference(elements, offset);
+            }
+
+            @ForceInline
+            private Object acquireMutex() {
+                return list.mutexes.acquireMutex(offset);
+            }
+
+            @ForceInline
+            private void disposeOfMutex() {
+                list.mutexes.disposeOfMutex(offset);
+            }
+
+            @ForceInline
+            private Object mutexVolatile() {
+                return list.mutexes.mutexVolatile(offset);
+            }
+
+            private void preventReentry() {
+                final Object mutex = mutexVolatile();
+                if (mutex == null || mutex == TOMB_STONE || !Thread.holdsLock(mutex)) {
+                    // No reentry attempted
+                    return;
+                }
+                throw new IllegalStateException("Recursive initialization of a stable value is illegal. Index: " + indexFor(offset));
+            }
+
+            /**
+             * Tries to set the contents at the provided {@code index} to {@code newValue}.
+             * <p>
+             * This method ensures the {@link Stable} element is written to at most once.
+             *
+             * @param newValue to set
+             * @return if the contents was set
+             */
+            @ForceInline
+            private boolean set(T newValue) {
+                Object mutex;
+                assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@ offset " + offset + ") didn't hold " + mutex;
+                // We know we hold the monitor here so plain semantic is enough
+                if (UNSAFE.getReference(elements, offset) == null) {
+                    UNSAFE.putReferenceRelease(elements, offset, newValue);
+                    return true;
+                }
+                return false;
+            }
+
+            private long indexFor(long offset) {
+                return (offset - Unsafe.ARRAY_OBJECT_BASE_OFFSET) / Unsafe.ARRAY_OBJECT_INDEX_SCALE;
+            }
+
+        }
+
+        @ForceInline
+        private static long offsetFor(long index) {
+            return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
+        }
+
+        private static final class Mutexes {
+
+            // Inflated on demand
+            private volatile Object[] mutexes;
+            // Used to detect we have computed all elements and no longer need the `mutexes` array
+            private volatile AtomicInteger counter;
+
+            private Mutexes(int length) {
+                this.mutexes = new Object[length];
+                this.counter = new AtomicInteger(length);
+            }
+
+            @ForceInline
+            private Object acquireMutex(long offset) {
+                final Object candidate = new Mutexes.MutexObject(offset, Thread.currentThread().threadId());
+                final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
+                check(witness, offset);
+                return witness == null ? candidate : witness;
+            }
+
+            @ForceInline
+            private void disposeOfMutex(long offset) {
+                UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+                // Todo: the null check is redundant as this method is invoked at most
+                //       `size()` times.
+                if (counter != null && counter.decrementAndGet() == 0) {
+                    // We don't need these anymore
+                    counter = null;
+                    mutexes = null;
+                }
+            }
+
+            @ForceInline
+            private Object mutexVolatile(long offset) {
+                // Can be plain semantics?
+                return check(UNSAFE.getReferenceVolatile(mutexes, offset), offset);
+            }
+
+            // Todo: remove this after stabilization
+            private Object check(Object mutex, long realOffset) {
+                if (mutex == null || mutex == TOMB_STONE) {
+                    return mutex;
+                }
+                assert (mutex instanceof Mutexes.MutexObject(long offset, long tid)) && offset == realOffset :
+                        mutex +
+                                ", realOffset = " + realOffset+
+                                ", realThread = " + Thread.currentThread().threadId();
+                return mutex;
+            }
+
+            // Todo: remove this after stabilization
+            record MutexObject(long offset, long tid) { }
+
+        }
+
+        public static <E> List<StableValue<E>> ofList(int size) {
+            return new DenseStableList<>(size);
+        }
+    }
 
     @FunctionalInterface
     interface HasStableDelegates<E> {
@@ -413,6 +727,38 @@ class StableCollections {
         @Override
         public String toString() {
             return StableUtil.renderMappings(this, "StableMap", delegate.entrySet(), true);
+        }
+
+    }
+
+    abstract static class AbstractImmutableStableList<E>
+            extends ImmutableCollections.AbstractImmutableList<StableValue<E>> {
+
+        @Override
+        public final int indexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (o instanceof StableValue<?> s) {
+                final int size = size();
+                for (int i = 0; i < size; i++) {
+                    if (Objects.equals(s, get(i))) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public final int lastIndexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (o instanceof StableValue<?> s) {
+                for (int i = size() - 1; i >= 0; i--) {
+                    if (Objects.equals(s, get(i))) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
         }
 
     }

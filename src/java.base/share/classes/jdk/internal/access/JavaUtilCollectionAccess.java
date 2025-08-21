@@ -25,9 +25,12 @@
 
 package jdk.internal.access;
 
+import java.lang.invoke.StableValue;
 import java.util.List;
 
 public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
+    <E> List<StableValue<E>> denseStableList(int size);
+    <E> List<StableValue<E>> presetStableList(E[] array);
 }

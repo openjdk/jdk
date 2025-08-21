@@ -25,11 +25,11 @@
 
 package java.lang.invoke;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.PresetStableList;
+import jdk.internal.lang.stable.InternalStableValue;
 import jdk.internal.lang.stable.PresetStableValue;
-import jdk.internal.lang.stable.DenseStableList;
 import jdk.internal.lang.stable.StandardStableValue;
 
 import java.io.Serializable;
@@ -365,7 +365,7 @@ import java.util.function.Supplier;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits StandardStableValue, PresetStableValue, DenseStableList.ElementStableValue {
+        permits InternalStableValue, PresetStableValue, StandardStableValue {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -480,7 +480,7 @@ public sealed interface StableValue<T>
      * <p>
      * The returned list is equivalent to creating an unmodifiable list as in this example:
      * {@snippet lang = java:
-     * return Stream.generate(StableValue::<T>of)
+     * return Stream.generate(StableValue::<E>of)
      *            .limit(size)
      *            .toList();
      *}
@@ -492,14 +492,14 @@ public sealed interface StableValue<T>
      *           contents at any time.
      *
      * @param size of the returned list
-     * @param <T>  type of the contents
+     * @param <E>  type of the contents
      * @throws IllegalArgumentException if the provided {@code size} is negative
      *
      * @since 26
      */
-    static <T> List<StableValue<T>> ofList(int size) {
+    static <E> List<StableValue<E>> ofList(int size) {
         Utils.checkNonNegativeArgument(size, "size");
-        return DenseStableList.ofList(size);
+        return SharedSecrets.getJavaUtilCollectionAccess().denseStableList(size);
     }
 
     /**
@@ -520,7 +520,7 @@ public sealed interface StableValue<T>
      *           contents at any time.
      *
      * @param elements in the returned list
-     * @param <T>      type of the contents
+     * @param <E>      type of the contents
      * @throws NullPointerException if the provided array of {@code elements}
      *         is {@code null} or contains a {@code null} component
      *
@@ -530,12 +530,12 @@ public sealed interface StableValue<T>
     @SuppressWarnings("varargs")
     // Note: This factory has another name than SV::ofList so that confusion
     //       around if a first parameter is a size or an element can be avoided.
-    static <T> List<StableValue<T>> ofPresetList(T... elements) {
-        // Protect against TOCTOU attacks
-        final T[] copy = Arrays.copyOf(elements, elements.length);
-        for (T t : copy) {
-            Objects.requireNonNull(t);
+    static <E> List<StableValue<E>> ofPresetList(E... elements) {
+        // Protect against TOC-TOU attacks
+        final E[] copy = Arrays.copyOf(elements, elements.length);
+        for (E e : copy) {
+            Objects.requireNonNull(e);
         }
-        return PresetStableList.ofList(copy);
+        return SharedSecrets.getJavaUtilCollectionAccess().presetStableList(copy);
     }
 }

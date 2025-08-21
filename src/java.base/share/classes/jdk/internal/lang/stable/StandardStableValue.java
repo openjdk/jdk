@@ -155,7 +155,7 @@ public final class StandardStableValue<T> implements StableValue<T> {
         return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }
 
-    static String render(Object t) {
+    public static String render(Object t) {
         return (t == null) ? UNSET_LABEL : Objects.toString(t);
     }
 

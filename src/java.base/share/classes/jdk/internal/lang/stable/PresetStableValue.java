@@ -37,6 +37,9 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the contents
  */
+
+// Todo: Consider removing this class and instead just set the contents in StandardStableValue
+
 public record PresetStableValue<T>(T contents) implements StableValue<T> {
 
     @ForceInline @Override public boolean trySet(T contents) {

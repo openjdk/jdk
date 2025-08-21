@@ -250,7 +250,8 @@ final class StableListTest {
 
     @Test
     void reversed() {
-        var reversed = newList().reversed();
+        var list = newList();
+        var reversed = list.reversed();
         assertInstanceOf(RandomAccess.class, reversed);
         assertEquals(SIZE - 1, reversed.getFirst());
         assertEquals(0, reversed.getLast());
@@ -260,7 +261,7 @@ final class StableListTest {
         assertEquals(0, reversed2.getFirst());
         assertEquals(SIZE - 1, reversed2.getLast());
         // Make sure we get back a non-reversed implementation
-        assertEquals("java.util.ImmutableCollections$StableList", reversed2.getClass().getName());
+        assertEquals(list.getClass().getName(), reversed2.getClass().getName());
     }
 
     @Test
