@@ -2772,6 +2772,14 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   }
 }
 
+// Vector expand implementation. Elements from the src vector are expanded into
+// the dst vector under the control of the vector mask.
+// Since there are no native instructions directly corresponding to expand before
+// SVE2p2, the following implementations mainly leverages the TBL instruction to
+// implement expand. To compute the index input for TBL, the prefix sum algorithm
+// (https://en.wikipedia.org/wiki/Prefix_sum) is used. The same algorithm is used
+// for NEON and SVE, but with different instructions where appropriate.
+
 // Vector expand implementation for NEON.
 //
 // An example of 128-bit Byte vector:
@@ -2811,12 +2819,6 @@ void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src,
   tbl(dst, size, src, 1, dst);
 }
 
-// Vector expand implementation for SVE. Elements from the src vector are expanded
-// into the dst vector under the control of the predicate register pg.
-// The main strategy utilizes the TBL instruction for flexible element shuffling.
-// To generate the second source operand for TBL, which dictates the indices to select
-// from the src vector, prefix sum algorithm is used.
-//
 // Vector expand implementation for SVE.
 //
 // An example of 128-bit Short vector:
