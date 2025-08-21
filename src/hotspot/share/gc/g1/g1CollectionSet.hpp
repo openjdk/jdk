@@ -205,9 +205,6 @@ class G1CollectionSet {
   // as Eden and calculate a prediction on how long the evacuation of all young regions
   // will take. Returns the time remaining from the given target pause time.
   double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
-  // Perform any final calculations on the incremental collection set fields before we
-  // can use them.
-  void finalize_incremental_building();
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
