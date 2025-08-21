@@ -1476,7 +1476,7 @@ single-argument form are permitted.
 barely used (if at all) in HotSpot, but there's no reason to artificially
 disallow this syntactic regularization in any such uses.
 
-## Excluded Features 
+## Excluded Features
 
 ### Structured Bindings
 
@@ -1525,7 +1525,7 @@ initialization for classes with base classes
 aggregate classes, preferring explicit constructors even for very simple
 classes.
 
-### Additional Excluded Features 
+### Additional Excluded Features
 
 * New string and character literals
     * New character types
