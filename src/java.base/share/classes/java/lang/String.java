@@ -892,8 +892,9 @@ public final class String
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        // fastpath with ArrayEncoder implies replacement.
-        if (characterCodingException == null && ce instanceof ArrayEncoder ae) {
+        boolean doReplace = characterCodingException == null;
+        // fastpath with ArrayEncoder implies `doReplace`.
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
@@ -916,7 +917,7 @@ public final class String
         if (len == 0) {
             return ba;
         }
-        if (characterCodingException == null) {
+        if (doReplace) {
             ce.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
@@ -932,7 +933,7 @@ public final class String
             if (!cr.isUnderflow())
                 cr.throwException();
         } catch (CharacterCodingException x) {
-            if (characterCodingException != null) {
+            if (!doReplace) {
                 @SuppressWarnings("unchecked")
                 E cce = (E) x;
                 throw cce;

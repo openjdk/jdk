@@ -355,7 +355,7 @@ public interface JavaLangAccess {
      * @param s the string to encode
      * @param cs the charset
      * @throws NullPointerException If {@code s} or {@code cs} is null
-     * @throws CharacterCodingException For malformed input or unmappable characters
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
     byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException;
 

@@ -45,7 +45,7 @@ public class NoReplTest {
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
 
     /**
-     * Verifies `uncheckedNewStringNoReplacement()` throws a `CharacterCodingException`.
+     * Verifies {@code uncheckedNewStringNoReplacement()} throws a {@link CharacterCodingException}.
      * The method is invoked by `Files.readString()` method.
      */
     @Test
@@ -67,8 +67,8 @@ public class NoReplTest {
     }
 
     /**
-     * Verifies `uncheckedGetBytesNoReplacement()` throws a `CharacterCodingException`.
-     * The method is invoked by `Files.writeString()` method.
+     * Verifies {@code uncheckedGetBytesNoReplacement()} throws a {@link CharacterCodingException}.
+     * The method is invoked by {@code Files.writeString()} method.
      */
     @Test
     public void uncheckedGetBytesNoReplacementTest() throws IOException {
