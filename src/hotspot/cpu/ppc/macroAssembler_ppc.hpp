@@ -697,8 +697,6 @@ class MacroAssembler: public Assembler {
 
   void push_cont_fastpath();
   void pop_cont_fastpath();
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
   void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Label& slow);
@@ -714,12 +712,6 @@ class MacroAssembler: public Assembler {
 
   enum { trampoline_stub_size = 6 * 4 };
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
-
-  void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
-                                 Register tmp1, Register tmp2, Register tmp3);
-
-  void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                   Register tmp1, Register tmp2, Register tmp3);
 
   void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
                                              Register tmp1, Register tmp2, Register tmp3);
