@@ -50,9 +50,21 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      * @throws IOException if a valid version of OpenSSL cannot be found
+     * @throws SkippedException if OpenSSL is not available on the target platform
      */
     public static String getOpensslPath() throws IOException {
-        String path;
+        String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
+        if (path != null) {
+            System.out.println("Using OpenSSL from system property.");
+            return path;
+        }
+
+        path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
+        if (path != null) {
+            System.out.println("Using OpenSSL from system.");
+            return path;
+        }
+
         if (Platform.isX64()) {
             if (Platform.isLinux()) {
                 return fetchOpenssl(LINUX_X64.class);
@@ -68,16 +80,6 @@ public class OpensslArtifactFetcher {
             if (Platform.isOSX()) {
                 return fetchOpenssl(MACOSX_AARCH64.class);
             }
-        }
-
-        path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
-        if (path != null) {
-            return path;
-        }
-
-        path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
-        if (path != null) {
-            return path;
         }
 
         throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
