@@ -170,13 +170,13 @@ abstract class ExchangeImpl<T> {
         // In both cases, we may attempt a direct HTTP/3 connection if
         // we don't have an H3 endpoint registered in the AltServicesRegistry.
         // However, if HTTP/3 is not specified explicitly on the request,
-        // we will start both an HTTP/2 `and an HTTP/3 connection at the
+        // we will start both an HTTP/2 and an HTTP/3 connection at the
         // same time, and use the one that complete first. If HTTP/3 is
         // specified on the request, we will give priority to HTTP/3 ond
         // only start the HTTP/2 connection if the HTTP/3 connection fails,
         // or doesn't succeed in the imparted timeout. The timeout can be
         // specified with the property "jdk.httpclient.http3.maxDirectConnectionTimeout".
-        // If unspecified it defaults to 500ms.
+        // If unspecified it defaults to 2750ms.
         //
         // Because the HTTP/2 connection may start as soon as we create the
         // CompletableFuture<Http2Connection> returned by the Http2Client,
@@ -299,6 +299,12 @@ abstract class ExchangeImpl<T> {
                         debug.log("HTTP/3 connect completed first, using HTTP/3");
                     }
                     res = createExchangeImpl(h3c, null, exchange, connection);
+                    if (c2f != null) c2f.thenApply(c -> {
+                        if (c != null) {
+                            c.abandonStream();
+                        }
+                        return c;
+                    });
                 } else {
                     // HTTP/3 failed! Use HTTP/2
                     if (debug.on()) {

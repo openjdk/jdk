@@ -639,6 +639,32 @@ class Http2Connection  {
         return true;
     }
 
+    void abandonStream() {
+        boolean shouldClose = false;
+        stateLock.lock();
+        try {
+            long reserved = --numReservedClientStreams;
+            assert reserved >= 0;
+            if (finalStream && reserved == 0 && streams.isEmpty()) {
+                shouldClose = true;
+            }
+        } catch (Throwable t) {
+            shutdown(t); // in case the assert fires...
+        } finally {
+            stateLock.unlock();
+        }
+
+        // We should close the connection here if
+        // it's not pooled. If it's not pooled it will
+        // be marked final stream, reserved will be 0
+        // after decrementing it by one, and there should
+        // be no active request-response streams.
+        if (shouldClose) {
+            shutdown(new IOException("HTTP/2 connection abandoned"));
+        }
+
+    }
+
     boolean shouldClose() {
         stateLock.lock();
         try {
