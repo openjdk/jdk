@@ -138,7 +138,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
- void CompilationPolicy::flush_replay_training_at_init(JavaThread* THREAD) {
+ void CompilationPolicy::wait_replay_training_at_init(JavaThread* THREAD) {
     MonitorLocker locker(THREAD, TrainingReplayQueue_lock);
     while (!_training_replay_queue.is_empty_unlocked() || _training_replay_queue.is_processing_unlocked()) {
       locker.wait(); // let the replay training thread drain the queue
@@ -170,7 +170,7 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
   }
 }
 
-void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* THREAD) {
   assert(klass->is_initialized(), "");
   if (TrainingData::have_data() && klass->is_shared()) {
     _training_replay_queue.push(klass, TrainingReplayQueue_lock, THREAD);
@@ -188,7 +188,7 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
+void CompilationPolicy::replay_training_at_init_loop(JavaThread* THREAD) {
   while (!CompileBroker::is_compilation_disabled_forever()) {
     InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
     if (ik != nullptr) {

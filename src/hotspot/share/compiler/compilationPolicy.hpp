@@ -80,7 +80,7 @@ class Queue {
   }
 public:
   Queue() : _head(nullptr), _tail(nullptr), _processing(0) { }
-  void push(T* value, Monitor* lock, TRAPS) {
+  void push(T* value, Monitor* lock, JavaThread* THREAD) {
     MonitorLocker locker(THREAD, lock);
     push_unlocked(value);
     locker.notify_all();
@@ -89,7 +89,7 @@ public:
   bool is_empty_unlocked() const { return _head == nullptr; }
   bool is_processing_unlocked() const { return _processing > 0; }
 
-  T* pop(Monitor* lock, TRAPS) {
+  T* pop(Monitor* lock, JavaThread* THREAD) {
     MonitorLocker locker(THREAD, lock);
     while(is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
       locker.wait();
@@ -98,13 +98,13 @@ public:
     return value;
   }
 
-  T* try_pop(Monitor* lock, TRAPS) {
+  T* try_pop(Monitor* lock, JavaThread* THREAD) {
     MonitorLocker locker(THREAD, lock);
     T* value = pop_unlocked();
     return value;
   }
 
-  void processing_done(Monitor* lock, TRAPS) {
+  void processing_done(Monitor* lock, JavaThread* THREAD) {
     MonitorLocker locker(THREAD, lock);
     processing_done_unlocked();
     locker.notify_all();
@@ -362,9 +362,9 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
-  static void flush_replay_training_at_init(JavaThread* THREAD);
-  static void replay_training_at_init(InstanceKlass* klass, TRAPS);
-  static void replay_training_at_init_loop(TRAPS);
+  static void wait_replay_training_at_init(JavaThread* THREAD);
+  static void replay_training_at_init(InstanceKlass* klass, JavaThread* THREAD);
+  static void replay_training_at_init_loop(JavaThread* THREAD);
 
   // m is allowed to be compiled
   static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);

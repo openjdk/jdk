@@ -519,7 +519,7 @@ void before_exit(JavaThread* thread, bool halt) {
   #if INCLUDE_CDS
   if (AOTVerifyTrainingData) {
     EXCEPTION_MARK;
-    CompilationPolicy::flush_replay_training_at_init(THREAD);
+    CompilationPolicy::wait_replay_training_at_init(THREAD);
     TrainingData::verify();
   }
   #endif
