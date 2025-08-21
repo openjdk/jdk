@@ -83,15 +83,16 @@ public class RedefineAnnotations {
                 ProtectionDomain protectionDomain, byte[] classfileBuffer)
             throws IllegalClassFormatException {
 
-            var cf = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
-            return cf.transformClass(cf.parse(classfileBuffer), new ClassTransform() {
-                // Shuffle constant pool
-                final List<FieldModel> fields = new ArrayList<>();
+            // Shuffle constant pool
+            ClassFile context = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
+            return context.transformClass(context.parse(classfileBuffer), new ClassTransform() {
+                final List<FieldModel> dummyFields = new ArrayList<>();
 
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     if (element instanceof FieldModel field && field.fieldName().stringValue().startsWith("dummy")) {
-                        fields.addLast(field);
+                        // Remove dummy field
+                        dummyFields.addLast(field);
                     } else {
                         builder.with(element);
                     }
@@ -99,7 +100,8 @@ public class RedefineAnnotations {
 
                 @Override
                 public void atEnd(ClassBuilder builder) {
-                    fields.forEach(builder);
+                    // Re-add dummy fields
+                    dummyFields.forEach(builder);
                 }
             });
         }

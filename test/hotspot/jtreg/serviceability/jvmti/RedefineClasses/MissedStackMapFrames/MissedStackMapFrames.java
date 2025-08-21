@@ -34,6 +34,8 @@
 
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
 
 public class MissedStackMapFrames {
     static {
@@ -54,12 +56,12 @@ public class MissedStackMapFrames {
     private static native byte[] retransformBytes(int idx);
 
     private static int getStackMapFrameCount(byte[] classfileBuffer) {
-        var cm = ClassFile.of().parse(classfileBuffer);
+        ClassModel clazz = ClassFile.of().parse(classfileBuffer);
         int count = 0;
-        for (var mth : cm.methods()) {
-            var optSmt = mth.code().flatMap(code -> code.findAttribute(Attributes.stackMapTable()));
-            if (optSmt.isPresent()) {
-                count += optSmt.get().entries().size();
+        for (MethodModel method : clazz.methods()) {
+            var foundStackMapTable = method.code().flatMap(code -> code.findAttribute(Attributes.stackMapTable()));
+            if (foundStackMapTable.isPresent()) {
+                count += foundStackMapTable.get().entries().size();
             }
         }
         return count;

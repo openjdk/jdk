@@ -46,9 +46,11 @@ import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /*
@@ -91,19 +93,21 @@ public class RedefineRetransform {
         }
         return ClassFile.of().transformClass(ClassFile.of().parse(initialClassBytes),
                 // overwrites previously passed RVAA
-                ClassTransform.endHandler(clb -> clb.with(RuntimeVisibleAnnotationsAttribute
+                ClassTransform.endHandler(classBuilder -> classBuilder.with(RuntimeVisibleAnnotationsAttribute
                         .of(Annotation.of(CD_ClassVersion, AnnotationElement.ofInt("value", ver))))));
     }
 
     // Extracts ClassVersion values from the provided class bytes.
     private static int getClassBytesVersion(byte[] classBytes) {
-        var cm = ClassFile.of().parse(classBytes);
-        var rvaa = cm.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
-        var elements = rvaa.annotations().stream().filter(anno -> anno.className().isFieldType(CD_ClassVersion)).findFirst().orElseThrow().elements();
-        if (elements.size() != 1)
+        ClassModel clazz = ClassFile.of().parse(classBytes);
+        RuntimeVisibleAnnotationsAttribute rvaa = clazz.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
+        List<AnnotationElement> classVersionElementValuePairs = rvaa.annotations().stream()
+                .filter(anno -> anno.className().isFieldType(CD_ClassVersion))
+                .findFirst().orElseThrow().elements();
+        if (classVersionElementValuePairs.size() != 1)
             throw new NoSuchElementException();
-        var element = elements.getFirst();
-        if (!element.name().equalsString("value") || !(element.value() instanceof AnnotationValue.OfInt intVal))
+        AnnotationElement elementValuePair = classVersionElementValuePairs.getFirst();
+        if (!elementValuePair.name().equalsString("value") || !(elementValuePair.value() instanceof AnnotationValue.OfInt intVal))
             throw new NoSuchElementException();
         return intVal.intValue();
     }

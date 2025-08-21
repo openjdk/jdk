@@ -26,6 +26,8 @@ package nsk.jvmti.GetClassFields;
 import java.io.PrintStream;
 import java.io.InputStream;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldModel;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -91,8 +93,8 @@ public class getclfld007 {
         System.out.println("Class " + cls.getName());
         List<String> fieldNameAndSig = new ArrayList<>();
         try (InputStream classBytes = getClassBytes(cls)) {
-            var classModel = ClassFile.of().parse(classBytes.readAllBytes());
-            for (var field : classModel.fields()) {
+            ClassModel classModel = ClassFile.of().parse(classBytes.readAllBytes());
+            for (FieldModel field : classModel.fields()) {
                 fieldNameAndSig.add(field.fieldName().stringValue());
                 fieldNameAndSig.add(field.fieldType().stringValue());
             }

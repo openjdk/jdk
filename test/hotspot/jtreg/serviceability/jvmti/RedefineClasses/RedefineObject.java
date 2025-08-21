@@ -40,6 +40,8 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
 import java.lang.instrument.ClassFileTransformer;
@@ -62,12 +64,12 @@ public class RedefineObject {
                           Class<?> classBeingRedefined,
                           ProtectionDomain protectionDomain, byte[] classfileBuffer)
                 throws IllegalClassFormatException {
-            return ClassFile.of().transformClass(ClassFile.of().parse(classfileBuffer), (cb, ce) -> {
-                if (ce instanceof ClassFileVersion cfv) {
+            return ClassFile.of().transformClass(ClassFile.of().parse(classfileBuffer), (classBuilder, classElement) -> {
+                if (classElement instanceof ClassFileVersion cfv) {
                     // Force a redefine with different class file versions
-                    cb.with(ClassFileVersion.of(cfv.majorVersion() - 1, 0));
+                    classBuilder.with(ClassFileVersion.of(cfv.majorVersion() - 1, 0));
                 } else {
-                    cb.with(ce);
+                    classBuilder.with(classElement);
                 }
             });
         }

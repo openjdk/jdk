@@ -156,13 +156,13 @@ public class RedefineMethodUsedByMultipleMethodHandles {
         public byte[] transform(ClassLoader cl, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
             if (Foo.class.equals(classBeingRedefined)) {
                 System.out.println("redefining " + classBeingRedefined);
-                var cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(cl)));
-                return cf.transformClass(cf.parse(classfileBuffer), ClassTransform.transformingMethodBodies((cob, coe) -> {
-                    if (coe instanceof ConstantInstruction.LoadConstantInstruction ldc) {
+                var context = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(cl)));
+                return context.transformClass(context.parse(classfileBuffer), ClassTransform.transformingMethodBodies((codeBuilder, codeElement) -> {
+                    if (codeElement instanceof ConstantInstruction.LoadConstantInstruction ldc) {
                         System.out.println("replacing \"" + ldc.constantEntry().constantValue() + "\" with \"bar\"");
-                        cob.ldc("bar");
+                        codeBuilder.ldc("bar");
                     } else {
-                        cob.with(coe);
+                        codeBuilder.with(codeElement);
                     }
                 }));
             }

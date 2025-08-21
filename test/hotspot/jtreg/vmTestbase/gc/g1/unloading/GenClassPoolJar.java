@@ -259,7 +259,9 @@ public class GenClassPoolJar {
     * @return              new class file to write into class
     */
    byte[] morphClass(byte[] classToMorph, String newName) {
-       var cf = ClassFile.of();
-       return cf.transformClass(cf.parse(classToMorph), ClassDesc.ofInternalName(newName), ClassTransform.ACCEPT_ALL);
+       var context = ClassFile.of();
+       return context.transformClass(context.parse(classToMorph),
+               ClassDesc.ofInternalName(newName),
+               ClassTransform.ACCEPT_ALL);
    }
 }

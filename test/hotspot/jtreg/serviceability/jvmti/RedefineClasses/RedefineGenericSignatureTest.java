@@ -146,8 +146,8 @@ public class RedefineGenericSignatureTest {
     private byte[] getNewClassBytes() {
         byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource);
 
-        var cf = ClassFile.of();
-        return cf.transformClass(cf.parse(bytecode), new ClassTransform() {
+        ClassFile context = ClassFile.of();
+        return context.transformClass(context.parse(bytecode), new ClassTransform() {
             private boolean sourceSet = false;
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {

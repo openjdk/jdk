@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Constructor;
@@ -39,6 +40,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -66,29 +68,32 @@ public class CTVMUtilities {
 
     public static Map<Integer, Integer> getBciToLineNumber(Executable method) {
         Map<Integer, Integer> lineNumbers = new TreeMap<>();
-        Class<?> aClass = method.getDeclaringClass();
-        ClassModel cm;
-        try {
-            Module aModule = aClass.getModule();
-            String name = aClass.getName();
-            cm = ClassFile.of().parse(aModule.getResourceAsStream(
-                    name.replace('.', '/') + ".class").readAllBytes());
+        Class<?> owner = method.getDeclaringClass();
+        String binaryName = owner.getName();
+        byte[] fileBytes;
+        try (var inputStream = owner.getModule().getResourceAsStream(
+                binaryName.replace('.', '/') + ".class")) {
+            fileBytes = inputStream.readAllBytes();
         } catch (IOException e) {
-                        throw new Error("TEST BUG: can read " + aClass.getName() + " : " + e, e);
+            throw new Error("TEST BUG: cannot read " + binaryName, e);
         }
+        ClassModel classModel = ClassFile.of().parse(fileBytes);
 
-        var params = Arrays.stream(method.getParameterTypes())
+        List<ClassDesc> paramTypes = Arrays.stream(method.getParameterTypes())
                 .map(cl -> cl.describeConstable().orElseThrow())
                 .toList();
-        var ret = method instanceof Method m ? m.getReturnType().describeConstable().orElseThrow()
-                                             : ConstantDescs.CD_void;
-        var mt = MethodTypeDesc.of(ret, params);
-        var name = method instanceof Method m ? m.getName() : ConstantDescs.INIT_NAME;
+        ClassDesc returnType = method instanceof Method m
+                ? m.getReturnType().describeConstable().orElseThrow()
+                : ConstantDescs.CD_void;
+        MethodTypeDesc methodType = MethodTypeDesc.of(returnType, paramTypes);
+        String methodName = method instanceof Method m ? m.getName() : ConstantDescs.INIT_NAME;
 
-        for (var m : cm.methods()) {
-            if (m.methodName().equalsString(name) && m.methodType().isMethodType(mt)) {
-                var optLnt = m.code().flatMap(code -> code.findAttribute(Attributes.lineNumberTable()));
-                if (optLnt.isEmpty()) {
+        for (var methodModel : classModel.methods()) {
+            if (methodModel.methodName().equalsString(methodName)
+                    && methodModel.methodType().isMethodType(methodType)) {
+                var foundLineNumberTable = methodModel.code().flatMap(code ->
+                        code.findAttribute(Attributes.lineNumberTable()));
+                if (foundLineNumberTable.isEmpty()) {
                     boolean isEmptyMethod = Modifier.isAbstract(method.getModifiers())
                             || Modifier.isNative(method.getModifiers());
                     if (!isEmptyMethod) {
@@ -97,7 +102,8 @@ public class CTVMUtilities {
                     }
                     break;
                 }
-                optLnt.get().lineNumbers().forEach(ln -> lineNumbers.put(ln.startPc(), ln.lineNumber()));
+                foundLineNumberTable.get().lineNumbers().forEach(ln ->
+                        lineNumbers.put(ln.startPc(), ln.lineNumber()));
                 break;
             }
         }
