@@ -50,7 +50,7 @@ public class TestRawRSACipher extends PKCS11Test {
         try {
             Cipher.getInstance("RSA/ECB/NoPadding", p);
         } catch (GeneralSecurityException e) {
-            throw new SkippedException("Not supported by provider, skipping");
+            throw new SkippedException("Algorithm RSA/ECB/NoPadding is not supported by provider, skipping");
         }
 
         String kpgAlgorithm = "RSA";

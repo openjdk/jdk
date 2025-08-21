@@ -56,7 +56,7 @@ public class TestRSACipher extends PKCS11Test {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
         } catch (GeneralSecurityException e) {
-            throw new SkippedException("Not supported by provider, skipping");
+            throw new SkippedException("Algorithm " + RSA_ALGOS[0] + " is not supported by provider, skipping");
         }
         String kpgAlgorithm = "RSA";
         int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);

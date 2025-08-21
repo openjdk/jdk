@@ -48,7 +48,7 @@ public class ReinitCipher extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Cipher", "ARCFOUR") == null) {
-            throw new SkippedException("Not supported by provider, skipping");
+            throw new SkippedException("Algorithm ARCFOUR is not supported by provider, skipping");
         }
         Random random = new Random();
         byte[] data1 = new byte[10 * 1024];
