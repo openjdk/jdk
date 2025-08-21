@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
         WCHAR stdNameInReg[MAX_ZONE_CHAR];
         TziValue tempTzi;
         WCHAR *stdNamePtr = tzi.StandardName;
-        int onlyMapID;
+     // int onlyMapID;
 
         timeType = GetTimeZoneInformation(&tzi);
         if (timeType == TIME_ZONE_ID_INVALID) {
@@ -304,7 +304,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
          * Compare to the "Std" value of each subkey and find the entry that
          * matches the current control panel setting.
          */
-        onlyMapID = 0;
+     // onlyMapID = 0;
         for (i = 0; i < nSubKeys; ++i) {
             DWORD size = sizeof(subKeyName);
             ret = RegEnumKeyEx(hKey, i, subKeyName, &size, NULL, NULL, NULL, NULL);
@@ -325,7 +325,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
                  * entry in the Time Zones registry.
                  */
                 RegCloseKey(hSubKey);
-                onlyMapID = 1;
+             // onlyMapID = 1;
                 ret = RegOpenKeyExW(hKey, stdNamePtr, 0, KEY_READ, (PHKEY)&hSubKey);
                 if (ret != ERROR_SUCCESS) {
                     goto err;
@@ -435,7 +435,7 @@ static char *matchJavaTZ(const char *java_home_dir, char *tzName)
     strcpy(mapFileName, java_home_dir);
     strcat(mapFileName, MAPPINGS_FILE);
 
-    if ((fp = fopen(mapFileName, "r")) == NULL) {
+    if (fopen_s(&fp, mapFileName, "rt") != 0) {
         jio_fprintf(stderr, "can't open %s.\n", mapFileName);
         free((void *) mapFileName);
         return NULL;

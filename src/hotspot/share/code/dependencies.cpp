@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciKlass.hpp"
@@ -30,16 +29,15 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/dependencies.hpp"
-#include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/flags/flagSetting.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

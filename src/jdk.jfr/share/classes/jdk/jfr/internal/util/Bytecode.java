@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.MethodModel;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.components.ClassPrinter;
@@ -74,6 +75,12 @@ public final class Bytecode {
             MethodTypeDesc mtd = MethodTypeDesc.of(returnDesc, parameterDesc);
             return new MethodDesc(methodName, mtd);
         }
+
+        public boolean matches(MethodModel m) {
+            return this.descriptor().equals(m.methodTypeSymbol()) && m.methodName().equalsString(this.name());
+        }
+    }
+    public record SettingDesc(ClassDesc paramType, String methodName) {
     }
 
     public static ClassDesc classDesc(ValueDescriptor v) {
@@ -92,6 +99,14 @@ public final class Bytecode {
             case "java.lang.Thread" -> CD_Thread;
             default -> throw new InternalError("Unsupported JFR type " + v.getTypeName());
         };
+    }
+
+    public static String internalName(String className) {
+        return className != null ? className.replace(".", "/") : null;
+    }
+
+    public static String descriptorName(String className) {
+        return className != null ? ("L" + internalName(className) + ";") : null;
     }
 
     public static ClassDesc classDesc(Class<?> clazz) {

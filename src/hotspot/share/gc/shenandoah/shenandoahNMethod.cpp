@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -179,9 +178,9 @@ public:
   }
 };
 
-void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
+void ShenandoahNMethod::assert_same_oops() {
   ShenandoahNMethodOopDetector detector;
-  nm()->oops_do(&detector, allow_dead);
+  nm()->oops_do(&detector);
 
   GrowableArray<oop*>* oops = detector.oops();
 

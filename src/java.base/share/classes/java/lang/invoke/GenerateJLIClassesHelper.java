@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
@@ -67,6 +70,7 @@ class GenerateJLIClassesHelper {
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
+    static final Annotation AOT_SAFE_ANNOTATION = Annotation.of(AOTSafeClassInitializer.class.describeConstable().orElseThrow());
 
     static class HolderClassBuilder {
 
@@ -378,13 +382,7 @@ class GenerateJLIClassesHelper {
         ArrayList<String> names = new ArrayList<>();
         HashSet<String> dedupSet = new HashSet<>();
         for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
-            LambdaForm zero = LambdaForm.zeroForm(type);
-            String name = zero.kind.defaultLambdaName
-                   + "_" + zero.returnType().basicTypeChar();
-            if (dedupSet.add(name)) {
-                names.add(name);
-                forms.add(zero);
-            }
+            String name;
 
             LambdaForm identity = LambdaForm.identityForm(type);
             name = identity.kind.defaultLambdaName
@@ -392,6 +390,16 @@ class GenerateJLIClassesHelper {
             if (dedupSet.add(name)) {
                 names.add(name);
                 forms.add(identity);
+            }
+
+            if (type != V_TYPE) {
+                LambdaForm constant = LambdaForm.constantForm(type);
+                name = constant.kind.defaultLambdaName
+                        + "_" + constant.returnType().basicTypeChar();
+                if (dedupSet.add(name)) {
+                    names.add(name);
+                    forms.add(constant);
+                }
             }
         }
         return generateCodeBytesForLFs(className,
@@ -426,24 +434,21 @@ class GenerateJLIClassesHelper {
             names.add(form.kind.defaultLambdaName);
         }
         for (Wrapper wrapper : Wrapper.values()) {
-            if (wrapper == Wrapper.VOID) {
-                continue;
-            }
+            int ftype = wrapper == Wrapper.VOID ? DirectMethodHandle.FT_CHECKED_REF : DirectMethodHandle.ftypeKind(wrapper.primitiveType());
             for (byte b = DirectMethodHandle.AF_GETFIELD; b < DirectMethodHandle.AF_LIMIT; b++) {
-                int ftype = DirectMethodHandle.ftypeKind(wrapper.primitiveType());
                 LambdaForm form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " non-volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
                 // volatile
                 form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
             }
         }
         return generateCodeBytesForLFs(className,
@@ -561,6 +566,7 @@ class GenerateJLIClassesHelper {
         return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PRIVATE | ACC_FINAL | ACC_SUPER)
                .withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC)
+               .with(RuntimeVisibleAnnotationsAttribute.of(AOT_SAFE_ANNOTATION))
                .with(SourceFileAttribute.of(className.substring(className.lastIndexOf('/') + 1)));
             for (int i = 0; i < forms.length; i++) {
                 new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb, false);

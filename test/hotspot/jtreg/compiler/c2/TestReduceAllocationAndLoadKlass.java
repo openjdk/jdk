@@ -36,7 +36,6 @@
  *                   -XX:-UseCompressedClassPointers
  *                   -Xbatch
  *                   -Xcomp
- *                   -server
  *                   compiler.c2.TestReduceAllocationAndLoadKlass
  */
 

@@ -33,6 +33,6 @@ private:
 
 public:
   void flush_bundle(bool start_new_bundle) {}
-  static bool supports_shared_stubs() { return false; }
+  static bool supports_shared_stubs() { return true; }
 
 #endif // CPU_RISCV_CODEBUFFER_RISCV_HPP

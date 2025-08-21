@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class ZipLibrary : AllStatic {
   static void close(jzfile* zip);
   static jzentry* find_entry(jzfile* zip, const char* name, jint* sizeP, jint* nameLen);
   static jboolean read_entry(jzfile* zip, jzentry* entry, unsigned char* buf, char* namebuf);
+  static void free_entry(jzfile* zip, jzentry* entry);
   static jint crc32(jint crc, const jbyte* buf, jint len);
   static const char* init_params(size_t block_size, size_t* needed_out_size, size_t* needed_tmp_size, int level);
   static size_t compress(char* in, size_t in_size, char* out, size_t out_size, char* tmp, size_t tmp_size, int level, char* buf, const char** pmsg);

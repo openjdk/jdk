@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.BranchInstruction;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
@@ -34,15 +37,28 @@ import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
- * Models stack map frame of {@code StackMapTable} attribute (JVMS {@jvms 4.7.4}).
+ * Models a stack map frame in a {@link StackMapTableAttribute StackMapTable}
+ * attribute (JVMS {@jvms 4.7.4}).  A stack map frame must appear at the
+ * beginning of each basic block in a method (JVMS {@jvms 4.10.1}).
  *
+ * @apiNote
+ * In general, a stack map frame should be defined for each target of a
+ * {@link BranchInstruction}, or unreachable code right after an unconditional
+ * branch instruction like {@link Opcode#GOTO goto}.  The automatic stack map
+ * generation cannot handle unreachable code right after an unconditional jump;
+ * The {@link ClassFile.DeadCodeOption} allows substituting such code, or
+ * advanced users can provide their own stack maps for dead code.
+ *
+ * @see StackMapTableAttribute#entries()
+ * @jvms 4.7.4 The {@code StackMapTable} Attribute
+ * @jvms 4.10.1 Verification by Type Checking
  * @since 24
  */
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
     /**
-     * {@return the frame compact form type}
+     * {@return the raw {@code u1 frame_type}}
      */
     int frameType();
 
@@ -57,12 +73,13 @@ public sealed interface StackMapFrameInfo
     List<VerificationTypeInfo> locals();
 
     /**
-     * {@return the expanded stack types}
+     * {@return the expanded operand stack types}
      */
     List<VerificationTypeInfo> stack();
 
     /**
      * {@return a new stack map frame}
+     *
      * @param target the location of the frame
      * @param locals the complete list of frame locals
      * @param stack the complete frame stack
@@ -70,13 +87,15 @@ public sealed interface StackMapFrameInfo
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
             List<VerificationTypeInfo> stack) {
-
         return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack);
     }
 
     /**
-     * The type of a stack value.
+     * The type of a stack or local variable value.
      *
+     * @see #locals()
+     * @see #stack()
+     * @jvms 4.7.4 The {@code StackMapTable} Attribute
      * @since 24
      */
     sealed interface VerificationTypeInfo {
@@ -125,25 +144,25 @@ public sealed interface StackMapFrameInfo
      */
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
-        /** verification type top */
+        /** Verification type top. */
         TOP(ITEM_TOP),
 
-        /** verification type int */
+        /** Verification type int. */
         INTEGER(ITEM_INTEGER),
 
-        /** verification type float */
+        /** Verification type float. */
         FLOAT(ITEM_FLOAT),
 
-        /** verification type double */
+        /** Verification type double. */
         DOUBLE(ITEM_DOUBLE),
 
-        /** verification type long */
+        /** Verification type long. */
         LONG(ITEM_LONG),
 
-        /** verification type null */
+        /** Verification type null. */
         NULL(ITEM_NULL),
 
-        /** verification type uninitializedThis */
+        /** Verification type uninitializedThis. */
         UNINITIALIZED_THIS(ITEM_UNINITIALIZED_THIS);
 
 
@@ -162,6 +181,7 @@ public sealed interface StackMapFrameInfo
     /**
      * A stack value for an object type. Its {@link #tag() tag} is {@value #ITEM_OBJECT}.
      *
+     * @jvms 4.7.4 The {@code StackMapTable} Attribute
      * @since 24
      */
     sealed interface ObjectVerificationTypeInfo extends VerificationTypeInfo
@@ -190,7 +210,7 @@ public sealed interface StackMapFrameInfo
         ClassEntry className();
 
         /**
-         * {@return the class of the object}
+         * {@return the class of the object, as a symbolic descriptor}
          */
         default ClassDesc classSymbol() {
             return className().asSymbol();
@@ -200,19 +220,22 @@ public sealed interface StackMapFrameInfo
     /**
      * An uninitialized stack value. Its {@link #tag() tag} is {@value #ITEM_UNINITIALIZED}.
      *
+     * @jvms 4.7.4 The {@code StackMapTable} Attribute
      * @since 24
      */
     sealed interface UninitializedVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
 
         /**
-         * {@return the {@code new} instruction position that creates this unitialized object}
+         * {@return the label immediately before the {@link Opcode#NEW new}
+         * instruction that creates this uninitialized object}
          */
         Label newTarget();
 
         /**
-         * {@return an unitialized verification type info}
-         * @param newTarget the {@code new} instruction position that creates this unitialized object
+         * {@return an uninitialized verification type info}
+         * @param newTarget the label immediately before the {@link Opcode#NEW new}
+         *                  instruction that creates this uninitialized object
          */
         public static UninitializedVerificationTypeInfo of(Label newTarget) {
             return new StackMapDecoder.UninitializedVerificationTypeInfoImpl(newTarget);

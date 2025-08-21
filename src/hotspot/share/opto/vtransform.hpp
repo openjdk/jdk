@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
+class VTransformMemVectorNode;
 class VTransformLoadVectorNode;
 class VTransformStoreVectorNode;
 
@@ -108,16 +109,19 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
-    _verbose     (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections  (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector(_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _info        (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
+    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -213,7 +217,7 @@ public:
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
     NOT_PRODUCT(_trace(trace) COMMA)
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
@@ -244,6 +248,10 @@ private:
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
+  void apply_speculative_runtime_checks();
+  void add_speculative_alignment_check(Node* node, juint alignment);
+  void add_speculative_check(BoolNode* bol);
+
   void apply_vectorization() const;
 };
 
@@ -256,7 +264,8 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
-  // _in is split into required inputs (_req), and additional dependencies.
+  // _in is split into required inputs (_req, i.e. all data dependencies),
+  // and memory dependencies.
   const uint _req;
   GrowableArray<VTransformNode*> _in;
   GrowableArray<VTransformNode*> _out;
@@ -286,7 +295,7 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_dependency(VTransformNode* n) {
+  void add_memory_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
     _in.push(n);
     n->add_out(this);
@@ -314,9 +323,11 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
+  virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
+  virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
   virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); }
 
@@ -342,6 +353,7 @@ public:
     VTransformNode(vtransform, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
+  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
   virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
@@ -358,6 +370,7 @@ public:
   VTransformInputScalarNode(VTransform& vtransform, Node* n) :
     VTransformScalarNode(vtransform, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+  virtual bool is_load_in_loop() const override { return false; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
@@ -478,28 +491,40 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
 };
 
-class VTransformLoadVectorNode : public VTransformVectorNode {
+class VTransformMemVectorNode : public VTransformVectorNode {
+private:
+  const VPointer _vpointer; // with size of the vector
+
+public:
+  VTransformMemVectorNode(VTransform& vtransform, const uint req, uint number_of_nodes, const VPointer& vpointer) :
+    VTransformVectorNode(vtransform, req, number_of_nodes),
+    _vpointer(vpointer) {}
+
+  virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
+  virtual bool is_load_or_store_in_loop() const override { return true; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+};
+
+class VTransformLoadVectorNode : public VTransformMemVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, 3, number_of_nodes) {}
+  VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
+    VTransformMemVectorNode(vtransform, 3, number_of_nodes, vpointer) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
-  virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(nodes().at(0)->as_Mem()); }
+  virtual bool is_load_in_loop() const override { return true; }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
 
-class VTransformStoreVectorNode : public VTransformVectorNode {
+class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, 4, number_of_nodes) {}
+  VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
+    VTransformMemVectorNode(vtransform, 4, number_of_nodes, vpointer) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
-  virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(nodes().at(0)->as_Mem()); }
+  virtual bool is_load_in_loop() const override { return false; }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

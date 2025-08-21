@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -138,6 +137,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case MODULE:
                 addOverviewLink(target);
@@ -149,6 +149,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case PACKAGE:
                 addOverviewLink(target);
@@ -167,6 +168,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case CLASS:
                 addOverviewLink(target);
@@ -185,6 +187,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case USE:
                 addOverviewLink(target);
@@ -209,6 +212,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case TREE:
                 addOverviewLink(target);
@@ -227,6 +231,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case DEPRECATED:
             case INDEX:
@@ -269,6 +274,7 @@ public class Navigation {
                 } else {
                     addHelpLink(target);
                 }
+                addThemeSwitcher(target);
                 break;
             case ALL_CLASSES:
             case ALL_PACKAGES:
@@ -286,6 +292,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case DOC_FILE:
                 addOverviewLink(target);
@@ -312,14 +319,11 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             default:
                 break;
         }
-    }
-
-    private void addContentToList(List<Content> listContents, Content source) {
-        listContents.add(HtmlTree.LI(source));
     }
 
     private void addItemToList(Content list, Content item) {
@@ -404,7 +408,7 @@ public class Navigation {
                             : Text.of(pkg.getQualifiedName()));
             // Breadcrumb navigation displays nested classes as separate links.
             // Enclosing classes may be undocumented, in which case we just display the class name.
-            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.hasHiddenTag(type))
+            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.isHidden(type))
                     ? links.createLink(pathToRoot.resolve(
                             docPaths.forClass(type)), type.getSimpleName().toString())
                     : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
@@ -493,12 +497,24 @@ public class Navigation {
         }
     }
 
+    private void addThemeSwitcher(Content target) {
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        target.add(HtmlTree.LI(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_LIGHT.name()))
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.MOON_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_DARK.name()))
+                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString())
+                .put(HtmlAttr.TITLE, selectTheme.toString())));
+    }
+
     private void addSearch(Content target) {
         var resources = configuration.getDocResources();
         var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
-                .put(HtmlAttr.AUTOCOMPLETE, "off");
+                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                .put(HtmlAttr.SPELLCHECK, "false");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
         var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)
@@ -545,6 +561,7 @@ public class Navigation {
         navContent.add(aboutDiv);
         navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
+
         var subNavContent = HtmlTree.DIV(HtmlStyles.navContent);
         List<Content> subNavLinks = new ArrayList<>();
         switch (documentedPage) {
@@ -556,6 +573,22 @@ public class Navigation {
         var breadcrumbNav = HtmlTree.OL(HtmlStyles.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
         subNavContent.addUnchecked(breadcrumbNav);
+
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        subNavContent.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
+                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);

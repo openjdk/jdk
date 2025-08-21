@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,28 +30,28 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 #include "classfile/javaClasses.inline.hpp"
-#include "gc/shared/markBitMap.inline.hpp"
-#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/prefetch.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -62,10 +63,6 @@ inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
-}
-
-inline bool ShenandoahHeap::has_forwarded_objects() const {
-  return _gc_state.is_set(HAS_FORWARDED);
 }
 
 inline WorkerThreads* ShenandoahHeap::workers() const {
@@ -255,7 +252,7 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() == CANCELLED;
+  return _cancelled_gc.get() != GCCause::_no_gc;
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
@@ -267,8 +264,12 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
+inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
+  return _cancelled_gc.get();
+}
+
 inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
-  _cancelled_gc.set(CANCELLABLE);
+  _cancelled_gc.set(GCCause::_no_gc);
   if (_cancel_requested_time > 0) {
     log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
@@ -382,7 +383,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     // Old regions are in old and global collections, not in young collections
     return !gen->is_young();
   default:
-    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, region_affiliation(index), index);
+    assert(false, "Bad affiliation (%d) for region %zu", region_affiliation(index), index);
     return false;
   }
 }
@@ -450,28 +451,36 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   return collection_set()->is_in_loc(p);
 }
 
-inline bool ShenandoahHeap::is_stable() const {
-  return _gc_state.is_clear();
+inline bool ShenandoahHeap::is_idle() const {
+  return _gc_state_changed ? _gc_state.is_clear() : ShenandoahThreadLocalData::gc_state(Thread::current()) == 0;
 }
 
-inline bool ShenandoahHeap::is_idle() const {
-  return _gc_state.is_unset(MARKING | EVACUATION | UPDATEREFS);
+inline bool ShenandoahHeap::has_forwarded_objects() const {
+  return is_gc_state(HAS_FORWARDED);
 }
 
 inline bool ShenandoahHeap::is_concurrent_mark_in_progress() const {
-  return _gc_state.is_set(MARKING);
+  return is_gc_state(MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_young_mark_in_progress() const {
-  return _gc_state.is_set(YOUNG_MARKING);
+  return is_gc_state(YOUNG_MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_old_mark_in_progress() const {
-  return _gc_state.is_set(OLD_MARKING);
+  return is_gc_state(OLD_MARKING);
 }
 
 inline bool ShenandoahHeap::is_evacuation_in_progress() const {
-  return _gc_state.is_set(EVACUATION);
+  return is_gc_state(EVACUATION);
+}
+
+inline bool ShenandoahHeap::is_update_refs_in_progress() const {
+  return is_gc_state(UPDATE_REFS);
+}
+
+inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
+  return is_gc_state(WEAK_ROOTS);
 }
 
 inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
@@ -486,20 +495,12 @@ inline bool ShenandoahHeap::is_full_gc_move_in_progress() const {
   return _full_gc_move_in_progress.is_set();
 }
 
-inline bool ShenandoahHeap::is_update_refs_in_progress() const {
-  return _gc_state.is_set(UPDATEREFS);
-}
-
 inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
   return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
 }
 
 inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
   return _concurrent_strong_root_in_progress.is_set();
-}
-
-inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
-  return _gc_state.is_set(WEAK_ROOTS);
 }
 
 template<class T>
@@ -640,11 +641,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const
   } else {
     return nullptr;
   }
-}
-
-inline ShenandoahMarkingContext* ShenandoahHeap::complete_marking_context() const {
-  assert (_marking_context->is_complete()," sanity");
-  return _marking_context;
 }
 
 inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {

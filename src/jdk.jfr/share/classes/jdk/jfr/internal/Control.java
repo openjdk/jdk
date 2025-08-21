@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,16 @@
 
 package jdk.jfr.internal;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
 import jdk.jfr.SettingControl;
-import jdk.jfr.internal.settings.JDKSettingControl;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 final class Control {
-    @SuppressWarnings("removal")
-    private final AccessControlContext context;
     private static final int CACHE_SIZE = 5;
     private final Set<?>[] cachedUnions = new HashSet<?>[CACHE_SIZE];
     private final String[] cachedValues = new String[CACHE_SIZE];
@@ -51,12 +44,8 @@ final class Control {
 
     // called by exposed subclass in external API
     public Control(SettingControl delegate, String defaultValue) {
-        this.context = PrivateAccess.getInstance().getContext(delegate);
         this.delegate = delegate;
         this.defaultValue = defaultValue;
-        if (this.context == null && !(delegate instanceof JDKSettingControl)) {
-            throw new InternalError("Security context can only be null for trusted setting controls");
-        }
     }
 
     boolean isType(Class<? extends SettingControl> clazz) {
@@ -74,25 +63,8 @@ final class Control {
         apply(defaultValue);
     }
 
-    @SuppressWarnings("removal")
     public String getValue() {
-        if (context == null) {
-            // VM events requires no access control context
-            return delegate.getValue();
-        } else {
-            return AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    try {
-                        return delegate.getValue();
-                    } catch (Throwable t) {
-                        // Prevent malicious user to propagate exception callback in the wrong context
-                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when trying to get value for " + getClass());
-                    }
-                    return defaultValue != null ? defaultValue : ""; // Need to return something
-                }
-            }, context);
-        }
+        return delegate.getValue();
     }
 
     private void apply(String value) {
@@ -102,53 +74,18 @@ final class Control {
         setValue(value);
     }
 
-    @SuppressWarnings("removal")
     public void setValue(String value) {
-        if (context == null) {
-            // VM events requires no access control context
-            try {
-                delegate.setValue(value);
-                lastValue = delegate.getValue();
-            } catch (Throwable t) {
-                Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
-                lastValue = null;
-            }
-        } else {
-            lastValue = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    try {
-                        delegate.setValue(value);
-                        return delegate.getValue();
-                    } catch (Throwable t) {
-                        // Prevent malicious user to propagate exception callback in the wrong context
-                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
-                    }
-                    return null;
-                }
-            }, context);
+        try {
+            delegate.setValue(value);
+            lastValue = delegate.getValue();
+        } catch (Throwable t) {
+            Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\". " + t.getMessage());
+            lastValue = null;
         }
     }
 
-
-    @SuppressWarnings("removal")
     public String combine(Set<String> values) {
-        if (context == null) {
-            // VM events requires no access control context
-            return delegate.combine(values);
-        }
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                try {
-                    return delegate.combine(Collections.unmodifiableSet(values));
-                } catch (Throwable t) {
-                    // Prevent malicious user to propagate exception callback in the wrong context
-                    Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when combining " + values + " for " + getClass());
-                }
-                return null;
-            }
-        }, context);
+        return delegate.combine(values);
     }
 
     private final String findCombine(Set<String> values) {

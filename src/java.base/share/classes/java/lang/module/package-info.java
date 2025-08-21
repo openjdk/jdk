@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,10 @@
  * resolution does not search the observable modules for M to satisfy the dependency.
  * However, if M is recursively enumerated at step 1 then all modules that are
  * enumerated and `requires static M` will read M. </p>
+ *
+ * <p> The {@linkplain java.lang.module.Configuration##optional-services Optional
+ * Services} section of {@link java.lang.module.Configuration} shows how resolution
+ * can be resilient when a service comes from a module that is optional at run time.
  *
  * <h3> Completeness </h3>
  *

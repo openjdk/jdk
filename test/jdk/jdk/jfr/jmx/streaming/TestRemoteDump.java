@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @summary Tests RecordingStream::dump(Path)
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.jmx.streaming.TestRemoteDump
@@ -97,7 +97,7 @@ public class TestRemoteDump {
         }
     }
 
-    private static List<RecordedEvent> recordWithPolicy(String filename, Consumer<RemoteRecordingStream> policy) throws Exception {
+    private static List<RecordedEvent> recordWithPolicy(String filename, boolean awaitEvents, Consumer<RemoteRecordingStream> policy) throws Exception {
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(2);
         CountDownLatch latch3 = new CountDownLatch(3);
@@ -111,14 +111,18 @@ public class TestRemoteDump {
             rs.startAsync();
             DumpEvent e1 = new DumpEvent();
             e1.commit();
-            latch1.await();
+            if (awaitEvents) {
+                latch1.await();
+            }
             // Force chunk rotation
             try (Recording r = new Recording()) {
                 r.start();
                 DumpEvent e2 = new DumpEvent();
                 e2.commit();
             }
-            latch2.await();
+            if (awaitEvents) {
+                latch2.await();
+            }
             DumpEvent e3 = new DumpEvent();
             e3.commit();
             latch3.await();
@@ -129,7 +133,7 @@ public class TestRemoteDump {
     }
 
     private static void testSetMaxSize() throws Exception {
-        var events = recordWithPolicy("max-size.jfr", rs -> {
+        var events = recordWithPolicy("max-size.jfr", false, rs -> {
             // keeps all events for the dump
             rs.setMaxSize(100_000_000);
         });
@@ -140,7 +144,7 @@ public class TestRemoteDump {
     }
 
     private static void testSetMaxAge() throws Exception {
-        var events = recordWithPolicy("max-age.jfr", rs -> {
+        var events = recordWithPolicy("max-age.jfr", false, rs -> {
             // keeps all events for the dump
             rs.setMaxAge(Duration.ofDays(1));
         });
@@ -151,7 +155,7 @@ public class TestRemoteDump {
     }
 
     private static void testSetNoPolicy() throws Exception {
-        var events = recordWithPolicy("no-policy.jfr", rs -> {
+        var events = recordWithPolicy("no-policy.jfr", true, rs -> {
             // use default policy, remove after consumption
         });
         // Since latch3 have been triggered at least two events/chunks

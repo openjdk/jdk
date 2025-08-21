@@ -61,6 +61,7 @@ public class TestAccessModes {
             // access is unaligned
             assertTrue(segment.maxByteAlignment() < layout.byteAlignment());
         }
+        assertEquals(varHandle.isAccessModeSupported(mode), compatible);
     }
 
     static ValueLayout accessLayout(MemoryLayout layout) {

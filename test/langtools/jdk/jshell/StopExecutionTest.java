@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,25 +33,18 @@
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import jdk.internal.jshell.tool.StopDetectingInputStream;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
-import jdk.jshell.JShell;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 
 @Test
-public class StopExecutionTest extends KullaTesting {
-
-    private final Object lock = new Object();
-    private boolean isStopped;
+public class StopExecutionTest extends AbstractStopExecutionTest {
 
     @Test(enabled = false) // TODO 8129546
     public void testStopLoop() throws InterruptedException {
@@ -66,42 +59,6 @@ public class StopExecutionTest extends KullaTesting {
     @Test(enabled = false) // TODO 8129546
     public void testScriptCatchesStop() throws Exception {
         scheduleStop("for (int i = 0; i < 30; i++) { try { Thread.sleep(100); } catch (Throwable ex) { } }");
-    }
-
-    private void scheduleStop(String src) throws InterruptedException {
-        JShell state = getState();
-        isStopped = false;
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        Thread t = new Thread(() -> {
-            int i = 1;
-            int n = 30;
-            synchronized (lock) {
-                do {
-                    state.stop();
-                    if (!isStopped) {
-                        out.println("Not stopped. Try again: " + i);
-                        try {
-                            lock.wait(1000);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-                } while (i++ < n && !isStopped);
-                if (!isStopped) {
-                    System.err.println(writer.toString());
-                    fail("Evaluation was not stopped: '" + src + "'");
-                }
-            }
-        });
-        t.start();
-        assertEval(src);
-        synchronized (lock) {
-            out.println("Evaluation was stopped successfully: '" + src + "'");
-            isStopped = true;
-            lock.notify();
-        }
-        // wait until the background thread finishes to prevent from calling 'stop' on closed state.
-        t.join();
     }
 
     public void testStopDetectingInputRandom() throws IOException {

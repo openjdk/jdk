@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,7 +662,8 @@ class Stream<T> extends ExchangeImpl<T> {
             responseHeaders.firstValueAsLong("content-length");
 
             if (Log.headers()) {
-                StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
+                sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                 Log.dumpHeaders(sb, "    ", responseHeaders);
                 Log.logHeaders(sb.toString());
             }
@@ -673,7 +674,7 @@ class Stream<T> extends ExchangeImpl<T> {
             completeResponse(response);
         } else {
             if (Log.headers()) {
-                StringBuilder sb = new StringBuilder("TRAILING HEADERS:\n");
+                StringBuilder sb = new StringBuilder("TRAILING HEADERS (streamid=%s):\n".formatted(streamid));
                 Log.dumpHeaders(sb, "    ", responseHeaders);
                 Log.logHeaders(sb.toString());
             }
@@ -725,7 +726,10 @@ class Stream<T> extends ExchangeImpl<T> {
                 debug.log("completing requestBodyCF exceptionally due to received" +
                         " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
             }
-            requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
+            var exception = new IOException("RST_STREAM received " +
+                    ResetFrame.stringForCode(frame.getErrorCode()));
+            requestBodyCF.completeExceptionally(exception);
+            cancelImpl(exception, frame.getErrorCode());
         } else {
             if (debug.on()) {
                 debug.log("completing requestBodyCF normally due to received" +
@@ -1767,8 +1771,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 responseHeaders.firstValueAsLong("content-length");
 
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS");
-                    sb.append(" (streamid=").append(streamid).append("):\n");
+                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
+                    sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                     Log.dumpHeaders(sb, "    ", responseHeaders);
                     Log.logHeaders(sb.toString());
                 }
@@ -1779,8 +1783,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 completeResponse(response);
             } else {
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("TRAILING HEADERS");
-                    sb.append(" (streamid=").append(streamid).append("):\n");
+                    StringBuilder sb = new StringBuilder("TRAILING HEADERS (streamid=%s):\n".formatted(streamid));
+                    sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                     Log.dumpHeaders(sb, "    ", responseHeaders);
                     Log.logHeaders(sb.toString());
                 }
@@ -1868,7 +1872,12 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
-    private class HeadersConsumer extends ValidatingHeadersConsumer implements DecodingCallback {
+    private final class HeadersConsumer extends ValidatingHeadersConsumer
+            implements DecodingCallback {
+
+        private HeadersConsumer() {
+            super(Context.RESPONSE);
+        }
 
         boolean maxHeaderListSizeReached;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -59,9 +58,7 @@ void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
       nm->mark_as_maybe_on_stack();
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      if (bs_nm != nullptr) {
-        bs_nm->disarm(nm);
-      }
+      bs_nm->disarm(nm);
     }
 
     if (_fix_relocations) {

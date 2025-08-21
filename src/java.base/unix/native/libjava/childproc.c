@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,21 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
+int
+markCloseOnExec(int fd)
+{
+    const int flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+    if ((flags & FD_CLOEXEC) == 0) {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static int
 isAsciiDigit(char c)
 {
@@ -67,21 +83,15 @@ isAsciiDigit(char c)
 #endif
 
 static int
-closeDescriptors(void)
+markDescriptorsCloseOnExec(void)
 {
     DIR *dp;
     struct dirent *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    close(from_fd);          /* for possible use by opendir() */
-    close(from_fd + 1);      /* another one for good luck */
+    /* This function marks all file descriptors beyond stderr as CLOEXEC.
+     * That includes the file descriptor used for the fail pipe: we want that
+     * one to stay open up until the execve, but it should be closed with the
+     * execve. */
+    const int fd_from = STDERR_FILENO + 1;
 
 #if defined(_AIX)
     /* AIX does not understand '/proc/self' - it requires the real process ID */
@@ -90,18 +100,22 @@ closeDescriptors(void)
 #endif
 
     if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
+        return -1;
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
+            if (markCloseOnExec(fd) == -1) {
+                closedir(dp);
+                return -1;
+            }
+        }
     }
 
     closedir(dp);
 
-    return 1;
+    return 0;
 }
 
 static int
@@ -144,7 +158,7 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
         } else {
             return -1;
         }
@@ -358,7 +372,7 @@ childProcess(void *arg)
     jtregSimulateCrash(0, 6);
 #endif
     /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
+       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
        would do it anyways, but a little paranoia is a good thing. */
     if ((closeSafely(p->in[1])   == -1) ||
         (closeSafely(p->out[0])  == -1) ||
@@ -393,11 +407,11 @@ childProcess(void *arg)
     fail_pipe_fd = FAIL_FILENO;
 
     /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
+    if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
         int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (close(fd) == -1 && errno != EBADF)
+        for (fd = STDERR_FILENO + 1; fd < max_fd; fd++)
+            if (markCloseOnExec(fd) == -1 && errno != EBADF)
                 goto WhyCantJohnnyExec;
     }
 
@@ -405,8 +419,17 @@ childProcess(void *arg)
     if (p->pdir != NULL && chdir(p->pdir) < 0)
         goto WhyCantJohnnyExec;
 
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
+    // Reset any mask signals from parent, but not in VFORK mode
+    if (p->mode != MODE_VFORK) {
+        sigset_t unblock_signals;
+        sigemptyset(&unblock_signals);
+        sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+    }
+
+    // Children should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
         goto WhyCantJohnnyExec;
+    }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 

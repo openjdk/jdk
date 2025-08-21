@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getSupportedCipherSuites()
      * @return array of the cipher suites enabled by default
      */
@@ -128,6 +129,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getDefaultCipherSuites()
      * @return an array of cipher suite names
      */

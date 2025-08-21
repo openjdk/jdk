@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public abstract class CiReplayBase {
         "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
         "-XX:+CICountNative", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        "-XX:-SegmentedCodeCache",
         REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",

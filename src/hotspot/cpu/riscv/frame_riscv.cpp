@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -158,6 +157,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // sender_pc might be invalid so check that the frame
+      // actually belongs to a Continuation.
+      if (!Continuation::is_frame_in_continuation(thread, *this)) {
+        return false;
+      }
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
       frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
       sender_sp = s.sp();
@@ -410,8 +414,8 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 
   JavaThread** thread_addr;
 #ifdef COMPILER1
-  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
-      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+  if (cb == Runtime1::blob_for(StubId::c1_monitorenter_id) ||
+      cb == Runtime1::blob_for(StubId::c1_monitorenter_nofpu_id)) {
     thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
   } else
 #endif
@@ -666,7 +670,6 @@ void JavaFrameAnchor::make_walkable() {
   // already walkable?
   if (walkable()) { return; }
   vmassert(last_Java_sp() != nullptr, "not called from Java code?");
-  vmassert(last_Java_pc() == nullptr, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }

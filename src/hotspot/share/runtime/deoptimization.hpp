@@ -98,6 +98,7 @@ class Deoptimization : AllStatic {
 #endif
 
     Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
+    Reason_auto_vectorization_check, // compiler generated (speculative) auto vectorization checks failed
 
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
@@ -116,8 +117,9 @@ class Deoptimization : AllStatic {
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
     Reason_receiver_constraint,   // receiver subtype check failed
+    Reason_short_running_long_loop,    // profile reports loop runs for small number of iterations
 #if INCLUDE_JVMCI
-    Reason_aliasing,              // optimistic assumption about aliasing failed
+    Reason_aliasing = Reason_short_running_long_loop, // optimistic assumption about aliasing failed
     Reason_transfer_to_interpreter, // explicit transferToInterpreter()
     Reason_not_compiled_exception_handler,
     Reason_unresolved,

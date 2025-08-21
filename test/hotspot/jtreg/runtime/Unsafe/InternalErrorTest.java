@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class InternalErrorTest {
                 break;
             case 1:
                 // testing Unsafe.copySwapMemory, trying to access next page after truncation.
-                int destOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                long destOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
                 unsafe.copySwapMemory(null, mapAddr + pageSize, new byte[4000], destOffset, 2000, 2);
                 break;
             case 2:

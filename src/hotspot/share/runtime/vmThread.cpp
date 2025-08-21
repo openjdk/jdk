@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/vmThreadCpuTimeScope.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -46,8 +46,8 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -61,7 +61,7 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: " INTX_FORMAT " ms)",
+      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: %zd ms)",
             _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
@@ -88,7 +88,7 @@ void VMOperationTimeoutTask::disarm() {
   // VMOperationTimeoutTask might miss the arm-disarm window depending on
   // the scheduling.
   if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
-    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: %zd ms)",
           _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
   }
   _vm_op_name = nullptr;
@@ -276,31 +276,25 @@ void VMThread::evaluate_operation(VM_Operation* op) {
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
     HOTSPOT_VMOPS_BEGIN(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
+    VMThreadCPUTimeScope CPUTimeScope(this, op->is_gc_operation());
     op->evaluate();
     if (event.should_commit()) {
       post_vm_operation_event(&event, op);
     }
 
     HOTSPOT_VMOPS_END(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
-  }
-
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    assert(Thread::current() == this, "Must be called from VM thread");
-    // Update vm_thread_cpu_time after each VM operation.
-    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::vm);
-    tttc.do_thread(this);
   }
 }
 
-class HandshakeALotClosure : public HandshakeClosure {
+class ALotOfHandshakeClosure : public HandshakeClosure {
  public:
-  HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
+  ALotOfHandshakeClosure() : HandshakeClosure("ALotOfHandshakeClosure") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
     JavaThread::cast(thread)->verify_states_for_handshake();
@@ -401,17 +395,17 @@ void VMThread::inner_execute(VM_Operation* op) {
   HandleMark hm(VMThread::vm_thread());
 
   const char* const cause = op->cause();
-  EventMarkVMOperation em("Executing %sVM operation: %s%s%s%s",
-      prev_vm_operation != nullptr ? "nested " : "",
-      op->name(),
-      cause != nullptr ? " (" : "",
-      cause != nullptr ? cause : "",
-      cause != nullptr ? ")" : "");
+  stringStream ss;
+  ss.print("Executing%s%s VM operation: %s",
+           prev_vm_operation != nullptr ? " nested" : "",
+           op->evaluate_at_safepoint() ? " safepoint" : " non-safepoint",
+           op->name());
+  if (cause != nullptr) {
+    ss.print(" (%s)", cause);
+  }
 
-  log_debug(vmthread)("Evaluating %s %s VM operation: %s",
-                       prev_vm_operation != nullptr ? "nested" : "",
-                      _cur_vm_operation->evaluate_at_safepoint() ? "safepoint" : "non-safepoint",
-                      _cur_vm_operation->name());
+  EventMarkVMOperation em("%s", ss.freeze());
+  log_debug(vmthread)("%s", ss.freeze());
 
   bool end_safepoint = false;
   bool has_timeout_task = (_timeout_task != nullptr);
@@ -454,8 +448,8 @@ void VMThread::wait_for_operation() {
     if (handshake_or_safepoint_alot()) {
       if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
-        HandshakeALotClosure hal_cl;
-        Handshake::execute(&hal_cl);
+        ALotOfHandshakeClosure aohc;
+        Handshake::execute(&aohc);
       }
       // When we unlocked above someone might have setup a new op.
       if (_next_vm_operation != nullptr) {
@@ -527,6 +521,13 @@ void VMThread::execute(VM_Operation* op) {
     ((VMThread*)t)->inner_execute(op);
     return;
   }
+
+  // The current thread must not belong to the SuspendibleThreadSet, because an
+  // on-the-fly safepoint can be waiting for the current thread, and the
+  // current thread will be blocked in wait_until_executed, resulting in
+  // deadlock.
+  assert(!t->is_suspendible_thread(), "precondition");
+  assert(!t->is_indirectly_suspendible_thread(), "precondition");
 
   // Avoid re-entrant attempts to gc-a-lot
   SkipGCALot sgcalot(t);

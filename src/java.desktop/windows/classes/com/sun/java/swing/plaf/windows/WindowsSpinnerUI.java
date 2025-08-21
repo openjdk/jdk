@@ -37,7 +37,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 
-public class WindowsSpinnerUI extends BasicSpinnerUI {
+public final class WindowsSpinnerUI extends BasicSpinnerUI {
     public static ComponentUI createUI(JComponent c) {
         return new WindowsSpinnerUI();
     }
@@ -46,6 +46,7 @@ public class WindowsSpinnerUI extends BasicSpinnerUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             paintXPBackground(g, c);
@@ -71,6 +72,7 @@ public class WindowsSpinnerUI extends BasicSpinnerUI {
         skin.paintSkin(g, 0, 0, c.getWidth(), c.getHeight(), state);
     }
 
+    @Override
     protected Component createPreviousButton() {
         if (XPStyle.getXP() != null) {
             JButton xpButton = new XPStyle.GlyphButton(spinner, Part.SPNP_DOWN);
@@ -83,6 +85,7 @@ public class WindowsSpinnerUI extends BasicSpinnerUI {
         return super.createPreviousButton();
     }
 
+    @Override
     protected Component createNextButton() {
         if (XPStyle.getXP() != null) {
             JButton xpButton = new XPStyle.GlyphButton(spinner, Part.SPNP_UP);

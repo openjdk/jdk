@@ -28,6 +28,7 @@
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          various API called with a null caller class function properly.
  * @library /test/lib
+ * @requires !jdk.static
  * @modules java.base/jdk.internal.module
  *          jdk.compiler
  * @build NullCallerTest

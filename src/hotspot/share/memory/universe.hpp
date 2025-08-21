@@ -117,8 +117,8 @@ class Universe: AllStatic {
   static intptr_t _non_oop_bits;
 
   // array of dummy objects used with +FullGCAlot
-  debug_only(static OopHandle   _fullgc_alot_dummy_array;)
-  debug_only(static int         _fullgc_alot_dummy_next;)
+  DEBUG_ONLY(static OopHandle   _fullgc_alot_dummy_array;)
+  DEBUG_ONLY(static int         _fullgc_alot_dummy_next;)
 
   // Compiler/dispatch support
   static int  _base_vtable_size;                      // Java vtbl size of klass Object (in words)
@@ -185,15 +185,24 @@ class Universe: AllStatic {
   static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
   static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
+  static ObjArrayKlass* objectArrayKlass() {
+    ObjArrayKlass* k = _objectArrayKlass;
+    assert(k != nullptr, "Object array klass should be initialized; too early?");
+    return k;
+  }
 
-  static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
+  static Klass* fillerArrayKlass() {
+    Klass* k = _fillerArrayKlass;
+    assert(k != nullptr, "Filler array class should be initialized; too early?");
+    return k;
+  }
 
   static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlasses[t] != nullptr, "domain check");
-    return _typeArrayKlasses[t];
+    TypeArrayKlass* k = _typeArrayKlasses[t];
+    assert(k != nullptr, "Type array class should be initialized; too early?");
+    return k;
   }
 
   // Known objects in the VM
@@ -296,6 +305,8 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  static void before_exit();
+
   DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
@@ -357,7 +368,7 @@ class Universe: AllStatic {
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.
-  debug_only(static bool release_fullgc_alot_dummy();)
+  DEBUG_ONLY(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
   static void*         non_oop_word();
   static bool contains_non_oop_word(void* p);

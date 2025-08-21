@@ -789,6 +789,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     // Object overrides
 
+    @Override
     public String toString() {
         return getClass().getName() + "[" + target + "]";
     }

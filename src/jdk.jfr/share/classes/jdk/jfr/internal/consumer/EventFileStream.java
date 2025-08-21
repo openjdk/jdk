@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,9 +44,9 @@ public final class EventFileStream extends AbstractEventStream {
     private ChunkParser currentParser;
     private RecordedEvent[] cacheSorted;
 
-    public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path file) throws IOException {
-        super(acc, Collections.emptyList());
-        this.input = new RecordingInput(file.toFile(), FileAccess.UNPRIVILEGED);
+    public EventFileStream(Path file) throws IOException {
+        super(Collections.emptyList());
+        this.input = new RecordingInput(file.toFile());
         this.input.setStreamed();
     }
 

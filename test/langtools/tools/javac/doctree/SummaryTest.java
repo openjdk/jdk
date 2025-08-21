@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8173425 8273244
+ * @bug 8173425 8273244 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,13 +39,13 @@ class SummaryTest {
      */
     void empty() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Summary[SUMMARY, pos:1
+    Summary[SUMMARY, pos:0
       summary: empty
     ]
   body: 1
-    Text[TEXT, pos:11, _abc.]
+    Text[TEXT, pos:10, _abc.]
   block tags: empty
 ]
 */
@@ -54,14 +54,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void simple() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Summary[SUMMARY, pos:1
+    Summary[SUMMARY, pos:0
       summary: 1
-        Text[TEXT, pos:11, abc]
+        Text[TEXT, pos:10, abc]
     ]
   body: 1
-    Text[TEXT, pos:15, _def.]
+    Text[TEXT, pos:14, _def.]
   block tags: empty
 ]
 */
@@ -71,8 +71,30 @@ DocComment[DOC_COMMENT, pos:1
      */
     void leading_space() { }
 /*
-DocComment[DOC_COMMENT, pos:4
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
+    Summary[SUMMARY, pos:0
+      summary: 1
+        Text[TEXT, pos:10, abc]
+    ]
+  body: 1
+    Text[TEXT, pos:14, _def]
+  block tags: empty
+]
+*/
+
+    /**
+     * <p> {@summary abc} def
+     */
+    void leading_html() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:0
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:3, _]
     Summary[SUMMARY, pos:4
       summary: 1
         Text[TEXT, pos:14, abc]
@@ -84,41 +106,19 @@ DocComment[DOC_COMMENT, pos:4
 */
 
     /**
-     * <p> {@summary abc} def
-     */
-    void leading_html() { }
-/*
-DocComment[DOC_COMMENT, pos:1
-  firstSentence: 3
-    StartElement[START_ELEMENT, pos:1
-      name:p
-      attributes: empty
-    ]
-    Text[TEXT, pos:4, _]
-    Summary[SUMMARY, pos:5
-      summary: 1
-        Text[TEXT, pos:15, abc]
-    ]
-  body: 1
-    Text[TEXT, pos:19, _def]
-  block tags: empty
-]
-*/
-
-    /**
      * abc {@summary def} ghi
      */
     void leading_text() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Summary[SUMMARY, pos:5
+    Text[TEXT, pos:0, abc_]
+    Summary[SUMMARY, pos:4
       summary: 1
-        Text[TEXT, pos:15, def]
+        Text[TEXT, pos:14, def]
     ]
   body: 1
-    Text[TEXT, pos:19, _ghi]
+    Text[TEXT, pos:18, _ghi]
   block tags: empty
 ]
 */
@@ -128,15 +128,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void leading_text_with_break() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: 2
-    Summary[SUMMARY, pos:6
+    Summary[SUMMARY, pos:5
       summary: 1
-        Text[TEXT, pos:16, def]
+        Text[TEXT, pos:15, def]
     ]
-    Text[TEXT, pos:20, _ghi]
+    Text[TEXT, pos:19, _ghi]
   block tags: empty
 ]
 */
@@ -146,19 +146,19 @@ DocComment[DOC_COMMENT, pos:1
      */
     void trailing_html() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Summary[SUMMARY, pos:1
+    Summary[SUMMARY, pos:0
       summary: 1
-        Text[TEXT, pos:11, def]
+        Text[TEXT, pos:10, def]
     ]
   body: 3
-    Text[TEXT, pos:15, _]
-    StartElement[START_ELEMENT, pos:16
+    Text[TEXT, pos:14, _]
+    StartElement[START_ELEMENT, pos:15
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:19, _ghi]
+    Text[TEXT, pos:18, _ghi]
   block tags: empty
 ]
 */
@@ -168,18 +168,18 @@ DocComment[DOC_COMMENT, pos:1
      */
     void with_html() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Summary[SUMMARY, pos:1
+    Summary[SUMMARY, pos:0
       summary: 5
-        Text[TEXT, pos:11, abc_]
-        Entity[ENTITY, pos:15, lt]
-        Text[TEXT, pos:19, def]
-        Entity[ENTITY, pos:22, gt]
-        Text[TEXT, pos:26, _ghi]
+        Text[TEXT, pos:10, abc_]
+        Entity[ENTITY, pos:14, lt]
+        Text[TEXT, pos:18, def]
+        Entity[ENTITY, pos:21, gt]
+        Text[TEXT, pos:25, _ghi]
     ]
   body: 1
-    Text[TEXT, pos:31, _jkl]
+    Text[TEXT, pos:30, _jkl]
   block tags: empty
 ]
 */

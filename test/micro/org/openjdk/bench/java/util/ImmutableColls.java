@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,6 +295,50 @@ public class ImmutableColls {
         for (String s : coll) {
             bh.consume(s);
         }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void forEachOverSet(Blackhole bh) {
+        forEachSet(bh, fs4);
+        forEachSet(bh, s1);
+        forEachSet(bh, s3);
+        forEachSet(bh, fs2);
+        forEachSet(bh, s0);
+    }
+
+    public void forEachSet(Blackhole bh, Set<String> coll) {
+        coll.forEach(bh::consume);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void iterateOverList(Blackhole bh) {
+        iterateList(bh, fl4);
+        iterateList(bh, fl1);
+        iterateList(bh, l3);
+        iterateList(bh, l0);
+        iterateList(bh, fl2);
+    }
+
+    public void iterateList(Blackhole bh, List<String> coll) {
+        for (String s : coll) {
+            bh.consume(s);
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void forEachOverList(Blackhole bh) {
+        forEachList(bh, fl4);
+        forEachList(bh, fl1);
+        forEachList(bh, l3);
+        forEachList(bh, l0);
+        forEachList(bh, fl2);
+    }
+
+    public void forEachList(Blackhole bh, List<String> coll) {
+        coll.forEach(bh::consume);
     }
 
     @Benchmark

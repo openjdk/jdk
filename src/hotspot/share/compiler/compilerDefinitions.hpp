@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ enum CompLevel : s1 {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4          // C2 or JVMCI
+  CompLevel_full_optimization = 4,         // C2 or JVMCI
+  CompLevel_count             = 5
 };
 
 class CompilationModeFlag : AllStatic {
@@ -148,7 +149,7 @@ public:
   inline static bool is_c2_or_jvmci_compiler_only();
   inline static bool is_c2_or_jvmci_compiler_enabled();
 
-  inline static size_t min_code_cache_size();
+  inline static CompilerType compiler_type();
 
 private:
   static bool is_compilation_mode_selected();

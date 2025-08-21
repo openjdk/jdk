@@ -31,6 +31,7 @@ import jtreg.SkippedException;
  * @test
  * @summary Test verifies that jstack --mixed prints information about VM locks
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

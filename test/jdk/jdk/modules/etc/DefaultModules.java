@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8197532
+ * @requires !java.enablePreview
  * @modules jdk.compiler
  *          jdk.jlink
  *          jdk.zipfs

@@ -81,6 +81,7 @@ public class X11Renderer implements
     native void XDrawLine(long pXSData, long xgc,
                           int x1, int y1, int x2, int y2);
 
+    @Override
     public void drawLine(SunGraphics2D sg2d, int x1, int y1, int x2, int y2) {
         SunToolkit.awtLock();
         try {
@@ -97,6 +98,7 @@ public class X11Renderer implements
     native void XDrawRect(long pXSData, long xgc,
                           int x, int y, int w, int h);
 
+    @Override
     public void drawRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -114,6 +116,7 @@ public class X11Renderer implements
                                int x, int y, int w, int h,
                                int arcW, int arcH);
 
+    @Override
     public void drawRoundRect(SunGraphics2D sg2d,
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
@@ -132,6 +135,7 @@ public class X11Renderer implements
     native void XDrawOval(long pXSData, long xgc,
                           int x, int y, int w, int h);
 
+    @Override
     public void drawOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -149,6 +153,7 @@ public class X11Renderer implements
                          int x, int y, int w, int h,
                          int angleStart, int angleExtent);
 
+    @Override
     public void drawArc(SunGraphics2D sg2d,
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
@@ -169,6 +174,7 @@ public class X11Renderer implements
                           int[] xpoints, int[] ypoints,
                           int npoints, boolean isclosed);
 
+    @Override
     public void drawPolyline(SunGraphics2D sg2d,
                              int[] xpoints, int[] ypoints,
                              int npoints)
@@ -184,6 +190,7 @@ public class X11Renderer implements
         }
     }
 
+    @Override
     public void drawPolygon(SunGraphics2D sg2d,
                             int[] xpoints, int[] ypoints,
                             int npoints)
@@ -202,6 +209,7 @@ public class X11Renderer implements
     native void XFillRect(long pXSData, long xgc,
                           int x, int y, int w, int h);
 
+    @Override
     public void fillRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -219,6 +227,7 @@ public class X11Renderer implements
                                int x, int y, int w, int h,
                                int arcW, int arcH);
 
+    @Override
     public void fillRoundRect(SunGraphics2D sg2d,
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
@@ -237,6 +246,7 @@ public class X11Renderer implements
     native void XFillOval(long pXSData, long xgc,
                           int x, int y, int w, int h);
 
+    @Override
     public void fillOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -254,6 +264,7 @@ public class X11Renderer implements
                          int x, int y, int w, int h,
                          int angleStart, int angleExtent);
 
+    @Override
     public void fillArc(SunGraphics2D sg2d,
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
@@ -274,6 +285,7 @@ public class X11Renderer implements
                           int[] xpoints, int[] ypoints,
                           int npoints);
 
+    @Override
     public void fillPolygon(SunGraphics2D sg2d,
                             int[] xpoints, int[] ypoints,
                             int npoints)
@@ -322,6 +334,7 @@ public class X11Renderer implements
         }
     }
 
+    @Override
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             // Delegate to drawPolygon() if possible...
@@ -359,6 +372,7 @@ public class X11Renderer implements
         }
     }
 
+    @Override
     public void fill(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             // Delegate to fillPolygon() if possible...
@@ -418,19 +432,22 @@ public class X11Renderer implements
                             int dstx, int dsty,
                             int w, int h);
 
-    public static class X11TracingRenderer extends X11Renderer {
+    public static final class X11TracingRenderer extends X11Renderer {
+        @Override
         void XDrawLine(long pXSData, long xgc,
                        int x1, int y1, int x2, int y2)
         {
             GraphicsPrimitive.tracePrimitive("X11DrawLine");
             super.XDrawLine(pXSData, xgc, x1, y1, x2, y2);
         }
+        @Override
         void XDrawRect(long pXSData, long xgc,
                        int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("X11DrawRect");
             super.XDrawRect(pXSData, xgc, x, y, w, h);
         }
+        @Override
         void XDrawRoundRect(long pXSData, long xgc,
                             int x, int y, int w, int h,
                             int arcW, int arcH)
@@ -438,12 +455,14 @@ public class X11Renderer implements
             GraphicsPrimitive.tracePrimitive("X11DrawRoundRect");
             super.XDrawRoundRect(pXSData, xgc, x, y, w, h, arcW, arcH);
         }
+        @Override
         void XDrawOval(long pXSData, long xgc,
                        int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("X11DrawOval");
             super.XDrawOval(pXSData, xgc, x, y, w, h);
         }
+        @Override
         void XDrawArc(long pXSData, long xgc,
                       int x, int y, int w, int h,
                       int angleStart, int angleExtent)
@@ -452,6 +471,7 @@ public class X11Renderer implements
             super.XDrawArc(pXSData, xgc,
                            x, y, w, h, angleStart, angleExtent);
         }
+        @Override
         void XDrawPoly(long pXSData, long xgc,
                        int transx, int transy,
                        int[] xpoints, int[] ypoints,
@@ -461,6 +481,7 @@ public class X11Renderer implements
             super.XDrawPoly(pXSData, xgc, transx, transy,
                             xpoints, ypoints, npoints, isclosed);
         }
+        @Override
         void XDoPath(SunGraphics2D sg2d, long pXSData, long xgc,
                      int transX, int transY, Path2D.Float p2df,
                      boolean isFill)
@@ -470,12 +491,14 @@ public class X11Renderer implements
                                              "X11DrawPath");
             super.XDoPath(sg2d, pXSData, xgc, transX, transY, p2df, isFill);
         }
+        @Override
         void XFillRect(long pXSData, long xgc,
                        int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("X11FillRect");
             super.XFillRect(pXSData, xgc, x, y, w, h);
         }
+        @Override
         void XFillRoundRect(long pXSData, long xgc,
                             int x, int y, int w, int h,
                             int arcW, int arcH)
@@ -483,12 +506,14 @@ public class X11Renderer implements
             GraphicsPrimitive.tracePrimitive("X11FillRoundRect");
             super.XFillRoundRect(pXSData, xgc, x, y, w, h, arcW, arcH);
         }
+        @Override
         void XFillOval(long pXSData, long xgc,
                        int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("X11FillOval");
             super.XFillOval(pXSData, xgc, x, y, w, h);
         }
+        @Override
         void XFillArc(long pXSData, long xgc,
                       int x, int y, int w, int h,
                       int angleStart, int angleExtent)
@@ -497,6 +522,7 @@ public class X11Renderer implements
             super.XFillArc(pXSData, xgc,
                            x, y, w, h, angleStart, angleExtent);
         }
+        @Override
         void XFillPoly(long pXSData, long xgc,
                        int transx, int transy,
                        int[] xpoints, int[] ypoints,
@@ -506,6 +532,7 @@ public class X11Renderer implements
             super.XFillPoly(pXSData, xgc,
                             transx, transy, xpoints, ypoints, npoints);
         }
+        @Override
         void XFillSpans(long pXSData, long xgc,
                         SpanIterator si, long iterator, int transx, int transy)
         {
@@ -513,6 +540,7 @@ public class X11Renderer implements
             super.XFillSpans(pXSData, xgc,
                              si, iterator, transx, transy);
         }
+        @Override
         void devCopyArea(long sdOps, long xgc,
                          int srcx, int srcy,
                          int dstx, int dsty,

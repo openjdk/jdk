@@ -74,6 +74,10 @@ Link	Etc/GMT				GMT
 # so we moved the names into the Etc subdirectory.
 # Also, the time zone abbreviations are now compatible with %z.
 
+# There is no "Etc/Unknown" entry, as CLDR says that "Etc/Unknown"
+# corresponds to an unknown or invalid time zone, and things would get
+# confusing if Etc/Unknown were made valid here.
+
 Zone	Etc/GMT-14	14	-	%z
 Zone	Etc/GMT-13	13	-	%z
 Zone	Etc/GMT-12	12	-	%z

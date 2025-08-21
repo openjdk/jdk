@@ -2146,7 +2146,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     private int createdFontCount = 0;
 
     public Font2D[] createFont2D(File fontFile, int fontFormat, boolean all,
-                                 boolean isCopy, CreatedFontTracker tracker)
+                                 boolean isCopy)
     throws FontFormatException {
 
         List<Font2D> fList = new ArrayList<>();
@@ -2154,7 +2154,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         String fontFilePath = fontFile.getPath();
         FileFont font2D = null;
         final File fFile = fontFile;
-        final CreatedFontTracker _tracker = tracker;
         boolean weakRefs = false;
         int maxStrikes = 0;
         synchronized (this) {
@@ -2192,15 +2191,12 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             }
         } catch (FontFormatException e) {
             if (isCopy) {
-                if (_tracker != null) {
-                    _tracker.subBytes((int)fFile.length());
-                }
                 fFile.delete();
             }
             throw(e);
         }
         if (isCopy) {
-            FileFont.setFileToRemove(fList, fontFile, cnt, tracker);
+            FileFont.setFileToRemove(fList, fontFile, cnt);
             synchronized (FontManager.class) {
 
                 if (tmpFontFiles == null) {
@@ -2485,7 +2481,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * performed normally. There may be some duplication of effort, but
      * that code is already written to be able to perform properly if called
      * to duplicate work. The main difference is that if we detect we are
-     * running in an applet/browser/Java plugin environment these new fonts
+     * in an AppContext environment these new fonts
      * are not placed in the "default" maps but into an AppContext instance.
      * The font lookup mechanism in java.awt.Font.getFont2D() is also updated
      * so that look-up for composite fonts will in that case always
@@ -2506,7 +2502,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * Calling the methods below is "heavyweight" but it is expected that
      * these methods will be called very rarely.
      *
-     * If _usingAlternateComposites is true, we are not in an "applet"
+     * If _usingAlternateComposites is true, we are not in an "AppContext"
      * environment and the (single) application has selected
      * an alternate composite font behaviour.
      *

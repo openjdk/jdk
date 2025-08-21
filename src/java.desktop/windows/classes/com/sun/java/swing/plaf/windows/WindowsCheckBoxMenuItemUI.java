@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import javax.swing.ButtonModel;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.plaf.ComponentUI;
@@ -41,11 +42,12 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows check box menu item.
  */
-public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
+public final class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
 
+            @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
@@ -54,6 +56,7 @@ public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
 
+            @Override
             public Part getPart(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getPart(this, menuItem);
             }
@@ -71,6 +74,24 @@ public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
         }
         super.paintBackground(g, menuItem, bgColor);
     }
+
+    /**
+     * Paint MenuItem.
+     */
+    protected void paintMenuItem(Graphics g, JComponent c,
+                                 Icon checkIcon, Icon arrowIcon,
+                                 Color background, Color foreground,
+                                 int defaultTextIconGap) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
+            WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
+                    arrowIcon, background, foreground, defaultTextIconGap,
+                    menuItem, getPropertyPrefix());
+            return;
+        }
+        super.paintMenuItem(g, c, checkIcon, arrowIcon, background,
+                foreground, defaultTextIconGap);
+    }
+
     /**
      * Method which renders the text of the current menu item.
      *
@@ -80,6 +101,7 @@ public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
      * @param text String to render
      * @since 1.4
      */
+    @Override
     protected void paintText(Graphics g, JMenuItem menuItem,
                              Rectangle textRect, String text) {
         if (WindowsMenuItemUI.isVistaPainting()) {

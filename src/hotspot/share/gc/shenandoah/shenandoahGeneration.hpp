@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "memory/allocation.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
@@ -71,7 +71,6 @@ protected:
   volatile size_t _used;
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
-  size_t _soft_max_capacity;
 
   ShenandoahHeuristics* _heuristics;
 
@@ -105,8 +104,7 @@ private:
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers,
-                       size_t max_capacity,
-                       size_t soft_max_capacity);
+                       size_t max_capacity);
   ~ShenandoahGeneration();
 
   bool is_young() const  { return _type == YOUNG; }
@@ -126,7 +124,6 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t soft_max_capacity() const override { return _soft_max_capacity; }
   size_t max_capacity() const override      { return _max_capacity; }
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
@@ -159,10 +156,11 @@ private:
   void log_status(const char* msg) const;
 
   // Used directly by FullGC
+  template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
   // Used by concurrent and degenerated GC to reset remembered set.
-  void swap_remembered_set();
+  void swap_card_tables();
 
   // Update the read cards with the state of the write table (write table is not cleared).
   void merge_write_table();
@@ -200,7 +198,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete();
+  bool is_mark_complete() { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 

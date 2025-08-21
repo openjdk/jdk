@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "unittest.hpp"
 
@@ -66,4 +65,3 @@ TEST_VM_ASSERT_MSG(ArchiveWorkersTest, multiple_tasks, ".* Should be unused yet"
   workers.run_task(&task);
 }
 #endif // ASSERT
-

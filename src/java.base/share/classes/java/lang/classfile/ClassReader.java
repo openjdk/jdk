@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,21 @@ import java.util.function.Function;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 
 /**
- * Supports reading from a classfile.  Methods are provided to read data of
- * various numeric types (e.g., {@code u2}, {@code u4}) at a given offset within
- * the classfile, copying raw bytes, and reading constant pool entries.
- * Encapsulates additional reading context such as mappers for custom attributes
- * and processing options.
+ * Advanced {@code class} file reading support for {@link AttributeMapper}s.
+ * Supports reading arbitrary offsets within a {@code class} file and reading
+ * data of various numeric types (e.g., {@code u2}, {@code u4}) in addition to
+ * constant pool access.
+ * <p>
+ * All numeric values in the {@code class} file format are {@linkplain
+ * java.nio.ByteOrder#BIG_ENDIAN big endian}.
+ * <p>
+ * Unless otherwise specified, all out-of-bounds access result in an {@link
+ * IllegalArgumentException} to indicate the {@code class} file data is
+ * malformed.  Since the {@code class} file data is arbitrary, users should
+ * sanity-check the structural integrity of the data before attempting to
+ * interpret the potentially malformed data.
  *
+ * @see AttributeMapper#readAttribute(AttributedElement, ClassReader, int)
  * @since 24
  */
 public sealed interface ClassReader extends ConstantPool
@@ -56,29 +65,41 @@ public sealed interface ClassReader extends ConstantPool
 
     // Class context
 
-    /** {@return the access flags for the class, as a bit mask } */
+    /**
+     * {@return the access flags for the class, as a bit mask}
+     *
+     * @see ClassModel#flags()
+     */
     int flags();
 
-    /** {@return the constant pool entry describing the name of class} */
+    /**
+     * {@return the constant pool entry describing the name of class}
+     *
+     * @see ClassModel#thisClass()
+     */
     ClassEntry thisClassEntry();
 
-    /** {@return the constant pool entry describing the name of the superclass, if any} */
+    /**
+     * {@return the constant pool entry describing the name of the superclass, if any}
+     *
+     * @see ClassModel#superclass()
+     */
     Optional<ClassEntry> superclassEntry();
 
-    /** {@return the length of the classfile, in bytes} */
+    /** {@return the length of the {@code class} file, in number of bytes} */
     int classfileLength();
 
     // Constant pool
 
     /**
      * {@return the constant pool entry whose index is given at the specified
-     * offset within the classfile}
+     * offset within the {@code class} file}
      *
      * @apiNote
      * If only a particular type of entry is expected, use {@link #readEntry(
      * int, Class) readEntry(int, Class)}.
      *
-     * @param offset the offset of the index within the classfile
+     * @param offset the offset of the index within the {@code class} file
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero
      */
@@ -86,9 +107,9 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the constant pool entry of a given type whose index is given
-     * at the specified offset within the classfile}
+     * at the specified offset within the {@code class} file}
      * @param <T> the entry type
-     * @param offset the offset of the index within the classfile
+     * @param offset the offset of the index within the {@code class} file
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the entry is not of the given type
@@ -97,14 +118,14 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the constant pool entry whose index is given at the specified
-     * offset within the classfile, or null if the index at the specified
-     * offset is zero}
+     * offset within the {@code class} file, or {@code null} if the index at the
+     * specified offset is zero}
      *
      * @apiNote
      * If only a particular type of entry is expected, use {@link #readEntryOrNull(
      * int, Class) readEntryOrNull(int, Class)}.
      *
-     * @param offset the offset of the index within the classfile
+     * @param offset the offset of the index within the {@code class} file
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size
      */
@@ -112,11 +133,11 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the constant pool entry of a given type whose index is given
-     * at the specified offset within the classfile, or null if the index at
-     * the specified offset is zero}
+     * at the specified offset within the {@code class} file, or {@code null} if
+     * the index at the specified offset is zero}
      *
      * @param <T> the entry type
-     * @param offset the offset of the index within the classfile
+     * @param offset the offset of the index within the {@code class} file
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the entry is not of the given type
@@ -124,65 +145,89 @@ public sealed interface ClassReader extends ConstantPool
     <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls);
 
     /**
-     * {@return the unsigned byte at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the unsigned byte at the specified offset within the {@code
+     * class} file}  Reads a byte and zero-extends it to an {@code int}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     int readU1(int offset);
 
     /**
-     * {@return the unsigned short at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the unsigned short at the specified offset within the {@code
+     * class} file}  Reads a 2-byte value and zero-extends it to an {@code int}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     int readU2(int offset);
 
     /**
-     * {@return the signed byte at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the signed byte at the specified offset within the {@code class}
+     * file}  Reads a byte and sign-extends it to an {@code int}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     int readS1(int offset);
 
     /**
-     * {@return the signed byte at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the signed byte at the specified offset within the {@code class}
+     * file}  Reads a 2-byte value and sign-extends it to an {@code int}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     int readS2(int offset);
 
     /**
-     * {@return the signed int at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the signed int at the specified offset within the {@code class}
+     * file}  Reads 4 bytes of value.
+     *
+     * @param offset the offset within the {@code class} file
      */
     int readInt(int offset);
 
     /**
-     * {@return the signed long at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the signed long at the specified offset within the {@code class}
+     * file}  Reads 8 bytes of value.
+     *
+     * @param offset the offset within the {@code class} file
      */
     long readLong(int offset);
 
     /**
-     * {@return the float value at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the float value at the specified offset within the {@code class}
+     * file}  Reads 4 bytes of value.
+     * <p>
+     * In the conversions, all NaN values of the {@code float} may or may not be
+     * collapsed into a single {@linkplain Float#NaN "canonical" NaN value}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     float readFloat(int offset);
 
     /**
-     * {@return the double value at the specified offset within the classfile}
-     * @param offset the offset within the classfile
+     * {@return the double value at the specified offset within the {@code
+     * class} file}  Reads 8 bytes of value.
+     * <p>
+     * In the conversions, all NaN values of the {@code double} may or may not
+     * be collapsed into a single {@linkplain Double#NaN "canonical" NaN value}.
+     *
+     * @param offset the offset within the {@code class} file
      */
     double readDouble(int offset);
 
     /**
-     * {@return a copy of the bytes at the specified range in the classfile}
-     * @param offset the offset within the classfile
+     * {@return a copy of the bytes at the specified range in the {@code class}
+     * file}
+     *
+     * @param offset the offset within the {@code class} file
      * @param len the length of the range
      */
     byte[] readBytes(int offset, int len);
 
     /**
-     * Copy a range of bytes from the classfile to a {@link BufWriter}
+     * Copy a range of bytes from the {@code class} file to a {@link BufWriter}.
      *
      * @param buf the {@linkplain BufWriter}
-     * @param offset the offset within the classfile
+     * @param offset the offset within the {@code class} file
      * @param len the length of the range
      */
     void copyBytesTo(BufWriter buf, int offset, int len);

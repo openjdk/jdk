@@ -107,12 +107,7 @@ public class LayoutNode {
         this(null);
     }
 
-    /**
-     * Initializes the size and margins of the node.
-     * If the node represents a real vertex, it uses the vertex's size.
-     * Dummy nodes use default dimensions.
-     */
-    public void initSize() {
+    public void updateSize() {
         if (vertex == null) {
             height = DUMMY_HEIGHT;
             width = DUMMY_WIDTH;
@@ -121,6 +116,15 @@ public class LayoutNode {
             height = size.height;
             width = size.width;
         }
+    }
+
+    /**
+     * Initializes the size and margins of the node.
+     * If the node represents a real vertex, it uses the vertex's size.
+     * Dummy nodes use default dimensions.
+     */
+    public void initSize() {
+        updateSize();
         topMargin = 0;
         bottomMargin = 0;
         leftMargin = 0;

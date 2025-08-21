@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.util.*;
-import sun.security.util.Resources;
 import sun.security.util.LocalizedMessage;
 import java.text.MessageFormat;
 
@@ -32,6 +31,7 @@ import java.text.MessageFormat;
  * @summary Ensure that security message formatting code is capable of
  *     displaying all messages.
  * @modules java.base/sun.security.util
+ *          java.base/sun.security.util.resources
  * @run main MessageFormatting
  * @run main/othervm -Duser.country=SA -Duser.language=ar MessageFormatting
  */
@@ -42,7 +42,7 @@ public class MessageFormatting {
 
     public static void main(String[] args) throws Exception {
 
-        Resources resources = new Resources();
+        ListResourceBundle resources = new sun.security.util.resources.security();
         Enumeration<String> keys = resources.getKeys();
         while (keys.hasMoreElements()) {
             String curKey = keys.nextElement();

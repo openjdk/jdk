@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,13 @@ static jdouble doubleVal;
 static jobject objVal;
 static jobject arrVal;
 
+static void check_error(jvmtiError err, bool is_virtual, const char* func_id) {
+    if (err != JVMTI_ERROR_NONE && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
+        printf("(%s) unexpected error: %s (%d)\n", func_id, TranslateError(err), err);
+        result = STATUS_FAILED;
+    }
+}
+
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method, jlocation location) {
     jvmtiError err;
@@ -51,6 +58,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     jlocation loc;
     jint entryCount;
     jvmtiLocalVariableEntry *table = nullptr;
+    bool is_virtual = env->IsVirtualThread(thr);
     int i;
 
     err = jvmti_env->GetFrameLocation(thr, 1, &mid, &loc);
@@ -74,27 +82,15 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
             if (strcmp(table[i].name, "l") == 0) {
                 err = jvmti_env->SetLocalLong(thr, 1,
                     table[i].slot, longVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalLong) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalLong");
             } else if (strcmp(table[i].name, "f") == 0) {
                 err = jvmti_env->SetLocalFloat(thr, 1,
                     table[i].slot, floatVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalFloat) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalFloat");
             } else if (strcmp(table[i].name, "d") == 0) {
                 err = jvmti_env->SetLocalDouble(thr, 1,
                     table[i].slot, doubleVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalDouble) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalDouble");
             }
         }
     } else if (mid == mid2) {
@@ -102,43 +98,23 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
             if (strcmp(table[i].name, "i1") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i1) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i1");
             } else if (strcmp(table[i].name, "i2") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i2) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i2");
             } else if (strcmp(table[i].name, "i3") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i3) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i3");
             } else if (strcmp(table[i].name, "i4") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i4) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i4");
             } else if (strcmp(table[i].name, "i5") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i5) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i5");
             }
         }
     } else if (mid == mid3) {
@@ -146,19 +122,11 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
             if (strcmp(table[i].name, "ob1") == 0) {
                 err = jvmti_env->SetLocalObject(thr, 1,
                     table[i].slot, objVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalObject#ob1) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalObject#ob1");
             } else if (strcmp(table[i].name, "ob2") == 0) {
                 err = jvmti_env->SetLocalObject(thr, 1,
                     table[i].slot, arrVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalObject#ob2) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalObject#ob2");
             }
         }
     } else if (mid == mid4) {
@@ -166,67 +134,35 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
             if (strcmp(table[i].name, "i1") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 1);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i1,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i1,param");
             } else if (strcmp(table[i].name, "i2") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 2);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i2,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i2,param");
             } else if (strcmp(table[i].name, "i3") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 3);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i3,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i3,param");
             } else if (strcmp(table[i].name, "i4") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, 4);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#i4,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#i4,param");
             } else if (strcmp(table[i].name, "b") == 0) {
                 err = jvmti_env->SetLocalInt(thr, 1,
                     table[i].slot, JNI_TRUE);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalInt#b,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalInt#b,param");
             } else if (strcmp(table[i].name, "l") == 0) {
                 err = jvmti_env->SetLocalLong(thr, 1,
                     table[i].slot, longVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalLong,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalLong,param");
             } else if (strcmp(table[i].name, "f") == 0) {
                 err = jvmti_env->SetLocalFloat(thr, 1,
                     table[i].slot, floatVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalFloat,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalFloat,param");
             } else if (strcmp(table[i].name, "d") == 0) {
                 err = jvmti_env->SetLocalDouble(thr, 1,
                     table[i].slot, doubleVal);
-                if (err != JVMTI_ERROR_NONE) {
-                    printf("(SetLocalDouble,param) unexpected error: %s (%d)\n",
-                           TranslateError(err), err);
-                    result = STATUS_FAILED;
-                }
+                check_error(err, is_virtual, "SetLocalDouble,param");
             }
         }
     } else {

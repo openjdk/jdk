@@ -25,10 +25,9 @@
 #ifndef SHARE_C1_C1_LINEARSCAN_HPP
 #define SHARE_C1_C1_LINEARSCAN_HPP
 
-#include "c1/c1_FpuStackSim.hpp"
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "compiler/oopMap.hpp"
@@ -176,15 +175,6 @@ class LinearScan : public CompilationResourceObj {
   bool          has_fpu_registers() const        { return _has_fpu_registers; }
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
-
-  // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef IA32
-  FpuStackAllocator* _fpu_stack_allocator;
-  bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
-#else
-  bool use_fpu_stack_allocation() const          { return false; }
-#endif
-
 
   // access to interval list
   int           interval_count() const           { return _intervals.length(); }
@@ -356,12 +346,6 @@ class LinearScan : public CompilationResourceObj {
 
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
   void assign_reg_num();
-
-
-  // Phase 8: fpu stack allocation
-  // (Used only on x86 when fpu operands are present)
-  void allocate_fpu_stack();
-
 
   // helper functions for printing state
 #ifndef PRODUCT
@@ -953,7 +937,6 @@ class LinearScanTimers : public StackObj {
     timer_sort_intervals_after,
     timer_eliminate_spill_moves,
     timer_assign_reg_num,
-    timer_allocate_fpu_stack,
     timer_optimize_lir,
 
     number_of_timers
@@ -965,11 +948,7 @@ class LinearScanTimers : public StackObj {
 
  public:
   LinearScanTimers();
-
-  void begin_method();                     // called for each method when register allocation starts
-  void end_method(LinearScan* allocator);  // called for each method when register allocation completed
   void print(double total_time);           // called before termination of VM to print global summary
-
   elapsedTimer* timer(int idx) { return &(_timers[idx]); }
 };
 

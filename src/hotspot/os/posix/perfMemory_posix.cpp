@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -65,7 +64,7 @@ static char* backing_store_file_name = nullptr;  // name of the backing store
 static char* create_standard_memory(size_t size) {
 
   // allocate an aligned chuck of memory
-  char* mapAddress = os::reserve_memory(size);
+  char* mapAddress = os::reserve_memory(size, mtInternal);
 
   if (mapAddress == nullptr) {
     return nullptr;
@@ -1086,16 +1085,16 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);
   }
   if (res != 0) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
   }
 }
 
@@ -1227,7 +1226,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   *addr = mapAddress;
   *sizep = size;
 
-  log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
+  log_debug(perf, memops)("mapped %zu bytes for vmid %d at "
                           INTPTR_FORMAT, size, vmid, p2i((void*)mapAddress));
 }
 

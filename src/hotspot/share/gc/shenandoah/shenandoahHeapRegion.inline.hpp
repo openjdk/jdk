@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +27,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest &req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(req.is_lab_alloc(), "allocate_aligned() only applies to LAB allocations");
-  assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
   assert(is_old(), "aligned allocations are only taken from OLD regions to support PLABs");
   assert(is_aligned(alignment_in_bytes, HeapWordSize), "Expect heap word alignment");
 
@@ -88,7 +89,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
 
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
@@ -111,6 +112,7 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
     case ShenandoahAllocRequest::_alloc_shared_gc:
+    case ShenandoahAllocRequest::_alloc_cds:
       // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
@@ -133,9 +135,6 @@ inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
 
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
-  if (ShenandoahPacing) {
-    ShenandoahHeap::heap()->pacer()->report_mark(s);
-  }
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
@@ -160,7 +159,7 @@ inline bool ShenandoahHeapRegion::has_live() const {
 
 inline size_t ShenandoahHeapRegion::garbage() const {
   assert(used() >= get_live_data_bytes(),
-         "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         "Live Data must be a subset of used() live: %zu used: %zu",
          get_live_data_bytes(), used());
 
   size_t result = used() - get_live_data_bytes();
@@ -171,7 +170,7 @@ inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
   assert(get_top_before_promote() != nullptr, "top before promote should not equal null");
   size_t used_before_promote = byte_size(bottom(), get_top_before_promote());
   assert(used_before_promote >= get_live_data_bytes(),
-         "Live Data must be a subset of used before promotion live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         "Live Data must be a subset of used before promotion live: %zu used: %zu",
          get_live_data_bytes(), used_before_promote);
   size_t result = used_before_promote - get_live_data_bytes();
   return result;

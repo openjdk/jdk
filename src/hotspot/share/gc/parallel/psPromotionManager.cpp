@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -167,7 +166,7 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads, ParGCArrayScanChunk)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -194,6 +193,7 @@ void PSPromotionManager::reset() {
   // Do not prefill the LAB's, save heap wastage!
   HeapWord* lab_base = young_space()->top();
   _young_lab.initialize(MemRegion(lab_base, (size_t)0));
+  _young_gen_has_alloc_failure = false;
   _young_gen_is_full = false;
 
   lab_base = old_gen()->object_space()->top();
@@ -252,7 +252,7 @@ void PSPromotionManager::flush_labs() {
     _old_lab.flush();
 
   // Let PSScavenge know if we overflowed
-  if (_young_gen_is_full) {
+  if (_young_gen_is_full || _young_gen_has_alloc_failure) {
     PSScavenge::set_survivor_overflow(true);
   }
 }

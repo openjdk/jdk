@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,14 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector compiler.loopopts.superword.TestLargeScaleAndStride
  */
 
+/*
+ * @test id=StoreToLoadForwardingFailureDetection
+ * @bug 8328938
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:SuperWordStoreToLoadForwardingFailureDetection=4096 compiler.loopopts.superword.TestLargeScaleAndStride
+ */
+
 package compiler.loopopts.superword;
 
 import jdk.internal.misc.Unsafe;
@@ -48,6 +56,7 @@ public class TestLargeScaleAndStride {
 
     public static void main(String[] args) {
         byte[] a = new byte[100];
+        byte[] b = new byte[RANGE];
         fill(a);
 
         byte[] gold1a = a.clone();
@@ -57,6 +66,7 @@ public class TestLargeScaleAndStride {
         byte[] gold2c = a.clone();
         byte[] gold2d = a.clone();
         byte[] gold3  = a.clone();
+        byte[] gold4  = b.clone();
         test1a(gold1a);
         test1b(gold1b);
         test2a(gold2a);
@@ -64,6 +74,7 @@ public class TestLargeScaleAndStride {
         test2c(gold2c);
         test2d(gold2d);
         test3(gold3);
+        test4(gold4);
 
         for (int i = 0; i < 100; i++) {
             byte[] c = a.clone();
@@ -105,6 +116,12 @@ public class TestLargeScaleAndStride {
             byte[] c = a.clone();
             test3(c);
             verify(c, gold3);
+        }
+
+        for (int i = 0; i < 100; i++) {
+            byte[] c = b.clone();
+            test4(c);
+            verify(c, gold4);
         }
     }
 
@@ -247,6 +264,19 @@ public class TestLargeScaleAndStride {
             UNSAFE.putByte(a, base + (int)(j + 1), (byte)(v1 + 1));
             UNSAFE.putByte(a, base + (int)(j + 2), (byte)(v2 + 1));
             UNSAFE.putByte(a, base + (int)(j + 3), (byte)(v3 + 1));
+        }
+    }
+
+    // VPointer con overflow possible with large SuperWordStoreToLoadForwardingFailureDetection
+    static final int test4_BIG = (1 << 31)-1000;
+    static       int test4_big = (1 << 31)-1000;
+    static void test4(byte[] a) {
+        long zero = test4_BIG - test4_big;
+        for (int i = 0; i < RANGE; i++) {
+            long base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+            long adr = base + zero + i;
+            byte v0 = UNSAFE.getByte(a, adr);
+            UNSAFE.putByte(a, adr, (byte)(v0 + 1));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @key stress randomness
- * @bug 8252219 8256535 8317349 8319879 8335334
+ * @bug 8252219 8256535 8317349 8319879 8335334 8325478
  * @requires vm.compiler2.enabled
  * @summary Tests that different combinations of stress options and
  *          -XX:StressSeed=N are accepted.
@@ -55,6 +55,10 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressUnstableIfTraps
  *      compiler.arguments.TestStressOptions
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressUnstableIfTraps -XX:StressSeed=42
+ *      compiler.arguments.TestStressOptions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressMacroElimination
+ *      compiler.arguments.TestStressOptions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressMacroElimination -XX:StressSeed=42
  *      compiler.arguments.TestStressOptions
  */
 

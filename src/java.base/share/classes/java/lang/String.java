@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,11 +173,14 @@ public final class String
     private final byte coder;
 
     /** Cache the hash code for the string */
+    @Stable
     private int hash; // Default to 0
 
     /**
      * Cache if the hash has been calculated as actually being zero, enabling
-     * us to avoid recalculating this.
+     * us to avoid recalculating this. This field is _not_ annotated @Stable as
+     * the `hashCode()` method reads the field `hash` first anyhow and if `hash`
+     * is the default zero value, is not trusted.
      */
     private boolean hashIsZero; // Default to false;
 
@@ -550,135 +553,125 @@ public final class String
      * disambiguate it against other similar methods of this class.
      */
     private String(Charset charset, byte[] bytes, int offset, int length) {
+        String str;
         if (length == 0) {
-            this.value = "".value;
-            this.coder = "".coder;
+            str = "";
         } else if (charset == UTF_8.INSTANCE) {
-            if (COMPACT_STRINGS) {
-                int dp = StringCoding.countPositives(bytes, offset, length);
-                if (dp == length) {
-                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                    this.coder = LATIN1;
-                    return;
+            str = utf8(bytes, offset, length);
+        } else if (charset == ISO_8859_1.INSTANCE) {
+            str = iso88591(bytes, offset, length);
+        } else if (charset == US_ASCII.INSTANCE) {
+            str = ascii(bytes, offset, length);
+        } else {
+            str = decode(charset, bytes, offset, length);
+        }
+        this(str);
+    }
+
+    private static String utf8(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS) {
+            int dp = StringCoding.countPositives(bytes, offset, length);
+            if (dp == length) {
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            }
+            // Decode with a stable copy, to be the result if the decoded length is the same
+            byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+            int sp = dp;            // first dp bytes are already in the copy
+            while (sp < length) {
+                int b1 = latin1[sp++];
+                if (b1 >= 0) {
+                    latin1[dp++] = (byte) b1;
+                    continue;
                 }
-                // Decode with a stable copy, to be the result if the decoded length is the same
-                byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
-                int sp = dp;            // first dp bytes are already in the copy
-                while (sp < length) {
-                    int b1 = latin1[sp++];
-                    if (b1 >= 0) {
-                        latin1[dp++] = (byte)b1;
+                if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
+                    int b2 = latin1[sp];
+                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                        latin1[dp++] = (byte) decode2(b1, b2);
+                        sp++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
-                        int b2 = latin1[sp];
-                        if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                            latin1[dp++] = (byte)decode2(b1, b2);
-                            sp++;
-                            continue;
-                        }
-                    }
-                    // anything not a latin1, including the REPL
-                    // we have to go with the utf16
-                    sp--;
-                    break;
                 }
-                if (sp == length) {
-                    if (dp != latin1.length) {
-                        latin1 = Arrays.copyOf(latin1, dp);
-                    }
-                    this.value = latin1;
-                    this.coder = LATIN1;
-                    return;
-                }
-                byte[] utf16 = StringUTF16.newBytesFor(length);
-                StringLatin1.inflate(latin1, 0, utf16, 0, dp);
-                dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
-                if (dp != length) {
-                    utf16 = Arrays.copyOf(utf16, dp << 1);
-                }
-                this.value = utf16;
-                this.coder = UTF16;
-            } else { // !COMPACT_STRINGS
-                byte[] dst = StringUTF16.newBytesFor(length);
-                int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
-                if (dp != length) {
-                    dst = Arrays.copyOf(dst, dp << 1);
-                }
-                this.value = dst;
-                this.coder = UTF16;
+                // anything not a latin1, including the REPL
+                // we have to go with the utf16
+                sp--;
+                break;
             }
-        } else if (charset == ISO_8859_1.INSTANCE) {
-            if (COMPACT_STRINGS) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
-                this.value = StringLatin1.inflate(bytes, offset, length);
-                this.coder = UTF16;
-            }
-        } else if (charset == US_ASCII.INSTANCE) {
-            if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
-                byte[] dst = StringUTF16.newBytesFor(length);
-                int dp = 0;
-                while (dp < length) {
-                    int b = bytes[offset++];
-                    StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
+            if (sp == length) {
+                if (dp != latin1.length) {
+                    latin1 = Arrays.copyOf(latin1, dp);
                 }
-                this.value = dst;
-                this.coder = UTF16;
+                return new String(latin1, LATIN1);
             }
-        } else {
-            // (1)We never cache the "external" cs, the only benefit of creating
-            // an additional StringDe/Encoder object to wrap it is to share the
-            // de/encode() method. These SD/E objects are short-lived, the young-gen
-            // gc should be able to take care of them well. But the best approach
-            // is still not to generate them if not really necessary.
-            // (2)The defensive copy of the input byte/char[] has a big performance
-            // impact, as well as the outgoing result byte/char[]. Need to do the
-            // optimization check of (sm==null && classLoader0==null) for both.
-            CharsetDecoder cd = charset.newDecoder();
-            // ArrayDecoder fastpaths
-            if (cd instanceof ArrayDecoder ad) {
-                // ascii
-                if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
-                    if (COMPACT_STRINGS) {
-                        this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                        this.coder = LATIN1;
-                        return;
-                    }
-                    this.value = StringLatin1.inflate(bytes, offset, length);
-                    this.coder = UTF16;
-                    return;
-                }
+            byte[] utf16 = StringUTF16.newBytesFor(length);
+            StringLatin1.inflate(latin1, 0, utf16, 0, dp);
+            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
+            if (dp != length) {
+                utf16 = Arrays.copyOf(utf16, dp << 1);
+            }
+            return new String(utf16, UTF16);
+        } else { // !COMPACT_STRINGS
+            byte[] dst = StringUTF16.newBytesFor(length);
+            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
+            if (dp != length) {
+                dst = Arrays.copyOf(dst, dp << 1);
+            }
+            return new String(dst, UTF16);
+        }
+    }
 
+    private static String iso88591(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS) {
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        } else {
+            return new String(StringLatin1.inflate(bytes, offset, length), UTF16);
+        }
+    }
+
+    private static String ascii(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        } else {
+            byte[] dst = StringUTF16.newBytesFor(length);
+            int dp = 0;
+            while (dp < length) {
+                int b = bytes[offset++];
+                StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
+            }
+            return new String(dst, UTF16);
+        }
+    }
+
+    private static String decode(Charset charset, byte[] bytes, int offset, int length) {
+        // (1)We never cache the "external" cs, the only benefit of creating
+        // an additional StringDe/Encoder object to wrap it is to share the
+        // de/encode() method. These SD/E objects are short-lived, the young-gen
+        // gc should be able to take care of them well. But the best approach
+        // is still not to generate them if not really necessary.
+        // (2)The defensive copy of the input byte/char[] has a big performance
+        // impact, as well as the outgoing result byte/char[]. Need to do the
+        // optimization check of (sm==null && classLoader0==null) for both.
+        CharsetDecoder cd = charset.newDecoder();
+        // ArrayDecoder fastpaths
+        if (cd instanceof ArrayDecoder ad) {
+            // ascii
+            if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
+                return iso88591(bytes, offset, length);
+            } else {
                 // fastpath for always Latin1 decodable single byte
                 if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
                     byte[] dst = new byte[length];
                     ad.decodeToLatin1(bytes, offset, length, dst);
-                    this.value = dst;
-                    this.coder = LATIN1;
-                    return;
+                    return new String(dst, LATIN1);
+                } else {
+                    int en = scale(length, cd.maxCharsPerByte());
+                    cd.onMalformedInput(CodingErrorAction.REPLACE)
+                            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                    char[] ca = new char[en];
+                    int clen = ad.decode(bytes, offset, length, ca);
+                    return new String(ca, 0, clen, null);
                 }
-
-                int en = scale(length, cd.maxCharsPerByte());
-                cd.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
-                char[] ca = new char[en];
-                int clen = ad.decode(bytes, offset, length, ca);
-                if (COMPACT_STRINGS) {
-                    byte[] val = StringUTF16.compress(ca, 0, clen);;
-                    this.coder = StringUTF16.coderFromArrayLen(val, clen);
-                    this.value = val;
-                    return;
-                }
-                coder = UTF16;
-                value = StringUTF16.toBytes(ca, 0, clen);
-                return;
             }
-
+        } else {
             // decode using CharsetDecoder
             int en = scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
@@ -691,26 +684,16 @@ public final class String
                 // Substitution is enabled, so this shouldn't happen
                 throw new Error(x);
             }
-            if (COMPACT_STRINGS) {
-                byte[] val = StringUTF16.compress(ca, 0, caLen);
-                this.coder = StringUTF16.coderFromArrayLen(val, caLen);
-                this.value = val;
-                return;
-            }
-            coder = UTF16;
-            value = StringUTF16.toBytes(ca, 0, caLen);
+            return new String(ca, 0, caLen, null);
         }
     }
 
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
-     *
-     * @param  noShare
-     *         {@code true} if the resulting string MUST NOT share the byte array,
-     *         {@code false} if the byte array can be exclusively used to construct
-     *         the string and is not modified or used for any other purpose.
+     * The byte array can be exclusively used to construct
+     * the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noShare) {
+    private static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -721,7 +704,7 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                if (noShare || length != bytes.length) {
+                if (length != bytes.length) {
                     return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
                 } else {
                     return new String(bytes, LATIN1);
@@ -773,6 +756,34 @@ public final class String
         return new String(dst, UTF16);
     }
 
+    /**
+     * {@return a new String created using the supplied latin1 bytes}
+     * @param src a byte array with the bytes for a latin1 string
+     */
+    static String newStringWithLatin1Bytes(byte[] src) {
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
+
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
+    /**
+     * {@return a new {@code String} created using the given byte array that is
+     * encoded in specified charset}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
+     *
+     * @param src byte array containing encoded characters
+     * @param cs charset the byte array encoded in
+     *
+     * @throws CharacterCodingException for malformed input or unmappable characters
+     */
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
         try {
             return newStringNoRepl1(src, cs);
@@ -792,7 +803,7 @@ public final class String
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length, false);
+            return newStringUTF8NoRepl(src, 0, src.length);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -1033,7 +1044,7 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            int ret = StringCoding.encodeISOArray(val, sp, dst, dp, len);
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
@@ -1298,13 +1309,18 @@ public final class String
             return encodeUTF8_UTF16(val, doReplace);
         }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
             return val.clone();
         }
 
-        int dp = 0;
         byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
+        if (positives > 0) {
+            System.arraycopy(val, 0, dst, 0, positives);
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
@@ -1586,6 +1602,11 @@ public final class String
      * @return {@code true} if {@link #length()} is {@code 0}, otherwise
      * {@code false}
      *
+     * @apiNote
+     * To determine whether a string contains only
+     * {@linkplain Character#isWhitespace(int) white space}, use
+     * {@link #isBlank() isBlank}.
+     *
      * @since 1.6
      */
     @Override
@@ -1736,35 +1757,14 @@ public final class String
     }
 
     /**
-     * Copies characters from this string into the destination character
-     * array.
-     * <p>
-     * The first character to be copied is at index {@code srcBegin};
-     * the last character to be copied is at index {@code srcEnd-1}
-     * (thus the total number of characters to be copied is
-     * {@code srcEnd-srcBegin}). The characters are copied into the
-     * subarray of {@code dst} starting at index {@code dstBegin}
-     * and ending at index:
-     * <blockquote><pre>
-     *     dstBegin + (srcEnd-srcBegin) - 1
-     * </pre></blockquote>
-     *
-     * @param      srcBegin   index of the first character in the string
-     *                        to copy.
-     * @param      srcEnd     index after the last character in the string
-     *                        to copy.
-     * @param      dst        the destination array.
-     * @param      dstBegin   the start offset in the destination array.
-     * @throws    IndexOutOfBoundsException If any of the following
-     *            is true:
-     *            <ul><li>{@code srcBegin} is negative.
-     *            <li>{@code srcBegin} is greater than {@code srcEnd}
-     *            <li>{@code srcEnd} is greater than the length of this
-     *                string
-     *            <li>{@code dstBegin} is negative
-     *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
-     *                {@code dst.length}</ul>
+     * {@inheritDoc CharSequence}
+     * @param srcBegin {@inheritDoc CharSequence}
+     * @param srcEnd   {@inheritDoc CharSequence}
+     * @param dst      {@inheritDoc CharSequence}
+     * @param dstBegin {@inheritDoc CharSequence}
+     * @throws    IndexOutOfBoundsException {@inheritDoc CharSequence}
      */
+    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
@@ -3845,9 +3845,13 @@ public final class String
      * begins with the character at index <i>k</i> and ends with the
      * character at index <i>m</i>-that is, the result of
      * {@code this.substring(k, m + 1)}.
-     * <p>
-     * This method may be used to trim space (as defined above) from
-     * the beginning and end of a string.
+     *
+     * @apiNote
+     * This method removes leading and trailing space characters and ASCII control
+     * characters from the string. To remove characters using a Unicode-based definition of
+     * {@linkplain Character#isWhitespace(int) white space}, use {@link #strip() strip},
+     * {@link #stripIndent() stripIndent}, {@link #stripLeading() stripLeading}, or
+     * {@link #stripTrailing() stripTrailing}.
      *
      * @return  a string whose value is this string, with all leading
      *          and trailing space removed, or this string if it
@@ -3952,13 +3956,9 @@ public final class String
     }
 
     /**
-     * Returns {@code true} if the string is empty or contains only
-     * {@linkplain Character#isWhitespace(int) white space} codepoints,
-     * otherwise {@code false}.
-     *
-     * @return {@code true} if the string is empty or contains only
-     *         {@linkplain Character#isWhitespace(int) white space} codepoints,
-     *         otherwise {@code false}
+     * {@return {@code true} if the string is {@linkplain #isEmpty empty} or contains
+     * only {@linkplain Character#isWhitespace(int) white space} codepoints,
+     * otherwise {@code false}}
      *
      * @see Character#isWhitespace(int)
      *

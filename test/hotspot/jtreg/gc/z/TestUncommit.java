@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@ package gc.z;
  * @test TestUncommit
  * @requires vm.gc.Z
  * @summary Test ZGC uncommit unused memory
- * @library /test/lib
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=5 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;
-import jdk.test.lib.Utils;
 
 public class TestUncommit {
-    private static final int delay = 10 * 1000; // milliseconds
+    private static final int delay = 5 * 1000; // milliseconds
     private static final int allocSize = 200 * 1024 * 1024; // 200M
     private static final int smallObjectSize = 4 * 1024; // 4K
     private static final int mediumObjectSize = 2 * 1024 * 1024; // 2M
@@ -110,7 +108,16 @@ public class TestUncommit {
             throw new Exception("Uncommitted too fast");
         }
 
-        if (actualDelay > delay * 2 * Utils.TIMEOUT_FACTOR) {
+        // In typical conditions (system not over-provisioned or slow),
+        // uncommitting is expected to complete within 3 * ZUncommitDelay after
+        // the last commit. To accommodate less ideal environments, only
+        // durations exceeding 5 * ZUncommitDelay are flagged as errors.
+
+        if (actualDelay > delay * 3) {
+            log(" *** Uncommit slower than expected. ***");
+        }
+
+        if (actualDelay > delay * 5) {
             throw new Exception("Uncommitted too slow");
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  *
+ * @see ModuleHashesAttribute#hashes()
  * @since 24
  */
 public sealed interface ModuleHashInfo

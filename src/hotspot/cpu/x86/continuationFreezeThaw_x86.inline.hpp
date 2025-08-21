@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,9 +98,12 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
-    // We need to re-read fp out of the frame because it may be an oop and we might have
-    // had a safepoint in finalize_freeze, after constructing f.
-    fp = *(intptr_t**)(f.sp() - frame::sender_sp_offset);
+    // For a compiled frame we need to re-read fp out of the frame because it may be an
+    // oop and we might have had a safepoint in finalize_freeze, after constructing f.
+    // For stub/native frames the value is not used while frozen, and will be constructed again
+    // when thawing the frame (see ThawBase::new_stack_frame). We use a special bad address to
+    // help with debugging, particularly when inspecting frames and identifying invalid accesses.
+    fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : (intptr_t*)badAddressVal;
 
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;
@@ -183,6 +186,11 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
   }
 }
 
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
+  intptr_t* fp_addr = sp - frame::sender_sp_offset;
+  *fp_addr = badAddressVal;
+}
+
 //////// Thaw
 
 // Fast path
@@ -261,15 +269,12 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 }
 
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
-#ifdef _LP64
   if (((intptr_t)frame_sp & 0xf) != 0) {
     assert(caller.is_interpreted_frame() || (bottom && hf.compiled_frame_stack_argsize() % 2 != 0), "");
     frame_sp--;
     caller.set_sp(caller.sp() - 1);
   }
   assert(is_aligned(frame_sp, frame::frame_alignment), "");
-#endif
-
   return frame_sp;
 }
 
