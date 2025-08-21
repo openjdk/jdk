@@ -139,26 +139,20 @@ enum CompilerPhaseType {
 #undef table_entry
 
 class CompilerPhaseTypeHelper {
-  public:
+ private:
   static const char* const _phase_descriptions[];
   static const char* const _phase_names[];
 
+ public:
   static const char* to_name(CompilerPhaseType cpt) {
     return _phase_names[cpt];
   }
   static const char* to_description(CompilerPhaseType cpt) {
     return _phase_descriptions[cpt];
   }
-};
 
-static CompilerPhaseType find_phase(const char* str) {
-  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-    if (strcmp(CompilerPhaseTypeHelper::_phase_names[i], str) == 0) {
-      return (CompilerPhaseType)i;
-    }
-  }
-  return PHASE_NONE;
-}
+  static CompilerPhaseType find_phase(const char* str);
+};
 
 class PhaseNameValidator {
  private:
@@ -174,7 +168,7 @@ class PhaseNameValidator {
   {
     for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
 
-      CompilerPhaseType cpt = find_phase(*iter);
+      CompilerPhaseType cpt = CompilerPhaseTypeHelper::find_phase(*iter);
       if (PHASE_NONE == cpt) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);

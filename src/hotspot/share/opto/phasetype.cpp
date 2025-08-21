@@ -35,3 +35,12 @@ const char* const CompilerPhaseTypeHelper::_phase_names[] = {
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
 };
+
+CompilerPhaseType CompilerPhaseTypeHelper::find_phase(const char* str) {
+  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
+    if (strcmp(CompilerPhaseTypeHelper::_phase_names[i], str) == 0) {
+      return (CompilerPhaseType)i;
+    }
+  }
+  return PHASE_NONE;
+}
