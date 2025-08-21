@@ -59,6 +59,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
@@ -148,6 +149,17 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         return builder.proxy(Builder.NO_PROXY);
     }
 
+    HttpRequest.Builder newHttpRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (uri.contains("/http3/") && !http3TestServer.supportsH3DirectConnection()) {
+            // Ensure we don't attempt to connect to a
+            // potentially different server if HTTP/3 endpoint and
+            // HTTP/2 endpoint are not on the same port
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "variants")
     void test(String uri, Supplier<BodyPublisher> bpSupplier, boolean sameClient)
             throws Exception
@@ -158,7 +170,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
                 client = newHttpClientBuilder(uri).sslContext(sslContext).build();
 
             BodyPublisher bodyPublisher = bpSupplier.get();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest request = newHttpRequestBuilder(uri)
                     .POST(bodyPublisher)
                     .build();
 
@@ -184,7 +196,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
                 client = newHttpClientBuilder(uri).sslContext(sslContext).build();
 
             BodyPublisher bodyPublisher = bpSupplier.get();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest request = newHttpRequestBuilder(uri)
                     .POST(bodyPublisher)
                     .build();
 
