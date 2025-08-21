@@ -46,7 +46,7 @@ public class NoReplTest {
 
     /**
      * Verifies {@code uncheckedNewStringNoReplacement()} throws a {@link CharacterCodingException}.
-     * The method is invoked by `Files.readString()` method.
+     * The method is invoked by {@code Files.readString()} method.
      */
     @Test
     public void uncheckedNewStringNoReplacementTest() throws IOException {
