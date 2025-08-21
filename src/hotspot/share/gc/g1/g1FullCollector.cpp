@@ -246,6 +246,11 @@ void G1FullCollector::complete_collection(size_t allocation_word_size) {
 
   _heap->resize_all_tlabs();
 
+  // We clear remembered sets for young regions this late in the full GC because
+  // G1HeapVerifier expects the remembered sets for all young regions to be complete
+  // throughout most of the collection process (e.g. G1FullCollector::verify_after_marking).
+  _heap->young_regions_cset_group()->clear();
+
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
 

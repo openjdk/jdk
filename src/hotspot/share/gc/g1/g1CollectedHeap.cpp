@@ -1487,6 +1487,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_num_regions());
 
+  start_new_collection_set();
+
   allocation_failure_injector()->reset();
 
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
@@ -2793,8 +2795,6 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->stop_incremental_building();
 
   collection_set()->abandon_all_candidates();
-
-  young_regions_cset_group()->clear();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {

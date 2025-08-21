@@ -38,6 +38,15 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
+uint G1CollectionSet::selected_groups_cur_length() const {
+  assert(_inc_build_state == CSetBuildType::Inactive, "must be");
+  return _collection_set_groups.length();
+}
+
+uint G1CollectionSet::collection_groups_increment_length() const {
+  return selected_groups_cur_length() - _selected_groups_inc_part_start;
+}
+
 G1CollectorState* G1CollectionSet::collector_state() const {
   return _g1h->collector_state();
 }
@@ -54,7 +63,6 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_cur_length(0),
   _collection_set_max_length(0),
   _collection_set_groups(),
-  _selected_groups_cur_length(0),
   _selected_groups_inc_part_start(0),
   _eden_region_length(0),
   _survivor_region_length(0),
@@ -122,14 +130,23 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
-  assert(_inc_build_state == Inactive, "Precondition");
+  assert(selected_groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
+  assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
-  update_incremental_marker();
+  continue_incremental_building();
 }
 
-void G1CollectionSet::finalize_incremental_building() {
-  assert(_inc_build_state == Active, "Precondition");
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+void G1CollectionSet::continue_incremental_building() {
+  assert(_inc_build_state == Inactive, "Precondition");
+
+  _inc_part_start = _collection_set_cur_length;
+  _selected_groups_inc_part_start = selected_groups_cur_length();
+
+  _inc_build_state = CSetBuildType::Active;
+}
+
+void G1CollectionSet::stop_incremental_building() {
+  _inc_build_state = Inactive;
 }
 
 void G1CollectionSet::clear() {
@@ -284,9 +301,10 @@ void G1CollectionSet::print(outputStream* st) {
 // pinned by JNI) to allow faster future evacuation. We already "paid" for this work
 // when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
-  Ticks start_time = Ticks::now();
+  assert(_inc_build_state == Active, "Precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
-  finalize_incremental_building();
+  Ticks start_time = Ticks::now();
 
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
@@ -343,9 +361,6 @@ static int compare_region_idx(const uint a, const uint b) {
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
-  _selected_groups_cur_length = 0;
-  _selected_groups_inc_part_start = 0;
-
   if (!candidates()->is_empty()) {
     candidates()->verify();
 
@@ -363,13 +378,8 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     log_debug(gc, ergo, cset)("No candidates to reclaim.");
   }
 
-  _selected_groups_cur_length = collection_set_groups()->length();
-  stop_incremental_building();
-
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
-
-  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
 }
 
 static void print_finish_message(const char* reason, bool from_marking) {
@@ -670,16 +680,21 @@ void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
 }
 
 void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
+  assert(_inc_part_start == 0, "must be");
+  assert(_selected_groups_inc_part_start == 0, "must be");
+
   double time_remaining_ms = finalize_young_part(target_pause_time_ms, survivor);
   finalize_old_part(time_remaining_ms);
+
+  stop_incremental_building();
+  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
-  update_incremental_marker();
+  continue_incremental_building();
 
   uint num_regions_selected = select_optional_collection_set_regions(remaining_pause_time);
 
-  _selected_groups_cur_length = collection_set_groups()->length();
   stop_incremental_building();
 
   _g1h->verify_region_attr_remset_is_tracked();

@@ -149,9 +149,7 @@ class G1CollectionSet {
   // Old gen groups selected for evacuation.
   G1CSetCandidateGroupList _collection_set_groups;
 
-  // Groups are added to the collection set in increments when performing optional evacuations.
-  // We use the value below to track these increments.
-  uint _selected_groups_cur_length;
+  uint selected_groups_cur_length() const;
   uint _selected_groups_inc_part_start;
 
   uint _eden_region_length;
@@ -200,9 +198,6 @@ class G1CollectionSet {
   // as Eden and calculate a prediction on how long the evacuation of all young regions
   // will take.
   double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
-  // Perform any final calculations on the incremental collection set fields before we
-  // can use them.
-  void finalize_incremental_building();
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
@@ -258,14 +253,10 @@ public:
 
   // Initialize incremental collection set info.
   void start_incremental_building();
-  // Start a new collection set increment.
-  void update_incremental_marker() {
-    _inc_build_state = Active;
-    _inc_part_start = _collection_set_cur_length;
-    _selected_groups_inc_part_start = _selected_groups_cur_length;
-  }
+  // Start a new collection set increment, continuing the incremental building.
+  void continue_incremental_building();
   // Stop adding regions to the current collection set increment.
-  void stop_incremental_building() { _inc_build_state = Inactive; }
+  void stop_incremental_building();
 
   // Iterate over the current collection set increment applying the given G1HeapRegionClosure
   // from a starting position determined by the given worker id.
@@ -276,7 +267,7 @@ public:
   // Returns the length of the whole current collection set in number of regions
   size_t cur_length() const { return _collection_set_cur_length; }
 
-  uint collection_groups_increment_length() const { return _selected_groups_cur_length - _selected_groups_inc_part_start; }
+  uint collection_groups_increment_length() const;
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of them.

@@ -105,10 +105,10 @@ final class WinFromParams {
     static final BundlerParamInfo<WinMsiPackage> MSI_PACKAGE = createPackageBundlerParam(
             WinFromParams::createWinMsiPackage);
 
-    private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = createBooleanBundlerParam(
+    private static final BundlerParamInfo<String> WIN_MENU_HINT = createStringBundlerParam(
             Arguments.CLIOptions.WIN_MENU_HINT.getId());
 
-    private static final BundlerParamInfo<Boolean> WIN_SHORTCUT_HINT = createBooleanBundlerParam(
+    private static final BundlerParamInfo<String> WIN_SHORTCUT_HINT = createStringBundlerParam(
             Arguments.CLIOptions.WIN_SHORTCUT_HINT.getId());
 
     public static final BundlerParamInfo<Boolean> CONSOLE_HINT = createBooleanBundlerParam(
