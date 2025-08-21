@@ -741,7 +741,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     }
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT int JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd,
     jlong pathAddress, jint flag, jobject attrs)
 {
@@ -761,24 +761,29 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
+        } else if (errno == ENOENT) {
+            return ENOENT;
         } else {
             throwUnixException(env, errno);
         }
         // statx was available, so return now
-        return;
+        return 0;
     }
 #endif
 
     if (my_fstatat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
-        return;
+        return -1;
     }
     RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
+    } else if (errno == ENOENT) {
+        return ENOENT;
+    } else {
+        throwUnixException(env, errno);
     }
+    return 0;
 }
 
 JNIEXPORT void JNICALL

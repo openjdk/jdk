@@ -288,14 +288,14 @@ class UnixNativeDispatcher {
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
      */
-    static void fstatat(int dfd, byte[] path, int flag, UnixFileAttributes attrs)
+    static int fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
-        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
-            fstatat0(dfd, buffer.address(), flag, attrs);
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return fstatat0(dfd, buffer.address(), flag, attrs);
         }
     }
-    private static native void fstatat0(int dfd, long pathAddress, int flag,
+    private static native int fstatat0(int dfd, long pathAddress, int flag,
         UnixFileAttributes attrs) throws UnixException;
 
     /**
