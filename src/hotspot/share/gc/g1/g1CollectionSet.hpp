@@ -205,9 +205,6 @@ class G1CollectionSet {
   // as Eden and calculate a prediction on how long the evacuation of all young regions
   // will take. Returns the time remaining from the given target pause time.
   double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
-  // Perform any final calculations on the incremental collection set fields before we
-  // can use them.
-  void finalize_incremental_building();
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
@@ -237,7 +234,7 @@ public:
   G1CSetCandidateGroupList* groups() { return &_groups; }
   const G1CSetCandidateGroupList* groups() const { return &_groups; }
 
-  void prepare_groups_for_scan();
+  void prepare_for_scan();
 
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
