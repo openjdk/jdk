@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     }
 
     private static final CI[] TEST_LIST = {
-        // algorithms which use the native padding impl
-        new CI("DES/CBC/PKCS5Padding", "DES"),
-        new CI("DESede/CBC/PKCS5Padding", "DESede"),
-        new CI("AES/CBC/PKCS5Padding", "AES"),
-        // algorithms which use SunPKCS11's own padding impl
-        new CI("DES/ECB/PKCS5Padding", "DES"),
-        new CI("DESede/ECB/PKCS5Padding", "DESede"),
-        new CI("AES/ECB/PKCS5Padding", "AES"),
+            // algorithms which use the native padding impl
+            new CI("DES/CBC/PKCS5Padding", "DES"),
+            new CI("DESede/CBC/PKCS5Padding", "DESede"),
+            new CI("AES/CBC/PKCS5Padding", "AES"),
+            // algorithms which use SunPKCS11's own padding impl
+            new CI("DES/ECB/PKCS5Padding", "DES"),
+            new CI("DESede/ECB/PKCS5Padding", "DESede"),
+            new CI("AES/ECB/PKCS5Padding", "AES"),
     };
 
     private static StringBuffer debugBuf = new StringBuffer();
@@ -69,7 +69,8 @@ public class TestPKCS5PaddingError extends PKCS11Test {
         try {
             byte[] plainText = new byte[200];
 
-            for (CI currTest : TEST_LIST) {
+            for (int i = 0; i < TEST_LIST.length; i++) {
+                CI currTest = TEST_LIST[i];
                 System.out.println("===" + currTest.transformation + "===");
                 try {
                     KeyGenerator kg =
