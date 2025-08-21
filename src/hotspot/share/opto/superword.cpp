@@ -2572,8 +2572,13 @@ static bool can_subword_truncate(Node* in, const Type* type) {
     return false;
   }
 
-  // Vector nodes and casts should not truncate.
-  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction() || in->is_ConstraintCast()) {
+  // Vector nodes should not truncate.
+  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Since casts specifically change the type of a node, stay on the safe side and do not truncate them.
+  if (in->is_ConstraintCast()) {
     return false;
   }
 
