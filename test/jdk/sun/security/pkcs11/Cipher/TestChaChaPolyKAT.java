@@ -26,7 +26,6 @@
  * @bug 8255410
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @build jdk.test.lib.Convert
  * @run main/othervm TestChaChaPolyKAT
  * @summary ChaCha20-Poly1305 Cipher Implementation (KAT)
  */

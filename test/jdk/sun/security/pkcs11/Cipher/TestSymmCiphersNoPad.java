@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=ARCFOUR-ARCFOUR-400
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -33,7 +33,7 @@
  */
 
 /*
- * @test
+ * @test id=RC4-RC4-401
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -44,7 +44,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-CBC-NOPADDING-DES-400
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -55,7 +55,7 @@
  */
 
 /*
- * @test
+ * @test id=DESEDE-CBC-NOPADDING-DESEDE-160
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -66,7 +66,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CBC-NOPADDING-AES-4800
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -77,7 +77,7 @@
  */
 
 /*
- * @test
+ * @test id=BLOWFISH-CBC-NOPADDING-BLOWFISH-24
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -88,7 +88,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTR-NOPADDING-AES-1600
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -99,7 +99,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTR-NOPADDING-AES-65
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -110,7 +110,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTS-NOPADDING-AES-1600
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
@@ -121,7 +121,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTS-NOPADDING-AES-65
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng

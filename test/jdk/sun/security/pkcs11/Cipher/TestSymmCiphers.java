@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=ARCFOUR-ARCFOUR-400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -30,10 +30,10 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphers ARCFOUR ARCFOUR 400
- */
+*/
 
 /*
- * @test
+ * @test id=RC4-RC4-401
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -44,7 +44,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-CBC-NOPADDING-DES-400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -55,7 +55,7 @@
  */
 
 /*
- * @test
+ * @test id=DESEDE-CBC-NOPADDING-DESEDE-160
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -66,7 +66,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CBC-NOPADDING-AES-4800
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -77,7 +77,7 @@
  */
 
 /*
- * @test
+ * @test id=BLOWFISH-CBC-NOPADDING-BLOWFISH-24
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -88,7 +88,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-CBC-PKCS5PADDING-DES-6401
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -99,7 +99,7 @@
  */
 
 /*
- * @test
+ * @test id=DESEDE-CBC-PKCS5PADDING-DESEDE-402
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -110,7 +110,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CBC-PKCS5PADDING-AES-30
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -121,7 +121,7 @@
  */
 
 /*
- * @test
+ * @test id=BLOWFISH-CBC-PKCS5PADDING-BLOWFISH-19
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -132,7 +132,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-ECB-NOPADDING-DES-400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -143,7 +143,7 @@
  */
 
 /*
- * @test
+ * @test id=DESEDE-ECB-NOPADDING-DESEDE-160
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -154,7 +154,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-ECB-NOPADDING-AES-4800
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -165,7 +165,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-ECB-PKCS5PADDING-DES-32
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -176,7 +176,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-ECB-PKCS5PADDING-DES-6400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -187,7 +187,7 @@
  */
 
 /*
- * @test
+ * @test id=DESEDE-ECB-PKCS5PADDING-DESEDE-400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -198,7 +198,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-ECB-PKCS5PADDING-AES-64
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -209,7 +209,7 @@
  */
 
 /*
- * @test
+ * @test id=DES-DES-6400
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -218,8 +218,9 @@
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphers DES DES 6400
  */
+
 /*
- * @test
+ * @test id=DESEDE-DESEDE-408
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -230,7 +231,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-AES-128
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -241,7 +242,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTR-NOPADDING-AES-3200
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
@@ -252,7 +253,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-CTS-NOPADDING-AES-3200
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng

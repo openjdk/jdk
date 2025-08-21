@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-ECB
  * @bug 8265500
  * @summary
  * @library /test/lib ..
@@ -31,7 +31,7 @@
  */
 
 /*
- * @test
+ * @test id=AES-GCM
  * @bug 8265500
  * @summary
  * @library /test/lib ..
@@ -40,7 +40,7 @@
  */
 
 /*
- * @test
+ * @test id=RSA-ECB
  * @bug 8265500
  * @summary
  * @library /test/lib ..

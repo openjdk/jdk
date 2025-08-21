@@ -52,14 +52,14 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     }
 
     private static final CI[] TEST_LIST = {
-            // algorithms which use the native padding impl
-            new CI("DES/CBC/PKCS5Padding", "DES"),
-            new CI("DESede/CBC/PKCS5Padding", "DESede"),
-            new CI("AES/CBC/PKCS5Padding", "AES"),
-            // algorithms which use SunPKCS11's own padding impl
-            new CI("DES/ECB/PKCS5Padding", "DES"),
-            new CI("DESede/ECB/PKCS5Padding", "DESede"),
-            new CI("AES/ECB/PKCS5Padding", "AES"),
+        // algorithms which use the native padding impl
+        new CI("DES/CBC/PKCS5Padding", "DES"),
+        new CI("DESede/CBC/PKCS5Padding", "DESede"),
+        new CI("AES/CBC/PKCS5Padding", "AES"),
+        // algorithms which use SunPKCS11's own padding impl
+        new CI("DES/ECB/PKCS5Padding", "DES"),
+        new CI("DESede/ECB/PKCS5Padding", "DESede"),
+        new CI("AES/ECB/PKCS5Padding", "AES"),
     };
 
     private static StringBuffer debugBuf = new StringBuffer();
@@ -113,7 +113,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     System.out.println("DONE");
                 } catch (NoSuchAlgorithmException nsae) {
                     System.out.println("Skipping unsupported algorithm: " +
-                                       nsae);
+                                   nsae);
                 }
             }
         } catch (Exception ex) {
