@@ -1099,9 +1099,7 @@ void VM_Version::get_processor_features() {
   }
 
   stringStream ss(2048);
-  if (supports_hybrid()) {
-    ss.print("(%u threads)", _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus);
-  } else {
+  if (!supports_hybrid()) {
     ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
   }
   ss.print(" family %d model %d stepping %d microcode 0x%x",
