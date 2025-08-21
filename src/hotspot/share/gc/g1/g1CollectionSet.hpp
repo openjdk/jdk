@@ -191,8 +191,8 @@ class G1CollectionSet {
 
   // Select regions for evacuation from the optional candidates given the remaining time
   // and return the number  of actually selected regions.
-  uint select_optional_collection_set_regions(double time_remaining_ms, bool force_all);
-  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected, bool force_all);
+  uint select_optional_collection_set_regions(double time_remaining_ms, bool force_all = false);
+  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected, bool force_all = false);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -285,7 +285,7 @@ public:
   // few old gen regions.
   void finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor);
   // Finalize the next collection set from the set of available optional old gen regions.
-  bool finalize_optional_for_evacuation(double remaining_pause_time, bool force_all);
+  bool finalize_optional_for_evacuation(double remaining_pause_time, bool force_all = false);
   // Abandon (clean up) optional collection set regions that were not evacuated in this
   // pause.
   void abandon_optional_collection_set(G1ParScanThreadStateSet* pss);
