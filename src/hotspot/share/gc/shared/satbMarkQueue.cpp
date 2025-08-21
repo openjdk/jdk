@@ -321,7 +321,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
       _qset(qset), _buffer(buffer) {}
 
     virtual void do_thread(Thread* t) {
-      os::snprintf_checked(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+      (void) os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
       _qset->satb_queue_for_thread(t).print(_buffer);
     }
   } closure(this, buffer);

@@ -346,9 +346,8 @@ void AttachListener::vm_start() {
   struct stat st;
   int ret;
 
-  int n = os::snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
+  os::snprintf_checked(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
                        os::get_temp_directory(), os::current_process_id());
-  assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
 
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
