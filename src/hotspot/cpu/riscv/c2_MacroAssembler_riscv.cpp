@@ -2494,36 +2494,48 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
 
   // mul is already set to mf2 in float_to_float16_v.
 
-  // preserve the payloads of non-canonical NaNs.
-  __ vnsra_wi(dst, src, 13, Assembler::v0_t);
+  // preserve the sign bit and exponent.
+  __ vnsra_wi(dst, src, 26, Assembler::v0_t);
+  __ vsll_vi(dst, dst, 10, Assembler::v0_t);
 
-  // preserve the sign bit.
-  __ vnsra_wi(tmp, src, 26, Assembler::v0_t);
-  __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  __ vnsrl_wi(tmp, src, 13, Assembler::v0_t);
   __ mv(t0, 0x3ff);
-  __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
-
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-  __ vand_vv(dst, dst, tmp, Assembler::v0_t);
+  __ vand_vx(tmp, tmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
+  // 9 bits
+  __ vnsrl_wi(tmp, src, 4, Assembler::v0_t);
+  __ mv(t0, 0x1ff);
+  __ vand_vx(tmp, tmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
+  // 4 bits
+  __ vnsrl_wi(tmp, src, 0, Assembler::v0_t);
+  __ vand_vi(tmp, tmp, 0xf, Assembler::v0_t);
+  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
 
   __ j(stub.continuation());
 #undef __
 }
 
 // j.l.Float.float16ToFloat
-void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp,
-                                           Register tmp, uint vector_length) {
+void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src,
+                                           VectorRegister vtmp, Register tmp, uint vector_length) {
   assert_different_registers(dst, src, vtmp);
 
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister>
-              (dst, src, vtmp, 28, float_to_float16_v_slow_path);
+              (dst, src, vtmp, 56, float_to_float16_v_slow_path);
 
   // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
 
   vsetvli_helper(BasicType::T_FLOAT, vector_length, Assembler::m1);
 
   // check whether there is a NaN.
-  // replace v_fclass with vmseq_vv as performance optimization.
+  // replace v_fclass with vmfne_vv as performance optimization.
   vmfne_vv(v0, src, src);
   vcpop_m(t0, v0);
 
