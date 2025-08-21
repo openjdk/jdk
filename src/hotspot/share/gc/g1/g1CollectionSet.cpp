@@ -348,10 +348,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   return remaining_time_ms;
 }
 
-static int compare_region_idx(const uint a, const uint b) {
-  return static_cast<int>(a-b);
-}
-
 // The current mechanism for evacuating pinned old regions is as below:
 // * pinned regions in the marking collection set candidate list (available during mixed gc) are evacuated like
 //   pinned young regions to avoid the complexity of dealing with pinned regions that are part of a
@@ -692,7 +688,6 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   finalize_old_part(time_remaining_ms);
 
   stop_incremental_building();
-  QuickSort::sort(_regions, _regions_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
