@@ -1847,6 +1847,8 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     // we just call into the interpreter to convert this into a jvalue.
     oop oop_result;
     BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+    assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+      "Stack shouldn't be empty");
     if (is_reference_type(type)) {
       result = Handle(thread, oop_result);
       value.l = JNIHandles::make_local(thread, result());
