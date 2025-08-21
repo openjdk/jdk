@@ -819,11 +819,16 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
-    double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
-    double time_left_ms = MaxGCPauseMillis - time_used_ms;
+    double time_left_ms;
+    if(EvacuateAllOptionalRegions){
+      time_left_ms = DBL_MAX;
+    }else{
+      double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
+      time_left_ms = MaxGCPauseMillis - time_used_ms;
+    }
 
-    if ((time_left_ms <= 0 && !EvacuateAllOptionalRegions) ||
-        !collection_set()->finalize_optional_for_evacuation(time_left_ms * policy()->optional_evacuation_fraction(), EvacuateAllOptionalRegions)) {
+    if (time_left_ms <= 0 ||
+        !collection_set()->finalize_optional_for_evacuation(time_left_ms * policy()->optional_evacuation_fraction())) {
       log_trace(gc, ergo, cset)("Skipping evacuation of %u optional regions, no more regions can be evacuated in %.3fms",
                                 collection_set()->num_optional_regions(), time_left_ms);
       break;
