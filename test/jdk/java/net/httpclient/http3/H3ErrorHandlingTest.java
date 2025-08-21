@@ -70,6 +70,10 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @key intermittent
+ * @comment testResetControlStream may fail if the client doesn't read the stream type
+ *              before the stream is reset,
+ *          testConnectionCloseXXX may fail because connection_close frame is not retransmitted
  * @summary Verifies that the HTTP client responds with the right error codes and types
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @library ../access
