@@ -25,14 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERTHREAD_HPP
 #define SHARE_COMPILER_COMPILERTHREAD_HPP
 
-#include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
 #include "runtime/javaThread.hpp"
-#include "utilities/macros.hpp"
-
-#ifdef LINUX
-#include "compilerThreadTimeout_linux.hpp"
-#endif //LINUX
 
 class AbstractCompiler;
 class ArenaStatCounter;
@@ -45,27 +38,10 @@ class CompileQueue;
 class CompilerCounters;
 class IdealGraphPrinter;
 
-#ifndef LINUX
-class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
- public:
-  CompilerThreadTimeoutGeneric() {};
-  void arm() {};
-  void disarm() {};
-  bool init_timeout() { return true; };
-};
-#endif // !LINUX
-
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
   JVMCI_ONLY(friend class CompilerThreadCanCallJava;)
-
-#ifdef LINUX
-  typedef CompilerThreadTimeoutLinux Timeout;
-#else // LINUX
-  typedef CompilerThreadTimeoutGeneric Timeout;
-#endif // LINUX
-
  private:
   CompilerCounters* _counters;
 
@@ -81,7 +57,6 @@ class CompilerThread : public JavaThread {
 
   ArenaStatCounter*     _arena_stat;
 
-  Timeout*              _timeout;
  public:
 
   static CompilerThread* current() {
@@ -138,13 +113,7 @@ class CompilerThread : public JavaThread {
  public:
   IdealGraphPrinter *ideal_graph_printer()           { return _ideal_graph_printer; }
   void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
-#endif // !PRODUCT
-
-  Timeout* timeout() const { return _timeout; };
-  bool init_compilation_timeout() {
-    _timeout = new Timeout();
-    return _timeout->init_timeout();
-  };
+#endif
 
   // Get/set the thread's current task
   CompileTask* task()                      { return _task; }
