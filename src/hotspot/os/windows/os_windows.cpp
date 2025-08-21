@@ -866,7 +866,7 @@ bool os::win32::available_memory(size_t& value) {
     value = static_cast<size_t>(ms.ullAvailPhys);
     return true;
   } else {
-    assert(false, "GlobalMemoryStatusEx failed in os::available_memory(): %lu", ::GetLastError());
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
     return false;
   }
 }
