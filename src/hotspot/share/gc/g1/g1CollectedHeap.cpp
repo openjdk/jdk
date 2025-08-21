@@ -1487,6 +1487,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_num_regions());
 
+  start_new_collection_set();
+
   allocation_failure_injector()->reset();
 
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
