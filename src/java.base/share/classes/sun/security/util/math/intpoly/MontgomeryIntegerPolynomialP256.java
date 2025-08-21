@@ -309,9 +309,9 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         c7 = dd4;
 
         // Row 3 - multiply by aa3 and reduce out c3
-        n0 = n * modulus[0];
-        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
-        d0 += n0 & LIMB_MASK;
+        d0 = aa3 * bb0;
+        dd0 = Math.unsignedMultiplyHigh(aa3, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
         d0 += c3;
         n = d0 & LIMB_MASK;
         d1 = aa3 * bb1;
@@ -327,8 +327,9 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 = Math.unsignedMultiplyHigh(aa3, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        dd0 += (n + (-n >> BITS_PER_LIMB));
-        d0 += -n & LIMB_MASK;;
+        n0 = n * modulus[0];
+        dd0 += Math.unsignedMultiplyHigh(n, modulus[0]) << shift1 | (n0 >>> shift2);
+        d0 += n0 & LIMB_MASK;
         n1 = n * modulus[1];
         dd1 += Math.unsignedMultiplyHigh(n, modulus[1]) << shift1 | (n1 >>> shift2);
         d1 += n1 & LIMB_MASK;
