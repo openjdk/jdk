@@ -492,7 +492,6 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) {
   uint num_initial_regions = 0;
   uint prev_num_optional_regions = _optional_groups.num_regions();
-  guarantee(prev_num_optional_regions == 0, "must be, why else?");
   uint num_optional_regions = prev_num_optional_regions;
   uint num_expensive_regions = 0;
   uint num_pinned_regions = 0;
