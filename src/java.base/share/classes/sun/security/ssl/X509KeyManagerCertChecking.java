@@ -293,6 +293,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 : checkType.check(cert, date, serverNames, idAlgorithm);
     }
 
+    // TODO move this method to a public interface / class
+    abstract String chooseClientAlias(String[] keyTypes, Principal[] issuers,
+                                      QuicTLSEngineImpl quicTLSEngine);
+
+    // TODO move this method to a public interface / class
+    abstract String chooseServerAlias(String keyType,
+                                      X500Principal[] issuers,
+                                      QuicTLSEngineImpl quicTLSEngine);
+
     // enum for the result of the extension check
     // NOTE: the order of the constants is important as they are used
     // for sorting, i.e. OK is best, followed by EXPIRED and EXTENSION_MISMATCH

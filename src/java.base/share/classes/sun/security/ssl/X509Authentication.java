@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,11 +222,12 @@ enum X509Authentication implements SSLAuthentication {
             // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
             // takes QuicTLSEngine.
             // For now, in context of QUIC, for KeyManager implementations other than
-            // sun.security.ssl.X509KeyManagerImpl we don't take into account
+            // subclasses of sun.security.ssl.X509KeyManagerCertChecking
+            // we don't take into account
             // any algorithm constraints when choosing the client alias and
             // just call the functionally limited
             // javax.net.ssl.X509KeyManager.chooseClientAlias(...)
-            if (km instanceof X509KeyManagerImpl xkm) {
+            if (km instanceof X509KeyManagerCertChecking xkm) {
                 clientAlias = xkm.chooseClientAlias(keyTypes,
                         chc.peerSupportedAuthorities == null
                                 ? null
@@ -315,11 +316,12 @@ enum X509Authentication implements SSLAuthentication {
                 // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
                 // takes QuicTLSEngine.
                 // For now, in context of QUIC, for KeyManager implementations other than
-                // sun.security.ssl.X509KeyManagerImpl we don't take into account
+                // subclasses of sun.security.ssl.X509KeyManagerCertChecking
+                // we don't take into account
                 // any algorithm constraints when choosing the server alias
                 // and just call the functionally limited
                 // javax.net.ssl.X509KeyManager.chooseServerAlias(...)
-                if (km instanceof X509KeyManagerImpl xkm) {
+                if (km instanceof X509KeyManagerCertChecking xkm) {
                     serverAlias = xkm.chooseServerAlias(keyType,
                             shc.peerSupportedAuthorities == null
                                     ? null

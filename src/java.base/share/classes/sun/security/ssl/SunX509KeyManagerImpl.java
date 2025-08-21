@@ -182,6 +182,13 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
                 getAlgorithmConstraints(socket), null, null);
     }
 
+    @Override
+    String chooseClientAlias(String[] keyTypes, Principal[] issuers,
+                             QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
+                getAlgorithmConstraints(quicTLSEngine), null, null);
+    }
+
     /*
      * Choose an alias to authenticate the client side of an
      * <code>SSLEngine</code> connection given the public key type
@@ -206,6 +213,16 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
                 getAlgorithmConstraints(socket),
                 X509TrustManagerImpl.getRequestedServerNames(socket), "HTTPS");
+    }
+
+    @Override
+    String chooseServerAlias(String keyType,
+                             X500Principal[] issuers,
+                             QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
+                getAlgorithmConstraints(quicTLSEngine),
+                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
+                "HTTPS");
     }
 
     /*
