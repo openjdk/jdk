@@ -420,7 +420,6 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 JvmtiThreadState*
 JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
-  assert(thread->thread_state() == _thread_in_vm, "thread should be in vm");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
     if (allow_suspend && thread->is_suspended()) {
@@ -1831,44 +1830,42 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
 void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame current_frame) {
   HandleMark hm(thread);
   methodHandle mh(thread, method);
-  oop oop_result;
-  Handle result;
-  jvalue value;
-  value.l = 0L;
-  // post_method_exit is only called when the method exits normally,
-  // so result should be always initialized.
-  // At this point we only have the address of a "raw result" and
-  // we just call into the interpreter to convert this into a jvalue.
-  // Additionally, the result oop should be preserved while the thread is in java.
-  BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
 
-  assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
-      "Stack shouldn't be empty");
+  JvmtiThreadState *state = get_jvmti_thread_state(thread);
 
-  if (is_reference_type(type)) {
-    result = Handle(thread, oop_result);
+  if (state == nullptr || !state->is_interp_only_mode()) {
+    // for any thread that actually wants method exit, interp_only_mode is set
+    return;
   }
-  JvmtiThreadState *state;
-  // Deferred transition to VM, so we can stash away the return oop before GC
-  JavaThread* current = thread; // for JRT_BLOCK
-  JRT_BLOCK
-    state = get_jvmti_thread_state(thread);
 
-    if (state == nullptr || !state->is_interp_only_mode()) {
-      // for any thread that actually wants method exit, interp_only_mode is set
-      return;
-    }
-    if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT) && is_reference_type(type)) {
+ Handle result;
+  jvalue value;
+  value.j = 0L;
+
+  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+    // At this point we only have the address of a "raw result" and
+    // we just call into the interpreter to convert this into a jvalue.
+    oop oop_result;
+    BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+    if (is_reference_type(type)) {
+      result = Handle(thread, oop_result);
       value.l = JNIHandles::make_local(thread, result());
     }
-    // Do not allow NotifyFramePop to add new FramePop event request at
-    // depth 0 as it is already late in the method exiting dance.
-    state->set_top_frame_is_exiting();
+  }
 
-    post_method_exit_inner(thread, mh, state,false, current_frame, value);
+  // Do not allow NotifyFramePop to add new FramePop event request at
+  // depth 0 as it is already late in the method exiting dance.
+  state->set_top_frame_is_exiting();
+
+  // Deferred transition to VM, so we can stash away the return oop before GC
+  // Note that this transition is not needed when throwing an exception, because
+  // there is no oop to retain.
+  JavaThread* current = thread; // for JRT_BLOCK
+  JRT_BLOCK
+    post_method_exit_inner(thread, mh, state, false, current_frame, value);
   JRT_BLOCK_END
 
-  // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
+  // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
   // adding FramePop event requests as no safepoint can happen before removing activation.
   state->clr_top_frame_is_exiting();
 
