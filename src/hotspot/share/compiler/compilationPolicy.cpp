@@ -138,14 +138,14 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
- void CompilationPolicy::wait_replay_training_at_init(JavaThread* THREAD) {
-    MonitorLocker locker(THREAD, TrainingReplayQueue_lock);
+ void CompilationPolicy::wait_replay_training_at_init(JavaThread* current) {
+    MonitorLocker locker(current, TrainingReplayQueue_lock);
     while (!_training_replay_queue.is_empty_unlocked() || _training_replay_queue.is_processing_unlocked()) {
       locker.wait(); // let the replay training thread drain the queue
     }
  }
 
-void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current) {
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
     log_debug(training)("Replay training: %s", klass->external_name());
@@ -160,8 +160,8 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
           if (ctd->init_deps_left() == 0) {
             MethodTrainingData* mtd = ctd->method();
             if (mtd->has_holder()) {
-              const methodHandle mh(THREAD, const_cast<Method*>(mtd->holder()));
-              CompilationPolicy::maybe_compile_early(mh, THREAD);
+              const methodHandle mh(current, const_cast<Method*>(mtd->holder()));
+              CompilationPolicy::maybe_compile_early(mh, current);
             }
           }
         });
@@ -170,10 +170,10 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
   }
 }
 
-void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* THREAD) {
+void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
   if (TrainingData::have_data() && klass->is_shared()) {
-    _training_replay_queue.push(klass, TrainingReplayQueue_lock, THREAD);
+    _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }
 
@@ -188,12 +188,12 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_loop(JavaThread* THREAD) {
+void CompilationPolicy::replay_training_at_init_loop(JavaThread* current) {
   while (!CompileBroker::is_compilation_disabled_forever()) {
-    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
+    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, current);
     if (ik != nullptr) {
-      replay_training_at_init_impl(ik, THREAD);
-      _training_replay_queue.processing_done(TrainingReplayQueue_lock, THREAD);
+      replay_training_at_init_impl(ik, current);
+      _training_replay_queue.processing_done(TrainingReplayQueue_lock, current);
     }
   }
 }

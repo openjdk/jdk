@@ -98,7 +98,7 @@ void TrainingData::verify() {
           Key k(mtd->holder());
           verify_archived_entry(td, &k);
         }
-        mtd->verify(true);
+        mtd->verify(/*verify_dep_counter*/true);
       }
     });
   }
@@ -110,7 +110,9 @@ void TrainingData::verify() {
         ktd->verify();
       } else if (td->is_MethodTrainingData()) {
         MethodTrainingData* mtd = td->as_MethodTrainingData();
-        mtd->verify(false);
+        // During the training run init deps tracking is not setup yet,
+        // don't verify it.
+        mtd->verify(/*verify_dep_counter*/false);
       }
     });
   }

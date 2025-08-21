@@ -80,8 +80,8 @@ class Queue {
   }
 public:
   Queue() : _head(nullptr), _tail(nullptr), _processing(0) { }
-  void push(T* value, Monitor* lock, JavaThread* THREAD) {
-    MonitorLocker locker(THREAD, lock);
+  void push(T* value, Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
     push_unlocked(value);
     locker.notify_all();
   }
@@ -89,8 +89,8 @@ public:
   bool is_empty_unlocked() const { return _head == nullptr; }
   bool is_processing_unlocked() const { return _processing > 0; }
 
-  T* pop(Monitor* lock, JavaThread* THREAD) {
-    MonitorLocker locker(THREAD, lock);
+  T* pop(Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
     while(is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
       locker.wait();
     }
@@ -98,14 +98,14 @@ public:
     return value;
   }
 
-  T* try_pop(Monitor* lock, JavaThread* THREAD) {
-    MonitorLocker locker(THREAD, lock);
+  T* try_pop(Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
     T* value = pop_unlocked();
     return value;
   }
 
-  void processing_done(Monitor* lock, JavaThread* THREAD) {
-    MonitorLocker locker(THREAD, lock);
+  void processing_done(Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
     processing_done_unlocked();
     locker.notify_all();
   }
@@ -352,7 +352,7 @@ class CompilationPolicy : AllStatic {
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static void maybe_compile_early(const methodHandle& m, TRAPS);
-  static void replay_training_at_init_impl(InstanceKlass* klass, TRAPS);
+  static void replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current);
  public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
@@ -362,9 +362,9 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
-  static void wait_replay_training_at_init(JavaThread* THREAD);
-  static void replay_training_at_init(InstanceKlass* klass, JavaThread* THREAD);
-  static void replay_training_at_init_loop(JavaThread* THREAD);
+  static void wait_replay_training_at_init(JavaThread* current);
+  static void replay_training_at_init(InstanceKlass* klass, JavaThread* current);
+  static void replay_training_at_init_loop(JavaThread* current);
 
   // m is allowed to be compiled
   static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
