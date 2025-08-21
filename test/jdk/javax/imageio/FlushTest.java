@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,16 @@ public class FlushTest {
     static void testWrite(String fmt) throws IOException {
         ImageWriter iw = ImageIO.getImageWritersBySuffix(fmt).next();
         System.out.println(iw);
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            FileCacheImageOutputStream fcs = new FileCacheImageOutputStream(baos, null);
-            iw.setOutput(fcs);
-            iw.write(bi);
-            int sz0 = baos.size();
-            fcs.close();
-            int sz1 = baos.size();
-            System.out.println("fmt=" + fmt + " sizes=" + sz0 + ", " + sz1);
-            if (sz0 != sz1) {
-               failed = true;
-            }
-        } finally {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        FileCacheImageOutputStream fcs = new FileCacheImageOutputStream(baos, null);
+        iw.setOutput(fcs);
+        iw.write(bi);
+        int sz0 = baos.size();
+        fcs.close();
+        int sz1 = baos.size();
+        System.out.println("fmt=" + fmt + " sizes=" + sz0 + ", " + sz1);
+        if (sz0 != sz1) {
+           failed = true;
         }
     }
 }
