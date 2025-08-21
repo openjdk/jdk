@@ -127,11 +127,11 @@ final class DateTimePrintContext {
      * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
      * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
      *
+     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
+     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      * @param temporal  the temporal object to adjust, not null
      * @param formatter the formatter providing potential chronology and time-zone overrides
      * @return the adjusted temporal, or the original if no overrides are present in the formatter
-     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
-     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      */
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first (early return is an optimization)
