@@ -39,7 +39,7 @@ import jdk.test.lib.Asserts;
 
 public class TestScenariosCrossProduct {
     static void hasNFailures(String s, int count) {
-        if (s.matches("The following scenarios have failed: (#[0-9](?:, )?){" + count + "}\\.")) {
+        if (!s.matches("The following scenarios have failed: (#[0-9](, )?){" + count + "}. Please check stderr for more information.")) {
             throw new RuntimeException("Expected " + count + " failures in \"" + s + "\"");
         }
     }
@@ -89,25 +89,29 @@ public class TestScenariosCrossProduct {
             hasNFailures(e.getMessage(), 1);
         }
 
-        // Test with an empty string. Only 4 scenarios fail.
+        // Test with an empty string. All 6 scenarios fail because 64 is the default value for TLABRefillWasteFraction.
         try {
             TestFramework t5 = new TestFramework();
-            t5.addCrossProductScenarios(Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=64"),
+            t5.addCrossProductScenarios(Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
                                         Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
             t5.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 4);
+            hasNFailures(e.getMessage(), 6);
         }
     }
 
     @Test
     @IR(applyIf = {"TLABRefillWasteFraction", "64"}, counts = {IRNode.CALL, "1"})
-    public void fail1() {
+    public void failDefault() {
     }
 
     @Test
     @IR(applyIf = {"TLABRefillWasteFraction", "51"}, counts = {IRNode.CALL, "1"})
+    public void fail1() {
+    }
+
+    @Test
     @IR(applyIf = {"TLABRefillWasteFraction", "53"}, counts = {IRNode.CALL, "1"})
     public void fail2() {
     }
