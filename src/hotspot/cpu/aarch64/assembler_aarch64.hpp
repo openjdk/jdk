@@ -3808,9 +3808,8 @@ public:
     pgrf(Pg, 10), srf(Rn, 5), rf(Zd, 0);
   }
 
-private:
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
-               bool isMerge, bool isFloat) {
+  // SVE copy signed integer immediate to vector elements (predicated)
+  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
@@ -3824,17 +3823,17 @@ private:
     }
     int m = isMerge ? 1 : 0;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
-    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    prf(Pg, 16), f(0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
   }
 
-public:
-  // SVE copy signed integer immediate to vector elements (predicated)
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
-    sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
-  }
   // SVE copy floating-point immediate to vector elements (predicated)
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<int8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+  void sve_fcpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
+    starti;
+    assert(T != B && T != Q, "invalid size");
+    unsigned int imm8 = pack(d);
+    assert(imm8 >> 8 == 0, "invalid immediate");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
+    prf(Pg, 16), f(0b110, 15, 13), f(imm8, 12, 5), rf(Zd, 0);
   }
 
   // SVE conditionally select elements from two vectors
