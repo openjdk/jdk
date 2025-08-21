@@ -81,10 +81,6 @@ public class JInternalFrameDraggingTest {
                 Color rgbCWColor = new Color(rgbCW);
                 Color rgbCHColor = new Color(rgbCH);
 
-                    System.out.println("i " + i + " rgbCW " +
-                                       Integer.toHexString(rgbCW) +
-                                       " testRGB " + Integer.toHexString(testRGB) +
-                                       " rgbCH " + Integer.toHexString(rgbCH));
                 if (Math.abs(rgbCWColor.getRed() - testColor.getRed()) > tolerance
                     || Math.abs(rgbCWColor.getGreen() - testColor.getGreen()) > tolerance
                     || Math.abs(rgbCWColor.getBlue() - testColor.getBlue()) > tolerance
