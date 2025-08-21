@@ -318,6 +318,18 @@ public interface JavaLangAccess {
     int countNonZeroAscii(String s);
 
     /**
+     * Constructs a new {@code String} with the supplied Latin1 bytes.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the byte array to the callee</b>, since the latter will not
+     * make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     */
+    String uncheckedNewStringWithLatin1Bytes(byte[] bytes);
+
+    /**
      * Constructs a new {@code String} by decoding the specified byte array
      * using the specified {@linkplain java.nio.charset.Charset charset}.
      * <p>
@@ -346,19 +358,6 @@ public interface JavaLangAccess {
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
     byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException;
-
-    /**
-     * {@return a new string by decoding from the given UTF-8 bytes array}
-     *
-     * @param offset the index of the first byte to decode
-     * @param length the number of bytes to decode
-     * @throws NullPointerException If {@code bytes} is null
-     * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
-     *         {@code length} is negative, or {@code offset} is greater than
-     *         {@code bytes.length - length}
-     * @throws CharacterCodingException For malformed input or unmappable characters
-     */
-    String newStringUTF8NoReplacement(byte[] bytes, int offset, int length) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -422,15 +421,19 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source array into
-     * the destination byte array, assuming that the encoding is ASCII
-     * compatible.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
      *
-     * @return the number of bytes successfully encoded, or 0 if none
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
      */
-    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
      * Set the cause of Throwable

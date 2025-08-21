@@ -343,22 +343,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*) openat;
-    my_fstatat_func = (fstatat_func*) fstatat;
-#else
-    // Make sure we link to the 64-bit version of the functions
-    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
-    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
-#endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "open64at");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "stat64at");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #elif defined(_ALLBSD_SOURCE)
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
     my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
+    // Make sure we link to the 64-bit version of the functions
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
 

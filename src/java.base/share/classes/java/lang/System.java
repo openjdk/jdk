@@ -2128,6 +2128,10 @@ public final class System {
                 return StringCoding.countNonZeroAscii(s);
             }
 
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
+            }
+
             public String uncheckedNewStringNoReplacement(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoReplacement(bytes, cs);
             }
@@ -2144,10 +2148,6 @@ public final class System {
                 return String.getBytesNoReplacement(s, cs);
             }
 
-            public String newStringUTF8NoReplacement(byte[] bytes, int off, int len) throws CharacterCodingException {
-                return String.newStringUTF8NoReplacement(bytes, off, len, true);
-            }
-
             public byte[] getBytesUTF8NoReplacement(String s) throws CharacterCodingException {
                 return String.getBytesUTF8NoReplacement(s);
             }
@@ -2160,8 +2160,8 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
-                return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            public int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len) {
+                return StringCoding.encodeAsciiArray(sa, sp, da, dp, len);
             }
 
             public InputStream initialSystemIn() {

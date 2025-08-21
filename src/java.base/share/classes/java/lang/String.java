@@ -690,20 +690,21 @@ public final class String
 
     /*
      * {@return a new string by decoding from the given UTF-8 bytes array}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
      *
+     * @param bytes byte array containing UTF-8 encoded characters
      * @param offset the index of the first byte to decode
      * @param length the number of bytes to decode
-     * @param  noShare
-     *         {@code true} if the resulting string MUST NOT share the byte array,
-     *         {@code false} if the byte array can be exclusively used to construct
-     *         the string and is not modified or used for any other purpose.
      * @throws NullPointerException If {@code bytes} is null
      * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
      *         {@code length} is negative, or {@code offset} is greater than
      *         {@code bytes.length - length}
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    static String newStringUTF8NoReplacement(byte[] bytes, int offset, int length, boolean noShare) throws CharacterCodingException {
+    private static String newStringUTF8NoReplacement(byte[] bytes, int offset, int length) throws CharacterCodingException {
         checkBoundsOffCount(offset, length, bytes.length);  // Implicit null check on `bytes`
         if (length == 0) {
             return "";
@@ -714,7 +715,7 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                if (noShare || length != bytes.length) {
+                if (length != bytes.length) {
                     return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
                 } else {
                     return new String(bytes, LATIN1);
@@ -766,13 +767,41 @@ public final class String
         return new String(dst, UTF16);
     }
 
+    /**
+     * {@return a new String created using the supplied latin1 bytes}
+     * @param src a byte array with the bytes for a latin1 string
+     */
+    static String newStringWithLatin1Bytes(byte[] src) {
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
+
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
+    /**
+     * {@return a new {@code String} created using the given byte array that is
+     * encoded in specified charset}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
+     *
+     * @param src byte array containing encoded characters
+     * @param cs charset the byte array encoded in
+     *
+     * @throws CharacterCodingException for malformed input or unmappable characters
+     */
     static String newStringNoReplacement(byte[] src, Charset cs) throws CharacterCodingException {
         int len = src.length;
         if (len == 0) {
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoReplacement(src, 0, src.length, false);
+            return newStringUTF8NoReplacement(src, 0, src.length);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -1026,7 +1055,7 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            int ret = StringCoding.encodeISOArray(val, sp, dst, dp, len);
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
@@ -1317,13 +1346,18 @@ public final class String
             return encodeUTF8_UTF16(val, unmappableCharacterException);
         }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
             return val.clone();
         }
 
-        int dp = 0;
         byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
+        if (positives > 0) {
+            System.arraycopy(val, 0, dst, 0, positives);
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
@@ -1878,7 +1912,7 @@ public final class String
     public byte[] getBytes(Charset charset) {
         if (charset == null) throw new NullPointerException();
         return encode(charset, coder(), value);
-    }
+     }
 
     /**
      * Encodes this {@code String} into a sequence of bytes using the

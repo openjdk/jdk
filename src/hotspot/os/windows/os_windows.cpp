@@ -3297,10 +3297,43 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 }
 
 size_t os::commit_memory_limit() {
-  MEMORYSTATUSEX ms;
-  ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (size_t)ms.ullAvailVirtual;
+  BOOL is_in_job_object = false;
+  BOOL res = IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to determine whether the process is running in a job failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling IsProcessInJob.
+    return SIZE_MAX;
+  }
+
+  if (!is_in_job_object) {
+    // Not limited by a Job Object
+    return SIZE_MAX;
+  }
+
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+  res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling QueryInformationJobObject.
+    return SIZE_MAX;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) {
+    return jeli.ProcessMemoryLimit;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_JOB_MEMORY) {
+    return jeli.JobMemoryLimit;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 size_t os::reserve_memory_limit() {
