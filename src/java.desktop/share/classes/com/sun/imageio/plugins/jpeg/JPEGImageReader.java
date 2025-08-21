@@ -393,7 +393,7 @@ public class JPEGImageReader extends ImageReader {
 
     private void checkNegativeImageIndex(int imageIndex) {
         if (imageIndex < minIndex) {
-            throw new IndexOutOfBoundsException("imageIndex < 0!");
+            throw new IndexOutOfBoundsException("imageIndex < " + minIndex);
         }
     }
 

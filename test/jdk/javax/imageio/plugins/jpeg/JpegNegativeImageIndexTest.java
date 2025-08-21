@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug     8364135
- * @summary Test verifies that jpeg image reader getImageTypes() throws
- *          IndexOutOfBoundsException when negative index is passed.
+ * @summary Test verifies that jpeg image reader throws
+ *          IndexOutOfBoundsException when "-1" image index is used.
  * @run main JpegNegativeImageIndexTest
  */
 
@@ -50,15 +50,20 @@ public class JpegNegativeImageIndexTest {
 
         ImageReader ir = readers.next();
         try {
+            // Iterate through all functions where we don't have sufficient
+            // checks for -1 index
             Iterator<ImageTypeSpecifier> types = ir.getImageTypes(-1);
+            int width = ir.getWidth(-1);
+            int height = ir.getHeight(-1);
+            ImageTypeSpecifier specifier = ir.getRawImageType(-1);
         } catch (IndexOutOfBoundsException e) {
-            if (Objects.equals(e.getMessage(), "imageIndex < 0!")) {
+            if (Objects.equals(e.getMessage(), "imageIndex < 0")) {
                 passed = true;
             }
         }
         if (!passed) {
             throw new RuntimeException("JpegImageReader didn't throw required"
-                + " IndexOutOfBoundsException for non-zero image index");
+                + " IndexOutOfBoundsException for -1 image index");
         }
     }
 }
