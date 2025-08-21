@@ -25,14 +25,14 @@
 
 package jdk.internal.net.http;
 
-import java.util.Iterator;
 import java.util.concurrent.Flow;
+
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.SequentialScheduler;
 
 /**
- * A Publisher that publishes items obtained from the given Iterable. Each new
- * subscription gets a new Iterator.
+ * A {@linkplain Flow.Publisher publisher} that publishes items obtained from the given {@link CheckedIterator} supplier.
+ * Each new subscription gets a new {@code CheckedIterator}.
  */
 class PullPublisher<T> implements Flow.Publisher<T> {
 
@@ -40,15 +40,21 @@ class PullPublisher<T> implements Flow.Publisher<T> {
     // non-null when an error has been encountered, by the creator of
     // PullPublisher, while subscribing the subscriber, but before subscribe has
     // completed.
-    private final Iterable<T> iterable;
+    private final CheckedIterable<T> iterable;
     private final Throwable throwable;
 
-    PullPublisher(Iterable<T> iterable, Throwable throwable) {
+    PullPublisher(CheckedIterable<T> iterable, Throwable throwable) {
+        if ((iterable == null && throwable == null) || (iterable != null && throwable != null)) {
+            String message = String.format(
+                    "only one of `iterable` or `throwable` can be null, but %s are",
+                    throwable == null ? "both" : "none");
+            throw new IllegalArgumentException(message);
+        }
         this.iterable = iterable;
         this.throwable = throwable;
     }
 
-    PullPublisher(Iterable<T> iterable) {
+    PullPublisher(CheckedIterable<T> iterable) {
         this(iterable, null);
     }
 
@@ -56,10 +62,8 @@ class PullPublisher<T> implements Flow.Publisher<T> {
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         Subscription sub;
         if (throwable != null) {
-            assert iterable == null : "non-null iterable: " + iterable;
             sub = new Subscription(subscriber, null, throwable);
         } else {
-            assert throwable == null : "non-null exception: " + throwable;
             sub = new Subscription(subscriber, iterable.iterator(), null);
         }
         subscriber.onSubscribe(sub);
@@ -72,7 +76,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
     private class Subscription implements Flow.Subscription {
 
         private final Flow.Subscriber<? super T> subscriber;
-        private final Iterator<T> iter;
+        private final CheckedIterator<T> iter;
         private volatile boolean completed;
         private volatile boolean cancelled;
         private volatile Throwable error;
@@ -80,7 +84,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
         private final Demand demand = new Demand();
 
         Subscription(Flow.Subscriber<? super T> subscriber,
-                     Iterator<T> iter,
+                     CheckedIterator<T> iter,
                      Throwable throwable) {
             this.subscriber = subscriber;
             this.iter = iter;
@@ -117,7 +121,18 @@ class PullPublisher<T> implements Flow.Publisher<T> {
                     }
                     subscriber.onNext(next);
                 }
-                if (!iter.hasNext() && !cancelled) {
+
+                boolean hasNext;
+                try {
+                    hasNext = iter.hasNext();
+                } catch (Exception e) {
+                    completed = true;
+                    pullScheduler.stop();
+                    subscriber.onError(e);
+                    return;
+                }
+
+                if (!hasNext && !cancelled) {
                     completed = true;
                     pullScheduler.stop();
                     subscriber.onComplete();

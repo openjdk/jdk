@@ -38,7 +38,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -98,7 +97,7 @@ public final class RequestPublishers {
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             List<ByteBuffer> copy = copy(content, offset, length);
-            var delegate = new PullPublisher<>(copy);
+            var delegate = new PullPublisher<>(CheckedIterable.fromIterable(copy));
             delegate.subscribe(subscriber);
         }
 
@@ -110,26 +109,30 @@ public final class RequestPublishers {
 
     // This implementation has lots of room for improvement.
     public static class IterablePublisher implements BodyPublisher {
-        private final Iterable<byte[]> content;
+
+        private final CheckedIterable<byte[]> content;
         private volatile long contentLength;
 
         public IterablePublisher(Iterable<byte[]> content) {
-            this.content = Objects.requireNonNull(content);
+            Objects.requireNonNull(content, "content");
+            this.content = CheckedIterable.fromIterable(content);
         }
 
         // The ByteBufferIterator will iterate over the byte[] arrays in
         // the content one at the time.
         //
-        class ByteBufferIterator implements Iterator<ByteBuffer> {
+        class ByteBufferIterator implements CheckedIterator<ByteBuffer> {
+
             final ConcurrentLinkedQueue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
-            final Iterator<byte[]> iterator = content.iterator();
+            final CheckedIterator<byte[]> iterator = content.iterator();
+
             @Override
-            public boolean hasNext() {
+            public boolean hasNext() throws Exception {
                 return !buffers.isEmpty() || iterator.hasNext();
             }
 
             @Override
-            public ByteBuffer next() {
+            public ByteBuffer next() throws Exception {
                 ByteBuffer buffer = buffers.poll();
                 while (buffer == null) {
                     copy();
@@ -142,7 +145,7 @@ public final class RequestPublishers {
                 return Utils.getBuffer();
             }
 
-            void copy() {
+            void copy() throws Exception {
                 byte[] bytes = iterator.next();
                 int length = bytes.length;
                 if (length == 0 && iterator.hasNext()) {
@@ -165,18 +168,18 @@ public final class RequestPublishers {
             }
         }
 
-        public Iterator<ByteBuffer> iterator() {
+        CheckedIterator<ByteBuffer> iterator() {
             return new ByteBufferIterator();
         }
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            Iterable<ByteBuffer> iterable = this::iterator;
+            CheckedIterable<ByteBuffer> iterable = this::iterator;
             var delegate = new PullPublisher<>(iterable);
             delegate.subscribe(subscriber);
         }
 
-        static long computeLength(Iterable<byte[]> bytes) {
+        static long computeLength(CheckedIterable<byte[]> bytes) {
             // Avoid iterating just for the purpose of computing
             // a length, in case iterating is a costly operation
             // For HTTP/1.1 it means we will be using chunk encoding
@@ -207,7 +210,7 @@ public final class RequestPublishers {
 
     public static class EmptyPublisher implements BodyPublisher {
         private final Flow.Publisher<ByteBuffer> delegate =
-                new PullPublisher<ByteBuffer>(Collections.emptyList(), null);
+                new PullPublisher<>(CheckedIterable.fromIterable(Collections.emptyList()), null);
 
         @Override
         public long contentLength() {
@@ -289,7 +292,7 @@ public final class RequestPublishers {
     /**
      * Reads one buffer ahead all the time, blocking in hasNext()
      */
-    public static class StreamIterator implements Iterator<ByteBuffer> {
+    public static class StreamIterator implements CheckedIterator<ByteBuffer> {
         final InputStream is;
         final Supplier<? extends ByteBuffer> bufSupplier;
         private volatile boolean eof;
@@ -330,20 +333,8 @@ public final class RequestPublishers {
             return n;
         }
 
-        /**
-         * Close stream in this instance.
-         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
-         */
-        private void closeStream() {
-            try {
-                is.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
         @Override
-        public boolean hasNext() {
+        public boolean hasNext() throws IOException {
             stateLock.lock();
             try {
                 return hasNext0();
@@ -352,7 +343,7 @@ public final class RequestPublishers {
             }
         }
 
-        private boolean hasNext0() {
+        private boolean hasNext0() throws IOException {
             if (need2Read) {
                 try {
                     haveNext = read() != -1;
@@ -362,10 +353,10 @@ public final class RequestPublishers {
                 } catch (IOException e) {
                     haveNext = false;
                     need2Read = false;
-                    throw new UncheckedIOException(e);
+                    throw new IOException(e);
                 } finally {
                     if (!haveNext) {
-                        closeStream();
+                        is.close();
                     }
                 }
             }
@@ -373,7 +364,7 @@ public final class RequestPublishers {
         }
 
         @Override
-        public ByteBuffer next() {
+        public ByteBuffer next() throws IOException {
             stateLock.lock();
             try {
                 if (!hasNext()) {
@@ -408,7 +399,7 @@ public final class RequestPublishers {
             publisher.subscribe(subscriber);
         }
 
-        protected Iterable<ByteBuffer> iterableOf(InputStream is) {
+        CheckedIterable<ByteBuffer> iterableOf(InputStream is) {
             return () -> new StreamIterator(is);
         }
 
