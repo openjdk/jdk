@@ -38,6 +38,12 @@ import jdk.test.lib.Asserts;
  */
 
 public class TestScenariosCrossProduct {
+    static void hasNFailures(String s, int count) {
+        if (s.matches("The following scenarios have failed: (#[0-9](?:, )?){" + count + "}\\.")) {
+            throw new RuntimeException("Expected " + count + " failures in \"" + s + "\"");
+        }
+    }
+
     public static void main(String[] args) {
         // Single set should test all flags in the set by themselves.
         try {
@@ -48,9 +54,7 @@ public class TestScenariosCrossProduct {
             t1.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2")) {
-                throw e;
-            }
+            hasNFailures(e.getMessage(), 3);
         }
 
         // The cross product of a set with one element and a set with three elements is three sets.
@@ -61,10 +65,7 @@ public class TestScenariosCrossProduct {
             t2.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2")||
-                 e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3")) {
-                throw e;
-            }
+            hasNFailures(e.getMessage(), 3);
         }
 
         // The cross product of two sets with two elements is four sets.
@@ -75,24 +76,28 @@ public class TestScenariosCrossProduct {
             t3.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3") ||
-                 e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3, #4")) {
-                throw e;
-            }
+            hasNFailures(e.getMessage(), 4);
         }
 
         try {
             TestFramework t4 = new TestFramework();
-            t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWastFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
+            t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
                                         Set.of("-XX:+UseNewCode2"));
             t4.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
-            if (!(e.getMessage().contains("The following scenarios have failed: #0") ||
-                  e.getMessage().contains("The following scenarios have failed: #1")) ||
-                 e.getMessage().contains("The following scenarios have failed: #0, #1")) {
-                throw e;
-            }
+            hasNFailures(e.getMessage(), 1);
+        }
+
+        // Test with an empty string. Only 4 scenarios fail.
+        try {
+            TestFramework t5 = new TestFramework();
+            t5.addCrossProductScenarios(Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=64"),
+                                        Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
+            t5.start();
+            Asserts.fail("Should have thrown exception");
+        } catch (TestRunException e) {
+            hasNFailures(e.getMessage(), 4);
         }
     }
 
