@@ -37,11 +37,6 @@ namespace CPUTimeUsage {
     static jlong stringdedup();
   };
 
-  class Runtime : public AllStatic {
-  public:
-    static jlong vm_thread();
-  };
-
   class Error : public AllStatic {
   private:
     static volatile bool _has_error;

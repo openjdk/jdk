@@ -1315,8 +1315,6 @@ static void log_cpu_time() {
     return;
   }
 
-  const double vm_thread_cpu_time = (double) CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
-
   const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
   const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
   const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
@@ -1334,7 +1332,6 @@ static void log_cpu_time() {
     cpuLog.print("                                                               s       %%  utilized");
     cpuLog.print("   Process");
     cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
-    cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, percent_of(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / elasped_time);
     cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
     cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
     cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);

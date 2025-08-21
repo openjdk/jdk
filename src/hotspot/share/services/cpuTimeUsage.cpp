@@ -75,10 +75,6 @@ jlong CPUTimeUsage::GC::stringdedup() {
   return 0;
 }
 
-jlong CPUTimeUsage::Runtime::vm_thread() {
-  return VMThread::perf_accumulated_vm_operation_time()->get_value();
-}
-
 bool CPUTimeUsage::Error::has_error() {
   return Atomic::load(&_has_error);
 }
