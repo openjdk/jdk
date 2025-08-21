@@ -109,7 +109,7 @@ JfrBlobHandle JfrTypeManager::create_thread_blob(JavaThread* jt, traceid tid /* 
   // TYPE_THREAD and count is written unconditionally for blobs, also for vthreads.
   writer.write_type(TYPE_THREAD);
   writer.write_count(1);
-  JfrThreadConstant type_thread(jt, tid, vthread);
+  JfrThreadConstant type_thread(jt, tid, true, vthread);
   type_thread.serialize(writer);
   return writer.move();
 }
@@ -128,7 +128,7 @@ void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthrea
     writer.write_type(TYPE_THREAD);
     writer.write_count(1);
   }
-  JfrThreadConstant type_thread(t, tid, vthread);
+  JfrThreadConstant type_thread(t, tid, false, vthread);
   type_thread.serialize(writer);
 }
 

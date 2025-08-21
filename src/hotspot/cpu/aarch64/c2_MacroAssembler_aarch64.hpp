@@ -51,9 +51,6 @@
                           FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
                           BasicType eltype);
 
-  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
-  void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
   void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
   void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
