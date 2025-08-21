@@ -605,7 +605,7 @@ public class Cipher {
      *         the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
-     *         from the specified {@code provider} is found but it does not
+     *         from the specified {@code provider} is found but does not
      *         support the padding scheme
      *
      * @throws NoSuchProviderException if the specified {@code provider} is not
@@ -679,7 +679,7 @@ public class Cipher {
      *         the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
-     *         from the specified {@code provider} is found but it does not
+     *         from the specified {@code provider} is found but does not
      *         support the padding scheme
      *
      * @see java.security.Provider
