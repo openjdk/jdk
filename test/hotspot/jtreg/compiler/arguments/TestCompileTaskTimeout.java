@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@ package compiler.arguments;
 
 /*
  * @test TestCompileTaskTimeout
- * @bug 8308094
- * @requires vm.debug & vm.flagless & os.name == "Linux"
+ * @bug 8308094 8365909
+ * @requires vm.debug & vm.flagless & os.name == "Linux" & os.simpleArch == "x64"
  * @summary Check functionality of CompileTaskTimeout
  * @library /test/lib
  * @run driver compiler.arguments.TestCompileTaskTimeout
