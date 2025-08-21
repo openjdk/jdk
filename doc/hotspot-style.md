@@ -1503,7 +1503,7 @@ and `second` members don't carry any useful information.
 
 ### File System Library
 
-The use of the File System library is forbidden. HotSpot doesn't very much
+The use of the File System library is forbidden. HotSpot doesn't do very much
 with files, and already has adequate mechanisms for its needs. Rewriting in
 terms of this new library would not be a good use of resources. Having a mix
 of the existing usage and uses of this new library would just be confusing.
