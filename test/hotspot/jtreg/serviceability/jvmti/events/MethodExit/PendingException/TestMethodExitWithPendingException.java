@@ -39,7 +39,9 @@ public class TestMethodExitWithPendingException {
     }
 
 
-    // Called from ExceptionExit MethodExit callback via JNI
+    // Called from ExceptionExit MethodExit callback via JNI.
+    // So MyRuntimeException is thrown already and hasn't been caught yet
+    // when this method is called.
     static String upCall() {
         return "MyNewString";
     }
