@@ -367,13 +367,14 @@ static u4 flush_typeset(JfrCheckpointManager& checkpoint_manager, JfrChunkWriter
 class MetadataEvent : public StackObj {
  private:
   JfrChunkWriter& _cw;
+  size_t _elements;
  public:
-  MetadataEvent(JfrChunkWriter& cw) : _cw(cw) {}
+  MetadataEvent(JfrChunkWriter& cw) : _cw(cw), _elements(0) {}
   bool process() {
-    JfrMetadataEvent::write(_cw);
+    _elements = JfrMetadataEvent::write(_cw);
     return true;
   }
-  size_t elements() const { return 1; }
+  size_t elements() const { return _elements; }
 };
 
 typedef WriteContent<MetadataEvent> WriteMetadata;
