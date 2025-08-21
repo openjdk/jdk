@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 /*
  * @test
  * @requires vm.debug == true & vm.compiler2.enabled & vm.flagless
- * @requires (os.arch != "riscv64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"))
  * @summary Test test format violations.
  * @library /test/lib /
  * @run driver ir_framework.tests.TestBadFormat
@@ -1125,8 +1124,8 @@ class BadIRAnnotationsAfterTestVM {
 
     @Test
     @FailCount(8)
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"}, applyIf = {"MaxVectorSize", ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}, applyIf = {"MaxVectorSize", ">0"}) // valid
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
