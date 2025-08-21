@@ -200,7 +200,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         d4 = aa0 * bb4;
         dd4 = Math.unsignedMultiplyHigh(aa0, bb4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
-        
+
         n0 = -n & LIMB_MASK;
         nn0 = (n + (-n >> BITS_PER_LIMB));
         n1 = n * modulus[1];
