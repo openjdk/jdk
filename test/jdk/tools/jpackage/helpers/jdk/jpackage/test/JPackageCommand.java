@@ -742,6 +742,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand setIgnoreExitCode(boolean v) {
+        ignoreExitCode = v;
+        return this;
+    }
+
     @FunctionalInterface
     public interface CannedArgument {
         public String value(JPackageCommand cmd);
@@ -852,7 +857,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
-        if (expectedExitCode == 0 && !isImagePackageType()) {
+        if (expectedExitCode == 0 && !isImagePackageType() && !ignoreExitCode) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -860,11 +865,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
-        Executor.Result result = copy.createExecutor().execute(expectedExitCode);
+        Executor.Result result;
+        if (ignoreExitCode) {
+            result = copy.createExecutor().executeWithoutExitCodeCheck();
+        } else {
+            result = copy.createExecutor().execute(expectedExitCode);
+        }
 
         directoriesAssert.updateAndAssert();
 
-        if (expectedExitCode == 0 && isImagePackageType()) {
+        if (expectedExitCode == 0 && isImagePackageType() && !ignoreExitCode) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -872,7 +882,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0) {
+        if (result.exitCode() == 0 && !ignoreExitCode) {
             verifyActions.run();
         }
 
@@ -1467,6 +1477,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
+    private boolean ignoreExitCode;
     private boolean immutable;
     private Path dmgInstallDir;
     private final Actions prerequisiteActions;

@@ -88,13 +88,7 @@ public final class ErrorTest {
 
             return appImageCmd.outputBundle().toString();
         }),
-        ADD_LAUNCHER_PROPERTY_FILE,
-        APP_CONTENT_NON_STANDARD_DIR(cmd -> {
-            final var appContentDir
-                    = TKit.createTempDirectory("app-content-non-standard-dir");
-
-            return TKit.createTempFile(appContentDir.resolve("Foo.txt"));
-        });
+        ADD_LAUNCHER_PROPERTY_FILE;
 
         private Token() {
             this.valueSupplier = Optional.empty();
@@ -612,11 +606,7 @@ public final class ErrorTest {
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
                         .error("ERR_MacAppStoreRuntimeBinExists", JPackageCommand.cannedArgument(cmd -> {
                             return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
-                        }, Token.JAVA_HOME.token())),
-                testSpec().nativeType().addArgs("--app-content", Token.APP_CONTENT_NON_STANDARD_DIR.token())
-                        .error("warning.non.standard.contents.sub.dir", JPackageCommand.cannedArgument(cmd -> {
-                            return Path.of(cmd.getArgumentValue("--app-content"));
-                        }, Token.APP_CONTENT_NON_STANDARD_DIR.token()))
+                        }, Token.JAVA_HOME.token()))
         ).map(TestSpec.Builder::create).toList());
 
         // Test a few app-image options that should not be used when signing external app image

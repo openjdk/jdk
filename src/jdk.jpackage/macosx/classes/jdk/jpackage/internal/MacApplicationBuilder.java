@@ -26,8 +26,10 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.Application;
@@ -127,9 +129,10 @@ final class MacApplicationBuilder {
 
     private static void validateAppContentDirs(Application app) {
         for (var contentDir : app.contentDirs()) {
-            if (!CONTENTS_SUB_DIRS.stream()
-                    .anyMatch(subDir -> contentDir.getFileName().toString()
-                                                  .equals(subDir))) {
+            if (!Files.isDirectory(contentDir)) {
+                Log.info(I18N.format("warning.app.content.is.not.dir",
+                        contentDir));
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName().toString())) {
                 Log.info(I18N.format("warning.non.standard.contents.sub.dir",
                         contentDir));
             }
@@ -248,6 +251,6 @@ final class MacApplicationBuilder {
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
 
     // List of standard subdirectories of the "Contents" directory
-    private static final List<String> CONTENTS_SUB_DIRS = List.of("MacOS",
+    private static final Set<String> CONTENTS_SUB_DIRS = Set.of("MacOS",
             "Resources", "Frameworks", "PlugIns", "SharedSupport");
 }
