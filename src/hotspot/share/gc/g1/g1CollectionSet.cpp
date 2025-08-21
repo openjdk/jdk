@@ -105,7 +105,7 @@ void G1CollectionSet::abandon_all_candidates() {
   _initial_old_region_length = 0;
 }
 
-void G1CollectionSet::prepare_groups_for_scan () {
+void G1CollectionSet::prepare_for_scan () {
   groups()->prepare_for_scan();
 }
 
@@ -130,6 +130,8 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
 void G1CollectionSet::start_incremental_building() {
   assert(_regions_cur_length == 0, "Collection set must be empty before starting a new collection set.");
+  assert(groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
+  assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
   continue_incremental_building();
 }
@@ -145,11 +147,6 @@ void G1CollectionSet::continue_incremental_building() {
 
 void G1CollectionSet::stop_incremental_building() {
   DEBUG_ONLY(_inc_build_state = CSetBuildType::Inactive;)
-}
-
-void G1CollectionSet::finalize_incremental_building() {
-  assert(_inc_build_state == CSetBuildType::Active, "Precondition");
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 }
 
 void G1CollectionSet::clear() {
@@ -304,9 +301,10 @@ void G1CollectionSet::print(outputStream* st) {
 // pinned by JNI) to allow faster future evacuation. We already "paid" for this work
 // when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
-  Ticks start_time = Ticks::now();
+  assert(_inc_build_state == CSetBuildType::Active, "Precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
-  finalize_incremental_building();
+  Ticks start_time = Ticks::now();
 
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);

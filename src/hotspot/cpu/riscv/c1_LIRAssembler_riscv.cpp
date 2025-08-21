@@ -339,11 +339,7 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
     stub = new MonitorExitStub(FrameMap::r10_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ j(*stub->entry());
-    } else {
-      __ unlock_object(x15, x14, x10, x16, *stub->entry());
-    }
+    __ unlock_object(x15, x14, x10, x16, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -1497,13 +1493,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   Register temp = op->scratch_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj, -1);
-    }
-    __ j(*op->stub()->entry());
-  } else if (op->code() == lir_lock) {
+  if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
@@ -1831,7 +1821,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
   }
 
   LIR_Address* adr = addr->as_address_ptr();
-  Register dst = dest->as_register_lo();
+  Register dst = dest->as_pointer_register();
 
   assert_different_registers(dst, t0);
   if (adr->base()->is_valid() && dst == adr->base()->as_pointer_register() && (!adr->index()->is_cpu_register())) {

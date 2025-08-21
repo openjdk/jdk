@@ -35,7 +35,7 @@ private:
   const PackSet& _packset;
   VTransform& _vtransform;
 
-  ResourceHashtable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
+  HashTable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
 
 public:
   SuperWordVTransformBuilder(const PackSet& packset,
