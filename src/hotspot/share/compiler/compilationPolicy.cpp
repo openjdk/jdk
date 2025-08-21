@@ -138,7 +138,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
- void CompilationPolicy::flush_replay_training_at_init(TRAPS) {
+ void CompilationPolicy::flush_replay_training_at_init(JavaThread* THREAD) {
     MonitorLocker locker(THREAD, TrainingReplayQueue_lock);
     while (!_training_replay_queue.is_empty_unlocked() || _training_replay_queue.is_processing_unlocked()) {
       locker.wait(); // let the replay training thread drain the queue
