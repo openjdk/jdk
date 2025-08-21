@@ -195,29 +195,6 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     // implementation private methods
     //
 
-    // Gets algorithm constraints of QUIC TLS engine.
-    private AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
-        // we don't expect the engine to be null
-        Objects.requireNonNull(engine, "QuicTLSEngine");
-        SSLSession session = engine.getHandshakeSession();
-        if (session == null) {
-            return SSLAlgorithmConstraints.forQUIC(engine, true);
-        }
-        // QUIC TLS version is mandated to be always TLSv1.3
-        final ProtocolVersion pv = ProtocolVersion.nameOf(session.getProtocol());
-        if (pv == null || !ProtocolVersion.useTLS13PlusSpec(pv.id, false)) {
-            throw new IllegalStateException("unexpected protocol version "
-                    + pv + " in handshake session");
-        }
-        String[] peerSupportedSignAlgs = null;
-        if (session instanceof ExtendedSSLSession extSession) {
-            peerSupportedSignAlgs =
-                    extSession.getPeerSupportedSignatureAlgorithms();
-        }
-        return SSLAlgorithmConstraints.forQUIC(engine,
-                peerSupportedSignAlgs, true);
-    }
-
     // we construct the alias we return to JSSE as seen in the code below
     // a unique id is included to allow us to reliably cache entries
     // between the calls to getCertificateChain() and getPrivateKey()
