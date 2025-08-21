@@ -600,14 +600,13 @@ public class Cipher {
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified {@code transformation} is not available from
-     *         the {@code provider} due to causes not covered by the
-     *         {@code NoSuchPaddingException}
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found, or is found but does not support
+     *         the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
-     *         from the specified {@code provider} is found using the algorithm
-     *         and mode but not the padding scheme
+     *         from the specified {@code provider} is found but it does not
+     *         support the padding scheme
      *
      * @throws NoSuchProviderException if the specified {@code provider} is not
      *         registered in the security provider list
@@ -675,14 +674,13 @@ public class Cipher {
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified {@code transformation} is not available from
-     *         the specified {@code provider} due to causes not covered
-     *         by the {@code NoSuchPaddingException}
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found, or is found but does not support
+     *         the mode
      *
-     * @throws NoSuchPaddingException if the {@code CipherSpi} implementation
-     *         from the specified {@code provider} is found using the algorithm
-     *         and mode but not the padding scheme
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found but it does not
+     *         support the padding scheme
      *
      * @see java.security.Provider
      */
