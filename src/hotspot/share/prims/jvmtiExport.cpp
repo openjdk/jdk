@@ -1838,7 +1838,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     return;
   }
 
- Handle result;
+  Handle result;
   jvalue value;
   value.j = 0L;
 
