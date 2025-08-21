@@ -38,22 +38,20 @@ import sun.nio.cs.UTF_8;
  * Methods to access the character-based console device, if any, associated
  * with the current Java virtual machine.
  *
- * <p> Whether a virtual machine has a console is dependent upon the
+ * <p> Whether a virtual machine's console exists is dependent upon the
  * underlying platform and also upon the manner in which the virtual
  * machine is invoked.  If the virtual machine is started from an
  * interactive command line without redirecting the standard input and
- * output streams, then its console will exist and will typically be
+ * output streams, then its console will generally exist and will be
  * connected to the keyboard and display from which the virtual machine
- * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it may not
- * have a console. Regardless of how the virtual machine was created,
- * it will not have a console if either the standard input or output
- * stream is redirected.
+ * was launched. If the standard input or standard output have been
+ * redirected (for example, to a file or to a pipe), or if the virtual
+ * machine was started from a background job scheduler, the console
+ * will not exist.
  * <p>
- * If this virtual machine has a console then it is represented by a
- * unique instance of this class which can be obtained by invoking the
- * {@link System#console()} method.  If no console device is
- * available then an invocation of that method will return {@code null}.
+ * If the console exists, then it is represented by a unique instance of this
+ * class which can be obtained by invoking the {@link System#console()} method.
+ * If the console does not exist, that method will return {@code null}.
  * <p>
  * Read and write operations are synchronized to guarantee the atomic
  * completion of critical operations; therefore invoking methods
