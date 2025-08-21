@@ -23,7 +23,6 @@
 
 import java.io.File;
 import java.awt.BorderLayout;
-import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
