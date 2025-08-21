@@ -110,11 +110,13 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
-  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");            // E
 
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
+
+  ADD_EXCL("jdk/internal/loader/BootLoader",             "UNNAMED_MODULE");        // A
   ADD_EXCL("jdk/internal/loader/BuiltinClassLoader",     "packageToModule");       // A
   ADD_EXCL("jdk/internal/loader/ClassLoaders",           "BOOT_LOADER",            // A
                                                          "APP_LOADER",             // A
@@ -151,10 +153,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_error(cds, heap)("Scanned %d objects. Found %d case(s) where "
+    log_error(aot, heap)("Scanned %d objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
-    log_error(cds, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
+    log_error(aot, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
     MetaspaceShared::unrecoverable_writing_error();
   }
 }
@@ -285,7 +287,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();
-    LogStream ls(Log(cds, heap)::warning());
+    LogStream ls(Log(aot, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may hold a different value at runtime:");
     ls.print_cr("Field: %s::%s", class_name, field_name);
     ls.print("Value: ");

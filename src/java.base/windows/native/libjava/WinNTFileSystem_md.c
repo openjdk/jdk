@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,31 +649,43 @@ Java_java_io_WinNTFileSystem_createFileExclusively0(JNIEnv *env, jclass cls,
 }
 
 static int
-removeFileOrDirectory(const jchar *path)
+removeFileOrDirectory(const jchar *path, jboolean allowDeleteReadOnlyFiles)
 {
     /* Returns 0 on success */
-    DWORD a;
-
-    SetFileAttributesW(path, FILE_ATTRIBUTE_NORMAL);
-    a = GetFileAttributesW(path);
+    DWORD a = GetFileAttributesW(path);
     if (a == INVALID_FILE_ATTRIBUTES) {
         return 1;
     } else if (a & FILE_ATTRIBUTE_DIRECTORY) {
+        // read-only attribute cannot be set on directories
         return !RemoveDirectoryW(path);
     } else {
-        return !DeleteFileW(path);
+        // unset read-only attribute if deleting read-only files is enabled
+        BOOL readOnlyAttrCleared = FALSE;
+        if (allowDeleteReadOnlyFiles && ((a & FILE_ATTRIBUTE_READONLY) != 0)) {
+            DWORD notReadOnlyAttr = a & (~FILE_ATTRIBUTE_READONLY);
+            readOnlyAttrCleared = SetFileAttributesW(path, notReadOnlyAttr);
+        }
+
+        BOOL deleted = !DeleteFileW(path);
+
+        // reinstate the read-only attribute if it was unset but deletion failed
+        if (!deleted && readOnlyAttrCleared)
+            SetFileAttributesW(path, a);
+
+        return deleted;
     }
 }
 
 JNIEXPORT jboolean JNICALL
-Java_java_io_WinNTFileSystem_delete0(JNIEnv *env, jobject this, jobject file)
+Java_java_io_WinNTFileSystem_delete0(JNIEnv *env, jobject this, jobject file,
+                                     jboolean allowDeleteReadOnlyFiles)
 {
     jboolean rv = JNI_FALSE;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL) {
         return JNI_FALSE;
     }
-    if (removeFileOrDirectory(pathbuf) == 0) {
+    if (removeFileOrDirectory(pathbuf, allowDeleteReadOnlyFiles) == 0) {
         rv = JNI_TRUE;
     }
     free(pathbuf);

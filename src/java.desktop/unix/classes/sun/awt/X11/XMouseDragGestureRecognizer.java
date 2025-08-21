@@ -50,7 +50,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * @see java.awt.dnd.DragSource
  */
 
-class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
+final class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
 
     /**
      * Use serialVersionUID from JDK 1.5 for interoperability.
@@ -141,6 +141,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse has been clicked on a component.
      */
 
+    @Override
     public void mouseClicked(MouseEvent e) {
         // do nothing
     }
@@ -149,6 +150,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button has been pressed on a component.
      */
 
+    @Override
     public void mousePressed(MouseEvent e) {
         events.clear();
 
@@ -166,6 +168,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button has been released on a component.
      */
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         events.clear();
     }
@@ -174,6 +177,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse enters a component.
      */
 
+    @Override
     public void mouseEntered(MouseEvent e) {
         events.clear();
     }
@@ -182,6 +186,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse exits a component.
      */
 
+    @Override
     public void mouseExited(MouseEvent e) {
         if (!events.isEmpty()) { // gesture pending
             int dragAction = mapDragOperationFromModifiers(e);
@@ -196,6 +201,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button is pressed on a component.
      */
 
+    @Override
     public void mouseDragged(MouseEvent e) {
         if (!events.isEmpty()) { // gesture pending
             int dop = mapDragOperationFromModifiers(e);
@@ -225,6 +231,7 @@ class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * (with no buttons no down).
      */
 
+    @Override
     public void mouseMoved(MouseEvent e) {
         // do nothing
     }

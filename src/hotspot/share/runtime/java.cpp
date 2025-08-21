@@ -70,7 +70,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
@@ -464,32 +463,19 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
+  // 2nd argument (emit_event_shutdown) should be set to false
+  // because EventShutdown would be emitted at Threads::destroy_vm().
+  // (one of the callers of before_exit())
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
   WatcherThread::stop();
 
-  // shut down the StatSampler task
-  StatSampler::disengage();
-  StatSampler::destroy();
-
   NativeHeapTrimmer::cleanup();
 
-  // Stop concurrent GC threads
-  Universe::heap()->stop();
-
-  // Print GC/heap related information.
-  Log(gc, heap, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
-  }
+  // Run before exit and then stop concurrent GC threads
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
@@ -518,7 +504,6 @@ void before_exit(JavaThread* thread, bool halt) {
   os::terminate_signal_thread();
 
   print_statistics();
-  Universe::heap()->print_tracing_info();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

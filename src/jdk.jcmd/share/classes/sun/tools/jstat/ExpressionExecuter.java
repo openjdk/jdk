@@ -61,6 +61,10 @@ public class ExpressionExecuter implements ExpressionEvaluator {
             return ((Literal)e).getValue();
         }
 
+        if (e instanceof Timestamp) {
+            return ((Timestamp)e).getValue();
+        }
+
         if (e instanceof Identifier) {
             Identifier id = (Identifier)e;
             if (map.containsKey(id.getName())) {

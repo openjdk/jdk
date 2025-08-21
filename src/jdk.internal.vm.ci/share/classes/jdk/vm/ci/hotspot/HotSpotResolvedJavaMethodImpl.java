@@ -28,6 +28,9 @@ import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.getFirstAnnotationOrNull;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -489,7 +492,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             // case of a deoptimization.
             info = DefaultProfilingInfo.get(TriState.FALSE);
         } else {
-            info = new HotSpotProfilingInfo(methodData, this, includeNormal, includeOSR);
+            info = new HotSpotProfilingInfoImpl(methodData, this, includeNormal, includeOSR);
         }
         return info;
     }
@@ -571,6 +574,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         // Copied from java.lang.Method.isDefault()
         int mask = Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC;
         return ((getModifiers() & mask) == Modifier.PUBLIC) && getDeclaringClass().isInterface();
+    }
+
+    /*
+     * Currently in hotspot a method can either be a "normal" or an "overpass"
+     * method. Overpass methods are instance methods which are created when
+     * otherwise a valid candidate for method resolution would not be found.
+     */
+    @Override
+    public boolean isDeclared() {
+        if (isConstructor() || isClassInitializer()) {
+            return false;
+        }
+        return (getConstMethodFlags() & config().constMethodFlagsIsOverpass) == 0;
     }
 
     @Override
@@ -762,15 +778,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType type) {
         if (!hasAnnotations()) {
+            checkIsAnnotation(type);
             return null;
         }
-        return getAnnotationData0(type).get(0);
+        return getFirstAnnotationOrNull(getAnnotationData0(type));
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        checkIsAnnotation(type1);
+        checkIsAnnotation(type2);
+        checkAreAnnotations(types);
         if (!hasAnnotations()) {
-            return Collections.emptyList();
+            return List.of();
         }
         return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
     }

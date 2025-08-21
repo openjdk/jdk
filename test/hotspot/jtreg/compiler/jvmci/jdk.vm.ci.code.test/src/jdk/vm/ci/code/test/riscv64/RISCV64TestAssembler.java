@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.vm.ci.code.test.riscv64;
 
+import java.util.List;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
@@ -227,9 +228,9 @@ public class RISCV64TestAssembler extends TestAssembler {
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
         growFrame(cc.getStackSize());
-        AllocatableValue[] args = cc.getArguments();
-        for (int i = 0; i < args.length; i++) {
-            emitLoad(args[i], prim[i]);
+        List<AllocatableValue> args = cc.getArguments();
+        for (int i = 0; i < args.size(); i++) {
+            emitLoad(args.get(i), prim[i]);
         }
     }
 

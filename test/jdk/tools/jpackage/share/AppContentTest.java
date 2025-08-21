@@ -162,13 +162,16 @@ public class AppContentTest {
 
         private static Path createAppContentLink(Path appContentPath) throws IOException {
             var appContentArg = TKit.createTempDirectory("app-content");
+            Path dstPath;
             if (copyInResources) {
-                appContentArg = appContentArg.resolve(RESOURCES_DIR).resolve(LINKS_DIR);
-            }   else {
+                appContentArg = appContentArg.resolve(RESOURCES_DIR);
+                dstPath = appContentArg.resolve(LINKS_DIR)
+                                       .resolve(appContentPath.getFileName());
+            } else {
                 appContentArg = appContentArg.resolve(LINKS_DIR);
+                dstPath = appContentArg.resolve(appContentPath.getFileName());
             }
 
-            var dstPath = appContentArg.resolve(appContentPath.getFileName());
             Files.createDirectories(dstPath.getParent());
 
             // Create target file for a link

@@ -101,6 +101,12 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
     protected void runTests() throws Exception {
         connect(new String[]{"EarlyThreadGroupChildrenTestTarg"});
         System.out.println("Connected: ");
+
+        waitForVMStart();
+        System.out.println("VM Started: ");
+
+        // Do not add until after the VMStartEvent has arrived. Otherwise the debuggee
+        // will be resumed after handling the VMStartEvent, and we don't want it resumed.
         addListener(this);
 
         // Create a ThreadStartRequest for the first ThreadStartEvent. When this event is
@@ -109,9 +115,6 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
         tsRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tsRequest.addCountFilter(1);
         tsRequest.enable();
-
-        waitForVMStart();
-        System.out.println("VM Started: ");
 
         resumeToVMDisconnect();
 

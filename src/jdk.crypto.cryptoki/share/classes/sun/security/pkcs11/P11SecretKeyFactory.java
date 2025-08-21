@@ -276,6 +276,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new TLSKeyInfo("TlsClientAppTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsClientHandshakeTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsEarlySecret"));
+        putKeyInfo(new TLSKeyInfo("TlsExporterMasterSecret"));
         putKeyInfo(new TLSKeyInfo("TlsFinishedSecret"));
         putKeyInfo(new TLSKeyInfo("TlsHandshakeSecret"));
         putKeyInfo(new TLSKeyInfo("TlsKey"));
@@ -400,28 +401,22 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (keyAlgo == null) {
             throw new InvalidKeyException("Key must specify its algorithm");
         }
-        KeyInfo ki = getKeyInfo(keyAlgo);
-        if (ki == null) {
-            throw new InvalidKeyException("Unknown algorithm " + keyAlgo);
-        }
-
-        KeyInfo si;
         if (svcAlgo == null) {
             svcAlgo = keyAlgo;
-            si = ki;
-        } else {
-            si = getKeyInfo(svcAlgo);
-            if (si == null) {
-                throw new InvalidKeyException("Unknown algorithm " + svcAlgo);
-            }
+        }
+        KeyInfo si = getKeyInfo(svcAlgo);
+        if (si == null) {
+            throw new InvalidKeyException("Unknown algorithm " + svcAlgo);
         }
 
         // Check if the key can be used for the service.
-        // Any key can be used for a MAC service.
-        if (svcAlgo != keyAlgo && !(si instanceof HMACKeyInfo) &&
-                !KeyInfo.checkUse(ki, si)) {
-            throw new InvalidKeyException("Cannot use a " + keyAlgo +
+        // Skip this check for Hmac as any key can be used for Mac.
+        if (svcAlgo != keyAlgo && !(si instanceof HMACKeyInfo)) {
+            KeyInfo ki = getKeyInfo(keyAlgo);
+            if (ki == null || !KeyInfo.checkUse(ki, si)) {
+                throw new InvalidKeyException("Cannot use a " + keyAlgo +
                         " key for a " + svcAlgo + " service");
+            }
         }
 
         if (key instanceof P11Key p11Key) {
@@ -454,6 +449,8 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             return p11Key;
         }
         if (key instanceof PBEKey pbeKey) {
+            // make sure key info matches key type
+            KeyInfo ki = (keyAlgo == svcAlgo ? si : getKeyInfo(keyAlgo));
             if (ki instanceof PBEKeyInfo pbeKi) {
                 PBEKeySpec keySpec = getPbeKeySpec(pbeKey);
                 try {

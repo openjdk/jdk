@@ -57,7 +57,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   assert(is_enabled(), "must be");
 
   if (!ClassLoader::has_jrt_entry()) {
-    log_warning(cds)("DumpLoadedClassList and CDS are not supported in exploded build");
+    log_warning(aot)("DumpLoadedClassList and CDS are not supported in exploded build");
     DumpLoadedClassList = nullptr;
     return;
   }
@@ -66,7 +66,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   write_to_stream(k, w.stream(), cfs);
 }
 
-class ClassListWriter::IDTable : public ResourceHashtable<
+class ClassListWriter::IDTable : public HashTable<
   const InstanceKlass*, int,
   15889, // prime number
   AnyObj::C_HEAP> {};

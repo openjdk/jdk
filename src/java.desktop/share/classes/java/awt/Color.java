@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1195,11 +1195,10 @@ public class Color implements Paint, java.io.Serializable {
      * @see AffineTransform
      * @see RenderingHints
      */
-    public synchronized PaintContext createContext(ColorModel cm, Rectangle r,
-                                                   Rectangle2D r2d,
-                                                   AffineTransform xform,
-                                                   RenderingHints hints) {
-        return new ColorPaintContext(getRGB(), cm);
+    public PaintContext createContext(ColorModel cm, Rectangle r,
+                                      Rectangle2D r2d, AffineTransform xform,
+                                      RenderingHints hints) {
+        return new ColorPaintContext(getRGB());
     }
 
     /**

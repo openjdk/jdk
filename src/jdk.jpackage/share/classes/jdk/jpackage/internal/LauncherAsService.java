@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,24 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.Map;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import java.util.Objects;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.Launcher;
 
 class LauncherAsService {
 
-    LauncherAsService(String name, Map<String, Object> mainParams,
-            OverridableResource resource) {
-        if (name == null || APP_NAME.fetchFrom(mainParams).equals(name)) {
+    LauncherAsService(Application app, Launcher launcher, OverridableResource resource) {
+        this.name = launcher.name();
+
+        if (app.mainLauncher().orElseThrow() == launcher) {
             // Main launcher
-            name = APP_NAME.fetchFrom(mainParams);
-            this.description = DESCRIPTION.fetchFrom(mainParams);
+            this.description = launcher.description();
         } else {
             // Additional launcher
-            this.description = String.format("%s (%s)", DESCRIPTION.fetchFrom(
-                    mainParams), name);
+            this.description = String.format("%s (%s)", app.description(), name);
         }
 
-        this.name = name;
-        this.resource = resource;
+        this.resource = Objects.requireNonNull(resource);
         resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
     }
 
