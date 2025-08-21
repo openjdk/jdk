@@ -4419,7 +4419,7 @@ Interval* Interval::split(int split_pos) {
   assert(cur != Range::end(), "split interval after end of last range");
 
   if ((cur != nullptr) &&
-  (cur->from() < split_pos)) {
+      (cur->from() < split_pos)) {
     result->_first = new Range(split_pos, cur->to(), cur->next());
     cur->set_to(split_pos);
     cur->set_next(Range::end());
