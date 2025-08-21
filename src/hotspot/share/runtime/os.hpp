@@ -340,7 +340,6 @@ class os: AllStatic {
   ATTRIBUTE_NODISCARD static bool free_swap_space(size_t& value);
 
   static size_t physical_memory();
-  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
   static size_t rss();
 
