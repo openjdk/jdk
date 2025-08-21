@@ -826,6 +826,13 @@ public class FloatingDecimal{
                 61,
         };
 
+        /**
+         * Converts the decimal representation of a floating-point number into its
+         * ASCII character representation and stores it in the provided byte array.
+         *
+         * @param result the byte array to store the ASCII representation, must have length at least 26
+         * @return the number of characters written to the result array
+         */
         public int getChars(byte[] result) {
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
