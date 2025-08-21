@@ -27,8 +27,6 @@
  * @summary Use special characters in the name of the cache file specified by -XX:AOTCacheOutput
  *          Make sure these characters are passed to the child JVM process that assembles the cache.
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build SpecialCacheNames
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar MyTestApp

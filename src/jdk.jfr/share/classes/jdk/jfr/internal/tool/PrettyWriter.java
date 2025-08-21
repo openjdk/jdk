@@ -27,6 +27,7 @@ package jdk.jfr.internal.tool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -117,11 +118,11 @@ public final class PrettyWriter extends EventPrintWriter {
     // At the same time, a too large window, means it will take more time
     // before the first event is printed and the tool will feel unresponsive.
     private static final int EVENT_WINDOW_SIZE = 1_000_000;
-    private final PriorityQueue<Timestamp> timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
-    private final Map<Long, TypeInformation> typeInformation = new HashMap<>();
-    private final Map<Long, SequencedSet<RecordedEvent>> contexts = new HashMap<>();
     private final boolean showExact;
     private RecordedEvent currentEvent;
+    private PriorityQueue<Timestamp> timeline;
+    private Map<Long, TypeInformation> typeInformation;
+    private Map<Long, SequencedSet<RecordedEvent>> contexts;
 
     public PrettyWriter(PrintWriter destination, boolean showExact) {
         super(destination);
@@ -133,6 +134,9 @@ public final class PrettyWriter extends EventPrintWriter {
     }
 
     void print(Path source) throws IOException {
+        timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
+        typeInformation = new HashMap<>();
+        contexts = new HashMap<>();
         printBegin();
         int counter = 0;
         try (RecordingFile file = new RecordingFile(source)) {
@@ -288,7 +292,7 @@ public final class PrettyWriter extends EventPrintWriter {
             RecordedFrame frame = frames.get(i);
             if (frame.isJavaFrame() && !frame.getMethod().isHidden()) {
                 printIndent();
-                printValue(frame, null, "");
+                printJavaFrame(frame, "");
                 println();
                 depth++;
             }
@@ -320,12 +324,12 @@ public final class PrettyWriter extends EventPrintWriter {
         printValue(getValue(struct, v), v, "");
     }
 
-    private void printArray(Object[] array) {
+    private void printArray(Object[] array, ValueDescriptor field) {
         println("[");
         indent();
         for (int i = 0; i < array.length; i++) {
             printIndent();
-            printValue(array[i], null, i + 1 < array.length ? ", " : "");
+            printValue(array[i], field, i + 1 < array.length ? ", " : "");
         }
         retract();
         printIndent();
@@ -333,81 +337,38 @@ public final class PrettyWriter extends EventPrintWriter {
     }
 
     private void printValue(Object value, ValueDescriptor field, String postFix) {
-        if (value == null) {
-            println("N/A" + postFix);
-            return;
+        switch (value) {
+            case null -> println("N/A" + postFix);
+            case RecordedObject object -> printRecordedObject(object, field, postFix);
+            case Number number -> printNumber(number, field);
+            case String text -> println("\"" + text + "\"");
+            case Duration duration -> printDuration(duration);
+            case OffsetDateTime dateTime -> printOffsetDateTime(dateTime);
+            case Object[] array -> printArray(array, field);
+            default -> println(value);
         }
-        if (value instanceof RecordedObject) {
-            if (value instanceof RecordedThread rt) {
-                printThread(rt, postFix);
-                return;
-            }
-            if (value instanceof RecordedClass rc) {
-                printClass(rc, postFix);
-                return;
-            }
-            if (value instanceof RecordedClassLoader rcl) {
-                printClassLoader(rcl, postFix);
-                return;
-            }
-            if (value instanceof RecordedFrame frame) {
-                if (frame.isJavaFrame()) {
-                    printJavaFrame((RecordedFrame) value, postFix);
-                    return;
-                }
-            }
-            if (value instanceof RecordedMethod rm) {
-                println(formatMethod(rm));
-                return;
-            }
-            if (field.getTypeName().equals(TYPE_OLD_OBJECT)) {
-                printOldObject((RecordedObject) value);
-                return;
-            }
-             print((RecordedObject) value, postFix);
-            return;
-        }
-        if (value.getClass().isArray()) {
-            printArray((Object[]) value);
-            return;
-        }
+    }
 
-        if (value instanceof Double d) {
-            if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY) {
-                println("N/A");
-                return;
-            }
+    private void printRecordedObject(RecordedObject struct, ValueDescriptor field, String postFix) {
+        switch (struct) {
+            case RecordedThread rt -> printThread(rt, postFix);
+            case RecordedClass rc -> printClass(rc, postFix);
+            case RecordedClassLoader rcl -> printClassLoader(rcl, postFix);
+            case RecordedFrame rf when rf.isJavaFrame() -> printJavaFrame(rf, postFix);
+            case RecordedMethod rm -> println(formatMethod(rm));
+            case RecordedObject ro when field.getTypeName().equals(TYPE_OLD_OBJECT) -> printOldObject(ro);
+            default -> print(struct, postFix);
         }
-        if (value instanceof Float f) {
-            if (Float.isNaN(f) || f == Float.NEGATIVE_INFINITY) {
-                println("N/A");
-                return;
-            }
-        }
-        if (value instanceof Long l) {
-            if (l == Long.MIN_VALUE) {
-                println("N/A");
-                return;
-            }
-        }
-        if (value instanceof Integer i) {
-            if (i == Integer.MIN_VALUE) {
-                println("N/A");
-                return;
-            }
-        }
+    }
 
-        if (field.getContentType() != null) {
-            if (printFormatted(field, value)) {
-                return;
-            }
+    private void printNumber(Number number, ValueDescriptor field) {
+        switch (number) {
+            case Double d when Double.isNaN(d) || d == Double.NEGATIVE_INFINITY -> println("N/A");
+            case Float f when Float.isNaN(f) || f == Float.NEGATIVE_INFINITY -> println("N/A");
+            case Long l when l == Long.MIN_VALUE -> println("N/A");
+            case Integer i when i == Integer.MIN_VALUE -> println("N/A");
+            default -> printFormatted(field, number);
         }
-
-        String text = String.valueOf(value);
-        if (value instanceof String) {
-            text = "\"" + text + "\"";
-        }
-        println(text);
     }
 
     private void printOldObject(RecordedObject object) {
@@ -543,78 +504,73 @@ public final class PrettyWriter extends EventPrintWriter {
         }
     }
 
-    private boolean printFormatted(ValueDescriptor field, Object value) {
-        if (value instanceof Duration d) {
-            if (d.getSeconds() == Long.MIN_VALUE && d.getNano() == 0)  {
-                println("N/A");
-                return true;
-            }
-            if (d.equals(ChronoUnit.FOREVER.getDuration())) {
-                println("Forever");
-                return true;
-            }
-            if (showExact) {
-                println(String.format("%.9f s", (double) d.toNanos() / 1_000_000_000));
-            } else {
-                println(ValueFormatter.formatDuration(d));
-            }
-            return true;
+    private void printOffsetDateTime(OffsetDateTime dateTime) {
+        if (dateTime.equals(OffsetDateTime.MIN)) {
+            println("N/A");
+            return;
         }
-        if (value instanceof OffsetDateTime odt) {
-            if (odt.equals(OffsetDateTime.MIN))  {
-                println("N/A");
-                return true;
-            }
-            if (showExact) {
-                println(TIME_FORMAT_EXACT.format(odt));
-            } else {
-                println(TIME_FORMAT.format(odt));
-            }
-            return true;
+        if (showExact) {
+            println(TIME_FORMAT_EXACT.format(dateTime));
+        } else {
+            println(TIME_FORMAT.format(dateTime));
         }
-        Percentage percentage = field.getAnnotation(Percentage.class);
-        if (percentage != null) {
-            if (value instanceof Number n) {
-                double p = 100 * n.doubleValue();
+    }
+
+    private void printDuration(Duration duration) {
+        if (duration.getSeconds() == Long.MIN_VALUE && duration.getNano() == 0) {
+            println("N/A");
+            return;
+        }
+        if (duration.equals(ChronoUnit.FOREVER.getDuration())) {
+            println("Forever");
+            return;
+        }
+        if (showExact) {
+            println(String.format("%.9f s", (double) duration.toNanos() / 1_000_000_000));
+        } else {
+            println(ValueFormatter.formatDuration(duration));
+        }
+    }
+
+    private void printFormatted(ValueDescriptor field, Number number) {
+        if (field.getContentType() != null) {
+            Percentage percentage = field.getAnnotation(Percentage.class);
+            if (percentage != null) {
+                double p = 100 * number.doubleValue();
                 if (showExact) {
                     println(String.format("%.9f%%", p));
                 } else {
                     println(String.format("%.2f%%", p));
                 }
-                return true;
+                return;
             }
-        }
-        DataAmount dataAmount = field.getAnnotation(DataAmount.class);
-        if (dataAmount != null && value instanceof Number number) {
-            boolean frequency = field.getAnnotation(Frequency.class) != null;
-            String unit = dataAmount.value();
-            boolean bits = unit.equals(DataAmount.BITS);
-            boolean bytes = unit.equals(DataAmount.BYTES);
-            if (bits || bytes) {
-                formatMemory(number.longValue(), bytes, frequency);
-                return true;
+            DataAmount dataAmount = field.getAnnotation(DataAmount.class);
+            if (dataAmount != null) {
+                boolean frequency = field.getAnnotation(Frequency.class) != null;
+                String unit = dataAmount.value();
+                boolean bits = unit.equals(DataAmount.BITS);
+                boolean bytes = unit.equals(DataAmount.BYTES);
+                if (bits || bytes) {
+                    printMemory(number.longValue(), bytes, frequency);
+                    return;
+                }
             }
-        }
-        MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
-        if (memoryAddress != null) {
-            if (value instanceof Number n) {
-                long d = n.longValue();
+            MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
+            if (memoryAddress != null) {
+                long d = number.longValue();
                 println(String.format("0x%08X", d));
-                return true;
+                return;
+            }
+            Frequency frequency = field.getAnnotation(Frequency.class);
+            if (frequency != null) {
+                println(number + " Hz");
+                return;
             }
         }
-        Frequency frequency = field.getAnnotation(Frequency.class);
-        if (frequency != null) {
-            if (value instanceof Number) {
-                println(value + " Hz");
-                return true;
-            }
-        }
-
-        return false;
+        println(number);
     }
 
-    private void formatMemory(long value, boolean bytesUnit, boolean frequency) {
+    private void printMemory(long value, boolean bytesUnit, boolean frequency) {
         if (showExact) {
             StringBuilder sb = new StringBuilder();
             sb.append(value);

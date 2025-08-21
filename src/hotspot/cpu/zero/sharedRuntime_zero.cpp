@@ -56,11 +56,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
                                             AdapterHandlerEntry* handler) {
+  // foil any attempt to call the i2c, c2i or unverified c2i entries
   handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
                             CAST_FROM_FN_PTR(address,zero_null_code_stub),
                             CAST_FROM_FN_PTR(address,zero_null_code_stub),
                             nullptr);
-  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
@@ -108,15 +108,15 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   return generate_empty_safepoint_blob();
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   return generate_empty_runtime_stub();
 }
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   return generate_empty_runtime_stub();
 }
 

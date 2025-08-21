@@ -26,8 +26,8 @@
 #define SHARE_JFR_SUPPORT_JFRANNOTATIONELEMENTITERATOR_HPP
 
 #include "jni.h"
-#include "utilities/globalDefinitions.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class InstanceKlass;
 class Symbol;

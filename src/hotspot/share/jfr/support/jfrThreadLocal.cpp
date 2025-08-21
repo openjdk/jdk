@@ -26,8 +26,10 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrOopTraceId.inline.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -44,6 +46,7 @@
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "utilities/sizes.hpp"
+#include "utilities/spinYield.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
   _sample_request(),
@@ -73,12 +76,22 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _non_reentrant_nesting(0),
   _vthread_epoch(0),
+  _generation(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
   _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false) {
+  _dead(false),
+  _sampling_critical_section(false)
+#ifdef LINUX
+  ,_cpu_timer(nullptr),
+  _cpu_time_jfr_locked(UNLOCKED),
+  _has_cpu_time_jfr_requests(false),
+  _cpu_time_jfr_queue(0),
+  _do_async_processing_of_cpu_time_jfr_requests(false)
+#endif
+  {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }
@@ -125,15 +138,33 @@ static void send_java_thread_start_event(JavaThread* jt) {
 }
 
 void JfrThreadLocal::on_start(Thread* t) {
-  assign_thread_id(t, t->jfr_thread_local());
+  JfrThreadLocal* const tl = t->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  assign_thread_id(t, tl);
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_checkpoint(t);
-    if (t->is_Java_thread()) {
-      send_java_thread_start_event(JavaThread::cast(t));
+    if (!t->is_Java_thread()) {
+      JfrCheckpointManager::write_checkpoint(t);
+      return;
+    }
+    JavaThread* const jt = JavaThread::cast(t);
+    if (jt->thread_state() == _thread_new) {
+      JfrCPUTimeThreadSampling::on_javathread_create(jt);
+    } else {
+      assert(jt->thread_state() == _thread_in_vm, "invariant");
+      if (tl->should_write()) {
+        JfrCheckpointManager::write_checkpoint(t);
+      }
+      send_java_thread_start_event(jt);
+      if (tl->has_cached_stack_trace()) {
+        tl->clear_cached_stack_trace();
+      }
+      return;
     }
   }
-  if (t->jfr_thread_local()->has_cached_stack_trace()) {
-    t->jfr_thread_local()->clear_cached_stack_trace();
+  if (t->is_Java_thread() && JavaThread::cast(t)->thread_state() == _thread_in_vm) {
+    if (tl->has_cached_stack_trace()) {
+      tl->clear_cached_stack_trace();
+    }
   }
 }
 
@@ -216,12 +247,18 @@ void JfrThreadLocal::on_exit(Thread* t) {
   JfrThreadLocal * const tl = t->jfr_thread_local();
   assert(!tl->is_dead(), "invariant");
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_checkpoint(t);
-  }
-  if (t->is_Java_thread()) {
-    JavaThread* const jt = JavaThread::cast(t);
-    send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
-    JfrThreadCPULoadEvent::send_event_for_thread(jt);
+    if (!t->is_Java_thread()) {
+      JfrCheckpointManager::write_checkpoint(t);
+    } else {
+      JavaThread* const jt = JavaThread::cast(t);
+      assert(jt->thread_state() == _thread_in_vm, "invariant");
+      if (tl->should_write()) {
+        JfrCheckpointManager::write_checkpoint(t);
+      }
+      send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
+      JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
+      JfrThreadCPULoadEvent::send_event_for_thread(jt);
+    }
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
 }
@@ -411,6 +448,15 @@ u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
   return Atomic::load(&jt->jfr_thread_local()->_vthread_epoch);
 }
 
+bool JfrThreadLocal::should_write() const {
+  const u2 current_generation = JfrTraceIdEpoch::epoch_generation();
+  if (Atomic::load(&_generation) != current_generation) {
+    Atomic::store(&_generation, current_generation);
+    return true;
+  }
+  return false;
+}
+
 traceid JfrThreadLocal::thread_id(const Thread* t) {
   assert(t != nullptr, "invariant");
   if (is_impersonating(t)) {
@@ -537,3 +583,88 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
   tl->_dcmd_arena = arena;
   return arena;
 }
+
+
+#ifdef LINUX
+
+void JfrThreadLocal::set_cpu_timer(timer_t* timer) {
+  if (_cpu_timer == nullptr) {
+    _cpu_timer = JfrCHeapObj::new_array<timer_t>(1);
+  }
+  *_cpu_timer = *timer;
+}
+
+void JfrThreadLocal::unset_cpu_timer() {
+  if (_cpu_timer != nullptr) {
+    timer_delete(*_cpu_timer);
+    JfrCHeapObj::free(_cpu_timer, sizeof(timer_t));
+    _cpu_timer = nullptr;
+  }
+}
+
+timer_t* JfrThreadLocal::cpu_timer() const {
+  return _cpu_timer;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
+}
+
+bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
+  CPUTimeLockState got;
+  while (true)  {
+    CPUTimeLockState got = Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
+    if (got == UNLOCKED) {
+      return true; // successfully locked for dequeue
+    }
+    if (got == DEQUEUE) {
+      return false; // already locked for dequeue
+    }
+    // else wait for the lock to be released from a signal handler
+  }
+}
+
+void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
+  SpinYield s;
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
+    s.wait();
+  }
+}
+
+void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
+  Atomic::release_store(&_cpu_time_jfr_locked, UNLOCKED);
+}
+
+void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
+  Atomic::release_store(&_has_cpu_time_jfr_requests, has_requests);
+}
+
+bool JfrThreadLocal::has_cpu_time_jfr_requests() {
+  return Atomic::load_acquire(&_has_cpu_time_jfr_requests);
+}
+
+JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
+  return _cpu_time_jfr_queue;
+}
+
+void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
+  cpu_time_jfr_queue().resize(0);
+}
+
+void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
+  Atomic::release_store(&_do_async_processing_of_cpu_time_jfr_requests, wants);
+}
+
+bool JfrThreadLocal::wants_async_processing_of_cpu_time_jfr_requests() {
+  return Atomic::load_acquire(&_do_async_processing_of_cpu_time_jfr_requests);
+}
+
+#endif
