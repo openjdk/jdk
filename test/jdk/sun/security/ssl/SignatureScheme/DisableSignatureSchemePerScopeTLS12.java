@@ -120,13 +120,13 @@ public class DisableSignatureSchemePerScopeTLS12 extends
         assertTrue(sigAlgsCertSS.contains(HANDSHAKE_DISABLED_SIG),
                 "Signature Scheme " + HANDSHAKE_DISABLED_SIG
                 + " isn't present in ClientHello's"
-                + " signature_algorithms extension");
+                + " signature_algorithms_cert extension");
 
         // signature_algorithms_cert extension MUST NOT contain disabled
         // certificate signature scheme.
         assertFalse(sigAlgsCertSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
-                + " present in ClientHello's signature_algorithms extension");
+                + " present in ClientHello's signature_algorithms_cert extension");
     }
 
     protected void checkCertificateRequest() throws Exception {

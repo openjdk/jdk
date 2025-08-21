@@ -23,23 +23,24 @@
 
 /*
  * @test
- * @bug 8349583
- * @summary Add mechanism to disable signature schemes based on their TLS scope.
- *          This test only covers TLS 1.3.
+ * @bug 8365820
+ * @summary Apply certificate scope constraints to algorithms in
+ *          "signature_algorithms" extension when
+ *          "signature_algorithms_cert" extension is not being sent.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSignatureSchemePerScopeTLS13
+ * @run main/othervm DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13
  */
 
-
 import static jdk.test.lib.Asserts.assertFalse;
-import static jdk.test.lib.Asserts.assertTrue;
 
 import java.security.Security;
 import java.util.List;
 
-public class DisableSignatureSchemePerScopeTLS13
-        extends DisableSignatureSchemePerScopeTLS12 {
+// Test disabled signature_algorithms_cert extension on the client side
+// for TLSv1.3.
+public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13 extends
+        DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 {
 
     // Signature schemes not supported in TLSv1.3 only for the handshake.
     // This is regardless of jdk.tls.disabledAlgorithms configuration.
@@ -50,14 +51,18 @@ public class DisableSignatureSchemePerScopeTLS13
             "rsa_pkcs1_sha512"
     );
 
-    protected DisableSignatureSchemePerScopeTLS13() throws Exception {
+    protected DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13()
+            throws Exception {
         super();
     }
 
     public static void main(String[] args) throws Exception {
         Security.setProperty(
                 "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
-        new DisableSignatureSchemePerScopeTLS13().run();
+        // Disable signature_algorithms_cert extension for the client.
+        System.setProperty("jdk.tls.client.disableExtensions",
+                "signature_algorithms_cert");
+        new DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13().run();
     }
 
     @Override
@@ -79,17 +84,6 @@ public class DisableSignatureSchemePerScopeTLS13
                 assertFalse(sigAlgsSS.contains(ss),
                         "Signature Scheme " + ss
                         + " present in ClientHello's signature_algorithms extension"));
-
-        // Get signature_algorithms_cert extension signature schemes.
-        List<String> sigAlgsCertSS = getSigSchemesCliHello(
-                extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
-                SIG_ALGS_CERT_EXT);
-
-        // Should be present in signature_algorithms_cert extension.
-        NOT_SUPPORTED_FOR_HANDSHAKE.forEach(ss ->
-                assertTrue(sigAlgsCertSS.contains(ss), "Signature Scheme " + ss
-                        + " isn't present in ClientHello's"
-                        + " signature_algorithms_cert extension"));
     }
 
     // TLSv1.3 sends CertificateRequest signature schemes in
