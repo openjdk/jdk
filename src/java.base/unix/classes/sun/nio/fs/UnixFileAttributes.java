@@ -81,8 +81,11 @@ class UnixFileAttributes
         return attrs;
     }
 
-    // get the UnixFileAttributes for a given file. Returns null if the file does not exist.
-    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException {
+    // get the UnixFileAttributes for a given file.
+    // Returns null if the file does not exist.
+    static UnixFileAttributes getIfExists(UnixPath path)
+        throws UnixException
+    {
         UnixFileAttributes attrs = new UnixFileAttributes();
         int errno = UnixNativeDispatcher.stat2(path, attrs);
         if (errno == 0) {
@@ -92,6 +95,26 @@ class UnixFileAttributes
         } else {
             throw new UnixException(errno);
         }
+    }
+
+    // get the UnixFileAttributes for a given file, optionally following links.
+    // Returns null if the file does not exist.
+    static UnixFileAttributes getIfExists(UnixPath path, boolean followLinks)
+        throws UnixException
+    {
+        UnixFileAttributes attrs = new UnixFileAttributes();
+        int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
+        try {
+            UnixNativeDispatcher.fstatat(UnixConstants.AT_FDCWD,
+                                         path.asByteArray(), flag, attrs);
+        } catch (UnixException x) {
+            if (x.errno() == UnixConstants.ENOENT)
+                return null;
+
+            throw x;
+        }
+
+        return attrs;
     }
 
     // get the UnixFileAttributes for an open file

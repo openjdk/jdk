@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8005566 8215467 8255576 8286160
+ * @bug 4313887 6838333 8005566 8154364 8215467 8255576 8286160
  * @summary Unit test for miscellaneous methods in java.nio.file.Files
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
@@ -113,34 +113,18 @@ public class Misc {
         assertTrue(isSameFile(thisFile, thisFile));
 
         /**
-         * Test: Neither files exist
+         * Test: Neither file exists
          */
-        try {
-            isSameFile(thisFile, thatFile);
-            throw new RuntimeException("IOException not thrown");
-        } catch (IOException x) {
-        }
-        try {
-            isSameFile(thatFile, thisFile);
-            throw new RuntimeException("IOException not thrown");
-        } catch (IOException x) {
-        }
+        assertTrue(!isSameFile(thisFile, thatFile));
+        assertTrue(!isSameFile(thatFile, thisFile));
 
         createFile(thisFile);
         try {
             /**
              * Test: One file exists
              */
-            try {
-                isSameFile(thisFile, thatFile);
-                throw new RuntimeException("IOException not thrown");
-            } catch (IOException x) {
-            }
-            try {
-                isSameFile(thatFile, thisFile);
-                throw new RuntimeException("IOException not thrown");
-            } catch (IOException x) {
-            }
+            assertTrue(!isSameFile(thisFile, thatFile));
+            assertTrue(!isSameFile(thatFile, thisFile));
 
             /**
              * Test: Both file exists
