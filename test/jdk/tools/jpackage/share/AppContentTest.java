@@ -119,16 +119,15 @@ public class AppContentTest {
     @Test(ifOS = MACOS)
     @Parameter({TEST_DIR, "warning.non.standard.contents.sub.dir"})
     @Parameter({TEST_DUKE, "warning.app.content.is.not.dir"})
-    public void testWarnings(String... args) throws Exception {
-        final var testPathArg = TKit.TEST_SRC_ROOT.resolve(args[0]);
+    public void testWarnings(String testPath, String warningId) throws Exception {
+        final var appContentValue = TKit.TEST_SRC_ROOT.resolve(testPath);
         final var expectedWarning = JPackageStringBundle.MAIN.cannedFormattedString(
-                args[1], testPathArg);
+                warningId, appContentValue);
 
         JPackageCommand.helloAppImage()
-            .addArguments("--app-content", testPathArg)
+            .addArguments("--app-content", appContentValue)
             .validateOutput(expectedWarning)
-            .setIgnoreExitCode(true)
-            .execute();
+            .executeIgnoreExitCode();
     }
 
     private static Path getAppContentRoot(JPackageCommand cmd) {

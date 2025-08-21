@@ -46,6 +46,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -742,11 +743,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand setIgnoreExitCode(boolean v) {
-        ignoreExitCode = v;
-        return this;
-    }
-
     @FunctionalInterface
     public interface CannedArgument {
         public String value(JPackageCommand cmd);
@@ -816,11 +812,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return exec;
     }
 
+    public Executor.Result executeIgnoreExitCode() {
+        return execute(OptionalInt.empty());
+    }
+
     public Executor.Result execute() {
         return execute(0);
     }
 
     public Executor.Result execute(int expectedExitCode) {
+        return execute(OptionalInt.of(expectedExitCode));
+    }
+
+    private Executor.Result execute(OptionalInt expectedExitCode) {
         verifyMutable();
         executePrerequisiteActions();
 
@@ -857,7 +861,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
-        if (expectedExitCode == 0 && !isImagePackageType() && !ignoreExitCode) {
+        if (expectedExitCode.isPresent() && expectedExitCode.orElseThrow() == 0
+                && !isImagePackageType()) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -866,15 +871,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
         Executor.Result result;
-        if (ignoreExitCode) {
+        if (expectedExitCode.isEmpty()) {
             result = copy.createExecutor().executeWithoutExitCodeCheck();
         } else {
-            result = copy.createExecutor().execute(expectedExitCode);
+            result = copy.createExecutor().execute(expectedExitCode.orElseThrow());
         }
 
         directoriesAssert.updateAndAssert();
 
-        if (expectedExitCode == 0 && isImagePackageType() && !ignoreExitCode) {
+        if (expectedExitCode.isPresent() && expectedExitCode.orElseThrow() == 0
+                && isImagePackageType()) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -882,7 +888,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0 && !ignoreExitCode) {
+        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 
@@ -1477,7 +1483,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
-    private boolean ignoreExitCode;
     private boolean immutable;
     private Path dmgInstallDir;
     private final Actions prerequisiteActions;
