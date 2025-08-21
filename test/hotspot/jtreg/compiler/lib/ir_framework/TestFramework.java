@@ -335,7 +335,24 @@ public class TestFramework {
     }
 
     /**
-     * Add the cross-product (cartesian product) of sets of flags as Scenarios.
+     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when when constructing
+     * scenarios directly a string can contain multiple flags separated with a space. This allows grouping
+     * flags that have to be specified togeher. Further, an empty string in a set stands in for "no flag".
+     * <p>
+     * Example:
+     * <pre>
+     *     addCrossProductScenarios(Set.of("", "-Xint", "-Xbatch -XX:-TieredCompilation"),
+     *                              Set.of("-XX:+UseNewCode", "-XX:UseNewCode2"))
+     * </pre>
+     *   produces the following Scenarios
+     * <pre>
+     *     Scenario(0, "-XX:+UseNewCode")
+     *     Scenario(1, "-XX:+UseNewCode2")
+     *     Scenario(2, "-Xint", "-XX:+UseNewCode")
+     *     Scenario(3, "-Xint", "-XX:+UseNewCode2")
+     *     Scenario(4, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode")
+     *     Scenario(5, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode2")
+     * </pre>
      *
      * @param sets sets of flags to generate the cross product for.
      * @return the same framework instance.
@@ -343,17 +360,24 @@ public class TestFramework {
     @SafeVarargs
     final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
         TestFormat.checkAndReport(flagSets != null && Arrays.stream(flagSets).noneMatch(Objects::isNull),
-                                  "Flags must not be null");
+                "Flags must not be null");
         int initIdx = 0;
         if (this.scenarioIndices != null && !this.scenarioIndices.isEmpty()) {
             initIdx = this.scenarioIndices.stream().max(Comparator.comparingInt(Integer::intValue)).get() + 1;
         }
         AtomicInteger idx = new AtomicInteger(initIdx);
 
-        return addScenarios(
-                crossProductHelper(0, flagSets)
-                        .map(flags -> new Scenario(idx.getAndIncrement(), flags.toArray(new String[0])))
-                        .collect(Collectors.toList()).toArray(new Scenario[0]));
+        Scenario[] newScenarios = crossProductHelper(0, flagSets)
+                .map(flags -> new Scenario(
+                        idx.getAndIncrement(),
+                        flags.stream() // Process flags
+                                .filter(s -> !s.isEmpty()) // Remove empty flags
+                                .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings
+                                .flatMap(Collection::stream)
+                                .collect(Collectors.toList())
+                                .toArray(new String[0])))
+                .collect(Collectors.toList()).toArray(new Scenario[0]);
+        return addScenarios(newScenarios);
     }
 
     @SafeVarargs
