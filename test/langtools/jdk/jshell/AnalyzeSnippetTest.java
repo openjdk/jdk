@@ -180,14 +180,14 @@ public class AnalyzeSnippetTest {
         SnippetWrapper wrapper = analysis.wrapper(sn);
         String wrapped = wrapper.wrapped();
         assertEquals("""
-                              package REPL;
+                     package REPL;
 
-                              class $JShell$DOESNOTMATTER {
-                                  public static java.lang.Object do_it$() throws java.lang.Throwable {
-                                      return unknown();
-                                  }
-                              }
-                              """, wrapped);
+                     class $JShell$DOESNOTMATTER {
+                         public static java.lang.Object do_it$() throws java.lang.Throwable {
+                             return unknown();
+                         }
+                     }
+                     """, wrapped);
         for (int pos = 0; pos < code.length(); pos++) {
             int wrappedPos = wrapper.sourceToWrappedPosition(pos);
             assertEquals(code.charAt(pos), wrapped.charAt(wrappedPos));

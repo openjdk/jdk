@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 public class ShutdownTest extends KullaTesting {
 
@@ -163,8 +164,8 @@ public class ShutdownTest extends KullaTesting {
     private Method currentTestMethod;
 
     @BeforeEach
-    public void setUp(Method testMethod) {
-        currentTestMethod = testMethod;
+    public void setUp(TestInfo testInfo) {
+        currentTestMethod = testInfo.getTestMethod().orElseThrow();
         super.setUp();
     }
 
