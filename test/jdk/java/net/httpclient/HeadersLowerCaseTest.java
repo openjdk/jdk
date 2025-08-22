@@ -177,32 +177,33 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
     @ParameterizedTest
     @MethodSource("params")
     public void testRequestHeaders(final Version version, final URI requestURI) throws Exception {
-        final HttpClient client = newClientBuilderForH3()
+        try (final HttpClient client = newClientBuilderForH3()
                 .version(version)
                 .sslContext(sslContext)
-                .proxy(HttpClient.Builder.NO_PROXY).build();
-        Http3DiscoveryMode config = switch (version) {
-            case HTTP_3 -> HTTP_3_URI_ONLY;
-            default -> ALT_SVC;
-        };
-        final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(requestURI)
-                .setOption(H3_DISCOVERY, config)
-                .version(version);
-        for (final String k : REQUEST_HEADERS) {
-            reqBuilder.header(k, k);
+                .proxy(HttpClient.Builder.NO_PROXY).build()) {
+            Http3DiscoveryMode config = switch (version) {
+                case HTTP_3 -> HTTP_3_URI_ONLY;
+                default -> ALT_SVC;
+            };
+            final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(requestURI)
+                    .setOption(H3_DISCOVERY, config)
+                    .version(version);
+            for (final String k : REQUEST_HEADERS) {
+                reqBuilder.header(k, k);
+            }
+            final HttpRequest req = reqBuilder.build();
+            System.out.println("Issuing " + version + " request to " + requestURI);
+            final HttpResponse<Void> resp = client.send(req, BodyHandlers.discarding());
+            assertEquals(resp.version(), version, "Unexpected HTTP version in response");
+            assertEquals(resp.statusCode(), 200, "Unexpected response code");
+            // now try with async
+            System.out.println("Issuing (async) request to " + requestURI);
+            final CompletableFuture<HttpResponse<Void>> futureResp = client.sendAsync(req,
+                    BodyHandlers.discarding());
+            final HttpResponse<Void> asyncResp = futureResp.get();
+            assertEquals(asyncResp.version(), version, "Unexpected HTTP version in response");
+            assertEquals(asyncResp.statusCode(), 200, "Unexpected response code");
         }
-        final HttpRequest req = reqBuilder.build();
-        System.out.println("Issuing " + version + " request to " + requestURI);
-        final HttpResponse<Void> resp = client.send(req, BodyHandlers.discarding());
-        assertEquals(resp.version(), version, "Unexpected HTTP version in response");
-        assertEquals(resp.statusCode(), 200, "Unexpected response code");
-        // now try with async
-        System.out.println("Issuing (async) request to " + requestURI);
-        final CompletableFuture<HttpResponse<Void>> futureResp = client.sendAsync(req,
-                BodyHandlers.discarding());
-        final HttpResponse<Void> asyncResp = futureResp.get();
-        assertEquals(asyncResp.version(), version, "Unexpected HTTP version in response");
-        assertEquals(asyncResp.statusCode(), 200, "Unexpected response code");
     }
 
     /**
