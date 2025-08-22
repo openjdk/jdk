@@ -545,44 +545,37 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
   // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
   // We also must include min_val in the output if i1->_lo == min_val and i2->_hi.
-  if (i1->_lo == min_val) {
-    // Special case possible, check carefully
-    NativeType new_lo;
+  if (i1->_lo == min_val && i2_hi == min_val) {
+    // special overflow case as defined above, and as min_val is the lowest possible value, this is our lower bound
+    NativeType new_lo = min_val;
     NativeType new_hi;
-    if (i2_hi == -1) {
-      // special overflow case as defined above
-      new_lo = min_val;
-      if (!i1->is_con()) {
-        // Also compute the "next" division result for a non‑constant range.
-        new_hi = i1->_lo + 1 / i2_hi;
-      } else {
-        new_hi = min_val;
-      }
+    // compute new_hi for non-constant divisor and/or dividend.
+    // i2 is purely in the negative domain here, which means the maximum value this division can yield is either
+    // a) (min_val + 1) / -1 for non-constant dividend or
+    // b) (min_val)     / -2 for non-constant divisor
+    if (!i1->is_con()) {
+      new_hi = (min_val + 1) / -1;
+    } else if (i2_lo != i2_hi) {
+      new_hi = min_val / -2;
     } else {
-      // Normal corner: (i1->_lo, i2->_hi)
-      NativeType result = i1->_lo / i2_hi;
-      new_lo = result;
-      new_hi = result;
+      new_hi = min_val;
     }
-
-    // If the divisor range is wider than a singleton, include (i1->_lo, i2->_lo).
-    // We cannot use is_con here, as a range of [-1, 0] will also result in i2_lo and i2_hi being -1
+#ifdef ASSERT
+    // validate new_hi for non-constant divisor
     if (i2_lo != i2_hi) {
       assert(i2_lo != -1, "Special case not possible here, as i2_lo has to be < i2_hi");
       NativeType result = i1->_lo / i2_lo;
-      new_lo = MIN2(new_lo, result);
-      new_hi = MAX2(new_hi, result);
+      assert(new_hi >= result, "computed wrong value for new_hi");
     }
 
-    // If i1 is not a single constant, include the two corners with i1->_hi:
-    //   (i1->_hi, i2->_lo) and (i1->_hi, i2->_hi)
+    // validate new_hi for non-constant dividend
     if (!i1->is_con()) {
       assert(i2_hi > min_val, "Special case not possible here, as i1->_hi has to be > min");
       NativeType result1 = i1->_hi / i2_lo;
       NativeType result2 = i1->_hi / i2_hi;
-      new_lo = MIN3(new_lo, result1, result2);
-      new_hi = MAX3(new_hi, result1, result2);
+      assert(new_hi >= result1 && new_hi >= result2, "computed wrong value for new_hi");
     }
+#endif
 
     return IntegerType::make(new_lo, new_hi, widen);
   }
