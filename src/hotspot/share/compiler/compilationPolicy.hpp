@@ -91,7 +91,7 @@ public:
 
   T* pop(Monitor* lock, JavaThread* current) {
     MonitorLocker locker(current, lock);
-    while(is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
+    while (is_empty_unlocked() && (!CompileBroker::is_compilation_disabled_forever() || AOTVerifyTrainingData)) {
       locker.wait();
     }
     T* value = pop_unlocked();
