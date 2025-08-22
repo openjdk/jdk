@@ -961,7 +961,7 @@ public final class String
 
     /**
      * {@return the sequence of bytes obtained by encoding the given string in
-     * the specified {@linkplain java.nio.charset.Charset charset}}
+     * the specified {@code Charset}}
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array

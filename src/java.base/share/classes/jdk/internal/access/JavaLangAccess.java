@@ -331,7 +331,7 @@ public interface JavaLangAccess {
 
     /**
      * Constructs a new {@code String} by decoding the specified byte array
-     * using the specified {@linkplain java.nio.charset.Charset charset}.
+     * using the specified {@code Charset}.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
      * ownership of the byte array to the callee</b>, since the latter will not
@@ -346,7 +346,7 @@ public interface JavaLangAccess {
 
     /**
      * {@return the sequence of bytes obtained by encoding the given string in
-     * the specified {@linkplain java.nio.charset.Charset charset}}
+     * the specified {@code Charset}}
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array
