@@ -59,7 +59,9 @@ void G1CSetCandidateGroup::calculate_efficiency() {
 }
 
 double G1CSetCandidateGroup::liveness_percent() const {
-  assert(length() > 0, "must be");
+  if (length() == 0) {
+    return 0.0f;
+  }
   size_t capacity = length() * G1HeapRegion::GrainBytes;
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }

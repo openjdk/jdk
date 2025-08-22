@@ -3122,7 +3122,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSet
                           group->group_id(),
                           group->length(),
                           group->gc_efficiency(),
-                          group->length() > 0 ? group->liveness_percent() : 0.0f,
+                          group->liveness_percent(),
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();
@@ -3162,7 +3162,9 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
+  if (g1h->young_regions_cset_group()->length() != 0) {
+    log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
+  }
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
   log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
