@@ -930,10 +930,10 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_node, bool do_reenter) {
+void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* node, bool do_reenter) {
   assert(current != nullptr, "invariant");
-  assert(current_node != nullptr, "invariant");
-  assert(current_node->_thread == current, "invariant");
+  assert(node != nullptr, "invariant");
+  assert(node->_thread == current, "invariant");
   assert(current->thread_state() != _thread_blocked, "invariant");
   if (do_reenter) {
     assert(_waiters > 0, "invariant");
@@ -973,16 +973,11 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
 
     // Enqueue "current" on ObjectMonitor's _entry_list.
     //
-    // Node acts as a proxy for current.
-    // As an aside, if were to ever rewrite the synchronization code mostly
-    // in Java, WaitNodes, ObjectMonitors, and Events would become 1st-class
-    // Java objects.  This would avoid awkward lifecycle and liveness issues,
-    // as well as eliminate a subset of ABA issues.
-    // TODO: eliminate ObjectWaiter and enqueue either Threads or Events.
+    // Node acts as a proxy for current.  
 
     current->_ParkEvent->reset();
 
-    if (try_lock_or_add_to_entry_list(current, current_node)) {
+    if (try_lock_or_add_to_entry_list(current, node)) {
       return; // We got the lock.
     }
     // This thread is now added to the _entry_list.
@@ -1033,14 +1028,13 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
         ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, do_reenter /* allow_suspend */);
         // park self
         if (do_timed_parked) {
-          current->_ParkEvent->park((jlong)recheck_interval);
+          current->_ParkEvent->park((jlong) recheck_interval);
           // Increase the recheck_interval, but clamp the value.
           recheck_interval *= 8;
           if (recheck_interval > MAX_RECHECK_INTERVAL) {
             recheck_interval = MAX_RECHECK_INTERVAL;
           }
-        }
-        else {
+        } else {
           current->_ParkEvent->park();
         }
       }
@@ -1077,7 +1071,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // Current has acquired the lock -- Unlink current from the _entry_list.
   assert(has_owner(current), "invariant");
   assert_mark_word_consistency();
-  unlink_after_acquire(current, current_node);
+  unlink_after_acquire(current, node);
   if (has_successor(current)) {
     clear_successor();
     // Note that we don't need to do OrderAccess::fence() after clearing
@@ -1106,7 +1100,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // the ST of null into _owner in the *subsequent* (following) corresponding
   // monitorexit.
   if (do_reenter) {
-    current_node->TState = ObjectWaiter::TS_RUN;
+    node->TState = ObjectWaiter::TS_RUN;
     OrderAccess::fence();      // see comments above
   }
 
@@ -1900,7 +1894,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       enter(current);
     } else {
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-      enter_internal(current, &node, true);
+      enter_internal(current, &node, true /* do_reenter */);
       node.wait_reenter_end(this);
     }
 
