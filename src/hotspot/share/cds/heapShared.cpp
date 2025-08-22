@@ -1617,9 +1617,11 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   }
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // The enum klasses are archived with aot-initialized mirror.
-    // See AOTClassInitializer::can_archive_initialized_mirror().
+    // The classes of all archived enum instances have been marked as aot-init,
+    // so there's nothing else to be done in the production run.
   } else {
+    // This is legacy support for enum classes before JEP 483 -- we cannot rerun
+    // the enum's <clinit> in the production run, so special handling is needed.
     if (CDSEnumKlass::is_enum_obj(orig_obj)) {
       CDSEnumKlass::handle_enum_obj(level + 1, subgraph_info, orig_obj);
     }
