@@ -117,10 +117,6 @@ abstract class HttpConnection implements Closeable {
         this.label = label;
     }
 
-    private static String nextLabel() {
-        return nextLabel("");
-    }
-
     private static String nextLabel(String prefix) {
         return prefix + LABEL_COUNTER.incrementAndGet();
     }

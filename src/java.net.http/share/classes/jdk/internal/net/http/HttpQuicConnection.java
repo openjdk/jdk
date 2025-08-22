@@ -313,13 +313,11 @@ abstract class HttpQuicConnection extends HttpConnection {
             // attempt direct connection if HTTP/3 only
             case HTTP_3_URI_ONLY: {
                 if (advertisedAltSvc && !altSvc.originHasSameAuthority()) {
-                    if (altSvc != null) {
-                        if (Log.altsvc()) {
-                            Log.logAltSvc("{0}: Cannot use advertised AltService: {1}",
+                    if (Log.altsvc()) {
+                        Log.logAltSvc("{0}: Cannot use advertised AltService: {1}",
                                     config, altSvc);
-                        }
-                        altSvc = null;
                     }
+                    altSvc = null;
                 }
                 assert altSvc == null || altSvc.originHasSameAuthority();
                 break;

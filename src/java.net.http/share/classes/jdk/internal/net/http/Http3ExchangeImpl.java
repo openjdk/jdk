@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
@@ -133,7 +134,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     volatile boolean stopRequested;
     volatile boolean deRegistered;
     private String dbgTag = null;
-    long sentQuicBytes;
+    private final AtomicLong sentQuicBytes = new AtomicLong();
 
     Http3ExchangeImpl(final Http3Connection connection, final Exchange<T> exchange,
                       final QuicBidiStream stream) {
@@ -476,7 +477,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         } catch (IOException io) {
             throw new CompletionException(io);
         } finally {
-            sentQuicBytes += sentBytes;
+            if (sentBytes != 0) sentQuicBytes.addAndGet(sentBytes);
         }
         return this;
     }
@@ -1075,7 +1076,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                 var completed = remaining == 0;
                 if (completed) this.completed = true;
                 writer.scheduleForWriting(item, completed);
-                sentQuicBytes += len;
+                sentQuicBytes.addAndGet(len);
                 if (completed) {
                     requestBodyCF.complete(null);
                 }
@@ -1157,7 +1158,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             headers.flip();
             int sent = headers.remaining();
             writer.queueForWriting(headers);
-            sentQuicBytes += sent;
+            if (sent != 0) sentQuicBytes.addAndGet(sent);
         }
 
         @Override
@@ -1325,7 +1326,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     String.valueOf(reader.stream().streamId()), request, String.valueOf(exchange.multi.id),
                     requestSent, responseReceived, reader.receivingState(), writer.sendingState(),
                     String.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes()),
-                    String.valueOf(sentQuicBytes), io);
+                    String.valueOf(sentQuicBytes.get()), io);
         }
     }
 
