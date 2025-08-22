@@ -41,7 +41,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 
@@ -61,7 +60,7 @@ public class Test4520754 {
         // AWT classes (com.sun.beans.infos.ComponentBeanInfo)
         test(null, Button.class, Component.class, List.class, Menu.class, Panel.class);
         // Swing classes (dt.jar)
-        test(null, JApplet.class, JButton.class, JCheckBox.class);
+        test(null, JButton.class, JCheckBox.class);
         // user defined classes
         test(Boolean.TRUE, Wombat.class, Foo.class, FooBar.class);
     }

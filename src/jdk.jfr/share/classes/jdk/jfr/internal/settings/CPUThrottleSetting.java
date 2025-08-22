@@ -58,18 +58,18 @@ public final class CPUThrottleSetting extends SettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        TimespanRate max = null;
+        TimespanRate highestRate = null;
         for (String value : values) {
             TimespanRate rate = TimespanRate.of(value);
             if (rate != null) {
-                if (max == null || rate.isHigher(max)) {
-                    max = rate;
+                if (highestRate == null) {
+                    highestRate = rate;
+                } else {
+                    highestRate = TimespanRate.selectHigherResolution(highestRate, rate);
                 }
-                max = new TimespanRate(max.rate(), max.autoAdapt() || rate.autoAdapt());
             }
         }
-        // "off" is not supported
-        return Objects.requireNonNullElse(max.toString(), DEFAULT_VALUE);
+        return Objects.requireNonNullElse(highestRate.toString(), DEFAULT_VALUE);
     }
 
     @Override
