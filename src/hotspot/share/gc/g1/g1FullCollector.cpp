@@ -246,6 +246,9 @@ void G1FullCollector::complete_collection(size_t allocation_word_size) {
 
   _heap->resize_all_tlabs();
 
+  // We clear remembered sets for young regions this late in the full GC because
+  // G1HeapVerifier expects the remembered sets for all young regions to be complete
+  // throughout most of the collection process (e.g. G1FullCollector::verify_after_marking).
   _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
@@ -299,18 +302,14 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   {
-    uint old_active_mt_degree = reference_processor()->num_queues();
-    reference_processor()->set_active_mt_degree(workers());
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Reference Processing", scope()->timer());
     // Process reference objects found during marking.
     ReferenceProcessorPhaseTimes pt(scope()->timer(), reference_processor()->max_num_queues());
     G1FullGCRefProcProxyTask task(*this, reference_processor()->max_num_queues());
-    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, _heap->workers(), pt);
     scope()->tracer()->report_gc_reference_stats(stats);
     pt.print_all_references();
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
-
-    reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
   {

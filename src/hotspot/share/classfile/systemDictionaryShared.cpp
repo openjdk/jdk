@@ -22,6 +22,7 @@
  *
  */
 
+
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
@@ -35,8 +36,8 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "cds/unregisteredClasses.hpp"
@@ -44,9 +45,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -76,7 +75,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
@@ -447,7 +446,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
-class UnregisteredClassesTable : public ResourceHashtable<
+class UnregisteredClassesTable : public HashTable<
   Symbol*, InstanceKlass*,
   15889, // prime number
   AnyObj::C_HEAP> {};
