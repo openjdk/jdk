@@ -26,12 +26,11 @@
  * @bug 8268725
  * @summary Tests for the --enable-native-access option
  * @modules jdk.jshell
- * @run testng ToolEnableNativeAccessTest
+ * @run junit ToolEnableNativeAccessTest
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class ToolEnableNativeAccessTest extends ReplToolTesting {
 

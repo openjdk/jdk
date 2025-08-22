@@ -35,18 +35,18 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @build UndefinedClassTest
- * @run testng UndefinedClassTest
+ * @run junit UndefinedClassTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class UndefinedClassTest extends UITesting {
 
     public UndefinedClassTest() {
         super(true);
     }
 
+    @Test
     public void testUndefinedClassWithStaticAccess() throws Exception{
         String code = "@FunctionalInterface\n" +
                 "interface RunnableWithThrowable {\n" +
@@ -62,6 +62,7 @@ public class UndefinedClassTest extends UITesting {
         });
     }
 
+    @Test
     public void testUndefinedClassWithDefaultAccess() throws Exception{
         String code = "@FunctionalInterface\n" +
                 "interface RunnableWithThrowable {\n" +

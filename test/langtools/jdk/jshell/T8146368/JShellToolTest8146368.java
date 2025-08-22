@@ -28,13 +28,13 @@
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib /jdk/jshell
  * @build ReplToolTesting
- * @run testng/othervm -Duser.language=ja JShellToolTest8146368
+ * @run junit/othervm -Duser.language=ja JShellToolTest8146368
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JShellToolTest8146368 extends ReplToolTesting {
+    @Test
     public void test() {
         test(
                 a -> assertCommand(a, "class A extends B {}", "|  created class A, however, it cannot be referenced until class B is declared\n"),

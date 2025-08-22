@@ -24,7 +24,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.testng.annotations.BeforeTest;
+import org.junit.jupiter.api.BeforeAll;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -46,10 +46,10 @@ public class LocalExecutionTestSupport extends ReplToolTesting {
 
     protected Path baseDir;                 // base working directory
     protected Path sourcesDir;              // sources directory
-    protected Path classesDir;              // classes directory
+    protected Path classesDir;              // classes directory// classes directory
 
     // Install file "test/MyClass.class" in some temporary directory somewhere
-    @BeforeTest
+    @BeforeAll
     public void installMyClass() throws IOException {
 
         // Create directories

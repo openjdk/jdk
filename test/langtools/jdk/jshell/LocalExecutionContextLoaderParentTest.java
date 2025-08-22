@@ -30,7 +30,7 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask LocalExecutionTestSupport
- * @run testng/othervm LocalExecutionContextLoaderParentTest
+ * @run junit/othervm LocalExecutionContextLoaderParentTest
  */
 
 import java.io.IOException;
@@ -49,12 +49,14 @@ import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
 import jdk.jshell.spi.ExecutionEnv;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeTest;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LocalExecutionContextLoaderParentTest extends LocalExecutionTestSupport {
 
-    @BeforeTest
+    @BeforeAll
     public void installParentTestProvider() throws IOException {
         Path dir = createSubdir(classesDir, "META-INF/services");
         Files.write(dir.resolve(ExecutionControlProvider.class.getName()),

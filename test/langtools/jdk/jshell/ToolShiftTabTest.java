@@ -31,18 +31,18 @@
  *     jdk.jshell/jdk.jshell:open
  * @build UITesting
  * @build ToolShiftTabTest
- * @run testng/timeout=300 ToolShiftTabTest
+ * @run junit/timeout=300 ToolShiftTabTest
  */
 
 import java.util.regex.Pattern;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolShiftTabTest extends UITesting {
 
     // Shift-tab as escape sequence
     private String FIX = "\033\133\132";
 
+    @Test
     public void testFixVariable() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("3+4");
@@ -54,6 +54,7 @@ public class ToolShiftTabTest extends UITesting {
         });
     }
 
+    @Test
     public void testFixMethod() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("5.5 >= 3.1415926535");
@@ -68,6 +69,7 @@ public class ToolShiftTabTest extends UITesting {
         });
     }
 
+    @Test
     public void testFixMethodVoid() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("System.out.println(\"Testing\")");
@@ -81,6 +83,7 @@ public class ToolShiftTabTest extends UITesting {
         });
     }
 
+    @Test
     public void testFixMethodNoLeaks() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("4");
@@ -106,6 +109,7 @@ public class ToolShiftTabTest extends UITesting {
         });
     }
 
+    @Test
     public void testFixImport() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("Frame");
@@ -126,6 +130,7 @@ public class ToolShiftTabTest extends UITesting {
         });
     }
 
+    @Test
     public void testFixBad() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("123");
