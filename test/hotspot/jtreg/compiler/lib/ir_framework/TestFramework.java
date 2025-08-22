@@ -375,24 +375,24 @@ public class TestFramework {
 
         Stream<List<String>> crossProduct = Arrays.stream(flagSets)
             .reduce(
-                Stream.of(Collections.<String>emptyList()),
-                (acc, set) ->
-                    acc.flatMap(list ->
-                        set.stream().map(element -> {
-                            List<String> newList = new ArrayList<>(list);
-                            newList.add(element);
+                Stream.of(Collections.<String>emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
+                (acc, set) ->  // (Stream<List<String>>, Stream<List<String>>) -> Stream<List<String>>
+                    acc.flatMap(lAcc -> // For each List<String>> lAcc in acc...
+                        set.stream().map(flag -> { // ...and each flag in the current set...
+                            List<String> newList = new ArrayList<>(lAcc); // ...create a new list containing lAcc...
+                            newList.add(flag); // ...and append the flag.
                             return newList;
-                        })
-                    ),
-                (a, b) -> Stream.concat(a, b));
+                        }) // This results in one List<List<String>> for each lAcc...
+                    ), // ...that get flattend into one big List<List<String>>.
+                (a, b) -> Stream.concat(a, b)); // combiner; if any reduction steps are executed in parallel, just concat two streams.
 
         Scenario[] newScenarios = crossProduct
-                .map(flags -> new Scenario(
+                .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
                         idx.getAndIncrement(),
                         flags.stream() // Process flags
-                             .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings
-                             .flatMap(Collection::stream)
-                             .filter(s -> !s.isEmpty()) // Remove empty string flags
+                             .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
+                             .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
+                             .filter(s -> !s.isEmpty()) // Remove empty string flags.
                              .distinct()
                              .collect(Collectors.toList())
                              .toArray(new String[0])))
