@@ -888,6 +888,7 @@ public final class String
 
     private static <E extends Exception> byte[] encodeWithEncoder(
             Charset cs, byte coder, byte[] val, Class<E> characterCodingException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
@@ -1046,7 +1047,9 @@ public final class String
         return encode8859_1(coder, val, UnmappableCharacterException.class);
     }
 
-    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> unmappableCharacterException) throws E {
+    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> unmappableCharacterException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
+            throws E {
         if (coder == LATIN1) {
             return val.clone();
         }
@@ -1167,6 +1170,7 @@ public final class String
 
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> malformedInputException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         while (sp < sl) {
             int b1 = src[sp++];
@@ -1342,7 +1346,9 @@ public final class String
         return encodeUTF8(coder, val, UnmappableCharacterException.class);
     }
 
-    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> unmappableCharacterException) throws E {
+    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> unmappableCharacterException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
+            throws E {
         if (coder == UTF16) {
             return encodeUTF8_UTF16(val, unmappableCharacterException);
         }
@@ -1372,7 +1378,9 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException) throws E {
+    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
+            throws E {
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1435,7 +1443,9 @@ public final class String
     /**
      * {@return the exact size required to UTF_8 encode this UTF16 string}
      */
-    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException) throws E {
+    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException)
+            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
+            throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
