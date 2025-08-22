@@ -1124,8 +1124,8 @@ class BadIRAnnotationsAfterTestVM {
 
     @Test
     @FailCount(8)
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
