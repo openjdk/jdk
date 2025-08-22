@@ -91,7 +91,7 @@ public class nmethodrelocation extends DebugeeClass {
             throw new AssertionError("Could not find original nmethod");
         }
 
-        WHITE_BOX.relocateNMethodFromAddr(originalNMethod.address, BlobType.MethodNonProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodNonProfiled.id);
 
         NMethod relocatedNMethod = NMethod.get(method, false);
         if (relocatedNMethod == null) {

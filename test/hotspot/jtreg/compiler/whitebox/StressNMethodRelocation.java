@@ -31,8 +31,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+SegmentedCodeCache -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
- *                   -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.StressNMethodRelocation
+ *                   -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+NMethodRelocation compiler.whitebox.StressNMethodRelocation
  */
 
 package compiler.whitebox;

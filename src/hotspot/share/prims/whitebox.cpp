@@ -1656,12 +1656,24 @@ WB_END
 WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, jint blob_type))
   ResourceMark rm(THREAD);
   CHECK_JNI_EXCEPTION(env);
-  nmethod* code = (nmethod*) addr;
-  if (code != nullptr) {
-    MutexLocker ml_Compile_lock(Compile_lock);
-    CompiledICLocker ic_locker(code);
-    MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    code->relocate(static_cast<CodeBlobType>(blob_type));
+  void* address = (void*) addr;
+
+  if (address == nullptr) {
+    return;
+  }
+
+  MutexLocker ml_Compile_lock(Compile_lock);
+  MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  // Verify that nmethod address is still valid
+  CodeBlob* blob = CodeCache::find_blob(address);
+  if (blob != nullptr && blob->is_nmethod()) {
+    nmethod* code = blob->as_nmethod();
+    if (code->is_in_use()) {
+      CompiledICLocker ic_locker(code);
+      code->relocate(static_cast<CodeBlobType>(blob_type));
+    }
   }
 WB_END
 
