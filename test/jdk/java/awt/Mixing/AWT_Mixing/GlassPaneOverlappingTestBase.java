@@ -58,6 +58,9 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     private JFrame f = null;
     private volatile Point ancestorLoc;
 
+    {
+        multiFramesTest = false;
+    }
     /**
      * Setups GlassPane with lightweight component returned by {@link SimpleOverlappingTestBase#getSwingComponent() }
      * Called by base class.
