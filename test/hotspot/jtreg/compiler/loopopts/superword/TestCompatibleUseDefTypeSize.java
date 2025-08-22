@@ -404,7 +404,9 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test6(int[] a, float[] b) {
@@ -415,7 +417,9 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test7(int[] a, float[] b) {
@@ -438,7 +442,9 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test9(long[] a, double[] b) {
@@ -449,7 +455,9 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test10(long[] a, double[] b) {
