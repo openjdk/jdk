@@ -36,7 +36,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
  */
 class PullPublisher<T> implements Flow.Publisher<T> {
 
-    // Only one of `iterable` and `throwable` can be non-null. throwable is
+    // Only one of `iterable` or `throwable` should be null, and the other non-null. throwable is
     // non-null when an error has been encountered, by the creator of
     // PullPublisher, while subscribing the subscriber, but before subscribe has
     // completed.
@@ -46,7 +46,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
     PullPublisher(CheckedIterable<T> iterable, Throwable throwable) {
         if ((iterable == null) == (throwable == null)) {
             String message = String.format(
-                    "only one of `iterable` or `throwable` can be null, but %s are",
+                    "only one of `iterable` or `throwable` should be null, and the other non-null, but %s are null",
                     throwable == null ? "both" : "none");
             throw new IllegalArgumentException(message);
         }
