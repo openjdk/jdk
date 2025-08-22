@@ -2900,7 +2900,7 @@ Java HotSpot VM.
 
     `passive`
     :   Stop the world GC only (either degenerated or full). This mode is
-    diagnostic, and must be enabled via `-XX:+UnlockDiagnosticVMOptions`.
+        diagnostic, and must be enabled via `-XX:+UnlockDiagnosticVMOptions`.
 
     `generational`
     :   Generational concurrent GC.
@@ -2919,7 +2919,8 @@ Java HotSpot VM.
     :   Trigger GC when free heap falls below the ShenandoahMinFreeThreshold.
 
     `aggressive`
-    :   Run GC continuously, try to evacuate everything.
+    :   Run GC continuously, try to evacuate everything. This heuristics is
+        diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions.
 
     `compact`
     :   Run GC more frequently and with deeper targets to free up more memory.
