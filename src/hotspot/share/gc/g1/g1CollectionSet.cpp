@@ -38,13 +38,13 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
-uint G1CollectionSet::selected_groups_cur_length() const {
+uint G1CollectionSet::groups_cur_length() const {
   assert(_inc_build_state == CSetBuildType::Inactive, "must be");
-  return _collection_set_groups.length();
+  return _groups.length();
 }
 
-uint G1CollectionSet::collection_groups_increment_length() const {
-  return selected_groups_cur_length() - _selected_groups_inc_part_start;
+uint G1CollectionSet::groups_increment_length() const {
+  return groups_cur_length() - _groups_inc_part_start;
 }
 
 G1CollectorState* G1CollectionSet::collector_state() const {
@@ -59,21 +59,21 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1h(g1h),
   _policy(policy),
   _candidates(),
-  _collection_set_regions(nullptr),
-  _collection_set_cur_length(0),
-  _collection_set_max_length(0),
-  _collection_set_groups(),
-  _selected_groups_inc_part_start(0),
+  _regions(nullptr),
+  _regions_max_length(0),
+  _regions_cur_length(0),
+  _groups(),
   _eden_region_length(0),
   _survivor_region_length(0),
   _initial_old_region_length(0),
   _optional_groups(),
-  _inc_build_state(Inactive),
-  _inc_part_start(0) {
+  DEBUG_ONLY(_inc_build_state(CSetBuildType::Inactive) COMMA)
+  _regions_inc_part_start(0),
+  _groups_inc_part_start(0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
-  FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
+  FREE_C_HEAP_ARRAY(uint, _regions);
   abandon_all_candidates();
 }
 
@@ -84,8 +84,8 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   _eden_region_length     = eden_cset_region_length;
   _survivor_region_length = survivor_cset_region_length;
 
-  assert((size_t)young_region_length() == _collection_set_cur_length,
-         "Young region length %u should match collection set length %u", young_region_length(), _collection_set_cur_length);
+  assert((size_t)young_region_length() == _regions_cur_length,
+         "Young region length %u should match collection set length %u", young_region_length(), _regions_cur_length);
 
   _initial_old_region_length = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
@@ -93,9 +93,9 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
 }
 
 void G1CollectionSet::initialize(uint max_region_length) {
-  guarantee(_collection_set_regions == nullptr, "Must only initialize once.");
-  _collection_set_max_length = max_region_length;
-  _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
+  guarantee(_regions == nullptr, "Must only initialize once.");
+  _regions_max_length = max_region_length;
+  _regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
 
   _candidates.initialize(max_region_length);
 }
@@ -105,14 +105,14 @@ void G1CollectionSet::abandon_all_candidates() {
   _initial_old_region_length = 0;
 }
 
-void G1CollectionSet::prepare_groups_for_scan () {
-  collection_set_groups()->prepare_for_scan();
+void G1CollectionSet::prepare_for_scan () {
+  groups()->prepare_for_scan();
 }
 
 void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
   assert_at_safepoint_on_vm_thread();
 
-  assert(_inc_build_state == Active,
+  assert(_inc_build_state == CSetBuildType::Active,
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
@@ -121,46 +121,46 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
 
-  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
-  _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
+  assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
+  _regions[_regions_cur_length++] = hr->hrm_index();
   _initial_old_region_length++;
 
   _g1h->old_set_remove(hr);
 }
 
 void G1CollectionSet::start_incremental_building() {
-  assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
-  assert(selected_groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
+  assert(_regions_cur_length == 0, "Collection set must be empty before starting a new collection set.");
+  assert(groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
   assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
   continue_incremental_building();
 }
 
 void G1CollectionSet::continue_incremental_building() {
-  assert(_inc_build_state == Inactive, "Precondition");
+  assert(_inc_build_state == CSetBuildType::Inactive, "Precondition");
 
-  _inc_part_start = _collection_set_cur_length;
-  _selected_groups_inc_part_start = selected_groups_cur_length();
+  _regions_inc_part_start = _regions_cur_length;
+  _groups_inc_part_start = groups_cur_length();
 
-  _inc_build_state = CSetBuildType::Active;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Active;)
 }
 
 void G1CollectionSet::stop_incremental_building() {
-  _inc_build_state = Inactive;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Inactive;)
 }
 
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
-  _collection_set_cur_length = 0;
-  _collection_set_groups.clear();
+  _regions_cur_length = 0;
+  _groups.clear();
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
-  size_t len = _collection_set_cur_length;
+  size_t len = _regions_cur_length;
   OrderAccess::loadload();
 
   for (uint i = 0; i < len; i++) {
-    G1HeapRegion* r = _g1h->region_at(_collection_set_regions[i]);
+    G1HeapRegion* r = _g1h->region_at(_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
       cl->set_incomplete();
@@ -187,7 +187,7 @@ void G1CollectionSet::iterate_optional(G1HeapRegionClosure* cl) const {
 void G1CollectionSet::iterate_incremental_part_from(G1HeapRegionClosure* cl,
                                                     G1HeapRegionClaimer* hr_claimer,
                                                     uint worker_id) const {
-  iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id);
+  iterate_part_from(cl, hr_claimer, _regions_inc_part_start, regions_cur_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_part_from(G1HeapRegionClosure* cl,
@@ -197,29 +197,29 @@ void G1CollectionSet::iterate_part_from(G1HeapRegionClosure* cl,
                                         uint worker_id) const {
   _g1h->par_iterate_regions_array(cl,
                                   hr_claimer,
-                                  &_collection_set_regions[offset],
+                                  &_regions[offset],
                                   length,
                                   worker_id);
 }
 
 void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
-  assert(_inc_build_state == Active, "Precondition");
+  assert(_inc_build_state == CSetBuildType::Active, "Precondition");
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
 
   // We use UINT_MAX as "invalid" marker in verification.
-  assert(_collection_set_cur_length < (UINT_MAX - 1),
-         "Collection set is too large with %u entries", _collection_set_cur_length);
-  hr->set_young_index_in_cset(_collection_set_cur_length + 1);
+  assert(_regions_cur_length < (UINT_MAX - 1),
+         "Collection set is too large with %u entries", _regions_cur_length);
+  hr->set_young_index_in_cset(_regions_cur_length + 1);
 
-  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set larger than maximum allowed.");
-  _collection_set_regions[_collection_set_cur_length] = hr->hrm_index();
+  assert(_regions_cur_length < _regions_max_length, "Collection set larger than maximum allowed.");
+  _regions[_regions_cur_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the length field.
   OrderAccess::storestore();
-  _collection_set_cur_length++;
+  _regions_cur_length++;
 }
 
 void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
@@ -301,7 +301,7 @@ void G1CollectionSet::print(outputStream* st) {
 // pinned by JNI) to allow faster future evacuation. We already "paid" for this work
 // when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
-  assert(_inc_build_state == Active, "Precondition");
+  assert(_inc_build_state == CSetBuildType::Active, "Precondition");
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
   Ticks start_time = Ticks::now();
@@ -626,7 +626,8 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     selected.append(group);
   }
 
-  log_debug(gc, ergo, cset) ("Completed with groups, selected %u", num_regions_selected);
+  log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
+                            num_regions_selected, num_groups_selected);
   // Remove selected groups from candidate list.
   if (num_groups_selected > 0) {
     _optional_groups.remove(&selected);
@@ -635,7 +636,7 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   return total_prediction_ms;
 }
 
-uint G1CollectionSet::select_optional_collection_set_regions(double time_remaining_ms) {
+uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
   uint optional_regions_count = num_optional_regions();
   assert(optional_regions_count > 0,
          "Should only be called when there are optional regions");
@@ -670,7 +671,7 @@ void G1CollectionSet::add_group_to_collection_set(G1CSetCandidateGroup* gr) {
     assert(r->rem_set()->is_complete(), "must be");
     add_region_to_collection_set(r);
   }
-  _collection_set_groups.append(gr);
+  _groups.append(gr);
 }
 
 void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
@@ -680,20 +681,20 @@ void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
 }
 
 void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
-  assert(_inc_part_start == 0, "must be");
-  assert(_selected_groups_inc_part_start == 0, "must be");
+  assert(_regions_inc_part_start == 0, "must be");
+  assert(_groups_inc_part_start == 0, "must be");
 
   double time_remaining_ms = finalize_young_part(target_pause_time_ms, survivor);
   finalize_old_part(time_remaining_ms);
 
   stop_incremental_building();
-  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
+  QuickSort::sort(_regions, _regions_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
   continue_incremental_building();
 
-  uint num_regions_selected = select_optional_collection_set_regions(remaining_pause_time);
+  uint num_regions_selected = select_optional_groups(remaining_pause_time);
 
   stop_incremental_building();
 
@@ -756,7 +757,7 @@ public:
 void G1CollectionSet::verify_young_cset_indices() const {
   assert_at_safepoint_on_vm_thread();
 
-  G1VerifyYoungCSetIndicesClosure cl(_collection_set_cur_length);
+  G1VerifyYoungCSetIndicesClosure cl(_regions_cur_length);
   iterate(&cl);
 }
 #endif

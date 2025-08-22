@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,25 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
-#define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+#include "phasetype.hpp"
 
-#include "gc/g1/g1CollectionSet.hpp"
+const char* const CompilerPhaseTypeHelper::_phase_descriptions[] = {
+#define array_of_labels(name, description) description,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
+};
 
-#include "gc/g1/g1HeapRegionRemSet.hpp"
+const char* const CompilerPhaseTypeHelper::_phase_names[] = {
+#define array_of_labels(name, description) #name,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
+};
 
-template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint length = groups_increment_length();
-  uint offset =  _groups_inc_part_start;
-  if (length == 0) {
-    return;
-  }
-
-  uint start_pos = (worker_id * length) / num_workers;
-  uint cur_pos = start_pos;
-  uint count = 0;
-  do {
-    G1HeapRegionRemSet::iterate_for_merge(groups()->at(offset + cur_pos)->card_set(), cl);
-    cur_pos++;
-    count++;
-    if (cur_pos == length) {
-      cur_pos = 0;
+CompilerPhaseType CompilerPhaseTypeHelper::find_phase(const char* str) {
+  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
+    if (strcmp(CompilerPhaseTypeHelper::_phase_names[i], str) == 0) {
+      return (CompilerPhaseType)i;
     }
-  } while (cur_pos != start_pos);
+  }
+  return PHASE_NONE;
 }
-#endif /* SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP */

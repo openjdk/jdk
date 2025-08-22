@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,29 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
-#define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+#ifndef SHARE_SERVICES_CPUTIMEUSAGE_HPP
+#define SHARE_SERVICES_CPUTIMEUSAGE_HPP
 
-#include "gc/g1/g1CollectionSet.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-#include "gc/g1/g1HeapRegionRemSet.hpp"
+namespace CPUTimeUsage {
+  class GC : public AllStatic {
+  public:
+    static jlong total();
+    static jlong gc_threads();
+    static jlong vm_thread();
+    static jlong stringdedup();
+  };
 
-template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint length = groups_increment_length();
-  uint offset =  _groups_inc_part_start;
-  if (length == 0) {
-    return;
-  }
+  class Error : public AllStatic {
+  private:
+    static volatile bool _has_error;
 
-  uint start_pos = (worker_id * length) / num_workers;
-  uint cur_pos = start_pos;
-  uint count = 0;
-  do {
-    G1HeapRegionRemSet::iterate_for_merge(groups()->at(offset + cur_pos)->card_set(), cl);
-    cur_pos++;
-    count++;
-    if (cur_pos == length) {
-      cur_pos = 0;
-    }
-  } while (cur_pos != start_pos);
+  public:
+    static bool has_error();
+    static void mark_error();
+  };
 }
-#endif /* SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP */
+
+#endif // SHARE_SERVICES_CPUTIMEUSAGE_HPP
