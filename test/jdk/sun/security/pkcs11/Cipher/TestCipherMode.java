@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,12 @@
  */
 
 /*
- * @test id=AES-ECB
+ * @test
  * @bug 8265500
  * @summary
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestCipherMode AES/ECB/PKCS5Padding
- */
-
-/*
- * @test id=AES-GCM
- * @bug 8265500
- * @summary
- * @library /test/lib ..
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestCipherMode AES/GCM/NoPadding
- */
-
-/*
- * @test id=RSA-ECB
- * @bug 8265500
- * @summary
- * @library /test/lib ..
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestCipherMode RSA/ECB/PKCS1Padding
+ * @run main/othervm TestCipherMode
  */
 
 import jtreg.SkippedException;
@@ -110,8 +92,25 @@ public class TestCipherMode extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
+        final String[] transformations = {
+                "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding", "RSA/ECB/PKCS1Padding"
+        };
 
-        main(new TestCipherMode(args[0]), args);
+        boolean skipEncountered = false;
+        for (final String t : transformations) {
+            try {
+                main(new TestCipherMode(t), args);
+            } catch (SkippedException skippedException) {
+                // printing to System.out, so it's easier to see which test it relates to
+                skippedException.printStackTrace(System.out);
+                skipEncountered = true;
+            }
+        }
+
+        if (skipEncountered) {
+            throw new SkippedException("One or more transformations skipped");
+        }
+
     }
 
     @Override

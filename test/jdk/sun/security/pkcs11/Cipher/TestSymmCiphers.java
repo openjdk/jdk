@@ -22,246 +22,15 @@
  */
 
 /*
- * @test id=ARCFOUR-ARCFOUR-400
+ * @test
  * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers ARCFOUR ARCFOUR 400
+ * @run main/othervm TestSymmCiphers
 */
-
-/*
- * @test id=RC4-RC4-401
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers RC4 RC4 401
- */
-
-/*
- * @test id=DES-CBC-NOPADDING-DES-400
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES/CBC/NoPadding DES 400
- */
-
-/*
- * @test id=DESEDE-CBC-NOPADDING-DESEDE-160
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DESede/CBC/NoPadding DESede 160
- */
-
-/*
- * @test id=AES-CBC-NOPADDING-AES-4800
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/CBC/NoPadding AES 4800
- */
-
-/*
- * @test id=BLOWFISH-CBC-NOPADDING-BLOWFISH-24
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers Blowfish/CBC/NoPadding Blowfish 24
- */
-
-/*
- * @test id=DES-CBC-PKCS5PADDING-DES-6401
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES/cbc/PKCS5Padding DES 6401
- */
-
-/*
- * @test id=DESEDE-CBC-PKCS5PADDING-DESEDE-402
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DESede/CBC/PKCS5Padding DESede 402
- */
-
-/*
- * @test id=AES-CBC-PKCS5PADDING-AES-30
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/CBC/PKCS5Padding AES 30
- */
-
-/*
- * @test id=BLOWFISH-CBC-PKCS5PADDING-BLOWFISH-19
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers Blowfish/CBC/PKCS5Padding Blowfish 19
- */
-
-/*
- * @test id=DES-ECB-NOPADDING-DES-400
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES/ECB/NoPadding DES 400
- */
-
-/*
- * @test id=DESEDE-ECB-NOPADDING-DESEDE-160
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DESede/ECB/NoPadding DESede 160
- */
-
-/*
- * @test id=AES-ECB-NOPADDING-AES-4800
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/ECB/NoPadding AES 4800
- */
-
-/*
- * @test id=DES-ECB-PKCS5PADDING-DES-32
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES/ECB/PKCS5Padding DES 32
- */
-
-/*
- * @test id=DES-ECB-PKCS5PADDING-DES-6400
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES/ECB/PKCS5Padding DES 6400
- */
-
-/*
- * @test id=DESEDE-ECB-PKCS5PADDING-DESEDE-400
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DESede/ECB/PKCS5Padding DESede 400
- */
-
-/*
- * @test id=AES-ECB-PKCS5PADDING-AES-64
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/ECB/PKCS5Padding AES 64
- */
-
-/*
- * @test id=DES-DES-6400
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DES DES 6400
- */
-
-/*
- * @test id=DESEDE-DESEDE-408
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers DESede DESede 408
- */
-
-/*
- * @test id=AES-AES-128
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES AES 128
- */
-
-/*
- * @test id=AES-CTR-NOPADDING-AES-3200
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/CTR/NoPadding AES 3200
- */
-
-/*
- * @test id=AES-CTS-NOPADDING-AES-3200
- * @bug 4898461 6604496 8330842
- * @summary basic test for symmetric ciphers with padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphers AES/CTS/NoPadding AES 3200
- */
 
 import jtreg.SkippedException;
 
@@ -270,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -445,6 +215,47 @@ public class TestSymmCiphers extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestSymmCiphers(args[0], args[1], Integer.parseInt(args[2])), args);
+
+        final List<String[]> tests = List.of(
+                new String[]{"ARCFOUR", "ARCFOUR", "400"},
+                new String[]{"RC4", "RC4", "401"},
+                new String[]{"DES/CBC/NoPadding", "DES", "400"},
+                new String[]{"DESede/CBC/NoPadding", "DESede", "160"},
+                new String[]{"AES/CBC/NoPadding", "AES", "4800"},
+                new String[]{"Blowfish/CBC/NoPadding", "Blowfish", "24"},
+                new String[]{"DES/cbc/PKCS5Padding", "DES", "6401"},
+                new String[]{"DESede/CBC/PKCS5Padding", "DESede", "402"},
+                new String[]{"AES/CBC/PKCS5Padding", "AES", "30"},
+                new String[]{"Blowfish/CBC/PKCS5Padding", "Blowfish", "19"},
+                new String[]{"DES/ECB/NoPadding", "DES", "400"},
+                new String[]{"DESede/ECB/NoPadding", "DESede", "160"},
+                new String[]{"AES/ECB/NoPadding", "AES", "4800"},
+                new String[]{"DES/ECB/PKCS5Padding", "DES", "32"},
+                new String[]{"DES/ECB/PKCS5Padding", "DES", "6400"},
+                new String[]{"DESede/ECB/PKCS5Padding", "DESede", "400"},
+                new String[]{"AES/ECB/PKCS5Padding", "AES", "64"},
+
+                new String[]{"DES", "DES", "6400"},
+                new String[]{"DESede", "DESede", "408"},
+                new String[]{"AES", "AES", "128"},
+
+                new String[]{"AES/CTR/NoPadding", "AES", "3200"},
+                new String[]{"AES/CTS/NoPadding", "AES", "3200"}
+
+        );
+
+        boolean skipEncountered = false;
+        for (final String[] t : tests) {
+            try {
+                main(new TestSymmCiphers(t[0], t[1], Integer.parseInt(t[2])), args);
+            } catch (SkippedException skippedException) {
+                skippedException.printStackTrace(System.err);
+                skipEncountered = true;
+            }
+        }
+
+        if (skipEncountered) {
+            throw new SkippedException("One or more tests skipped");
+        }
     }
 }

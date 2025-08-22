@@ -22,113 +22,14 @@
  */
 
 /*
- * @test id=ARCFOUR-ARCFOUR-400
+ * @test
  * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad ARCFOUR ARCFOUR 400
- */
-
-/*
- * @test id=RC4-RC4-401
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad RC4 RC4 401
- */
-
-/*
- * @test id=DES-CBC-NOPADDING-DES-400
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad DES/CBC/NoPadding DES 400
- */
-
-/*
- * @test id=DESEDE-CBC-NOPADDING-DESEDE-160
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad DESede/CBC/NoPadding DESede 160
- */
-
-/*
- * @test id=AES-CBC-NOPADDING-AES-4800
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad AES/CBC/NoPadding AES 4800
- */
-
-/*
- * @test id=BLOWFISH-CBC-NOPADDING-BLOWFISH-24
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad Blowfish/CBC/NoPadding Blowfish 24
- */
-
-/*
- * @test id=AES-CTR-NOPADDING-AES-1600
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad AES/CTR/NoPadding AES 1600
- */
-
-/*
- * @test id=AES-CTR-NOPADDING-AES-65
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad AES/CTR/NoPadding AES 65
- */
-
-/*
- * @test id=AES-CTS-NOPADDING-AES-1600
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad AES/CTS/NoPadding AES 1600
- */
-
-/*
- * @test id=AES-CTS-NOPADDING-AES-65
- * @bug 4898484 6604496 8001284 8330842
- * @summary basic test for symmetric ciphers with no padding
- * @author Valerie Peng
- * @library /test/lib ..
- * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm TestSymmCiphersNoPad AES/CTS/NoPadding AES 65
+ * @run main/othervm TestSymmCiphersNoPad
  */
 
 import jtreg.SkippedException;
@@ -140,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -323,6 +225,32 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestSymmCiphersNoPad(args[0], args[1], Integer.parseInt(args[2])), args);
+
+        final List<String[]> tests = List.of(
+                new String[]{"ARCFOUR", "ARCFOUR", "400"},
+                new String[]{"RC4", "RC4", "401"},
+                new String[]{"DES/CBC/NoPadding", "DES", "400"},
+                new String[]{"DESede/CBC/NoPadding", "DESede", "160"},
+                new String[]{"AES/CBC/NoPadding", "AES", "4800"},
+                new String[]{"Blowfish/CBC/NoPadding", "Blowfish", "24"},
+                new String[]{"AES/CTR/NoPadding", "AES", "1600"},
+                new String[]{"AES/CTR/NoPadding", "AES", "65"},
+                new String[]{"AES/CTS/NoPadding", "AES", "1600"},
+                new String[]{"AES/CTS/NoPadding", "AES", "65"}
+        );
+
+        boolean skipEncountered = false;
+        for (final String[] t : tests) {
+            try {
+                main(new TestSymmCiphersNoPad(t[0], t[1], Integer.parseInt(t[2])), args);
+            } catch (SkippedException skippedException) {
+                skippedException.printStackTrace(System.err);
+                skipEncountered = true;
+            }
+        }
+
+        if (skipEncountered) {
+            throw new SkippedException("One or more tests skipped");
+        }
     }
 }
