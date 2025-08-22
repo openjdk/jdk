@@ -1219,13 +1219,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     }
   }
 
-<<<<<<< HEAD
   // 2. (Optionally) Merge the refinement table into the card table (if needed).
-=======
-  WorkerThreads* workers = g1h->workers();
-  size_t const increment_length = g1h->collection_set()->regions_cur_length();
->>>>>>> master
-
   G1ConcurrentRefineSweepState& state = g1h->concurrent_refine()->sweep_state();
   if (initial_evacuation && state.is_in_progress()) {
     Ticks start = Ticks::now();
