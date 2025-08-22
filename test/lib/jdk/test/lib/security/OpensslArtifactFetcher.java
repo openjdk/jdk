@@ -49,10 +49,9 @@ public class OpensslArtifactFetcher {
            and return that path, if download fails then return null.
      *
      * @return openssl binary path of the current version
-     * @throws IOException if a valid version of OpenSSL cannot be found
      * @throws SkippedException if OpenSSL is not available on the target platform
      */
-    public static String getOpensslPath() throws IOException {
+    public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             System.out.println("Using OpenSSL from system property.");
@@ -118,10 +117,14 @@ public class OpensslArtifactFetcher {
         return false;
     }
 
-    private static String fetchOpenssl(Class<?> clazz) throws IOException {
-        return ArtifactResolver.fetchOne(clazz)
-                .resolve("openssl", "bin", "openssl")
-                .toString();
+    private static String fetchOpenssl(Class<?> clazz) {
+        try {
+            return ArtifactResolver.fetchOne(clazz)
+                    .resolve("openssl", "bin", "openssl")
+                    .toString();
+        } catch (IOException exc) {
+            throw new SkippedException("Could not find openssl", exc);
+        }
     }
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
