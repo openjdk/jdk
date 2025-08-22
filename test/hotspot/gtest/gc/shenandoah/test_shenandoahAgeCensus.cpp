@@ -40,9 +40,14 @@ protected:
     build_cohort_populations(_mortality_rates, _cohort_populations, _cohorts_count);
   }
 
+  static void add_population(ShenandoahAgeCensus& census, uint age, size_t population_words) {
+    CENSUS_NOISE(census.add(age, 0, 0, population_words, 0));
+    NO_CENSUS_NOISE(census.add(age, 0, population_words, 0));
+  }
+
   void update(ShenandoahAgeCensus& census, size_t cohorts) const {
     for (size_t i = 1; i < cohorts; i++) {
-      census.add(i, 0, 0, _cohort_populations[i], 0);
+      add_population(census, i, _cohort_populations[i]);
     }
     census.update_census(_cohort_populations[0]);
   }
@@ -85,8 +90,8 @@ TEST_F(ShenandoahAgeCensusTest, initialize) {
 TEST_F(ShenandoahAgeCensusTest, ignore_small_populations) {
   // Small populations are ignored so we do not return early before reaching the youngest cohort.
   ShenandoahAgeCensus census(1);
-  census.add(1, 0, 0, 32, 0);
-  census.add(1, 0, 0, 32, 0);
+  add_population(census,1, 32);
+  add_population(census,1, 32);
   census.update_census(64);
   EXPECT_EQ(1u, census.tenuring_threshold());
 }
