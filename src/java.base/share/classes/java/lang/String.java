@@ -814,7 +814,7 @@ public final class String
                     return new String(src, LATIN1);
                 return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
-                throw malformedInputException(src, MalformedInputException.class);
+                throw malformedInputException(src);
             }
         }
 
@@ -887,13 +887,13 @@ public final class String
     }
 
     private static <E extends Exception> byte[] encodeWithEncoder(
-            Charset cs, byte coder, byte[] val, Class<E> characterCodingException)
+            Charset cs, byte coder, byte[] val, Class<E> exceptionClass)
             // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        boolean doReplace = characterCodingException == null;
+        boolean doReplace = exceptionClass == null;
         // fastpath with ArrayEncoder implies `doReplace`.
         if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
@@ -994,7 +994,7 @@ public final class String
                 if (isASCII(val)) {
                     return val;
                 } else {
-                    throw unmappableCharacterException(val, UnmappableCharacterException.class);
+                    throw unmappableCharacterException(val);
                 }
             }
         }
@@ -1047,7 +1047,7 @@ public final class String
         return encode8859_1(coder, val, UnmappableCharacterException.class);
     }
 
-    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> unmappableCharacterException)
+    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> exceptionClass)
             // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         if (coder == LATIN1) {
@@ -1063,8 +1063,8 @@ public final class String
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
-                if (unmappableCharacterException != null) {
-                    throw unmappableCharacterException(sp, unmappableCharacterException);
+                if (exceptionClass != null) {
+                    throw unmappableCharacterException(sp, exceptionClass);
                 }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
@@ -1169,7 +1169,7 @@ public final class String
     }
 
     private static <E extends Exception> int decodeUTF8_UTF16(
-            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> malformedInputException)
+            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exceptionClass)
             // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         while (sp < sl) {
@@ -1180,8 +1180,8 @@ public final class String
                 if (sp < sl) {
                     int b2 = src[sp++];
                     if (isNotContinuation(b2)) {
-                        if (malformedInputException != null) {
-                            throw malformedInputException(sp - 1, 1, malformedInputException);
+                        if (exceptionClass != null) {
+                            throw malformedInputException(sp - 1, 1, exceptionClass);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp--;
@@ -1190,8 +1190,8 @@ public final class String
                     }
                     continue;
                 }
-                if (malformedInputException != null) {
-                    throw malformedInputException(sp, 1, malformedInputException);  // underflow()
+                if (exceptionClass != null) {
+                    throw malformedInputException(sp, 1, exceptionClass);  // underflow()
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1200,8 +1200,8 @@ public final class String
                     int b2 = src[sp++];
                     int b3 = src[sp++];
                     if (isMalformed3(b1, b2, b3)) {
-                        if (malformedInputException != null) {
-                            throw malformedInputException(sp - 3, 3, malformedInputException);
+                        if (exceptionClass != null) {
+                            throw malformedInputException(sp - 3, 3, exceptionClass);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 3;
@@ -1209,8 +1209,8 @@ public final class String
                     } else {
                         char c = decode3(b1, b2, b3);
                         if (Character.isSurrogate(c)) {
-                            if (malformedInputException != null) {
-                                throw malformedInputException(sp - 3, 3, malformedInputException);
+                            if (exceptionClass != null) {
+                                throw malformedInputException(sp - 3, 3, exceptionClass);
                             }
                             StringUTF16.putChar(dst, dp++, REPL);
                         } else {
@@ -1220,14 +1220,14 @@ public final class String
                     continue;
                 }
                 if (sp < sl && isMalformed3_2(b1, src[sp])) {
-                    if (malformedInputException != null) {
-                        throw malformedInputException(sp - 1, 2, malformedInputException);
+                    if (exceptionClass != null) {
+                        throw malformedInputException(sp - 1, 2, exceptionClass);
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (malformedInputException != null) {
-                    throw malformedInputException(sp, 1, malformedInputException);
+                if (exceptionClass != null) {
+                    throw malformedInputException(sp, 1, exceptionClass);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1239,8 +1239,8 @@ public final class String
                     int uc = decode4(b1, b2, b3, b4);
                     if (isMalformed4(b2, b3, b4) ||
                             !Character.isSupplementaryCodePoint(uc)) { // shortest form check
-                        if (malformedInputException != null) {
-                            throw malformedInputException(sp - 4, 4, malformedInputException);
+                        if (exceptionClass != null) {
+                            throw malformedInputException(sp - 4, 4, exceptionClass);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 4;
@@ -1253,14 +1253,14 @@ public final class String
                 }
                 b1 &= 0xff;
                 if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
-                    if (malformedInputException != null) {
-                        throw malformedInputException(sp - 1, 1, malformedInputException);  // or 2
+                    if (exceptionClass != null) {
+                        throw malformedInputException(sp - 1, 1, exceptionClass);  // or 2
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (malformedInputException != null) {
-                    throw malformedInputException(sp - 1, 1, malformedInputException);
+                if (exceptionClass != null) {
+                    throw malformedInputException(sp - 1, 1, exceptionClass);
                 }
                 sp++;
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1269,8 +1269,8 @@ public final class String
                 }
                 break;
             } else {
-                if (malformedInputException != null) {
-                    throw malformedInputException(sp - 1, 1, malformedInputException);
+                if (exceptionClass != null) {
+                    throw malformedInputException(sp - 1, 1, exceptionClass);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
             }
@@ -1313,29 +1313,29 @@ public final class String
     }
 
     @SuppressWarnings("unchecked")
-    private static <E extends Exception> E malformedInputException(int off, int nb, Class<E> exceptionType) {
+    private static <E extends Exception> E malformedInputException(int off, int nb, Class<E> exceptionClass) {
         MalformedInputException mie = new MalformedInputException(nb);
         String msg = "malformed input off : " + off + ", length : " + nb;
         mie.initCause(new IllegalArgumentException(msg));
         return (E) mie;
     }
 
-    private static <E extends Exception> E malformedInputException(byte[] val, Class<E> exceptionType) {
+    private static MalformedInputException malformedInputException(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        return malformedInputException(dp, 1, exceptionType);
+        return malformedInputException(dp, 1, MalformedInputException.class);
     }
 
     @SuppressWarnings("unchecked")
-    private static <E extends Exception> E unmappableCharacterException(int off, Class<E> exceptionType) {
+    private static <E extends Exception> E unmappableCharacterException(int off, Class<E> exceptionClass) {
         UnmappableCharacterException uce = new UnmappableCharacterException(1);
         String msg = "malformed input off : " + off + ", length : 1";
         uce.initCause(new IllegalArgumentException(msg, uce));
         return (E) uce;
     }
 
-    private static <E extends Exception> E unmappableCharacterException(byte[] val, Class<E> exceptionType) {
+    private static UnmappableCharacterException unmappableCharacterException(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        return unmappableCharacterException(dp, exceptionType);
+        return unmappableCharacterException(dp, UnmappableCharacterException.class);
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val) {
@@ -1346,11 +1346,11 @@ public final class String
         return encodeUTF8(coder, val, UnmappableCharacterException.class);
     }
 
-    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> unmappableCharacterException)
+    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exceptionClass)
             // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
             throws E {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16(val, unmappableCharacterException);
+            return encodeUTF8_UTF16(val, exceptionClass);
         }
 
         int positives = StringCoding.countPositives(val, 0, val.length);
