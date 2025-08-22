@@ -266,14 +266,14 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void convertD2LBits() {
         for (int i = 0; i < COUNT; i++) {
-            resL[i] = Double.doubleToLongBits(i);
+            resL[i] = Double.doubleToLongBits(doubles[i]);
         }
     }
 
     @Benchmark
     public void convertD2LBitsRaw() {
         for (int i = 0; i < COUNT; i++) {
-            resL[i] = Double.doubleToRawLongBits(i);
+            resL[i] = Double.doubleToRawLongBits(doubles[i]);
         }
     }
 
@@ -287,14 +287,14 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void convertF2IBits() {
         for (int i = 0; i < COUNT; i++) {
-            resI[i] = (int) Float.floatToIntBits(i);
+            resI[i] = Float.floatToIntBits(floats[i]);
         }
     }
 
     @Benchmark
     public void convertF2IBitsRaw() {
         for (int i = 0; i < COUNT; i++) {
-            resI[i] = (int) Float.floatToRawIntBits(i);
+            resI[i] = (int) Float.floatToRawIntBits(floats[i]);
         }
     }
 
@@ -336,7 +336,7 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void convertIBits2F() {
         for (int i = 0; i < COUNT; i++) {
-            resF[i] = Float.intBitsToFloat(i);
+            resF[i] = Float.intBitsToFloat(ints[i]);
         }
     }
 
@@ -364,7 +364,7 @@ public abstract class TypeVectorOperations {
     @Benchmark
     public void convertLBits2D() {
         for (int i = 0; i < COUNT; i++) {
-            resD[i] = Double.longBitsToDouble(i);
+            resD[i] = Double.longBitsToDouble(longs[i]);
         }
     }
 
