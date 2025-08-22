@@ -256,6 +256,19 @@ void IdealGraphPrinter::print_prop(const char *name, const char *val) {
   tail(PROPERTY_ELEMENT);
 }
 
+void IdealGraphPrinter::print_prop_record(const IdealGraphPrintRecord rec[], int size) {
+  for ( int i = 0; i < size; i++ ) {
+    if (rec[i].cond != 0) {
+      if (rec[i].string_value != nullptr) {
+        print_prop(rec[i].name, rec[i].string_value);
+      }
+      else {
+        print_prop(rec[i].name, rec[i].int_value);
+      }
+    }
+  }
+}
+
 void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree) {
   begin_head(METHOD_ELEMENT);
 
@@ -507,61 +520,27 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     }
 
     const jushort flags = node->flags();
-    if (flags & Node::Flag_is_Copy) {
-      print_prop("is_copy", "true");
-    }
-    if (flags & Node::Flag_rematerialize) {
-      print_prop("rematerialize", "true");
-    }
-    if (flags & Node::Flag_needs_anti_dependence_check) {
-      print_prop("needs_anti_dependence_check", "true");
-    }
-    if (flags & Node::Flag_is_macro) {
-      print_prop("is_macro", "true");
-    }
-    if (flags & Node::Flag_is_Con) {
-      print_prop("is_con", "true");
-    }
-    if (flags & Node::Flag_is_cisc_alternate) {
-      print_prop("is_cisc_alternate", "true");
-    }
-    if (flags & Node::Flag_is_dead_loop_safe) {
-      print_prop("is_dead_loop_safe", "true");
-    }
-    if (flags & Node::Flag_may_be_short_branch) {
-      print_prop("may_be_short_branch", "true");
-    }
-    if (flags & Node::Flag_has_call) {
-      print_prop("has_call", "true");
-    }
-    if (flags & Node::Flag_has_swapped_edges) {
-      print_prop("has_swapped_edges", "true");
-    }
-
-    if (C->matcher() != nullptr) {
-      if (C->matcher()->is_shared(node)) {
-        print_prop("is_shared", "true");
-      } else {
-        print_prop("is_shared", "false");
-      }
-      if (C->matcher()->is_dontcare(node)) {
-        print_prop("is_dontcare", "true");
-      } else {
-        print_prop("is_dontcare", "false");
-      }
-      Node* old = C->matcher()->find_old_node(node);
-      if (old != nullptr) {
-        print_prop("old_node_idx", old->_idx);
-      }
-    }
-
-    if (node->is_Proj()) {
-      print_prop("con", (int)node->as_Proj()->_con);
-    }
-
-    if (node->is_Mach()) {
-      print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
-    }
+    Node* old = C->matcher()->find_old_node(node);
+    const IdealGraphPrintRecord rec[] = {
+        {flags & Node::Flag_is_Copy, "is_copy", "true"},
+        {flags & Node::Flag_rematerialize, "rematerialize", "true"},
+        {flags & Node::Flag_needs_anti_dependence_check, "needs_anti_dependence_check", "true"},
+        {flags & Node::Flag_is_macro, "is_macro", "true"},
+        {flags & Node::Flag_is_Con, "is_con", "true"},
+        {flags & Node::Flag_is_cisc_alternate, "is_cisc_alternate", "true"},
+        {flags & Node::Flag_is_dead_loop_safe, "is_dead_loop_safe", "true"},
+        {flags & Node::Flag_may_be_short_branch, "may_be_short_branch", "true"},
+        {flags & Node::Flag_has_call, "has_call", "true"},
+        {flags & Node::Flag_has_swapped_edges, "has_swapped_edges", "true"},
+        {((C->matcher() != nullptr) && (C->matcher()->is_shared(node))), "is_shared", "true"},
+        {((C->matcher() != nullptr) && !(C->matcher()->is_shared(node))), "is_shared", "false"},
+        {((C->matcher() != nullptr) && (C->matcher()->is_dontcare(node))), "is_dontcare", "true"},
+        {((C->matcher() != nullptr) && !(C->matcher()->is_dontcare(node))), "is_dontcare", "false"},
+        {(old != nullptr), "old_node_idx", nullptr, (int)old->_idx},
+        {(node->is_Proj()), "con", nullptr, (int)node->as_Proj()->_con},
+        {node->is_Mach(), "idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]}
+      };
+    print_prop_record(rec,(sizeof(rec)/sizeof(IdealGraphPrintRecord)));
 
     if (node->is_CountedLoop()) {
       print_loop_kind(node->as_CountedLoop());
@@ -1082,73 +1061,36 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       buffer[0] = 0;
       stringStream lrg_mask_stream(buffer, sizeof(buffer) - 1);
       lrg.mask().dump(&lrg_mask_stream);
-      print_prop("mask", buffer);
-      print_prop("mask_size", lrg.mask_size());
-      if (lrg._degree_valid) {
-        print_prop("degree", lrg.degree());
-      }
-      print_prop("num_regs", lrg.num_regs());
-      print_prop("reg_pressure", lrg.reg_pressure());
-      print_prop("cost", lrg._cost);
-      print_prop("area", lrg._area);
-      print_prop("score", lrg.score());
-      if (lrg._risk_bias != 0) {
-        print_prop("risk_bias", lrg._risk_bias);
-      }
-      if (lrg._copy_bias != 0) {
-        print_prop("copy_bias", lrg._copy_bias);
-      }
-      if (lrg.is_singledef()) {
-        print_prop("is_singledef", TRUE_VALUE);
-      }
-      if (lrg.is_multidef()) {
-        print_prop("is_multidef", TRUE_VALUE);
-      }
-      if (lrg._is_oop) {
-        print_prop("is_oop", TRUE_VALUE);
-      }
-      if (lrg._is_float) {
-        print_prop("is_float", TRUE_VALUE);
-      }
-      if (lrg._is_vector) {
-        print_prop("is_vector", TRUE_VALUE);
-      }
-      if (lrg._is_predicate) {
-        print_prop("is_predicate", TRUE_VALUE);
-      }
-      if (lrg._is_scalable) {
-        print_prop("is_scalable", TRUE_VALUE);
-      }
-      if (lrg._was_spilled1) {
-        print_prop("was_spilled1", TRUE_VALUE);
-      }
-      if (lrg._was_spilled2) {
-        print_prop("was_spilled2", TRUE_VALUE);
-      }
-      if (lrg._direct_conflict) {
-        print_prop("direct_conflict", TRUE_VALUE);
-      }
-      if (lrg._fat_proj) {
-        print_prop("fat_proj", TRUE_VALUE);
-      }
-      if (lrg._was_lo) {
-        print_prop("_was_lo", TRUE_VALUE);
-      }
-      if (lrg._has_copy) {
-        print_prop("has_copy", TRUE_VALUE);
-      }
-      if (lrg._at_risk) {
-        print_prop("at_risk", TRUE_VALUE);
-      }
-      if (lrg._must_spill) {
-        print_prop("must_spill", TRUE_VALUE);
-      }
-      if (lrg._is_bound) {
-        print_prop("is_bound", TRUE_VALUE);
-      }
-      if (lrg._msize_valid && lrg._degree_valid && lrg.lo_degree()) {
-        print_prop("trivial", TRUE_VALUE);
-      }
+      IdealGraphPrintRecord rec[] = {
+          {1, "mask", buffer},
+          {1, "mask_size", nullptr, lrg.mask_size()},
+          {lrg._degree_valid, "degree", nullptr, lrg.degree()},
+          {1, "num_regs", nullptr, lrg.num_regs()},
+          {1, "reg_pressure", nullptr, lrg.reg_pressure()},
+          {1, "cost", nullptr, (int)lrg._cost},
+          {1, "area", nullptr, (int)lrg._area},
+          {1, "score", nullptr, (int)lrg.score()},
+          {(int)lrg._risk_bias, "risk_bias", nullptr, (int)lrg._risk_bias},
+          {(int)lrg._copy_bias, "copy_bias", nullptr, (int)lrg._copy_bias},
+          {lrg.is_singledef(), "is_singledef", TRUE_VALUE},
+          {lrg.is_multidef(), "is_multidef", TRUE_VALUE},
+          {lrg._is_oop, "is_oop", TRUE_VALUE},
+          {lrg._is_float, "is_float", TRUE_VALUE},
+          {lrg._is_vector, "is_vector", TRUE_VALUE},
+          {lrg._is_predicate, "is_predicate", TRUE_VALUE},
+          {lrg._is_scalable, "is_scalable", TRUE_VALUE},
+          {lrg._was_spilled1, "was_spilled1", TRUE_VALUE},
+          {lrg._was_spilled2, "was_spilled2", TRUE_VALUE},
+          {lrg._direct_conflict, "direct_conflict", TRUE_VALUE},
+          {lrg._fat_proj, "fat_proj", TRUE_VALUE},
+          {lrg._was_lo, "_was_lo", TRUE_VALUE},
+          {lrg._has_copy, "has_copy", TRUE_VALUE},
+          {lrg._at_risk, "at_risk", TRUE_VALUE},
+          {lrg._must_spill, "must_spill", TRUE_VALUE},
+          {lrg._is_bound, "is_bound", TRUE_VALUE},
+          {lrg._msize_valid && lrg._degree_valid && lrg.lo_degree(), "trivial", TRUE_VALUE}
+        };
+      print_prop_record(rec, (sizeof(rec)/sizeof(IdealGraphPrintRecord)));
       tail(PROPERTIES_ELEMENT);
       tail(LIVE_RANGE_ELEMENT);
     }
