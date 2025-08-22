@@ -2883,6 +2883,47 @@ Java HotSpot VM.
     expensive operations. Using a lower value will cause heap memory to be
     uncommitted earlier, at the risk of soon having to commit it again.
 
+`-XX:+UseShenandoahGC`
+:   Enables the use of the Shenandoah garbage collector. This is a low pause
+    time, concurrent garbage collector. Its pause times are not proportional to
+    the size of the heap. Shenandoah garbage collector can work with compressed
+    pointers. See `-XX:UseCompressedOops` for further information about
+    compressed oops.
+
+`-XX:ShenandoahGCMode=`*mode*
+:   Sets the GC mode for Shenandoah GC to use. By default, this option is set
+    to `satb`. Among other things, this defines which barriers are in use.
+    Possible mode values include the following:
+
+    `satb`
+    :   Snapshot-at-the-beginning concurrent GC (three pass mark-evac-update).
+
+    `passive`
+    :   Stop the world GC only (either degenerated or full). This mode is
+    diagnostic, and must be enabled via `-XX:+UnlockDiagnosticVMOptions`.
+
+    `generational`
+    :   Generational concurrent GC.
+
+`-XX:ShenandoahGCHeuristics=`*heuristics*
+:   Sets the heuristics for Shenandoah GC to use. By default, this option is
+    set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
+    to start the GC, how much to process on each cycle, and what other features
+    to automatically enable. Possible heuristics are following:
+
+    `adaptive`
+    :   To maintain the given amount of free heap at all times, even during
+    the GC cycle.
+
+    `static`
+    :   Trigger GC when free heap falls below the ShenandoahMinFreeThreshold.
+
+    `aggressive`
+    :   Run GC continuously, try to evacuate everything.
+
+    `compact`
+    :   Run GC more frequently and with deeper targets to free up more memory.
+
 ## Deprecated Java Options
 
 These `java` options are deprecated and might be removed in a future JDK
