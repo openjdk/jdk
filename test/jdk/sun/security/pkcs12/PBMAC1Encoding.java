@@ -402,10 +402,12 @@ public class PBMAC1Encoding {
                 password.toCharArray());
         System.out.println("A.1 pass");
 
+/* kdfHash and Hash must have same value, therefore, this test is not supported.
         ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A2)),
                 password.toCharArray());
         System.out.println("A.2 pass");
+*/
 
         ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A3)),

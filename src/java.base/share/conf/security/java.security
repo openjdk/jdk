@@ -1270,6 +1270,7 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # Java Security Standard Algorithm Names Specification. When set to "NONE",
 # no Mac is generated. The default value is "HmacPBESHA256".
 #keystore.pkcs12.macAlgorithm = HmacPBESHA256
+keystore.pkcs12.macAlgorithm = HmacPBESHA256
 
 # The iteration count used by the MacData algorithm. This value must be a
 # positive integer. The default value is 10000.

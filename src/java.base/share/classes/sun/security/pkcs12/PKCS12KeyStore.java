@@ -42,7 +42,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.PBMAC1ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
@@ -177,7 +176,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String pbmac1Hmac = null;
     private String pbmac1KdfHmac = null;
     private int macIterationCount = -1;
-    private int macKeyLength = -1;
     private int macSaltLength = -1;
     private byte[] extraSalt = null;
     private int extraIterationCount = -1;
@@ -1489,9 +1487,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         final MacData macData;
 
         if (macAlgorithm.equals("PBMAC1")) {
-                params = new PBMAC1ParameterSpec(getSalt(), macIterationCount,
-                        pbmac1KdfHmac, pbmac1Hmac, macKeyLength);
-                macString = "PBEWith" + pbmac1Hmac;
+                params = new PBEParameterSpec(getSalt(), macIterationCount);
+                if (defaultMacAlgorithm().equals("HmacPBESHA512")) {
+                    macString = "PBEWithHmacSHA512";
+                } else {
+                    macString = "PBEWithHmacSHA256";
+                }
                 algName = "PBMAC1";
         } else {
                 params = new PBEParameterSpec(getSalt(), macIterationCount);
@@ -1512,8 +1513,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             byte[] macResult = m.doFinal();
 
             // encode as MacData
-            macData = new MacData(algName, macResult, params, extraSalt,
-                extraIterationCount);
+            macData = new MacData(algName, macResult, params,
+                    defaultMacAlgorithm().replace("PBE", ""),
+                    extraSalt, extraIterationCount);
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(macData.getEncoded());
             mData = bytes.toByteArray();
@@ -2170,27 +2172,17 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
                     if (algName.equals("PBMAC1")) {
                         byte[] salt = macData.getSalt();
-                        int keyLength = macData.getKeyLength();
 
-                        // PKCS12 implementations MUST NOT accept PBKDF2 KDF
-                        // params that omit the keyLength field.
-                        if (keyLength == -1) {
-                            throw new IOException("PMAC1 parameter parsing "
-                                + "error: missing keyLength field");
-                        }
+                        pbmac1Hmac = macData.getHmac();
+                        pbmac1KdfHmac = macData.getKdfHmac();
 
-                        PBMAC1ParameterSpec params =
-                                new PBMAC1ParameterSpec(salt,
-                                macData.getIterations(), macData.getkdfHmac(),
-                                macData.getHmac(), keyLength);
+                        PBEParameterSpec params =
+                                new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
-                                "PBEWith" + macData.getHmac());
+                                "PBEWith" + pbmac1Hmac);
 
                         macAlgorithm = algName;
-                        pbmac1Hmac = macData.getHmac();
-                        pbmac1KdfHmac = macData.getkdfHmac();
                         macIterationCount = macData.getIterations();
-                        macKeyLength = macData.getKeyLength();
                         // store salt length in macData
                         macSaltLength = salt.length;
                         extraSalt = macData.getExtraSalt();

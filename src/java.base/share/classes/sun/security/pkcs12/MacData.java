@@ -30,8 +30,9 @@ import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.PBMAC1ParameterSpec;
 
 import sun.security.pkcs.ParsingException;
 import sun.security.util.*;
@@ -88,21 +89,21 @@ class MacData {
             throw new IOException("algid parse error, not a sequence");
         }
         if (digestAlgorithmName.equals("PBMAC1")) {
-            PBMAC1ParameterSpec pbmac1Spec;
+            PBEParameterSpec pbeSpec;
 
             try {
-                pbmac1Spec =
+                pbeSpec =
                         digestAlgorithmParams.getParameterSpec(
-                        PBMAC1ParameterSpec.class);
+                        PBEParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
                 throw new IOException(
-                        "Invalid PBMAC1 algorithm parameters");
+                        "Invalid PBE algorithm parameters");
             }
-            iterations = pbmac1Spec.getIterationCount();
-            macSalt = pbmac1Spec.getSalt();
-            kdfHmac = pbmac1Spec.getkdfHmac();
-            Hmac = pbmac1Spec.getHmac();
-            keyLength = pbmac1Spec.getKeyLength();
+            iterations = pbeSpec.getIterationCount();
+            macSalt = pbeSpec.getSalt();
+            String ps = digestAlgorithmParams.toString();
+            kdfHmac = getKdfHmac(ps);
+            Hmac = getHmac(ps);
         }
 
         // Get the salt.
@@ -121,7 +122,7 @@ class MacData {
     }
 
     MacData(String algName, byte[] digest, AlgorithmParameterSpec params,
-            byte[] extraSalt, int extraIterationCount)
+            String defaultKdfHmac, byte[] extraSalt, int extraIterationCount)
         throws NoSuchAlgorithmException
     {
         if (algName == null) {
@@ -143,20 +144,29 @@ class MacData {
             this.digest = digest.clone();
         }
 
-        if (params instanceof PBMAC1ParameterSpec p) {
-            macSalt = p.getSalt();
-            iterations = p.getIterationCount();
-            kdfHmac = p.getkdfHmac();
-            Hmac = p.getHmac();
-            keyLength = p.getKeyLength();
-            extraMacSalt = extraSalt;
-            extraIterations = extraIterationCount;
-        } else if (params instanceof PBEParameterSpec p) {
-            macSalt = p.getSalt();
-            iterations = p.getIterationCount();
-            kdfHmac = null;
-            Hmac = null;
-            keyLength = 0;
+        if (params instanceof PBEParameterSpec p) {
+            if (algName.equals("PBMAC1")) {
+                macSalt = p.getSalt();
+                iterations = p.getIterationCount();
+                kdfHmac = defaultKdfHmac;
+                Hmac = kdfHmac;
+
+                if (defaultKdfHmac.equals("HmacSHA512")) {
+                    keyLength = 512;
+                } else if (defaultKdfHmac.equals("HmacSHA256")) {
+                    keyLength = 256;
+                } else {
+                    throw new IllegalArgumentException("unsupported Hmac");
+                }
+                extraMacSalt = extraSalt;
+                extraIterations = extraIterationCount;
+            } else {
+                macSalt = p.getSalt();
+                iterations = p.getIterationCount();
+                kdfHmac = null;
+                Hmac = null;
+                keyLength = 0;
+            }
         } else {
             throw new IllegalArgumentException("unsupported parameter spec");
         }
@@ -182,7 +192,7 @@ class MacData {
         return digest;
     }
 
-    String getkdfHmac() {
+    String getKdfHmac() {
         return kdfHmac;
     }
 
@@ -260,6 +270,7 @@ class MacData {
             tmp0.write(DerValue.tag_Sequence, tmp2);
             tmp0.putOctetString(extraMacSalt);
             tmp0.putInteger(extraIterations);
+
             out.write(DerValue.tag_Sequence, tmp0);
             encoded = out.toByteArray();
 
@@ -295,4 +306,32 @@ class MacData {
         return this.encoded.clone();
     }
 
+    public String getKdfHmac(String text) {
+        final String word1 = "With";
+        final String word2 = "And";
+
+        String regex = Pattern.quote(word1) + "(.*?)" + Pattern.quote(word2);
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    public String getHmac(String text) {
+        final String word2 = "And";
+
+        String regex = Pattern.quote(word2) + "(.*?)$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
 }
