@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACEARENAGROWTHPOLICY_HPP
 #define SHARE_MEMORY_METASPACE_METASPACEARENAGROWTHPOLICY_HPP
 
-#include "memory/metaspace.hpp" // For Metaspace::MetaspaceType
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "utilities/debug.hpp"
 

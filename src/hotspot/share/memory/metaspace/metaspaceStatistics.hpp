@@ -26,7 +26,6 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 #define SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 
-#include "memory/metaspace.hpp"             // for MetadataType enum
 #include "memory/metaspace/chunklevel.hpp"
 #include "utilities/globalDefinitions.hpp"
 
