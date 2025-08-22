@@ -274,6 +274,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
   const size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
   const size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
+  log_info(gc, ergo)("max_young_evac_reserve: %zu", maximum_young_evacuation_reserve);
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
   // clamped by the old generation space available.
@@ -296,7 +297,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ?
     old_available : MIN2((maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
                           old_available);
-
+  log_info(gc, ergo)("max_old_evac_reserve: %zu", maximum_old_evacuation_reserve);
 
   // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
   // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
@@ -657,7 +658,7 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_debug(gc)("Preselected %zu regions containing %zu live bytes,"
+    log_info(gc, ergo)("Preselected %zu regions containing %zu live bytes,"
                  " consuming: %zu of budgeted: %zu",
                  selected_regions, selected_live, old_consumed, old_promotion_reserve);
   }
@@ -670,7 +671,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->old_generation()->set_promotion_potential(tenurable_next_cycle);
-  return old_consumed;
+  old_consumed = MAX2(old_consumed, tenurable_this_cycle);
+  return MIN2(old_consumed, old_promotion_reserve);
 }
 
 void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
