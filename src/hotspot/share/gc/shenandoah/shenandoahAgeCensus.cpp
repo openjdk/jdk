@@ -188,7 +188,7 @@ size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) c
   size_t total = 0;
   const AgeTable* pv = _global_age_table[_epoch];
   for (uint i = 0; i < MAX_COHORTS; i++) {
-    if (i>= tenuring_threshold) {
+    if (i > tenuring_threshold) {
       total += pv->sizes[i];
     }
   }
@@ -314,9 +314,10 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
   uint upper_bound = ShenandoahGenerationalMaxTenuringAge;
   const uint prev_tt = previous_tenuring_threshold();
   if (ShenandoahGenerationalCensusIgnoreOlderCohorts && prev_tt > 0) {
-     // We stay below the computed tenuring threshold for the last cycle plus 1,
-     // ignoring the mortality rates of any older cohorts.
-     upper_bound = MIN2(upper_bound, prev_tt + 1);
+     // We stay below the computed tenuring threshold for the last cycle,
+     // ignoring the mortality rates of any older cohorts (which may see
+     // higher mortality rates due to promotions).
+     upper_bound = MIN2(upper_bound, prev_tt);
   }
   upper_bound = MIN2(upper_bound, markWord::max_age);
 
@@ -331,16 +332,16 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
     const size_t prev_pop = prev_pv->sizes[i-1];
     const double mr = mortality_rate(prev_pop, cur_pop);
     if (prev_pop > ShenandoahGenerationalTenuringCohortPopulationThreshold &&
-        mr > 0 && ((mr - ShenandoahGenerationalTenuringMortalityRateThreshold) > 0.001)) {
+        mr > 0 && mr > ShenandoahGenerationalTenuringMortalityRateThreshold) {
       // This is the oldest cohort that has high mortality.
       // We ignore any cohorts that had a very low population count, or
       // that have a lower mortality rate than we care to age in young; these
       // cohorts are considered eligible for tenuring when all older
       // cohorts are. We return the next higher age as the tenuring threshold
       // so that we do not prematurely promote objects of this age.
-      assert(tenuring_threshold == i+1 || tenuring_threshold == upper_bound, "Error");
+      assert(tenuring_threshold == i + 1 || tenuring_threshold == upper_bound, "Error");
       assert(tenuring_threshold >= lower_bound && tenuring_threshold <= upper_bound, "Error");
-      return tenuring_threshold;
+      return i + 1;
     }
     // Remember that we passed over this cohort, looking for younger cohorts
     // showing high mortality. We want to tenure cohorts of this age.

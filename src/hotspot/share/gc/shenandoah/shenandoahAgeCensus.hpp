@@ -176,6 +176,11 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _local_age_table[worker_id];
   }
 
+  // Return true if this age is above the tenuring threshold.
+  bool is_tenurable(uint age) const {
+    return age > tenuring_threshold();
+  }
+
   // Update the local age table for worker_id by size for
   // given obj_age, region_age, and region_youth
   CENSUS_NOISE(void add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id);)
