@@ -69,7 +69,6 @@ public class TestScenariosCrossProduct {
             Asserts.fail("Should not have thrown exception");
         }
 
-
         // Single set should test all flags in the set by themselves.
         try {
             TestFramework t1 = new TestFramework();
