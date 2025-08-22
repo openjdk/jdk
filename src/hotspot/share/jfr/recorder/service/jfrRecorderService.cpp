@@ -22,14 +22,13 @@
  *
  */
 
-#include "jfrfiles/jfrEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
@@ -43,8 +42,9 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfr/writers/jfrJavaEventWriter.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
