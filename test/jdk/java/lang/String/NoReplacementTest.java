@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8286287 8288589
  * @summary Tests for *NoReplacement() shared secret methods.
- * @run testng NoReplTest
+ * @run testng NoReplacementTest
  * @modules jdk.charsets
  */
 
@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import org.testng.annotations.Test;
 
 @Test
-public class NoReplTest {
+public class NoReplacementTest {
     private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
     private final static String MALFORMED_WINDOWS_1252 = "\u0080\u041e";
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
