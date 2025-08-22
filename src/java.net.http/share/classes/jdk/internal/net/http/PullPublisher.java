@@ -44,7 +44,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
     private final Throwable throwable;
 
     PullPublisher(CheckedIterable<T> iterable, Throwable throwable) {
-        if ((iterable == null && throwable == null) || (iterable != null && throwable != null)) {
+        if ((iterable == null) == (throwable == null)) {
             String message = String.format(
                     "only one of `iterable` or `throwable` can be null, but %s are",
                     throwable == null ? "both" : "none");
