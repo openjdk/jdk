@@ -4550,7 +4550,7 @@ void ClassHierarchyIterator::next() {
   }
   _visit_subclasses = true; // reset
   while (_current->next_sibling() == nullptr && _current != _root) {
-    _current = _current->superklass(); // backtrack; no more sibling subclasses left
+    _current = _current->java_super(); // backtrack; no more sibling subclasses left
   }
   if (_current == _root) {
     // Iteration is over (back at root after backtracking). Invalidate the iterator.
