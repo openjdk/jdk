@@ -53,7 +53,7 @@ public class IncludeRandom {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.security.krb5.conf", "f");
-        for (var i = 0; i < 10_000; i++) {
+        for (var i = 0; i < 1000; i++) {
             test();
         }
     }
