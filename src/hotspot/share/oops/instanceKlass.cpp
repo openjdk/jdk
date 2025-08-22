@@ -1919,7 +1919,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
@@ -1936,7 +1936,7 @@ static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
@@ -3985,7 +3985,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(superklass()));
+                       p2i(this),  p2i(java_super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
