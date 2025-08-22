@@ -1,0 +1,15 @@
+suite: Maxjdoc
+tests:
+- name: build
+  tags:
+    - daily
+  commands:
+    - make jdk.javadoc
+    - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+    - cp -vR ../build ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  sharedEnvironment:
+      MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  clusterParameters:
+    cpus: 1.0
+    mem: 1024.0
+    rocky9: 1.0
