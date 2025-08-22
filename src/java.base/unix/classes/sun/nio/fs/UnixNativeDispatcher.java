@@ -250,10 +250,20 @@ class UnixNativeDispatcher {
      */
     static void stat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            stat0(buffer.address(), attrs);
+            int errno = stat0(buffer.address(), attrs);
+            if (errno != 0) {
+                throw new UnixException(errno);
+            }
         }
     }
-    private static native void stat0(long pathAddress, UnixFileAttributes attrs);
+    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
+
+    // Variant of stat() returning errno instead of throwing UnixException
+    static int stat2(UnixPath path, UnixFileAttributes attrs) {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return stat0(buffer.address(), attrs);
+        }
+    }
 
     /**
      * lstat(const char* path, struct stat* buf)
@@ -278,15 +288,26 @@ class UnixNativeDispatcher {
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
      */
-    static void fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
+    static void  fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            fstatat0(dfd, buffer.address(), flag, attrs);
+            int errno = fstatat0(dfd, buffer.address(), flag, attrs);
+            if (errno != 0) {
+                throw new UnixException(errno);
+            }
         }
     }
-    private static native void fstatat0(int dfd, long pathAddress, int flag,
-        UnixFileAttributes attrs) throws UnixException;
+    private static native int fstatat0(int dfd, long pathAddress, int flag,
+        UnixFileAttributes attrs);
+
+    // Variant of fstatat() returning errno instead of throwing UnixException
+    static int fstatat2(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
+    {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return fstatat0(dfd, buffer.address(), flag, attrs);
+        }
+    }
 
     /**
      * chown(const char* path, uid_t owner, gid_t group)
