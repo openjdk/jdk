@@ -786,6 +786,7 @@ public class FloatingDecimal{
          *  for ( i = 0; insignificant >= 10L; i++ )
          *         insignificant /= 10L;
          */
+        @Stable
         private static final int[] insignificantDigitsNumber = {
             0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3,
             4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7,
@@ -796,6 +797,7 @@ public class FloatingDecimal{
         };
 
         // approximately ceil( log2( long5pow[i] ) )
+        @Stable
         private static final int[] N_5_BITS = {
                 0,
                 3,
@@ -1187,7 +1189,6 @@ public class FloatingDecimal{
             FDBigInteger bigD = null;
             int prevD2 = 0;
 
-            correctionLoop:
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = (int) (ieeeBits >>> EXP_SHIFT);
@@ -1289,20 +1290,20 @@ public class FloatingDecimal{
                 } else {
                     // the candidate is exactly right!
                     // this happens with surprising frequency
-                    break correctionLoop;
+                    break;
                 }
                 cmpResult = diff.cmpPow52(B5, Ulp2);
                 if ((cmpResult) < 0) {
                     // difference is small.
                     // this is close enough
-                    break correctionLoop;
+                    break;
                 } else if (cmpResult == 0) {
                     // difference is exactly half an ULP
                     // round to some other value maybe, then finish
                     if ((ieeeBits & 1) != 0) { // half ties to even
                         ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     }
-                    break correctionLoop;
+                    break;
                 } else {
                     // difference is non-trivial.
                     // could scale addend by ratio of difference to
@@ -1310,9 +1311,8 @@ public class FloatingDecimal{
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     if (ieeeBits == 0 || ieeeBits == DoubleConsts.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
+                        break; // oops. Fell off end of range.
                     }
-                    continue; // try again.
                 }
 
             }
@@ -1493,7 +1493,6 @@ public class FloatingDecimal{
             FDBigInteger bigD = null;
             int prevD2 = 0;
 
-            correctionLoop:
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
@@ -1595,20 +1594,20 @@ public class FloatingDecimal{
                 } else {
                     // the candidate is exactly right!
                     // this happens with surprising frequency
-                    break correctionLoop;
+                    break;
                 }
                 cmpResult = diff.cmpPow52(B5, Ulp2);
                 if ((cmpResult) < 0) {
                     // difference is small.
                     // this is close enough
-                    break correctionLoop;
+                    break;
                 } else if (cmpResult == 0) {
                     // difference is exactly half an ULP
                     // round to some other value maybe, then finish
                     if ((ieeeBits & 1) != 0) { // half ties to even
                         ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     }
-                    break correctionLoop;
+                    break;
                 } else {
                     // difference is non-trivial.
                     // could scale addend by ratio of difference to
@@ -1616,9 +1615,8 @@ public class FloatingDecimal{
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
+                        break; // oops. Fell off end of range.
                     }
-                    continue; // try again.
                 }
 
             }
@@ -1633,25 +1631,31 @@ public class FloatingDecimal{
          * All the positive powers of 10 that can be
          * represented exactly in double/float.
          */
+        @Stable
         private static final double[] SMALL_10_POW = {
-            1.0e0,
-            1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5,
-            1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10,
-            1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15,
-            1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20,
-            1.0e21, 1.0e22
+                1e0, 1e1, 1e2, 1e3, 1e4,
+                1e5, 1e6, 1e7, 1e8, 1e9,
+                1e10, 1e11, 1e12, 1e13, 1e14,
+                1e15, 1e16, 1e17, 1e18, 1e19,
+                1e20, 1e21, 1e22,
         };
 
+        @Stable
         private static final float[] SINGLE_SMALL_10_POW = {
-            1.0e0f,
-            1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
-            1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
+                1e0f, 1e1f, 1e2f, 1e3f, 1e4f,
+                1e5f, 1e6f, 1e7f, 1e8f, 1e9f,
+                1e10f,
         };
 
+        @Stable
         private static final double[] BIG_10_POW = {
-            1e16, 1e32, 1e64, 1e128, 1e256 };
+                1e16, 1e32, 1e64, 1e128, 1e256,
+        };
+
+        @Stable
         private static final double[] TINY_10_POW = {
-            1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
+                1e-16, 1e-32, 1e-64, 1e-128, 1e-256,
+        };
 
         private static final int MAX_SMALL_TEN = SMALL_10_POW.length-1;
         private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length-1;
