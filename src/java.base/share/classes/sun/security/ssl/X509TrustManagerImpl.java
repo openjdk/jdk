@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.net.ssl.*;
+
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
@@ -144,6 +146,16 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         checkTrusted(chain, authType, engine, false);
     }
 
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, true);
+    }
+
+    void checkServerTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, false);
+    }
+
     private Validator checkTrustedInit(X509Certificate[] chain,
             String authType, boolean checkClientTrusted) {
         if (chain == null || chain.length == 0) {
@@ -236,6 +248,59 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             if (identityAlg != null && !identityAlg.isEmpty()) {
                 checkIdentity(session,
                         trustedChain, identityAlg, checkClientTrusted);
+            }
+        } else {
+            trustedChain = v.validate(chain, null, Collections.emptyList(),
+                    null, checkClientTrusted ? null : authType);
+        }
+
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
+        }
+    }
+
+    private void checkTrusted(X509Certificate[] chain,
+            String authType, QuicTLSEngineImpl quicTLSEngine,
+            boolean checkClientTrusted) throws CertificateException {
+        Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
+
+        final X509Certificate[] trustedChain;
+        if (quicTLSEngine != null) {
+            final SSLSession session = quicTLSEngine.getHandshakeSession();
+            if (session == null) {
+                throw new CertificateException("No handshake session");
+            }
+
+            // create the algorithm constraints
+            final AlgorithmConstraints constraints;
+            if (session instanceof ExtendedSSLSession extSession) {
+                final String[] localSupportedSignAlgs =
+                        extSession.getLocalSupportedSignatureAlgorithms();
+                constraints = SSLAlgorithmConstraints.forQUIC(
+                        quicTLSEngine, localSupportedSignAlgs, false);
+            } else {
+                constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine,
+                        false);
+            }
+            final List<byte[]> responseList;
+            // grab any stapled OCSP responses for use in validation
+            if (!checkClientTrusted &&
+                    session instanceof ExtendedSSLSession extSession) {
+                responseList = extSession.getStatusResponses();
+            } else {
+                responseList = Collections.emptyList();
+            }
+            // do the certificate chain validation
+            trustedChain = v.validate(chain, null, responseList,
+                    constraints, checkClientTrusted ? null : authType);
+
+            // check endpoint identity
+            String identityAlg = quicTLSEngine.getSSLParameters().
+                    getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && !identityAlg.isEmpty()) {
+                checkIdentity(session, trustedChain,
+                        identityAlg, checkClientTrusted);
             }
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
@@ -364,6 +429,13 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             return getRequestedServerNames(engine.getHandshakeSession());
         }
 
+        return Collections.emptyList();
+    }
+
+    static List<SNIServerName> getRequestedServerNames(QuicTLSEngineImpl engine) {
+        if (engine != null) {
+            return getRequestedServerNames(engine.getHandshakeSession());
+        }
         return Collections.emptyList();
     }
 

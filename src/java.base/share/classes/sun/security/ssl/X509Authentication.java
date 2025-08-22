@@ -218,6 +218,27 @@ enum X509Authentication implements SSLAuthentication {
                     chc.peerSupportedAuthorities == null ? null :
                             chc.peerSupportedAuthorities.clone(),
                     engine);
+        } else if (chc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
+            // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
+            // takes QuicTLSEngine.
+            // For now, in context of QUIC, for KeyManager implementations other than
+            // sun.security.ssl.X509KeyManagerImpl we don't take into account
+            // any algorithm constraints when choosing the client alias and
+            // just call the functionally limited
+            // javax.net.ssl.X509KeyManager.chooseClientAlias(...)
+            if (km instanceof X509KeyManagerImpl xkm) {
+                clientAlias = xkm.chooseClientAlias(keyTypes,
+                        chc.peerSupportedAuthorities == null
+                                ? null
+                                : chc.peerSupportedAuthorities.clone(),
+                        quicEngineImpl);
+            } else {
+                clientAlias = km.chooseClientAlias(keyTypes,
+                        chc.peerSupportedAuthorities == null
+                                ? null
+                                : chc.peerSupportedAuthorities.clone(),
+                        null);
+            }
         }
 
         if (clientAlias == null) {
@@ -290,6 +311,27 @@ enum X509Authentication implements SSLAuthentication {
                         shc.peerSupportedAuthorities == null ? null :
                                 shc.peerSupportedAuthorities.clone(),
                         engine);
+            } else if (shc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
+                // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
+                // takes QuicTLSEngine.
+                // For now, in context of QUIC, for KeyManager implementations other than
+                // sun.security.ssl.X509KeyManagerImpl we don't take into account
+                // any algorithm constraints when choosing the server alias
+                // and just call the functionally limited
+                // javax.net.ssl.X509KeyManager.chooseServerAlias(...)
+                if (km instanceof X509KeyManagerImpl xkm) {
+                    serverAlias = xkm.chooseServerAlias(keyType,
+                            shc.peerSupportedAuthorities == null
+                                    ? null
+                                    : shc.peerSupportedAuthorities.clone(),
+                            quicEngineImpl);
+                } else {
+                    serverAlias = km.chooseServerAlias(keyType,
+                            shc.peerSupportedAuthorities == null
+                                    ? null
+                                    : shc.peerSupportedAuthorities.clone(),
+                            null);
+                }
             }
 
             if (serverAlias == null) {

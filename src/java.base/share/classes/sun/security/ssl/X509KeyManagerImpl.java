@@ -117,52 +117,68 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
 
     @Override
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
-            Socket socket) {
+                                    Socket socket) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                 getAlgorithmConstraints(socket), null, null);
     }
 
+    String chooseClientAlias(String[] keyTypes, Principal[] issuers,
+                             QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
+                getAlgorithmConstraints(quicTLSEngine), null, null);
+    }
+
     @Override
     public String chooseEngineClientAlias(String[] keyTypes,
-            Principal[] issuers, SSLEngine engine) {
+                                          Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                 getAlgorithmConstraints(engine), null, null);
     }
 
     @Override
     public String chooseServerAlias(String keyType,
-            Principal[] issuers, Socket socket) {
+                                    Principal[] issuers, Socket socket) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
-            getAlgorithmConstraints(socket),
-            X509TrustManagerImpl.getRequestedServerNames(socket),
-            "HTTPS");    // The SNI HostName is a fully qualified domain name.
-                         // The certificate selection scheme for SNI HostName
-                         // is similar to HTTPS endpoint identification scheme
-                         // implemented in this provider.
-                         //
-                         // Using HTTPS endpoint identification scheme to guide
-                         // the selection of an appropriate authentication
-                         // certificate according to requested SNI extension.
-                         //
-                         // It is not a really HTTPS endpoint identification.
+                getAlgorithmConstraints(socket),
+                X509TrustManagerImpl.getRequestedServerNames(socket),
+                "HTTPS");    // The SNI HostName is a fully qualified domain name.
+        // The certificate selection scheme for SNI HostName
+        // is similar to HTTPS endpoint identification scheme
+        // implemented in this provider.
+        //
+        // Using HTTPS endpoint identification scheme to guide
+        // the selection of an appropriate authentication
+        // certificate according to requested SNI extension.
+        //
+        // It is not a really HTTPS endpoint identification.
+    }
+
+    String chooseServerAlias(String keyType,
+                             X500Principal[] x500Principals,
+                             QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyType), x500Principals,
+                CheckType.SERVER,
+                getAlgorithmConstraints(quicTLSEngine),
+                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
+                "HTTPS");
     }
 
     @Override
     public String chooseEngineServerAlias(String keyType,
-            Principal[] issuers, SSLEngine engine) {
+                                          Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
-            getAlgorithmConstraints(engine),
-            X509TrustManagerImpl.getRequestedServerNames(engine),
-            "HTTPS");    // The SNI HostName is a fully qualified domain name.
-                         // The certificate selection scheme for SNI HostName
-                         // is similar to HTTPS endpoint identification scheme
-                         // implemented in this provider.
-                         //
-                         // Using HTTPS endpoint identification scheme to guide
-                         // the selection of an appropriate authentication
-                         // certificate according to requested SNI extension.
-                         //
-                         // It is not a really HTTPS endpoint identification.
+                getAlgorithmConstraints(engine),
+                X509TrustManagerImpl.getRequestedServerNames(engine),
+                "HTTPS");    // The SNI HostName is a fully qualified domain name.
+        // The certificate selection scheme for SNI HostName
+        // is similar to HTTPS endpoint identification scheme
+        // implemented in this provider.
+        //
+        // Using HTTPS endpoint identification scheme to guide
+        // the selection of an appropriate authentication
+        // certificate according to requested SNI extension.
+        //
+        // It is not a really HTTPS endpoint identification.
     }
 
     @Override
@@ -178,6 +194,29 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     //
     // implementation private methods
     //
+
+    // Gets algorithm constraints of QUIC TLS engine.
+    private AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
+        // we don't expect the engine to be null
+        Objects.requireNonNull(engine, "QuicTLSEngine");
+        SSLSession session = engine.getHandshakeSession();
+        if (session == null) {
+            return SSLAlgorithmConstraints.forQUIC(engine, true);
+        }
+        // QUIC TLS version is mandated to be always TLSv1.3
+        final ProtocolVersion pv = ProtocolVersion.nameOf(session.getProtocol());
+        if (pv == null || !ProtocolVersion.useTLS13PlusSpec(pv.id, false)) {
+            throw new IllegalStateException("unexpected protocol version "
+                    + pv + " in handshake session");
+        }
+        String[] peerSupportedSignAlgs = null;
+        if (session instanceof ExtendedSSLSession extSession) {
+            peerSupportedSignAlgs =
+                    extSession.getPeerSupportedSignatureAlgorithms();
+        }
+        return SSLAlgorithmConstraints.forQUIC(engine,
+                peerSupportedSignAlgs, true);
+    }
 
     // we construct the alias we return to JSSE as seen in the code below
     // a unique id is included to allow us to reliably cache entries
@@ -210,7 +249,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         }
         try {
             int builderIndex = Integer.parseInt
-                                (alias.substring(firstDot + 1, secondDot));
+                    (alias.substring(firstDot + 1, secondDot));
             String keyStoreAlias = alias.substring(secondDot + 1);
             Builder builder = builders.get(builderIndex);
             KeyStore ks = builder.getKeyStore();
@@ -243,8 +282,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
      *     return the first one of them.
      */
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
-            CheckType checkType, AlgorithmConstraints constraints,
-            List<SNIServerName> requestedServerNames, String idAlgorithm) {
+                               CheckType checkType, AlgorithmConstraints constraints,
+                               List<SNIServerName> requestedServerNames, String idAlgorithm) {
 
         if (keyTypeList == null || keyTypeList.isEmpty()) {
             return null;
@@ -256,8 +295,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
-                            issuerSet, false, checkType, constraints,
-                            requestedServerNames, idAlgorithm);
+                        issuerSet, false, checkType, constraints,
+                        requestedServerNames, idAlgorithm);
                 if (results != null) {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
@@ -286,7 +325,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
             SSLLogger.fine(
                     "KeyMgr: no good matching key found, "
-                    + "returning best match out of", allResults);
+                            + "returning best match out of", allResults);
         }
         return makeAlias(allResults.get(0));
     }
@@ -372,11 +411,11 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
      *     matches
      */
     private List<EntryStatus> getAliases(int builderIndex,
-            List<KeyType> keyTypes, Set<X500Principal> issuerSet,
-            boolean findAll, CheckType checkType,
-            AlgorithmConstraints constraints,
-            List<SNIServerName> requestedServerNames,
-            String idAlgorithm) throws KeyStoreException {
+                                         List<KeyType> keyTypes, Set<X500Principal> issuerSet,
+                                         boolean findAll, CheckType checkType,
+                                         AlgorithmConstraints constraints,
+                                         List<SNIServerName> requestedServerNames,
+                                         String idAlgorithm) throws KeyStoreException {
 
         Builder builder = builders.get(builderIndex);
         KeyStore ks = builder.getKeyStore();
