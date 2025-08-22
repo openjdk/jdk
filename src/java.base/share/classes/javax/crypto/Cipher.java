@@ -505,11 +505,11 @@ public class Cipher {
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
-     *         or if no provider supports a {@code CipherSpi}
-     *         implementation for the specified {@code transformation}
+     *         or if a {@code CipherSpi} implementation is not found, or
+     *         is found but does not support the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         is found but does not support the padding scheme
      *
      * @see java.security.Provider
      */
@@ -555,8 +555,13 @@ public class Cipher {
                 failure = e;
             }
         }
-        throw new NoSuchAlgorithmException
-            ("Cannot find any provider supporting " + transformation, failure);
+        if (failure instanceof NoSuchPaddingException nspe) {
+            throw nspe;
+        } else {
+            throw new NoSuchAlgorithmException
+                    ("Cannot find any provider supporting " + transformation,
+                    failure);
+        }
     }
 
     /**
