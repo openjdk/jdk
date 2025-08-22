@@ -326,7 +326,7 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
       // cohorts are considered eligible for tenuring when all older
       // cohorts are. We return the next higher age as the tenuring threshold
       // so that we do not prematurely promote objects of this age.
-      assert(tenuring_threshold == i+1 || tenuring_threshold == upper_bound, "Error");
+      assert(tenuring_threshold == i + 1 || tenuring_threshold == upper_bound, "Error");
       assert(tenuring_threshold >= lower_bound && tenuring_threshold <= upper_bound, "Error");
       return i + 1;
     }

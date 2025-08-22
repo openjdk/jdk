@@ -35,9 +35,9 @@ protected:
   size_t _cohort_populations[ShenandoahAgeCensus::MAX_COHORTS];
 
   ShenandoahAgeCensusTest()
-  : _mortality_rates{0.9, 0.7, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+  : _mortality_rates{0.9, 0.7, 0.5, 0.3, 0.09, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
   {
-    get_cohort_populations(_mortality_rates, _cohort_populations, _cohorts_count);
+    build_cohort_populations(_mortality_rates, _cohort_populations, _cohorts_count);
   }
 
   void update(ShenandoahAgeCensus& census, size_t cohorts) const {
@@ -69,12 +69,10 @@ protected:
     }
   }
 
-  static void get_cohort_populations(const double mortality_rates[], size_t cohort_populations[], const size_t cohorts) {
-    size_t population = InitialPopulationSize;
-    cohort_populations[0] = population;
+  static void build_cohort_populations(const double mortality_rates[], size_t cohort_populations[], const size_t cohorts) {
+    cohort_populations[0] = InitialPopulationSize;
     for (size_t i = 1; i < cohorts; i++) {
-      population = population * (1.0 - mortality_rates[i - 1]);
-      cohort_populations[i] = population;
+      cohort_populations[i] = cohort_populations[i - 1] * (1.0 - mortality_rates[i - 1]);
     }
   }
 };
@@ -99,29 +97,33 @@ TEST_F(ShenandoahAgeCensusTest, find_high_mortality_rate) {
   // Initial threshold, no data
   EXPECT_EQ(16u, census.tenuring_threshold());
 
-  // No deaths in previous data, everybody seems to survive, set threshold to 1 (tenure everything).
+  // Provide population data for 1st cohort. Previous epoch has no population data so our
+  // algorithm skips over all cohorts, leaving tenuring threshold at 1.
   update(census, 1);
   EXPECT_EQ(1u, census.tenuring_threshold());
 
-  // mr = 0.7 from 1 -> 2, above mr threshold of 0.1
+  // Mortality rate of 1st cohort at age 1 is 0.9, we don't want to promote here. Move threshold to 2.
   update(census, 2);
   EXPECT_EQ(2u, census.tenuring_threshold());
 
-  // mr = 0.5 from 2 -> 3, above mr threshold of 0.1
+  // Mortality rate of 1st cohort at age 2 is 0.7, we don't want to promote here. Move threshold to 3.
   update(census, 3);
   EXPECT_EQ(3u, census.tenuring_threshold());
 
-  // mr = 0.3 from 3 -> 4, above mr threshold of 0.1
+  // Mortality rate of 1st cohort at age 3 is 0.5, we don't want to promote here. Move threshold to 4.
   update(census, 4);
   EXPECT_EQ(4u, census.tenuring_threshold());
 
-  // mr = 0.1 from 4 -> 5, not above mr threshold of 0.1, stay at 4?
+  // Mortality rate of 1st cohort at age 4 is 0.3, we don't want to promote here. Move threshold to 5.
   update(census, 5);
   EXPECT_EQ(5u, census.tenuring_threshold());
 
+  // Mortality rate of 1st cohort at age 5 is 0.09, this is less than the mortality rate threshold. It
+  // is okay to tenure objects older than 5 now. Keep threshold at 5.
   update(census, 6);
   EXPECT_EQ(5u, census.tenuring_threshold());
 
+  // Mortality rate at this age is 0. Keep tenuring threshold at 5.
   update(census, 7);
   EXPECT_EQ(5u, census.tenuring_threshold());
 }
@@ -147,6 +149,6 @@ TEST_F(ShenandoahAgeCensusTest, ignore_mortality_caused_by_promotions) {
   promote_all_tenurable(census.tenuring_threshold());
   update(census);
 
-  // We want this to stay at 5 - the mortality in 6th cohort was caused by expected promotions.
+  // We want this to stay at 5 - the mortality in 1st cohort at age 6 was caused by expected promotions.
   EXPECT_EQ(5u, census.tenuring_threshold());
 }
