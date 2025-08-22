@@ -26,6 +26,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotOopChecker.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -300,6 +301,8 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     debug_trace();
     return false;
   } else {
+    AOTOopChecker::check(obj); // Make sure contents of this oop are safe.
+
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
     CachedOopInfo info = make_cached_oop_info(obj, referrer);
