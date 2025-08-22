@@ -814,7 +814,7 @@ public final class String
                     return new String(src, LATIN1);
                 return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
-                throw malformedInputException(src);
+                throw malformedASCII(src);
             }
         }
 
@@ -1320,7 +1320,7 @@ public final class String
         return (E) mie;
     }
 
-    private static MalformedInputException malformedInputException(byte[] val) {
+    private static MalformedInputException malformedASCII(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
         return malformedInputException(dp, 1, MalformedInputException.class);
     }
