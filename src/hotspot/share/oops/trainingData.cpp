@@ -241,7 +241,7 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
 }
 
 
-void CompileTrainingData::dec_init_deps_left(KlassTrainingData* ktd) {
+void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
   LogStreamHandle(Trace, training) log;
   if (log.is_enabled()) {
     log.print("CTD "); print_on(&log); log.cr();
@@ -462,7 +462,7 @@ void KlassTrainingData::notice_fully_initialized() {
   TrainingDataLocker l; // Not a real lock if we don't collect the data,
                         // that's why we need the atomic decrement below.
   for (int i = 0; i < comp_dep_count(); i++) {
-    comp_dep(i)->dec_init_deps_left(this);
+    comp_dep(i)->dec_init_deps_left_release(this);
   }
   holder()->set_has_init_deps_processed();
 }
@@ -629,7 +629,7 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
   }
 
   if (verify_dep_counter) {
-    int init_deps_left1 = init_deps_left();
+    int init_deps_left1 = init_deps_left_acquire();
     int init_deps_left2 = compute_init_deps_left();
 
     if (init_deps_left1 != init_deps_left2) {

@@ -673,8 +673,10 @@ public:
     }
     _init_deps.clear();
   }
-  void dec_init_deps_left(KlassTrainingData* ktd);
-  int init_deps_left() const { return _init_deps_left; }
+  void dec_init_deps_left_release(KlassTrainingData* ktd);
+  int init_deps_left_acquire() const {
+    return Atomic::load_acquire(&_init_deps_left);
+  }
   uint compute_init_deps_left(bool count_initialized = false);
 
   void notice_inlined_method(CompileTask* task, const methodHandle& method) NOT_CDS_RETURN;

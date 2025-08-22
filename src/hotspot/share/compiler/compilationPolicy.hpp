@@ -362,7 +362,7 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
-  static void wait_replay_training_at_init(JavaThread* current);
+  static void wait_replay_training_to_finish(JavaThread* current);
   static void replay_training_at_init(InstanceKlass* klass, JavaThread* current);
   static void replay_training_at_init_loop(JavaThread* current);
 
