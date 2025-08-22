@@ -597,13 +597,13 @@ class RelocIterator : public StackObj {
   void initialize(nmethod* nm, address begin, address limit);
 
   RelocIterator() { initialize_misc(); }
+  RelocIterator(relocInfo& ri);
 
  public:
   // constructor
   RelocIterator(nmethod* nm, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeBlob* cb);
-  RelocIterator(relocInfo& ri);
 
   // get next reloc info, return !eos
   bool next() {
