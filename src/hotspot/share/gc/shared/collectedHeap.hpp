@@ -36,6 +36,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -48,9 +49,10 @@
 
 class GCHeapLog;
 class GCHeapSummary;
+class GCMemoryManager;
+class GCMetaspaceLog;
 class GCTimer;
 class GCTracer;
-class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
@@ -88,13 +90,15 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
 
  private:
-  GCHeapLog* _gc_heap_log;
+  GCHeapLog*      _heap_log;
+  GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
@@ -129,6 +133,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   unsigned int _total_full_collections;     // ... started
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
+
+  jlong _vmthread_cpu_time;
 
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
@@ -204,6 +210,13 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
+
  public:
 
   static inline size_t filler_array_max_size() {
@@ -237,12 +250,13 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -256,11 +270,6 @@ protected:
   size_t free_at_last_gc() const { return _capacity_at_last_gc - _used_at_last_gc; }
   size_t used_at_last_gc() const { return _used_at_last_gc; }
   void update_capacity_and_used_at_gc();
-
-  // Return "true" if the part of the heap that allocates Java
-  // objects has reached the maximal committed limit that it can
-  // reach, without a garbage collection.
-  virtual bool is_maximal_no_gc() const = 0;
 
   // Support for java.lang.Runtime.maxMemory():  return the maximum amount of
   // memory that the vm could make available for storing 'normal' java objects.
@@ -420,6 +429,8 @@ protected:
 
   virtual void initialize_serviceability() = 0;
 
+  void print_relative_to_gc(GCWhen::Type when) const;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -434,6 +445,8 @@ protected:
   // some reason a context doesn't allow using the Access API, then this function
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
+
+  void print_invocation_on(outputStream* st, const char* type, GCWhen::Type when) const;
 
   // Print heap information.
   virtual void print_heap_on(outputStream* st) const = 0;
@@ -450,12 +463,8 @@ protected:
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
-
-  void print_heap_before_gc();
-  void print_heap_after_gc();
+  void print_before_gc() const;
+  void print_after_gc() const;
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
 
 import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
+import static jdk.internal.util.Exceptions.filterSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
@@ -330,7 +332,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throw new UnknownHostException(epoint.toString());
+                throw new UnknownHostException(formatMsg("%s", filterSocketInfo(epoint.toString())));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }
@@ -349,7 +351,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throw new UnknownHostException(epoint.toString());
+                throw new UnknownHostException(formatMsg("%s", filterSocketInfo(epoint.toString())));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }

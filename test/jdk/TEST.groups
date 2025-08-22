@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,14 @@ tier2_part2 = \
 tier2_part3 = \
     :jdk_net
 
+# These sub groups of tier3 allow for running certain tests separately from the
+# rest. When adding tests to tier3, in most cases they should be added to
+# tier3_part1.
 tier3 = \
+    :tier3_part1 \
+    :tier3_jpackage
+
+tier3_part1 = \
     :build \
     :jdk_vector \
     -:jdk_vector_sanity \
@@ -91,8 +98,11 @@ tier3 = \
     :jdk_svc \
     -:jdk_svc_sanity \
     -:svc_tools \
-    :jdk_jpackage \
     :jdk_since_checks
+
+# The jpackage tests on Windows require permissions that aren't always present
+tier3_jpackage = \
+    :jdk_jpackage
 
 # Everything not in other tiers
 tier4 = \
@@ -387,7 +397,6 @@ jdk_foreign = \
     -java/foreign/TestUpcallStress.java
 
 jdk_foreign_stress = \
-    java/foreign/TestMatrix.java \
     java/foreign/TestUpcallStress.java
 
 jdk_vector = \
@@ -619,13 +628,14 @@ jdk_core_manual_no_input = \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
     javax/net/ssl/compatibility/SniTest.java \
-    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java \
     jdk/nio/zipfs/LargeCompressedEntrySizeTest.java \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
-    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java 
+    com/sun/net/httpserver/simpleserver/DocRootDirPermissionsWinTest.java \
+    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java \
+    java/util/zip/ZipFile/CenSizeMaximum.java
 
 jdk_security_manual_no_input = \
     :jdk_security_infra \
@@ -649,7 +659,9 @@ jdk_core_manual_interactive = \
     java/util/TimeZone/DefaultTimeZoneTest.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
-    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
+    java/foreign/TestMatrix.java \
+    java/nio/channels/FileChannel/BlockDeviceSize.java
 
 jdk_security_manual_interactive = \
     sun/security/tools/keytool/i18n.java \

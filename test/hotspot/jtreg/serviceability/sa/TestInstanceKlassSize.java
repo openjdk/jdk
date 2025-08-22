@@ -46,6 +46,7 @@ import java.util.*;
  * @test
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities

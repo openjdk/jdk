@@ -327,6 +327,8 @@ public class HtmlDoclet extends AbstractDoclet {
         copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
+        copyResource(DocPaths.MOON_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.MOON_SVG), true);
+        copyResource(DocPaths.SUN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.SUN_SVG), true);
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
@@ -341,7 +343,7 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_CSS),
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
-        copyLegalFiles(options.createIndex());
+        copyLegalFiles(options.createIndex(), options.syntaxHighlight());
         // Print a notice if the documentation contains diagnostic markers
         if (messages.containsDiagnosticMarkers()) {
             messages.notice("doclet.contains.diagnostic.markers");
@@ -357,7 +359,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+    private void copyLegalFiles(boolean includeJQuery, boolean includeHighlightJs) throws DocletException {
         Path legalNoticesDir;
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
@@ -399,6 +401,9 @@ public class HtmlDoclet extends AbstractDoclet {
                         continue;
                     }
                     if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                        continue;
+                    }
+                    if (entry.getFileName().toString().equals("highlightjs.md") && !includeHighlightJs) {
                         continue;
                     }
                     DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());

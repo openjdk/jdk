@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.SecretKey;
 
 interface SSLKeyDerivation {
-    SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException;
+    SecretKey deriveKey(String purpose) throws IOException;
+
+    default byte[] deriveData(String purpose) throws IOException {
+        throw new UnsupportedOperationException("No support for deriveData!");
+    };
 }

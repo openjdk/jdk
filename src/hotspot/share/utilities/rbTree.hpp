@@ -29,6 +29,7 @@
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 // An intrusive red-black tree is constructed with two template parameters:
@@ -37,10 +38,14 @@
 //     - an int < 0 when a < b
 //     - an int == 0 when a == b
 //     - an int > 0 when a > b
-// A second static function `cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b)`
-// used for `verify_self` and other extra validation can optionally be provided. This should return:
-//     - true if a < b
-//     - false otherwise
+// Additional static functions used for extra validation can optionally be provided:
+//   `cmp(K a, K b)` which returns:
+//       - an int < 0 when a < b
+//       - an int == 0 when a == b
+//       - an int > 0 when a > b
+//   `cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b)` which returns:
+//       - true if a < b
+//       - false otherwise
 // K needs to be of a type that is trivially destructible.
 // K needs to be stored by the user and is not stored inside the tree.
 // Nodes are address stable and will not change during its lifetime.
@@ -48,7 +53,7 @@
 // A red-black tree is constructed with four template parameters:
 // K is the key type stored in the tree nodes.
 // V is the value type stored in the tree nodes.
-// COMPARATOR must have one of the static functions `cmp(K a, K b)` or `cmp(K a, const RBNode<K, V>* b)` which returns:
+// COMPARATOR must have a static function `cmp(K a, K b)` which returns:
 //     - an int < 0 when a < b
 //     - an int == 0 when a == b
 //     - an int > 0 when a > b
@@ -162,6 +167,7 @@ public:
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree {
   friend class RBTreeTest;
+  friend class NMTVMATreeTest;
   typedef AbstractRBTree<K, NodeType, COMPARATOR> TreeType;
 
 public:
@@ -198,20 +204,20 @@ private:
   struct has_cmp_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::cmp), void())> : std::true_type {};
 
   template <typename CMP>
-  static constexpr bool IsKeyComparator = has_cmp_type<CMP, int, K, K>::value;
+  static constexpr bool HasKeyComparator = has_cmp_type<CMP, int, K, K>::value;
 
   template <typename CMP>
-  static constexpr bool IsNodeComparator = has_cmp_type<CMP, int, K, const NodeType*>::value;
+  static constexpr bool HasNodeComparator = has_cmp_type<CMP, int, K, const NodeType*>::value;
 
   template <typename CMP>
   static constexpr bool HasNodeVerifier = has_cmp_type<CMP, bool, const NodeType*, const NodeType*>::value;
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP>)>
+  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeComparator<CMP>)>
   int cmp(const K& a, const NodeType* b) const {
     return COMPARATOR::cmp(a, b->key());
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP>)>
+  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeComparator<CMP>)>
   int cmp(const K& a, const NodeType* b) const {
     return COMPARATOR::cmp(a, b);
   }
@@ -226,24 +232,13 @@ private:
     return COMPARATOR::cmp(a, b);
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP>)>
-  void assert_leq(const K& a, const NodeType* b) const {
-    assert(COMPARATOR::cmp(a, b->key()) <= 0, "key not <= node");
-  }
+  // Cannot assert if no key comparator exist.
+  template <typename CMP = COMPARATOR, ENABLE_IF(!HasKeyComparator<CMP>)>
+  void assert_key_leq(K a, K b) const {}
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP>)>
-  void assert_leq(const K& a, const NodeType* b) const {
-    assert(COMPARATOR::cmp(a, b) <= 0, "key not <= node");
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP>)>
-  void assert_geq(const K& a, const NodeType* b) const {
-    assert(COMPARATOR::cmp(a, b->key()) >= 0, "key not >= node");
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP>)>
-  void assert_geq(const K& a, const NodeType* b) const {
-    assert(COMPARATOR::cmp(a, b) >= 0, "key not >= node");
+  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP>)>
+  void assert_key_leq(K a, K b) const {
+    assert(COMPARATOR::cmp(a, b) <= 0, "key a must be less or equal to key b");
   }
 
   // True if node is black (nil nodes count as black)
@@ -272,7 +267,7 @@ public:
 
   AbstractRBTree() : _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
     static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
-    static_assert(IsKeyComparator<COMPARATOR> || IsNodeComparator<COMPARATOR>,
+    static_assert(HasKeyComparator<COMPARATOR> || HasNodeComparator<COMPARATOR>,
                   "comparator must be of correct type");
   }
 
@@ -410,12 +405,20 @@ public:
   }
 
   // Visit all RBNodes in ascending order, calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_in_order(F f) const;
 
+  template <typename F>
+  void visit_in_order(F f);
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_range_in_order(const K& from, const K& to, F f) const;
+
+  template <typename F>
+  void visit_range_in_order(const K &from, const K &to, F f);
 
   // Verifies that the tree is correct and holds rb-properties
   // If not using a key comparator (when using IntrusiveRBTree for example),
@@ -425,12 +428,12 @@ public:
     verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a, b);});
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
+  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
   void verify_self() const {
     verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) < 0; });
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP> && !HasNodeVerifier<CMP>)>
+  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeComparator<CMP> && !HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
   void verify_self() const {
     verify_self([](const NodeType*, const NodeType*){ return true;});
   }
@@ -461,6 +464,12 @@ public:
     RBNode<K, V>* old_node = node_cursor.node();
     BaseType::replace_at_cursor(new_node, node_cursor);
     free_node(old_node);
+  }
+
+  RBNode<K, V>* allocate_node(const K& key) {
+    void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
+    assert(node_place != nullptr, "rb-tree allocator must exit on failure");
+    return new (node_place) RBNode<K, V>(key);
   }
 
   RBNode<K, V>* allocate_node(const K& key, const V& val) {

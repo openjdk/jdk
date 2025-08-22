@@ -41,6 +41,7 @@ public class VectorBoxExpandTest {
 
     private static int[] iarr = new int[ARR_LEN];
     private static IntVector g;
+    private static int acc = 0;
 
     // C2 would generate IR graph like below:
     //
@@ -86,10 +87,14 @@ public class VectorBoxExpandTest {
 
         for (int ic = 0; ic < NUM_ITER; ic++) {
             for (int i = 0; i < iarr.length; i++) {
+                acc += System.identityHashCode(a);
                 a = a.add(a);
+                acc += System.identityHashCode(a);
             }
         }
         g = a;
+        acc += System.identityHashCode(a);
+
     }
 
     public static void main(String[] args) {

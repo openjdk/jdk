@@ -42,9 +42,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class LotsOfSyntheticClasses {
 
-    // Generate 100 top-level classes, each containing 1000 nested classes.
-    // 100K total classes are more than enough to push the CDS limits.
-    private static final int NUM_CLASSES = 100;
+    // Generate 70 top-level classes, each containing 1000 nested classes.
+    // 70K total classes is enough to push the CDS limits. Any archived
+    // collection that holds Classes should not have backing storage larger
+    // than CDS archival limit (256KB). This means we want at least 64K classes
+    // to probe that limit.
+    private static final int NUM_CLASSES = 70;
     private static final int NUM_NESTED_CLASSES = 1000;
 
     private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
@@ -117,7 +120,11 @@ public class LotsOfSyntheticClasses {
             OutputAnalyzer output = TestCommon.createArchive(
                 APP_JAR.toString(),
                 listAppClasses(),
-                MAIN_CLASS_NAME
+                MAIN_CLASS_NAME,
+                // Verification for lots of classes slows down the test.
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:-VerifyDependencies",
+                "-XX:-VerifyBeforeExit"
             );
             TestCommon.checkDump(output);
         }
@@ -125,9 +132,10 @@ public class LotsOfSyntheticClasses {
         // Step 3. Try to run, touching every class.
         {
             TestCommon.run(
-                // Verifying dependencies for lots of classes slows down the test.
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-VerifyDependencies",
-                "-Xlog:cds",
+                // Verification for lots of classes slows down the test.
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:-VerifyDependencies",
+                "-XX:-VerifyBeforeExit",
                 "-cp", APP_JAR.toString(),
                 MAIN_CLASS_NAME).
                     assertNormalExit("Success");

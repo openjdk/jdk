@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ public class ClassFileLoadHookTest {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI", useWb,
                 "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
+                "-Xlog:aot",
                 "-Xlog:cds",
                 "ClassFileLoadHook",
                 "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON);
@@ -111,7 +112,7 @@ public class ClassFileLoadHookTest {
             // the static archive was not created with aot-linked classes.
             out.shouldHaveExitValue(0);
         } else {
-            out.shouldContain("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+            out.shouldContain("shared archive file has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
             out.shouldNotHaveExitValue(0);
         }
     }

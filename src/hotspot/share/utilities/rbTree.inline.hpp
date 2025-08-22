@@ -25,12 +25,13 @@
 #ifndef SHARE_UTILITIES_RBTREE_INLINE_HPP
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
+#include "utilities/rbTree.hpp"
+
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/rbTree.hpp"
 
 inline void IntrusiveRBNode::replace_child(IntrusiveRBNode* old_child, IntrusiveRBNode* new_child) {
   if (_left == old_child) {
@@ -84,7 +85,7 @@ inline IntrusiveRBNode* IntrusiveRBNode::rotate_right() {
 
 inline const IntrusiveRBNode* IntrusiveRBNode::prev() const {
   const IntrusiveRBNode* node = this;
-  if (_left != nullptr) { // right subtree exists
+  if (_left != nullptr) { // left subtree exists
     node = _left;
     while (node->_right != nullptr) {
       node = node->_right;
@@ -550,19 +551,19 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   new_node->_parent = old_node->_parent;
 
   if (new_node->is_left_child()) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->_parent), "new node not < parent");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->parent())), "new node not < parent");
   } else if (new_node->is_right_child()) {
-    assert(cmp((const NodeType*)new_node->_parent, (const NodeType*)new_node->_right), "new node not > parent");
+    assert(cmp(static_cast<const NodeType*>(new_node->parent()), static_cast<const NodeType*>(new_node)), "new node not > parent");
   }
 
   new_node->_left = old_node->_left;
   new_node->_right = old_node->_right;
   if (new_node->_left != nullptr) {
-    assert(cmp((const NodeType*)new_node->_left, (const NodeType*)new_node), "left child not < new node");
+    assert(cmp(static_cast<const NodeType*>(new_node->_left), static_cast<const NodeType*>(new_node)), "left child not < new node");
     new_node->_left->set_parent(new_node);
   }
   if (new_node->_right != nullptr) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->_right), "right child not > new node");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->_right)), "right child not > new node");
     new_node->_right->set_parent(new_node);
   }
 
@@ -598,7 +599,21 @@ template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
   const NodeType* node = leftmost();
   while (node != nullptr) {
-    f(node);
+    if (!f(node)) {
+      return;
+    }
+    node = node->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) {
+  NodeType* node = leftmost();
+  while (node != nullptr) {
+    if (!f(node)) {
+      return;
+    }
     node = node->next();
   }
 }
@@ -606,6 +621,7 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
 template <typename K, typename NodeType, typename COMPARATOR>
 template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
+  assert_key_leq(from, to);
   if (_root == nullptr) {
     return;
   }
@@ -615,15 +631,31 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   const NodeType* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
   const NodeType* end = next(cursor_end).node();
 
-  if (start != nullptr) {
-    assert_leq(from, start);
-    assert_geq(to, start);
-  } else {
-    assert(end == nullptr, "end node found but not start node");
+  while (start != end) {
+    if (!f(start)) {
+      return;
+    }
+    start = start->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) {
+  assert_key_leq(from, to);
+  if (_root == nullptr) {
+    return;
   }
 
+  Cursor cursor_start = cursor(from);
+  Cursor cursor_end = cursor(to);
+  NodeType* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
+  NodeType* end = next(cursor_end).node();
+
   while (start != end) {
-    f(start);
+    if (!f(start)) {
+      return;
+    }
     start = start->next();
   }
 }
