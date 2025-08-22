@@ -665,11 +665,11 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
 
-  log_info(gc, ergo)("Promotion potential: %zu, tenurable next cycle: %zu, tenurable this cycle: %zu, difference: %zu",
-                     promo_potential, tenurable_next_cycle, tenurable_this_cycle, (tenurable_next_cycle - tenurable_this_cycle));
+  log_info(gc, ergo)("Promotion potential: %zu, tenurable next cycle: %zu, tenurable this cycle: %zu, selected for promotion: %zu",
+                     promo_potential, tenurable_next_cycle, tenurable_this_cycle, old_consumed);
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
-  heap->old_generation()->set_promotion_potential(promo_potential);
+  heap->old_generation()->set_promotion_potential(tenurable_next_cycle);
   return old_consumed;
 }
 
