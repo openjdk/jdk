@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -11021,45 +11021,9 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
-                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
-%{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
-
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register,
-                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-// using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
-%{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
-
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
                                 iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
@@ -11074,10 +11038,10 @@ instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
   ins_pipe(pipe_serial);
 %}
 
+// using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
                                   iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
