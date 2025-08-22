@@ -5959,19 +5959,19 @@ void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
                                           Register tmp1, Register tmp2) {
   fmv_x_w(dst, src);
 
-//  Float (32 bits)
-//    Bit:     31        30 to 23          22 to 0
-//          +---+------------------+-----------------------------+
-//          | S |     Exponent     |      Mantissa (Fraction)    |
-//          +---+------------------+-----------------------------+
-//          1 bit       8 bits                  23 bits
-//
-//  Float (16 bits)
-//    Bit:    15        14 to 10         9 to 0
-//          +---+----------------+------------------+
-//          | S |    Exponent    |     Mantissa     |
-//          +---+----------------+------------------+
-//          1 bit      5 bits          10 bits
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
   const int fp_sign_bits = 1;
   const int fp32_bits = 32;
   const int fp32_exponent_bits = 8;
