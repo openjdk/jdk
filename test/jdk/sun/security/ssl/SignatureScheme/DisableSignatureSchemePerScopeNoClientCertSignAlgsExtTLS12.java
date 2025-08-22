@@ -34,6 +34,7 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.security.Security;
 import java.util.List;
@@ -77,6 +78,17 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 extends
         assertFalse(sigAlgsSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
                 + " present in ClientHello's signature_algorithms extension");
+
+        // RSASSA-PKCS1-v1_5 and Legacy algorithms that we include in
+        // "signature_algorithms" extension if "signature_algorithms_cert"
+        // extension is not being sent as we MAY per RFC 8446.
+        // These should be present in both: TLSv1.2 and TLSv1.3, so we
+        // place this check here and TLS13 test should run this method as well.
+        TLS13_CERT_ONLY.forEach(ss ->
+                assertTrue(sigAlgsSS.contains(ss), "Signature Scheme "
+                        + ss
+                        + " isn't present in ClientHello's"
+                        + " signature_algorithms extension"));
 
         // Check signature_algorithms_cert extension should not be present.
         assertEquals(getSigSchemesCliHello(extractHandshakeMsg(
