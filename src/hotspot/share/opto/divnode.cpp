@@ -545,7 +545,7 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
   // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
   // We also must include min_val in the output if i1->_lo == min_val and i2->_hi.
-  if (i1->_lo == min_val && i2_hi == min_val) {
+  if (i1->_lo == min_val && i2_hi == -1) {
     // special overflow case as defined above, and as min_val is the lowest possible value, this is our lower bound
     NativeType new_lo = min_val;
     NativeType new_hi;
