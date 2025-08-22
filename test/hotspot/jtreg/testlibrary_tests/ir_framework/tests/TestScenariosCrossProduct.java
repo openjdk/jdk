@@ -27,6 +27,7 @@ import java.util.Set;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
 /*
@@ -45,6 +46,30 @@ public class TestScenariosCrossProduct {
     }
 
     public static void main(String[] args) {
+        // Test argument handling
+        try {
+            TestFramework t = new TestFramework();
+            t.addCrossProductScenarios(null);
+            Asserts.fail("Should not have thrown exception");
+        } catch (TestFormatException e) {}
+        try {
+            TestFramework t = new TestFramework();
+            t.addCrossProductScenarios(Set.of("foo", "bar"), null);
+            Asserts.fail("Should not have thrown exception");
+        } catch (TestFormatException e) {}
+        try {
+            TestFramework t = new TestFramework();
+            t.addCrossProductScenarios(Set.of("blub"), Set.of("foo", null));
+            Asserts.fail("Should not have thrown exception");
+        } catch (NullPointerException e) {} // Set.of prevents null elements
+        try {
+            TestFramework t = new TestFramework();
+            t.addCrossProductScenarios();
+        } catch (TestFormatException e) {
+            Asserts.fail("Should not have thrown exception");
+        }
+
+
         // Single set should test all flags in the set by themselves.
         try {
             TestFramework t1 = new TestFramework();
@@ -79,6 +104,7 @@ public class TestScenariosCrossProduct {
             hasNFailures(e.getMessage(), 4);
         }
 
+        // Test with a pair of flags.
         try {
             TestFramework t4 = new TestFramework();
             t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
@@ -95,6 +121,22 @@ public class TestScenariosCrossProduct {
             t5.addCrossProductScenarios(Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
                                         Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
             t5.start();
+            Asserts.fail("Should have thrown exception");
+        } catch (TestRunException e) {
+            hasNFailures(e.getMessage(), 6);
+        }
+
+        try {
+            TestFramework t6 = new TestFramework();
+            t6.addScenarios(new Scenario(0, "-XX:TLABRefillWasteFraction=50", "-XX:+UseNewCode")); // failPair
+            t6.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
+                                        Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
+            try {
+                t6.addScenarios(new Scenario(4, "-XX:+UseNewCode3")); // fails because index 4 is already used
+            Asserts.fail("Should have thrown exception");
+            } catch (TestFormatException e) {}
+            t6.addScenarios(new Scenario(5, "-XX:+UseNewCode3")); // fail default
+            t6.start();
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
             hasNFailures(e.getMessage(), 6);

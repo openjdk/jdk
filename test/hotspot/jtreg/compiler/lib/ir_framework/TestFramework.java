@@ -359,40 +359,45 @@ public class TestFramework {
      */
     @SafeVarargs
     final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
-        TestFormat.checkAndReport(flagSets != null && Arrays.stream(flagSets).noneMatch(Objects::isNull),
-                "Flags must not be null");
+        TestFormat.checkAndReport(flagSets != null &&
+                                  Arrays.stream(flagSets).noneMatch(Objects::isNull) &&
+                                  Arrays.stream(flagSets).flatMap(Set::stream).noneMatch(Objects::isNull),
+                                  "Flags must not be null");
+        if (flagSets.length == 0) {
+            return this;
+        }
+
         int initIdx = 0;
         if (this.scenarioIndices != null && !this.scenarioIndices.isEmpty()) {
             initIdx = this.scenarioIndices.stream().max(Comparator.comparingInt(Integer::intValue)).get() + 1;
         }
         AtomicInteger idx = new AtomicInteger(initIdx);
 
-        Scenario[] newScenarios = crossProductHelper(0, flagSets)
+        Stream<List<String>> crossProduct = Arrays.stream(flagSets)
+            .reduce(
+                Stream.of(Collections.<String>emptyList()),
+                (acc, set) ->
+                    acc.flatMap(list ->
+                        set.stream().map(element -> {
+                            List<String> newList = new ArrayList<>(list);
+                            newList.add(element);
+                            return newList;
+                        })
+                    ),
+                (a, b) -> Stream.concat(a, b));
+
+        Scenario[] newScenarios = crossProduct
                 .map(flags -> new Scenario(
                         idx.getAndIncrement(),
                         flags.stream() // Process flags
-                                .filter(s -> !s.isEmpty()) // Remove empty flags
-                                .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings
-                                .flatMap(Collection::stream)
-                                .collect(Collectors.toList())
-                                .toArray(new String[0])))
+                             .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings
+                             .flatMap(Collection::stream)
+                             .filter(s -> !s.isEmpty()) // Remove empty string flags
+                             .distinct()
+                             .collect(Collectors.toList())
+                             .toArray(new String[0])))
                 .collect(Collectors.toList()).toArray(new Scenario[0]);
         return addScenarios(newScenarios);
-    }
-
-    @SafeVarargs
-    private static Stream<Set<String>> crossProductHelper(int idx, Set<String>... sets) {
-        if (idx == sets.length) {
-            Set<String> empty = Set.of();
-            return Set.of(empty).stream();
-        }
-        return sets[idx].stream()
-                .flatMap(setElement -> crossProductHelper(idx + 1, sets)
-                        .map(set -> {
-                            Set<String> newSet = new HashSet<>(set);
-                            newSet.add(setElement);
-                            return newSet;
-                        }));
     }
 
     /**
