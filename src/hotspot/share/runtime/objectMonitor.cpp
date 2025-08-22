@@ -973,7 +973,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* node, bool
 
     // Enqueue "current" on ObjectMonitor's _entry_list.
     //
-    // Node acts as a proxy for current.  
+    // Node acts as a proxy for current.
 
     current->_ParkEvent->reset();
 
