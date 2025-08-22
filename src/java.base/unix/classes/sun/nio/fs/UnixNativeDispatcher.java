@@ -250,20 +250,10 @@ class UnixNativeDispatcher {
      */
     static void stat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            int errno = stat0(buffer.address(), attrs);
-            if (errno != 0) {
-                throw new UnixException(errno);
-            }
+            stat0(buffer.address(), attrs);
         }
     }
-
-    static int stat2(UnixPath path, UnixFileAttributes attrs) {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            return stat0(buffer.address(), attrs);
-        }
-    }
-
-    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
+    private static native void stat0(long pathAddress, UnixFileAttributes attrs);
 
     /**
      * lstat(const char* path, struct stat* buf)
@@ -288,14 +278,14 @@ class UnixNativeDispatcher {
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
      */
-    static int fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
+    static void fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            return fstatat0(dfd, buffer.address(), flag, attrs);
+            fstatat0(dfd, buffer.address(), flag, attrs);
         }
     }
-    private static native int fstatat0(int dfd, long pathAddress, int flag,
+    private static native void fstatat0(int dfd, long pathAddress, int flag,
         UnixFileAttributes attrs) throws UnixException;
 
     /**

@@ -95,15 +95,16 @@ class UnixFileAttributes
     {
         UnixFileAttributes attrs = new UnixFileAttributes();
         int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
-        int errno = UnixNativeDispatcher.fstatat(UnixConstants.AT_FDCWD,
-                                                 path, flag, attrs);
-        if (errno == 0) {
-            return attrs;
-        } else if (errno == UnixConstants.ENOENT) {
-            return null;
-        } else {
-            throw new UnixException(errno);
+        try {
+            UnixNativeDispatcher.fstatat(UnixConstants.AT_FDCWD,
+                                         path, flag, attrs);
+        } catch (UnixException x) {
+            if (x.errno() == UnixConstants.ENOENT)
+                return null;
+            else
+                throw x;
         }
+        return attrs;
     }
 
     // get the UnixFileAttributes for an open file
