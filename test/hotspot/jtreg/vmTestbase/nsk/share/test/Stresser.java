@@ -318,10 +318,11 @@ public class Stresser implements ExecutionController {
      */
     public long getTimeLeft() {
         long elapsedTime = System.nanoTime()/1000000 - startTime;
-        if (elapsedTime >= options.getTime() * 1000) {
+        long stressTime = options.getTime() * 1000;
+        if (elapsedTime >= stressTime) {
             return 0;
         } else {
-            return options.getTime() * 1000 - elapsedTime;
+            return stressTime - elapsedTime;
         }
     }
 
