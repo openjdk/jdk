@@ -50,6 +50,7 @@ public class TestThreadDumpMonitorContention {
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
     final static String PID = Long.toString(ProcessHandle.current().pid());
+    final static String DISABLE_STREAMING_OUTPUT = "-J-Djdk.attach.allowStreamingOutput=false";
 
     // looking for header lines with these patterns:
     // "ContendingThread-1" #19 prio=5 os_prio=64 tid=0x000000000079c000 nid=0x23 runnable [0xffff80ffb8b87000]
@@ -379,7 +380,7 @@ public class TestThreadDumpMonitorContention {
             // we don't mix data between the two stack traces that do
             // match HEADER_PREFIX_PATTERN.
             //
-            Process process = new ProcessBuilder(JSTACK, PID)
+            Process process = new ProcessBuilder(JSTACK, DISABLE_STREAMING_OUTPUT, PID)
                 .redirectErrorStream(true).start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(
