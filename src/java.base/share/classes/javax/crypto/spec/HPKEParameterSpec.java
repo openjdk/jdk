@@ -66,17 +66,18 @@ import java.util.Objects;
  * Application-supplied information can be provided using the
  * {@link #info(byte[])} method by both sides.
  * <li>
- * To use the HPKE mode {@code mode_auth}, the asymmetric keys for authentication
- * must be provided using the {@link #authKey(AsymmetricKey)} method. Precisely,
- * the sender must call this method with its own private key and the recipient
- * must call it with the sender's public key.
+ * To support authentication using a pre-shared key ({@code mode_psk}), the
+ * pre-shared key and its identifier must be provided using the
+ * {@link #psk(SecretKey, byte[])} method by both sides.
  * <li>
- * To use the HPKE mode {@code mode_psk}, the pre-shared key for authentication
- * and its identifier must be provided using the {@link #psk(SecretKey, byte[])}
- * method by both sides.
+ * To support authentication using an asymmetric Key ({@code mode_auth}),
+ * the asymmetric keys must be provided using the {@link #authKey(AsymmetricKey)}
+ * method. Precisely, the sender must call this method with its own private key
+ * and the recipient must call it with the sender's public key.
  * <li>
- * To use the HPKE mode {@code mode_auth_psk}, both {@link #authKey(AsymmetricKey)}
- * and {@link #psk(SecretKey, byte[])} methods must be called as described above.
+ * To support authentication using both a PSK and an asymmetric key
+ * ({@code mode_auth_psk}), both {@link #authKey(AsymmetricKey)} and
+ * {@link #psk(SecretKey, byte[])} methods must be called as described above.
  * <li>
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient
@@ -102,15 +103,16 @@ import java.util.Objects;
  * an {@code InvalidAlgorithmParameterException} will be thrown. For example:
  * <ul>
  * <li> An algorithm identifier is unsupported or does not match the provided key type.
+ * <li> The key encapsulation message is not provided on the receiver side.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
- * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
- *      does not support authentication.
+ * <li> An attempt to use {@code authKey(key)} is made but {@code mode_auth}
+ *      or {@code mode_auth_psk}) is not supported by the KEM used.
  * </ul>
- * After initialization, both the sender and receiver can encrypt or decrypt
- * multiple plaintexts in sequence using repeated calls to {@code doFinal},
- * optionally preceded by one or more {@code update} calls. Each {@code doFinal}
- * call performs a complete HPKE encryption or decryption operation using a
- * distinct nonce derived from an internal sequence counter, as specified by
+ * After initialization, both the sender and receiver can process multiple
+ * messages in sequence with repeated {@code doFinal} calls, optionally preceded
+ * by one or more {@code updateAAD} and {@code update}. Each {@code doFinal}
+ * call performs a complete HPKE encryption or decryption operation using
+ * a distinct nonce derived from an internal sequence counter, as specified by
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5.2">Section 5.2</a>
  * of RFC 9180.
  * <p>
@@ -122,7 +124,8 @@ import java.util.Objects;
  * This simplifies usage while ensuring nonce uniqueness and preserving AEAD
  * security guarantees.
  * <p>
- * Example:
+ * This example shows a sender and a receiver using HPKE to securely exchange
+ * messages with an X25519 key pair.
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
  *
  * @implNote This class has defined constants for some of the standard algorithm
@@ -328,6 +331,11 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     /**
      * Creates a new {@code HPKEParameterSpec} object with a different
      * authentication key value.
+     * <p>
+     * Note: this method does not check whether the KEM supports
+     * {@code mode_auth} or {@code mode_auth_psk}. If the resulting object is
+     * used to initialize an HPKE cipher with an unsupported mode, an
+     * {@code InvalidAlgorithmParameterException} will be thrown at that time.
      *
      * @param kS the authentication key. If set to {@code null}, the previous
      *          authentication key is cleared.
@@ -406,20 +414,21 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
                         : (kS == null ? "mode_psk" : "mode_auth_psk")) + "}";
     }
 
-    // Returns a human-readable format of a byte array.
+    // Returns a human-readable representation of a byte array.
     private static String bytesToString(byte[] input) {
         if (input.length == 0) {
             return "(empty)";
         } else {
             for (byte b : input) {
                 if (b < 0x20 || b > 0x7E || b == '"') {
-                    // Non-ASCII and control characters are not friendly to human
-                    // eyes. `"` also excluded to avoid character escaping.
-                    // Only return HEX format.
+                    // Non-ASCII or control characters are hard to read, and
+                    // `"` requires character escaping. If any of these are
+                    // present, return only the HEX representation.
                     return HexFormat.of().formatHex(input);
                 }
             }
-            // Human-readable. Return both HEX and string formats.
+            // Otherwise, all characters are printable and safe.
+            // Return both HEX and ASCII representations.
             return HexFormat.of().formatHex(input)
                     + " (\"" + new String(input, StandardCharsets.US_ASCII) + "\")";
         }

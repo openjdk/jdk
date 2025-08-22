@@ -28,7 +28,7 @@ import javax.crypto.SecretKey;
 
 /**
  * An interface for <code>SecretKey</code>s that support using its slice as a new
- * <code>SecretKey</code>
+ * <code>SecretKey</code>.
  * <p>
  * This is mainly used by PKCS #11 implementations that support the
  * EXTRACT_KEY_FROM_KEY mechanism even if the key itself is sensitive

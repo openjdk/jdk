@@ -38,7 +38,7 @@ class PackageSnippets {
         KeyPair kp = g.generateKeyPair();
 
         // The HPKE sender cipher is initialized with the recipient's public
-        // key and HPKEParameterSpec using specified algorithm identifiers
+        // key and an HPKEParameterSpec using specified algorithm identifiers
         // and application-supplied info.
         Cipher senderCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec ps = HPKEParameterSpec.of(
@@ -52,8 +52,8 @@ class PackageSnippets {
         // the sender.
         byte[] kemEncap = senderCipher.getIV();
 
-        // The HPKE recipient side is initialized with its own private key,
-        // HPKEParameterSpec using the same algorithm identifiers as used by
+        // The HPKE recipient cipher is initialized with its own private key,
+        // an HPKEParameterSpec using the same algorithm identifiers as used by
         // the sender, and the key encapsulation message from the sender.
         Cipher recipientCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec pr = HPKEParameterSpec.of(
