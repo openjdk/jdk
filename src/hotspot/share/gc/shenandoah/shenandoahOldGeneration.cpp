@@ -205,6 +205,8 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
+    _promotion_failure_count(0),
+    _promotion_failure_words(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -241,7 +243,9 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  Atomic::store(&_promoted_expended, (size_t) 0);
+  Atomic::store(&_promoted_expended, 0UL);
+  Atomic::store(&_promotion_failure_count, 0UL);
+  Atomic::store(&_promotion_failure_words, 0UL);
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
@@ -682,6 +686,9 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
   auto heap = ShenandoahGenerationalHeap::heap();
 
   const size_t gc_id = heap->control_thread()->get_gc_id();
+
+  Atomic::inc(&_promotion_failure_count);
+  Atomic::add(&_promotion_failure_words, size);
 
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
     size_t promotion_expended;

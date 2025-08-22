@@ -1277,7 +1277,9 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
     set_gc_state_concurrent(UPDATE_REFS, true);
   }
 
-  log_info(gc, ergo)("Evacuation complete, promotions expended: %zu", old_generation()->get_promoted_expended());
+  log_info(gc, ergo)("Evacuation complete, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+    old_generation()->get_promoted_expended(), old_generation()->get_promotion_failed_count(),
+    old_generation()->get_promotion_failed_words() * HeapWordSize);
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefsHandshakeClosure prepare_for_update_refs(_gc_state.raw_value());
