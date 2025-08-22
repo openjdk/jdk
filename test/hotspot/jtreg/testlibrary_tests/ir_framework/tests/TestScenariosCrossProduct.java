@@ -50,17 +50,17 @@ public class TestScenariosCrossProduct {
         try {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios(null);
-            Asserts.fail("Should not have thrown exception");
+            Asserts.fail("Should have thrown exception");
         } catch (TestFormatException e) {}
         try {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios(Set.of("foo", "bar"), null);
-            Asserts.fail("Should not have thrown exception");
+            Asserts.fail("Should have thrown exception");
         } catch (TestFormatException e) {}
         try {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios(Set.of("blub"), Set.of("foo", null));
-            Asserts.fail("Should not have thrown exception");
+            Asserts.fail("Should have thrown exception");
         } catch (NullPointerException e) {} // Set.of prevents null elements
         try {
             TestFramework t = new TestFramework();
