@@ -32,7 +32,7 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-Deferred<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
+DeferredStatic<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -64,16 +64,16 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
 
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
-  VMATree::TreapNode* prev = nullptr;
+  const VMATree::TNode* prev = nullptr;
 #ifdef ASSERT
-  VMATree::TreapNode* broken_start = nullptr;
-  VMATree::TreapNode* broken_end = nullptr;
+  const VMATree::TNode* broken_start = nullptr;
+  const VMATree::TNode* broken_end = nullptr;
 #endif
-  file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
+  file->_tree.visit_in_order([&](const VMATree::TNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
@@ -91,11 +91,12 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
                        NMTUtil::tag_to_name(prev->val().out.mem_tag()));
       {
         StreamIndentor si(stream, 4);
-        _stack_storage.get(prev->val().out.stack()).print_on(stream);
+        _stack_storage.get(prev->val().out.reserved_stack()).print_on(stream);
       }
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {

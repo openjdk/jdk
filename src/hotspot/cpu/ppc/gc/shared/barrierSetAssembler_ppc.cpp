@@ -333,9 +333,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_ConditionRegister()) {
       // NOP. Conditions registers are covered by save_LR_CR
-    } else if (vm_reg->is_VectorSRegister()) {
+    } else if (vm_reg->is_VectorRegister()) {
       assert(SuperwordUseVSX, "or should not reach here");
-      VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+      VectorSRegister vs_reg = (vm_reg->as_VectorRegister()).to_vsr();
       if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
         reg_save_index += (2 + (reg_save_index & 1)); // 2 slots + alignment if needed
 

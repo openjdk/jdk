@@ -59,7 +59,7 @@ class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : pu
       BarrierSet::barrier_set()->make_parsable((JavaThread*)thread);
       // Retire TLABs.
       if (UseTLAB) {
-        thread->tlab().retire(&_tlab_stats);
+        thread->retire_tlab(&_tlab_stats);
       }
       // Concatenate logs.
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();

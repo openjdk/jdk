@@ -187,14 +187,17 @@ RelocIterator::RelocIterator(CodeBlob* cb) {
     _code = nullptr;
   }
   _current = cb->relocation_begin() - 1;
-  _end = cb->relocation_end();
-  _addr = cb->content_begin();
+  _end     = cb->relocation_end();
+  _addr    = cb->content_begin();
 
   _section_start[CodeBuffer::SECT_CONSTS] = cb->content_begin();
-  _section_start[CodeBuffer::SECT_INSTS] = cb->code_begin();
+  _section_start[CodeBuffer::SECT_INSTS ] = cb->code_begin();
+  _section_start[CodeBuffer::SECT_STUBS ] = cb->code_end();
 
-  _section_end[CodeBuffer::SECT_CONSTS] = cb->code_begin();
-  _section_start[CodeBuffer::SECT_INSTS] = cb->code_end();
+  _section_end  [CodeBuffer::SECT_CONSTS] = cb->code_begin();
+  _section_end  [CodeBuffer::SECT_INSTS ] = cb->code_end();
+  _section_end  [CodeBuffer::SECT_STUBS ] = cb->code_end();
+
   assert(!has_current(), "just checking");
   set_limits(nullptr, nullptr);
 }

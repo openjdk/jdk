@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,11 @@
  * This testcase uses random strings for first phase, array of
  * random strings for second phase and multiple threads.
  *
+ * @requires os.maxMemory > 3G
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm
+ *      -Xmx2G
  *      -XX:-UseGCOverheadLimit
  *      vm.gc.compact.Compact
  *      -gp randomString

@@ -27,9 +27,9 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
+#include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
-#include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolWriter.hpp"
@@ -43,8 +43,6 @@
 
 static int generation_offset = invalid_offset;
 static jobject string_pool = nullptr;
-
-static unsigned short generation = 0;
 
 static bool setup_string_pool_offsets(TRAPS) {
   const char class_name[] = "jdk/jfr/internal/StringPool";
@@ -281,9 +279,8 @@ void JfrStringPool::register_full(BufferPtr buffer, Thread* thread) {
 
 void JfrStringPool::on_epoch_shift() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(!JfrTraceIdEpoch::is_synchronizing(), "invariant");
   assert(string_pool != nullptr, "invariant");
   oop mirror = JfrJavaSupport::resolve_non_null(string_pool);
   assert(mirror != nullptr, "invariant");
-  mirror->short_field_put(generation_offset, generation++);
+  mirror->short_field_put(generation_offset, JfrTraceIdEpoch::epoch_generation());
 }

@@ -122,36 +122,29 @@ public class setvalue004 {
             return quitDebuggee();
         }
 
-        ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+        try {
+            ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
 
-        thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee's thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-        thrRef.suspend();
-        while(!thrRef.isSuspended()) {
-            num++;
-            if (num > ATTEMPTS) {
-                log.complain("TEST FAILED: Unable to suspend debuggee's thread");
+            thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee's thread "
+                             + DEBUGGEE_THRNAME);
                 tot_res = Consts.TEST_FAILED;
                 return quitDebuggee();
             }
-            log.display("Waiting for debuggee's thread suspension ...");
-            try {
+            thrRef.suspend();
+            while(!thrRef.isSuspended()) {
+                num++;
+                if (num > ATTEMPTS) {
+                    log.complain("TEST FAILED: Unable to suspend debuggee's thread");
+                    tot_res = Consts.TEST_FAILED;
+                    return quitDebuggee();
+                }
+                log.display("Waiting for debuggee's thread suspension ...");
                 Thread.currentThread().sleep(1000);
-            } catch(InterruptedException ie) {
-                ie.printStackTrace();
-                log.complain("TEST FAILED: caught: " + ie);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
             }
-        }
 
 // Check the tested assersion
-        try {
             objRef = findObjRef(DEBUGGEE_LOCALVAR);
             rType = objRef.referenceType();
 

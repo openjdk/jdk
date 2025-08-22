@@ -28,8 +28,6 @@
  * @bug 8352437
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver AddExports
  */
@@ -99,21 +97,21 @@ public class AddExports {
         test("FMG should be enabled with '--add-exports java.base/jdk.internal.misc=ALL-UNNAMED'",
              SimpleCDSAppTester.of("nonModuleNeedsJdkAddExport")
                  .classpath(nonModuleNeedsJdkAddExportJar)
-                 .addVmArgs("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-Xlog:cds")
+                 .addVmArgs("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-Xlog:aot,cds")
                  .appCommandLine("com.nomodule.needsjdkaddexport.Main"));
 
         test("FMG should be enabled with '--add-exports java.base/jdk.internal.misc=com.needsjdkaddexport'",
              SimpleCDSAppTester.of("moduleNeedsJdkAddExport")
                  .modulepath(modulePath)
                  .addVmArgs("--add-modules", "com.needsjdkaddexport",
-                            "--add-exports", "java.base/jdk.internal.misc=com.needsjdkaddexport", "-Xlog:cds")
+                            "--add-exports", "java.base/jdk.internal.misc=com.needsjdkaddexport", "-Xlog:aot,cds")
                  .appCommandLine("-m", "com.needsjdkaddexport/com.needsjdkaddexport.Main"));
 
         test("FMG should be enabled with '--add-exports com.foos/com.foos.internal=com.needsfoosaddexport'",
              SimpleCDSAppTester.of("moduleNeedsFoosAddExport")
                  .modulepath(modulePath)
                  .addVmArgs("--add-modules", "com.needsfoosaddexport",
-                            "--add-exports", "com.foos/com.foos.internal=com.needsfoosaddexport", "-Xlog:cds")
+                            "--add-exports", "com.foos/com.foos.internal=com.needsfoosaddexport", "-Xlog:aot,cds")
                  .appCommandLine("-m", "com.needsfoosaddexport/com.needsfoosaddexport.Main"));
 
         test("FMG should be enabled with multiple --add-exports",
@@ -124,7 +122,7 @@ public class AddExports {
                             "--add-exports", "com.foos/com.foos.internal=ALL-UNNAMED",
                             "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                             "--add-exports", "java.base/jdk.internal.misc=com.foos",
-                            "-Xlog:cds")
+                            "-Xlog:aot,cds")
                  .appCommandLine("-m", "com.needsfoosaddexport/com.needsfoosaddexport.Main"));
     }
 }

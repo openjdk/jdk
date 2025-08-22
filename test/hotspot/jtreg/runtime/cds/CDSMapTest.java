@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8308903
- * @summary Test the contents of -Xlog:cds+map
+ * @summary Test the contents of -Xlog:aot+map
  * @requires vm.cds
  * @library /test/lib
  * @run driver CDSMapTest
@@ -67,7 +67,7 @@ public class CDSMapTest {
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xlog:cds=debug")
-            .addPrefix("-Xlog:cds+map=debug,cds+map+oops=trace:file=" + mapName + ":none:filesize=0")
+            .addPrefix("-Xlog:aot+map=debug,aot+map+oops=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)
             .addSuffix(more);

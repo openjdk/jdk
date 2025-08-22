@@ -27,7 +27,6 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
@@ -98,7 +97,6 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
 
       if (class_loader.is_null()) {
         new_ik->set_classpath_index(path_index);
-        new_ik->assign_class_loader_type();
       }
 
       return new_ik;

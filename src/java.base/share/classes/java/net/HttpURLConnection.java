@@ -534,7 +534,7 @@ public abstract class HttpURLConnection extends URLConnection {
 
                 try {
                     responseCode = Integer.parseInt
-                            (statusLine.substring(codePos+1, phrasePos));
+                            (statusLine, codePos+1, phrasePos, 10);
                     return responseCode;
                 } catch (NumberFormatException e) { }
             }
@@ -556,6 +556,10 @@ public abstract class HttpURLConnection extends URLConnection {
      * @return the HTTP response message, or {@code null}
      */
     public String getResponseMessage() throws IOException {
+        // If the responseMessage is already set then return it
+        if (responseMessage != null) {
+            return responseMessage;
+        }
         getResponseCode();
         return responseMessage;
     }
