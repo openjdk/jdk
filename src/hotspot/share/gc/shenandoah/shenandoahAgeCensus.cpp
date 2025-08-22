@@ -387,22 +387,22 @@ void ShenandoahAgeCensus::print() {
   for (uint i = 1; i < MAX_COHORTS; i++) {
     const size_t prev_pop = prev_pv->sizes[i-1];  // (i-1) OK because i >= 1
     const size_t cur_pop  = cur_pv->sizes[i];
-    double mr = mortality_rate(prev_pop, cur_pop);
-
-    if ( i >= tt) {
-      total_tenurable += cur_pop;
-      if (i == tt) {
-        // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
-        log_info(gc, age)("----------------------------------------------------------------------------");
-      }
-    }
+    const double mr = mortality_rate(prev_pop, cur_pop);
 
     // Suppress printing when everything is zero
     if (prev_pop + cur_pop > 0) {
-      log_info(gc, age)
-        (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
-         i, prev_pop*oopSize, cur_pop*oopSize, mr);
+      log_info(gc, age) (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ", i, prev_pop*oopSize, cur_pop*oopSize, mr);
     }
+
+    if (i == tt) {
+      // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
+      log_info(gc, age)("----------------------------------------------------------------------------");
+    }
+
+    if ( i > tt) {
+      total_tenurable += cur_pop;
+    }
+
     total += cur_pop;
   }
 
