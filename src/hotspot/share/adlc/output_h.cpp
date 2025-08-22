@@ -770,7 +770,8 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "    return ((_mask & in2._mask) != 0);\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator<<=(int n) {\n");
-    fprintf(fp_hpp, "    _mask <<= n;\n");
+    fprintf(fp_hpp, "    int max_shift = 8 * sizeof(_mask) - 1;\n");
+    fprintf(fp_hpp, "    _mask <<= (n < max_shift) ? n : max_shift;\n");
     fprintf(fp_hpp, "    return *this;\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  void Or(const Pipeline_Use_Cycle_Mask &in2) {\n");
@@ -870,8 +871,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  void step(uint cycles) {\n");
   fprintf(fp_hpp, "    _used = 0;\n");
-  fprintf(fp_hpp, "    uint max_shift = 8 * sizeof(_mask) - 1;\n");
-  fprintf(fp_hpp, "    _mask <<= (cycles < max_shift) ? cycles : max_shift;\n");
+  fprintf(fp_hpp, "    _mask <<= cycles;\n");
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  friend class Pipeline_Use;\n");
   fprintf(fp_hpp, "};\n\n");
