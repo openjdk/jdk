@@ -641,6 +641,13 @@ inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 
+inline jlong jlong_from(jint h, jint l) {
+  // First cast jint values to juint, so cast to julong will zero-extend.
+  julong high = (julong)(juint)h << 32;
+  julong low = (julong)(juint)l;
+  return (jlong)(high | low);
+}
+
 union jlong_accessor {
   jint  words[2];
   jlong long_value;
@@ -1053,28 +1060,6 @@ template<class T> inline T nth_bit_typed(int n) {
 }
 template<class T> inline T right_n_bits_typed(int n) {
   return nth_bit_typed<T>(n) - 1;
-}
-
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low (jlong* value, jint low ) {
-  *value &= (jlong)0xffffffff << 32;
-  *value |= (jlong)(julong)(juint)low;
-}
-
-inline void set_high(jlong* value, jint high) {
-  *value &= (jlong)(julong)(juint)0xffffffff;
-  jlong low_32bits = right_n_bits_typed<jlong>(32);
-  // high 32 bits are cleared before left-shift, since left-shift of a negative value is UB
-  assert((high & low_32bits) << 32 == ((jlong)high << 32), "must be");
-  *value |= (high & low_32bits) << 32;
-}
-
-inline jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
 }
 
 // bit-operations using a mask m
