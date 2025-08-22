@@ -147,6 +147,10 @@ private:
       result = _free_set->global_used();
       break;
     }
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("used(_type: %d) returning %zu", _type, result);
+#endif
     return result;
   }
 
@@ -154,6 +158,9 @@ private:
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {
     // In the current implementation, used() includes humongous waste
+#ifdef KELVIN_DEBUG
+    log_info(gc)("used_including_humongous_waste(_type: %d) returning %zu", _type, used());
+#endif
     return used();
   }
 
@@ -165,11 +172,24 @@ private:
 
   size_t bytes_allocated_since_gc_start() const override {
     if (_type == ShenandoahGenerationType::YOUNG) {
-      return _free_set->get_bytes_allocated_since_gc_start();
-    } else if (ShenandoahHeap::heap()->mode()->is_generational() && (_type == ShenandoahGenerationType::NON_GEN)) {
-      return _free_set->get_bytes_allocated_since_gc_start();
+      size_t result = _free_set->get_bytes_allocated_since_gc_start();
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
+    } else if (_type == ShenandoahGenerationType::NON_GEN) {
+      assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
+      size_t result = _free_set->get_bytes_allocated_since_gc_start();
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
     } else {
-      return 0;
+      size_t result = 0;
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
     }
   }
 
@@ -247,6 +267,9 @@ private:
       result = _free_set->global_affiliated_regions();
       break;
     }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_affiliated_region_count(_type: %d) returning %zu", _type, result);
+#endif
     return result;
   }
 
@@ -265,6 +288,9 @@ private:
       result = _free_set->total_global_regions();
       break;
     }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_total_region_count(_type: %d) returning %zu", _type, result);
+#endif
     return result;
   }
 
@@ -283,6 +309,9 @@ private:
       result = _free_set->total_humongous_waste();
       break;
     }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_humongous_waste()(_type: %d) returning %zu", _type, result);
+#endif
     return result;
   }
 
