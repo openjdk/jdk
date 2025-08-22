@@ -410,8 +410,13 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
 
-  const size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
-  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
+  // This is only the young bytes in aged regions. It represents a _floor_ on the amount of data we actually have to promote
+  // out of the collection set. In reality, it may be much higher. We previously attempted to reserved enough to hold
+  // all objects above the tenuring threshold. Let's stick with that. The risk is we promote _too_ much, but we have
+  // faith in the tenuring algorithm.
+  // TODO: Keep this in, but consider using established promotion reserve instead of what is in aged regions added to collection set.
+  // const size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
+  // size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
 
   const size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
   const size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
@@ -424,17 +429,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
   // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
   // evac and update phases.
-  size_t old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
+  size_t old_consumed = old_evacuated_committed;
 
   if (old_available < old_consumed) {
+    // TODO: Set promotion reserve to zero?
     log_info(gc, ergo)("Old has consumed more than available, truncate young promo reserve");
-    // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
-    // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
-    assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
-           "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
-           young_advance_promoted_reserve_used, old_available - old_evacuated_committed);
-    young_advance_promoted_reserve_used = old_available - old_evacuated_committed;
-    old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
   }
 
   assert(old_available >= old_consumed, "Cannot consume (%zu) more than is available (%zu)", old_consumed, old_available);
@@ -447,7 +446,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // Make sure old_evac_committed is unaffiliated
   if (old_evacuated_committed > 0) {
     if (unaffiliated_old > old_evacuated_committed) {
-      const size_t giveaway = unaffiliated_old - old_evacuated_committed;
+      const size_t giveaway = unaffiliated_old - old_evacuated_committed - ShenandoahHeap::heap()->old_generation()->get_promoted_reserve();
       const size_t giveaway_regions = giveaway / region_size_bytes;  // round down
       if (giveaway_regions > 0) {
         excess_old = MIN2(excess_old, giveaway_regions * region_size_bytes);
@@ -485,9 +484,9 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
 
   // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
   // promotions than fit in reserved memory, they will be deferred until a future GC pass.
-  const size_t total_promotion_reserve = young_advance_promoted_reserve_used + excess_old;
-  log_info(gc, ergo)("Changing promotion reserve from %zu to %zu (young advance: %zu, old excess: %zu)",
-    old_generation->get_promoted_reserve(), total_promotion_reserve, young_advance_promoted_reserve_used, excess_old);
+  const size_t total_promotion_reserve = excess_old;
+  log_info(gc, ergo)("Changing promotion reserve from %zu to %zu (%zu, old excess: %zu)",
+    old_generation->get_promoted_reserve(), total_promotion_reserve, excess_old);
   old_generation->set_promoted_reserve(total_promotion_reserve);
   old_generation->reset_promoted_expended();
 }
