@@ -74,6 +74,7 @@ public class CDSMapTest {
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xlog:cds=debug")
+            // filesize=0 ensures that a large map file not broken up in multiple files.
             .addPrefix("-Xlog:aot+map=debug,aot+map+oops=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args);

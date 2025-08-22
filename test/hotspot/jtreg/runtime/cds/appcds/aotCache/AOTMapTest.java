@@ -95,6 +95,7 @@ public class AOTMapTest {
                 vmArgs.add("-XX:" + sign + "UseCompressedOops");
             }
 
+            // filesize=0 ensures that a large map file not broken up in multiple files.
             String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";
             String logMapSuffix = ":none:filesize=0";
 
