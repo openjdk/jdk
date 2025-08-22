@@ -105,25 +105,6 @@ public class FloatingDecimal{
         int getChars(byte[] result);
 
         /**
-         * Retrieves the decimal exponent most closely corresponding to this value.
-         * @return The decimal exponent.
-         */
-        int getDecimalExponent();
-
-        /**
-         * Retrieves the value as an array of digits.
-         * @param digits The digit array.
-         * @return The number of valid digits copied into the array.
-         */
-        int getDigits(char[] digits);
-
-        /**
-         * Indicates the sign of the value.
-         * @return {@code value < 0.0}.
-         */
-        boolean isNegative();
-
-        /**
          * Indicates whether the value is either infinite or not a number.
          *
          * @return <code>true</code> if and only if the value is <code>NaN</code>
@@ -153,11 +134,9 @@ public class FloatingDecimal{
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
-        private final boolean isNegative;
 
-        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
+        public ExceptionalBinaryToASCIIBuffer(String image) {
             this.image = image;
-            this.isNegative = isNegative;
         }
 
         @Override
@@ -165,21 +144,6 @@ public class FloatingDecimal{
         public int getChars(byte[] chars) {
             image.getBytes(0, image.length(), chars, 0);
             return image.length();
-        }
-
-        @Override
-        public int getDecimalExponent() {
-            throw new IllegalArgumentException("Exceptional value does not have an exponent");
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            throw new IllegalArgumentException("Exceptional value does not have digits");
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
         }
 
         @Override
@@ -201,9 +165,9 @@ public class FloatingDecimal{
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP);
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP);
+    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP);
     private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
 
@@ -250,22 +214,6 @@ public class FloatingDecimal{
         }
 
         @Override
-        public int getDecimalExponent() {
-            return decExponent;
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
-            return this.nDigits;
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
-        }
-
-        @Override
         public boolean isExceptional() {
             return false;
         }
@@ -293,13 +241,14 @@ public class FloatingDecimal{
          * In particular:
          * lvalue is a finite number (not Inf, nor NaN)
          * lvalue > 0L (not zero, nor negative).
-         *
+         *<p>
          * The only reason that we develop the digits here, rather than
          * calling on Long.toString() is that we can do it a little faster,
          * and besides want to treat trailing 0s specially. If Long.toString
          * changes, we should re-evaluate this strategy!
          */
-        private void developLongDigits( int decExponent, long lvalue, int insignificantDigits ){
+        private void developLongDigits(long lvalue, int insignificantDigits) {
+            int decExponent = 0;
             if ( insignificantDigits != 0 ){
                 // Discard non-significant low-order bits, while rounding,
                 // up to insignificant value.
@@ -356,7 +305,7 @@ public class FloatingDecimal{
             this.nDigits = this.digits.length - digitno;
         }
 
-        private void dtoa( int binExp, long fractBits, int nSignificantBits, boolean isCompatibleFormat)
+        private void dtoa( int binExp, long fractBits, int nSignificantBits)
         {
             assert fractBits > 0 ; // fractBits here can't be zero or negative
             assert (fractBits & FRACT_HOB)!=0  ; // Hi-order bit should be set
@@ -408,7 +357,7 @@ public class FloatingDecimal{
                         } else {
                             fractBits >>>= (EXP_SHIFT-binExp) ;
                         }
-                        developLongDigits( 0, fractBits, insignificant );
+                        developLongDigits(fractBits, insignificant );
                         return;
                     }
                     //
@@ -539,7 +488,6 @@ public class FloatingDecimal{
                     // was too high, our first quotient will be zero. In this
                     // case, we discard it and decrement decExp.
                     //
-                    ndigit = 0;
                     q = b / s;
                     b = 10 * ( b % s );
                     m *= 10;
@@ -558,7 +506,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat ||decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -593,7 +541,6 @@ public class FloatingDecimal{
                     // was too high, our first quotient will be zero. In this
                     // case, we discard it and decrement decExp.
                     //
-                    ndigit = 0;
                     q = (int) ( b / s );
                     b = 10L * ( b % s );
                     m *= 10L;
@@ -612,7 +559,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -655,7 +602,6 @@ public class FloatingDecimal{
                 // was too high, our first quotient will be zero. In this
                 // case, we discard it and decrement decExp.
                 //
-                ndigit = 0;
                 q = Bval.quoRemIteration( Sval );
                 low  = (Bval.cmp( Mval ) < 0);
                 high = tenSval.addAndCmp(Bval,Mval)<=0;
@@ -673,7 +619,7 @@ public class FloatingDecimal{
                 // Thus we will need more than one digit if we're using
                 // E-form
                 //
-                if (!isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                if (decExp < -3 || decExp >= 8){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -743,7 +689,7 @@ public class FloatingDecimal{
         /**
          * Estimate decimal exponent. (If it is small-ish,
          * we could double-check.)
-         *
+         *<p>
          * First, scale the mantissa bits such that 1 <= d2 < 2.
          * We are then going to estimate
          *          log10(d2) ~=~  (d2-1.5)/1.5 + log(1.5)
@@ -981,7 +927,7 @@ public class FloatingDecimal{
         /**
          * Takes a FloatingDecimal, which we presumably just scanned in,
          * and finds out what its value is, as a double.
-         *
+         *<p>
          * AS A SIDE EFFECT, SET roundDir TO INDICATE PREFERRED
          * ROUNDING DIRECTION in case the result is really destined
          * for a single-precision float.
@@ -998,7 +944,7 @@ public class FloatingDecimal{
             for (int i = 1; i < iDigits; i++) {
                 iValue = iValue * 10 + (int) digits[i] - (int) '0';
             }
-            long lValue = (long) iValue;
+            long lValue = iValue;
             for (int i = iDigits; i < kDigits; i++) {
                 lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
             }
@@ -1408,7 +1354,7 @@ public class FloatingDecimal{
                 // Then convert that integer to a double, multiply
                 // by the appropriate power of ten, and convert to float.
                 //
-                long lValue = (long) iValue;
+                long lValue = iValue;
                 for (int i = kDigits; i < nDigits; i++) {
                     lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
                 }
@@ -1657,8 +1603,8 @@ public class FloatingDecimal{
                 1e-16, 1e-32, 1e-64, 1e-128, 1e-256,
         };
 
-        private static final int MAX_SMALL_TEN = SMALL_10_POW.length-1;
-        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length-1;
+        private static final int MAX_SMALL_TEN = SMALL_10_POW.length - 1;
+        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length - 1;
 
     }
 
@@ -1672,7 +1618,7 @@ public class FloatingDecimal{
      */
     public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean compat) {
         return compat
-                ? getCompatBinaryToASCIIConverter(d, true)
+                ? getCompatBinaryToASCIIConverter(d)
                 : getBinaryToASCIIConverter(d);
     }
 
@@ -1703,7 +1649,7 @@ public class FloatingDecimal{
      * Should be removed in the future, along with its dependent methods and
      * fields (> 550 lines).
      */
-    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
+    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
@@ -1739,7 +1685,7 @@ public class FloatingDecimal{
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, fractBits, nSignificantBits, isCompatibleFormat);
+        buf.dtoa(binExp, fractBits, nSignificantBits);
         return buf;
     }
 
