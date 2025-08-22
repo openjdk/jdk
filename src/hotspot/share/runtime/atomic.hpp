@@ -488,6 +488,25 @@ private:
   class PrefetchBitopsUsingCmpxchg;
   class PostfetchBitopsUsingCmpxchg;
   class PostfetchBitopsUsingPrefetch;
+
+  // Implementation support for AtomicValue<T>.
+
+  template<typename T> class ValueAccess;
+  template<typename T> class ValueSupportsFetchThenSet;
+  template<typename T> class ValueSupportsArithmetic;
+  template<typename T> class IntegerValue;
+  template<typename T> class ByteValue;
+  template<typename T> class PointerValue;
+  template<typename T> class TranslatingValue;
+
+  template<typename T> class AtomicValueHasFetchThenSet;
+  template<typename T, typename Enable = void> class IntegerValueSelector;
+  template<typename T, typename Enable = void> class ValueSelectorImpl;
+
+public:
+  // Public for accessibility by AtomicValue.
+  template<typename T> class ValueSelector;
+  template<typename T> static auto value_selector(T);
 };
 
 template<typename From, typename To>
@@ -1231,5 +1250,474 @@ inline T Atomic::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
   } while (old_value != Atomic::cmpxchg(dest, old_value, exchange_value, order));
   return old_value;
 }
+
+// AtomicValue<T> is used to declare a variable of type T with atomic access.
+//
+// This type is not intended to be anything approaching a drop-in replacement
+// for std::atomic. Rather, it wraps up an existing HotSpot idiom in a tidier
+// and more rigorous package.
+//
+// The following value types T are supported:
+//
+// (1) Integers with sizeof the same as sizeof int, long, or long long. These
+// are referred to as atomic integers below.
+//
+// (2) Integers with sizeof 1, including bool. These are referred to as atomic
+// bytes below.
+//
+// (3) Pointers. These are referred to as atomic pointers below.
+//
+// (4) Types with a PrimitiveValues::Translate definition. These are referred
+// to as atomic translated types below. The atomic value for the associated
+// decayed type is referred to as the atomic decayed type.
+//
+// The interface for an AtomicValue provided depends on the value type.
+//
+// If T is the value type, v is an AtomicValue<T>, x and y are instances of T,
+// i is an integer, and o is an atomic_memory_order, then:
+//
+// (1) All AtomicValue types provide
+//
+//   nested types:
+//     ValueType -> T
+//
+//   special functions:
+//     explicit constructor(T)
+//     noncopyable
+//     destructor
+//
+//   static member functions:
+//     value_offset_in_bytes() -> int   // should be constexpr, needs JDK-8300080
+//     value_size_in_bytes() -> int     // constexpr
+//
+//   member functions:
+//     v.load_relaxed() -> T
+//     v.load_acquire() -> T
+//     v.relaxed_store(x) -> void
+//     v.release_store(x) -> void
+//     v.release_store_fence(x) -> void
+//     v.cmpxchg(x, y [, o]) -> T
+//
+// (2) All except atomic translated types are default constructible, value
+// initializing the value. An atomic translated type is default constructible
+// only if its value type is default constructible.
+//
+// (3) Atomic pointers and atomic integers additionally provide
+//
+//   member functions:
+//     v.fetch_then_set(x [, o]) -> T
+//     v.add_then_fetch(i [, o]) -> T
+//     v.sub_then_fetch(i [, o]) -> T
+//     v.fetch_then_add(i [, o]) -> T
+//     v.fetch_then_sub(i [, o]) -> T
+//     v.atomic_inc([o]) -> void
+//     v.atomic_dec([o]) -> void
+//
+// (4) An atomic translated type additionally provides the fetch_then_set
+// function if its associated atomic decayed type provides that function.
+//
+// (5) Atomic integers additionally provide
+//
+//   member functions:
+//     v.and_then_fetch(x [, o]) -> T
+//     v.or_then_fetch(x [, o]) -> T
+//     v.xor_then_fetch(x [, o]) -> T
+//     v.fetch_then_and(x [, o]) -> T
+//     v.fetch_then_or(x [, o]) -> T
+//     v.fetch_then_xor(x [, o]) -> T
+//
+// (6) Atomic pointers additionally provide
+//
+//   nested types:
+//     ElementType -> std::remove_pointer_t<T>
+//
+//   member functions:
+//     v.replace_if_null(x [, o]) -> bool
+//     v.clear_if_equal(x [, o]) -> bool
+//
+// Atomic bytes don't provide fetch_then_set. This is because that operation
+// hasn't been implemented for 1 byte values. That could be changed if needed.
+//
+// AtomicValue for 2 byte integers is not supported. This is because atomic
+// operations of that size have not been implemented. There haven't been
+// required use-cases. Many platforms don't provide hardware support.
+//
+// Atomic translated types don't provide the full interface of the associated
+// atomic decayed type. They could do so, perhaps under the control of an
+// associated type trait. The conditional definition of fetch_then_set for
+// atomic translated types demonstrates an approach to doing so.
+
+#if 0  // Use pre-C++17 selection of AtomicValue implementation from T
+template<typename T>
+using AtomicValue = typename Atomic::ValueSelector<T>::type;
+#else  // Use C++17 selection
+template<typename T>
+using AtomicValue = decltype(Atomic::value_selector(declval<T>()));
+#endif
+
+// FIXME: Move this to globalDefinitions.hpp.
+// This provides a workaround for static_assert(false) in discarded or
+// otherwise uninstantiated places.  Instead use
+//   static_assert(dependent_always_false<T>, "...")
+// See http://wg21.link/p2593r1. Some, but not all compiler versions we're
+// using have implemented that change as a DR:
+// https://cplusplus.github.io/CWG/issues/2518.html
+template<typename T> inline constexpr bool dependent_always_false = false;
+
+// C++17 selection of AtomicValue implementation from T.
+template<typename T>
+inline auto Atomic::value_selector(T v) {
+  static_assert(std::is_same_v<T, std::remove_cv_t<T>>,
+                "Value type must not be cv-qualified");
+  if constexpr (std::is_integral_v<T>) {
+    if constexpr (sizeof(T) >= sizeof(int)) {
+      return IntegerValue<T>(v);
+    } else if constexpr (sizeof(T) == 1) {
+      return ByteValue<T>(v);
+    } else {
+      static_assert(dependent_always_false<T>, "Invalid atomic integer type");
+    }
+  } else if constexpr (std::is_pointer_v<T>) {
+    return PointerValue<T>(v);
+  } else if constexpr (PrimitiveConversions::Translate<T>::value) {
+    return TranslatingValue<T>(v);
+  } else {
+    static_assert(dependent_always_false<T>, "Invalid atomic value type");
+  }
+}
+
+// pre-C++17 selection of AtomicValue implementation from T.
+// Uses IntegerValueSelector, ValueSelectorImpl, and ValueSelector.
+template<typename T>
+class Atomic::IntegerValueSelector<T, std::enable_if_t<(sizeof(T) >= sizeof(int))>> {
+public:
+  using type = IntegerValue<T>;
+};
+
+template<typename T>
+class Atomic::IntegerValueSelector<T, std::enable_if_t<(sizeof(T) == 1)>> {
+public:
+  using type = ByteValue<T>;
+};
+
+template<typename T>
+class Atomic::ValueSelectorImpl<
+  T,
+  std::enable_if_t<std::is_integral<T>::value>> {
+public:
+  using type = typename IntegerValueSelector<T>::type;
+};
+
+template<typename T>
+class Atomic::ValueSelectorImpl<T*> {
+public:
+  using type = PointerValue<T*>;
+};
+
+template<typename T>
+class Atomic::ValueSelectorImpl<
+  T,
+  std::enable_if_t<PrimitiveConversions::Translate<T>::value>>
+{
+public:
+  using type = TranslatingValue<T>;
+};
+
+template<typename T>
+class Atomic::ValueSelector {
+  static_assert(std::is_same<T, std::remove_cv_t<T>>::value,
+                "Value type must not be cv-qualified");
+
+public:
+  using type = typename ValueSelectorImpl<T>::type;
+};
+// End of pre-C++17 selection of AtomicValue implementation from T.
+
+template<typename T>
+class Atomic::ValueAccess {
+  T volatile _value;
+
+protected:
+  explicit ValueAccess(T value) : _value(value) {}
+  ~ValueAccess() = default;
+
+public:
+  NONCOPYABLE(ValueAccess);
+
+  // Used internally, not part of final derived public API.
+  T volatile* value_ptr() { return &_value; }
+  T const volatile* value_ptr() const { return &_value; }
+
+  // These are mostly for assembly language access to the value.
+  static int value_offset_in_bytes() { return offset_of(ValueAccess, _value); }
+  static constexpr int value_size_in_bytes() { return sizeof(_value); }
+
+  T load_relaxed() const { return Atomic::load(value_ptr()); }
+  T load_acquire() const { return Atomic::load_acquire(value_ptr()); }
+
+  void relaxed_store(T value) { Atomic::store(value_ptr(), value); }
+  void release_store(T value) { Atomic::release_store(value_ptr(), value); }
+  void release_store_fence(T value) { Atomic::release_store_fence(value_ptr(), value); }
+
+  T cmpxchg(T compare_value, T new_value,
+            atomic_memory_order order = memory_order_conservative) {
+    return Atomic::cmpxchg(value_ptr(), compare_value, new_value);
+  }
+};
+
+#define USING_ATOMIC_ACCESS_FROM_BASE()         \
+  using Base::value_offset_in_bytes;            \
+  using Base::value_size_in_bytes;              \
+  using Base::load_relaxed;                     \
+  using Base::load_acquire;                     \
+  using Base::relaxed_store;                    \
+  using Base::release_store;                    \
+  using Base::release_store_fence;              \
+  using Base::cmpxchg;                          \
+  /* */
+
+template<typename T>
+class Atomic::ValueSupportsFetchThenSet : public ValueAccess<T> {
+  using Base = ValueAccess<T>;
+
+protected:
+  explicit ValueSupportsFetchThenSet(T value) : Base(value) {}
+  ~ValueSupportsFetchThenSet() = default;
+
+public:
+  using Base::value_ptr;
+  USING_ATOMIC_ACCESS_FROM_BASE();
+
+  T fetch_then_set(T new_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return Atomic::xchg(value_ptr(), new_value);
+  }
+};
+
+#define USING_ATOMIC_FETCH_THEN_SET_FROM_BASE() \
+  using Base::fetch_then_set;                   \
+  /* */
+
+template<typename T>
+class Atomic::ValueSupportsArithmetic : public ValueSupportsFetchThenSet<T> {
+  using Base = ValueSupportsFetchThenSet<T>;
+
+protected:
+  explicit ValueSupportsArithmetic(T value) : Base(value) {}
+  ~ValueSupportsArithmetic() = default;
+
+public:
+  using Base::value_ptr;
+  USING_ATOMIC_ACCESS_FROM_BASE();
+  USING_ATOMIC_FETCH_THEN_SET_FROM_BASE();
+
+  template<typename I>
+  T add_then_fetch(I add_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return Atomic::add(value_ptr(), add_value, order);
+  }
+
+  template<typename I>
+  T fetch_then_add(I add_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return Atomic::fetch_then_add(value_ptr(), add_value, order);
+  }
+
+  template<typename I>
+  T sub_then_fetch(I sub_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return Atomic::sub(value_ptr(), sub_value, order);
+  }
+
+  template<typename I>
+  T fetch_then_sub(I sub_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    // Atomic doesn't currently provide fetch_then_sub.
+    return sub_then_fetch(sub_value, order) + sub_value;
+  }
+
+  void atomic_inc(atomic_memory_order order = memory_order_conservative) {
+    Atomic::inc(value_ptr(), order);
+  }
+
+  void atomic_dec(atomic_memory_order order = memory_order_conservative) {
+    Atomic::dec(value_ptr(), order);
+  }
+};
+
+#define USING_ATOMIC_ARITHMETIC_FROM_BASE()     \
+  using Base::add_then_fetch;                   \
+  using Base::fetch_then_add;                   \
+  using Base::sub_then_fetch;                   \
+  using Base::fetch_then_sub;                   \
+  using Base::atomic_inc;                       \
+  using Base::atomic_dec;                       \
+  /* */
+
+template<typename T>
+class Atomic::IntegerValue : private ValueSupportsArithmetic<T> {
+  using Base = ValueSupportsArithmetic<T>;
+  using Base::value_ptr;
+
+public:
+  explicit IntegerValue(T value = 0) : Base(value) {}
+
+  NONCOPYABLE(IntegerValue);
+
+  using ValueType = T;
+
+  USING_ATOMIC_ACCESS_FROM_BASE();
+  USING_ATOMIC_FETCH_THEN_SET_FROM_BASE();
+  USING_ATOMIC_ARITHMETIC_FROM_BASE();
+
+  T fetch_then_and(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::fetch_then_and(value_ptr(), bits, order);
+  }
+
+  T fetch_then_or(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::fetch_then_or(value_ptr(), bits, order);
+  }
+
+  T fetch_then_xor(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::fetch_then_xor(value_ptr(), bits, order);
+  }
+
+  T and_then_fetch(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::and_then_fetch(value_ptr(), bits, order);
+  }
+
+  T or_then_fetch(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::or_then_fetch(value_ptr(), bits, order);
+  }
+
+  T xor_then_fetch(T bits, atomic_memory_order order = memory_order_conservative) {
+    return Atomic::xor_then_fetch(value_ptr(), bits, order);
+  }
+};
+
+template<typename T>
+class Atomic::ByteValue : private ValueAccess<T> {
+  using Base = ValueAccess<T>;
+
+public:
+  explicit ByteValue(T value = 0) : Base(value) {}
+
+  NONCOPYABLE(ByteValue);
+
+  using ValueType = T;
+
+  USING_ATOMIC_ACCESS_FROM_BASE();
+};
+
+template<typename T>
+class Atomic::PointerValue : private ValueSupportsArithmetic<T> {
+  using Base = ValueSupportsArithmetic<T>;
+  using Base::value_ptr;
+
+public:
+  explicit PointerValue(T value = nullptr) : Base(value) {}
+
+  NONCOPYABLE(PointerValue);
+
+  using ValueType = T;
+  using ElementType = std::remove_pointer_t<T>;
+
+  USING_ATOMIC_ACCESS_FROM_BASE();
+  USING_ATOMIC_FETCH_THEN_SET_FROM_BASE();
+  USING_ATOMIC_ARITHMETIC_FROM_BASE();
+
+  bool replace_if_null(T new_value,
+                       atomic_memory_order order = memory_order_conservative) {
+    return nullptr == cmpxchg(nullptr, new_value, order);
+  }
+
+  bool clear_if_equal(T compare_value,
+                      atomic_memory_order order = memory_order_conservative) {
+    return compare_value == cmpxchg(compare_value, nullptr, order);
+  }
+};
+
+template<typename T>
+class Atomic::AtomicValueHasFetchThenSet {
+  template<typename Check> static char* test(decltype(&Check::fetch_then_set));
+  template<typename> static char test(...);
+  using test_type = decltype(test<AtomicValue<T>>(nullptr));
+public:
+  static const bool value = std::is_pointer_v<test_type>;
+};
+
+template<typename T>
+class Atomic::TranslatingValue {
+  using Translator = PrimitiveConversions::Translate<T>;
+  using Decayed = typename Translator::Decayed;
+
+  AtomicValue<Decayed> _value;
+
+  static Decayed decay(T x) { return Translator::decay(x); }
+  static T recover(Decayed x) { return Translator::recover(x); }
+
+  // "Unit test" AtomicValueHasFetchThenSet.
+  static_assert(AtomicValueHasFetchThenSet<int>::value);
+  static_assert(AtomicValueHasFetchThenSet<void*>::value);
+  static_assert(!AtomicValueHasFetchThenSet<char>::value);
+
+public:
+  using ValueType = T;
+
+  template<typename Dummy = int,
+           std::enable_if_t<std::is_default_constructible_v<T>, Dummy> = 0>
+  TranslatingValue() : TranslatingValue(T()) {}
+
+  explicit TranslatingValue(T value) : _value(decay(value)) {}
+
+  NONCOPYABLE(TranslatingValue);
+
+  static int value_offset_in_bytes() {
+    return (offset_of(TranslatingValue, _value) +
+            AtomicValue<Decayed>::value_offset_in_bytes());
+  }
+
+  static constexpr int value_size_in_bytes() {
+    return AtomicValue<Decayed>::value_size_in_bytes();
+  }
+
+  T load_relaxed() const {
+    return recover(_value.load_relaxed());
+  }
+
+  T load_acquire() const {
+    return recover(_value.load_acquire());
+  }
+
+  void relaxed_store(T value) {
+    _value.relaxed_store(decay(value));
+  }
+
+  void release_store(T value) {
+    _value.release_store(decay(value));
+  }
+
+  void release_store_fence(T value) {
+    _value.release_store_fence(decay(value));
+  }
+
+  T cmpxchg(T compare_value, T new_value,
+            atomic_memory_order order = memory_order_conservative) {
+    return recover(_value.cmpxchg(decay(compare_value),
+                                  decay(new_value),
+                                  order));
+  }
+
+  template<typename Dummy = int,
+           std::enable_if_t<AtomicValueHasFetchThenSet<Decayed>::value, Dummy> = 0>
+  T fetch_then_set(T new_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return recover(_value.fetch_then_set(decay(new_value), order));
+  }
+};
+
+#undef USING_ATOMIC_ACCESS_FROM_BASE
+#undef USING_ATOMIC_FETCH_THEN_SET_FROM_BASE
+#undef USING_ATOMIC_ARITHMETIC_FROM_BASE
 
 #endif // SHARE_RUNTIME_ATOMIC_HPP
