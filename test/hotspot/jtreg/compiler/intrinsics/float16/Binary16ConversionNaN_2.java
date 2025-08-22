@@ -151,7 +151,7 @@ public class Binary16ConversionNaN_2 {
         int i2 = Float.floatToRawIntBits(f2);
         assert Float.isNaN(f1);
         if (!Float.isNaN(f2) ||
-            ((i1 & 0x8000_0000) != (i1 & 0x8000_0000))) {
+            ((i1 & 0x8000_0000) != (i2 & 0x8000_0000))) {
             errors++;
             System.out.println("Roundtrip failure on NaN value " +
                                Integer.toHexString(i1) +
@@ -166,7 +166,7 @@ public class Binary16ConversionNaN_2 {
         int i2 = Float.floatToRawIntBits(f2);
         assert Float.isNaN(f1);
         if (!Float.isNaN(f2) ||
-            ((i1 & 0x8000_0000) != (i1 & 0x8000_0000))) {
+            ((i1 & 0x8000_0000) != (i2 & 0x8000_0000))) {
             errors++;
             System.out.println("Roundtrip failure on NaN value " +
                                Integer.toHexString(i1) +
