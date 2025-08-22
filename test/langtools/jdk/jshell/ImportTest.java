@@ -52,6 +52,7 @@ import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 public class ImportTest extends KullaTesting {
 
@@ -190,8 +191,8 @@ public class ImportTest extends KullaTesting {
     }
 
     @BeforeEach
-    public void setUp(Method m) {
-        switch (m.getName()) {
+    public void setUp(TestInfo testInfo) {
+        switch (testInfo.getTestMethod().orElseThrow().getName()) {
             case "testImportModule" ->
                 super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
             default ->
