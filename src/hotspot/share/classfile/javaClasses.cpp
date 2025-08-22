@@ -1014,7 +1014,7 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
 // Set the java.lang.Module module field in the java_lang_Class mirror
 void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
   if (CDSConfig::is_using_preloaded_classes()) {
-    oop archived_module = java_lang_Class:: module(mirror());
+    oop archived_module = java_lang_Class::module(mirror());
     if (archived_module != nullptr) {
       precond(module() == nullptr || module() == archived_module);
       precond(MetaspaceShared::is_shared_static((void*)k));

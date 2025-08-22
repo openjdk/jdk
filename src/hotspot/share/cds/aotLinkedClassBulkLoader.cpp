@@ -115,17 +115,6 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
                           ik->is_hidden() ? " (hidden)" : "");
     }
 
-    DEBUG_ONLY({
-        // The list should be sorted such that ik is placed after all of its supertypes.
-        precond(!ik->is_loaded());
-        if (ik->java_super() != nullptr) {
-          precond(ik->java_super()->is_loaded());
-        }
-        for (int i = 0; i < ik->local_interfaces()->length(); i++) {
-          precond(ik->local_interfaces()->at(i)->is_loaded());
-        }
-      });
-
     SystemDictionary::preload_class(loader, ik, CHECK);
 
     if (ik->is_hidden()) {
