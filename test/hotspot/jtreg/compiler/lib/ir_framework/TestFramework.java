@@ -387,16 +387,16 @@ public class TestFramework {
                 (a, b) -> Stream.concat(a, b)); // combiner; if any reduction steps are executed in parallel, just concat two streams.
 
         Scenario[] newScenarios = crossProduct
-                .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
-                        idx.getAndIncrement(),
-                        flags.stream() // Process flags
-                             .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
-                             .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
-                             .filter(s -> !s.isEmpty()) // Remove empty string flags.
-                             .distinct()
-                             .collect(Collectors.toList())
-                             .toArray(new String[0])))
-                .collect(Collectors.toList()).toArray(new Scenario[0]);
+            .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
+                idx.getAndIncrement(),
+                flags.stream() // Process flags
+                     .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
+                     .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
+                     .filter(s -> !s.isEmpty()) // Remove empty string flags.
+                     .distinct()
+                     .collect(Collectors.toList())
+                     .toArray(new String[0])))
+            .collect(Collectors.toList()).toArray(new Scenario[0]);
         return addScenarios(newScenarios);
     }
 
