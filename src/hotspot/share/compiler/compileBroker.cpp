@@ -480,6 +480,7 @@ void CompileQueue::purge_stale_tasks() {
       MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != nullptr; ) {
         CompileTask* next_task = task->next();
+        task->set_next(nullptr);
         CompileTaskWrapper ctw(task); // Frees the task
         task->set_failure_reason("stale task");
         task = next_task;

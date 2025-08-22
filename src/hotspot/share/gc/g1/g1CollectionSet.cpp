@@ -66,7 +66,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _survivor_region_length(0),
   _initial_old_region_length(0),
   _optional_groups(),
-  _inc_build_state(CSetBuildType::Inactive),
+  DEBUG_ONLY(_inc_build_state(CSetBuildType::Inactive) COMMA)
   _regions_inc_part_start(0),
   _groups_inc_part_start(0) {
 }
@@ -141,11 +141,11 @@ void G1CollectionSet::continue_incremental_building() {
   _regions_inc_part_start = _regions_cur_length;
   _groups_inc_part_start = groups_cur_length();
 
-  _inc_build_state = CSetBuildType::Active;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Active;)
 }
 
 void G1CollectionSet::stop_incremental_building() {
-  _inc_build_state = CSetBuildType::Inactive;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Inactive;)
 }
 
 void G1CollectionSet::clear() {
