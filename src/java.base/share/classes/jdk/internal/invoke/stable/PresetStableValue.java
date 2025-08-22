@@ -23,12 +23,11 @@
  * questions.
  */
 
-package jdk.internal.lang.stable;
+package jdk.internal.invoke.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 

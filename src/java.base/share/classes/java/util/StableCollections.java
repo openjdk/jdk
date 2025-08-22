@@ -26,10 +26,10 @@
 package java.util;
 
 import jdk.internal.ValueBased;
-import jdk.internal.lang.stable.InternalStableValue;
-import jdk.internal.lang.stable.PresetStableValue;
-import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.invoke.stable.InternalStableValue;
+import jdk.internal.invoke.stable.PresetStableValue;
+import jdk.internal.invoke.stable.StableUtil;
+import jdk.internal.invoke.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;

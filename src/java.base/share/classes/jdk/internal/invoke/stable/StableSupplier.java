@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.stable;
+package jdk.internal.invoke.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 

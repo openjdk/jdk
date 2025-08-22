@@ -26,7 +26,7 @@
 package java.util.function;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.StableSupplier;
+import jdk.internal.invoke.stable.StableSupplier;
 
 import java.util.Objects;
 import java.util.Optional;

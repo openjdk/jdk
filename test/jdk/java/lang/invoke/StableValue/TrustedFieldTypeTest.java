@@ -24,14 +24,14 @@
 /* @test
  * @summary Basic tests for TrustedFieldType implementations
  * @modules jdk.unsupported/sun.misc
- * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.invoke.stable
  * @modules java.base/jdk.internal.misc
  * @enablePreview
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED -Dopens=true TrustedFieldTypeTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.invoke.stable=ALL-UNNAMED -Dopens=true TrustedFieldTypeTest
  * @run junit/othervm -Dopens=false TrustedFieldTypeTest
  */
 
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.invoke.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.stable;
+package jdk.internal.invoke.stable;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -31,7 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 

@@ -23,12 +23,12 @@
 
 /* @test
  * @summary Basic tests for StableValue factory implementations
- * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.invoke.stable
  * @enablePreview
  * @run junit StableValueFactoriesTest
  */
 
-import jdk.internal.lang.stable.StableUtil;
+import jdk.internal.invoke.stable.StableUtil;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

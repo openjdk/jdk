@@ -28,9 +28,9 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.InternalStableValue;
-import jdk.internal.lang.stable.PresetStableValue;
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.invoke.stable.InternalStableValue;
+import jdk.internal.invoke.stable.PresetStableValue;
+import jdk.internal.invoke.stable.StandardStableValue;
 
 import java.io.Serializable;
 import java.util.Arrays;

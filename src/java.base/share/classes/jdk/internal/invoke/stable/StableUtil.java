@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.stable;
+package jdk.internal.invoke.stable;
 
 import java.util.Map;
 import java.util.Objects;
