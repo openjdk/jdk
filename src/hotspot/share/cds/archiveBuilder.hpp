@@ -180,6 +180,7 @@ private:
       return _buffered_addr;
     }
     MetaspaceObj::Type msotype() const { return _msotype; }
+    FollowMode follow_mode() const { return _follow_mode; }
   };
 
   class SourceObjList {
@@ -443,10 +444,8 @@ public:
   }
 
   bool has_been_archived(address src_addr) const;
-
-  bool has_been_buffered(address src_addr) const;
-  template <typename T> bool has_been_buffered(T src_addr) const {
-    return has_been_buffered((address)src_addr);
+  template <typename T> bool has_been_archived(T src_addr) const {
+    return has_been_archived((address)src_addr);
   }
 
   address get_buffered_addr(address src_addr) const;
