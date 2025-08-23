@@ -79,14 +79,14 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
-  if (ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
+  if (ObjectCountEventSender::should_send_event()) {
     ResourceMark rm;
 
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit.size_of_instances_in_words(), Ticks::now(), &cit);
+      ObjectCountEventSenderClosure<EventObjectCountAfterGC, false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }

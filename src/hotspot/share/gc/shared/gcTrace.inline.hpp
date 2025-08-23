@@ -9,7 +9,7 @@
 
 #if INCLUDE_SERVICES
 
-template <typename Event>
+template <typename Event, bool ShouldDelete>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   size_t _total_size_in_words;
@@ -17,17 +17,23 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   KlassInfoTable* _cit;
 
  public:
-  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp, KlassInfoTable* cit) :
+  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp, KlassInfoTable* cit=nullptr) :
     _size_threshold_percentage(ObjectCountCutOffPercent / 100),
     _total_size_in_words(total_size_in_words),
     _timestamp(timestamp),
     _cit(cit)
   {}
-
+  
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       ObjectCountEventSender::send<Event>(entry, _timestamp);
-      _cit->delete_entry(entry, &_total_size_in_words);
+    }
+
+    // If the same KlassInfoTable is being used for every event emission,
+    // delete the entry even if we don't send it. This ensure live objects that
+    // weren't sent in a previous event emission are not monotonically increasing.
+    if (ShouldDelete) {
+      _cit->delete_entry(entry);
     }
   }
 
@@ -38,17 +44,19 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-template <typename T>
-void GCTracer::report_object_count(T* heap) {
-  if (!ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
+template <typename T, class Event>
+void GCTracer::report_object_count() {
+  if (!ObjectCountEventSender::should_send_event()) {
     return;
   }
   
+  T* heap = T::heap();
   KlassInfoTable* cit = heap->get_cit();
 
   if (!cit->allocation_failed()) {
-    ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
+    ObjectCountEventSenderClosure<Event, true> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
     cit->iterate(&event_sender);
+    cit->reset_size_of_instances_in_words();
   }
 }
 

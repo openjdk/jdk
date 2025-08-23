@@ -28,4 +28,12 @@
 
 bool ObjectCountEventSender::_should_send_requestable_event = false;
 
+bool ObjectCountEventSender::should_send_event() {
+#if INCLUDE_JFR
+  return _should_send_requestable_event || EventObjectCountAfterGC::is_enabled();
+#else
+  return false;
+#endif // INCLUDE_JFR
+}
+
 #endif // INCLUDE_SERVICES

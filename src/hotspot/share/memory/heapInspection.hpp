@@ -132,7 +132,11 @@ class KlassInfoTable: public StackObj {
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
   // Deletes the KlassInfoEntry in the list
-  void delete_entry(KlassInfoEntry* entry, size_t* total_table_size);
+  void delete_entry(KlassInfoEntry* entry);
+  // Reset the size of instances in words to 0. Only call this method
+  // after sending the KlassInfoTable for the ObjectCount or
+  // ObjectCountAfterGC event and deleting it's entries.
+  void reset_size_of_instances_in_words();
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };

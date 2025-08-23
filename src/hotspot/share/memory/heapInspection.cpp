@@ -280,11 +280,13 @@ bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
   return false;
 }
 
-void KlassInfoTable::delete_entry(KlassInfoEntry* entry, size_t* total_table_size) {
+void KlassInfoTable::reset_size_of_instances_in_words() {
+  _size_of_instances_in_words = 0;
+}
+
+void KlassInfoTable::delete_entry(KlassInfoEntry* entry) {
   uint idx = hash(entry->klass()) % _num_buckets;
-  size_t total_entry_size = entry->words();
   _buckets[idx].remove_from_list(entry);
-  *total_table_size -= total_entry_size;
 }
 
 class KlassInfoTableMergeClosure : public KlassInfoClosure {

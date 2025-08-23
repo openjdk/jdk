@@ -49,7 +49,6 @@ class ObjectCountEventSender : public AllStatic {
   template <class Event>
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
 
-  template <class Event>
   static bool should_send_event();
 };
 

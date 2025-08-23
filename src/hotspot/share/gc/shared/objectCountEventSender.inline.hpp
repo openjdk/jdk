@@ -13,15 +13,6 @@ inline void ObjectCountEventSender::disable_requestable_event() {
   ObjectCountEventSender::_should_send_requestable_event = false;
 }
 
-template <class Event>
-bool ObjectCountEventSender::should_send_event() {
-#if INCLUDE_JFR
-  return _should_send_requestable_event || Event::is_enabled();
-#else
-  return false;
-#endif // INCLUDE_JFR
-}
-
 template <typename T>
 void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
   T event(UNTIMED);
@@ -43,9 +34,11 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& time
   julong total_size = entry->words() * BytesPerWord;
 
   send_event_if_enabled<Event>(klass, count, total_size, timestamp);
-  // If sending ObjectCountAfterGCEvent, check if ObjectCount is enabled and send event data to ObjectCount
-  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent
-  if (std::is_same<Event, EventObjectCountAfterGC>::value && ObjectCountEventSender::should_send_event<EventObjectCount>()) {
+
+  // If sending ObjectCountAfterGCEvent and ObjectCountEvent is enabled,
+  // Then we should emit data to both of these events.
+  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent.
+  if (std::is_same<Event, EventObjectCountAfterGC>::value) {
     send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
   }
 }
