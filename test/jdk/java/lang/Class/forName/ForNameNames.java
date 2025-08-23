@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ForNameNames {
+    private static final int JAVA_CLASSNAME_MAX_LEN = 65535;
     static class Inner {}
     static Stream<Arguments> testCases() {
         return Stream.of(
