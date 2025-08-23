@@ -37,11 +37,14 @@ public class BytecodeDescriptor {
 
     private BytecodeDescriptor() { }  // cannot instantiate
 
-    /**
-     * @throws IllegalArgumentException if the descriptor is invalid
-     * @throws TypeNotPresentException if the descriptor is valid, but
-     * the class cannot be found by the loader
-     */
+    /// Parses and validates a field descriptor string in the {@code loader} context.
+    ///
+    /// @param descriptor a field descriptor string
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    /// @throws IllegalArgumentException if the descriptor is invalid
+    /// @throws TypeNotPresentException if the descriptor is valid, but
+    ///         the class cannot be found by the loader
     public static Class<?> parseClass(String descriptor, ClassLoader loader) {
         int[] i = {0};
         var ret = parseSig(descriptor, i, descriptor.length(), loader);
@@ -51,15 +54,16 @@ public class BytecodeDescriptor {
         return ret;
     }
 
-    /**
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     * @throws IllegalArgumentException if the descriptor is invalid
-     * @throws TypeNotPresentException if the descriptor is valid, but
-     * a reference type cannot be found by the loader
-     */
-    public static List<Class<?>> parseMethod(String bytecodeSignature, ClassLoader loader) {
-        return parseMethod(bytecodeSignature, 0, bytecodeSignature.length(), loader);
+    /// Parses and validates a method descriptor string in the {@code loader} context.
+    ///
+    /// @param descriptor a method descriptor string
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    /// @throws IllegalArgumentException if the descriptor is invalid
+    /// @throws TypeNotPresentException if a reference type cannot be found by
+    ///         the loader (before the descriptor is found invalid)
+    public static List<Class<?>> parseMethod(String descriptor, ClassLoader loader) {
+        return parseMethod(descriptor, 0, descriptor.length(), loader);
     }
 
     /**
@@ -94,17 +98,19 @@ public class BytecodeDescriptor {
         throw new IllegalArgumentException("bad signature: "+str+": "+msg);
     }
 
-    /**
-     * Parse a single type in a descriptor. Results can be:
-     * <ul>
-     *     <li>A {@code Class} for successful parsing
-     *     <li>{@code null} for malformed descriptor format
-     *     <li>Throwing a {@link TypeNotPresentException} for valid class name,
-     *     but class cannot be discovered
-     * </ul>
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     */
+    /// Parse a single type in a descriptor. Results can be:
+    ///
+    /// - A `Class` for successful parsing
+    /// - `null` for malformed descriptor format
+    /// - Throwing a [TypeNotPresentException] for valid class name,
+    ///   but class cannot be found
+    ///
+    /// @param str contains the string to parse
+    /// @param i cursor for the next token in the string, modified in-place
+    /// @param end the limit for parsing
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    ///
     private static Class<?> parseSig(String str, int[] i, int end, ClassLoader loader) {
         if (i[0] == end)  return null;
         char c = str.charAt(i[0]++);
@@ -124,8 +130,14 @@ public class BytecodeDescriptor {
                 t = t.arrayType();
             return t;
         } else {
-            var w = Wrapper.forPrimitiveTypeOrNull(c);
-            return w == null ? null : w.primitiveType();
+            Wrapper w;
+            try {
+                w = Wrapper.forBasicType(c);
+            } catch (IllegalArgumentException ex) {
+                // Our reporting has better error message
+                return null;
+            }
+            return w.primitiveType();
         }
     }
 
