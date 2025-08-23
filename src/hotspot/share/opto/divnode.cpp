@@ -581,7 +581,6 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   }
 
   // Special case not possible here, calculate all corners normally
-  assert(i1->_lo != min_val && i1->_hi != min_val, "Special has should have been filtered out");
   NativeType corner1 = i1->_lo / i2_lo;
   NativeType corner2 = i1->_lo / i2_hi;
   NativeType corner3 = i1->_hi / i2_lo;
