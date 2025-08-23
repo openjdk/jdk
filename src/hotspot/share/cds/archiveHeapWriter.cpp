@@ -764,7 +764,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
       native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
     }
 
-    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
               "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
