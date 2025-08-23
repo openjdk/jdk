@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8366028
  * @summary unit tests for java.lang.invoke.MethodType
  * @compile MethodTypeTest.java
  * @run testng/othervm test.java.lang.invoke.MethodTypeTest
@@ -231,6 +232,7 @@ public class MethodTypeTest {
         };
     }
 
+    // JDK-8366028
     @Test(dataProvider = "badMethodDescriptorStrings", expectedExceptions = IllegalArgumentException.class)
     public void testFromMethodDescriptorStringNegatives(String desc) {
         MethodType.fromMethodDescriptorString(desc, null);
