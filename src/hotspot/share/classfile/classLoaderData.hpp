@@ -134,7 +134,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
-  ModuleEntryTable*  volatile _modules;  // The modules defined by the class loader.
+  AtomicValue<ModuleEntryTable*> _modules; // The modules defined by the class loader.
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
 
@@ -330,7 +330,7 @@ private:
   PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
-  bool modules_defined() { return (_modules != nullptr); }
+  bool modules_defined() { return (_modules.load_relaxed() != nullptr); }
 
   // Offsets
   static ByteSize holder_offset() { return byte_offset_of(ClassLoaderData, _holder); }
