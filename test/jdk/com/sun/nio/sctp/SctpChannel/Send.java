@@ -49,6 +49,8 @@ import com.sun.nio.sctp.SctpServerChannel;
 import static java.lang.System.out;
 import static java.lang.System.err;
 
+import jtreg.SkippedException;
+
 public class Send {
     /* Latches used to synchronize between the client and server so that
      * connections without any IO may not be closed without being accepted */
@@ -447,7 +449,7 @@ public class Send {
     void debug(String message) {if(debug) { System.out.println(message); }  }
     public static void main(String[] args) throws Throwable {
         if (!Util.isSCTPSupported()) {
-            throw new jtreg.SkippedException("SCTP protocol is not supported");
+            throw new SkippedException("SCTP protocol is not supported");
         }
 
         Class<?> k = new Object(){}.getClass().getEnclosingClass();

@@ -188,7 +188,7 @@ public class SocketOptionTests {
     void debug(String message) {if(debug) { System.out.println(message); }  }
     public static void main(String[] args) throws Throwable {
         if (!Util.isSCTPSupported()) {
-            throw new jtreg.SkippedException("SCTP protocol is not supported");
+            throw new SkippedException("SCTP protocol is not supported");
         }
 
         Class<?> k = new Object(){}.getClass().getEnclosingClass();

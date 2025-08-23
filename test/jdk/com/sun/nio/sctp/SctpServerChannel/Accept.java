@@ -260,7 +260,7 @@ public class Accept {
                           catch(InterruptedException ie) { unexpected(ie); }}
     public static void main(String[] args) throws Throwable {
         if (!Util.isSCTPSupported()) {
-            throw new jtreg.SkippedException("SCTP protocol is not supported");
+            throw new SkippedException("SCTP protocol is not supported");
         }
 
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
