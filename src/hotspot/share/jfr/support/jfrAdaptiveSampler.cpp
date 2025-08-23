@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <cmath>
 
 JfrSamplerWindow::JfrSamplerWindow() :

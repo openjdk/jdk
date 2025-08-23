@@ -404,7 +404,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   return 1;
 }
 
-void CompilationPolicy::print_counters(const char* prefix, Method* m) {
+void CompilationPolicy::print_counters_on(outputStream* st, const char* prefix, Method* m) {
   int invocation_count = m->invocation_count();
   int backedge_count = m->backedge_count();
   MethodData* mdh = m->method_data();
@@ -416,133 +416,140 @@ void CompilationPolicy::print_counters(const char* prefix, Method* m) {
     mdo_invocations_start = mdh->invocation_count_start();
     mdo_backedges_start = mdh->backedge_count_start();
   }
-  tty->print(" %stotal=%d,%d %smdo=%d(%d),%d(%d)", prefix,
-      invocation_count, backedge_count, prefix,
-      mdo_invocations, mdo_invocations_start,
-      mdo_backedges, mdo_backedges_start);
-  tty->print(" %smax levels=%d,%d", prefix,
-      m->highest_comp_level(), m->highest_osr_comp_level());
+  st->print(" %stotal=%d,%d %smdo=%d(%d),%d(%d)", prefix,
+    invocation_count, backedge_count, prefix,
+    mdo_invocations, mdo_invocations_start,
+    mdo_backedges, mdo_backedges_start);
+  st->print(" %smax levels=%d,%d", prefix, m->highest_comp_level(), m->highest_osr_comp_level());
 }
 
-void CompilationPolicy::print_training_data(const char* prefix, Method* method) {
+void CompilationPolicy::print_training_data_on(outputStream* st,  const char* prefix, Method* method) {
   methodHandle m(Thread::current(), method);
-  tty->print(" %smtd: ", prefix);
+  st->print(" %smtd: ", prefix);
   MethodTrainingData* mtd = MethodTrainingData::find(m);
   if (mtd == nullptr) {
-    tty->print("null");
+    st->print("null");
   } else {
     MethodData* md = mtd->final_profile();
-    tty->print("mdo=");
+    st->print("mdo=");
     if (md == nullptr) {
-      tty->print("null");
+      st->print("null");
     } else {
       int mdo_invocations = md->invocation_count();
       int mdo_backedges = md->backedge_count();
       int mdo_invocations_start = md->invocation_count_start();
       int mdo_backedges_start = md->backedge_count_start();
-      tty->print("%d(%d), %d(%d)", mdo_invocations, mdo_invocations_start, mdo_backedges, mdo_backedges_start);
+      st->print("%d(%d), %d(%d)", mdo_invocations, mdo_invocations_start, mdo_backedges, mdo_backedges_start);
     }
     CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
-    tty->print(", deps=");
+    st->print(", deps=");
     if (ctd == nullptr) {
-      tty->print("null");
+      st->print("null");
     } else {
-      tty->print("%d", ctd->init_deps_left());
+      st->print("%d", ctd->init_deps_left());
     }
   }
 }
 
 // Print an event.
-void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int bci, CompLevel level) {
+void CompilationPolicy::print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level) {
   bool inlinee_event = m != im;
 
-  ttyLocker tty_lock;
-  tty->print("%lf: [", os::elapsedTime());
+  st->print("%lf: [", os::elapsedTime());
 
   switch(type) {
   case CALL:
-    tty->print("call");
+    st->print("call");
     break;
   case LOOP:
-    tty->print("loop");
+    st->print("loop");
     break;
   case COMPILE:
-    tty->print("compile");
+    st->print("compile");
     break;
   case FORCE_COMPILE:
-    tty->print("force-compile");
+    st->print("force-compile");
     break;
   case REMOVE_FROM_QUEUE:
-    tty->print("remove-from-queue");
+    st->print("remove-from-queue");
     break;
   case UPDATE_IN_QUEUE:
-    tty->print("update-in-queue");
+    st->print("update-in-queue");
     break;
   case REPROFILE:
-    tty->print("reprofile");
+    st->print("reprofile");
     break;
   case MAKE_NOT_ENTRANT:
-    tty->print("make-not-entrant");
+    st->print("make-not-entrant");
     break;
   default:
-    tty->print("unknown");
+    st->print("unknown");
   }
 
-  tty->print(" level=%d ", level);
+  st->print(" level=%d ", level);
 
   ResourceMark rm;
   char *method_name = m->name_and_sig_as_C_string();
-  tty->print("[%s", method_name);
+  st->print("[%s", method_name);
   if (inlinee_event) {
     char *inlinee_name = im->name_and_sig_as_C_string();
-    tty->print(" [%s]] ", inlinee_name);
+    st->print(" [%s]] ", inlinee_name);
   }
-  else tty->print("] ");
-  tty->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
-                                      CompileBroker::queue_size(CompLevel_full_optimization));
+  else st->print("] ");
+  st->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
+                                     CompileBroker::queue_size(CompLevel_full_optimization));
 
-  tty->print(" rate=");
-  if (m->prev_time() == 0) tty->print("n/a");
-  else tty->print("%f", m->rate());
+  st->print(" rate=");
+  if (m->prev_time() == 0) st->print("n/a");
+  else st->print("%f", m->rate());
 
-  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
-                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
+  st->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
+                              threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
   if (type != COMPILE) {
-    print_counters("", m);
+    print_counters_on(st, "", m);
     if (inlinee_event) {
-      print_counters("inlinee ", im);
+      print_counters_on(st, "inlinee ", im);
     }
-    tty->print(" compilable=");
+    st->print(" compilable=");
     bool need_comma = false;
     if (!m->is_not_compilable(CompLevel_full_profile)) {
-      tty->print("c1");
+      st->print("c1");
       need_comma = true;
     }
     if (!m->is_not_osr_compilable(CompLevel_full_profile)) {
-      if (need_comma) tty->print(",");
-      tty->print("c1-osr");
+      if (need_comma) st->print(",");
+      st->print("c1-osr");
       need_comma = true;
     }
     if (!m->is_not_compilable(CompLevel_full_optimization)) {
-      if (need_comma) tty->print(",");
-      tty->print("c2");
+      if (need_comma) st->print(",");
+      st->print("c2");
       need_comma = true;
     }
     if (!m->is_not_osr_compilable(CompLevel_full_optimization)) {
-      if (need_comma) tty->print(",");
-      tty->print("c2-osr");
+      if (need_comma) st->print(",");
+      st->print("c2-osr");
     }
-    tty->print(" status=");
+    st->print(" status=");
     if (m->queued_for_compilation()) {
-      tty->print("in-queue");
-    } else tty->print("idle");
-    print_training_data("", m);
+      st->print("in-queue");
+    } else st->print("idle");
+
+    print_training_data_on(st, "", m);
     if (inlinee_event) {
-      print_training_data("inlinee ", im);
+      print_training_data_on(st, "inlinee ", im);
     }
   }
-  tty->print_cr("]");
+  st->print_cr("]");
+
+}
+
+void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int bci, CompLevel level) {
+  stringStream s;
+  print_event_on(&s, type, m, im, bci, level);
+  ResourceMark rm;
+  tty->print("%s", s.as_string());
 }
 
 void CompilationPolicy::initialize() {

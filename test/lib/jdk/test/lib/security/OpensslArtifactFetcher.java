@@ -32,7 +32,7 @@ import jtreg.SkippedException;
 
 public class OpensslArtifactFetcher {
 
-    private static final String OPENSSL_BUNDLE_VERSION = "3.0.14";
+    private static final String OPENSSL_BUNDLE_VERSION = "3.5.1";
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**

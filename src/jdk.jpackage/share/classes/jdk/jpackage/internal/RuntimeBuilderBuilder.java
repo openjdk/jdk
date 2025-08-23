@@ -24,13 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.List;
@@ -116,15 +114,6 @@ final class RuntimeBuilderBuilder {
 
     private static RuntimeBuilder createCopyingRuntimeBuilder(Path runtimeDir,
             Path... modulePath) throws ConfigException {
-        if (!Files.exists(runtimeDir)) {
-            throw buildConfigException()
-                    .message("message.runtime-image-dir-does-not-exist",
-                            "--runtime-image", runtimeDir)
-                    .advice("message.runtime-image-dir-does-not-exist.advice",
-                            "--runtime-image")
-                    .create();
-        }
-
         return appImageLayout -> {
             try {
                 // copy whole runtime, skipping jmods and src.zip

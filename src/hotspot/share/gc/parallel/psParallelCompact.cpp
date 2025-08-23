@@ -685,6 +685,9 @@ void PSParallelCompact::post_compact()
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 
+  // Need to clear claim bits for the next full-gc (marking and adjust-pointers).
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
@@ -1288,9 +1291,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       ClassLoaderDataGraph::purge(true /* at_safepoint */);
       DEBUG_ONLY(MetaspaceUtils::verify();)
     }
-
-    // Need to clear claim bits for the next mark.
-    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {

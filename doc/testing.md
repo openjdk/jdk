@@ -367,6 +367,10 @@ between the specified revision and the repository tip.
 The report is stored in
 `build/$BUILD/test-results/jcov-output/diff_coverage_report` file.
 
+#### AOT_JDK
+
+See [Testing Ahead-of-time optimizations](#testing-ahead-of-time-optimizations).
+
 ### JTReg keywords
 
 #### JOBS
@@ -396,6 +400,13 @@ such implementation class, named Virtual, is currently part of the JDK build in
 the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
+
+#### JVMTI_STRESS_AGENT
+
+Executes JTReg tests with JVM TI stress agent. The stress agent is the part of
+test library and located in `test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp`.
+The value of this argument is set as JVM TI agent options.
+This mode uses ProblemList-jvmti-stress-agent.txt as an additional exclude list.
 
 #### TEST_MODE
 
@@ -545,6 +556,18 @@ Amount of time to spend in each warmup iteration. Same as specifying `-w
 Specify to have the test run save a log of the values. Accepts the same values
 as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
 
+#### TEST_JDK
+
+The path to the JDK that will be used to run the benchmarks.
+
+Defaults to `build/<CONF-NAME>/jdk`.
+
+#### BENCHMARKS_JAR
+
+The path to the JAR containing the benchmarks.
+
+Defaults to `test/micro/benchmarks.jar`.
+
 #### VM_OPTIONS
 
 Additional VM arguments to provide to forked off VMs. Same as `-jvmArgs <args>`
@@ -612,7 +635,7 @@ For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
 
 ### Testing Ahead-of-time Optimizations
--------------------------------------------------------------------------------
+
 One way to improve test coverage of ahead-of-time (AOT) optimizations in
 the JDK is to run existing jtreg test cases in a special "AOT_JDK" mode.
 Example:

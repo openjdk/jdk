@@ -44,6 +44,7 @@ public class AtomicIntegerFieldUpdaterTest extends JSR166TestCase {
     private volatile int privateField;
     int w;
     float z;
+    static volatile int q;
     public static void main(String[] args) {
         main(suite(), args);
     }
@@ -84,6 +85,16 @@ public class AtomicIntegerFieldUpdaterTest extends JSR166TestCase {
     public void testConstructor3() {
         try {
             updaterFor("w");
+            shouldThrow();
+        } catch (IllegalArgumentException success) {}
+    }
+
+    /**
+     * construction with static field throws IllegalArgumentException
+     */
+    public void testConstructor4() {
+        try {
+            updaterFor("q");
             shouldThrow();
         } catch (IllegalArgumentException success) {}
     }

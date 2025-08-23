@@ -30,7 +30,7 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_JFR
@@ -233,7 +233,7 @@ public:
 // The PackageEntryTable is a Hashtable containing a list of all packages defined
 // by a particular class loader.  Each package is represented as a PackageEntry node.
 class PackageEntryTable : public CHeapObj<mtModule> {
-  ResourceHashtable<SymbolHandle, PackageEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, PackageEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 public:
   PackageEntryTable();

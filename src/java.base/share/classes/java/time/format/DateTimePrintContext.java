@@ -150,11 +150,11 @@ final class DateTimePrintContext {
      * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
      * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
      *
+     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
+     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      * @param temporal  the temporal object to adjust, not null
      * @param formatter the formatter providing potential chronology and time-zone overrides
      * @return the adjusted temporal, or the original if no overrides are present in the formatter
-     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
-     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      */
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first (early return is an optimization)
@@ -164,8 +164,7 @@ final class DateTimePrintContext {
             return temporal;
         }
 
-        // The chronology and zone fields of Formatter are usually null,
-        // so the non-null processing code is placed in a separate method
+        // Placing the non-null cases in a separate method allows more flexible code optimizations
         return adjustWithOverride(temporal, overrideChrono, overrideZone);
     }
 
@@ -256,12 +255,8 @@ final class DateTimePrintContext {
      */
     private static TemporalAccessor adjustSlow(
             TemporalAccessor temporal,
-            ZoneId overrideZone,
-            ZoneId temporalZone,
-            Chronology overrideChrono,
-            Chronology effectiveChrono,
-            Chronology temporalChrono
-    ) {
+            ZoneId overrideZone, ZoneId temporalZone,
+            Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
         if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&

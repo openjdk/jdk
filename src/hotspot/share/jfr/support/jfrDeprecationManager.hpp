@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
 #define SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allocation.hpp"
 
 class JavaThread;
 class JfrCheckpointWriter;

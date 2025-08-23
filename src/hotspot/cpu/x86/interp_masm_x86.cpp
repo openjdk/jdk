@@ -1024,100 +1024,25 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 void InterpreterMacroAssembler::lock_object(Register lock_reg) {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
 
-  if (LockingMode == LM_MONITOR) {
-    call_VM_preemptable(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-  } else {
-    Label count_locking, done, slow_case;
+  Label done, slow_case;
 
-    const Register swap_reg = rax; // Must use rax for cmpxchg instruction
-    const Register tmp_reg = rbx;
-    const Register obj_reg = c_rarg3; // Will contain the oop
-    const Register rklass_decode_tmp = rscratch1;
+  const Register swap_reg = rax; // Must use rax for cmpxchg instruction
+  const Register tmp_reg = rbx;
+  const Register obj_reg = c_rarg3; // Will contain the oop
 
-    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
-    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-    const int mark_offset = lock_offset +
-                            BasicLock::displaced_header_offset_in_bytes();
+  // Load object pointer into obj_reg
+  movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    // Load object pointer into obj_reg
-    movptr(obj_reg, Address(lock_reg, obj_offset));
+  lightweight_lock(lock_reg, obj_reg, swap_reg, tmp_reg, slow_case);
+  jmp(done);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(lock_reg, obj_reg, swap_reg, tmp_reg, slow_case);
-    } else if (LockingMode == LM_LEGACY) {
-      if (DiagnoseSyncOnValueBasedClasses != 0) {
-        load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
-        testb(Address(tmp_reg, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-        jcc(Assembler::notZero, slow_case);
-      }
+  bind(slow_case);
 
-      // Load immediate 1 into swap_reg %rax
-      movl(swap_reg, 1);
-
-      // Load (object->mark() | 1) into swap_reg %rax
-      orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      movptr(Address(lock_reg, mark_offset), swap_reg);
-
-      assert(lock_offset == 0,
-             "displaced header must be first word in BasicObjectLock");
-
-      lock();
-      cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      jcc(Assembler::zero, count_locking);
-
-      const int zero_bits = 7;
-
-      // Fast check for recursive lock.
-      //
-      // Can apply the optimization only if this is a stack lock
-      // allocated in this thread. For efficiency, we can focus on
-      // recently allocated stack locks (instead of reading the stack
-      // base and checking whether 'mark' points inside the current
-      // thread stack):
-      //  1) (mark & zero_bits) == 0, and
-      //  2) rsp <= mark < mark + os::pagesize()
-      //
-      // Warning: rsp + os::pagesize can overflow the stack base. We must
-      // neither apply the optimization for an inflated lock allocated
-      // just above the thread stack (this is why condition 1 matters)
-      // nor apply the optimization if the stack lock is inside the stack
-      // of another thread. The latter is avoided even in case of overflow
-      // because we have guard pages at the end of all stacks. Hence, if
-      // we go over the stack base and hit the stack of another thread,
-      // this should not be in a writeable area that could contain a
-      // stack lock allocated by that thread. As a consequence, a stack
-      // lock less than page size away from rsp is guaranteed to be
-      // owned by the current thread.
-      //
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant bits clear.
-      // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
-      subptr(swap_reg, rsp);
-      andptr(swap_reg, zero_bits - (int)os::vm_page_size());
-
-      // Save the test result, for recursive case, the result is zero
-      movptr(Address(lock_reg, mark_offset), swap_reg);
-      jcc(Assembler::notZero, slow_case);
-
-      bind(count_locking);
-      inc_held_monitor_count();
-    }
-    jmp(done);
-
-    bind(slow_case);
-
-    // Call the runtime routine for slow case
-    call_VM_preemptable(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-    bind(done);
-  }
+  // Call the runtime routine for slow case
+  call_VM_preemptable(noreg,
+          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+          lock_reg);
+  bind(done);
 }
 
 
@@ -1136,63 +1061,31 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
 
-  if (LockingMode == LM_MONITOR) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-  } else {
-    Label count_locking, done, slow_case;
+  Label done, slow_case;
 
-    const Register swap_reg   = rax;  // Must use rax for cmpxchg instruction
-    const Register header_reg = c_rarg2;  // Will contain the old oopMark
-    const Register obj_reg    = c_rarg3;  // Will contain the oop
+  const Register swap_reg   = rax;  // Must use rax for cmpxchg instruction
+  const Register header_reg = c_rarg2;  // Will contain the old oopMark
+  const Register obj_reg    = c_rarg3;  // Will contain the oop
 
-    save_bcp(); // Save in case of exception
+  save_bcp(); // Save in case of exception
 
-    if (LockingMode != LM_LIGHTWEIGHT) {
-      // Convert from BasicObjectLock structure to object and BasicLock
-      // structure Store the BasicLock address into %rax
-      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset()));
-    }
+  // Load oop into obj_reg(%c_rarg3)
+  movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    // Load oop into obj_reg(%c_rarg3)
-    movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
+  // Free entry
+  movptr(Address(lock_reg, BasicObjectLock::obj_offset()), NULL_WORD);
 
-    // Free entry
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset()), NULL_WORD);
+  lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
+  jmp(done);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
-    } else if (LockingMode == LM_LEGACY) {
-      // Load the old header from BasicLock structure
-      movptr(header_reg, Address(swap_reg,
-                                 BasicLock::displaced_header_offset_in_bytes()));
+  bind(slow_case);
+  // Call the runtime routine for slow case.
+  movptr(Address(lock_reg, BasicObjectLock::obj_offset()), obj_reg); // restore obj
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
-      // Test for recursion
-      testptr(header_reg, header_reg);
+  bind(done);
 
-      // zero for recursive case
-      jcc(Assembler::zero, count_locking);
-
-      // Atomic swap back the old header
-      lock();
-      cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-
-      // zero for simple unlock of a stack-lock case
-      jcc(Assembler::notZero, slow_case);
-
-      bind(count_locking);
-      dec_held_monitor_count();
-    }
-    jmp(done);
-
-    bind(slow_case);
-    // Call the runtime routine for slow case.
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset()), obj_reg); // restore obj
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-
-    bind(done);
-
-    restore_bcp();
-  }
+  restore_bcp();
 }
 
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,

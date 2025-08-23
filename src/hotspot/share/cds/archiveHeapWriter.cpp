@@ -70,7 +70,7 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<
+typedef HashTable<
       size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
       size_t,    // size of this filler (in bytes)
       127,       // prime number
@@ -764,7 +764,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
       native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
     }
 
-    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
               "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);

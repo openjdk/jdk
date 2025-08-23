@@ -841,29 +841,4 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
 
         isClosed = true;
     }
-
-    /**
-     * Finalizes this object prior to garbage collection.  The
-     * {@code close} method is called to close any open input
-     * source.  This method should not be called from application
-     * code.
-     *
-     * @throws Throwable if an error occurs during superclass
-     * finalization.
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        if (!isClosed) {
-            try {
-                close();
-            } catch (IOException e) {
-            }
-        }
-        super.finalize();
-    }
 }

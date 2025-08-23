@@ -36,8 +36,6 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 
 /*
  * AddLauncherArguments
@@ -135,16 +133,16 @@ class AddLauncherArguments {
             Arguments.putUnlessNull(bundleParams,
                     CLIOptions.WIN_CONSOLE_HINT.getId(),
                     getOptionValue(CLIOptions.WIN_CONSOLE_HINT));
-            Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),
+            Arguments.putUnlessNull(bundleParams, CLIOptions.WIN_SHORTCUT_HINT.getId(),
                     getOptionValue(CLIOptions.WIN_SHORTCUT_HINT));
-            Arguments.putUnlessNull(bundleParams, MENU_HINT.getID(),
+            Arguments.putUnlessNull(bundleParams, CLIOptions.WIN_MENU_HINT.getId(),
                     getOptionValue(CLIOptions.WIN_MENU_HINT));
         }
 
         if (OperatingSystem.isLinux()) {
             Arguments.putUnlessNull(bundleParams, CLIOptions.LINUX_CATEGORY.getId(),
                     getOptionValue(CLIOptions.LINUX_CATEGORY));
-            Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),
+            Arguments.putUnlessNull(bundleParams, CLIOptions.LINUX_SHORTCUT_HINT.getId(),
                     getOptionValue(CLIOptions.LINUX_SHORTCUT_HINT));
         }
 

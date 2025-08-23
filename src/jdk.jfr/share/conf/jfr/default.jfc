@@ -33,12 +33,12 @@
     </event>
 
     <event name="jdk.SymbolTableStatistics">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">10 s</setting>
     </event>
 
     <event name="jdk.StringTableStatistics">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">10 s</setting>
     </event>
 
@@ -762,7 +762,7 @@
     </event>
 
     <event name="jdk.ModuleExport">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">endChunk</setting>
     </event>
 

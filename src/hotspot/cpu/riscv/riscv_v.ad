@@ -110,6 +110,7 @@ source %{
         if (vlen < 4) {
           return false;
         }
+        break;
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
       case Op_AddVHF:

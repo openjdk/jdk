@@ -472,7 +472,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   assert(loader_data != nullptr, "invariant");
 
   InstanceKlass* ik;
-  const bool use_class_space = parser.klass_needs_narrow_id();
+  const bool use_class_space = UseClassMetaspaceForAllClasses || parser.klass_needs_narrow_id();
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
@@ -1116,7 +1116,7 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+using InitializationErrorTable = HashTable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
 static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {

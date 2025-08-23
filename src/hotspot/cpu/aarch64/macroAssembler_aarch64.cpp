@@ -6421,10 +6421,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 
 // Intrinsic for
 //
-// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
-//     return the number of characters copied.
-// - java/lang/StringUTF16.compress
-//     return index of non-latin1 character if copy fails, otherwise 'len'.
+// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ASCII
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
@@ -7097,7 +7101,6 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - t1, t2, t3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, t1, t2, t3, rscratch1);
 
   Label push;
@@ -7157,7 +7160,6 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - t1, t2, t3: temporary registers
 // - slow: branched to if unlocking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   // cmpxchg clobbers rscratch1.
   assert_different_registers(obj, t1, t2, t3, rscratch1);
 

@@ -240,7 +240,7 @@ public class Analyzer {
 
         @Override
         List<JCNewClass> rewrite(JCNewClass oldTree) {
-            if (oldTree.clazz.hasTag(TYPEAPPLY)) {
+            if (oldTree.clazz.hasTag(TYPEAPPLY) && !oldTree.type.isErroneous()) {
                 JCNewClass nc = copier.copy(oldTree);
                 ((JCTypeApply)nc.clazz).arguments = List.nil();
                 return List.of(nc);

@@ -121,15 +121,15 @@ ifeq ($(call isTargetOs, windows), true)
   TARGETS += $(BUILD_LIBJPACKAGE)
 
   ##############################################################################
-  ## Build libwixhelper
+  ## Build libmsica
   ##############################################################################
 
-  # Build Wix custom action helper
+  # Build MSI custom action library
   # Output library in resources dir, and symbols in the object dir
-  $(eval $(call SetupJdkLibrary, BUILD_LIBWIXHELPER, \
-      NAME := wixhelper, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBMSICA, \
+      NAME := msica, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
-      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmsica, \
       ONLY_EXPORTED := true, \
       OPTIMIZATION := LOW, \
       EXTRA_SRC := common, \
@@ -139,7 +139,7 @@ ifeq ($(call isTargetOs, windows), true)
       LIBS_windows := msi.lib ole32.lib shell32.lib shlwapi.lib user32.lib, \
   ))
 
-  TARGETS += $(BUILD_LIBWIXHELPER)
+  TARGETS += $(BUILD_LIBMSICA)
 
   ##############################################################################
   ## Build msiwrapper

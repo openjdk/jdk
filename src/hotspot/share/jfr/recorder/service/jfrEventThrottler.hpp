@@ -26,8 +26,8 @@
 #ifndef SHARE_JFR_RECORDER_SERVICE_JFREVENTTHROTTLER_HPP
 #define SHARE_JFR_RECORDER_SERVICE_JFREVENTTHROTTLER_HPP
 
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 
 class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;

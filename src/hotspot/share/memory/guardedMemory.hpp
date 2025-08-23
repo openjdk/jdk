@@ -42,9 +42,10 @@
  * |Offset             | Content              | Description    |
  * |------------------------------------------------------------
  * |base_addr          | 0xABABABABABABABAB   | Head guard     |
- * |+16                | <size_t:user_size>   | User data size |
- * |+sizeof(uintptr_t) | <tag>                | Tag word       |
- * |+sizeof(uintptr_t) | <tag2>               | Tag word       |
+ * |+GUARD_SIZE        | <size_t:user_size>   | User data size |
+ * |+sizeof(size_t)    | <tag>                | Tag word       |
+ * |+sizeof(void*)     | <tag2>               | Tag word       |
+ * |+sizeof(void*)     | <pad bytes>          | Padding        |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
  * |+user_size         | 0xABABABABABABABAB   | Tail guard     |
  * -------------------------------------------------------------
@@ -52,6 +53,8 @@
  * Where:
  *  - guard padding uses "badResourceValue" (0xAB)
  *  - tag word and tag2 word are general purpose
+ *  - padding is inserted as-needed by the compiler to ensure
+ *    the user data is aligned on a 16-byte boundary
  *  - user data
  *    -- initially padded with "uninitBlockPad" (0xF1),
  *    -- to "freeBlockPad" (0xBA), when freed
@@ -132,12 +135,15 @@ protected:
 
   /**
    * Header guard and size
+   *
+   * NB: the size and placement of the GuardHeader must be such that the
+   * user-ptr is maximally aligned i.e. 16-byte alignment for x86 ABI for
+   * stack alignment and use of vector (xmm) instructions. We use alignas
+   * to achieve this.
    */
-  class GuardHeader : Guard {
+  class alignas(16) GuardHeader : Guard {
     friend class GuardedMemory;
    protected:
-    // Take care in modifying fields here, will effect alignment
-    // e.g. x86 ABI 16 byte stack alignment
     union {
       uintptr_t __unused_full_word1;
       size_t _user_size;

@@ -33,4 +33,6 @@ DISABLED_WARNINGS_java += dangling-doc-comments this-escape
 
 JAVAC_FLAGS += -parameters -XDstringConcat=inline
 
+TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK)
+
 ################################################################################

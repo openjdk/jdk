@@ -39,7 +39,7 @@ public final class CStrike extends PhysicalStrike {
                                                      int fmHint);
 
     // Disposes the native strike
-    private static native void disposeNativeStrikePtr(long nativeStrikePtr);
+    static native void disposeNativeStrikePtr(long nativeStrikePtr);
 
     // Creates a StrikeMetrics from the underlying native system fonts
     private static native StrikeMetrics getFontMetrics(long nativeStrikePtr);
@@ -70,14 +70,11 @@ public final class CStrike extends PhysicalStrike {
     private AffineTransform invDevTx;
     private final GlyphInfoCache glyphInfoCache;
     private final GlyphAdvanceCache glyphAdvanceCache;
-    private long nativeStrikePtr;
+    private final long nativeStrikePtr;
 
     CStrike(final CFont font, final FontStrikeDesc inDesc) {
         nativeFont = font;
         desc = inDesc;
-        glyphInfoCache = new GlyphInfoCache(font, desc);
-        glyphAdvanceCache = new GlyphAdvanceCache();
-        disposer = glyphInfoCache;
 
         // Normally the device transform should be the identity transform
         // for screen operations.  The device transform only becomes
@@ -92,12 +89,18 @@ public final class CStrike extends PhysicalStrike {
                 // so we won't worry about it.
             }
         }
+        nativeStrikePtr = initNativeStrikePtr(); // after setting up invDevTx
+        glyphInfoCache = new GlyphInfoCache(font, desc, nativeStrikePtr);
+        glyphAdvanceCache = new GlyphAdvanceCache();
+        disposer = glyphInfoCache;
     }
 
     public long getNativeStrikePtr() {
-        if (nativeStrikePtr != 0) {
-            return nativeStrikePtr;
-        }
+        return nativeStrikePtr;
+    }
+
+    public long initNativeStrikePtr() {
+        long nativeStrikePtr = 0L;
 
         final double[] glyphTx = new double[6];
         desc.glyphTx.getMatrix(glyphTx);
@@ -135,16 +138,6 @@ public final class CStrike extends PhysicalStrike {
 
         return nativeStrikePtr;
     }
-
-    @Override
-    @SuppressWarnings("removal")
-    protected synchronized void finalize() throws Throwable {
-        if (nativeStrikePtr != 0) {
-            disposeNativeStrikePtr(nativeStrikePtr);
-        }
-        nativeStrikePtr = 0;
-    }
-
 
     @Override
     public int getNumGlyphs() {
@@ -379,8 +372,8 @@ public final class CStrike extends PhysicalStrike {
         private SparseBitShiftingTwoLayerArray secondLayerCache;
         private HashMap<Integer, Long> generalCache;
 
-        GlyphInfoCache(final Font2D nativeFont, final FontStrikeDesc desc) {
-            super(nativeFont, desc);
+        GlyphInfoCache(final Font2D nativeFont, final FontStrikeDesc desc, long pScalerContext) {
+            super(nativeFont, desc, pScalerContext);
             firstLayerCache = new long[FIRST_LAYER_SIZE];
         }
 

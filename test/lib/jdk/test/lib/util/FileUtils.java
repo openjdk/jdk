@@ -24,6 +24,7 @@
 package jdk.test.lib.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -33,6 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -63,6 +65,14 @@ public final class FileUtils {
     private static final int RETRY_DELETE_MILLIS = IS_WINDOWS ? 500 : 0;
     private static final int MAX_RETRY_DELETE_TIMES = IS_WINDOWS ? 15 : 0;
     private static volatile boolean nativeLibLoaded;
+
+    @SuppressWarnings("restricted")
+    private static void loadNativeLib() {
+        if (!nativeLibLoaded) {
+            System.loadLibrary("FileUtils");
+            nativeLibLoaded = true;
+        }
+    }
 
     /**
      * Deletes a file, retrying if necessary.
@@ -392,14 +402,10 @@ public final class FileUtils {
     }
 
     // Return the current process handle count
-    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
-            if (!nativeLibLoaded) {
-                System.loadLibrary("FileUtils");
-                nativeLibLoaded = true;
-            }
-            return getWinProcessHandleCount();
+            loadNativeLib();
+            return getWinProcessHandleCount0();
         } else {
             return ((UnixOperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean()).getOpenFileDescriptorCount();
         }
@@ -443,7 +449,23 @@ public final class FileUtils {
         Files.write(path, lines);
     }
 
-    private static native long getWinProcessHandleCount();
+    // Create a directory junction with the specified target
+    public static boolean createWinDirectoryJunction(Path junction, Path target)
+        throws IOException
+    {
+        assert IS_WINDOWS;
+
+        // Convert "target" to its real path
+        target = target.toRealPath();
+
+        // Create a directory junction
+        loadNativeLib();
+        return createWinDirectoryJunction0(junction.toString(), target.toString());
+    }
+
+    private static native long getWinProcessHandleCount0();
+    private static native boolean createWinDirectoryJunction0(String junction,
+        String target) throws IOException;
 
     // Possible command locations and arguments
     static String[][] lsCommands = new String[][] {

@@ -38,6 +38,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -1097,21 +1098,16 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  char buf[2048];
-  size_t cpu_info_size = jio_snprintf(
-              buf, sizeof(buf),
-              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-              cores_per_cpu(), threads_per_core(),
-              cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  assert(cpu_info_size > 0, "not enough temporary space allocated");
+  stringStream ss(2048);
+  ss.print("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
+           cores_per_cpu(), threads_per_core(),
+           cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  ss.print(", ");
+  int features_offset = (int)ss.size();
+  insert_features_names(_features, ss);
 
-  insert_features_names(_features, buf + cpu_info_size, sizeof(buf) - cpu_info_size);
-
-  _cpu_info_string = os::strdup(buf);
-
-  _features_string = extract_features_string(_cpu_info_string,
-                                             strnlen(_cpu_info_string, sizeof(buf)),
-                                             cpu_info_size);
+  _cpu_info_string = ss.as_string(true);
+  _features_string = _cpu_info_string + features_offset;
 
   // Use AES instructions if available.
   if (supports_aes()) {
@@ -3266,13 +3262,15 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   return true;
 }
 
-void VM_Version::insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen) {
-  for (int i = 0; i < MAX_CPU_FEATURES; i++) {
-    if (features.supports_feature((VM_Version::Feature_Flag)i)) {
-      int res = jio_snprintf(buf, buflen, ", %s", _features_names[i]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
+void VM_Version::insert_features_names(VM_Version::VM_Features features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (_features.supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
     }
-  }
+    return (const char*)nullptr;
+  }, ", ");
 }

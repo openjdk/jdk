@@ -74,13 +74,6 @@ public class TestMultipleStartupRecordings {
         test(pb, "Started recording 1", "Started recording 2", "Started recording 3");
     }
 
-    private static void testDefault() throws Exception {
-        System.out.println("testDefault");
-        launchUnary(null);
-        launchBinary(null, null);
-        launchTernary(null, null, null);
-    }
-
     private static void testColonDelimited() throws Exception {
         launchBinary(":name=myrecording1,filename=myrecording1.jfr", ":filename=myrecording2.jfr,name=myrecording2");
     }
@@ -99,7 +92,6 @@ public class TestMultipleStartupRecordings {
     }
 
     public static void main(String[] args) throws Exception {
-        testDefault();
         testColonDelimited();
         testMixed();
         testWithFlightRecorderOptions();

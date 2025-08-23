@@ -1502,12 +1502,6 @@ WB_END
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
-#if INCLUDE_G1GC || INCLUDE_SERIALGC
-  if (UseG1GC || UseSerialGC) {
-    // Needs to be cleared explicitly for G1 and Serial GC.
-    Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
-  }
-#endif // INCLUDE_G1GC || INCLUDE_SERIALGC
 WB_END
 
 WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))

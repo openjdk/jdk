@@ -413,11 +413,7 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::rax_opr);
     stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ jmp(*stub->entry());
-    } else {
-      __ unlock_object(rdi, rsi, rax, *stub->entry());
-    }
+    __ unlock_object(rdi, rsi, rax, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -2733,15 +2729,9 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ jmp(*op->stub()->entry());
-  } else if (op->code() == lir_lock) {
+  if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    Register tmp = LockingMode == LM_LIGHTWEIGHT ? op->scratch_opr()->as_register() : noreg;
+    Register tmp = op->scratch_opr()->as_register();
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != nullptr) {

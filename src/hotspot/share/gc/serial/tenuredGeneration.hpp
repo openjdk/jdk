@@ -126,6 +126,8 @@ public:
   // Allocate and returns a block of the requested size, or returns "null".
   // Assumes the caller has done any necessary locking.
   inline HeapWord* allocate(size_t word_size);
+  // Multi-threaded version.
+  inline HeapWord* par_allocate(size_t word_size);
 
   // Expand the old-gen then invoke allocate above.
   HeapWord* expand_and_allocate(size_t size);

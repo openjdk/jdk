@@ -33,7 +33,9 @@ import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -52,24 +54,35 @@ final class LinuxPackageBuilder {
             pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
         }
 
-        final var pkg = pkgBuilder.create();
+        final var tmpPkg = pkgBuilder.create();
 
-        final var stdPkgType = pkg.asStandardPackageType();
+        final var stdPkgType = tmpPkg.asStandardPackageType();
         if (stdPkgType.isPresent()) {
-            validatePackageName(pkg.packageName(), stdPkgType.orElseThrow());
+            validatePackageName(tmpPkg.packageName(), stdPkgType.orElseThrow());
         }
 
-        var reply = create(pkg, pkg.packageLayout());
-        if (reply.isInstallDirInUsrTree()) {
-            reply = create(pkg, usrTreePackageLayout(pkg.relativeInstallDir(), pkg.packageName()));
+        final AppImageLayout relativeInstalledLayout;
+        if (create(tmpPkg).isInstallDirInUsrTree()) {
+            final var usrTreeLayout = usrTreePackageLayout(tmpPkg.relativeInstallDir(), tmpPkg.packageName());
+            if (tmpPkg.isRuntimeInstaller()) {
+                relativeInstalledLayout = RuntimeLayout.create(usrTreeLayout.runtimeDirectory());
+            } else {
+                relativeInstalledLayout = usrTreeLayout;
+            }
+        } else {
+            relativeInstalledLayout = tmpPkg.appImageLayout().resolveAt(tmpPkg.relativeInstallDir()).resetRootDirectory();
         }
 
-        return reply;
+        final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
+
+        return create(pkgBuilder
+                .app(LinuxApplication.create(app))
+                .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
+                .create());
     }
 
-    private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
+    private LinuxPackage create(Package pkg) throws ConfigException {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category),
                 Optional.ofNullable(additionalDependencies),

@@ -75,6 +75,7 @@ class JfrThreadLocal {
   jlong _wallclock_time;
   int32_t _non_reentrant_nesting;
   u2 _vthread_epoch;
+  mutable u2 _generation;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   volatile bool _enqueued_requests;
@@ -347,6 +348,9 @@ class JfrThreadLocal {
   bool in_sampling_critical_section() const {
     return _sampling_critical_section;
   }
+
+  // Serialization state.
+  bool should_write() const;
 
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);

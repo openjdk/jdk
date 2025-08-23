@@ -30,7 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // This file contains *legacy* optimization for lambdas before JEP 483. May be removed in the future.
 //
@@ -249,7 +249,7 @@ public:
 };
 
 class DumpTimeLambdaProxyClassDictionary
-  : public ResourceHashtable<LambdaProxyClassKey,
+  : public HashTable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
                              AnyObj::C_HEAP,

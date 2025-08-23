@@ -383,7 +383,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   // When using mask, mask use type needs to be VecMaskUseLoad.
   VectorMaskUseType mask_use_type = is_vector_mask(vbox_klass) ? VecMaskUseAll
                                       : is_masked_op ? VecMaskUseLoad : VecMaskNotUsed;
-  if ((sopc != 0) && !arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d is_masked_op=%d",
                     n, sopc, num_elem, type2name(elem_bt),
                     is_vector_mask(vbox_klass) ? 1 : 0, is_masked_op ? 1 : 0);
@@ -391,7 +391,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   // Return true if current platform has implemented the masked operation with predicate feature.
-  bool use_predicate = is_masked_op && sopc != 0 && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
+  bool use_predicate = is_masked_op && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
   if (is_masked_op && !use_predicate && !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=0 is_masked_op=1",
                     n, sopc, num_elem, type2name(elem_bt));

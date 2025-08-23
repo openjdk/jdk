@@ -36,6 +36,7 @@
 
 package compiler.startup;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
@@ -60,8 +61,11 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
+        // On s390x, generated code is ~6x larger in fastdebug and ~1.4x in release builds vs. other archs,
+        // hence we require slightly more minimum space.
+        int minInitialSize = 800 + (Platform.isS390x() ? 800 : 0);
         for (int i = 0; i < 200; i++) {
-            int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
+            int initialCodeCacheSizeInKb = minInitialSize + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
             out = new OutputAnalyzer(pb.start());

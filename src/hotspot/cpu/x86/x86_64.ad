@@ -14073,33 +14073,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, USE_KILL box);
-  ins_cost(300);
-  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, r15_thread, nullptr);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, USE_KILL box);
-  ins_cost(300);
-  format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
   ins_cost(300);
@@ -14111,7 +14085,6 @@ instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_Re
 %}
 
 instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object rax_reg));
   effect(TEMP tmp, USE_KILL rax_reg);
   ins_cost(300);

@@ -24,6 +24,7 @@
 /* @test
  * @summary Test function reading OS version from PE file
  * @requires (os.family == "windows")
- * @compile/module=jdk.jpackage jdk/jpackage/internal/ExecutableOSVersionTest.java
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/ExecutableOSVersionTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.ExecutableOSVersionTest
  */

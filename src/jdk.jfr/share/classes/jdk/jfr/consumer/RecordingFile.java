@@ -51,7 +51,7 @@ import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;
 /**
  * A recording file.
  * <p>
- * The following example shows how read and print all events in a recording file.
+ * The following example shows how to read and print all events in a recording file.
  *
  * {@snippet class="Snippets" region="RecordingFileOverview"}
  *
