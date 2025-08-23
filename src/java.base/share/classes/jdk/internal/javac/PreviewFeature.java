@@ -69,17 +69,17 @@ public @interface PreviewFeature {
 
         //---
         IMPLICIT_CLASSES, //to be removed when boot JDK is 25
-        @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
-        @JEP(number=499, title="Structured Concurrency", status="Fourth Preview")
+        @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,
         MODULE_IMPORTS, //remove when the boot JDK is JDK 25
-        @JEP(number=478, title="Key Derivation Function API", status="Preview")
-        KEY_DERIVATION,
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
         @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
+        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
+        PEM_API,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

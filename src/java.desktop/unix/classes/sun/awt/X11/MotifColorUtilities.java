@@ -41,7 +41,7 @@ import sun.awt.OSInfo;
   *
   */
 
-class MotifColorUtilities {
+final class MotifColorUtilities {
 
 
     static final float XmRED_LUMINOSITY=0.30f;

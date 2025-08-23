@@ -25,10 +25,10 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
-#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/matcher.hpp"
 #include "opto/mempointer.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and

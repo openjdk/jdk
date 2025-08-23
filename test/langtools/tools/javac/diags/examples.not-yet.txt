@@ -145,8 +145,6 @@ compiler.note.multiple.elements                         # needs user code
 compiler.err.preview.feature.disabled.classfile         # preview feature support: needs compilation against classfile
 compiler.warn.preview.feature.use.classfile             # preview feature support: needs compilation against classfile
 compiler.note.preview.plural.additional                 # preview feature support: diag test causes intermittent failures (see JDK-8201498)
-compiler.misc.bad.intersection.target.for.functional.expr  # currently not generated, should be removed?
-compiler.misc.not.an.intf.component
 compiler.warn.declared.using.preview                    # after making sealed classes a final feature there is no other
                                                         # preview feature but we should keep this key for future use just
                                                         # in case

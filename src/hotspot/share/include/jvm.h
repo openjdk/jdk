@@ -301,6 +301,9 @@ JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 JNIEXPORT jobject JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
+JNIEXPORT jobject JNICALL
+JVM_CreateThreadSnapshot(JNIEnv* env, jobject thread);
+
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);
 
@@ -349,6 +352,9 @@ JVM_HasReferencePendingList(JNIEnv *env);
 
 JNIEXPORT void JNICALL
 JVM_WaitForReferencePendingList(JNIEnv *env);
+
+JNIEXPORT jobject JNICALL
+JVM_ReferenceGet(JNIEnv *env, jobject ref);
 
 JNIEXPORT jboolean JNICALL
 JVM_ReferenceRefersTo(JNIEnv *env, jobject ref, jobject o);
@@ -592,16 +598,6 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly);
-
-
-/* Differs from JVM_GetClassModifiers in treatment of inner classes.
-   This returns the access flags for the class as specified in the
-   class file rather than searching the InnerClasses attribute (if
-   present) to find the source-level access flags. Only the values of
-   the low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
-   valid. */
-JNIEXPORT jint JNICALL
-JVM_GetClassAccessFlags(JNIEnv *env, jclass cls);
 
 /* Nestmates - since JDK 11 */
 

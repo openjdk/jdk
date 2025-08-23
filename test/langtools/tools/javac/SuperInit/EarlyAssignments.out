@@ -1,29 +1,27 @@
-EarlyAssignments.java:21:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:22:17: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:23:23: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:31:21: compiler.err.cant.ref.before.ctor.called: super
-EarlyAssignments.java:32:21: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:33:26: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:34:34: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:36:36: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:40:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:44:21: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:48:22: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:66:13: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:67:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:68:25: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:69:31: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:98:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:104:22: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:110:35: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:119:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:124:22: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:129:29: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:134:17: compiler.err.cant.ref.before.ctor.called: super
-EarlyAssignments.java:139:23: compiler.err.cant.ref.before.ctor.called: this
-EarlyAssignments.java:148:13: compiler.err.cant.assign.initialized.before.ctor.called: x
-EarlyAssignments.java:157:13: compiler.err.cant.assign.val.to.var: final, x
-EarlyAssignments.java:168:13: compiler.err.cant.ref.before.ctor.called: this
-- compiler.note.preview.filename: EarlyAssignments.java, DEFAULT
-- compiler.note.preview.recompile
+EarlyAssignments.java:20:17: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:21:17: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:22:23: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:30:21: compiler.err.cant.ref.before.ctor.called: super
+EarlyAssignments.java:31:21: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:32:26: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:33:34: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:35:36: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:39:17: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:43:21: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:47:22: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:65:13: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:66:17: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:67:25: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:68:31: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:97:17: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:103:22: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:109:35: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:118:17: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:123:22: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:128:29: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:133:17: compiler.err.cant.ref.before.ctor.called: super
+EarlyAssignments.java:138:23: compiler.err.cant.ref.before.ctor.called: this
+EarlyAssignments.java:147:13: compiler.err.cant.assign.initialized.before.ctor.called: x
+EarlyAssignments.java:156:13: compiler.err.cant.assign.val.to.var: final, x
+EarlyAssignments.java:167:13: compiler.err.cant.ref.before.ctor.called: this
 26 errors

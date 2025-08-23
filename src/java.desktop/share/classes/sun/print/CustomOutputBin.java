@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,6 @@ package sun.print;
 import java.io.Serial;
 import java.util.ArrayList;
 
-import javax.print.attribute.EnumSyntax;
-import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.OutputBin;
 
 public final class CustomOutputBin extends OutputBin {
@@ -65,6 +63,7 @@ public final class CustomOutputBin extends OutputBin {
         return new CustomOutputBin(name, choice);
     }
 
+    @Serial
     private static final long serialVersionUID = 3018751086294120717L;
 
     /**

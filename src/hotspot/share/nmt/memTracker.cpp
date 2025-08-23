@@ -41,6 +41,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS
@@ -49,7 +50,7 @@
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
-MemBaseline MemTracker::_baseline;
+DeferredStatic<MemBaseline> MemTracker::_baseline;
 
 bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 
@@ -67,9 +68,10 @@ void MemTracker::initialize() {
   STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
 
   if (level > NMT_off) {
+    _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level)) {
+        !VirtualMemoryTracker::Instance::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
@@ -124,7 +126,7 @@ void MemTracker::final_report(outputStream* output) {
 bool MemTracker::print_containing_region(const void* p, outputStream* out) {
   return enabled() &&
       (MallocTracker::print_pointer_information(p, out) ||
-       VirtualMemoryTracker::print_containing_region(p, out));
+       VirtualMemoryTracker::Instance::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {

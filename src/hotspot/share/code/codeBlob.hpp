@@ -28,9 +28,9 @@
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
-#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -99,6 +99,9 @@ class RuntimeStub;     // for as_runtime_stub()
 class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
 class AdapterBlob;
 class ExceptionBlob;
+class DeoptimizationBlob;
+class SafepointBlob;
+class UncommonTrapBlob;
 
 class CodeBlob {
   friend class VMStructs;
@@ -205,8 +208,12 @@ public:
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
+  ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
+  DeoptimizationBlob* as_deoptimization_blob() const { assert(is_deoptimization_stub(), "must be deopt stub"); return (DeoptimizationBlob*) this; }
+  SafepointBlob* as_safepoint_blob() const    { assert(is_safepoint_stub(), "must be safepoint stub"); return (SafepointBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
+  UncommonTrapBlob* as_uncommon_trap_blob() const { assert(is_uncommon_trap_stub(), "must be uncommon trap stub"); return (UncommonTrapBlob*) this; }
 
   // Boundaries
   address    header_begin() const             { return (address)    this; }
@@ -240,7 +247,7 @@ public:
   // Sizes
   int size() const               { return _size; }
   int header_size() const        { return _header_size; }
-  int relocation_size() const    { return pointer_delta_as_int((address) relocation_end(), (address) relocation_begin()); }
+  int relocation_size() const    { return _relocation_size; }
   int content_size() const       { return pointer_delta_as_int(content_end(), content_begin()); }
   int code_size() const          { return pointer_delta_as_int(code_end(), code_begin()); }
 
@@ -308,7 +315,10 @@ public:
   // methods to restore a blob from AOT code cache into the CodeCache
   void post_restore();
   CodeBlob* restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
-  static CodeBlob* create(CodeBlob* archived_blob, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
+  static CodeBlob* create(CodeBlob* archived_blob,
+                          const char* name,
+                          address archived_reloc_data,
+                          ImmutableOopMapSet* archived_oop_maps);
 };
 
 //----------------------------------------------------------------------------------------------------
@@ -362,8 +372,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, CodeBlobKind kind, int size);
-  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size);
+  BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size = sizeof(BufferBlob));
+  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size = sizeof(BufferBlob));
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -394,12 +404,18 @@ class BufferBlob: public RuntimeBlob {
 // AdapterBlob: used to hold C2I/I2C adapters
 
 class AdapterBlob: public BufferBlob {
+public:
+  static const int ENTRY_COUNT = 4;
 private:
-  AdapterBlob(int size, CodeBuffer* cb);
-
+  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  // _i2c_offset is always 0 so no need to store it
+  int _c2i_offset;
+  int _c2i_unverified_offset;
+  int _c2i_no_clinit_check_offset;
 public:
   // Creation
-  static AdapterBlob* create(CodeBuffer* cb);
+  static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  void get_offsets(int entry_offset[ENTRY_COUNT]);
 };
 
 //---------------------------------------------------------------------------------------------------
@@ -447,6 +463,7 @@ class RuntimeStub: public RuntimeBlob {
   void* operator new(size_t s, unsigned size) throw();
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
@@ -549,6 +566,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -679,6 +697,7 @@ class SafepointBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static SafepointBlob* create(
     CodeBuffer* cb,
