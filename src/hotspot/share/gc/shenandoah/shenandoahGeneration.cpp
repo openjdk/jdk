@@ -417,6 +417,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // TODO: Keep this in, but consider using established promotion reserve instead of what is in aged regions added to collection set.
   // const size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
   // size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
+  size_t promoted_reserve = ShenandoahHeap::heap()->old_generation()->get_promoted_reserve();
 
   const size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
   const size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
@@ -429,7 +430,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
   // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
   // evac and update phases.
-  size_t old_consumed = old_evacuated_committed;
+  size_t old_consumed = old_evacuated_committed + promoted_reserve;
 
   if (old_available < old_consumed) {
     // TODO: Set promotion reserve to zero?
@@ -446,7 +447,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // Make sure old_evac_committed is unaffiliated
   if (old_evacuated_committed > 0) {
     if (unaffiliated_old > old_evacuated_committed) {
-      const size_t giveaway = unaffiliated_old - old_evacuated_committed - ShenandoahHeap::heap()->old_generation()->get_promoted_reserve();
+      const size_t giveaway = unaffiliated_old - old_evacuated_committed - promoted_reserve;
       const size_t giveaway_regions = giveaway / region_size_bytes;  // round down
       if (giveaway_regions > 0) {
         excess_old = MIN2(excess_old, giveaway_regions * region_size_bytes);
