@@ -243,7 +243,7 @@ void StringDedup::Table::num_dead_callback(size_t num_dead) {
   // Lock while modifying dead count and state.
   MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
 
-  switch (Atomic::load(&_dead_state)) {
+  switch (_dead_state.load_relaxed()) {
   case DeadState::good:
     Atomic::store(&_dead_count, num_dead);
     break;
@@ -252,11 +252,11 @@ void StringDedup::Table::num_dead_callback(size_t num_dead) {
     // Set count first, so dedup thread gets this or a later value if it
     // sees the good state.
     Atomic::store(&_dead_count, num_dead);
-    Atomic::release_store(&_dead_state, DeadState::good);
+    _dead_state.release_store(DeadState::good);
     break;
 
   case DeadState::wait2:
-    Atomic::release_store(&_dead_state, DeadState::wait1);
+    _dead_state.release_store(DeadState::wait1);
     break;
 
   case DeadState::cleaning:
@@ -422,7 +422,9 @@ size_t StringDedup::Table::_grow_threshold;
 StringDedup::Table::CleanupState* StringDedup::Table::_cleanup_state = nullptr;
 bool StringDedup::Table::_need_bucket_shrinking = false;
 volatile size_t StringDedup::Table::_dead_count = 0;
-volatile StringDedup::Table::DeadState StringDedup::Table::_dead_state = DeadState::good;
+
+AtomicValue<StringDedup::Table::DeadState>
+StringDedup::Table::_dead_state{DeadState::good};
 
 void StringDedup::Table::initialize_storage() {
   assert(_table_storage == nullptr, "storage already created");
@@ -475,7 +477,7 @@ void StringDedup::Table::add(TableValue tv, uint hash_code) {
 }
 
 bool StringDedup::Table::is_dead_count_good_acquire() {
-  return Atomic::load_acquire(&_dead_state) == DeadState::good;
+  return _dead_state.load_acquire() == DeadState::good;
 }
 
 // Should be consistent with cleanup_start_if_needed.
@@ -671,7 +673,7 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
 void StringDedup::Table::set_dead_state_cleaning() {
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
   Atomic::store(&_dead_count, size_t(0));
-  Atomic::store(&_dead_state, DeadState::cleaning);
+  _dead_state.relaxed_store(DeadState::cleaning);
 }
 
 bool StringDedup::Table::start_resizer(bool grow_only, size_t number_of_entries) {
@@ -705,7 +707,7 @@ void StringDedup::Table::cleanup_end() {
   delete _cleanup_state;
   _cleanup_state = nullptr;
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_dead_state, DeadState::wait2);
+  _dead_state.relaxed_store(DeadState::wait2);
 }
 
 void StringDedup::Table::verify() {
@@ -728,7 +730,7 @@ void StringDedup::Table::log_statistics() {
   {
     MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
     dead_count = _dead_count;
-    dead_state = static_cast<int>(_dead_state);
+    dead_state = static_cast<int>(_dead_state.load_relaxed());
   }
   log_debug(stringdedup)("Table: %zu values in %zu buckets, %zu dead (%d)",
                          _number_of_entries, _number_of_buckets,
