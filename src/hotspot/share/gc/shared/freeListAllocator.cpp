@@ -164,8 +164,8 @@ void FreeListAllocator::release(void* free_node) {
 // in-progress transfer.
 bool FreeListAllocator::try_transfer_pending() {
   // Attempt to claim the lock.
-  if (Atomic::load(&_transfer_lock) || // Skip CAS if likely to fail.
-      Atomic::cmpxchg(&_transfer_lock, false, true)) {
+  if (_transfer_lock.load_relaxed() || // Skip CAS if likely to fail.
+      _transfer_lock.cmpxchg(false, true)) {
     return false;
   }
   // Have the lock; perform the transfer.
@@ -191,6 +191,6 @@ bool FreeListAllocator::try_transfer_pending() {
     log_trace(gc, freelist)
              ("Transferred %s pending to free: %zu", name(), count);
   }
-  Atomic::release_store(&_transfer_lock, false);
+  _transfer_lock.release_store(false);
   return true;
 }
