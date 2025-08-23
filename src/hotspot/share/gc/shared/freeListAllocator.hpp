@@ -62,15 +62,15 @@ public:
 // to the free list making them available for re-allocation.
 class FreeListAllocator {
   struct FreeNode {
-    FreeNode* volatile _next;
+    AtomicValue<FreeNode*> _next;
 
     FreeNode() : _next (nullptr) { }
 
-    FreeNode* next() { return Atomic::load(&_next); }
+    FreeNode* next() { return _next.load_relaxed(); }
 
-    FreeNode* volatile* next_addr() { return &_next; }
+    AtomicValue<FreeNode*>* next_addr() { return &_next; }
 
-    void set_next(FreeNode* next) { Atomic::store(&_next, next); }
+    void set_next(FreeNode* next) { _next.relaxed_store(next); }
   };
 
   struct NodeList {
@@ -85,8 +85,8 @@ class FreeListAllocator {
 
   class PendingList {
     FreeNode* _tail;
-    FreeNode* volatile _head;
-    volatile size_t _count;
+    AtomicValue<FreeNode*> _head;
+    AtomicValue<size_t> _count;
 
     NONCOPYABLE(PendingList);
 
@@ -105,7 +105,7 @@ class FreeListAllocator {
     NodeList take_all();
   };
 
-  static FreeNode* volatile* next_ptr(FreeNode& node) { return node.next_addr(); }
+  static AtomicValue<FreeNode*>* next_ptr(FreeNode& node) { return node.next_addr(); }
   typedef LockFreeStack<FreeNode, &next_ptr> Stack;
 
   FreeListConfig* _config;
@@ -113,12 +113,12 @@ class FreeListAllocator {
 
 #define DECLARE_PADDED_MEMBER(Id, Type, Name) \
   Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_PADDING_SIZE, sizeof(Type))
-  DECLARE_PADDED_MEMBER(1, volatile size_t, _free_count);
+  DECLARE_PADDED_MEMBER(1, AtomicValue<size_t>, _free_count);
   DECLARE_PADDED_MEMBER(2, Stack, _free_list);
-  DECLARE_PADDED_MEMBER(3, volatile bool, _transfer_lock);
+  DECLARE_PADDED_MEMBER(3, AtomicValue<bool>, _transfer_lock);
 #undef DECLARE_PADDED_MEMBER
 
-  volatile uint _active_pending_list;
+  AtomicValue<uint> _active_pending_list;
   PendingList _pending_lists[2];
 
   void delete_list(FreeNode* list);
