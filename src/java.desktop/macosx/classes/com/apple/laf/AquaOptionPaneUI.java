@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicOptionPaneUI;
 
-public class AquaOptionPaneUI extends BasicOptionPaneUI {
+public final class AquaOptionPaneUI extends BasicOptionPaneUI {
     private static final int kOKCancelButtonWidth = 79;
     private static final int kButtonHeight = 23;
 
@@ -49,6 +49,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * Creates and returns a Container containin the buttons. The buttons
      * are created by calling {@code getButtons}.
      */
+    @Override
     protected Container createButtonArea() {
         final Container bottom = super.createButtonArea();
         // Now replace the Layout
@@ -61,6 +62,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * body of the message.
      * The icon and body should be aligned on their top edges
      */
+    @Override
     protected Container createMessageArea() {
         final JPanel top = new JPanel();
         top.setBorder(UIManager.getBorder("OptionPane.messageAreaBorder"));
@@ -111,11 +113,12 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * BasicOptionPaneUI expects that its buttons are laid out with
      * a subclass of ButtonAreaLayout
      */
-    public static class AquaButtonAreaLayout extends ButtonAreaLayout {
+    public static final class AquaButtonAreaLayout extends ButtonAreaLayout {
         public AquaButtonAreaLayout(final boolean syncAllWidths, final int padding) {
             super(true, padding);
         }
 
+        @Override
         public void layoutContainer(final Container container) {
             final Component[] children = container.getComponents();
             if (children == null || 0 >= children.length) return;

@@ -816,6 +816,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
   switch (req.type()) {
     case ShenandoahAllocRequest::_alloc_tlab:
     case ShenandoahAllocRequest::_alloc_shared:
+    case ShenandoahAllocRequest::_alloc_cds:
       return allocate_for_mutator(req, in_new_region);
     case ShenandoahAllocRequest::_alloc_gclab:
     case ShenandoahAllocRequest::_alloc_plab:
@@ -880,7 +881,7 @@ HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAll
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
-    if (alloc_capacity(r) >= min_size) {
+    if (alloc_capacity(r) >= min_size * HeapWordSize) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
         return result;
@@ -1169,8 +1170,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   return result;
 }
 
-HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
-  assert(req.is_mutator_alloc(), "All humongous allocations are performed by mutator");
+HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous) {
+  assert(req.is_mutator_alloc(), "All contiguous allocations are performed by mutator");
   shenandoah_assert_heaplocked();
 
   size_t words_size = req.size();
@@ -1244,10 +1245,16 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
     assert(r->is_empty(), "Should be empty");
 
-    if (i == beg) {
-      r->make_humongous_start();
+    r->set_affiliation(req.affiliation());
+
+    if (is_humongous) {
+      if (i == beg) {
+        r->make_humongous_start();
+      } else {
+        r->make_humongous_cont();
+      }
     } else {
-      r->make_humongous_cont();
+      r->make_regular_allocation(req.affiliation());
     }
 
     // Trailing region may be non-full, record the remainder there
@@ -1257,25 +1264,31 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     } else {
       used_words = ShenandoahHeapRegion::region_size_words();
     }
-
-    r->set_affiliation(req.affiliation());
     r->set_update_watermark(r->bottom());
     r->set_top(r->bottom() + used_words);
   }
   generation->increase_affiliated_region_count(num);
-  if (remainder != 0) {
-    // Record this remainder as allocation waste
-    _heap->notify_mutator_alloc_words(ShenandoahHeapRegion::region_size_words() - remainder, true);
+
+  size_t total_used = 0;
+  if (is_humongous) {
+    // Humongous allocation retires all regions at once: no allocation is possible anymore.
+    _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
+    total_used = ShenandoahHeapRegion::region_size_bytes() * num;
+  } else {
+    // Non-humongous allocation retires only the regions that cannot be used for allocation anymore.
+    for (idx_t i = beg; i <= end; i++) {
+      ShenandoahHeapRegion* r = _heap->get_region(i);
+      if (r->free() < PLAB::min_size() * HeapWordSize) {
+        _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, i, r->used());
+      }
+      total_used += r->used();
+    }
   }
-
-  // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
-  _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-
-  size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_humongous_size);
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
   _partitions.assert_bounds();
+
   req.set_actual_size(words_size);
-  if (remainder != 0) {
+  if (remainder != 0 && is_humongous) {
     req.set_waste(ShenandoahHeapRegion::region_size_words() - remainder);
   }
   return _heap->get_region(beg)->bottom();
@@ -2064,7 +2077,10 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_shared:
       case ShenandoahAllocRequest::_alloc_shared_gc:
         in_new_region = true;
-        return allocate_contiguous(req);
+        return allocate_contiguous(req, /* is_humongous = */ true);
+      case ShenandoahAllocRequest::_alloc_cds:
+        in_new_region = true;
+        return allocate_contiguous(req, /* is_humongous = */ false);
       case ShenandoahAllocRequest::_alloc_plab:
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:

@@ -271,7 +271,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->initial_region_length() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -815,11 +815,11 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 }
 
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
-  const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
+  const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
-    double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
+    double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
 
     if (time_left_ms < 0 ||
