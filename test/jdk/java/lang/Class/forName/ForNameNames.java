@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310242
+ * @bug 8310242 8328874
  * @run junit ForNameNames
  * @summary Verify class names for Class.forName
  */
@@ -89,5 +89,22 @@ public class ForNameNames {
         Class<?> c = Class.forName(Object.class.getModule(), "[Ljava.lang.String;");
         assertNull(c);
     }
+
+    @Test
+    void testTooLongName() {
+        ClassLoader loader = ForNameNames.class.getClassLoader();
+        String tooLongName = "A".repeat(JAVA_CLASSNAME_MAX_LEN+1);
+        String errMsg = "Class name length exceeds limit of";
+
+        ClassNotFoundException ex = assertThrows(ClassNotFoundException.class,
+                                                 () -> Class.forName(tooLongName, false, loader));
+        assertTrue(ex.getMessage().contains(errMsg),
+                   "Unexpected exception message");
+
+        ex = assertThrows(ClassNotFoundException.class,
+                          () -> Class.forName(tooLongName));
+        assertTrue(ex.getMessage().contains(errMsg),
+                   "Unexpected exception message");
+   }
 
 }

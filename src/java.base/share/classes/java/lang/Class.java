@@ -4171,7 +4171,7 @@ public final class Class<T> implements java.io.Serializable,
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
         if (!classNameLengthIsValid(name)) {
             throw new ClassNotFoundException(
-            "Class name exceeds maximum length of " + JAVA_CLASSNAME_MAX_LEN);
+            "Class name length exceeds limit of " + JAVA_CLASSNAME_MAX_LEN);
         }
     }
 
