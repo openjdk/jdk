@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class DerValue {
 
     /** The tag class types */
     public static final byte TAG_UNIVERSAL = (byte)0x000;
+    public static final byte TAG_CONSTRUCT = (byte)0x020;
     public static final byte TAG_APPLICATION = (byte)0x040;
     public static final byte TAG_CONTEXT = (byte)0x080;
     public static final byte TAG_PRIVATE = (byte)0x0c0;

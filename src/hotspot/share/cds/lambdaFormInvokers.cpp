@@ -224,6 +224,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
 
   result->set_is_generated_shared_class();
   if (!klass->is_shared()) {
+    log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
   log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,

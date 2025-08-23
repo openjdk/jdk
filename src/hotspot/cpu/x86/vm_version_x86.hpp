@@ -30,6 +30,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
+class stringStream;
+
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -791,6 +793,7 @@ public:
   static uint32_t cpu_stepping()          { return _cpuid_info.cpu_stepping(); }
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
+  static bool is_intel_server_family()    { return cpu_family() == 6 || cpu_family() == 19; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_hygon()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x6F677948; } // 'ogyH'
   static bool is_amd_family()     { return is_amd() || is_hygon(); }
@@ -921,7 +924,7 @@ public:
 
   static bool is_intel_tsc_synched_at_init();
 
-  static void insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen);
+  static void insert_features_names(VM_Version::VM_Features features, stringStream& ss);
 
   // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
@@ -946,7 +949,7 @@ public:
   }
 
   // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
-  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+  static bool has_fast_idiv()     { return is_intel() && is_intel_server_family() &&
                                            supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }

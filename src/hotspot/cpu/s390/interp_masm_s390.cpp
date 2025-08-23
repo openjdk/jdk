@@ -1008,109 +1008,18 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  (Z_R11, Z_R2) - Address of the object to be locked.
 //  templateTable (monitorenter) is using Z_R2 for object
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
-
-  if (LockingMode == LM_MONITOR) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-    return;
-  }
-
-  // template code: (for LM_LEGACY)
-  //
-  // markWord displaced_header = obj->mark().set_unlocked();
-  // monitor->lock()->set_displaced_header(displaced_header);
-  // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-  //   // We stored the monitor address into the object's mark word.
-  // } else if (THREAD->is_lock_owned((address)displaced_header))
-  //   // Simple recursive case.
-  //   monitor->lock()->set_displaced_header(nullptr);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorenter(THREAD, monitor);
-  // }
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   const Register header           = Z_ARG5;
-  const Register object_mark_addr = Z_ARG4;
-  const Register current_header   = Z_ARG5;
   const Register tmp              = Z_R1_scratch;
 
   NearLabel done, slow_case;
 
-  // markWord header = obj->mark().set_unlocked();
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(monitor, object, header, tmp, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, object);
-      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-      z_btrue(slow_case);
-    }
-
-    // Load markWord from object into header.
-    z_lg(header, hdr_offset, object);
-
-    // Set header to be (markWord of object | UNLOCK_VALUE).
-    // This will not change anything if it was unlocked before.
-    z_oill(header, markWord::unlocked_value);
-
-    // monitor->lock()->set_displaced_header(displaced_header);
-    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-    const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
-
-    // Initialize the box (Must happen before we update the object mark!).
-    z_stg(header, mark_offset, monitor);
-
-    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-
-    // not necessary, use offset in instruction directly.
-    // add2reg(object_mark_addr, hdr_offset, object);
-
-    // Store stack address of the BasicObjectLock (this is monitor) into object.
-    z_csg(header, monitor, hdr_offset, object);
-    assert(current_header == header,
-           "must be same register"); // Identified two registers from z/Architecture.
-
-    z_bre(done);
-
-    // } else if (THREAD->is_lock_owned((address)displaced_header))
-    //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(nullptr);
-
-    // We did not see an unlocked object so try the fast recursive case.
-
-    // Check if owner is self by comparing the value in the markWord of object
-    // (current_header) with the stack pointer.
-    z_sgr(current_header, Z_SP);
-
-    assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-
-    // The prior sequence "LGR, NGR, LTGR" can be done better
-    // (Z_R1 is temp and not used after here).
-    load_const_optimized(Z_R0, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
-    z_ngr(Z_R0, current_header); // AND sets CC (result eq/ne 0)
-
-    // If condition is true we are done and hence we can store 0 in the displaced
-    // header indicating it is a recursive lock and be done.
-    z_brne(slow_case);
-    z_release();  // Member unnecessary on zarch AND because the above csg does a sync before and after.
-    z_stg(Z_R0/*==0!*/, mark_offset, monitor);
-  }
+  lightweight_lock(monitor, object, header, tmp, slow_case);
   z_bru(done);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorenter(THREAD, monitor);
 
-  // None of the above fast optimizations worked so we have to get into the
-  // slow case of monitor enter.
   bind(slow_case);
   call_VM(noreg,
           CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
           monitor);
-  // }
-
   bind(done);
 }
 
@@ -1122,28 +1031,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
-
-  if (LockingMode == LM_MONITOR) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-    return;
-  }
-
-// else {
-  // template code: (for LM_LEGACY):
-  //
-  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
-  //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(nullptr);
-  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-  //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(nullptr);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorexit(monitor);
-  // }
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   const Register header         = Z_ARG4;
   const Register current_header = Z_R1_scratch;
   Address obj_entry(monitor, BasicObjectLock::obj_offset());
@@ -1159,56 +1046,16 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   assert_different_registers(monitor, object, header, current_header);
 
-  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
-  //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(nullptr);
-
-  // monitor->lock()->set_displaced_header(displaced_header);
-  const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-  const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
-
   clear_mem(obj_entry, sizeof(oop));
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Test first if we are in the fast recursive case.
-    MacroAssembler::load_and_test_long(header, Address(monitor, mark_offset));
-    z_bre(done); // header == 0 -> goto done
-  }
 
-  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-  //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(nullptr);
-
-  // If we still have a lightweight lock, unlock the object and be done.
-  if (LockingMode == LM_LIGHTWEIGHT) {
-
-    lightweight_unlock(object, header, current_header, slow_case);
-
-    z_bru(done);
-  } else {
-    // The markword is expected to be at offset 0.
-    // This is not required on s390, at least not here.
-    assert(hdr_offset == 0, "unlock_object: review code below");
-
-    // We have the displaced header in header. If the lock is still
-    // lightweight, it will contain the monitor address and we'll store the
-    // displaced header back into the object's mark word.
-    z_lgr(current_header, monitor);
-    z_csg(current_header, header, hdr_offset, object);
-    z_bre(done);
-  }
-
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorexit(monitor);
+  lightweight_unlock(object, header, current_header, slow_case);
+  z_bru(done);
 
   // The lock has been converted into a heavy lock and hence
   // we need to get into the slow case.
   bind(slow_case);
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-
-  // }
-
   bind(done);
 }
 

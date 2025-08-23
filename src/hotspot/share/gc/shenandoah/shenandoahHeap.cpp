@@ -32,6 +32,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -62,7 +63,6 @@
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -201,8 +201,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  // Default to max heap size.
-  _soft_max_size = _num_regions * reg_size_bytes;
+  _soft_max_size = SoftMaxHeapSize;
 
   _committed = _initial_size;
 
@@ -470,11 +469,6 @@ jint ShenandoahHeap::initialize() {
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
   ShenandoahCodeRoots::initialize();
 
-  if (ShenandoahPacing) {
-    _pacer = new ShenandoahPacer(this);
-    _pacer->setup_for_idle();
-  }
-
   initialize_controller();
 
   if (ShenandoahUncommit) {
@@ -524,7 +518,7 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
 
@@ -558,7 +552,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
-  _pacer(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
@@ -574,7 +567,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
-  _collection_set(nullptr)
+  _collection_set(nullptr),
+  _evac_tracker(new ShenandoahEvacuationTracker())
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
@@ -586,20 +580,35 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #endif
 
 void ShenandoahHeap::print_heap_on(outputStream* st) const {
-  st->print_cr("Shenandoah Heap");
-  st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
-               byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
-               byte_size_in_proper_unit(soft_max_capacity()), proper_unit_for_byte_size(soft_max_capacity()),
-               byte_size_in_proper_unit(committed()),    proper_unit_for_byte_size(committed()),
-               byte_size_in_proper_unit(used()),         proper_unit_for_byte_size(used()));
-  st->print_cr(" %zu x %zu %s regions",
-               num_regions(),
-               byte_size_in_proper_unit(ShenandoahHeapRegion::region_size_bytes()),
-               proper_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
+  const bool is_generational = mode()->is_generational();
+  const char* front_spacing = "";
+  if (is_generational) {
+    st->print_cr("Generational Shenandoah Heap");
+    st->print_cr(" Young:");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " used", PROPERFMTARGS(young_generation()->max_capacity()), PROPERFMTARGS(young_generation()->used()));
+    st->print_cr(" Old:");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " used", PROPERFMTARGS(old_generation()->max_capacity()), PROPERFMTARGS(old_generation()->used()));
+    st->print_cr(" Entire heap:");
+    st->print_cr("  " PROPERFMT " soft max, " PROPERFMT " committed",
+                PROPERFMTARGS(soft_max_capacity()), PROPERFMTARGS(committed()));
+    front_spacing = " ";
+  } else {
+    st->print_cr("Shenandoah Heap");
+    st->print_cr("  " PROPERFMT " max, " PROPERFMT " soft max, " PROPERFMT " committed, " PROPERFMT " used",
+      PROPERFMTARGS(max_capacity()),
+      PROPERFMTARGS(soft_max_capacity()),
+      PROPERFMTARGS(committed()),
+      PROPERFMTARGS(used())
+    );
+  }
+  st->print_cr("%s %zu x " PROPERFMT " regions",
+          front_spacing,
+          num_regions(),
+          PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
 
   st->print("Status: ");
   if (has_forwarded_objects())                 st->print("has forwarded objects, ");
-  if (!mode()->is_generational()) {
+  if (!is_generational) {
     if (is_concurrent_mark_in_progress())      st->print("marking,");
   } else {
     if (is_concurrent_old_mark_in_progress())    st->print("old marking, ");
@@ -716,8 +725,7 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
 //   require padding in front of the PLAB (a filler object). Because this padding
 //   is included in the region's used memory we include the padding in the usage
 //   accounting as waste.
-// * Mutator allocations are used to compute an allocation rate. They are also
-//   sent to the Pacer for those purposes.
+// * Mutator allocations are used to compute an allocation rate.
 // * There are three sources of waste:
 //  1. The padding used to align a PLAB on card size
 //  2. Region's free is less than minimum TLAB size and is retired
@@ -737,9 +745,6 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
 
     // only actual size counts toward usage for mutator allocations
     increase_used(generation, actual_bytes);
-
-    // notify pacer of both actual size and waste
-    notify_mutator_alloc_words(req.actual_size(), req.waste());
 
     if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
       increase_humongous_waste(generation,wasted_bytes);
@@ -772,15 +777,6 @@ void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t byte
   generation->decrease_used(bytes);
   if (!generation->is_global()) {
     global_generation()->decrease_used(bytes);
-  }
-}
-
-void ShenandoahHeap::notify_mutator_alloc_words(size_t words, size_t waste) {
-  if (ShenandoahPacing) {
-    control_thread()->pacing_notify_alloc(words);
-    if (waste > 0) {
-      pacer()->claim_for_alloc<true>(waste);
-    }
   }
 }
 
@@ -965,15 +961,10 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
 }
 
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
-  intptr_t pacer_epoch = 0;
   bool in_new_region = false;
   HeapWord* result = nullptr;
 
   if (req.is_mutator_alloc()) {
-    if (ShenandoahPacing) {
-      pacer()->pace_for_alloc(req.size());
-      pacer_epoch = pacer()->epoch();
-    }
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
       result = allocate_memory_under_lock(req, in_new_region);
@@ -1048,15 +1039,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
             ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
-
-    if (req.is_mutator_alloc()) {
-      // If we requested more than we were granted, give the rest back to pacer.
-      // This only matters if we are in the same pacing epoch: do not try to unpace
-      // over the budget for the other phase.
-      if (ShenandoahPacing && (pacer_epoch > 0) && (requested > actual)) {
-        pacer()->unpace_for_alloc(pacer_epoch, requested - actual);
-      }
-    }
   }
 
   return result;
@@ -1206,10 +1188,6 @@ private:
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
-      if (ShenandoahPacing) {
-        _sh->pacer()->report_evac(r->used() >> LogHeapWordSize);
-      }
-
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
       }
@@ -1238,6 +1216,11 @@ public:
       //  1. We need to make the plab memory parsable by remembered-set scanning.
       //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
       ShenandoahGenerationalHeap::heap()->retire_plab(plab, thread);
+
+      // Re-enable promotions for the next evacuation phase.
+      ShenandoahThreadLocalData::enable_plab_promotions(thread);
+
+      // Reset the fill size for next evacuation phase.
       if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
         ShenandoahThreadLocalData::set_plab_size(thread, 0);
       }
@@ -1245,9 +1228,9 @@ public:
   }
 };
 
-class ShenandoahGCStatePropagator : public HandshakeClosure {
+class ShenandoahGCStatePropagatorHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahGCStatePropagator(char gc_state) :
+  explicit ShenandoahGCStatePropagatorHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah GC State Change"),
     _gc_state(gc_state) {}
 
@@ -1258,9 +1241,9 @@ private:
   char _gc_state;
 };
 
-class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
+class ShenandoahPrepareForUpdateRefsHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahPrepareForUpdateRefs(char gc_state) :
+  explicit ShenandoahPrepareForUpdateRefsHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
     _retire(ResizeTLAB), _propagator(gc_state) {}
 
@@ -1272,7 +1255,7 @@ public:
   }
 private:
   ShenandoahRetireGCLABClosure _retire;
-  ShenandoahGCStatePropagator _propagator;
+  ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
@@ -1295,7 +1278,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   }
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
-  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
+  ShenandoahPrepareForUpdateRefsHandshakeClosure prepare_for_update_refs(_gc_state.raw_value());
 
   // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
@@ -1327,7 +1310,7 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
     set_gc_state_concurrent(WEAK_ROOTS, false);
   }
 
-  ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+  ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
   Threads::non_java_threads_do(&propagator);
   if (handshake_closure == nullptr) {
     Handshake::execute(&propagator);
@@ -1390,6 +1373,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Copy the object:
+  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
@@ -1399,6 +1383,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // Successfully evacuated. Our copy is now the public one!
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
+    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -1452,27 +1437,23 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
-
-  oop humongous_obj = cast_to_oop(start->bottom());
-  size_t size = humongous_obj->size();
-  size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-  size_t index = start->index() + required_regions - 1;
-
   assert(!start->has_live(), "liveness must be zero");
 
-  for(size_t i = 0; i < required_regions; i++) {
-    // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
-    // as it expects that every region belongs to a humongous region starting with a humongous start region.
-    ShenandoahHeapRegion* region = get_region(index --);
-
-    assert(region->is_humongous(), "expect correct humongous start or continuation");
+  // Do not try to get the size of this humongous object. STW collections will
+  // have already unloaded classes, so an unmarked object may have a bad klass pointer.
+  ShenandoahHeapRegion* region = start;
+  size_t index = region->index();
+  do {
+    assert(region->is_humongous(), "Expect correct humongous start or continuation");
     assert(!region->is_cset(), "Humongous region should not be in collection set");
-
     region->make_trash_immediate();
-  }
-  return required_regions;
+    region = get_region(++index);
+  } while (region != nullptr && region->is_humongous_continuation());
+
+  // Return number of regions trashed
+  return index - start->index();
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
@@ -1632,6 +1613,13 @@ void ShenandoahHeap::print_tracing_info() const {
     ResourceMark rm;
     LogStream ls(lt);
 
+#ifdef NOT_PRODUCT
+    evac_tracker()->print_global_on(&ls);
+
+    ls.cr();
+    ls.cr();
+#endif
+
     phase_timings()->print_global_on(&ls);
 
     ls.cr();
@@ -1783,12 +1771,14 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 
 bool ShenandoahHeap::prepare_aux_bitmap_for_iteration() {
   assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
-
-  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false)) {
-    log_warning(gc)("Could not commit native memory for auxiliary marking bitmap for heap iteration");
-    return false;
+  if (!_aux_bitmap_region_special) {
+    bool success = os::commit_memory((char *) _aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false);
+    if (!success) {
+      log_warning(gc)("Auxiliary marking bitmap commit failed: " PTR_FORMAT " (%zu bytes)",
+                      p2i(_aux_bitmap_region.start()), _aux_bitmap_region.byte_size());
+      return false;
+    }
   }
-  // Reset bitmap
   _aux_bit_map.clear();
   return true;
 }
@@ -1804,8 +1794,13 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 }
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
-  if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size())) {
-    log_warning(gc)("Could not uncommit native memory for auxiliary marking bitmap for heap iteration");
+  if (!_aux_bitmap_region_special) {
+    bool success = os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
+    if (!success) {
+      log_warning(gc)("Auxiliary marking bitmap uncommit failed: " PTR_FORMAT " (%zu bytes)",
+                      p2i(_aux_bitmap_region.start()), _aux_bitmap_region.byte_size());
+      assert(false, "Auxiliary marking bitmap uncommit should always succeed");
+    }
   }
 }
 
@@ -2020,14 +2015,14 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   }
 }
 
-class ShenandoahRendezvousClosure : public HandshakeClosure {
+class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
+  inline ShenandoahRendezvousHandshakeClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
 void ShenandoahHeap::rendezvous_threads(const char* name) {
-  ShenandoahRendezvousClosure cl(name);
+  ShenandoahRendezvousHandshakeClosure cl(name);
   Handshake::execute(&cl);
 }
 
@@ -2069,7 +2064,7 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
-    ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+    ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
   }
@@ -2488,9 +2483,6 @@ private:
       assert (update_watermark >= r->bottom(), "sanity");
       if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
-        }
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
@@ -2600,18 +2592,14 @@ bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool ski
   return false;
 }
 
-bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
+void ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
   shenandoah_assert_heaplocked();
-
-  // Bitmaps in special regions do not need commits
-  if (_bitmap_region_special) {
-    return true;
-  }
+  assert(!is_bitmap_region_special(), "Not for special memory");
 
   if (is_bitmap_slice_committed(r, true)) {
     // Some other region from the group is already committed, meaning the bitmap
     // slice is already committed, we exit right away.
-    return true;
+    return;
   }
 
   // Commit the bitmap slice:
@@ -2620,39 +2608,34 @@ bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
   size_t len = _bitmap_bytes_per_slice;
   char* start = (char*) _bitmap_region.start() + off;
 
-  if (!os::commit_memory(start, len, false)) {
-    return false;
-  }
+  os::commit_memory_or_exit(start, len, false, "Unable to commit bitmap slice");
 
   if (AlwaysPreTouch) {
     os::pretouch_memory(start, start + len, _pretouch_bitmap_page_size);
   }
-
-  return true;
 }
 
-bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
+void ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   shenandoah_assert_heaplocked();
-
-  // Bitmaps in special regions do not need uncommits
-  if (_bitmap_region_special) {
-    return true;
-  }
+  assert(!is_bitmap_region_special(), "Not for special memory");
 
   if (is_bitmap_slice_committed(r, true)) {
     // Some other region from the group is still committed, meaning the bitmap
     // slice should stay committed, exit right away.
-    return true;
+    return;
   }
 
   // Uncommit the bitmap slice:
   size_t slice = r->index() / _bitmap_regions_per_slice;
   size_t off = _bitmap_bytes_per_slice * slice;
   size_t len = _bitmap_bytes_per_slice;
-  if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len)) {
-    return false;
+
+  char* addr = (char*) _bitmap_region.start() + off;
+  bool success = os::uncommit_memory(addr, len);
+  if (!success) {
+    log_warning(gc)("Bitmap slice uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(addr), len);
+    assert(false, "Bitmap slice uncommit should always succeed");
   }
-  return true;
 }
 
 void ShenandoahHeap::forbid_uncommit() {
@@ -2795,41 +2778,15 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 
 HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
 #if INCLUDE_CDS_JAVA_HEAP
-  // CDS wants a continuous memory range to load a bunch of objects.
-  // This effectively bypasses normal allocation paths, and requires
-  // a bit of massaging to unbreak GC invariants.
+  // CDS wants a raw continuous memory range to load a bunch of objects itself.
+  // This is an unusual request, since all requested regions should be regular, not humongous.
+  //
+  // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
+  // as MIN_GC_REGION_ALIGNMENT.
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
-
-  // Easy case: a single regular region, no further adjustments needed.
-  if (!ShenandoahHeapRegion::requires_humongous(size)) {
-    return allocate_memory(req);
-  }
-
-  // Hard case: the requested size would cause a humongous allocation.
-  // We need to make sure it looks like regular allocation to the rest of GC.
-
-  // CDS code would guarantee no objects straddle multiple regions, as long as
-  // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
-  // point to deal with case when Shenandoah runs with smaller regions.
-  // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
-  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
-    return nullptr;
-  }
-
-  HeapWord* mem = allocate_memory(req);
-  size_t start_idx = heap_region_index_containing(mem);
-  size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-
-  // Flip humongous -> regular.
-  {
-    ShenandoahHeapLocker locker(lock(), false);
-    for (size_t c = start_idx; c < start_idx + num_regions; c++) {
-      get_region(c)->make_regular_bypass();
-    }
-  }
-
-  return mem;
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
+  return allocate_memory(req);
 #else
   assert(false, "Archive heap loader should not be available, should not be here");
   return nullptr;
@@ -2856,17 +2813,25 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
          "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
          p2i(cur), p2i(end));
 
-  // Region bounds are good.
-  ShenandoahHeapRegion* begin_reg = heap_region_containing(start);
-  ShenandoahHeapRegion* end_reg = heap_region_containing(end);
-  assert(begin_reg->is_regular(), "Must be");
-  assert(end_reg->is_regular(), "Must be");
-  assert(begin_reg->bottom() == start,
-         "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
-         p2i(start), p2i(begin_reg->bottom()));
-  assert(end_reg->top() == end,
-         "Must agree: archive-space-end: " PTR_FORMAT ", end-region-top: " PTR_FORMAT,
-         p2i(end), p2i(end_reg->top()));
+  // All regions in contiguous space have good state.
+  size_t begin_reg_idx = heap_region_index_containing(start);
+  size_t end_reg_idx   = heap_region_index_containing(end);
+
+  for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
+    ShenandoahHeapRegion* r = get_region(idx);
+    assert(r->is_regular(), "Must be regular");
+    assert(r->is_young(), "Must be young");
+    assert(idx == end_reg_idx || r->top() == r->end(),
+           "All regions except the last one should be full: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->top()), p2i(r->end()));
+    assert(idx != begin_reg_idx || r->bottom() == start,
+           "Archive space start should be at the bottom of first region: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->bottom()), p2i(start));
+    assert(idx != end_reg_idx || r->top() == end,
+           "Archive space end should be at the top of last region: " PTR_FORMAT " " PTR_FORMAT,
+           p2i(r->top()), p2i(end));
+  }
+
 #endif
 }
 

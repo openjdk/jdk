@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -111,6 +112,11 @@ public interface JavaLangAccess {
      * of this Executable's type annotations.
      */
     byte[] getRawExecutableTypeAnnotations(Executable executable);
+
+    /**
+     * Get the int value of the Class's class-file access flags.
+     */
+    int getClassFileAccessFlags(Class<?> klass);
 
     /**
      * Returns the elements of an enum class or null if the
@@ -302,15 +308,27 @@ public interface JavaLangAccess {
 
     /**
      * Count the number of leading positive bytes in the range.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
-    int uncheckedCountPositives(byte[] ba, int off, int len);
+    int countPositives(byte[] ba, int off, int len);
 
     /**
      * Count the number of leading non-zero ascii chars in the String.
      */
     int countNonZeroAscii(String s);
+
+    /**
+     * Constructs a new {@code String} with the supplied Latin1 bytes.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the byte array to the callee</b>, since the latter will not
+     * make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     */
+    String uncheckedNewStringWithLatin1Bytes(byte[] bytes);
 
     /**
      * Constructs a new {@code String} by decoding the specified byte array
@@ -344,16 +362,6 @@ public interface JavaLangAccess {
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
     byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
-
-    /**
-     * Returns a new string by decoding from the given UTF-8 bytes array.
-     *
-     * @param off the index of the first byte to decode
-     * @param len the number of bytes to decode
-     * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes.
-     */
-    String newStringUTF8NoRepl(byte[] bytes, int off, int len);
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -390,20 +398,20 @@ public interface JavaLangAccess {
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
      * {@code StringLatin1.inflate}.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
-    void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      *
      * @return the number of bytes successfully decoded, at most len
      */
-    int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Returns the initial `System.in` to determine if it is replaced
@@ -417,15 +425,19 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source array into
-     * the destination byte array, assuming that the encoding is ASCII
-     * compatible.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
      *
-     * @return the number of bytes successfully encoded, or 0 if none
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
      */
-    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
      * Set the cause of Throwable
@@ -545,12 +557,6 @@ public interface JavaLangAccess {
      * Removes the value of the current carrier thread's copy of a thread-local.
      */
     void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
-
-    /**
-     * Returns {@code true} if there is a value in the current carrier thread's copy of
-     * thread-local, even if that values is {@code null}.
-     */
-    boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
      * Returns the current thread's scoped values cache

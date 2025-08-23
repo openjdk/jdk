@@ -22,6 +22,7 @@
  *
  */
 
+
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
@@ -35,8 +36,8 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "cds/unregisteredClasses.hpp"
@@ -44,9 +45,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -76,7 +75,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
@@ -309,7 +308,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
     } else if (CDSConfig::is_dumping_preimage_static_archive()) {
       // When dumping the final static archive, we will unconditionally load and link all
-      // classes from tje preimage. We don't want to get a VerifyError when linking this class.
+      // classes from the preimage. We don't want to get a VerifyError when linking this class.
       return warn_excluded(k, "Unlinked class not supported by AOTConfiguration");
     }
   } else {
@@ -346,6 +345,13 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       aot_log_warning(aot)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
+  }
+
+  InstanceKlass* nest_host = k->nest_host_or_null();
+  if (nest_host != nullptr && nest_host != k && check_for_exclusion(nest_host, nullptr)) {
+    ResourceMark rm;
+    aot_log_warning(aot)("Skipping %s: nest_host class %s is excluded", k->name()->as_C_string(), nest_host->name()->as_C_string());
+    return true;
   }
 
   return false; // false == k should NOT be excluded
@@ -440,7 +446,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
-class UnregisteredClassesTable : public ResourceHashtable<
+class UnregisteredClassesTable : public HashTable<
   Symbol*, InstanceKlass*,
   15889, // prime number
   AnyObj::C_HEAP> {};
@@ -658,6 +664,11 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
     return false;
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+      // ik is already part of the static archive, so it will never be considered as excluded.
+      return false;
+    }
 
     if (!SafepointSynchronize::is_at_safepoint()) {
       if (!ik->is_linked()) {
@@ -1003,7 +1014,7 @@ void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlas
 }
 
 unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
-  if (ArchiveBuilder::is_active()) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({

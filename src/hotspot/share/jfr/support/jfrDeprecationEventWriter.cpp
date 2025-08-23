@@ -22,13 +22,13 @@
 *
 */
 
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "runtime/thread.inline.hpp"
 
 // This dual state machine for the level setting is because when multiple recordings are running,

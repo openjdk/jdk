@@ -297,7 +297,7 @@ public class BindingSpecializer {
         if (callingSequence.allocationSize() != 0) {
             cb.loadConstant(callingSequence.allocationSize())
               .invokestatic(CD_SharedUtils, "newBoundedArena", MTD_NEW_BOUNDED_ARENA);
-        } else if (callingSequence.forUpcall() && needsSession()) {
+        } else if (callingSequence.forUpcall() && anyArgNeedsScope()) {
             cb.invokestatic(CD_SharedUtils, "newEmptyArena", MTD_NEW_EMPTY_ARENA);
         } else {
             cb.getstatic(CD_SharedUtils, "DUMMY_ARENA", CD_Arena);
@@ -437,7 +437,7 @@ public class BindingSpecializer {
         cb.exceptionCatchAll(tryStart, tryEnd, catchStart);
     }
 
-    private boolean needsSession() {
+    private boolean anyArgNeedsScope() {
         return callingSequence.argumentBindings()
                 .filter(BoxAddress.class::isInstance)
                 .map(BoxAddress.class::cast)
@@ -590,7 +590,7 @@ public class BindingSpecializer {
         popType(long.class);
         cb.loadConstant(boxAddress.size())
           .loadConstant(boxAddress.align());
-        if (needsSession()) {
+        if (boxAddress.needsScope()) {
             emitLoadInternalSession();
             cb.invokestatic(CD_Utils, "longToAddress", MTD_LONG_TO_ADDRESS_SCOPE);
         } else {

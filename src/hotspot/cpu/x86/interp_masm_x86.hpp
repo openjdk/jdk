@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_by_constant(Register mdp_in, int constant);
   void update_mdp_for_ret(Register return_bci);
 
-  void profile_taken_branch(Register mdp, Register bumped_count);
+  void profile_taken_branch(Register mdp);
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
@@ -261,6 +261,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // support for jvmti/dtrace
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
+
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
 
  private:
 

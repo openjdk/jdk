@@ -199,5 +199,5 @@ public final class TokenReplace {
 
     private final String[] tokens;
     private final transient List<Pattern> regexps;
-    private final static Object NULL_SUPPLIED = new Object();
+    private static final Object NULL_SUPPLIED = new Object();
 }

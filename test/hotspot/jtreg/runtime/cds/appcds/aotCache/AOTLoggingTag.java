@@ -34,7 +34,6 @@
  * @run driver AOTLoggingTag
  */
 
-import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -59,7 +58,7 @@ public class AOTLoggingTag {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "train");
-        out.shouldContain("[info][aot] Writing binary AOTConfiguration file:");
+        out.shouldContain("[aot] Writing binary AOTConfiguration file:");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -71,7 +70,7 @@ public class AOTLoggingTag {
             "-Xlog:aot",
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("[info][aot] Opened AOT configuration file hello.aotconfig");
+        out.shouldContain("[aot] Opened AOT configuration file hello.aotconfig");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -81,7 +80,7 @@ public class AOTLoggingTag {
             "-Xlog:aot",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("[info][aot] Opened AOT cache hello.aot");
+        out.shouldContain("[aot] Opened AOT cache hello.aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -92,7 +91,7 @@ public class AOTLoggingTag {
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldNotContain("No tag set matches selection: aot+heap");
-        out.shouldContain("[info][aot,heap] resolve subgraph java.lang.Integer$IntegerCache");
+        out.shouldContain("[aot,heap] resolve subgraph java.lang.Integer$IntegerCache");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -102,7 +101,7 @@ public class AOTLoggingTag {
             "-XX:AOTMode=on",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("[error][aot] An error has occurred while processing the AOT cache. Run with -Xlog:aot for details.");
+        out.shouldContain("[aot] An error has occurred while processing the AOT cache. Run with -Xlog:aot for details.");
         out.shouldNotHaveExitValue(0);
     }
 

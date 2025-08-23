@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Red Hat Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,12 +115,14 @@ int CgroupV2CpuController::cpu_quota() {
 // Constructor
 CgroupV2Subsystem::CgroupV2Subsystem(CgroupV2MemoryController * memory,
                                      CgroupV2CpuController* cpu,
+                                     CgroupV2CpuacctController* cpuacct,
                                      CgroupV2Controller unified) :
                                      _unified(unified) {
   CgroupUtil::adjust_controller(memory);
   CgroupUtil::adjust_controller(cpu);
   _memory = new CachingCgroupController<CgroupMemoryController>(memory);
   _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _cpuacct = cpuacct;
 }
 
 bool CgroupV2Subsystem::is_containerized() {
@@ -152,6 +155,17 @@ int CgroupV2CpuController::cpu_period() {
   return period;
 }
 
+jlong CgroupV2CpuController::cpu_usage_in_micros() {
+  julong cpu_usage;
+  bool is_ok = reader()->read_numerical_key_value("/cpu.stat", "usage_usec", &cpu_usage);
+  if (!is_ok) {
+    log_trace(os, container)("CPU Usage failed: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("CPU Usage is: " JULONG_FORMAT, cpu_usage);
+  return (jlong)cpu_usage;
+}
+
 /* memory_usage_in_bytes
  *
  * Return the amount of used memory used by this cgroup and descendents
@@ -173,10 +187,16 @@ jlong CgroupV2MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   return mem_soft_limit;
 }
 
+jlong CgroupV2MemoryController::memory_throttle_limit_in_bytes() {
+  jlong mem_throttle_limit;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(reader(), "/memory.high", "Memory Throttle Limit", mem_throttle_limit);
+  return mem_throttle_limit;
+}
+
 jlong CgroupV2MemoryController::memory_max_usage_in_bytes() {
-  // Log this string at trace level so as to make tests happy.
-  log_trace(os, container)("Maximum Memory Usage is not supported.");
-  return OSCONTAINER_ERROR; // not supported
+  julong mem_max_usage;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.peak", "Maximum Memory Usage", mem_max_usage);
+  return mem_max_usage;
 }
 
 jlong CgroupV2MemoryController::rss_usage_in_bytes() {

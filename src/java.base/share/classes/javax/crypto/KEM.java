@@ -707,8 +707,8 @@ public final class KEM {
      * the same key can be used to derive shared secrets in different ways.
      * If any extra information inside this object needs to be transmitted along
      * with the key encapsulation message so that the receiver is able to create
-     * a matching decapsulator, it will be included as a byte array in the
-     * {@link Encapsulated#params} field inside the encapsulation output.
+     * a matching decapsulator, it will be included as a byte array returned by the
+     * {@link Encapsulated#params()} method within the encapsulation output.
      * In this case, the security provider should provide an
      * {@code AlgorithmParameters} implementation using the same algorithm name
      * as the KEM. The receiver can initiate such an {@code AlgorithmParameters}
