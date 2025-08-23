@@ -907,6 +907,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
+     * Appends the two-digit string representation of the {@code int}
+     * argument to this sequence.
+     * <p>
+     * The integer {@code i} is formatted as two decimal digits.
+     * If the value is between 0 and 9, it is formatted with a leading zero
+     * (e.g., 5 becomes "05"). If the value is outside the range 0-99,
+     * the behavior is unspecified and may result in unexpected output.
+     *
+     * @param   i   an {@code int} (should be between 0 and 99 inclusive).
+     * @throws  IndexOutOfBoundsException if {@code i} is outside the range 0-99.
+     */
+    void appendPair(int i) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
+        if (isLatin1(coder)) {
+            DecimalDigits.uncheckedPutPairLatin1(value, count, i);
+        } else {
+            DecimalDigits.uncheckedPutPairUTF16(value, count, i);
+        }
+        this.value = value;
+        this.count = count + 2;
+    }
+
+    /**
      * Appends the string representation of the {@code int}
      * argument to this sequence.
      * <p>

@@ -25,6 +25,7 @@
 
 package jdk.internal.util;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
@@ -442,5 +443,23 @@ public final class DecimalDigits {
     private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
         assert charPos >= 0 && charPos < (buf.length >> 1);
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
+    }
+
+    /**
+     * Appends the two-digit string representation of the {@code int}
+     * argument to the given {@code StringBuilder}.
+     * <p>
+     * The integer {@code v} is formatted as two decimal digits.
+     * If the value is between 0 and 9, it is formatted with a leading zero
+     * (e.g., 5 becomes "05"). If the value is outside the range 0-99,
+     * the behavior is unspecified.
+     *
+     * @param buf the {@code StringBuilder} to append to.
+     * @param v the {@code int} value (should be between 0 and 99 inclusive).
+     * @see jdk.internal.access.JavaLangAccess#appendPair(StringBuilder, int)
+     */
+    public static void appendPair(StringBuilder buf, int v) {
+        SharedSecrets.getJavaLangAccess()
+                     .appendPair(buf, v);
     }
 }
