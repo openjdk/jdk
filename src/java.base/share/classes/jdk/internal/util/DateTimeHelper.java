@@ -55,8 +55,9 @@ public final class DateTimeHelper {
             if (year < 0) {
                 buf.append('-');
             }
-            DecimalDigits.appendPair(buf, absYear / 100);
-            DecimalDigits.appendPair(buf, absYear % 100);
+            int y01 = absYear / 100;
+            DecimalDigits.appendPair(buf, y01);
+            DecimalDigits.appendPair(buf, absYear - y01 * 100);
         } else {
             if (year > 9999) {
                 buf.append('+');
