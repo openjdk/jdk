@@ -41,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
@@ -50,56 +51,67 @@ import javax.crypto.SecretKey;
 
 public class TestSymmCiphersNoPad extends PKCS11Test {
 
+    private record CI (String transformation, String keyAlgo, int dataSize){}  // record for holding Cipher Information
+
     private static final StringBuffer debugBuf = new StringBuffer();
 
-    private final String transformation;
-    private final String keyAlgo;
-    private final int dataSize;
-
-    public TestSymmCiphersNoPad(String transformation,
-                                String keyAlgo,
-                                int dataSize) {
-        this.transformation = transformation;
-        this.keyAlgo = keyAlgo;
-        this.dataSize = dataSize;
-    }
+    private static final CI[] TEST_LIST = {
+            new CI("ARCFOUR", "ARCFOUR", 400),
+            new CI("RC4", "RC4", 401),
+            new CI("DES/CBC/NoPadding", "DES", 400),
+            new CI("DESede/CBC/NoPadding", "DESede", 160),
+            new CI("AES/CBC/NoPadding", "AES", 4800),
+            new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
+            new CI("AES/CTR/NoPadding", "AES", 1600),
+            new CI("AES/CTR/NoPadding", "AES", 65),
+            new CI("AES/CTS/NoPadding", "AES", 1600),
+            new CI("AES/CTS/NoPadding", "AES", 65),
+    };
 
     @Override
     public void main(Provider p) throws Exception {
+        List<CI> skippedList = new ArrayList<>();
         Random random = new Random();
         try {
-            System.out.println("===" + transformation + "===");
-            try {
-                KeyGenerator kg =
-                        KeyGenerator.getInstance(keyAlgo, p);
-                SecretKey key = kg.generateKey();
-                Cipher c1 = Cipher.getInstance(transformation, p);
-                Cipher c2 = Cipher.getInstance(transformation,
-                        System.getProperty("test.provider.name", "SunJCE"));
+            for (CI currTest : TEST_LIST) {
+                System.out.println("===" + currTest.transformation + "===");
+                try {
+                    KeyGenerator kg =
+                            KeyGenerator.getInstance(currTest.keyAlgo, p);
+                    SecretKey key = kg.generateKey();
+                    Cipher c1 = Cipher.getInstance(currTest.transformation, p);
+                    Cipher c2 = Cipher.getInstance(currTest.transformation,
+                            System.getProperty("test.provider.name", "SunJCE"));
 
-                byte[] plainTxt = new byte[dataSize];
-                random.nextBytes(plainTxt);
-                System.out.println("Testing inLen = " + plainTxt.length);
+                    byte[] plainTxt = new byte[currTest.dataSize];
+                    random.nextBytes(plainTxt);
+                    System.out.println("Testing inLen = " + plainTxt.length);
 
-                c2.init(Cipher.ENCRYPT_MODE, key);
-                AlgorithmParameters params = c2.getParameters();
-                byte[] answer = c2.doFinal(plainTxt);
-                test(c1, Cipher.ENCRYPT_MODE, key, params,
-                        plainTxt, answer);
-                System.out.println("Encryption tests: DONE");
-                c2.init(Cipher.DECRYPT_MODE, key, params);
-                byte[] answer2 = c2.doFinal(answer);
-                test(c1, Cipher.DECRYPT_MODE, key, params,
-                        answer, answer2);
-                System.out.println("Decryption tests: DONE");
-            } catch (NoSuchAlgorithmException nsae) {
-                throw new SkippedException("Skipping unsupported algorithm: " +
-                                           nsae);
+                    c2.init(Cipher.ENCRYPT_MODE, key);
+                    AlgorithmParameters params = c2.getParameters();
+                    byte[] answer = c2.doFinal(plainTxt);
+                    test(c1, Cipher.ENCRYPT_MODE, key, params,
+                            plainTxt, answer);
+                    System.out.println("Encryption tests: DONE");
+                    c2.init(Cipher.DECRYPT_MODE, key, params);
+                    byte[] answer2 = c2.doFinal(answer);
+                    test(c1, Cipher.DECRYPT_MODE, key, params,
+                            answer, answer2);
+                    System.out.println("Decryption tests: DONE");
+                } catch (NoSuchAlgorithmException nsae) {
+                    System.out.println("Skipping unsupported algorithm: " +
+                                       nsae);
+                    skippedList.add(currTest);
+                }
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
             System.out.println(debugBuf);
             throw ex;
+        }
+
+        if (!skippedList.isEmpty()){
+            throw new SkippedException("Some tests skipped: " + skippedList);
         }
     }
 
@@ -225,32 +237,6 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-
-        final List<String[]> tests = List.of(
-                new String[]{"ARCFOUR", "ARCFOUR", "400"},
-                new String[]{"RC4", "RC4", "401"},
-                new String[]{"DES/CBC/NoPadding", "DES", "400"},
-                new String[]{"DESede/CBC/NoPadding", "DESede", "160"},
-                new String[]{"AES/CBC/NoPadding", "AES", "4800"},
-                new String[]{"Blowfish/CBC/NoPadding", "Blowfish", "24"},
-                new String[]{"AES/CTR/NoPadding", "AES", "1600"},
-                new String[]{"AES/CTR/NoPadding", "AES", "65"},
-                new String[]{"AES/CTS/NoPadding", "AES", "1600"},
-                new String[]{"AES/CTS/NoPadding", "AES", "65"}
-        );
-
-        boolean skipEncountered = false;
-        for (final String[] t : tests) {
-            try {
-                main(new TestSymmCiphersNoPad(t[0], t[1], Integer.parseInt(t[2])), args);
-            } catch (SkippedException skippedException) {
-                skippedException.printStackTrace(System.err);
-                skipEncountered = true;
-            }
-        }
-
-        if (skipEncountered) {
-            throw new SkippedException("One or more tests skipped");
-        }
+        main(new TestSymmCiphersNoPad(), args);
     }
 }

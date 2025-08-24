@@ -113,7 +113,7 @@ public class TestCipherMode extends PKCS11Test {
         }
 
         if (!skipped.isEmpty()) {
-            throw new SkippedException("Some tests failed: " + skipped);
+            throw new SkippedException("Some tests skipped: " + skipped);
         } else {
             System.out.println("All tests passed");
         }

@@ -127,7 +127,7 @@ public class TestSymmCiphers extends PKCS11Test {
         }
 
         if (!skippedList.isEmpty()){
-            throw new SkippedException("Some tests failed: " + skippedList);
+            throw new SkippedException("Some tests skipped: " + skippedList);
         }
     }
 
