@@ -1556,7 +1556,7 @@ for yourself. To enable it, make sure it's on the path and configure with
 ### Precompiled Headers
 
 By default, the Hotspot build uses pre-compiled headers (PCH) on the toolchains
-were it is properly supported (clang, gcc, and Visual Studio). Normally, this
+where it is properly supported (clang, gcc, and Visual Studio). Normally, this
 speeds up the build process, but in some circumstances, it can actually slow
 things down.
 
