@@ -74,6 +74,7 @@
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -1487,6 +1488,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_num_regions());
 
+  start_new_collection_set();
+
   allocation_failure_injector()->reset();
 
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
@@ -2793,8 +2796,6 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->stop_incremental_building();
 
   collection_set()->abandon_all_candidates();
-
-  young_regions_cset_group()->clear();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
@@ -3079,6 +3080,8 @@ void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != nullptr, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
@@ -3159,5 +3162,5 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
 void G1CollectedHeap::prepare_group_cardsets_for_scan() {
   young_regions_cardset()->reset_table_scanner_for_groups();
 
-  collection_set()->prepare_groups_for_scan();
+  collection_set()->prepare_for_scan();
 }

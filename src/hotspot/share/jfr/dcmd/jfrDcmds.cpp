@@ -24,8 +24,8 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "jfr/jfr.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
+#include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
