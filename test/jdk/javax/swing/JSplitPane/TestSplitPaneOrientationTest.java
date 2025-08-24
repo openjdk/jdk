@@ -68,7 +68,7 @@ public class TestSplitPaneOrientationTest {
             if (jsp.getRightComponent() instanceof JButton rightButton) {
                 sb.append(rightButton.getText());
             }
-            System.out.println(sb.toString());
+            System.out.println(sb);
         }
         if (jsp.getLeftComponent() == null) {
             throw new RuntimeException("JSplitPane repeated orientation change not working");
