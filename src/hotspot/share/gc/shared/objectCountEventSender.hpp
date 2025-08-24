@@ -46,7 +46,7 @@ class ObjectCountEventSender : public AllStatic {
   static inline void enable_requestable_event();
   static inline void disable_requestable_event();
 
-  template <class Event>
+  template <bool SeparateEventEmission>
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
 
   static bool should_send_event();

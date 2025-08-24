@@ -30,7 +30,6 @@
 #include "gc/shared/gcTrace.inline.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
@@ -86,7 +85,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure<EventObjectCountAfterGC, false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<false, false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }

@@ -264,6 +264,10 @@ size_t KlassInfoTable::size_of_instances_in_words() const {
   return _size_of_instances_in_words;
 }
 
+void KlassInfoTable::subtract_total_size(size_t instance_words) {
+  _size_of_instances_in_words -= instance_words;
+}
+
 // Return false if the entry could not be recorded on account
 // of running out of space required to create a new entry.
 bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
@@ -280,13 +284,11 @@ bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
   return false;
 }
 
-void KlassInfoTable::reset_size_of_instances_in_words() {
-  _size_of_instances_in_words = 0;
-}
-
 void KlassInfoTable::delete_entry(KlassInfoEntry* entry) {
   uint idx = hash(entry->klass()) % _num_buckets;
+  size_t words = entry->words();
   _buckets[idx].remove_from_list(entry);
+  _size_of_instances_in_words -= words;
 }
 
 class KlassInfoTableMergeClosure : public KlassInfoClosure {

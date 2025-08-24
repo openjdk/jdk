@@ -320,7 +320,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should not be at safepoint");
 
   #if INCLUDE_JFR
-  heap->tracer()->report_object_count<ShenandoahHeap, EventObjectCountAfterGC>();
+  heap->tracer()->report_object_count<ShenandoahHeap>();
   #endif // INCLUDE_JFR
 }
 

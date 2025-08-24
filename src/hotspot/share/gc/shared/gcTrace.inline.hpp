@@ -3,13 +3,19 @@
 
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/objectCountEventSender.inline.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "memory/heapInspection.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_SERVICES
 
-template <typename Event, bool ShouldDelete>
+// The ObjectCountEventSenderClosure will decide whether to delete
+// the entry and/or emit the ObjectCount and ObjectCountAfterGC
+// events separately. Only set the delete entry flag to true if the same
+// KlassInfoTable is being reused for this closure. The SeparateEventEmission
+// determines if only the ObjectCount event will be emitted instead of
+// ObjectCountAfterGC. If false, then both events will be emitted.
+
+template <bool DeleteEntry, bool SeparateEventEmission>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   size_t _total_size_in_words;
@@ -26,13 +32,18 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
-      ObjectCountEventSender::send<Event>(entry, _timestamp);
+      if (SeparateEventEmission) {
+        ObjectCountEventSender::send<true>(entry, _timestamp);
+      } else {
+        ObjectCountEventSender::send<false>(entry, _timestamp);
+      }
     }
 
     // If the same KlassInfoTable is being used for every event emission,
     // delete the entry even if we don't send it. This ensure live objects that
     // weren't sent in a previous event emission are not monotonically increasing.
-    if (ShouldDelete) {
+    if (DeleteEntry) {
+      assert(_cit != nullptr, "KlassInfoTable should be initialized");
       _cit->delete_entry(entry);
     }
   }
@@ -44,7 +55,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-template <typename T, class Event>
+template <typename T>
 void GCTracer::report_object_count() {
   if (!ObjectCountEventSender::should_send_event()) {
     return;
@@ -54,9 +65,9 @@ void GCTracer::report_object_count() {
   KlassInfoTable* cit = heap->get_cit();
 
   if (!cit->allocation_failed()) {
-    ObjectCountEventSenderClosure<Event, true> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
+    ObjectCountEventSenderClosure<true, true> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
     cit->iterate(&event_sender);
-    cit->reset_size_of_instances_in_words();
+    assert(cit->size_of_instances_in_words() == 0, "KlassInfoTable should be empty");
   }
 }
 

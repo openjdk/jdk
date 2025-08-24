@@ -129,14 +129,12 @@ class KlassInfoTable: public StackObj {
   void iterate(KlassInfoClosure* cic);
   bool allocation_failed() { return _buckets == nullptr; }
   size_t size_of_instances_in_words() const;
+  void subtract_total_size(size_t instance_words);
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
-  // Deletes the KlassInfoEntry in the list
+  // Deletes the KlassInfoEntry and subtracts the total size
+  // of instances from the entry's size.
   void delete_entry(KlassInfoEntry* entry);
-  // Reset the size of instances in words to 0. Only call this method
-  // after sending the KlassInfoTable for the ObjectCount or
-  // ObjectCountAfterGC event and deleting it's entries.
-  void reset_size_of_instances_in_words();
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };

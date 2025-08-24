@@ -27,19 +27,21 @@ void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, ju
   }
 }
 
-template <class Event>
+template <bool SeparateEventEmission>
 void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
   Klass* klass = entry->klass();
   jlong count = entry->count();
   julong total_size = entry->words() * BytesPerWord;
 
-  send_event_if_enabled<Event>(klass, count, total_size, timestamp);
-
-  // If sending ObjectCountAfterGCEvent and ObjectCountEvent is enabled,
-  // Then we should emit data to both of these events.
-  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent.
-  if (std::is_same<Event, EventObjectCountAfterGC>::value) {
+  // If this request of object counting was done by the ObjectCount event,
+  // emit data for only that event and not ObjectCountAfterGC. We know
+  // that if this condition fails, then object counting was triggered by 
+  // ObjectCountAfterGC.
+  if (SeparateEventEmission && _should_send_requestable_event) {
     send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
+  } else {
+    send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
+    send_event_if_enabled<EventObjectCountAfterGC>(klass, count, total_size, timestamp);
   }
 }
 
