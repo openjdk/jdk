@@ -3510,7 +3510,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             Arrays.fill(buf, off + 2, off + 2 - insertionPoint, (byte) '0');
             DecimalDigits.uncheckedGetCharsLatin1(intCompactAbs, buf.length, buf);
         }
-        return newStringNoRepl(buf);
+        return JLA.uncheckedNewStringWithLatin1Bytes(buf);
     }
 
     /* Returns a digit.digit string */
@@ -4206,7 +4206,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
             byte[] buf = new byte[coeffLen];
             DecimalDigits.uncheckedGetCharsLatin1(intCompactAbs, buf.length, buf);
-            coeff = newStringNoRepl(buf);
+            coeff = JLA.uncheckedNewStringWithLatin1Bytes(buf);
         } else {
             signum = signum();
             coeff = intVal.abs().toString();
@@ -4284,17 +4284,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
         buf[highIntSize] = '.';
         DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
-        return newStringNoRepl(buf);
+        return JLA.uncheckedNewStringWithLatin1Bytes(buf);
     }
-
-    private static String newStringNoRepl(byte[] buf) {
-        try {
-            return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
-        }
-    }
-
     private String unscaledString() {
         return intCompact != INFLATED
                 ? Long.toString(intCompact)
