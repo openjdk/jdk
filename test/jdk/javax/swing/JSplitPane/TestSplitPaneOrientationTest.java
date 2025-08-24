@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4265389
+ * @bug 4265389 8365886
  * @summary  Verifies JSplitPane support ComponentOrientation
  * @run main TestSplitPaneOrientationTest
  */
