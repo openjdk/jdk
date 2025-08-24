@@ -40,24 +40,25 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class TestCipherMode extends PKCS11Test {
 
+    private static final String[] TRANSFORMATIONS = {
+            "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding",
+            "RSA/ECB/PKCS1Padding"
+    };
+
     private static final byte[] BYTES16 =
             Arrays.copyOf("AES/ECB/PKCS5Padding".getBytes(), 16);
     private static SecretKey AES_KEY = new SecretKeySpec(BYTES16, "AES");
     private static PublicKey RSA_PUBKEY = null;
     private static PrivateKey RSA_PRIVKEY = null;
-
-    private final String transformation;
-
-    public TestCipherMode(String transformation) {
-        this.transformation = transformation;
-    }
 
     enum CipherMode {
         ENCRYPT(Cipher.ENCRYPT_MODE),
@@ -92,25 +93,7 @@ public class TestCipherMode extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        final String[] transformations = {
-                "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding", "RSA/ECB/PKCS1Padding"
-        };
-
-        boolean skipEncountered = false;
-        for (final String t : transformations) {
-            try {
-                main(new TestCipherMode(t), args);
-            } catch (SkippedException skippedException) {
-                // printing to System.out, so it's easier to see which test it relates to
-                skippedException.printStackTrace(System.out);
-                skipEncountered = true;
-            }
-        }
-
-        if (skipEncountered) {
-            throw new SkippedException("One or more transformations skipped");
-        }
-
+        main(new TestCipherMode(), args);
     }
 
     @Override
@@ -118,8 +101,22 @@ public class TestCipherMode extends PKCS11Test {
 
         // test all cipher impls, e.g. P11Cipher, P11AEADCipher, and
         // P11RSACipher
-        checkModes(transformation, p);
-        System.out.println("All tests passed");
+        List<String> skipped = new ArrayList<>();
+        for (final String t : TRANSFORMATIONS) {
+            try {
+                checkModes(t, p);
+            } catch (SkippedException skippedException) {
+                // printing to System.out, so it's easier to see which test it relates to
+                skippedException.printStackTrace(System.out);
+                skipped.add(t);
+            }
+        }
+
+        if (!skipped.isEmpty()) {
+            throw new SkippedException("Some tests failed: " + skipped);
+        } else {
+            System.out.println("All tests passed");
+        }
     }
 
     private static void checkModes(String t, Provider p) throws Exception {

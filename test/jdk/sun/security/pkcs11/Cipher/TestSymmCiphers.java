@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphers
-*/
+ */
 
 import jtreg.SkippedException;
 
@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
@@ -47,61 +48,86 @@ import javax.crypto.SecretKey;
 
 public class TestSymmCiphers extends PKCS11Test {
 
+    private record CI (String transformation, String keyAlgo, int dataSize){}  // record for holding Cipher Information
+
+    private static final CI[] TEST_LIST = {
+            new CI("ARCFOUR", "ARCFOUR", 400),
+            new CI("RC4", "RC4", 401),
+            new CI("DES/CBC/NoPadding", "DES", 400),
+            new CI("DESede/CBC/NoPadding", "DESede", 160),
+            new CI("AES/CBC/NoPadding", "AES", 4800),
+            new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
+            new CI("DES/cbc/PKCS5Padding", "DES", 6401),
+            new CI("DESede/CBC/PKCS5Padding", "DESede", 402),
+            new CI("AES/CBC/PKCS5Padding", "AES", 30),
+            new CI("Blowfish/CBC/PKCS5Padding", "Blowfish", 19),
+            new CI("DES/ECB/NoPadding", "DES", 400),
+            new CI("DESede/ECB/NoPadding", "DESede", 160),
+            new CI("AES/ECB/NoPadding", "AES", 4800),
+            new CI("DES/ECB/PKCS5Padding", "DES", 32),
+            new CI("DES/ECB/PKCS5Padding", "DES", 6400),
+            new CI("DESede/ECB/PKCS5Padding", "DESede", 400),
+            new CI("AES/ECB/PKCS5Padding", "AES", 64),
+
+            new CI("DES", "DES", 6400),
+            new CI("DESede", "DESede", 408),
+            new CI("AES", "AES", 128),
+
+            new CI("AES/CTR/NoPadding", "AES", 3200),
+            new CI("AES/CTS/NoPadding", "AES", 3200),
+
+    };
     private static final StringBuffer debugBuf = new StringBuffer();
-
-    private final String transformation;
-    private final String keyAlgo;
-    private final int dataSize;
-
-    public TestSymmCiphers(String transformation,
-                           String keyAlgo,
-                           int dataSize) {
-        this.transformation = transformation;
-        this.keyAlgo = keyAlgo;
-        this.dataSize = dataSize;
-    }
 
     @Override
     public void main(Provider p) throws Exception {
         // NSS reports CKR_DEVICE_ERROR when the data passed to
         // its EncryptUpdate/DecryptUpdate is not multiple of blocks
         int firstBlkSize = 16;
+        List<CI> skippedList = new ArrayList<>();
         Random random = new Random();
         try {
-            System.out.println("===" + transformation + "===");
-            try {
-                KeyGenerator kg =
-                        KeyGenerator.getInstance(keyAlgo, p);
-                SecretKey key = kg.generateKey();
-                Cipher c1 = Cipher.getInstance(transformation, p);
-                Cipher c2 = Cipher.getInstance(transformation,
-                        System.getProperty("test.provider.name", "SunJCE"));
+            for (CI currTest : TEST_LIST) {
+                System.out.println("===" + currTest.transformation + "===");
+                try {
+                    KeyGenerator kg =
+                            KeyGenerator.getInstance(currTest.keyAlgo, p);
+                    SecretKey key = kg.generateKey();
+                    Cipher c1 = Cipher.getInstance(currTest.transformation, p);
+                    Cipher c2 = Cipher.getInstance(currTest.transformation,
+                            System.getProperty("test.provider.name", "SunJCE"));
 
-                byte[] plainTxt = new byte[dataSize];
-                random.nextBytes(plainTxt);
-                System.out.println("Testing inLen = " + plainTxt.length);
+                    byte[] plainTxt = new byte[currTest.dataSize];
+                    random.nextBytes(plainTxt);
+                    System.out.println("Testing inLen = " + plainTxt.length);
 
-                c2.init(Cipher.ENCRYPT_MODE, key);
-                AlgorithmParameters params = c2.getParameters();
-                byte[] answer = c2.doFinal(plainTxt);
-                System.out.println("Encryption tests: START");
-                test(c1, Cipher.ENCRYPT_MODE, key, params, firstBlkSize,
-                        plainTxt, answer);
-                System.out.println("Encryption tests: DONE");
-                c2.init(Cipher.DECRYPT_MODE, key, params);
-                byte[] answer2 = c2.doFinal(answer);
-                System.out.println("Decryption tests: START");
-                test(c1, Cipher.DECRYPT_MODE, key, params, firstBlkSize,
-                        answer, answer2);
-                System.out.println("Decryption tests: DONE");
-            } catch (NoSuchAlgorithmException nsae) {
-                throw new SkippedException("Skipping unsupported algorithm: " +
-                                           nsae);
+                    c2.init(Cipher.ENCRYPT_MODE, key);
+                    AlgorithmParameters params = c2.getParameters();
+                    byte[] answer = c2.doFinal(plainTxt);
+                    System.out.println("Encryption tests: START");
+                    test(c1, Cipher.ENCRYPT_MODE, key, params, firstBlkSize,
+                            plainTxt, answer);
+                    System.out.println("Encryption tests: DONE");
+                    c2.init(Cipher.DECRYPT_MODE, key, params);
+                    byte[] answer2 = c2.doFinal(answer);
+                    System.out.println("Decryption tests: START");
+                    test(c1, Cipher.DECRYPT_MODE, key, params, firstBlkSize,
+                            answer, answer2);
+                    System.out.println("Decryption tests: DONE");
+                } catch (NoSuchAlgorithmException nsae) {
+                    System.out.println("Skipping unsupported algorithm: " +
+                                       nsae);
+                    skippedList.add(currTest);
+                }
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
             System.out.println(debugBuf);
             throw ex;
+        }
+
+        if (!skippedList.isEmpty()){
+            throw new SkippedException("Some tests failed: " + skippedList);
         }
     }
 
@@ -112,6 +138,7 @@ public class TestSymmCiphers extends PKCS11Test {
         long startTime, endTime;
         cipher.init(mode, key, params);
         int outLen = cipher.getOutputSize(in.length);
+        //debugOut("Estimated output size = " + outLen + "\n");
 
         // test data preparation
         ByteBuffer inBuf = ByteBuffer.allocate(in.length);
@@ -124,6 +151,8 @@ public class TestSymmCiphers extends PKCS11Test {
         ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
 
         // test#1: byte[] in + byte[] out
+        //debugOut("Test#1:\n");
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         startTime = System.nanoTime();
@@ -141,6 +170,10 @@ public class TestSymmCiphers extends PKCS11Test {
         match(testOut1, answer);
 
         // test#2: Non-direct Buffer in + non-direct Buffer out
+        //debugOut("Test#2:\n");
+        //debugOut("inputBuf: " + inBuf + "\n");
+        //debugOut("outputBuf: " + outBuf + "\n");
+
         startTime = System.nanoTime();
         cipher.update(inBuf, outBuf);
         cipher.doFinal(inBuf, outBuf);
@@ -149,17 +182,26 @@ public class TestSymmCiphers extends PKCS11Test {
         match(outBuf, answer);
 
         // test#3: Direct Buffer in + direc Buffer out
+        //debugOut("Test#3:\n");
+        //debugOut("(pre) inputBuf: " + inDirectBuf + "\n");
+        //debugOut("(pre) outputBuf: " + outDirectBuf + "\n");
+
         startTime = System.nanoTime();
         cipher.update(inDirectBuf, outDirectBuf);
         cipher.doFinal(inDirectBuf, outDirectBuf);
         endTime = System.nanoTime();
         perfOut("direct InBuf + direct OutBuf", endTime - startTime);
 
+        //debugOut("(post) inputBuf: " + inDirectBuf + "\n");
+        //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
         match(outDirectBuf, answer);
 
         // test#4: Direct Buffer in + non-direct Buffer out
+        //debugOut("Test#4:\n");
         inDirectBuf.position(0);
         outBuf.position(0);
+        //debugOut("inputBuf: " + inDirectBuf + "\n");
+        //debugOut("outputBuf: " + outBuf + "\n");
 
         startTime = System.nanoTime();
         cipher.update(inDirectBuf, outBuf);
@@ -169,8 +211,12 @@ public class TestSymmCiphers extends PKCS11Test {
         match(outBuf, answer);
 
         // test#5: Non-direct Buffer in + direct Buffer out
+        //debugOut("Test#5:\n");
         inBuf.position(0);
         outDirectBuf.position(0);
+
+        //debugOut("(pre) inputBuf: " + inBuf + "\n");
+        //debugOut("(pre) outputBuf: " + outDirectBuf + "\n");
 
         startTime = System.nanoTime();
         cipher.update(inBuf, outDirectBuf);
@@ -178,6 +224,8 @@ public class TestSymmCiphers extends PKCS11Test {
         endTime = System.nanoTime();
         perfOut("non-direct InBuf + direct OutBuf", endTime - startTime);
 
+        //debugOut("(post) inputBuf: " + inBuf + "\n");
+        //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
         match(outDirectBuf, answer);
 
         debugBuf.setLength(0);
@@ -215,47 +263,6 @@ public class TestSymmCiphers extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-
-        final List<String[]> tests = List.of(
-                new String[]{"ARCFOUR", "ARCFOUR", "400"},
-                new String[]{"RC4", "RC4", "401"},
-                new String[]{"DES/CBC/NoPadding", "DES", "400"},
-                new String[]{"DESede/CBC/NoPadding", "DESede", "160"},
-                new String[]{"AES/CBC/NoPadding", "AES", "4800"},
-                new String[]{"Blowfish/CBC/NoPadding", "Blowfish", "24"},
-                new String[]{"DES/cbc/PKCS5Padding", "DES", "6401"},
-                new String[]{"DESede/CBC/PKCS5Padding", "DESede", "402"},
-                new String[]{"AES/CBC/PKCS5Padding", "AES", "30"},
-                new String[]{"Blowfish/CBC/PKCS5Padding", "Blowfish", "19"},
-                new String[]{"DES/ECB/NoPadding", "DES", "400"},
-                new String[]{"DESede/ECB/NoPadding", "DESede", "160"},
-                new String[]{"AES/ECB/NoPadding", "AES", "4800"},
-                new String[]{"DES/ECB/PKCS5Padding", "DES", "32"},
-                new String[]{"DES/ECB/PKCS5Padding", "DES", "6400"},
-                new String[]{"DESede/ECB/PKCS5Padding", "DESede", "400"},
-                new String[]{"AES/ECB/PKCS5Padding", "AES", "64"},
-
-                new String[]{"DES", "DES", "6400"},
-                new String[]{"DESede", "DESede", "408"},
-                new String[]{"AES", "AES", "128"},
-
-                new String[]{"AES/CTR/NoPadding", "AES", "3200"},
-                new String[]{"AES/CTS/NoPadding", "AES", "3200"}
-
-        );
-
-        boolean skipEncountered = false;
-        for (final String[] t : tests) {
-            try {
-                main(new TestSymmCiphers(t[0], t[1], Integer.parseInt(t[2])), args);
-            } catch (SkippedException skippedException) {
-                skippedException.printStackTrace(System.err);
-                skipEncountered = true;
-            }
-        }
-
-        if (skipEncountered) {
-            throw new SkippedException("One or more tests skipped");
-        }
+        main(new TestSymmCiphers(), args);
     }
 }
