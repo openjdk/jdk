@@ -179,7 +179,7 @@ void KlassInfoBucket::remove_from_list(KlassInfoEntry*& entry) {
     entry = nullptr;
   }
 
-  assert(entry == nullptr, "Entry was not deleted");
+  guarantee(false, "Entry not found.");
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {

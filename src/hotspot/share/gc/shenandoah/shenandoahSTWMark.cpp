@@ -131,7 +131,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
         ShenandoahObjectCountClosure _count(&local_cit);
         ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &_count);
         _root_scanner.roots_do(&init_mark, worker_id);
-        _count.merge_tables(main_cit);
+        _count.merge_table(main_cit);
       } else {
         ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
         _root_scanner.roots_do(&init_mark, worker_id);

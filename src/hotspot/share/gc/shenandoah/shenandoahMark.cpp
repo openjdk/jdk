@@ -78,7 +78,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
       using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
       Closure cl(q, rp, old_q, &_count);
       mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-      _count.merge_tables(main_cit);
+      _count.merge_table(main_cit);
     } else {
       using Closure = ShenandoahMarkRefsClosure<GENERATION>;
       Closure cl(q, rp, old_q);

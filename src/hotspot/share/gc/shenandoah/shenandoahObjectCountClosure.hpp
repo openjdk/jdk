@@ -14,6 +14,8 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
+    // No need to check if o is null because that was
+    // previously done by the marking.
     oop obj = CompressedOops::decode_not_null(o);
     _cit->record_instance(obj);
   }
@@ -26,8 +28,9 @@ public:
   inline void do_oop(oop* o) { do_oop_work(o); }
   inline KlassInfoTable* get_table() { return _cit; }
 
-  // Merges the heap's KlassInfoTable with the thread's KlassInfoTable
-  void merge_tables(KlassInfoTable* main_cit);
+  // Merges the heap's KlassInfoTable with the thread's KlassInfoTable.
+  // Clears the thread's table, so it won't be used again.
+  void merge_table(KlassInfoTable* main_cit);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOBJECTCOUNTCLOSURE_HPP

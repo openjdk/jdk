@@ -656,7 +656,7 @@ inline void ShenandoahHeap::set_cit(KlassInfoTable* cit) {
 }
 
 inline KlassInfoTable* ShenandoahHeap::get_cit() {
-  assert(_cit != nullptr, "Should be initialized");
+  assert(_cit != nullptr, "KlassInfoTable for Shenandoah should be initialized");
   return _cit;
 }
 

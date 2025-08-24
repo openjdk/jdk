@@ -74,7 +74,7 @@ private:
 
 protected:
   template <class T, ShenandoahGenerationType GENERATION>
-  // Return true if object was not previously marked by another thread
+  // Return true if object was not previously marked strong by another thread.
   bool work(T *p);
 
 public:
@@ -115,9 +115,9 @@ private:
   
   template <class T>
   inline void do_oop_work(T* p) {
-    // Count newly marked strong references to avoid double counting
-    bool newly_marked = work<T, GENERATION>(p);
-    if (newly_marked) {
+    // Count newly marked strong references to avoid double counting.
+    bool newly_marked_strong = work<T, GENERATION>(p);
+    if (newly_marked_strong) {
       _count->do_oop(p);
     }
   }

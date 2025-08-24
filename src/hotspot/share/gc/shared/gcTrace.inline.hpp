@@ -9,11 +9,11 @@
 #if INCLUDE_SERVICES
 
 // The ObjectCountEventSenderClosure will decide whether to delete
-// the entry and/or emit the ObjectCount and ObjectCountAfterGC
-// events separately. Only set the delete entry flag to true if the same
-// KlassInfoTable is being reused for this closure. The SeparateEventEmission
-// determines if only the ObjectCount event will be emitted instead of
-// ObjectCountAfterGC. If false, then both events will be emitted.
+// the entry and/or emit the ObjectCount event separately. Only set
+// the delete entry flag to true if the same KlassInfoTable is being
+// reused for this closure. The SeparateEventEmissios determines if
+// only the ObjectCount event will be emitted instead of ObjectCountAfterGC.
+// If false, then both events will be emitted.
 
 template <bool DeleteEntry, bool SeparateEventEmission>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
@@ -65,6 +65,9 @@ void GCTracer::report_object_count() {
   KlassInfoTable* cit = heap->get_cit();
 
   if (!cit->allocation_failed()) {
+    // Delete the entry of the KlassInfoTable since the table is local to the
+    // heap and will be reused again. Allow for separate event emission because
+    // to distinguish what event triggered this method.
     ObjectCountEventSenderClosure<true, true> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
     cit->iterate(&event_sender);
     assert(cit->size_of_instances_in_words() == 0, "KlassInfoTable should be empty");
