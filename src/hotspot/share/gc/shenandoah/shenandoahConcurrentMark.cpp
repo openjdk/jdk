@@ -173,7 +173,7 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ?
           nullptr : _old_queue_set->queue(worker_id);
 
-  // Use object counting closure if ObjectCountAfterGC event is enabled
+  // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
   const bool object_count_enabled = ObjectCountEventSender::should_send_event();
   if (object_count_enabled) {
     KlassInfoTable* const main_cit = ShenandoahHeap::heap()->get_cit();

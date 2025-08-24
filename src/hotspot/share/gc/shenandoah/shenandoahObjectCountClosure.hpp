@@ -28,9 +28,6 @@ public:
 
   // Merges the heap's KlassInfoTable with the thread's KlassInfoTable
   void merge_tables(KlassInfoTable* main_cit);
-
-private:
-  Mutex* get_mutex();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOBJECTCOUNTCLOSURE_HPP

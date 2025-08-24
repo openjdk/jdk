@@ -123,7 +123,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      // Use object counting closure if ObjectCountAfterGC event is enabled
+     // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
       const bool object_count_enabled = ObjectCountEventSender::should_send_event();
       if (object_count_enabled) {
         KlassInfoTable* const main_cit = ShenandoahHeap::heap()->get_cit();
