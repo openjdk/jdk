@@ -55,6 +55,7 @@ public class TestStylesheet extends JavadocTester {
 
     @Test
     public void test(Path base) {
+        setUseDefaultOptions(false);
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", testSrc,
                 "pkg");
