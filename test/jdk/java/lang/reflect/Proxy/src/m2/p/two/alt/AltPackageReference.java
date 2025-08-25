@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,14 @@
  * questions.
  */
 
-package p.two;
+package p.two.alt;
 
-// Package-private interface, exposed in public methods.
-// Has publicly accessible supertype and subtype for
-// proxy public method usage.
-interface B extends Cloneable {
+/**
+ * Used in combination with WithPackageReference to test rejection
+ * behavior.
+ */
+public interface AltPackageReference extends PackageInterface {
+    void process(PackageInterface input);
 }
+
+interface PackageInterface {}
