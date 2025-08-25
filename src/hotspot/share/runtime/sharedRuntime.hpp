@@ -667,7 +667,7 @@ class SharedRuntime: AllStatic {
     os::verify_stack_alignment();
     DEBUG_ONLY(NoSafepointVerifier __nsv;)
 
-    tty->print("%s\n", str);
+    tty->print_cr("%s", str);
     debug_print_rec(args...);
   }
 #endif // COMPILER2
