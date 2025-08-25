@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,25 @@
  *
  */
 
-#ifndef LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
-#define LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
+#include "phasetype.hpp"
 
-#include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
-#include "utilities/macros.hpp"
-
-#include <csignal>
-#include <ctime>
-
-class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
-#ifdef ASSERT
- public:
-  static const int TIMEOUT_SIGNAL = SIGALRM;
-  void compiler_signal_handler(int signo, siginfo_t* info, void* context);
- private:
-  timer_t          _timer;
-#endif // ASSERT
- public:
-  CompilerThreadTimeoutLinux() DEBUG_ONLY(: _timer(nullptr)) {};
-
-  bool init_timeout();
-  void arm();
-  void disarm();
+const char* const CompilerPhaseTypeHelper::_phase_descriptions[] = {
+#define array_of_labels(name, description) description,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
 };
 
-#endif //LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
+const char* const CompilerPhaseTypeHelper::_phase_names[] = {
+#define array_of_labels(name, description) #name,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
+};
+
+CompilerPhaseType CompilerPhaseTypeHelper::find_phase(const char* str) {
+  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
+    if (strcmp(CompilerPhaseTypeHelper::_phase_names[i], str) == 0) {
+      return (CompilerPhaseType)i;
+    }
+  }
+  return PHASE_NONE;
+}

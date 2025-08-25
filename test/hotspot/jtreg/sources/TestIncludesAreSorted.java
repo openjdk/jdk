@@ -54,6 +54,7 @@ public class TestIncludesAreSorted {
                     "share/jfr",
                     "share/jvmci",
                     "share/libadt",
+                    "share/logging",
                     "share/metaprogramming",
                     "share/oops",
                     "share/opto",
