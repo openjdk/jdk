@@ -98,7 +98,7 @@ public final class RequestPublishers {
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             List<ByteBuffer> copy = copy(content, offset, length);
-            var delegate = new PullPublisher<>(copy);
+            var delegate = new PullPublisher<>(CheckedIterable.fromIterable(copy));
             delegate.subscribe(subscriber);
         }
 
@@ -171,7 +171,7 @@ public final class RequestPublishers {
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            Iterable<ByteBuffer> iterable = this::iterator;
+            CheckedIterable<ByteBuffer> iterable = () -> CheckedIterator.fromIterator(iterator());
             var delegate = new PullPublisher<>(iterable);
             delegate.subscribe(subscriber);
         }
@@ -207,7 +207,7 @@ public final class RequestPublishers {
 
     public static class EmptyPublisher implements BodyPublisher {
         private final Flow.Publisher<ByteBuffer> delegate =
-                new PullPublisher<ByteBuffer>(Collections.emptyList(), null);
+                new PullPublisher<>(CheckedIterable.fromIterable(Collections.emptyList()), null);
 
         @Override
         public long contentLength() {
@@ -289,7 +289,7 @@ public final class RequestPublishers {
     /**
      * Reads one buffer ahead all the time, blocking in hasNext()
      */
-    public static class StreamIterator implements Iterator<ByteBuffer> {
+    public static class StreamIterator implements CheckedIterator<ByteBuffer> {
         final InputStream is;
         final Supplier<? extends ByteBuffer> bufSupplier;
         private volatile boolean eof;
@@ -330,20 +330,8 @@ public final class RequestPublishers {
             return n;
         }
 
-        /**
-         * Close stream in this instance.
-         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
-         */
-        private void closeStream() {
-            try {
-                is.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
         @Override
-        public boolean hasNext() {
+        public boolean hasNext() throws IOException {
             stateLock.lock();
             try {
                 return hasNext0();
@@ -352,7 +340,7 @@ public final class RequestPublishers {
             }
         }
 
-        private boolean hasNext0() {
+        private boolean hasNext0() throws IOException {
             if (need2Read) {
                 try {
                     haveNext = read() != -1;
@@ -362,10 +350,10 @@ public final class RequestPublishers {
                 } catch (IOException e) {
                     haveNext = false;
                     need2Read = false;
-                    throw new UncheckedIOException(e);
+                    throw new IOException(e);
                 } finally {
                     if (!haveNext) {
-                        closeStream();
+                        is.close();
                     }
                 }
             }
@@ -373,7 +361,7 @@ public final class RequestPublishers {
         }
 
         @Override
-        public ByteBuffer next() {
+        public ByteBuffer next() throws IOException {
             stateLock.lock();
             try {
                 if (!hasNext()) {
@@ -408,7 +396,7 @@ public final class RequestPublishers {
             publisher.subscribe(subscriber);
         }
 
-        protected Iterable<ByteBuffer> iterableOf(InputStream is) {
+        CheckedIterable<ByteBuffer> iterableOf(InputStream is) {
             return () -> new StreamIterator(is);
         }
 
