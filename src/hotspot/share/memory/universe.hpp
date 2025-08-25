@@ -185,15 +185,24 @@ class Universe: AllStatic {
   static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
   static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
+  static ObjArrayKlass* objectArrayKlass() {
+    ObjArrayKlass* k = _objectArrayKlass;
+    assert(k != nullptr, "Object array klass should be initialized; too early?");
+    return k;
+  }
 
-  static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
+  static Klass* fillerArrayKlass() {
+    Klass* k = _fillerArrayKlass;
+    assert(k != nullptr, "Filler array class should be initialized; too early?");
+    return k;
+  }
 
   static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlasses[t] != nullptr, "domain check");
-    return _typeArrayKlasses[t];
+    TypeArrayKlass* k = _typeArrayKlasses[t];
+    assert(k != nullptr, "Type array class should be initialized; too early?");
+    return k;
   }
 
   // Known objects in the VM
@@ -295,6 +304,8 @@ class Universe: AllStatic {
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
+
+  static void before_exit();
 
   DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
