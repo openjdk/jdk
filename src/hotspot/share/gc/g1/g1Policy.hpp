@@ -101,7 +101,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _card_rs_length;
+  DEBUG_ONLY(size_t _num_young_rem_set_cards_at_start;)
 
   size_t _pending_cards_at_gc_start;
 
@@ -127,10 +127,6 @@ public:
   void set_region_survivor(G1HeapRegion* hr) {
     assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
-  }
-
-  void record_card_rs_length(size_t card_rs_length) {
-    _card_rs_length = card_rs_length;
   }
 
   double cur_pause_start_sec() const {
