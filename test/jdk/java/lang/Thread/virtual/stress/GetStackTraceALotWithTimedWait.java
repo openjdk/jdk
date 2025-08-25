@@ -25,13 +25,13 @@
  * @test
  * @summary Stress test Thread.getStackTrace on a virtual thread in timed-Object.wait
  * @requires vm.debug != true
- * @run main GetStackTraceALotWithTimedWait 100000
+ * @run main/timeout=480 GetStackTraceALotWithTimedWait 100000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @run main GetStackTraceALotWithTimedWait 50000
+ * @run main/timeout=480 GetStackTraceALotWithTimedWait 50000
  */
 
 import java.time.Instant;
@@ -88,4 +88,3 @@ public class GetStackTraceALotWithTimedWait {
         }
     }
 }
-

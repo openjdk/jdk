@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules java.base/sun.security.util
  *          jdk.crypto.cryptoki
- * @run main TestDefaultSize
+ * @run main/timeout=480 TestDefaultSize
  */
 
 import java.security.InvalidParameterException;

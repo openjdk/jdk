@@ -28,7 +28,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver/timeout=180 compiler.jsr292.ContinuousCallSiteTargetChange
+ * @run driver/timeout=720 compiler.jsr292.ContinuousCallSiteTargetChange
  */
 
 package compiler.jsr292;

@@ -30,7 +30,7 @@ import java.util.ArrayList;
   * @test
   * @bug 8340313
   * @summary Test that concurrent patching of oop immediates is thread-safe in C1.
-  * @run main/othervm/timeout=480 -Xcomp -XX:CompileCommand=compileonly,TestConcurrentPatching::* -XX:TieredStopAtLevel=1 TestConcurrentPatching
+  * @run main/othervm/timeout=1920 -Xcomp -XX:CompileCommand=compileonly,TestConcurrentPatching::* -XX:TieredStopAtLevel=1 TestConcurrentPatching
   */
 
 class MyClass { }

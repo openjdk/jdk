@@ -35,7 +35,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
- * @run main/othervm ClhsdbThreadContext
+ * @run main/othervm/timeout=480 ClhsdbThreadContext
  */
 
 public class ClhsdbThreadContext {

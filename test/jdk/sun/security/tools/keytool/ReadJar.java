@@ -34,7 +34,7 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @run main ReadJar
+ * @run main/timeout=480 ReadJar
  */
 
 import java.nio.file.Files;

@@ -30,7 +30,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @build GetFreeSwapSpaceSize
- * @run driver TestGetFreeSwapSpaceSize
+ * @run driver/timeout=480 TestGetFreeSwapSpaceSize
  */
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;

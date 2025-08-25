@@ -37,6 +37,5 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native -agentlib:rawmnwait001 nsk.jvmti.RawMonitorWait.rawmnwait001
+ * @run main/othervm/native/timeout=480 -agentlib:rawmnwait001 nsk.jvmti.RawMonitorWait.rawmnwait001
  */
-

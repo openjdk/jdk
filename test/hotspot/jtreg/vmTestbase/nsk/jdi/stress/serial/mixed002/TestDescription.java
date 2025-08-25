@@ -63,7 +63,7 @@
  *        nsk.share.jdi.MonitorEventsDebuggee
  *
  * @build nsk.share.jdi.SerialExecutionDebugger
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=480
  *      nsk.share.jdi.SerialExecutionDebugger
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -76,4 +76,3 @@
  *      -configFile ${test.src}/mixed002.tests
  *      -testWorkDir .
  */
-

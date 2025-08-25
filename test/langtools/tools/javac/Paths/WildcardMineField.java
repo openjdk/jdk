@@ -27,7 +27,7 @@
  * @summary Test classpath wildcards for javac and java -classpath option.
  * @library /tools/lib
  * @build toolbox.ToolBox Util WildcardMineField
- * @run main WildcardMineField
+ * @run main/timeout=480 WildcardMineField
  */
 
 /*

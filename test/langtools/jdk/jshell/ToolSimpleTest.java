@@ -35,7 +35,7 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  *          java.desktop
  * @build KullaTesting TestingInputStream
- * @run testng ToolSimpleTest
+ * @run testng/timeout=480 ToolSimpleTest
  */
 
 import java.util.ArrayList;

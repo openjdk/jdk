@@ -28,8 +28,8 @@
  * @library /test/lib /
  * @requires vm.debug & vm.compiler2.enabled
  * @compile -XDstringConcat=inline TestScalarReplacementMaxLiveNodes.java
- * @run main/othervm compiler.c2.TestScalarReplacementMaxLiveNodes
- * @run main/othervm -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
+ * @run main/othervm/timeout=480 compiler.c2.TestScalarReplacementMaxLiveNodes
+ * @run main/othervm/timeout=480 -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+ReduceAllocationMerges
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestScalarReplacementMaxLiveNodes::test
  *                   -XX:CompileCommand=compileonly,*TestScalarReplacementMaxLiveNodes*::*test*

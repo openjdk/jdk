@@ -62,7 +62,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
- * @run driver
+ * @run driver/timeout=480
  *      nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

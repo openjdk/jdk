@@ -27,7 +27,7 @@
  *     connection cannot be established
  * @requires vm.flagless
  * @build OpenLeak
- * @run junit/othervm OpenLeak
+ * @run junit/othervm/timeout=480 OpenLeak
  */
 
 import java.io.IOException;

@@ -47,7 +47,7 @@ import static org.testng.Assert.assertThrows;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 TransferTo
+ * @run testng/othervm/timeout=720 TransferTo
  * @bug 8265891
  * @summary Tests whether sun.nio.ChannelInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
