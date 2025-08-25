@@ -1215,6 +1215,7 @@ bool Type::empty(void) const {
   case HalfFloatBot:
   case FloatBot:
   case DoubleBot:
+  case Control:
     return false;  // never a singleton, therefore never empty
 
   default:
@@ -2239,9 +2240,9 @@ bool TypeTuple::singleton(void) const {
 
 bool TypeTuple::empty(void) const {
   for( uint i=0; i<_cnt; i++ ) {
-    if (_fields[i]->empty())  return true;
+    if (!_fields[i]->empty())  return false;
   }
-  return false;
+  return true;
 }
 
 //=============================================================================
