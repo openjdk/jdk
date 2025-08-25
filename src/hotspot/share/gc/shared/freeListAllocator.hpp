@@ -115,7 +115,7 @@ class FreeListAllocator {
   Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_PADDING_SIZE, sizeof(Type))
   DECLARE_PADDED_MEMBER(1, volatile size_t, _free_count);
   DECLARE_PADDED_MEMBER(2, Stack, _free_list);
-  DECLARE_PADDED_MEMBER(3, volatile bool, _transfer_lock);
+  DECLARE_PADDED_MEMBER(3, AtomicValue<bool>, _transfer_lock);
 #undef DECLARE_PADDED_MEMBER
 
   volatile uint _active_pending_list;
