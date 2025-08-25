@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.TimespanRate;
