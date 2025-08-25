@@ -35,9 +35,13 @@ class ShenandoahPreBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
+#ifdef COMPILER2
+class MachNode;
+#endif // COMPILER2
 class StubCodeGenerator;
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
+  friend class ShenandoahCASBarrierSlowStub;
 private:
 
   void satb_write_barrier_pre(MacroAssembler* masm,
@@ -88,6 +92,10 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                    bool acquire, bool release, bool is_cae, Register result);
+#ifdef COMPILER2
+  void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register expected, Register new_val, Register result,
+                      bool acquire, bool release, bool weak, bool is_cae, bool narrow);
+#endif
 };
 
 #endif // CPU_AARCH64_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_AARCH64_HPP
