@@ -460,7 +460,7 @@ public:
     : _generation(generation),
       _in_place_count(0) {}
 
-  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target, uint32_t /* partition_id - ignored */) {
+  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZPage* const page = alloc_page(forwarding);
     if (page == nullptr) {
       Atomic::inc(&_in_place_count);
@@ -521,7 +521,7 @@ public:
     });
   }
 
-  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target, uint32_t partition_id) {
+  ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZLocker<ZConditionLock> locker(&_lock);
 
     // Wait for any ongoing in-place relocation to complete
@@ -534,6 +534,7 @@ public:
     // current target page if another thread shared a page, or allocated
     // a new page.
     const ZPageAge to_age = forwarding->to_age();
+    const uint32_t partition_id = forwarding->partition_id();
     if (_shared_targets->get(partition_id, to_age) == target) {
       ZPage* const to_page = alloc_page(forwarding);
       _shared_targets->set(partition_id, to_age, to_page);
@@ -911,7 +912,7 @@ private:
       // or if that fails, use the page being relocated as the new target,
       // which will cause it to be relocated in-place.
       ZPage* const target_page = _targets->get(partition_id, to_age);
-      ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target_page, partition_id);
+      ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target_page);
       _targets->set(partition_id, to_age, to_page);
 
       // We got a new page, retry relocation
