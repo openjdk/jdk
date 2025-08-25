@@ -163,7 +163,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
                                       LogDecorators());
   size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
   char* name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
-  snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
+  os::snprintf_checked(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
 
   LogFileStreamOutput* output = new LogFileOutput(name);
   output->initialize(nullptr, nullptr);

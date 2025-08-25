@@ -256,7 +256,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 #ifdef __APPLE__
   size_t len = strlen(java_home) + strlen("/lib/jli/libjli.dylib") + 1;
   char* path = new char[len];
-  snprintf(path, len, "%s/lib/jli/libjli.dylib", java_home);
+  os::snprintf_checked(path, len, "%s/lib/jli/libjli.dylib", java_home);
   dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 #endif // __APPLE__
 

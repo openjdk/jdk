@@ -59,6 +59,7 @@ FORBID_IMPORTED_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_IMPORTED_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
 
 FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
+FORBID_C_FUNCTION(int snprintf(char*, size_t, const char*, ...), "use os::snprintf");
 
 PRAGMA_DIAG_PUSH
 FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING

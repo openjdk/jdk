@@ -1848,32 +1848,32 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if (lib_arch.name != nullptr) {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load %s .so on a %s platform)",
-                 lib_arch.name, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load %s .so on a %s platform)",
+                           lib_arch.name, arch_array[running_arch_index].name);
     } else {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s platform)",
-                 lib_arch.code, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load this .so (machine code=0x%x) on a %s platform)",
+                           lib_arch.code, arch_array[running_arch_index].name);
     }
     return nullptr;
   }
 
   if (lib_arch.endianness != arch_array[running_arch_index].endianness) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: endianness mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: endianness mismatch)");
     return nullptr;
   }
 
   // ELF file class/capacity : 0 - invalid, 1 - 32bit, 2 - 64bit
   if (lib_arch.elf_class > 2 || lib_arch.elf_class < 1) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: invalid ELF file class)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: invalid ELF file class)");
     return nullptr;
   }
 
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-               " (Possible cause: architecture word width mismatch, can't load %d-bit .so on a %d-bit platform)",
-               (int) lib_arch.elf_class * 32, arch_array[running_arch_index].elf_class * 32);
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                         " (Possible cause: architecture word width mismatch, can't load %d-bit .so on a %d-bit platform)",
+                         (int) lib_arch.elf_class * 32, arch_array[running_arch_index].elf_class * 32);
     return nullptr;
   }
 
@@ -2613,10 +2613,10 @@ static void print_sys_devices_cpu_info(outputStream* st) {
       char hbuf_type[60];
       char hbuf_size[60];
       char hbuf_coherency_line_size[80];
-      snprintf(hbuf_level, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/level", i);
-      snprintf(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
-      snprintf(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
-      snprintf(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
+      os::snprintf_checked(hbuf_level, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/level", i);
+      os::snprintf_checked(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
+      os::snprintf_checked(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
+      os::snprintf_checked(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
       if (os::file_exists(hbuf_level)) {
         _print_ascii_file_h("cache level", hbuf_level, st);
         _print_ascii_file_h("cache type", hbuf_type, st);
@@ -4217,7 +4217,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   char fname[24];
   int retpid = -1;
 
-  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  os::snprintf_checked(fname, sizeof(fname), "/proc/%d/status", vmid);
   FILE *fp = os::fopen(fname, "r");
 
   if (fp) {
@@ -4797,7 +4797,7 @@ uint os::processor_id() {
 void os::set_native_thread_name(const char *name) {
   if (Linux::_pthread_setname_np) {
     char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    snprintf(buf, sizeof(buf), "%s", name);
+    (void) os::snprintf(buf, sizeof(buf), "%s", name);
     buf[sizeof(buf) - 1] = '\0';
     const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
@@ -5008,7 +5008,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
-  snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
+  os::snprintf_checked(proc_name, 64, "/proc/self/task/%d/stat", tid);
   fp = os::fopen(proc_name, "r");
   if (fp == nullptr) return -1;
   statlen = fread(stat, 1, 2047, fp);
@@ -5394,7 +5394,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
     }
   }
 
