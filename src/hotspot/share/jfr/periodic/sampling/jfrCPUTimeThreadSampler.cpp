@@ -182,7 +182,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
       factor = 2;
     }
     if (factor > 1) {
-      u4 new_capacity = _capacity * factor > CPU_TIME_QUEUE_MAX_CAPACITY ? CPU_TIME_QUEUE_MAX_CAPACITY : capacity * factor;
+      u4 new_capacity = capacity * factor > CPU_TIME_QUEUE_MAX_CAPACITY ? CPU_TIME_QUEUE_MAX_CAPACITY : capacity * factor;
       set_capacity(new_capacity);
     }
   }
@@ -320,12 +320,14 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   if (timer == nullptr) {
     return; // no timer was created for this thread
   }
+  tl->acquire_cpu_time_jfr_dequeue_lock();
   tl->unset_cpu_timer();
   tl->deallocate_cpu_time_jfr_queue();
   s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
   if (lost_samples > 0) {
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
   }
+  tl->release_cpu_time_jfr_queue_lock();
 }
 
 void JfrCPUSamplerThread::start_thread() {
