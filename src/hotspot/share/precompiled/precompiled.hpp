@@ -49,3 +49,8 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #endif
+
+#ifdef TARGET_COMPILER_visCPP
+#include "memory/allocation.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#endif // TARGET_COMPILER_visCPP
