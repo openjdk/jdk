@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,15 @@ public class Proc {
                     cmd.add("--add-opens=" + realModule + "=ALL-UNNAMED");
                 } else if (module.contains("/")) {
                     cmd.add("--add-exports=" + module + "=ALL-UNNAMED");
+                }
+            }
+        }
+        String patchPath = System.getProperty("test.patch.path");
+        if (patchPath != null) {
+            try (var subs = Files.newDirectoryStream(Path.of(patchPath))) {
+                for (var sub : subs) {
+                    var name = sub.getFileName();
+                    cmd.add("--patch-module=" + name + "=" + sub);
                 }
             }
         }
