@@ -332,7 +332,7 @@ private:
   void pd_patch_MetaspaceConstant(int pc_offset, HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_TRAPS);
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, JVMCI_TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS);
-  void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS);
+  void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, int method_index, JVMCI_TRAPS);
   bool pd_relocate(address pc, jint mark);
 
 public:
