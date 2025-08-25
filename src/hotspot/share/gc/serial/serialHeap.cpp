@@ -40,7 +40,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"

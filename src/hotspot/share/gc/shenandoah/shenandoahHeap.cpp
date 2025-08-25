@@ -28,7 +28,7 @@
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
-#include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
