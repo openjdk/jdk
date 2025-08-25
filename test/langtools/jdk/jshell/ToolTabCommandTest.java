@@ -34,18 +34,18 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @build ToolTabCommandTest
- * @run testng ToolTabCommandTest
+ * @run junit ToolTabCommandTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolTabCommandTest extends UITesting {
 
     public ToolTabCommandTest() {
         super(true);
     }
 
+    @Test
     public void testCommand() throws Exception {
         // set terminal height so that help output won't hit page breaks
         System.setProperty("test.terminal.height", "1000000");
@@ -133,6 +133,7 @@ public class ToolTabCommandTest extends UITesting {
         });
     }
 
+    @Test
     public void testRerunCommands() throws Exception {
         // set terminal height so that help output won't hit page breaks
         System.setProperty("test.terminal.height", "1000000");
@@ -170,6 +171,7 @@ public class ToolTabCommandTest extends UITesting {
         });
     }
 
+    @Test
     public void testHelp() throws Exception {
         // set terminal height so that help output won't hit page breaks
         System.setProperty("test.terminal.height", "1000000");

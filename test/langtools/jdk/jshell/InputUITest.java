@@ -35,14 +35,13 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile InputUITest.java
- * @run testng/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
+ * @run junit/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
  */
 
 import java.util.Map;
 import java.util.function.Function;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class InputUITest extends UITesting {
 
     static final String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -53,6 +52,7 @@ public class InputUITest extends UITesting {
         super(true);
     }
 
+    @Test
     public void testUserInputWithSurrogates() throws Exception {
         Function<Integer, String> genSnippet =
                 realCharsToRead -> "new String(System.in.readNBytes(" +
@@ -68,6 +68,7 @@ public class InputUITest extends UITesting {
         }, false);
     }
 
+    @Test
     public void testCloseInputSinkWhileReadingUserInputSimulatingCtrlD() throws Exception {
         var snippets = Map.of(
                 "System.in.read()",                 " ==> -1",
@@ -85,6 +86,7 @@ public class InputUITest extends UITesting {
         }
     }
 
+    @Test
     public void testUserInputWithCtrlDAndMultipleSnippets() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("IO.readln()\n" + CTRL_D);

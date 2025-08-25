@@ -27,18 +27,16 @@
  * @summary Tests for alternate JDI connector -- listening to "localhost"
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
- * @run testng JdiListeningLocalhostExecutionControlTest
+ * @run junit JdiListeningLocalhostExecutionControlTest
  * @key intermittent
  */
 
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.BeforeEach;
 
-@Test
 public class JdiListeningLocalhostExecutionControlTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine("jdi:hostname(localhost)"));

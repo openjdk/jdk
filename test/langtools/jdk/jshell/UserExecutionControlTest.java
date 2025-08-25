@@ -26,29 +26,29 @@
  * @bug 8156101 8159935 8159122 8168615
  * @summary Tests for ExecutionControl SPI
  * @build KullaTesting ExecutionControlTestBase
- * @run testng UserExecutionControlTest
+ * @run junit UserExecutionControlTest
  */
 
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.BeforeMethod;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class UserExecutionControlTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine("local"));
     }
 
+    @Test
     public void verifyLocal() throws ClassNotFoundException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
         System.setProperty("LOCAL_CHECK", "TBD");
-        assertEquals(System.getProperty("LOCAL_CHECK"), "TBD");
+        assertEquals("TBD", System.getProperty("LOCAL_CHECK"));
         assertEval("System.getProperty(\"LOCAL_CHECK\")", "\"TBD\"");
         assertEval("System.setProperty(\"LOCAL_CHECK\", \"local\")");
-        assertEquals(System.getProperty("LOCAL_CHECK"), "local");
+        assertEquals("local", System.getProperty("LOCAL_CHECK"));
     }
 
 }

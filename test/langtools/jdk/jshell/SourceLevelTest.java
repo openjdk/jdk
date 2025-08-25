@@ -26,15 +26,16 @@
  * @bug 8259820
  * @summary Check JShell can handle -source 8
  * @modules jdk.jshell
- * @run testng SourceLevelTest
+ * @run junit SourceLevelTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SourceLevelTest extends ReplToolTesting {
 
-    @DataProvider(name="sourceLevels")
     public Object[][] sourceLevels() {
         return new Object[][] {
             new Object[] {"8"},
@@ -42,7 +43,8 @@ public class SourceLevelTest extends ReplToolTesting {
         };
     }
 
-    @Test(dataProvider="sourceLevels")
+    @ParameterizedTest
+    @MethodSource("sourceLevels")
     public void testSourceLevel(String sourceLevel) {
         test(new String[] {"-C", "-source", "-C", sourceLevel},
                 (a) -> assertCommand(a, "1 + 1", "$1 ==> 2"),
