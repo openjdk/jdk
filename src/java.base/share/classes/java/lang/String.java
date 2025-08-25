@@ -888,8 +888,7 @@ public final class String
 
     private static <E extends Exception> byte[] encodeWithEncoder(
             Charset cs, byte coder, byte[] val, Class<E> exceptionClass)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
@@ -1048,8 +1047,7 @@ public final class String
     }
 
     private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> exceptionClass)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         if (coder == LATIN1) {
             return val.clone();
         }
@@ -1170,8 +1168,7 @@ public final class String
 
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exceptionClass)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1347,8 +1344,7 @@ public final class String
     }
 
     private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exceptionClass)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         if (coder == UTF16) {
             return encodeUTF8_UTF16(val, exceptionClass);
         }
@@ -1379,8 +1375,7 @@ public final class String
     }
 
     private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1444,8 +1439,7 @@ public final class String
      * {@return the exact size required to UTF_8 encode this UTF16 string}
      */
     private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> unmappableCharacterException)
-            // Parametrizing on exception type to enable callers (using null) to avoid having to declare the exception
-            throws E {
+            throws E {  // Parametrize on `throws` to enable callers to avoid having to declare the exception
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
