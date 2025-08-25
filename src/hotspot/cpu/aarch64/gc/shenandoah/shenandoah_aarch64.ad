@@ -42,7 +42,7 @@ instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, i
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, /*narrow*/ false);
+                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false);
   %}
 
   ins_pipe(pipe_slow);
@@ -62,8 +62,9 @@ instruct compareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, i
 
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, /*narrow*/ true);
+                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false);
   %}
 
   ins_pipe(pipe_slow);
@@ -85,7 +86,7 @@ instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false, /*narrow*/ false);
+                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false);
   %}
 
   ins_pipe(pipe_slow);
@@ -106,8 +107,9 @@ instruct compareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN oldval
 
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false, /*narrow*/ true);
+                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ false);
   %}
 
   ins_pipe(pipe_slow);
@@ -123,8 +125,9 @@ instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldva
   %}
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                     /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, /*narrow*/ true);
+                                                     /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -140,7 +143,7 @@ instruct compareAndExchangeP_shenandoah(iRegPNoSp res, indirect mem, iRegP oldva
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true, /*narrow*/ false);
+                                                      /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ true);
    %}
   ins_pipe(pipe_slow);
 %}
@@ -156,8 +159,9 @@ instruct compareAndExchangeNAcq_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
   %}
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true, /*narrow*/ true);
+                                                      /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -174,7 +178,7 @@ instruct compareAndExchangePAcq_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true, /*narrow*/ false);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ false, /*is_cae*/ true);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -190,8 +194,9 @@ instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldva
   %}
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, /*narrow*/ true);
+                                                      /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -207,7 +212,7 @@ instruct weakCompareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldva
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                      /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false, /*narrow*/ false);
+                                                      /*acquire*/ false, /*release*/ true, /*weak*/ true, /*is_cae*/ false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -224,8 +229,9 @@ instruct weakCompareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN ol
   %}
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    guarantee(UseCompressedOops, "must be compressed oops");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false, /*narrow*/ true);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -243,7 +249,7 @@ instruct weakCompareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP ol
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
-                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false, /*narrow*/ false);
+                                                   /*acquire*/ true, /*release*/ true, /*weak*/ true, /*is_cae*/ false);
   %}
   ins_pipe(pipe_slow);
 %}
