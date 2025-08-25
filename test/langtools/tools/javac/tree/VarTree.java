@@ -67,6 +67,12 @@ public class VarTree {
                  "java.lang.String testVar");
         test.run("java.util.function.Consumer<String> c = (|var testVar|) -> {};",
                  "java.lang.String testVar");
+        test.run("java.util.function.Consumer<String> c = (|final var testVar|) -> {};",
+                 "final java.lang.String testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|var testVar|) -> {} default -> {} };",
+                 "int testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|final var testVar|) -> {} default -> {} };",
+                 "final int testVar");
     }
 
     void run(String code, String expected) throws IOException {

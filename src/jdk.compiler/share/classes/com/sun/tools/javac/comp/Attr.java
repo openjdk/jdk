@@ -1261,14 +1261,14 @@ public class Attr extends JCTree.Visitor {
                     if (tree.init == null) {
                         //cannot use 'var' without initializer
                         log.error(tree, Errors.CantInferLocalVarType(tree.name, Fragments.LocalMissingInit));
-                        tree.vartype = make.Erroneous();
+                        tree.vartype = make.at(tree.pos()).Erroneous();
                     } else {
                         Fragment msg = canInferLocalVarType(tree);
                         if (msg != null) {
                             //cannot use 'var' with initializer which require an explicit target
                             //(e.g. lambda, method reference, array initializer).
                             log.error(tree, Errors.CantInferLocalVarType(tree.name, msg));
-                            tree.vartype = make.Erroneous();
+                            tree.vartype = make.at(tree.pos()).Erroneous();
                         }
                     }
                 }
@@ -5707,6 +5707,9 @@ public class Attr extends JCTree.Visitor {
     private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
         if (type.isErroneous()) {
             tree.vartype = make.at(tree.pos()).Erroneous();
+        } else if (tree.declaredUsingVar()) {
+            Assert.check(tree.typePos != Position.NOPOS);
+            tree.vartype = make.at(tree.typePos).Type(type);
         } else {
             tree.vartype = make.at(tree.pos()).Type(type);
         }
