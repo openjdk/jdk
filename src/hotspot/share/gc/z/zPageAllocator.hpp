@@ -220,6 +220,7 @@ private:
   void satisfy_stalled();
 
   bool is_multi_partition_enabled() const;
+  bool is_multi_partition_allowed(const ZPageAllocation* allocation) const;
 
   const ZPartition& partition_from_partition_id(uint32_t partition_id) const;
   ZPartition&       partition_from_partition_id(uint32_t partition_id);

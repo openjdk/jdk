@@ -1562,7 +1562,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
     }
   }
 
-  if (allocation->type() != ZPageType::large || !is_multi_partition_enabled() || sum_available() < allocation->size()) {
+  if (!is_multi_partition_allowed(allocation)) {
     // Multi-partition claiming is not possible
     return false;
   }
@@ -2191,6 +2191,12 @@ void ZPageAllocator::satisfy_stalled() {
 
 bool ZPageAllocator::is_multi_partition_enabled() const {
   return _virtual.is_multi_partition_enabled();
+}
+
+bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
+  return allocation->type() == ZPageType::large &&
+         is_multi_partition_enabled() &&
+         sum_available() >= allocation->size();
 }
 
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {
