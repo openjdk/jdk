@@ -124,7 +124,7 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A stable supplier is created via the
- * {@linkplain Supplier#ofCaching(Supplier) Supplier.ofLazy()} factory, by
+ * {@linkplain Supplier#ofCaching(Supplier) Supplier.ofCaching()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
@@ -132,7 +132,7 @@ import java.util.function.Supplier;
  * public class Component {
  *
  *     private final Supplier<Logger> logger =
- *             // @link substring="ofLazyFinal" target="Supplier#ofLazyFinal(Supplier)" :
+ *             // @link substring="ofCaching" target="Supplier#ofCaching(Supplier)" :
  *             Supplier.ofCaching( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
@@ -353,7 +353,7 @@ import java.util.function.Supplier;
  *           <p>
  *           Stable values, functions, and collections are not {@link Serializable}.
  *           <p>
- *           Stable values, collections and functions strongly references its underlying
+ *           Stable values and collections strongly references its underlying
  *           function used to compute values so long as there are values remaining to
  *           be computed after which the underlying function is not strongly referenced
  *           anymore and may be collected.
@@ -364,7 +364,7 @@ import java.util.function.Supplier;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits InternalStableValue, StandardStableValue {
+        permits InternalStableValue {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -419,7 +419,7 @@ public sealed interface StableValue<T>
      * Value v = stable.orElseSet(Value::new);
      * }
      * <p>
-     * When this method returns successfully the contents is always set.
+     * When this method returns successfully, the contents is always set.
      * <p>
      * The provided {@code supplier} will only be invoked once even if invoked from
      * several threads unless the {@code supplier} throws an exception.

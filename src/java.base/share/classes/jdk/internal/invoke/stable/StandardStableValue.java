@@ -31,7 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.lang.invoke.StableValue;
 import java.util.function.Supplier;
 
 /**
@@ -42,7 +41,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the contents
  */
-public final class StandardStableValue<T> implements StableValue<T> {
+public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     static final String UNSET_LABEL = ".unset";
 

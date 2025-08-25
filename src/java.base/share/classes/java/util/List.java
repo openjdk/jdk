@@ -745,7 +745,7 @@ public interface List<E> extends SequencedCollection<E> {
     /**
      * Creates a {@link Spliterator} over the elements in this list.
      *
-     * <p>The {@code Spliterator}    reports {@link Spliterator#SIZED} and
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
      * {@link Spliterator#ORDERED}.  Implementations should document the
      * reporting of additional characteristic values.
      *

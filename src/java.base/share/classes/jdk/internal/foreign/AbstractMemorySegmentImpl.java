@@ -244,36 +244,24 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (overlaps(that) >= 0) {
-            return Optional.empty();
+        if (overlaps(that)) {
+            final long offsetToThat = that.address() - this.address();
+            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
         }
-        final long offsetToThat = that.address() - this.address();
-        final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-        return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
+        return Optional.empty();
     }
 
-    // Returns a negative value if the regions overlap, otherwise a non-negative value.
     @ForceInline
-    int overlaps(AbstractMemorySegmentImpl that) {
+    boolean overlaps(AbstractMemorySegmentImpl that) {
         if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
-
             final long thisStart = this.unsafeGetOffset();
-            final long thisEnd = thisStart + this.byteSize();
             final long thatStart = that.unsafeGetOffset();
+            final long thisEnd = thisStart + this.byteSize();
             final long thatEnd = thatStart + that.byteSize();
-
-            // The below computation is a branchless equivalent to
-            // `return (thisStart < thatEnd && thisEnd > thatStart)?-something:+somethingElse;`. Here is how:
-            // All the variables thisStart, thisEnd, thatStart, and thatEnd are non-negative
-            // First, consider (thisStart < thatEnd).
-            // We can subtract thatEnd on both sides:
-            // (thisStart < thatEnd) -> (thisStart - thatEnd < 0). In the same way we can say:
-            // (thatStart < thisEnd) -> (thatStart - thisEnd < 0).
-            // A long value that is less than zero has it's 63:th bit set and so,
-            // we can just AND the expressions (and the sign bit 63)
-            return (int) (((thisStart - thatEnd) & (thatStart - thisEnd)));  // overlap occurs -> negative value
+            return (thisStart < thatEnd && thisEnd > thatStart); //overlap occurs?
         }
-        return 0;
+        return false;
     }
 
     @Override

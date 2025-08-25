@@ -83,47 +83,6 @@
         }
     }
 
-    @ForceInline
-    public $type$ get$Type$Unaligned(MemorySessionImpl session, Object base, long offset) {
-        try {
-            return get$Type$UnalignedInternal(session, base, offset);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    private $type$ get$Type$UnalignedInternal(MemorySessionImpl session, Object base, long offset) {
-        try {
-            if (session != null) {
-                session.checkValidStateRaw();
-            }
-            return UNSAFE.get$Type$Unaligned(base, offset);
-        } finally {
-            Reference.reachabilityFence(session);
-        }
-    }
-
-    @ForceInline
-    public void put$Type$Unaligned(MemorySessionImpl session, Object base, long offset, $type$ value) {
-        try {
-            put$Type$UnalignedInternal(session, base, offset, value);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    private void put$Type$UnalignedInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
-        try {
-            if (session != null) {
-                session.checkValidStateRaw();
-            }
-            UNSAFE.put$Type$Unaligned(base, offset, value);
-        } finally {
-            Reference.reachabilityFence(session);
-        }
-    }
 #end[Unaligned]
 
     @ForceInline

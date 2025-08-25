@@ -42,13 +42,8 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * Container class for immutable collections. Not part of the public API. Mainly for
- * namespace management and shared infrastructure.
- * <p>
- * Serial warnings are suppressed throughout because all implementation classes use a
- * serial proxy and thus have no need to declare serialVersionUID.
+ * Container class for stable collections. Not part of the public API.
  */
-
 final class StableCollections {
 
     /**
