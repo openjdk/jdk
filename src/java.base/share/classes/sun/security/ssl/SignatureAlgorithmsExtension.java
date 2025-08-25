@@ -68,9 +68,6 @@ final class SignatureAlgorithmsExtension {
     static final SSLStringizer ssStringizer =
             new SignatureSchemesStringizer();
 
-    private static final List<ProtocolVersion> tls13Protocols =
-            Arrays.asList(ProtocolVersion.PROTOCOLS_OF_13);
-
     /**
      * The "signature_algorithms" extension.
      */
@@ -550,24 +547,6 @@ final class SignatureAlgorithmsExtension {
         } else {
             sigAlgs = new ArrayList<>(hc.localSupportedSignAlgs);
             sigAlgs.retainAll(hc.localSupportedCertSignAlgs);
-            // Per RFC 8446, we MAY include RSASSA-PKCS1-v1_5 and Legacy
-            // algorithms in "signature_algorithms" extension. We choose to do
-            // so for TLSv1.3 if such signature schemes would be present in
-            // "signature_algorithms_cert" extension if it were sent.
-            // Because it's stated in RFC 8446 that these signature schemes
-            // can only be used in certificates, we could keep them in
-            // "signature_algorithms" without risking that the TLSv1.3 peer
-            // will misunderstand that those algorithms can be used for
-            // the handshake signature.
-            if (tls13Protocols.contains(hc.negotiatedProtocol)
-                    || (hc.activeProtocols.size() == 1
-                    && tls13Protocols.contains(
-                    hc.activeProtocols.getFirst()))) {
-                List<SignatureScheme> sigCertAlgs = new ArrayList<>(
-                        hc.localSupportedCertSignAlgs);
-                sigCertAlgs.retainAll(SignatureScheme.TLS13_CERT_ONLY);
-                sigAlgs.addAll(sigCertAlgs);
-            }
         }
 
         int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();

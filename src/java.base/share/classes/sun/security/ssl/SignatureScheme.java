@@ -218,16 +218,6 @@ enum SignatureScheme {
         }
     }
 
-    // RSASSA-PKCS1-v1_5 plus Legacy signature schemes as defined in RFC 8446,
-    // those can be used only for certificate signatures in TLSv1.3.
-    static final List<SignatureScheme> TLS13_CERT_ONLY = List.of(
-            RSA_PKCS1_SHA256,
-            RSA_PKCS1_SHA384,
-            RSA_PKCS1_SHA512,
-            ECDSA_SHA1,
-            RSA_PKCS1_SHA1
-    );
-
     // Handshake signature scope.
     static final Set<SSLScope> HANDSHAKE_SCOPE =
             Set.of(SSLScope.HANDSHAKE_SIGNATURE);

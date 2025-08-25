@@ -53,17 +53,6 @@ public class DisableSignatureSchemePerScopeTLS12 extends
             HANDSHAKE_DISABLED_SIG + " usage HandShakesignature, "
             + CERTIFICATE_DISABLED_SIG + " usage certificateSignature";
 
-    // Signature schemes not supported in TLSv1.3 for the handshake but
-    // supported for certificates.
-    // This is regardless of jdk.tls.disabledAlgorithms configuration.
-    protected static final List<String> TLS13_CERT_ONLY = List.of(
-            "ecdsa_sha1",
-            "rsa_pkcs1_sha1",
-            "rsa_pkcs1_sha256",
-            "rsa_pkcs1_sha384",
-            "rsa_pkcs1_sha512"
-    );
-
     protected DisableSignatureSchemePerScopeTLS12() throws Exception {
         super();
     }
