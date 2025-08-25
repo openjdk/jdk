@@ -218,6 +218,7 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
@@ -228,6 +229,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
+  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
@@ -1924,6 +1926,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
