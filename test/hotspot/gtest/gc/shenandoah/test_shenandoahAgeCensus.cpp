@@ -40,13 +40,13 @@ protected:
     build_cohort_populations(_mortality_rates, _cohort_populations, _cohorts_count);
   }
 
-  static void add_population(ShenandoahAgeCensus& census, uint age, size_t population_words) {
+  static void add_population(ShenandoahAgeCensus& census, const uint age, const size_t population_words) {
     CENSUS_NOISE(census.add(age, 0, 0, population_words, 0));
     NO_CENSUS_NOISE(census.add(age, 0, population_words, 0));
   }
 
   void update(ShenandoahAgeCensus& census, size_t cohorts) const {
-    for (size_t i = 1; i < cohorts; i++) {
+    for (uint i = 1; i < cohorts; i++) {
       add_population(census, i, _cohort_populations[i]);
     }
     census.update_census(_cohort_populations[0]);
