@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,10 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param description a brief textual description of the image
      */
     public ImageIcon(Image image, String description) {
-        this(image);
+        this.image = image;
         this.description = description;
+
+        loadImage(image);
     }
 
     /**
@@ -222,12 +224,17 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @see java.awt.Image#getProperty
      */
     public ImageIcon (Image image) {
-        this.image = image;
-        Object o = image.getProperty("comment", imageObserver);
-        if (o instanceof String) {
-            description = (String) o;
-        }
-        loadImage(image);
+        this(image, getImageComment(image));
+    }
+
+    /**
+     * @return the {@code "comment"} property of the image
+     *         if the value of the property is a sting}
+     * @param image the image to get the {@code "comment"} property
+     */
+    private static String getImageComment(Image image) {
+        Object o = image.getProperty("comment", null);
+        return (o instanceof String) ? (String) o : null;
     }
 
     /**
