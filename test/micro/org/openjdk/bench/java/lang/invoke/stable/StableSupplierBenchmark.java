@@ -59,13 +59,13 @@ public class StableSupplierBenchmark {
 
     private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
     private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = Supplier.ofLazyFinal(() -> VALUE);
-    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofLazyFinal(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER = Supplier.ofCaching(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofCaching(() -> VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final Supplier<Integer> supplier = Supplier.ofLazyFinal(() -> VALUE);
-    private final Supplier<Integer> supplier2 = Supplier.ofLazyFinal(() -> VALUE2);
+    private final Supplier<Integer> supplier = Supplier.ofCaching(() -> VALUE);
+    private final Supplier<Integer> supplier2 = Supplier.ofCaching(() -> VALUE2);
 
     @Benchmark
     public int stable() {

@@ -984,7 +984,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            Supplier.ofLazyFinal(new Supplier<>() {
+            Supplier.ofCaching(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -2316,7 +2316,7 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultFormatLocale;
 
     private final transient Supplier<String> languageTag =
-            Supplier.ofLazyFinal(new Supplier<>() {
+            Supplier.ofCaching(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();

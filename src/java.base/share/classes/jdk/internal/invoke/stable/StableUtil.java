@@ -25,6 +25,8 @@
 
 package jdk.internal.invoke.stable;
 
+import jdk.internal.foreign.Utils;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -32,7 +34,7 @@ import java.util.StringJoiner;
 
 public final class StableUtil {
 
-    private StableUtil() {}
+    private StableUtil() { }
 
     public static <R> String renderElements(Object self,
                                             String selfName,
@@ -76,7 +78,7 @@ public final class StableUtil {
     }
 
     public static <T> StandardStableValue<T>[] array(int size) {
-        assertSizeNonNegative(size);
+        Utils.checkNonNegativeArgument(size, "size");
         @SuppressWarnings("unchecked")
         final var stableValues = (StandardStableValue<T>[]) new StandardStableValue<?>[size];
         for (int i = 0; i < size; i++) {
@@ -94,12 +96,6 @@ public final class StableUtil {
             entries[i++] = Map.entry(key, StandardStableValue.of());
         }
         return Map.ofEntries(entries);
-    }
-
-    public static void assertSizeNonNegative(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("size can not be negative: " + size);
-        }
     }
 
 }

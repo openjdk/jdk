@@ -314,7 +314,7 @@ final class StableListTest {
         var lazy = List.ofLazy(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
-        assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
+        assertEquals("Recursive initialization of a stable value is illegal. Index: " + INDEX, x.getMessage());
     }
 
     // Immutability

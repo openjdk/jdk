@@ -29,7 +29,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.invoke.stable.InternalStableValue;
-import jdk.internal.invoke.stable.PresetStableValue;
 import jdk.internal.invoke.stable.StandardStableValue;
 
 import java.io.Serializable;
@@ -125,7 +124,7 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A stable supplier is created via the
- * {@linkplain Supplier#ofLazyFinal(Supplier) Supplier.ofLazy()} factory, by
+ * {@linkplain Supplier#ofCaching(Supplier) Supplier.ofLazy()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
@@ -134,7 +133,7 @@ import java.util.function.Supplier;
  *
  *     private final Supplier<Logger> logger =
  *             // @link substring="ofLazyFinal" target="Supplier#ofLazyFinal(Supplier)" :
- *             Supplier.ofLazyFinal( () -> Logger.getLogger(Component.class) );
+ *             Supplier.ofCaching( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -219,8 +218,8 @@ import java.util.function.Supplier;
  *         }
  *     }
  *
- *     private static final Supplier<Foo> FOO = Supplier.ofLazyFinal(Foo::new);
- *     private static final Supplier<Bar> BAR = Supplier.ofLazyFinal(() -> new Bar(FOO.get()));
+ *     private static final Supplier<Foo> FOO = Supplier.ofCaching(Foo::new);
+ *     private static final Supplier<Bar> BAR = Supplier.ofCaching(() -> new Bar(FOO.get()));
  *
  *     public static Foo foo() {
  *         return FOO.get();
@@ -365,7 +364,7 @@ import java.util.function.Supplier;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
-        permits InternalStableValue, PresetStableValue, StandardStableValue {
+        permits InternalStableValue, StandardStableValue {
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -471,7 +470,7 @@ public sealed interface StableValue<T>
      */
     static <T> StableValue<T> of(T contents) {
         Objects.requireNonNull(contents);
-        return new PresetStableValue<>(contents);
+        return StandardStableValue.ofPreset(contents);
     }
 
     /**

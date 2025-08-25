@@ -67,8 +67,11 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @Stable
     private Object contents;
 
-    // Only allow creation via the factory `StandardStableValue::newInstance`
     private StandardStableValue() {}
+
+    private StandardStableValue(T contents) {
+        this.contents = contents;
+    }
 
     @ForceInline
     @Override
@@ -187,10 +190,14 @@ public final class StandardStableValue<T> implements StableValue<T> {
         return false;
     }
 
-    // Factory
+    // Factories
 
     public static <T> StandardStableValue<T> of() {
         return new StandardStableValue<>();
+    }
+
+    public static <T> StandardStableValue<T> ofPreset(T contents) {
+        return new StandardStableValue<>(contents);
     }
 
 }

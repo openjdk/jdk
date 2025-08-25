@@ -93,7 +93,7 @@ public final class BaseLocale {
 
     // Interned BaseLocale cache
     private static final Supplier<ReferencedKeySet<BaseLocale>> CACHE =
-            Supplier.ofLazyFinal(new Supplier<>() {
+            Supplier.ofCaching(new Supplier<>() {
                 @Override
                 public ReferencedKeySet<BaseLocale> get() {
                     return ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());

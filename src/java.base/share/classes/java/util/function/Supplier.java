@@ -56,7 +56,7 @@ public interface Supplier<T> {
     T get();
 
     /**
-     * {@return a new lazy, stable, and final supplier}
+     * {@return a new caching, stable supplier}
      * <p>
      * The returned {@linkplain Supplier supplier} is a caching supplier that records
      * the value of the provided {@code underlying} supplier upon being first accessed via
@@ -80,7 +80,8 @@ public interface Supplier<T> {
      * If the provided {@code underlying} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
      * <p>
-     * Finality confers certain performance optimization opportunities to the VM.
+     * As the returned cached supplier is stable, it confers certain performance
+     * optimization opportunities to the VM.
      *
      * @param underlying supplier used to compute a cached value
      * @param <T>        the type of results supplied by the returned supplier
@@ -89,7 +90,7 @@ public interface Supplier<T> {
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-    static <T> Supplier<T> ofLazyFinal(Supplier<? extends T> underlying) {
+    static <T> Supplier<T> ofCaching(Supplier<? extends T> underlying) {
         Objects.requireNonNull(underlying);
         return StableSupplier.of(underlying);
     }

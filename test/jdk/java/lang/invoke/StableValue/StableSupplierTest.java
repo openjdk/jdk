@@ -42,7 +42,7 @@ final class StableSupplierTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> Supplier.ofLazyFinal(null));
+        assertThrows(NullPointerException.class, () -> Supplier.ofCaching(null));
     }
 
     @Test
@@ -52,7 +52,7 @@ final class StableSupplierTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = Supplier.ofLazyFinal(cs);
+        var cached = Supplier.ofCaching(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -66,7 +66,7 @@ final class StableSupplierTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = Supplier.ofLazyFinal(cs);
+        var cached = Supplier.ofCaching(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -77,7 +77,7 @@ final class StableSupplierTest {
     @Test
     void circular() {
         final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
-        Supplier<Supplier<?>> cached = Supplier.ofLazyFinal(ref::get);
+        Supplier<Supplier<?>> cached = Supplier.ofCaching(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -87,15 +87,15 @@ final class StableSupplierTest {
 
     @Test
     void equality() {
-        Supplier<Integer> f0 = Supplier.ofLazyFinal(SUPPLIER);
-        Supplier<Integer> f1 = Supplier.ofLazyFinal(SUPPLIER);
+        Supplier<Integer> f0 = Supplier.ofCaching(SUPPLIER);
+        Supplier<Integer> f1 = Supplier.ofCaching(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = Supplier.ofLazyFinal(SUPPLIER);
+        Supplier<Integer> f0 = Supplier.ofCaching(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());

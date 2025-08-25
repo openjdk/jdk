@@ -25,6 +25,7 @@
 
 package java.util;
 
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.invoke.stable.StableUtil;
 
@@ -744,7 +745,7 @@ public interface List<E> extends SequencedCollection<E> {
     /**
      * Creates a {@link Spliterator} over the elements in this list.
      *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
+     * <p>The {@code Spliterator}    reports {@link Spliterator#SIZED} and
      * {@link Spliterator#ORDERED}.  Implementations should document the
      * reporting of additional characteristic values.
      *
@@ -1243,10 +1244,10 @@ public interface List<E> extends SequencedCollection<E> {
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
     static <E> List<E> ofLazy(int size,
                               IntFunction<? extends E> mapper) {
-        StableUtil.assertSizeNonNegative(size);
+        Utils.checkNonNegativeArgument(size, "size");
         Objects.requireNonNull(mapper);
         // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return new StableCollections.StableList<>(size, mapper);
+        return StableCollections.StableList.of(size, mapper);
     }
 
 }

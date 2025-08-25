@@ -27,11 +27,9 @@ package java.util;
 
 import jdk.internal.ValueBased;
 import jdk.internal.invoke.stable.InternalStableValue;
-import jdk.internal.invoke.stable.PresetStableValue;
 import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -44,21 +42,26 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * Container class for immutable collections. Not part of the public API.
- * Mainly for namespace management and shared infrastructure.
- *
- * Serial warnings are suppressed throughout because all implementation
- * classes use a serial proxy and thus have no need to declare serialVersionUID.
+ * Container class for immutable collections. Not part of the public API. Mainly for
+ * namespace management and shared infrastructure.
+ * <p>
+ * Serial warnings are suppressed throughout because all implementation classes use a
+ * serial proxy and thus have no need to declare serialVersionUID.
  */
 
-class StableCollections {
+final class StableCollections {
 
-    /** No instances. */
+    /**
+     * No instances.
+     */
     private StableCollections() { }
+
+    // Unsafe allows StableValue to be used early in the boot sequence
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @ValueBased
     static public class PresetStableList<E>
-            extends AbstractImmutableStableList<E>
+            extends ImmutableCollections.AbstractImmutableList<StableValue<E>>
             implements List<StableValue<E>>, RandomAccess {
 
         @Stable
@@ -73,12 +76,22 @@ class StableCollections {
         @Override
         public StableValue<E> get(int index) {
             final E element = elements[index];
-            return new PresetStableValue<>(element);
+            return StandardStableValue.ofPreset(element);
         }
 
         @Override
         public int size() {
             return elements.length;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return StableCollections.indexOf(this, o);
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return StableCollections.lastIndexOf(this, o);
         }
 
         @SafeVarargs
@@ -91,12 +104,8 @@ class StableCollections {
 
     @ValueBased
     static final class DenseStableList<E>
-            extends AbstractImmutableStableList<E>
+            extends AbstractImmutableStableElementList<StableValue<E>>
             implements List<StableValue<E>>, RandomAccess {
-
-        // Unsafe allows StableValue to be used early in the boot sequence
-        static final Unsafe UNSAFE = Unsafe.getUnsafe();
-        static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
 
         @Stable
         private final E[] elements;
@@ -105,11 +114,9 @@ class StableCollections {
         @Stable
         private final int preHash;
 
-
-        @SuppressWarnings("unchecked")
-        private DenseStableList(int length) {
-            this.elements = (E[]) new Object[length];
-            this.mutexes = new Mutexes(length);
+        private DenseStableList(int size) {
+            this.elements = newGenericArray(size);
+            this.mutexes = new Mutexes(size);
             super();
             int h = 1;
             h = 31 * h + System.identityHashCode(this);
@@ -121,18 +128,45 @@ class StableCollections {
         @Override
         public ElementStableValue<E> get(int index) {
             Objects.checkIndex(index, elements.length);
-            return new ElementStableValue<>(elements, offsetFor(index), this);
+            return new ElementStableValue<>(elements, this, offsetFor(index));
         }
 
-        @Override public int     size() { return elements.length; }
-        @Override public boolean isEmpty() { return elements.length == 0;}
+        @Override
+        public int size() {
+            return elements.length;
+        }
 
+        @Override
+        public boolean isEmpty() {
+            return elements.length == 0;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return StableCollections.indexOf(this, o);
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return StableCollections.lastIndexOf(this, o);
+        }
+
+        @ForceInline
+        @Override
+        Mutexes mutexes() {
+            return mutexes;
+        }
+
+        @Override
+        int preHash() {
+            return preHash;
+        }
 
         // The views subList() and reversed() in the base class suffice for this list type
 
-        public record ElementStableValue<T>(@Stable T[] elements,// Fast track this one
-                                            long offset,
-                                            DenseStableList<T> list)  implements InternalStableValue<T> {
+        public record ElementStableValue<T>(@Stable T[] elements, // fast track this one
+                                            AbstractImmutableStableElementList<?> list,
+                                            long offset) implements InternalStableValue<T> {
 
             @ForceInline
             @Override
@@ -147,12 +181,12 @@ class StableCollections {
                 // Mutual exclusion is required here as `orElseSet` might also
                 // attempt to modify `this.elements`
                 final Object mutex = acquireMutex();
-                if (mutex == TOMB_STONE) {
+                if (mutex == Mutexes.TOMB_STONE) {
                     return false;
                 }
                 synchronized (mutex) {
                     // Maybe we were not the winner?
-                    if (acquireMutex() == TOMB_STONE) {
+                    if (acquireMutex() == Mutexes.TOMB_STONE) {
                         return false;
                     }
                     final boolean outcome = set(contents);
@@ -195,7 +229,7 @@ class StableCollections {
             private T orElseSetSlowPath(Supplier<? extends T> supplier) {
                 preventReentry();
                 final Object mutex = acquireMutex();
-                if (mutex == TOMB_STONE) {
+                if (mutex == Mutexes.TOMB_STONE) {
                     return contentsAcquire();
                 }
                 synchronized (mutex) {
@@ -228,10 +262,11 @@ class StableCollections {
             // element.
             @Override
             public int hashCode() {
-                return list.preHash + Long.hashCode(offset);
+                return list.preHash() + Long.hashCode(offset);
             }
 
-            @Override public String toString() {
+            @Override
+            public String toString() {
                 final T t = contentsAcquire();
                 return t == this
                         ? "(this StableValue)"
@@ -251,22 +286,22 @@ class StableCollections {
 
             @ForceInline
             private Object acquireMutex() {
-                return list.mutexes.acquireMutex(offset);
+                return list.mutexes().acquireMutex(offset);
             }
 
             @ForceInline
             private void disposeOfMutex() {
-                list.mutexes.disposeOfMutex(offset);
+                list.mutexes().disposeOfMutex(offset);
             }
 
             @ForceInline
             private Object mutexVolatile() {
-                return list.mutexes.mutexVolatile(offset);
+                return list.mutexes().mutexVolatile(offset);
             }
 
             private void preventReentry() {
                 final Object mutex = mutexVolatile();
-                if (mutex == null || mutex == TOMB_STONE || !Thread.holdsLock(mutex)) {
+                if (mutex == null || mutex == Mutexes.TOMB_STONE || !Thread.holdsLock(mutex)) {
                     // No reentry attempted
                     return;
                 }
@@ -274,7 +309,8 @@ class StableCollections {
             }
 
             /**
-             * Tries to set the contents at the provided {@code index} to {@code newValue}.
+             * Tries to set the contents at the provided {@code index} to
+             * {@code newValue}.
              * <p>
              * This method ensures the {@link Stable} element is written to at most once.
              *
@@ -293,70 +329,6 @@ class StableCollections {
                 return false;
             }
 
-            private long indexFor(long offset) {
-                return (offset - Unsafe.ARRAY_OBJECT_BASE_OFFSET) / Unsafe.ARRAY_OBJECT_INDEX_SCALE;
-            }
-
-        }
-
-        @ForceInline
-        private static long offsetFor(long index) {
-            return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
-        }
-
-        private static final class Mutexes {
-
-            // Inflated on demand
-            private volatile Object[] mutexes;
-            // Used to detect we have computed all elements and no longer need the `mutexes` array
-            private volatile AtomicInteger counter;
-
-            private Mutexes(int length) {
-                this.mutexes = new Object[length];
-                this.counter = new AtomicInteger(length);
-            }
-
-            @ForceInline
-            private Object acquireMutex(long offset) {
-                final Object candidate = new Mutexes.MutexObject(offset, Thread.currentThread().threadId());
-                final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
-                check(witness, offset);
-                return witness == null ? candidate : witness;
-            }
-
-            @ForceInline
-            private void disposeOfMutex(long offset) {
-                UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
-                // Todo: the null check is redundant as this method is invoked at most
-                //       `size()` times.
-                if (counter != null && counter.decrementAndGet() == 0) {
-                    // We don't need these anymore
-                    counter = null;
-                    mutexes = null;
-                }
-            }
-
-            @ForceInline
-            private Object mutexVolatile(long offset) {
-                // Can be plain semantics?
-                return check(UNSAFE.getReferenceVolatile(mutexes, offset), offset);
-            }
-
-            // Todo: remove this after stabilization
-            private Object check(Object mutex, long realOffset) {
-                if (mutex == null || mutex == TOMB_STONE) {
-                    return mutex;
-                }
-                assert (mutex instanceof Mutexes.MutexObject(long offset, long tid)) && offset == realOffset :
-                        mutex +
-                                ", realOffset = " + realOffset+
-                                ", realThread = " + Thread.currentThread().threadId();
-                return mutex;
-            }
-
-            // Todo: remove this after stabilization
-            record MutexObject(long offset, long tid) { }
-
         }
 
         public static <E> List<StableValue<E>> ofList(int size) {
@@ -364,51 +336,60 @@ class StableCollections {
         }
     }
 
-    @FunctionalInterface
-    interface HasStableDelegates<E> {
-        StandardStableValue<E>[] delegates();
-    }
-
     @jdk.internal.ValueBased
     static final class StableList<E>
-            extends ImmutableCollections.AbstractImmutableList<E>
-            implements HasStableDelegates<E> {
+            extends AbstractImmutableStableElementList<E>
+            implements LenientList<E> {
 
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
-        final StandardStableValue<E>[] delegates;
+        private final E[] elements;
+        @Stable
+        private final Mutexes mutexes;
 
-        StableList(int size, IntFunction<? extends E> mapper) {
+        private StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.delegates = StableUtil.array(size);
+            this.elements = newGenericArray(size);
+            this.mutexes = new Mutexes(size);
             super();
         }
 
-        @Override public boolean  isEmpty() { return delegates.length == 0;}
-        @Override public int      size() { return delegates.length; }
+        @Override public boolean  isEmpty() { return elements.length == 0;}
+        @Override public int      size() { return elements.length; }
         @Override public Object[] toArray() { return copyInto(new Object[size()]); }
 
         @ForceInline
         @Override
         public E get(int i) {
-            final StandardStableValue<E> delegate;
-            try {
-                delegate = delegates[i];
-            } catch (ArrayIndexOutOfBoundsException aioobe) {
-                throw new IndexOutOfBoundsException(i);
+            Objects.checkIndex(i, elements.length);
+            final long offset = offsetFor(i);
+            final E e = contentsAcquire(offset);
+            if (e != null) {
+                return e;
             }
-            return delegate.orElseSet(new Supplier<E>() {
-                        @Override  public E get() { return mapper.apply(i); }});
+            return asStableValue(i).orElseSet(new Supplier<E>() {
+                @Override  public E get() { return mapper.apply(i); }});
+        }
+
+        @Override
+        public E getLenient(int i) {
+            Objects.checkIndex(i, elements.length);
+            final long offset = offsetFor(i);
+            return contentsAcquire(offset);
+        }
+
+        public DenseStableList.ElementStableValue<E> asStableValue(int index) {
+            return new DenseStableList.ElementStableValue<>(elements, this, offsetFor(index));
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            final int size = delegates.length;
+            final int size = elements.length;
             if (a.length < size) {
                 // Make a new array of a's runtime type, but my contents:
-                T[] n = (T[])Array.newInstance(a.getClass().getComponentType(), size);
+                T[] n = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
                 return copyInto(n);
             }
             copyInto(a);
@@ -441,7 +422,7 @@ class StableCollections {
 
         @SuppressWarnings("unchecked")
         private <T> T[] copyInto(Object[] a) {
-            final int len = delegates.length;
+            final int len = elements.length;
             for (int i = 0; i < len; i++) {
                 a[i] = get(i);
             }
@@ -461,16 +442,31 @@ class StableCollections {
 
         @Override
         public String toString() {
-            return StableUtil.renderElements(this, "StableCollection", delegates);
+            return renderElements(this);
         }
 
         @Override
-        public StandardStableValue<E>[] delegates() {
-            return delegates;
+        Mutexes mutexes() {
+            return mutexes;
+        }
+
+        @Override
+        int preHash() {
+            return 0; // Never visible
+        }
+
+        @SuppressWarnings("unchecked")
+        @ForceInline
+        private E contentsAcquire(long offset) {
+            return (E) UNSAFE.getReferenceAcquire(elements, offset);
+        }
+
+        public static <E> List<E> of(int size, IntFunction<? extends E> mapper) {
+            return new StableList<>(size, mapper);
         }
 
         static final class StableSubList<E> extends ImmutableCollections.SubList<E>
-                implements HasStableDelegates<E> {
+                implements LenientList<E> {
 
             private StableSubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
                 super(root, offset, size);
@@ -489,19 +485,19 @@ class StableCollections {
 
             @Override
             public String toString() {
-                return StableUtil.renderElements(this, "StableCollection", delegates());
+                return renderElements(this);
             }
 
             @Override
             boolean allowNulls() {
-                return true;
+                return false;
             }
 
+            @SuppressWarnings("unchecked")
             @Override
-            public StandardStableValue<E>[] delegates() {
-                @SuppressWarnings("unchecked")
-                final var rootDelegates = ((HasStableDelegates<E>) root).delegates();
-                return Arrays.copyOfRange(rootDelegates, offset, offset + size);
+            public E getLenient(int index) {
+                Objects.checkIndex(index, size);
+                return ((LenientList<E>) root).getLenient(offset + index);
             }
 
             static <E> ImmutableCollections.SubList<E> fromStableList(StableList<E> list, int fromIndex, int toIndex) {
@@ -516,7 +512,7 @@ class StableCollections {
 
         private static final class StableReverseOrderListView<E>
                 extends ReverseOrderListView.Rand<E>
-                implements HasStableDelegates<E> {
+                implements LenientList<E> {
 
             private StableReverseOrderListView(List<E> base) {
                 super(base, false);
@@ -525,7 +521,7 @@ class StableCollections {
             // This method does not evaluate the elements
             @Override
             public String toString() {
-                return StableUtil.renderElements(this, "StableCollection", delegates());
+                return renderElements(this);
             }
 
             @Override
@@ -536,14 +532,21 @@ class StableCollections {
             }
 
             @Override
-            public StandardStableValue<E>[] delegates() {
-                @SuppressWarnings("unchecked")
-                final var baseDelegates = ((HasStableDelegates<E>) base).delegates();
-                return ArraysSupport.reverse(
-                        Arrays.copyOf(baseDelegates, baseDelegates.length));
+            public E getLenient(int i) {
+                final int size = base.size();
+                Objects.checkIndex(i, size);
+                return ((LenientList<E>) base).getLenient(size - i - 1);
             }
         }
 
+    }
+
+    interface LenientList<E> extends List<E> {
+        /**
+         * {@return the element at index {@code i} without evaluating it}
+         * @param i index
+         */
+        E getLenient(int i);
     }
 
     static final class StableMap<K, V>
@@ -560,8 +563,8 @@ class StableCollections {
             super();
         }
 
-        @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
-        @Override public int                  size() { return delegate.size(); }
+        @Override public boolean          containsKey(Object o) { return delegate.containsKey(o); }
+        @Override public int              size() { return delegate.size(); }
         @Override public Set<Entry<K, V>> entrySet() { return StableMapEntrySet.of(this); }
 
         @ForceInline
@@ -577,10 +580,13 @@ class StableCollections {
             if (stable == null) {
                 return defaultValue;
             }
-            @SuppressWarnings("unchecked")
-            final K k = (K) key;
+            @SuppressWarnings("unchecked") final K k = (K) key;
             return stable.orElseSet(new Supplier<V>() {
-                @Override public V get() { return mapper.apply(k); }});
+                @Override
+                public V get() {
+                    return mapper.apply(k);
+                }
+            });
         }
 
         @jdk.internal.ValueBased
@@ -601,8 +607,8 @@ class StableCollections {
             }
 
             @Override public Iterator<Entry<K, V>> iterator() { return LazyMapIterator.of(this); }
-            @Override public int                       size() { return delegateEntrySet.size(); }
-            @Override public int                       hashCode() { return outer.hashCode(); }
+            @Override public int                   size() { return delegateEntrySet.size(); }
+            @Override public int                   hashCode() { return outer.hashCode(); }
 
             @Override
             public String toString() {
@@ -631,7 +637,7 @@ class StableCollections {
                     super();
                 }
 
-                @Override public boolean hasNext() { return delegateIterator.hasNext(); }
+                @Override  public boolean hasNext() { return delegateIterator.hasNext(); }
 
                 @Override
                 public Entry<K, V> next() {
@@ -656,7 +662,7 @@ class StableCollections {
                 }
 
                 // For @ValueBased
-                private static  <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
+                private static <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
                     return new LazyMapIterator<>(outer);
                 }
 
@@ -667,18 +673,22 @@ class StableCollections {
                                          StandardStableValue<V> stableValue,
                                          Supplier<? extends V> supplier) implements Entry<K, V> {
 
-            @Override public V setValue(V value) { throw ImmutableCollections.uoe(); }
-            @Override public V getValue() { return stableValue.orElseSet(supplier); }
-            @Override public int hashCode() { return hash(getKey()) ^ hash(getValue()); }
+            @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
+            @Override public V      getValue() { return stableValue.orElseSet(supplier); }
+            @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
             @Override public String toString() { return getKey() + "=" + stableValue.toString(); }
-            @Override public boolean equals(Object o) {
+
+            @Override
+            public boolean equals(Object o) {
                 return o instanceof Map.Entry<?, ?> e
                         && Objects.equals(getKey(), e.getKey())
                         // Invoke `getValue()` as late as possible to avoid evaluation
                         && Objects.equals(getValue(), e.getValue());
             }
 
-            private int hash(Object obj) { return (obj == null) ? 0 : obj.hashCode(); }
+            private int hash(Object obj) {
+                return (obj == null) ? 0 : obj.hashCode();
+            }
         }
 
         @Override
@@ -700,9 +710,9 @@ class StableCollections {
             }
 
             @Override public Iterator<V> iterator() { return outer.new ValueIterator(); }
-            @Override public int size() { return outer.size(); }
-            @Override public boolean isEmpty() { return outer.isEmpty();}
-            @Override public boolean contains(Object v) { return outer.containsValue(v); }
+            @Override public int         size() { return outer.size(); }
+            @Override public boolean     isEmpty() { return outer.isEmpty(); }
+            @Override public boolean     contains(Object v) { return outer.containsValue(v); }
 
             private static final IntFunction<StandardStableValue<?>[]> GENERATOR = new IntFunction<StandardStableValue<?>[]>() {
                 @Override
@@ -731,36 +741,124 @@ class StableCollections {
 
     }
 
-    abstract static class AbstractImmutableStableList<E>
-            extends ImmutableCollections.AbstractImmutableList<StableValue<E>> {
+    abstract static class AbstractImmutableStableElementList<E>
+            extends ImmutableCollections.AbstractImmutableList<E> {
 
-        @Override
-        public final int indexOf(Object o) {
-            Objects.requireNonNull(o);
-            if (o instanceof StableValue<?> s) {
-                final int size = size();
-                for (int i = 0; i < size; i++) {
-                    if (Objects.equals(s, get(i))) {
-                        return i;
-                    }
-                }
-            }
-            return -1;
+        abstract Mutexes mutexes();
+
+        abstract int preHash();
+
+    }
+
+    private static final class Mutexes {
+
+        static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
+
+        // Inflated on demand
+        private volatile Object[] mutexes;
+        // Used to detect we have computed all elements and no longer need the `mutexes` array
+        private volatile AtomicInteger counter;
+
+        private Mutexes(int length) {
+            this.mutexes = new Object[length];
+            this.counter = new AtomicInteger(length);
         }
 
-        @Override
-        public final int lastIndexOf(Object o) {
-            Objects.requireNonNull(o);
-            if (o instanceof StableValue<?> s) {
-                for (int i = size() - 1; i >= 0; i--) {
-                    if (Objects.equals(s, get(i))) {
-                        return i;
-                    }
-                }
-            }
-            return -1;
+        @ForceInline
+        private Object acquireMutex(long offset) {
+            final Object candidate = new Mutexes.MutexObject(offset, Thread.currentThread().threadId());
+            final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
+            check(witness, offset);
+            return witness == null ? candidate : witness;
         }
 
+        @ForceInline
+        private void disposeOfMutex(long offset) {
+            UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+            // Todo: the null check is redundant as this method is invoked at most
+            //       `size()` times.
+            if (counter != null && counter.decrementAndGet() == 0) {
+                // We don't need these anymore
+                counter = null;
+                mutexes = null;
+            }
+        }
+
+        @ForceInline
+        private Object mutexVolatile(long offset) {
+            // Can be plain semantics?
+            return check(UNSAFE.getReferenceVolatile(mutexes, offset), offset);
+        }
+
+        // Todo: remove this after stabilization
+        private Object check(Object mutex, long realOffset) {
+            if (mutex == null || mutex == TOMB_STONE) {
+                return mutex;
+            }
+            assert (mutex instanceof Mutexes.MutexObject(
+                    long offset, long tid
+            )) && offset == realOffset :
+                    mutex +
+                            ", realOffset = " + realOffset +
+                            ", realThread = " + Thread.currentThread().threadId();
+            return mutex;
+        }
+
+        // Todo: remove this after stabilization
+        record MutexObject(long offset, long tid) { }
+
+    }
+
+    public static <E> int indexOf(List<StableValue<E>> list, Object o) {
+        Objects.requireNonNull(o);
+        if (o instanceof StableValue<?> s) {
+            final int size = list.size();
+            for (int i = 0; i < size; i++) {
+                if (Objects.equals(s, list.get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    public static <E> int lastIndexOf(List<StableValue<E>> list, Object o) {
+        Objects.requireNonNull(o);
+        if (o instanceof StableValue<?> s) {
+            for (int i = list.size() - 1; i >= 0; i--) {
+                if (Objects.equals(s, list.get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static long indexFor(long offset) {
+        return (offset - Unsafe.ARRAY_OBJECT_BASE_OFFSET) / Unsafe.ARRAY_OBJECT_INDEX_SCALE;
+    }
+
+    @ForceInline
+    private static long offsetFor(long index) {
+        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> E[] newGenericArray(int length) {
+        return (E[]) new Object[length];
+    }
+
+    public static String renderElements(LenientList<?> self) {
+        final StringJoiner sj = new StringJoiner(", ", "[", "]");
+        for (int i = 0; i < self.size(); i++) {
+            final Object e = self.getLenient(i);
+            if (e == self) {
+                sj.add("(this StableCollection)");
+            } else {
+                sj.add(StandardStableValue.render(e));
+            }
+        }
+        return sj.toString();
     }
 
 }

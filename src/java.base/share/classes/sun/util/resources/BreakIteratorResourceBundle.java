@@ -50,7 +50,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
     // those keys must be added to NON_DATA_KEYS.
     private static final Set<String> NON_DATA_KEYS = Set.of("BreakIteratorClasses");
 
-    private final Supplier<Set<String>> keys = Supplier.ofLazyFinal(
+    private final Supplier<Set<String>> keys = Supplier.ofCaching(
             new Supplier<>() { public Set<String> get() { return keys0(); }});
 
     private Set<String> keys0() {
