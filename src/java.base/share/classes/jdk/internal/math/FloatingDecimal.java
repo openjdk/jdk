@@ -32,14 +32,13 @@ import java.util.Arrays;
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
- * static convenience methods, although a <code>BinaryToASCIIConverter</code>
+ * static convenience methods, although a {@link BinaryToASCIIConverter}
  * instance may be obtained and reused.
  */
 public class FloatingDecimal{
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
-    // (There are more really boring constants at the end.)
     //
     private static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
     private static final long   FRACT_HOB = ( 1L<<EXP_SHIFT ); // assumed High-Order bit
@@ -52,16 +51,13 @@ public class FloatingDecimal{
     private static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
     private static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
     private static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
-    private static final int    SINGLE_MAX_DECIMAL_EXPONENT = 38;
-    private static final int    SINGLE_MIN_DECIMAL_EXPONENT = -45;
-
 
     /**
-     * Converts a <code>String</code> to a double precision floating point value.
+     * Converts a {@link String} to a double precision floating point value.
      *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The double precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted double precision value.
      */
     public static double parseDouble(String s) throws NumberFormatException {
@@ -69,11 +65,11 @@ public class FloatingDecimal{
     }
 
     /**
-     * Converts a <code>String</code> to a single precision floating point value.
+     * Converts a {@link String} to a single precision floating point value.
      *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The single precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted single precision value.
      */
     public static float parseFloat(String s) throws NumberFormatException {
@@ -1382,26 +1378,6 @@ public class FloatingDecimal{
                     // Else we have a hard case with a negative exp.
                     //
                 }
-            } else if ((e >= n) && (n + e <= MAX_DECIMAL_DIGITS)) {
-                //
-                // In double-precision, this is an exact floating integer.
-                // So we can compute to double, then shorten to float
-                // with one round, and get the right answer.
-                //
-                // First, finish accumulating digits.
-                // Then convert that integer to a double, multiply
-                // by the appropriate power of ten, and convert to float.
-                //
-                long lValue = iValue;
-                for (int i = kDigits; i < n; i++) {
-                    lValue = lValue * 10L + (long) ((int) d[i] - (int) '0');
-                }
-                double dValue = (double) lValue;
-                exp = e - n;
-                dValue *= SMALL_10_POW[exp];
-                fValue = (float) dValue;
-                return (isNegative) ? -fValue : fValue;
-
             }
             //
             // Harder cases:
@@ -1414,13 +1390,6 @@ public class FloatingDecimal{
             //
             double dValue = fValue;
             if (exp > 0) {
-                if (e > SINGLE_MAX_DECIMAL_EXPONENT + 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // Infinity. Cut to the chase.
-                    //
-                    return (isNegative) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-                }
                 if ((exp & 15) != 0) {
                     dValue *= SMALL_10_POW[exp & 15];
                 }
@@ -1434,13 +1403,6 @@ public class FloatingDecimal{
                 }
             } else if (exp < 0) {
                 exp = -exp;
-                if (e < SINGLE_MIN_DECIMAL_EXPONENT - 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // zero. Cut to the chase.
-                    //
-                    return (isNegative) ? -0.0f : 0.0f;
-                }
                 if ((exp & 15) != 0) {
                     dValue /= SMALL_10_POW[exp & 15];
                 }
