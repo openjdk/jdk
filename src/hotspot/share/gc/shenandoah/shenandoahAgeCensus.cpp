@@ -332,7 +332,7 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
     const size_t prev_pop = prev_pv->sizes[i-1];
     const double mr = mortality_rate(prev_pop, cur_pop);
     if (prev_pop > ShenandoahGenerationalTenuringCohortPopulationThreshold &&
-        mr > 0 && mr > ShenandoahGenerationalTenuringMortalityRateThreshold) {
+        mr > ShenandoahGenerationalTenuringMortalityRateThreshold) {
       // This is the oldest cohort that has high mortality.
       // We ignore any cohorts that had a very low population count, or
       // that have a lower mortality rate than we care to age in young; these

@@ -91,7 +91,7 @@ struct ShenandoahNoiseStats {
 //
 // In addition, this class also maintains per worker population vectors into which
 // census for the current minor GC is accumulated (during marking or, optionally, during
-// evacuation). These are cleared after each marking (resectively, evacuation) cycle,
+// evacuation). These are cleared after each marking (respectively, evacuation) cycle,
 // once the per-worker data is consolidated into the appropriate population vector
 // per minor collection. The _local_age_table is thus C x N, for N GC workers.
 class ShenandoahAgeCensus: public CHeapObj<mtGC> {
