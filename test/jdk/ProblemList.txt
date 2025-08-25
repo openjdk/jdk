@@ -750,11 +750,6 @@ java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
 
-sun/tools/jstat/jstatLineCounts1.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts2.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts3.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-
 ############################################################################
 
 # jdk_other
