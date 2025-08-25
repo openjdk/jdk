@@ -294,6 +294,11 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
+  // accept cold methods if requested
+  if (InlineColdMethods) {
+    return false;
+  }
+
   // don't use counts with -Xcomp
   if (UseInterpreter) {
     if (!callee_method->has_compiled_code() &&
@@ -329,6 +334,9 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile) {
   if (!UseInterpreter) {
     return false; // -Xcomp
+  }
+  if (InlineColdMethods) {
+    return false; // CTW
   }
   if (profile.count() > 0) {
     return false; // reachable according to profile
