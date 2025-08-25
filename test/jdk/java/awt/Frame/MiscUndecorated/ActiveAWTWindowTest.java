@@ -26,8 +26,6 @@
  * @key headful
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains
  * or looses the focus
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ActiveAWTWindowTest
  */
 
@@ -37,6 +35,7 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,82 +43,81 @@ import java.awt.event.InputEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ActiveAWTWindowTest {
 
-    private Frame frame, frame2;
-    private Button button, button2;
-    private TextField textField, textField2;
-    private volatile int eventType;
-    private static final CountDownLatch windowActivatedLatch = new CountDownLatch(1);
-    private static final CountDownLatch windowDeactivatedLatch = new CountDownLatch(1);
-    private static final CountDownLatch windowFocusGainedLatch = new CountDownLatch(1);
-    private boolean passed = true;
-    private final int delay = 150;
+    private static Frame frame, frame2;
+    private static Button button, button2;
+    private static TextField textField, textField2;
+    private static volatile int eventType;
+
+    private static CountDownLatch windowActivatedLatch = new CountDownLatch(1);
+    private static CountDownLatch windowDeactivatedLatch = new CountDownLatch(1);
+    private static CountDownLatch windowFocusGainedLatch = new CountDownLatch(1);
+    private static boolean passed = true;
 
     public static void main(String[] args) throws Exception {
-        ActiveAWTWindowTest test = new ActiveAWTWindowTest();
         try {
-            test.doTest();
+            EventQueue.invokeAndWait(() -> {
+                initializeGUI();
+            });
+            doTest();
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected Exception encountered.");
         } finally {
             EventQueue.invokeAndWait(() -> {
-                if (test.frame != null) {
-                    test.frame.dispose();
+                if (frame != null) {
+                    frame.dispose();
                 }
-                if (test.frame2 != null) {
-                    test.frame2.dispose();
+                if (frame2 != null) {
+                    frame2.dispose();
                 }
             });
         }
     }
 
-    public ActiveAWTWindowTest() {
-        try{
-            EventQueue.invokeAndWait( () -> {
-                    initializeGUI();
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Interrupted or unexpected Exception occured");
-        }
-    }
-
-    private void initializeGUI() {
+    private static void initializeGUI() {
         frame = new Frame();
         frame.setLayout(new FlowLayout());
-
         frame.setLocation(5, 20);
         frame.setSize(200, 200);
         frame.setUndecorated(true);
+
         frame.addWindowFocusListener(new WindowFocusListener() {
+            @Override
             public void windowGainedFocus(WindowEvent event) {
                 System.out.println("Frame Focus gained");
                 windowFocusGainedLatch.countDown();
             }
 
+            @Override
             public void windowLostFocus(WindowEvent event) {
-                    System.out.println("Frame Focus lost");
+                System.out.println("Frame Focus lost");
             }
         });
+
         frame.addWindowListener(new WindowAdapter() {
+            @Override
             public void windowActivated(WindowEvent e) {
                 eventType = WindowEvent.WINDOW_ACTIVATED;
-                System.out.println("Undecorated Frame is activated\n");
+                System.out.println("Undecorated Frame is activated");
                 windowActivatedLatch.countDown();
             }
 
+            @Override
             public void windowDeactivated(WindowEvent e) {
                 eventType = WindowEvent.WINDOW_DEACTIVATED;
-                System.out.println("Undecorated Frame got Deactivated\n");
+                System.out.println("Undecorated Frame got Deactivated");
                 windowDeactivatedLatch.countDown();
             }
         });
+
         textField = new TextField("TextField");
         button = new Button("Click me");
         button.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 textField.setText("Focus gained");
             }
@@ -135,9 +133,11 @@ public class ActiveAWTWindowTest {
         frame2.setLocation(5, 250);
         frame2.setSize(200, 200);
         frame2.setBackground(Color.green);
+
         button2 = new Button("Click me");
         textField2 = new TextField("TextField");
         button2.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 textField2.setText("Got the focus");
             }
@@ -146,71 +146,68 @@ public class ActiveAWTWindowTest {
         frame2.add(button2, BorderLayout.SOUTH);
         frame2.add(textField2, BorderLayout.NORTH);
         frame2.setVisible(true);
-
-        frame.toFront();
     }
 
-    public void doTest() {
-        ExtendedRobot robot;
+    private static void doTest() {
+        Robot robot;
         try {
-            robot = new ExtendedRobot();
+            robot = new Robot();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("Cannot create robot");
         }
-
-        robot.setAutoDelay(delay);
+        robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
+        try {
+            if (!windowFocusGainedLatch.await(1500, TimeUnit.MILLISECONDS)) {
+                passed = false;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for focus");
+        }
 
-        robot.waitForIdle(5*delay);
-        robot.mouseMove(button.getLocationOnScreen().x + button.getSize().width / 2,
-                        button.getLocationOnScreen().y + button.getSize().height / 2);
+        robot.mouseMove(
+            button.getLocationOnScreen().x + button.getSize().width / 2,
+            button.getLocationOnScreen().y + button.getSize().height / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
             try {
-                windowActivatedLatch.await(delay * 10, TimeUnit.MILLISECONDS);
+                windowActivatedLatch.await(1500, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException("Unexpected Exception: "
+                    + "waiting on WINDOW_ACTIVATED event");
             }
         }
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
             passed = false;
-            System.err.println("WINDOW_ACTIVATED event did not occur when the " +
-                    "undecorated frame is activated!");
         }
-
         eventType = -1;
 
-        robot.mouseMove(button2.getLocationOnScreen().x + button2.getSize().width / 2,
-                        button2.getLocationOnScreen().y + button2.getSize().height / 2);
+        robot.mouseMove(
+            button2.getLocationOnScreen().x + button2.getSize().width / 2,
+            button2.getLocationOnScreen().y + button2.getSize().height / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
             try {
-                windowDeactivatedLatch.await(delay * 10, TimeUnit.MILLISECONDS);
+                windowDeactivatedLatch.await(1500, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
+                throw new RuntimeException("Unexpected Exception: "
+                    + "waiting on WINDOW_DEACTIVATED event");
             }
         }
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
             passed = false;
-            System.err.println("FAIL: WINDOW_DEACTIVATED event did not occur for the " +
-                    "undecorated frame when another frame gains focus!");
         }
         if (frame.hasFocus()) {
             passed = false;
-            System.err.println("FAIL: The undecorated frame has focus even when " +
-                        "another frame is clicked!");
         }
-
         if (!passed) {
-            //captureScreenAndSave();
-            System.err.println("Test failed!");
             throw new RuntimeException("Test failed.");
-        } else {
-            System.out.println("Test passed");
         }
     }
 }
+
