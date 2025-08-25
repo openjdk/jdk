@@ -29,6 +29,7 @@
 #include "opto/matcher.hpp"
 #include "opto/mempointer.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
@@ -161,6 +162,10 @@ public:
            _multiversioning_fast_proj != nullptr;
   }
 
+  bool use_speculative_aliasing_checks() const {
+    return are_speculative_checks_possible() && UseAutoVectorizationSpeculativeAliasingChecks;
+  }
+
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
@@ -203,6 +208,10 @@ public:
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
+
+  bool is_trace_speculative_aliasing_analysis() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_ALIASING_ANALYSIS);
+  }
 #endif
 
   // Is the node in the basic block of the loop?
@@ -222,15 +231,18 @@ public:
       return false;
     }
 
+    // Usually the ctrl of n is already before the pre-loop.
     Node* ctrl = phase()->get_ctrl(n);
-
-    // Quick test: is it in the main-loop?
-    if (lpt()->is_member(phase()->get_loop(ctrl))) {
-      return false;
+    if (is_before_pre_loop(ctrl)) {
+      return true;
     }
 
-    // Is it before the pre-loop?
-    return phase()->is_dominator(ctrl, pre_loop_head());
+    // But in some cases, the ctrl of n is between the pre and
+    // main loop, but the early ctrl is before the pre-loop.
+    // As long as the early ctrl is before the pre-loop, we can
+    // compute n before the pre-loop.
+    Node* early = phase()->compute_early_ctrl(n, ctrl);
+    return is_before_pre_loop(early);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -239,6 +251,16 @@ public:
 
 private:
   VStatus check_preconditions_helper();
+
+  bool is_before_pre_loop(Node* ctrl) const {
+    // Quick test: is it in the main-loop?
+    if (lpt()->is_member(phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return phase()->is_dominator(ctrl, pre_loop_head());
+  }
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.
@@ -569,6 +591,9 @@ private:
 //  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
 //                         stores are serialized, even if their memory does not overlap. Thus,
 //                         we refine the memory-dependencies (see construct method).
+//    - Strong edge: must be respected.
+//    - Weak edge:   if we add a speculative aliasing check, we can violate
+//                   the edge, i.e. swap the order.
 class VLoopDependencyGraph : public StackObj {
 private:
   class DependencyNode;
@@ -611,7 +636,7 @@ public:
   bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  void add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges);
   int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
   int find_max_pred_depth(const Node* n) const;
@@ -625,16 +650,23 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _memory_pred_edges_length;
-    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+    const uint _num_strong_memory_edges;
+    const uint _num_weak_memory_edges;
+    int* _memory_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    DependencyNode(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
-    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+    uint num_strong_memory_edges() const { return _num_strong_memory_edges; }
+    uint num_weak_memory_edges() const { return _num_weak_memory_edges; }
 
-    int memory_pred_edge(uint i) const {
-      assert(i < _memory_pred_edges_length, "bounds check");
-      return _memory_pred_edges[i];
+    int strong_memory_edge(uint i) const {
+      assert(i < _num_strong_memory_edges, "bounds check");
+      return _memory_edges[i];
+    }
+
+    int weak_memory_edge(uint i) const {
+      assert(i < _num_weak_memory_edges, "bounds check");
+      return _memory_edges[_num_strong_memory_edges + i];
     }
   };
 
@@ -649,26 +681,39 @@ public:
 
     Node* _current;
     bool _is_current_memory_edge;
+    bool _is_current_weak_memory_edge;
 
-    // Iterate in node->in(i)
-    int _next_pred;
-    int _end_pred;
+    // Iterate in data edges, i.e. iterate node->in(i), excluding control and memory edges.
+    int _next_data_edge;
+    int _end_data_edge;
 
-    // Iterate in dependency_node->memory_pred_edge(i)
-    int _next_memory_pred;
-    int _end_memory_pred;
+    // Iterate in dependency_node->strong_memory_edges()
+    int _next_strong_memory_edge;
+    int _end_strong_memory_edge;
+
+    // Iterate in dependency_node->weak_memory_edge()
+    int _next_weak_memory_edge;
+    int _end_weak_memory_edge;
+
   public:
     PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
+
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
     }
+
     bool is_current_memory_edge() const {
       assert(!done(), "not done yet");
       return _is_current_memory_edge;
+    }
+
+    bool is_current_weak_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_weak_memory_edge;
     }
   };
 };
@@ -933,6 +978,43 @@ public:
     }
     return mem_pointer().never_overlaps_with(other.mem_pointer());
   }
+
+  // Delegate to MemPointer::always_overlaps_with, but guard for invalid cases
+  // where we must return a conservative answer: unknown overlap, return false.
+  bool always_overlaps_with(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::always_overlaps_with: invalid VPointer, overlap unknown.");
+      }
+#endif
+      return false;
+    }
+    return mem_pointer().always_overlaps_with(other.mem_pointer());
+  }
+
+  static int cmp_summands(const VPointer& vp1, const VPointer& vp2) {
+    return MemPointer::cmp_summands(vp1.mem_pointer(), vp2.mem_pointer());
+  }
+
+  static int cmp_con(const VPointer& vp1, const VPointer& vp2) {
+    // We use two comparisons, because a subtraction could underflow.
+    jint con1 = vp1.con();
+    jint con2 = vp2.con();
+    if (con1 < con2) { return -1; }
+    if (con1 > con2) { return  1; }
+    return 0;
+  }
+
+  static int cmp_summands_and_con(const VPointer& vp1, const VPointer& vp2) {
+    int cmp = cmp_summands(vp1, vp2);
+    if (cmp != 0) { return cmp; }
+    return cmp_con(vp1, vp2);
+  }
+
+  bool can_make_speculative_aliasing_check_with(const VPointer& other) const;
+  Node* make_pointer_expression(Node* iv_value) const;
+  BoolNode* make_speculative_aliasing_check_with(const VPointer& other) const;
 
   NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
 
