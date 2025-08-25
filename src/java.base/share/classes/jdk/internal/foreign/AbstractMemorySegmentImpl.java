@@ -206,7 +206,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public final MemorySegment fill(byte value) {
-        return SegmentBulkOperations.fill(this, value);
+        SegmentBulkOperations.fill(this, value);
+        return this;
     }
 
     @Override
@@ -345,7 +346,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public void checkReadOnly(boolean readOnly) {
+    public final void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
