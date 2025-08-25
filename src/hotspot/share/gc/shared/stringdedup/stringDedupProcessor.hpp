@@ -27,9 +27,9 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "utilities/macros.hpp"
 
-class CollectedHeap;
 class JavaThread;
 class OopStorage;
 
@@ -43,7 +43,7 @@ class OopStorage;
 // incremental operations for resizing and for removing dead entries, so
 // safepoint checks can be performed between steps in those operations.
 class StringDedup::Processor : public CHeapObj<mtGC> {
-  friend class CollectedHeap;
+  friend class CPUTimeUsage::GC;
 
   Processor();
   ~Processor() = default;
