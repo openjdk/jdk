@@ -2194,9 +2194,9 @@ bool ZPageAllocator::is_multi_partition_enabled() const {
 }
 
 bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
-  return allocation->type() == ZPageType::large &&
-         is_multi_partition_enabled() &&
-         sum_available() >= allocation->size();
+  return is_multi_partition_enabled() &&
+         allocation->type() == ZPageType::large &&
+         allocation->size() <= sum_available();
 }
 
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {
