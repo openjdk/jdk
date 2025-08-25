@@ -56,6 +56,9 @@ class oopDesc;
 #define ATTRIBUTE_FLATTEN
 #endif
 
+// Dummy placeholder for use of [[nodiscard]]
+#define ATTRIBUTE_NODISCARD
+
 // These are #defines to selectively turn on/off the Print(Opto)Assembly
 // capabilities. Choices should be led by a tradeoff between
 // code size and improved supportability.
