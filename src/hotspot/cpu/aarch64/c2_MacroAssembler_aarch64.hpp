@@ -204,4 +204,10 @@
                                FloatRegister index, FloatRegister tmp, BasicType bt,
                                unsigned vector_length_in_bytes);
 
+  void vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
+                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                          int vector_length_in_bytes);
+  void vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
+                         FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                         int vector_length_in_bytes);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
