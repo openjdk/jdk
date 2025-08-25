@@ -1050,31 +1050,35 @@ public class TestAliasingFuzzer {
                          Aliasing.CONTAINER_SAME_ALIASING_NEVER,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
                         // We would have liked to check that there is no multiversioning.
+                        //
                         // But sadly there are some cases that have issues with RCE and/or
                         // predicates, and so we end up using multiversioning anyway. We
                         // should fix those cases eventually, to strengthen the checks here.
-                        """
-                        // Due to cases like JDK-8360204 and JDK-8365982, there can be issues
-                        // with RCE leading cases where we remove predicates and then unroll again
-                        // and then end up multiversioning. These cases seem relatively rare but
-                        // prevent us from asserting that there is never multiversioning in these cases.
-                        """;
-                        // Once these cases are fixed, we want to use this IR rule:
-                        // """
-                        // // Aliasing check should never fail at runtime, so the predicate
-                        // // should never fail, and we do not have to use multiversioning.
-                        // // Failure could have a few causes:
-                        // // - issues with doing RCE / missing predicates
-                        // //   -> other loop-opts need to be fixed
-                        // // - predicate fails: recompile with multiversioning
-                        // //   -> logic in runtime check may be wrong
-                        // @IR(counts = {".*multiversion.*", "= 0"},
-                        //     phase = CompilePhase.PRINT_IDEAL,
-                        //     applyIf = {"UseAutoVectorizationPredicate", "true"},
-                        //     applyIfPlatform = {"64-bit", "true"},
-                        //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                        // """);
-                    case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
+                        //
+                        // The array cases are a little more tame, and do not have the same
+                        // issues as the MemorySegment cases.
+                        (containerKind == ContainerKind.ARRAY)
+                        ? """
+                          // Aliasing check should never fail at runtime, so the predicate
+                          // should never fail, and we do not have to use multiversioning.
+                          // Failure could have a few causes:
+                          // - issues with doing RCE / missing predicates
+                          //   -> other loop-opts need to be fixed
+                          // - predicate fails: recompile with multiversioning
+                          //   -> logic in runtime check may be wrong
+                          @IR(counts = {".*multiversion.*", "= 0"},
+                              phase = CompilePhase.PRINT_IDEAL,
+                              applyIf = {"UseAutoVectorizationPredicate", "true"},
+                              applyIfPlatform = {"64-bit", "true"},
+                              applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                          """
+                        : """
+                          // Due to cases like JDK-8360204 and JDK-8365982, there can be issues
+                          // with RCE leading cases where we remove predicates and then unroll again
+                          // and then end up multiversioning. These cases seem relatively rare but
+                          // prevent us from asserting that there is never multiversioning in these cases.
+                          """;
+                   case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                             """
                             // Aliasing unknown, we may use the predicate or multiversioning.

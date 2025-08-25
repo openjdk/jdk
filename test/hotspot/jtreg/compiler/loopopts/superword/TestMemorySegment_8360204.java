@@ -65,9 +65,9 @@ public class TestMemorySegment_8360204 {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0",
-                  IRNode.REPLICATE_L,  "= 0",
-                  ".*multiversion.*",  "> 0"}, // Sadly, we now multiversion
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0",
+                  ".*multiversion.*",   "> 0"}, // Sadly, we now multiversion
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
