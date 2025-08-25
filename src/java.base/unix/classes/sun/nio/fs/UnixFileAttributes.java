@@ -83,18 +83,9 @@ class UnixFileAttributes
 
     // get the UnixFileAttributes for a given file.
     // Returns null if the file does not exist.
-    static UnixFileAttributes getIfExists(UnixPath path)
-        throws UnixException
+    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException
     {
-        UnixFileAttributes attrs = new UnixFileAttributes();
-        int errno = UnixNativeDispatcher.stat2(path, attrs);
-        if (errno == 0) {
-            return attrs;
-        } else if (errno == UnixConstants.ENOENT) {
-            return null;
-        } else {
-            throw new UnixException(errno);
-        }
+        return getIfExists(path, true);
     }
 
     // get the UnixFileAttributes for a given file, optionally following links.
@@ -106,14 +97,13 @@ class UnixFileAttributes
         int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
         try {
             UnixNativeDispatcher.fstatat(UnixConstants.AT_FDCWD,
-                                         path.asByteArray(), flag, attrs);
+                                         path, flag, attrs);
         } catch (UnixException x) {
             if (x.errno() == UnixConstants.ENOENT)
                 return null;
-
-            throw x;
+            else
+                throw x;
         }
-
         return attrs;
     }
 
@@ -130,7 +120,7 @@ class UnixFileAttributes
     {
         UnixFileAttributes attrs = new UnixFileAttributes();
         int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
-        UnixNativeDispatcher.fstatat(dfd, path.asByteArray(), flag, attrs);
+        UnixNativeDispatcher.fstatat(dfd, path, flag, attrs);
         return attrs;
     }
 

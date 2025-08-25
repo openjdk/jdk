@@ -645,7 +645,7 @@ static void copy_stat_attributes(JNIEnv* env, struct stat* buf, jobject attrs) {
 #endif
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
@@ -662,18 +662,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
         RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-            return 0;
         } else {
-            return errno;
+            throwUnixException(env, errno);
         }
     }
 #endif
     RESTARTABLE(stat(path, &buf), err);
     if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
-        return 0;
     } else {
-        return errno;
+        throwUnixException(env, errno);
     }
 }
 
@@ -774,10 +772,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         return;
     }
     RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
+    } else {
+        throwUnixException(env, errno);
     }
 }
 
