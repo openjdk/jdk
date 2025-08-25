@@ -520,7 +520,6 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     }
 
     const jushort flags = node->flags();
-    Node* old = C->matcher()->find_old_node(node);
     const IdealGraphPrintRecord rec[] = {
         {flags & Node::Flag_is_Copy, "is_copy", "true"},
         {flags & Node::Flag_rematerialize, "rematerialize", "true"},
@@ -531,16 +530,34 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         {flags & Node::Flag_is_dead_loop_safe, "is_dead_loop_safe", "true"},
         {flags & Node::Flag_may_be_short_branch, "may_be_short_branch", "true"},
         {flags & Node::Flag_has_call, "has_call", "true"},
-        {flags & Node::Flag_has_swapped_edges, "has_swapped_edges", "true"},
-        {((C->matcher() != nullptr) && (C->matcher()->is_shared(node))), "is_shared", "true"},
-        {((C->matcher() != nullptr) && !(C->matcher()->is_shared(node))), "is_shared", "false"},
-        {((C->matcher() != nullptr) && (C->matcher()->is_dontcare(node))), "is_dontcare", "true"},
-        {((C->matcher() != nullptr) && !(C->matcher()->is_dontcare(node))), "is_dontcare", "false"},
-        {(old != nullptr), "old_node_idx", nullptr, (int)old->_idx},
-        {(node->is_Proj()), "con", nullptr, (int)node->as_Proj()->_con},
-        {node->is_Mach(), "idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]}
+        {flags & Node::Flag_has_swapped_edges, "has_swapped_edges", "true"}
       };
     print_prop_record(rec,(sizeof(rec)/sizeof(IdealGraphPrintRecord)));
+
+    if (C->matcher() != nullptr) {
+      if (C->matcher()->is_shared(node)) {
+        print_prop("is_shared", "true");
+      } else {
+        print_prop("is_shared", "false");
+      }
+      if (C->matcher()->is_dontcare(node)) {
+        print_prop("is_dontcare", "true");
+      } else {
+        print_prop("is_dontcare", "false");
+      }
+      Node* old = C->matcher()->find_old_node(node);
+      if (old != nullptr) {
+        print_prop("old_node_idx", old->_idx);
+      }
+    }
+
+    if (node->is_Proj()) {
+      print_prop("con", (int)node->as_Proj()->_con);
+    }
+
+    if (node->is_Mach()) {
+      print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
+    }
 
     if (node->is_CountedLoop()) {
       print_loop_kind(node->as_CountedLoop());
@@ -1064,7 +1081,7 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       IdealGraphPrintRecord rec[] = {
           {1, "mask", buffer},
           {1, "mask_size", nullptr, lrg.mask_size()},
-          {lrg._degree_valid, "degree", nullptr, lrg.degree()},
+          {(int)lrg._degree_valid, "degree", nullptr, lrg.degree()},
           {1, "num_regs", nullptr, lrg.num_regs()},
           {1, "reg_pressure", nullptr, lrg.reg_pressure()},
           {1, "cost", nullptr, (int)lrg._cost},
@@ -1074,10 +1091,10 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
           {(int)lrg._copy_bias, "copy_bias", nullptr, (int)lrg._copy_bias},
           {lrg.is_singledef(), "is_singledef", TRUE_VALUE},
           {lrg.is_multidef(), "is_multidef", TRUE_VALUE},
-          {lrg._is_oop, "is_oop", TRUE_VALUE},
-          {lrg._is_float, "is_float", TRUE_VALUE},
-          {lrg._is_vector, "is_vector", TRUE_VALUE},
-          {lrg._is_predicate, "is_predicate", TRUE_VALUE},
+          {(int)lrg._is_oop, "is_oop", TRUE_VALUE},
+          {(int)lrg._is_float, "is_float", TRUE_VALUE},
+          {(int)lrg._is_vector, "is_vector", TRUE_VALUE},
+          {(int)lrg._is_predicate, "is_predicate", TRUE_VALUE},
           {lrg._is_scalable, "is_scalable", TRUE_VALUE},
           {lrg._was_spilled1, "was_spilled1", TRUE_VALUE},
           {lrg._was_spilled2, "was_spilled2", TRUE_VALUE},
