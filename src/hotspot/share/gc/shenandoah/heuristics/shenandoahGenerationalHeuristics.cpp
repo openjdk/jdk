@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahEvacInfo.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -88,12 +89,15 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     if (region->is_empty()) {
       free_regions++;
       free += region_size_bytes;
-    } else if (region->is_regular()) {
+    } else if (region->is_regular() && region->has_allocs()) {
       if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
+        if (region->reserved_for_direct_allocation()) {
+          heap->free_set()->release_directly_allocatable_region(region);
+        }
       } else {
         bool is_candidate;
         // This is our candidate for later consideration.
