@@ -295,3 +295,31 @@ TEST(globalDefinitions, format_specifiers) {
   // Check all platforms print this compatibly without leading 0x.
   check_format(UINT64_FORMAT_0,        (u8)0x123,         "0000000000000123");
 }
+
+TEST(globalDefinitions, jlong_from) {
+  jlong val = jlong_from(0xFF, 0);
+  EXPECT_EQ(val, 0x00000000FF00000000);
+
+  val = jlong_from(0, 0xFF);
+  EXPECT_EQ(val, 0x00000000000000FF);
+
+  val = jlong_from(0xFFFFFFFF, 0);
+  EXPECT_EQ(               val, (signed long)0xFFFFFFFF00000000);
+  EXPECT_EQ((unsigned long)val,              0xFFFFFFFF00000000);
+
+  val = jlong_from(0, 0xFFFFFFFF);
+  EXPECT_EQ(val, 0x00000000FFFFFFFF);
+
+  val = jlong_from(0, -1);
+  EXPECT_EQ(val, 0x00000000FFFFFFFF);
+
+  val = jlong_from(-1, 0);
+  EXPECT_EQ(val, (signed long)0xFFFFFFFF00000000);
+
+  val = jlong_from(-1, -1);
+  EXPECT_EQ(val, (signed long)0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(val, -1);
+
+  val = jlong_from(0xABCD, 0xEFEF);
+  EXPECT_EQ(val, 0x0000ABCD0000EFEF);
+}
