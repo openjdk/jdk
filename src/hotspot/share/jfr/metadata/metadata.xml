@@ -791,7 +791,7 @@
   </Event>
 
   <Event name="NativeMemoryUsageTotal" category="Java Virtual Machine, Memory" label="Total Native Memory Usage"
-    description="Total native memory usage for the JVM. Might not be the exact sum of the NativeMemoryUsage events due to timeing." period="everyChunk">
+    description="Total native memory usage for the JVM. Might not be the exact sum of the NativeMemoryUsage events due to timing." period="everyChunk">
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Total amount of reserved bytes for the JVM" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Total amount of committed bytes for the JVM" />
   </Event>
@@ -911,6 +911,8 @@
     <Field type="long" name="daemonCount" label="Daemon Threads" description="Number of live daemon threads" />
     <Field type="long" name="accumulatedCount" label="Accumulated Threads" description="Number of threads created and also started since JVM start" />
     <Field type="long" name="peakCount" label="Peak Threads" description="Peak live thread count since JVM start or when peak count was reset" />
+    <Field type="long" name="nonJavaThreadCount" label="Non-Java Threads" description="JVM-internal non-Java threads" />
+    <Field type="long" name="osThreadCount" label="OS Threads" description="Number of OS threads (JVM- and non-JVM-Threads)" />
   </Event>
 
   <Event name="ClassLoadingStatistics" category="Java Application, Statistics" label="Class Loading Statistics" period="everyChunk">
@@ -1343,6 +1345,33 @@
     <Field type="Tickspan" name="minimum" label="Minimum" description="An approximation of the minimum wall-clock time it took for the method to execute" />
     <Field type="Tickspan" name="average" label="Average" description="An approximation of the average wall-clock time it took for the method to execute" />
     <Field type="Tickspan" name="maximum" label="Maximum" description="An approximation of the maximum wall-clock time it took for the method to execute" />
+  </Event>
+
+  <Event name="ProcessSize" category="Java Virtual Machine, Memory" label="Process Size" description="Memory sizes related to the process" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="vsize" label="VSize" description="Virtual Size" />
+    <Field type="ulong" contentType="bytes" name="rss" label="RSS" description="Resident Set Size" />
+    <Field type="ulong" contentType="bytes" name="rssPeak" label="Peak RSS" description="Resident Set Size, Peak" />
+    <Field type="ulong" contentType="bytes" name="rssAnon" label="Anon RSS" description="Resident Set Size, Anonymous" />
+    <Field type="ulong" contentType="bytes" name="rssFile" label="File RSS" description="Resident Set Size, File Buffers" />
+    <Field type="ulong" contentType="bytes" name="rssShmem" label="Shmem RSS" description="Resident Set Size, Shared Memory" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Size of the commit charge of the process" />
+    <Field type="ulong" contentType="bytes" name="swap" label="Swap" description="Process memory swapped out" />
+    <Field type="ulong" contentType="bytes" name="pagetable" label="Page Table Size" description="Size of Page Table Entries" />
+  </Event>
+
+  <Event name="LibcStatistics" category="Java Virtual Machine, Memory" label="Libc Malloc Statistics" description="Malloc Statistics reported by the Libc" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="mallocOutstanding" label="Libc Malloc Outstanding" description="Outstanding Malloc Size" />
+    <Field type="ulong" contentType="bytes" name="mallocRetained" label="Libc Malloc Retained" description="Retained (freed but cached in libc) Malloc size (estimate)" />
+    <Field type="ulong" name="trims" label="libc trims" description="Number of Libc Heap Trims" />
+  </Event>
+
+  <Event name="LibcHeapTrim" category="Java Virtual Machine, Memory" label="Libc Heap Trim" thread="true" startTime="true"
+    description="A Libc Trim operation">
+    <Field type="boolean" name="manual" label="manual" description="True for manual trims, false for periodic automatic trims" />
+    <Field type="double" contentType="millis" name="duration" label="Duration" description="Trim duration" />
+    <Field type="long" contentType="bytes" name="rssPre" label="RSS Before" description="RSS before Trim" />
+    <Field type="long" contentType="bytes" name="rssPost" label="RSS After" description="RSS after Trim" />
+    <Field type="long" contentType="bytes" name="rssRecovered" label="RSS Recovered" description="Amount of RSS Recovered by Trim (estimate)" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
