@@ -293,11 +293,10 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  const size_t ratio_of_old_in_collection_set = (maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent);
   const size_t old_available = old_generation->available();
-  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ?
-    old_available : MIN2((maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
-                          old_available);
-  log_info(gc, ergo)("max_old_evac_reserve: %zu", maximum_old_evacuation_reserve);
+  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ? old_available : MIN2(ratio_of_old_in_collection_set, old_available);
+  log_info(gc, ergo)("max_old_evac_reserve: %zu, old_available: %zu", maximum_old_evacuation_reserve, old_available);
 
   // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
   // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
@@ -354,8 +353,8 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
 
-  ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::cast(heap)->age_census();
-  log_info(gc, ergo)("Old gen reserved for live objects in aged regions: %zu, total tenurable population: %zu",
+  const ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::cast(heap)->age_census();
+  log_info(gc, ergo)("Old gen reserved for anticipated promotions: %zu, total tenurable population: %zu",
     consumed_by_advance_promotion, census->get_tenurable_bytes());
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
