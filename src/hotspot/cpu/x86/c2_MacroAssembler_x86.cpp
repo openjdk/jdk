@@ -5058,7 +5058,7 @@ void C2_MacroAssembler::vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegi
 }
 
 /*
- * Algorithm for vector D2L and F2I conversions:-
+ * Algorithm for vector D2L and F2I conversions (AVX 10.2 unsupported):-
  * a) Perform vector D2L/F2I cast.
  * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
  *    It signifies that source value could be any of the special floating point
@@ -5160,6 +5160,46 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
         break;
       default: assert(false, "%s", type2name(to_elem_bt));
     }
+  }
+}
+
+void C2_MacroAssembler::vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttps2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttps2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "%s", type2name(to_elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttpd2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "%s", type2name(to_elem_bt));
   }
 }
 
