@@ -20,7 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -30,16 +32,16 @@ import java.util.Set;
 
 /**
  * Represents an annotation where element values are represented with the types described
- * {@linkplain #get here}.
- *
+ * {@linkplain #get here}. This is the JVMCI analog of an {@link Annotation} object.
+ * <p>
  * In contrast to the standard annotation API based on {@link Annotation}, use of
- * {@link AnnotationData} allows annotations to be queried without the JVMCI runtime having to
+ * {@link AnnotationValue} allows annotations to be queried without the JVMCI runtime having to
  * support dynamic loading of arbitrary {@link Annotation} classes. Such support is impossible in a
- * closed world, ahead-of-time compiled environment such as libgraal.
+ * closed world, ahead-of-time compiled environment such as Native Image.
  */
-public final class AnnotationData {
+public final class AnnotationValue {
 
-    private final JavaType type;
+    private final ResolvedJavaType type;
     private final Map<String, Object> elements;
 
     private static final Set<Class<?>> ELEMENT_TYPES = Set.of(
@@ -52,41 +54,59 @@ public final class AnnotationData {
                     Long.class,
                     Double.class,
                     String.class,
-                    EnumData.class,
-                    AnnotationData.class);
+                    MissingType.class,
+                    ElementTypeMismatch.class,
+                    EnumArrayElement.class,
+                    EnumElement.class,
+                    AnnotationValue.class);
 
     /**
      * Creates an annotation.
      *
-     * @param type the annotation interface of this annotation, represented as a {@link JavaType}
+     * @param type the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
-     *            must be one of the {@code AnnotationData} types described {@linkplain #get here}
-     *            or it must be a {@link ErrorData} object whose {@code toString()} value describes
-     *            the error raised while parsing the element. There is no distinction between a
+     *            must be one of the {@code AnnotationValue} types described {@linkplain #get here}
+     *            or it must be a {@link ErrorElement} object for
+     *            an error seen while parsing the element. There is no distinction between a
      *            value explicitly present in the annotation and an element's default value.
      * @throws IllegalArgumentException if the value of an entry in {@code elements} is not of an
      *             accepted type
      * @throws NullPointerException if any of the above parameters is null or any entry in
      *             {@code elements} is null
      */
-    public AnnotationData(JavaType type, Map.Entry<String, Object>[] elements) {
+    public AnnotationValue(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
         this.type = Objects.requireNonNull(type);
         for (Map.Entry<String, Object> e : elements) {
-            Object value = e.getValue();
-            if (!(value instanceof ErrorData) &&
-                            !(value instanceof JavaType) &&
-                            !(value instanceof List) &&
-                            !ELEMENT_TYPES.contains(value.getClass())) {
-                throw new IllegalArgumentException("illegal type for element " + e.getKey() + ": " + value.getClass().getName());
-            }
+            checkEntry(e);
         }
         this.elements = Map.ofEntries(elements);
     }
 
+    private static void checkEntry(Map.Entry<String, Object> e) {
+        Object value = e.getValue();
+        Class<?> valueClass = value.getClass();
+        boolean illegalEnumType = false;
+        if (valueClass.isArray()) {
+            valueClass = valueClass.getComponentType();
+            if (valueClass == EnumElement.class || valueClass == EnumArrayElement.class) {
+                illegalEnumType = true;
+            }
+        }
+        if (illegalEnumType ||
+            (!ResolvedJavaType.class.isAssignableFrom(valueClass) &&
+             !(value instanceof List) &&
+             !ELEMENT_TYPES.contains(valueClass))) {
+            throw new IllegalArgumentException("illegal type for element " + e.getKey() + ": " + value.getClass().getName());
+        }
+    }
+
     /**
-     * @return the annotation interface of this annotation, represented as a {@link JavaType}
+     * Gets the annotation interface of this annotation, represented as
+     * a {@link ResolvedJavaType}.
+     *
+     * @see Annotation#annotationType()
      */
-    public JavaType getAnnotationType() {
+    public ResolvedJavaType getAnnotationType() {
         return type;
     }
 
@@ -97,7 +117,7 @@ public final class AnnotationData {
      * interface and the type of value returned by this method:
      * <table>
      * <thead>
-     * <tr><th>Annotation</th> <th>AnnotationData</th></tr>
+     * <tr><th>Annotation</th> <th>AnnotationValue</th></tr>
      * </thead><tbody>
      * <tr><td>boolean</td>    <td>Boolean</td></tr>
      * <tr><td>byte</td>       <td>Byte</td></tr>
@@ -108,37 +128,38 @@ public final class AnnotationData {
      * <tr><td>long</td>       <td>Long</td></tr>
      * <tr><td>double</td>     <td>Double</td></tr>
      * <tr><td>String</td>     <td>String</td></tr>
-     * <tr><td>Class</td>      <td>JavaType</td></tr>
-     * <tr><td>Enum</td>       <td>EnumData</td></tr>
-     * <tr><td>Annotation</td> <td>AnnotationData</td></tr>
-     * <tr><td>[]</td><td>immutable List&lt;T&gt; where T is one of the above types</td></tr>
+     * <tr><td>Class</td>      <td>ResolvedJavaType</td></tr>
+     * <tr><td>Enum</td>       <td>EnumElement</td></tr>
+     * <tr><td>Enum[]</td>     <td>EnumArrayElement</td></tr>
+     * <tr><td>Annotation</td> <td>AnnotationValue</td></tr>
+     * <tr><td>[]</td><td>List&lt;T&gt; where T is one of the above types except for EnumElement or EnumArrayElement</td></tr>
      * </tbody>
      * </table>
      *
-     * @param <V> the type of the element as per the {@code AnnotationData} column in the above
+     * @param <V> the type of the element as per the {@code AnnotationValue} column in the above
      *            table or {@link Object}
-     * @param elementType the class for the type of the element
+     * @param elementType the class for the type of the element or {@code Object.class}
      * @return the annotation element denoted by {@code name}
-     * @throws ClassCastException if the element is not of type {@code V}
-     * @throws IllegalArgumentException if this annotation has no element named {@code name} or if
-     *             there was an error parsing or creating the element value
+     * @throws ClassCastException if the element is not of type {@code elementType}
+     * @throws IllegalArgumentException if this annotation has no element named {@code name}
+     *            if {@code elementType != Object.class} and the element is of type
+     *            {@link ErrorElement}
      */
     // @formatter:on
     public <V> V get(String name, Class<V> elementType) {
         Object val = elements.get(name);
         if (val == null) {
-            throw new IllegalArgumentException("no element named " + name);
+            throw new IllegalArgumentException(type.toJavaName() + " missing element " + name);
         }
-        Class<? extends Object> valClass = val.getClass();
-        if (valClass == ErrorData.class) {
-            throw new IllegalArgumentException(val.toString());
+        if (elementType != Object.class && val instanceof ErrorElement ee) {
+            throw ee.generateException();
         }
         return elementType.cast(val);
     }
 
     @Override
     public String toString() {
-        return "@" + type.getName() + "(" + elements + ")";
+        return "@" + type.toClassName() + "(" + elements + ")";
     }
 
     @Override
@@ -146,8 +167,7 @@ public final class AnnotationData {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof AnnotationData) {
-            AnnotationData that = (AnnotationData) obj;
+        if (obj instanceof AnnotationValue that) {
             return this.type.equals(that.type) && this.elements.equals(that.elements);
 
         }

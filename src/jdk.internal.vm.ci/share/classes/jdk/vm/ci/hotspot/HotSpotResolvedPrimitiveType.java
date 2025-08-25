@@ -22,16 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.util.Objects.requireNonNull;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.List;
-
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -39,6 +30,16 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.Objects.requireNonNull;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 /**
  * Implementation of {@link JavaType} for primitive HotSpot types.
@@ -47,7 +48,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     static HotSpotResolvedPrimitiveType[] primitives;
 
-    private JavaKind kind;
+    private final JavaKind kind;
     HotSpotObjectConstantImpl mirror;
 
     /**
@@ -342,16 +343,18 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType type) {
+    public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
         checkIsAnnotation(type);
         return null;
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
-        checkAreAnnotations(types);
+    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
+        return Map.of();
+    }
+
+    @Override
+    public List<TypeAnnotationValue> getTypeAnnotationValues() {
         return List.of();
     }
 }

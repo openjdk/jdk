@@ -3014,8 +3014,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JNIHandles::make_local(THREAD, reflected);
 C2V_END
 
-static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
-                                              jint filter_length, jlong filter_klass_pointers,
+static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, AnnotationArray* annotations_array, jint category,
                                               JavaThread* THREAD, JVMCI_TRAPS) {
   // Get a ConstantPool object for annotation parsing
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
@@ -3033,23 +3032,13 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   typeArrayOop annotations_oop = Annotations::make_java_array(annotations_array, CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
 
-  InstanceKlass** filter = filter_length == 1 ?
-      (InstanceKlass**) &filter_klass_pointers:
-      (InstanceKlass**) filter_klass_pointers;
-  objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
-  objArrayHandle filter_classes(THREAD, filter_oop);
-  for (int i = 0; i < filter_length; i++) {
-    filter_classes->obj_at_put(i, filter[i]->java_mirror());
-  }
-
   // invoke VMSupport.encodeAnnotations
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_oop(annotations);
+  args.push_int(category);
   args.push_oop(Handle(THREAD, holder->java_mirror()));
   args.push_oop(jcp);
-  args.push_int(for_class);
-  args.push_oop(filter_classes);
   Symbol* signature = vmSymbols::encodeAnnotations_signature();
   JavaCalls::call_static(&result,
                          vm_support,
@@ -3077,26 +3066,51 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   return JVMCIENV->get_jbyteArray(ba_dest);
 }
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass),
-                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint category))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, klass));
-  return get_encoded_annotation_data(holder, holder->class_annotations(), true, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations;
+  if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+    raw_annotations = holder->class_annotations();
+  } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+    raw_annotations = holder->class_type_annotations();
+  } else {
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                  err_msg("%d", category));
+  }
+  return get_encoded_annotation_values(holder, raw_annotations, category, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
-                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), jint category))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  return get_encoded_annotation_data(method->method_holder(), method->annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations;
+  if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+    raw_annotations = method->annotations();
+  } else if (category == CompilerToVM::PARAMETER_ANNOTATIONS) {
+    raw_annotations = method->parameter_annotations();
+  } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+    raw_annotations = method->type_annotations();
+  } else {
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), err_msg("%d", category));
+  }
+  return get_encoded_annotation_values(method->method_holder(), raw_annotations, category, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
-                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index, jint category))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(holder, index);
-  return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+  AnnotationArray* raw_annotations;
+  if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+    raw_annotations = fd.annotations();
+  } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+    raw_annotations = fd.type_annotations();
+  } else {
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                  err_msg("%d", category));
+  }
+  return get_encoded_annotation_values(holder, raw_annotations, category, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
@@ -3440,9 +3454,9 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getCode",                                      CC "(" HS_INSTALLED_CODE ")[B",                                                       FN_PTR(getCode)},
   {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" REFLECTION_EXECUTABLE,                                          FN_PTR(asReflectionExecutable)},
   {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" REFLECTION_FIELD,                                               FN_PTR(asReflectionField)},
-  {CC "getEncodedClassAnnotationData",                CC "(" HS_KLASS2 OBJECT "IJ)[B",                                                      FN_PTR(getEncodedClassAnnotationData)},
-  {CC "getEncodedExecutableAnnotationData",           CC "(" HS_METHOD2 OBJECT "IJ)[B",                                                     FN_PTR(getEncodedExecutableAnnotationData)},
-  {CC "getEncodedFieldAnnotationData",                CC "(" HS_KLASS2 "I" OBJECT "IJ)[B",                                                  FN_PTR(getEncodedFieldAnnotationData)},
+  {CC "getEncodedClassAnnotationValues",              CC "(" HS_KLASS2 "I)[B",                                                              FN_PTR(getEncodedClassAnnotationValues)},
+  {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 "I)[B",                                                             FN_PTR(getEncodedExecutableAnnotationValues)},
+  {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "II)[B",                                                             FN_PTR(getEncodedFieldAnnotationValues)},
   {CC "getFailedSpeculations",                        CC "(J[[B)[[B",                                                                       FN_PTR(getFailedSpeculations)},
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getFailedSpeculationsAddress)},
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},

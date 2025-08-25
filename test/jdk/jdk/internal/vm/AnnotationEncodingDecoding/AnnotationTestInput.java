@@ -22,11 +22,14 @@
  */
 package jdk.internal.vm.test;
 
-import java.lang.annotation.Annotation;
+import java.io.Serializable;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 public class AnnotationTestInput {
 
@@ -107,7 +110,7 @@ public class AnnotationTestInput {
     public static class Super3 extends Super1 {}
 
     @Named("NonInheritedValue")
-    public static class OwnName extends Super1 {}
+    public static class OwnName extends @TypeQualifier Super1 {}
 
     public static class InheritedName1 extends Super1 {}
     public static class InheritedName2 extends Super2 {}
@@ -172,7 +175,7 @@ public class AnnotationTestInput {
             nestedArray = {@NestedAnno("nested11"), @NestedAnno("nested12")})
     @Deprecated
     @SuppressWarnings({"rawtypes", "all"})
-    public static class AnnotatedClass {}
+    public static class AnnotatedClass extends @TypeQualifier Thread implements @TypeQualifier Serializable {}
 
     @Single(string = "a",
             stringArray = {"a", "b"},
@@ -230,7 +233,18 @@ public class AnnotationTestInput {
             moodArray = {Mood.SAD, Mood.CONFUSED},
             nested = @NestedAnno("nested15"),
             nestedArray = {@NestedAnno("nested16"), @NestedAnno("nested17")})
-    private static final int annotatedField = 45;
+    private static final @TypeQualifier(comment = "annotatedField comment") int annotatedField = 45;
+
+    public @TypeQualifier String[][] s1;  // Annotates the class type String
+    public String @TypeQualifier [][] s2; // Annotates the array type String[][]
+    public String[] @TypeQualifier [] s3; // Annotates the array type String[]
+
+    // Define a type-use annotation
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TypeQualifier{
+        String comment() default "";
+    }
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface NestedAnno {
@@ -324,6 +338,9 @@ public class AnnotationTestInput {
         Single[] value();
     }
 
+    /**
+     * The class file for this class should be removed by a `@clean` jtreg command.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Missing {}
 
@@ -364,6 +381,13 @@ public class AnnotationTestInput {
     public void missingMember() {}
 
     /**
+     * Method with an annotation that has a member
+     * added in a newer version of the annotation.
+     */
+    @MemberAdded(value = "evolving")
+    public void addedMember() {}
+
+    /**
      * Method with an annotation that has a member named "any"
      * whose type is changed from int to String in a newer version
      * of the annotation.
@@ -371,5 +395,14 @@ public class AnnotationTestInput {
     @MemberTypeChanged(value = "evolving", retained = -34, any = 56)
     public void changeTypeOfMember() {}
 
+    /**
+     * Tries to get the {@code added} element from the {@link MemberAdded}
+     * annotation on {@link #addedMember()}
+     *
+     * @param missingMember the Method object for {@link #addedMember()}
+     */
+    public static MemberAdded getAddedElement(Method method) {
+        return method.getAnnotation(MemberAdded.class);
+    }
 }
 

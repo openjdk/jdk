@@ -35,6 +35,11 @@ class JVMCIObjectArray;
 
 class CompilerToVM {
  public:
+   // Keep in sync with constants in VMSupport.java
+   static const int DECLARED_ANNOTATIONS = 0;
+   static const int PARAMETER_ANNOTATIONS = 1;
+   static const int TYPE_ANNOTATIONS = 2;
+
   class Data {
     friend class JVMCIVMStructs;
 
