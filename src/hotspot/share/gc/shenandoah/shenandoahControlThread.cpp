@@ -58,9 +58,11 @@ void ShenandoahControlThread::run_service() {
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
 
-  // Create the KlassInfoTable for Shenandoah.
+  // Create the KlassInfoTable for Shenandoah only if JFR is enabled.
+  #if INCLUDE_JFR
   KlassInfoTable cit(false);
   heap->set_cit(&cit);
+  #endif // INCLUDE_JFR
 
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();

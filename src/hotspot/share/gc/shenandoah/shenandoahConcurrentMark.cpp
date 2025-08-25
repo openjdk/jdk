@@ -175,7 +175,7 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
 
   // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
   const bool object_count_enabled = ObjectCountEventSender::should_send_event();
-  if (object_count_enabled) {
+  if (object_count_enabled  && !ShenandoahHeap::heap()->mode()->is_generational()) {
     KlassInfoTable* const main_cit = ShenandoahHeap::heap()->get_cit();
     KlassInfoTable local_cit(false);
     ShenandoahObjectCountClosure _count(&local_cit);
