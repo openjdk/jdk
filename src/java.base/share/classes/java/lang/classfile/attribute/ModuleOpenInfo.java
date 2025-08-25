@@ -109,6 +109,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleOpenInfo of(PackageEntry opens, int opensFlags,
                              List<ModuleEntry> opensTo) {
@@ -137,6 +139,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleOpenInfo of(PackageEntry opens,
                              int opensFlags,
@@ -166,6 +170,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, if it is a
      *                qualified open, or empty
+     * @throws IllegalArgumentException if {@code opensFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleOpenInfo of(PackageDesc opens, int opensFlags,
                              List<ModuleDesc> opensTo) {
@@ -194,6 +200,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the packages to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleOpenInfo of(PackageDesc opens,
                              int opensFlags,
