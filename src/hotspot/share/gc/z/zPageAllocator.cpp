@@ -412,7 +412,7 @@ private:
   const Ticks                _start_timestamp;
   const uint32_t             _young_seqnum;
   const uint32_t             _old_seqnum;
-  const uint32_t             _initiating_numa_id;
+  const uint32_t             _preferred_partition;
   bool                       _is_multi_partition;
   ZSinglePartitionAllocation _single_partition_allocation;
   ZMultiPartitionAllocation  _multi_partition_allocation;
@@ -428,13 +428,13 @@ public:
       _start_timestamp(Ticks::now()),
       _young_seqnum(ZGeneration::young()->seqnum()),
       _old_seqnum(ZGeneration::old()->seqnum()),
-      _initiating_numa_id(preferred_partition),
+      _preferred_partition(preferred_partition),
       _is_multi_partition(false),
       _single_partition_allocation(size),
       _multi_partition_allocation(size),
       _node(),
       _stall_result() {
-    assert(_initiating_numa_id < ZNUMA::count(), "Initiating NUMA id out-of-bounds (0 <= %d < %d)", _initiating_numa_id, ZNUMA::count());
+    assert(_preferred_partition < ZNUMA::count(), "Preferred partition out-of-bounds (0 <= %d < %d)", _preferred_partition, ZNUMA::count());
   }
 
   void reset_for_retry() {
@@ -476,8 +476,8 @@ public:
     return _old_seqnum;
   }
 
-  uint32_t initiating_numa_id() const {
-    return _initiating_numa_id;
+  uint32_t preferred_partition() const {
+    return _preferred_partition;
   }
 
   bool is_multi_partition() const {
@@ -1550,7 +1550,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
   }
 
   // Round robin single-partition claiming
-  const uint32_t start_numa_id = allocation->initiating_numa_id();
+  const uint32_t start_numa_id = allocation->preferred_partition();
   const uint32_t start_partition = start_numa_id;
   const uint32_t num_partitions = _partitions.count();
 
@@ -1580,7 +1580,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
 }
 
 bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
-  const uint32_t start_node = allocation->initiating_numa_id();
+  const uint32_t start_node = allocation->preferred_partition();
   const uint32_t numa_nodes = ZNUMA::count();
 
   for (uint32_t i = 0; i < numa_nodes; ++i) {
