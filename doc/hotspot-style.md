@@ -1609,7 +1609,7 @@ doesn't use those mechanisms, instead providing and using its own.
 HotSpot has its own mechanisms for this, using values like
 `DEFAULT_CACHE_LINE_SIZE`. The platform-specific implementation of the HotSpot
 mechanisms might use these library functions, but there is no reason to move
-away from current approach. Quoting from [JOSUTTIS]: "... if you know better,
+away from the current approach. Quoting from [JOSUTTIS]: "... if you know better,
 use specific values, but using these values is better than any assumed fixed
 size for code supporting multiple platforms."
 
