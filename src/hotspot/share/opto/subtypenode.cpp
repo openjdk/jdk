@@ -136,8 +136,10 @@ bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type
   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
   record_for_cleanup(cmp, phase);
 
-  const Type* cmp_t = phase->type(cmp);
-  const Type* t = Value(phase);
+  // NOTE this is where the issue becomes apparent
+  const Type* cmp_t = phase->type(cmp); // NOTE this is TypeInt::CC_EQ (result of node comparison)
+  const Type* t = Value(phase);         // NOTE this is TypeInt::CC_GT
+  // NOTE cached_t is TypeInt::CC_GT as well
 
   if (t == cmp_t ||
       t != cached_t || // previous observations don't hold anymore
@@ -165,6 +167,8 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
 
   const TypeKlassPtr* superk = super_t->isa_klassptr();
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
+
+  // NOTE we could probably bail out from the verification if superk is abstract and has no subclass here
 
   if (super_t->singleton() && subk != nullptr) {
     if (obj_or_subklass->bottom_type() == Type::TOP) {
