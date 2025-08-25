@@ -51,8 +51,12 @@ public record StableSupplier<T>(StandardStableValue<T> delegate,
                    return t == this ? "(this StableSupplier)" : StandardStableValue.render(t);
               }
 
+
+    @SuppressWarnings("unchecked")
     public static <T> StableSupplier<T> of(Supplier<? extends T> original) {
-        return new StableSupplier<>(StandardStableValue.of(), original);
+        return original instanceof StableSupplier<? extends T> stableSupplier
+                ? (StableSupplier<T>) stableSupplier
+                : new StableSupplier<>(StandardStableValue.of(), original);
     }
 
 }

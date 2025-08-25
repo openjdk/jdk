@@ -62,6 +62,12 @@ final class StableSupplierTest {
     }
 
     @Test
+    void deduplicate() {
+         var cached = Supplier.ofCaching(SUPPLIER);
+         assertSame(cached, Supplier.ofCaching(cached));
+    }
+
+    @Test
     void exception() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
