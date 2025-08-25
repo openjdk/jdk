@@ -126,13 +126,13 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     {
         DerValue pBMAC1_params = new DerValue(encoded);
         if (pBMAC1_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PMAC1 parameter parsing error: "
+            throw new IOException("PBMAC1 parameter parsing error: "
                     + "not an ASN.1 SEQUENCE tag");
         }
         DerValue[] Info = (new DerInputStream(pBMAC1_params.toByteArray()))
                 .getSequence(2);
         if (Info.length != 2) {
-            throw new IOException("PMAC1 parameter parsing error: "
+            throw new IOException("PBMAC1 parameter parsing error: "
                 + "expected length not 2");
         }
         ObjectIdentifier OID = Info[1].data.getOID();
@@ -160,13 +160,13 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         // Key length must be present. It is not currently used.
         keyLength = kdfParams.getKeyLength();
         if (keyLength == -1) {
-            throw new IOException("PMAC1 parameter parsing "
+            throw new IOException("PBMAC1 parameter parsing "
                     + "error: missing keyLength field");
         }
         // Key length SHOULD be the same size as HMAC function output size.
         if ((kdfAlgo.contains("256") && keyLength != 256) ||
             (kdfAlgo.contains("512") && keyLength != 512)) {
-            throw new IOException("PMAC1 parameter parsing "
+            throw new IOException("PBMAC1 parameter parsing "
                     + "error: keyLength not Hmac output length ");
         }
 

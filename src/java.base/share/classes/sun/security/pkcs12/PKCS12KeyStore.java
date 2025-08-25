@@ -2173,13 +2173,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     if (algName.equals("PBMAC1")) {
                         byte[] salt = macData.getSalt();
 
-                        pbmac1Hmac = macData.getHmac();
                         pbmac1KdfHmac = macData.getKdfHmac();
 
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
-                                "PBEWith" + pbmac1Hmac);
+                                "PBEWith" + pbmac1KdfHmac);
 
                         macAlgorithm = algName;
                         macIterationCount = macData.getIterations();

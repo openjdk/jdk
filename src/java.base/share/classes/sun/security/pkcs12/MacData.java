@@ -103,7 +103,6 @@ class MacData {
             macSalt = pbeSpec.getSalt();
             String ps = digestAlgorithmParams.toString();
             kdfHmac = getKdfHmac(ps);
-            Hmac = getHmac(ps);
         }
 
         // Get the salt.
@@ -311,20 +310,6 @@ class MacData {
         final String word2 = "And";
 
         String regex = Pattern.quote(word1) + "(.*?)" + Pattern.quote(word2);
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(text);
-
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
-    public String getHmac(String text) {
-        final String word2 = "And";
-
-        String regex = Pattern.quote(word2) + "(.*?)$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(text);
 

@@ -28,6 +28,9 @@
  */
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Base64;
 
@@ -396,29 +399,51 @@ public class PBMAC1Encoding {
 
     public static void main(String[] args) throws Exception {
         KeyStore ks;
+        FileOutputStream fos;
+        FileInputStream fis;
 
         ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A1)),
                 password.toCharArray());
+
+        fos = new FileOutputStream("pbmac1KeyStore.p12");
+        ks.store(fos, password.toCharArray());
+        fos.close();
+
+        // read keystore we just wrote
+        fis = new FileInputStream("pbmac1KeyStore.p12");
+        ks.load(fis, password.toCharArray());
+        fis.close();
         System.out.println("A.1 pass");
 
-/* kdfHash and Hash must have same value, therefore, this test is not supported.
-        ks = KeyStore.getInstance("PKCS12");
-        ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A2)),
-                password.toCharArray());
-        System.out.println("A.2 pass");
-*/
+        // Unsupported: key length must be same as Hmac output length.
+        try {
+            ks = KeyStore.getInstance("PKCS12");
+            ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A2)),
+                    password.toCharArray());
+        } catch (IOException e) {
+            System.out.println("A.2 pass");
+        }
 
         ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A3)),
                 password.toCharArray());
+
+        fos = new FileOutputStream("pbmac1KeyStore.p12");
+        ks.store(fos, password.toCharArray());
+        fos.close();
+
+        // read keystore we just wrote
+        fis = new FileInputStream("pbmac1KeyStore.p12");
+        ks.load(fis, password.toCharArray());
+        fis.close();
         System.out.println("A.3 pass");
 
         try {
             ks = KeyStore.getInstance("PKCS12");
             ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A4)),
                     password.toCharArray());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("A.4 pass");
         }
 
@@ -427,7 +452,7 @@ public class PBMAC1Encoding {
             ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A5)),
                     password.toCharArray());
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("A.5 pass");
         }
 
@@ -435,7 +460,7 @@ public class PBMAC1Encoding {
             ks = KeyStore.getInstance("PKCS12");
             ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A6)),
                     password.toCharArray());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("A.6 pass");
         }
     }

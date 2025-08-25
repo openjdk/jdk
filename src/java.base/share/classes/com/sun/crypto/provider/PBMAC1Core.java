@@ -107,7 +107,7 @@ abstract class PBMAC1Core extends HmacCore {
         char[] passwdChars;
         byte[] salt = null;
         int iCount = 0;
-        int keyLength = 0;
+        int keyLength = blockLength;
         if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
             passwdChars = pbeKey.getPassword();
             salt = pbeKey.getSalt(); // maybe null if unspecified
@@ -165,10 +165,13 @@ abstract class PBMAC1Core extends HmacCore {
                     keyLength = 512;
                 } else if (kdfAlgo.equals("HmacSHA256")) {
                     keyLength = 256;
+                }
+/*
                 } else {
                         throw new InvalidAlgorithmParameterException
                                 ("Unsupported Mac algorithm");
                 }
+*/
             }
 
             // For security purpose, we need to enforce a minimum length
