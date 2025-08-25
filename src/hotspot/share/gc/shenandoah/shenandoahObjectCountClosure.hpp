@@ -13,10 +13,11 @@ private:
   
   template <class T>
   inline void do_oop_work(T* p) {
+    assert(p != nullptr, "Object is null.");
     T o = RawAccess<>::oop_load(p);
-    // No need to check if o is null because that was
-    // previously done by the marking.
+    assert(!CompressedOops::is_null(o), "CompressOops is null.");
     oop obj = CompressedOops::decode_not_null(o);
+    assert(_cit != nullptr, "KlassInfoTable is null.");
     _cit->record_instance(obj);
   }
 
@@ -30,7 +31,7 @@ public:
 
   // Merges the heap's KlassInfoTable with the thread's KlassInfoTable.
   // Clears the thread's table, so it won't be used again.
-  void merge_table(KlassInfoTable* main_cit);
+  void merge_table(KlassInfoTable* global_cit);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOBJECTCOUNTCLOSURE_HPP

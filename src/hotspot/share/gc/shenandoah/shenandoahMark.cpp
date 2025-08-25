@@ -72,13 +72,13 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
     const bool object_count_enabled = ObjectCountEventSender::should_send_event();
     if (object_count_enabled && !ShenandoahHeap::heap()->mode()->is_generational()) {
-      KlassInfoTable* const main_cit = ShenandoahHeap::heap()->get_cit();
+      KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
       KlassInfoTable local_cit(false);
       ShenandoahObjectCountClosure _count(&local_cit);
       using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
       Closure cl(q, rp, old_q, &_count);
       mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-      _count.merge_table(main_cit);
+      _count.merge_table(global_cit);
     } else {
       using Closure = ShenandoahMarkRefsClosure<GENERATION>;
       Closure cl(q, rp, old_q);

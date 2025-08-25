@@ -1,16 +1,16 @@
 #include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "runtime/mutexLocker.hpp"
 
-void ShenandoahObjectCountClosure::merge_table(KlassInfoTable* main_cit) {
+void ShenandoahObjectCountClosure::merge_table(KlassInfoTable* global_cit) {
   assert(_cit != nullptr, "The thread-local KlassInfoTables are not initialized");
-  assert(main_cit != nullptr, "Shenandoah KlassInfoTable is not initialized");
+  assert(global_cit != nullptr, "Shenandoah KlassInfoTable is not initialized");
 
-  if (main_cit == nullptr || _cit == nullptr) {
+  if (global_cit == nullptr || _cit == nullptr) {
     return;
   }
   
   MutexLocker x(TableMerge_lock, Mutex::_no_safepoint_check_flag);
-  bool success = main_cit->merge(_cit);
+  bool success = global_cit->merge(_cit);
 
   // Clear the _cit in the closure to ensure it won't be used again.
   _cit = nullptr;
