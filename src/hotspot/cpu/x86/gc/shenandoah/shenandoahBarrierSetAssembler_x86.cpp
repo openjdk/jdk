@@ -41,6 +41,9 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
+#ifdef COMPILER2
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif
 
 #define __ masm->
 
@@ -773,6 +776,148 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ bind(exit);
   }
 }
+
+#ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
+                                                Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
+                                                bool exchange) {
+  assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
+  assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
+  assert_different_registers(oldval, tmp1, tmp2);
+  assert_different_registers(newval, tmp1, tmp2);
+
+  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, oldval, newval, res, tmp1, tmp2, exchange);
+  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, oldval, res, tmp1, exchange);
+
+  Label L_success, L_failure;
+
+  // Remember oldval for retry logic below. It will be overwritten by the CAS.
+  __ movptr(tmp2, oldval);
+
+  // Step 1. Fast-path.
+  //
+  // Try to CAS with given arguments. If successful, then we are done.
+  __ lock();
+  __ cmpxchgptr(newval, addr);
+  __ jcc(Assembler::notEqual, *mid_stub->entry());
+
+  // Slow-stub re-enters with condition flags according to CAS, we may need to
+  // set result accordingly.
+  __ bind(*slow_stub->continuation());
+
+  // Step 5. If we need a boolean result out of CAS, set the flag appropriately.
+  // and promote the result. Note that we handle the flag from both the 1st and 2nd CAS.
+  // Otherwise, failure witness for CAE is in oldval on all paths, and we can return.
+
+  if (!exchange) {
+    assert(res != noreg, "need result register");
+    __ setcc(Assembler::equal, res);
+  }
+
+  // Mid-stub re-enters with result set correctly.
+  __ bind(*mid_stub->continuation());
+}
+
+#undef __
+#define __ masm.
+
+void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+
+  if (!_cae) {
+    // Set result to false, in case that we fail the following tests.
+    // Failing those tests means legitimate failures.
+    // Otherwise, result will be set correctly after returning from
+    // the slow-path.
+    __ movl(_result, 0); // Result = false.
+  }
+  // Check if CAS result is null. If it is, then we must have a legitimate failure.
+  // This makes loading the fwdptr in the slow-path simpler.
+  __ testptr(_expected, _expected);
+  __ jcc(Assembler::equal, *continuation());
+
+  // Check if GC is in progress, otherwise we must have a legitimate failure.
+  Address gc_state(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
+  __ jcc(Assembler::notZero, *_slow_stub->entry());
+  __ jmp(*continuation());
+}
+
+void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+
+  assert(_expected == rax, "expected must be rax");
+
+  // Step 2. CAS has failed because the value held at addr does not
+  // match expected.  This may be a false negative because the value fetched
+  // from addr (now held in result) may be a from-space pointer to the
+  // original copy of same object referenced by to-space pointer expected.
+  //
+  // To resolve this, it suffices to find the forward pointer associated
+  // with fetched value.  If this matches expected, retry CAS with new
+  // parameters.  If this mismatches, then we have a legitimate
+  // failure, and we're done.
+
+  // overwrite tmp1 with from-space pointer fetched from memory
+  __ movptr(_tmp1, _expected);
+
+  if (UseCompressedOops) {
+    __ decode_heap_oop_not_null(_tmp1);
+  }
+
+  // Load/decode forwarding pointer.
+  __ movq(_tmp1, Address(_tmp1, oopDesc::mark_offset_in_bytes()));
+  // Negate the mark-word. This allows us to test lowest 2 bits easily while preserving the upper bits.
+  __ negq(_tmp1);
+  __ testq(_tmp1, markWord::lock_mask_in_place);
+  // Not forwarded, must have a legit CAS failure.
+  __ jcc(Assembler::notEqual, *continuation());
+  // Set the lowest two bits. This is equivalent to clearing the two bits after
+  // the subsequent inversion.
+  __ orq(_tmp1, markWord::marked_value);
+  // And invert back to get the forwardee.
+  __ negq(_tmp1);
+
+  if (UseCompressedOops) {
+    __ encode_heap_oop_not_null(_tmp1); // encode for comparison
+  }
+
+  // Now we have the forwarded offender in tmp1.
+  // We preserved the original expected value in tmp2 in the fast-path.
+  // Compare and if they don't match, we have legitimate failure
+  __ cmpptr(_tmp1, _tmp2);
+  __ jcc(Assembler::notEqual, *continuation());
+
+  // Fall through to step 3.
+
+  // Step 3.  We've confirmed that the value originally held in memory
+  // (now held in result) pointed to from-space version of original
+  // expected value.  Try the CAS again with the from-space expected
+  // value.  If it now succeeds, we're good.
+  //
+  // Note: expected holds encoded from-space pointer that matches to-space
+  // object residing at tmp1.
+  __ lock();
+  __ cmpxchgptr(_new_val, _addr);
+
+  // If fetched value did not equal the new expected, this could
+  // still be a false negative because some other (GC) thread may have
+  // newly overwritten the memory value with its to-space equivalent.
+  __ jcc(Assembler::equal, *continuation());
+
+  // Step 4. Try to CAS again, but with the original to-space expected.
+  // This should be very rare.
+  __ movptr(_expected, _tmp2);
+  __ lock();
+  __ cmpxchgptr(_new_val, _addr);
+
+  // At this point, there can no longer be false negatives.
+  __ jmp(*continuation());
+}
+
+#undef __
+#define __ masm->
+#endif
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */

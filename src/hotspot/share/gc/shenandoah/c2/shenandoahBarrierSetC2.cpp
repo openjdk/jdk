@@ -26,6 +26,8 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+
+#include <utility>
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -1273,14 +1275,20 @@ void ShenandoahBarrierStub::register_stub() {
   }
 }
 
-ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool narrow, bool acquire, bool release, bool weak) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, addr, expected, new_val, result, tmp, cae, narrow, acquire, release, weak);
+ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool acquire, bool release, bool weak) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, addr, Address(), expected, new_val, result, tmp, noreg, cae, acquire, release, weak);
   stub->register_stub();
   return stub;
 }
 
-ShenandoahCASBarrierMidStub* ShenandoahCASBarrierMidStub::create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register result, Register tmp, bool cae) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierMidStub(node, slow_stub, result, tmp, cae);
+ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, noreg, addr, expected, new_val, result, tmp1, tmp2, cae, false, false, false);
+  stub->register_stub();
+  return stub;
+}
+
+ShenandoahCASBarrierMidStub* ShenandoahCASBarrierMidStub::create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register expected, Register result, Register tmp, bool cae) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierMidStub(node, slow_stub, expected, result, tmp, cae);
   stub->register_stub();
   return stub;
 }

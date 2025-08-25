@@ -184,35 +184,38 @@ public:
 };
 
 class ShenandoahCASBarrierSlowStub : public ShenandoahBarrierStub {
-  Register _addr;
+  Register _addr_reg;
+  Address  _addr;
   Register _expected;
   Register _new_val;
   Register _result;
-  Register _tmp;
+  Register _tmp1;
+  Register _tmp2;
   bool     _cae;
-  bool     _narrow;
   bool     _acquire;
   bool     _release;
   bool     _weak;
 
-  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool narrow, bool acquire, bool release, bool weak) :
+  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr_reg, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae, bool acquire, bool release, bool weak) :
     ShenandoahBarrierStub(node),
-    _addr(addr), _expected(expected), _new_val(new_val), _result(result), _tmp(tmp), _cae(cae), _narrow(narrow), _acquire(acquire), _release(release),  _weak(weak) {}
+    _addr_reg(addr_reg), _addr(addr), _expected(expected), _new_val(new_val), _result(result), _tmp1(tmp1), _tmp2(tmp2), _cae(cae), _acquire(acquire), _release(release),  _weak(weak) {}
 
 public:
-  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool narrow, bool acquire, bool release, bool weak);
+  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool acquire, bool release, bool weak);
+  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae);
   void emit_code(MacroAssembler& masm) override;
 };
 
 class ShenandoahCASBarrierMidStub : public ShenandoahBarrierStub {
   ShenandoahCASBarrierSlowStub* _slow_stub;
+  Register _expected;
   Register _result;
   Register _tmp;
   bool _cae;
-  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register result, Register tmp, bool cae) :
-    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _result(result), _tmp(tmp), _cae(cae) {}
+  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register expected, Register result, Register tmp, bool cae) :
+    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _expected(expected), _result(result), _tmp(tmp), _cae(cae) {}
 public:
-  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register result, Register tmp, bool cae);
+  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register expected, Register result, Register tmp, bool cae);
   void emit_code(MacroAssembler& masm) override;};
 
 #endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
