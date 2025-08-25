@@ -56,7 +56,7 @@ public class FrameVisualTest {
     public static void main(String[] args) throws Exception {
         gcs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getConfigurations();
         robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.waitForIdle();
         try {
             EventQueue.invokeAndWait(() -> createAndShowUI());
 
@@ -71,6 +71,8 @@ public class FrameVisualTest {
                 });
                 Rectangle rect = new Rectangle(p, d);
                 BufferedImage img = robot.createScreenCapture(rect);
+                robot.waitForIdle();
+                robot.delay(100);
                 if (chkImgBackgroundColor(img)) {
                     try {
                         ImageIO.write(img, "png", new File("Frame_" + index +
