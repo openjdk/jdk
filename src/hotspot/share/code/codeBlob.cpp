@@ -128,7 +128,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
-  _mutable_data(header_begin() + size), // default value is blob_end()
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -158,10 +158,8 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
-  } else {
-    // We need unique and valid not null address
-    assert(_mutable_data == blob_end(), "sanity");
   }
+  assert(_mutable_data != nullptr || _mutable_data_size == 0, "No mutable data => mutable data size is 0");
 
   set_oop_maps(oop_maps);
 }
@@ -170,7 +168,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(header_begin() + size), // default value is blob_end()
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -184,9 +182,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
+  assert(_mutable_data == nullptr && _mutable_data_size == 0, "invariant");
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
-  assert(_mutable_data == blob_end(), "sanity");
 }
 
 void CodeBlob::restore_mutable_data(address reloc_data) {
@@ -197,7 +195,7 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
   } else {
-    _mutable_data = blob_end(); // default value
+    _mutable_data = nullptr;
   }
   if (_relocation_size > 0) {
     assert(_mutable_data_size > 0, "relocation is part of mutable data section");
@@ -206,17 +204,13 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
 }
 
 void CodeBlob::purge() {
-  assert(_mutable_data != nullptr, "should never be null");
-  if (_mutable_data != blob_end()) {
-    os::free(_mutable_data);
-    _mutable_data = blob_end(); // Valid not null address
-    _mutable_data_size = 0;
-    _relocation_size = 0;
-  }
-  if (_oop_maps != nullptr) {
-    delete _oop_maps;
-    _oop_maps = nullptr;
-  }
+  os::free(_mutable_data);
+  _mutable_data = nullptr;
+  _mutable_data_size = 0;
+  delete _oop_maps;
+  _oop_maps = nullptr;
+  _relocation_size = 0;
+
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
