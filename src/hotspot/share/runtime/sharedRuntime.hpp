@@ -639,6 +639,7 @@ class SharedRuntime: AllStatic {
   static void print_call_statistics(uint64_t comp_total);
   static void print_ic_miss_histogram();
 
+#ifdef COMPILER2
   // Runtime methods for printf-style debug nodes
   static void debug_print_value(jboolean x);
   static void debug_print_value(jbyte x);
@@ -669,6 +670,7 @@ class SharedRuntime: AllStatic {
     tty->print("%s\n", str);
     debug_print_rec(args...);
   }
+#endif // COMPILER2
 
 #endif // PRODUCT
 
