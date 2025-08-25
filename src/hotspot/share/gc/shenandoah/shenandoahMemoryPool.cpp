@@ -63,7 +63,6 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   // to make sense under the race. See JDK-8207200.
   committed = MAX2(used, committed);
   assert(used <= committed, "used: %zu, committed: %zu", used,      committed);
-
   return MemoryUsage(initial, used, committed, max);
 }
 
