@@ -109,22 +109,16 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     // Dedicated entry for sun.security.util.Password.
-    private static final StableValue<Object> INSTANCE = StableValue.of();
-    public static Object passwordConsole() {
-        return INSTANCE.orElseSet(() -> {
-            var sysc = System.console();
-
-            if (sysc != null) {
-                return sysc;
-            } else {
-                // If stdin is NOT redirected, return a JdkConsoleImpl instance,
-                // otherwise null
-                return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
-                    new JdkConsoleImpl(
-                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE)) : null;
-            }
-        });
+    private static final StableValue<JdkConsoleImpl> INSTANCE = StableValue.of();
+    public static JdkConsoleImpl passwordConsole() {
+        return INSTANCE.orElseSet(() ->
+            // If stdin is NOT redirected, return a JdkConsoleImpl instance,
+            // otherwise null
+            (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
+            new JdkConsoleImpl(
+                Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE)) :
+            null);
     }
 
     public char[] readPasswordNoNewLine() {
