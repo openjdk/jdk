@@ -1192,10 +1192,8 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
-    if (loader == nullptr) {
-      // JFR classes
-      ik->set_shared_classpath_index(0);
-    }
+    // JFR classes, or other classes defined with JNI DefineClass()
+    ik->set_shared_classpath_index(-1);
     return;
   }
 
