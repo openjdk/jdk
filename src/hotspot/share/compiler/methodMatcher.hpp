@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,20 +105,26 @@ public:
 
 private:
   InlineType _inline_action;
+  int _inline_instructions_size;
   InlineMatcher * _next;
 
   InlineMatcher() : MethodMatcher(),
-    _inline_action(unknown_inline), _next(nullptr) {
+    _inline_action(unknown_inline), _inline_instructions_size(0), _next(nullptr) {
   }
 
 public:
-  static InlineMatcher* parse_method_pattern(char* line, const char*& error_msg);
+  static InlineMatcher* parse_method_pattern(char*& line, const char*& error_msg);
   bool match(const methodHandle& method, int inline_action);
+  bool match_if_bigger_than(const methodHandle& method, const int threshold);
   void print(outputStream* st);
   void set_next(InlineMatcher* next) { _next = next; }
   InlineMatcher* next() { return _next; }
   void set_action(InlineType inline_action) { _inline_action = inline_action; }
+  void set_size(const int size) { _inline_instructions_size = size; }
   int inline_action() { return _inline_action; }
+  // The attribute stores the estimated inlined size of a method, obtained
+  // from a compilerDirective JSON file generated in a previous profiling run.
+  int inline_instructions_size() { return _inline_instructions_size; }
   static InlineMatcher* parse_inline_pattern(char* line, const char*& error_msg);
   InlineMatcher* clone();
 };
