@@ -114,6 +114,11 @@ public class HtmlIds {
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
+    static final HtmlId THEME_BUTTON = HtmlId.of("theme-button");
+    static final HtmlId THEME_DARK = HtmlId.of("theme-dark");
+    static final HtmlId THEME_LIGHT = HtmlId.of("theme-light");
+    static final HtmlId THEME_OS = HtmlId.of("theme-os");
+    static final HtmlId THEME_PANEL = HtmlId.of("theme-panel");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
     static final String TOC_ORDER_TOGGLE = "toc-lexical-order-toggle";
     static final HtmlId TOC_LIST = HtmlId.of("toc-list");

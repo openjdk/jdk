@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177
+ * @bug 8350177 8362171
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -376,6 +376,57 @@ public class TestSubwordTruncation {
         }
     }
 
+    int intField;
+    short shortField;
+
+    @Test
+    @IR(counts = { IRNode.MOD_I, ">0" })
+    public void testMod() {
+        for (int i = 1; i < SIZE; i++) {
+            for (int j = 1; j < 204; j++) {
+                shortField %= intField | 1;
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_LT_MASK, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testCmpLTMask(byte[] in) {
+        char[] res = new char[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (char) (in[i] >= 0 ? in[i] : 256 + in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_F, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundF(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.F);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_D, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundD(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.0);
+        }
+
+        return new Object[] { in, res };
+    }
 
     public static void main(String[] args) {
         TestFramework.run();
