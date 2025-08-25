@@ -1505,8 +1505,9 @@ and `second` members don't carry any useful information.
 
 The use of the File System library is forbidden. HotSpot doesn't do very much
 with files, and already has adequate mechanisms for its needs. Rewriting in
-terms of this new library would not be a good use of resources. Having a mix
-of the existing usage and uses of this new library would just be confusing.
+terms of this new library doesn't provide any obviously significant
+benefits. Having a mix of the existing usage and uses of this new library
+would be confusing.
 
 [n4100](http://wg21.link/n4100)
 [p0218r0](http://wg21.link/p0218r0)
@@ -1561,8 +1562,8 @@ operator overloading is used, ensure the semantics conform to the
 normal expected behavior of the operation.
 
 * Avoid most implicit conversion constructors and (implicit or explicit)
-conversion operators.  (Note that conversion to `bool` isn't needed
-in HotSpot code because of the
+conversion operators.  Conversion to `bool` operators aren't needed
+because of the
 [no implicit boolean](#avoid-implicit-conversions-to-bool)
 guideline.)
 

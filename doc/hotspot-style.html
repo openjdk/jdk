@@ -1543,9 +1543,9 @@ dislike that some of the Standard Library functions return
 <h3 id="file-system-library">File System Library</h3>
 <p>The use of the File System library is forbidden. HotSpot doesn't do
 very much with files, and already has adequate mechanisms for its needs.
-Rewriting in terms of this new library would not be a good use of
-resources. Having a mix of the existing usage and uses of this new
-library would just be confusing.</p>
+Rewriting in terms of this new library doesn't provide any obviously
+significant benefits. Having a mix of the existing usage and uses of
+this new library would be confusing.</p>
 <p><a href="http://wg21.link/n4100">n4100</a> <a
 href="http://wg21.link/p0218r0">p0218r0</a> <a
 href="http://wg21.link/p0219r1">p0219r1</a> <a
@@ -1593,8 +1593,8 @@ useful.</p></li>
 operator overloading is used, ensure the semantics conform to the normal
 expected behavior of the operation.</p></li>
 <li><p>Avoid most implicit conversion constructors and (implicit or
-explicit) conversion operators. (Note that conversion to
-<code>bool</code> isn't needed in HotSpot code because of the <a
+explicit) conversion operators. Conversion to <code>bool</code>
+operators aren't needed because of the <a
 href="#avoid-implicit-conversions-to-bool">no implicit boolean</a>
 guideline.)</p></li>
 <li><p>Avoid <code>goto</code> statements.</p></li>
