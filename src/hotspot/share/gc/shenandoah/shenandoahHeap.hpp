@@ -258,7 +258,7 @@ public:
   // Used for JFR object count event support.
   inline void set_cit(KlassInfoTable* cit);
 
-  // Return Shenandoah's KlassInfoTable
+  // Return Shenandoah's KlassInfoTable.
   inline KlassInfoTable* get_cit();
 
 // ---------- Periodic Tasks

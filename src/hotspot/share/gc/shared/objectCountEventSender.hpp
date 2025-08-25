@@ -46,6 +46,9 @@ class ObjectCountEventSender : public AllStatic {
   static inline void enable_requestable_event();
   static inline void disable_requestable_event();
 
+  // Template parameter controls which JFR events are emitted:
+  // true  = ObjectCount events only (when ObjectCount event initiated the request)
+  // false = Both ObjectCount and ObjectCountAfterGC events
   template <bool SeparateEventEmission>
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
 
