@@ -42,15 +42,6 @@ import java.util.List;
 public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13 extends
         DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 {
 
-    // Signature schemes not supported in TLSv1.3 only for the handshake.
-    // This is regardless of jdk.tls.disabledAlgorithms configuration.
-    List<String> NOT_SUPPORTED_FOR_HANDSHAKE = List.of(
-            "rsa_pkcs1_sha1",
-            "rsa_pkcs1_sha256",
-            "rsa_pkcs1_sha384",
-            "rsa_pkcs1_sha512"
-    );
-
     protected DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13()
             throws Exception {
         super();
@@ -79,11 +70,12 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13 extends
                 extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
                 SIG_ALGS_EXT);
 
-        // Should not be present in signature_algorithms extension.
-        NOT_SUPPORTED_FOR_HANDSHAKE.forEach(ss ->
-                assertFalse(sigAlgsSS.contains(ss),
-                        "Signature Scheme " + ss
-                        + " present in ClientHello's signature_algorithms extension"));
+        // These signature schemes MOST NOT be present in signature_algorithms
+        // extension.
+        TLS13_CERT_ONLY.forEach(ss ->
+                assertFalse(sigAlgsSS.contains(ss), "Signature Scheme " + ss
+                        + " present in ClientHello's"
+                        + " signature_algorithms extension"));
     }
 
     // TLSv1.3 sends CertificateRequest signature schemes in

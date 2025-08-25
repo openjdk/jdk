@@ -78,7 +78,7 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 extends
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
                 + " present in ClientHello's signature_algorithms extension");
 
-        // Check signature_algorithms_cert extension should not be present.
+        // signature_algorithms_cert extension MUST NOT be present.
         assertEquals(getSigSchemesCliHello(extractHandshakeMsg(
                         cTOs, TLS_HS_CLI_HELLO), SIG_ALGS_CERT_EXT).size(), 0,
                 "signature_algorithms_cert extension present in ClientHello");
