@@ -41,6 +41,9 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
+#ifdef COMPILER2
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif
 
 #define __ masm->
 
@@ -605,6 +608,150 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ cset(result, Assembler::EQ);
   }
 }
+
+#ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
+                                                   MacroAssembler* masm,
+                                                   Register addr,
+                                                   Register expected,
+                                                   Register new_val,
+                                                   Register result,
+                                                   bool acquire, bool release, bool weak,
+                                                   bool is_cae) {
+  Register tmp = rscratch2;
+  Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
+
+  assert_different_registers(addr, expected, result, tmp);
+  assert_different_registers(addr, new_val,  result, tmp);
+
+  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, tmp, is_cae, acquire, release, weak);
+  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, expected, result, tmp, is_cae);
+
+  // Step 1. Fast-path.
+  //
+  // Try to CAS with given arguments.  If successful, then we are done.
+  __ cmpxchg(addr, expected, new_val, size, acquire, release, weak, result);
+  // EQ flag set iff success. result holds value fetched.
+
+  __ br(Assembler::NE, *mid_stub->entry());
+
+  // Slow-stub re-enters with condition flags according to CAS, we may need to
+  // set result accordingly.
+  __ bind(*slow_stub->continuation());
+  if (!is_cae) {
+    __ cset(result, Assembler::EQ);
+  }
+
+  // Mid-stub re-enters with result set correctly.
+  __ bind(*mid_stub->continuation());
+}
+
+#undef __
+#define __ masm.
+
+void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+
+  // Check if CAS result is null. If it is, then we must have a legitimate failure.
+  // This makes loading the fwdptr in the slow-path simpler.
+  __ tst(_result, _result);
+  // In case of !CAE, this has the correct value for legitimate failure (0/false)
+  // in result register.
+  __ br(Assembler::EQ, *continuation());
+
+  // Check if GC is in progress, otherwise we must have a legitimate failure.
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(_tmp, gc_state);
+  __ tstw(_tmp, ShenandoahHeap::HAS_FORWARDED);
+  __ br(Assembler::NE, *_slow_stub->entry());
+
+  if (!_cae) {
+    __ mov(_result, 0); // result = false
+  }
+  __ b(*continuation());
+}
+
+void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+  Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
+
+  // Step 2. CAS has failed because the value held at addr does not
+  // match expected.  This may be a false negative because the value fetched
+  // from addr (now held in result) may be a from-space pointer to the
+  // original copy of same object referenced by to-space pointer expected.
+  //
+  // To resolve this, it suffices to find the forward pointer associated
+  // with fetched value.  If this matches expected, retry CAS with new
+  // parameters.  If this mismatches, then we have a legitimate
+  // failure, and we're done.
+
+  // overwrite tmp with from-space pointer fetched from memory
+  __ mov(_tmp1, _result);
+
+  if (UseCompressedOops) {
+    // Decode tmp in order to resolve its forward pointer
+    __ decode_heap_oop_not_null(_tmp1, _tmp1);
+  }
+
+  // Load/decode forwarding pointer.
+  __ ldr(_tmp1, Address(_tmp1, oopDesc::mark_offset_in_bytes()));
+  // Negate the mark-word. This allows us to test lowest 2 bits easily while preserving the upper bits.
+  __ eon(_tmp1, _tmp1, zr);
+  __ ands(zr, _tmp1, markWord::lock_mask_in_place);
+  // Not forwarded, must have a legit CAS failure.
+  __ br(Assembler::NE, *continuation());
+  // Set the lowest two bits. This is equivalent to clearing the two bits after
+  // the subsequent inversion.
+  __ orr(_tmp1, _tmp1, markWord::marked_value);
+  // And invert back to get the forwardee.
+  __ eon(_tmp1, _tmp1, zr);
+
+  if (UseCompressedOops) {
+    // Encode tmp to compare against expected.
+    __ encode_heap_oop_not_null(_tmp1, _tmp1);
+  }
+
+  // Does forwarded value of fetched from-space pointer match original
+  // value of expected?  If result holds null, this comparison will fail
+  // because we know from step1 that expected is not null.  There is
+  // no need for a separate test for result (the value originally held
+  // in memory) equal to null.
+  __ cmp(_tmp1, _expected);
+
+  // If not, then the failure was legitimate and we're done.
+  // Branching to continuation with NE condition denotes failure.
+  __ br(Assembler::NE, *continuation());
+
+  // Fall through to step 3.
+
+  // Step 3.  We've confirmed that the value originally held in memory
+  // (now held in result) pointed to from-space version of original
+  // expected value.  Try the CAS again with the from-space expected
+  // value.  If it now succeeds, we're good.
+  //
+  // Note: result holds encoded from-space pointer that matches to-space
+  // object residing at expected. result is the new "expected".
+
+  // Note that macro implementation of __cmpxchg cannot use same register
+  // tmp2 for result and expected since it overwrites result before it
+  // compares result with expected.
+  __ mov(_tmp1, _result);
+  __ cmpxchg(_addr_reg, _tmp1, _new_val, size, _acquire, _release, _weak, _result);
+  // EQ flag set iff success. result holds value fetched, rscratch1 clobbered.
+
+  // If fetched value did not equal the new expected, this could
+  // still be a false negative because some other thread may have
+  // newly overwritten the memory value with its to-space equivalent.
+  __ br(Assembler::EQ, *continuation());
+
+  // Step 4. Retry CAS with original to-space expected.
+  __ cmpxchg(_addr_reg, _expected, _new_val, size, _acquire, _release, _weak, _result);
+
+  __ b(*continuation());
+}
+#undef __
+#define __ masm->
+#endif // COMPILER2
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register start, Register count, Register scratch, RegSet saved_regs) {
