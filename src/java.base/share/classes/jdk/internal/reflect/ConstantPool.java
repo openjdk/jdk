@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,41 +34,41 @@ import java.util.Set;
 
 public class ConstantPool {
   // Number of entries in this constant pool (= maximum valid constant pool index)
-  public int      getSize()                      { return getSize0            (constantPoolOop);        }
-  public Class<?> getClassAt         (int index) { return getClassAt0         (constantPoolOop, index); }
-  public Class<?> getClassAtIfLoaded (int index) { return getClassAtIfLoaded0 (constantPoolOop, index); }
+  public int      getSize()                      { return getSize0            ();        }
+  public Class<?> getClassAt         (int index) { return getClassAt0         (index); }
+  public Class<?> getClassAtIfLoaded (int index) { return getClassAtIfLoaded0 (index); }
   // Returns a class reference index for a method or a field.
   public int getClassRefIndexAt(int index) {
-      return getClassRefIndexAt0(constantPoolOop, index);
+      return getClassRefIndexAt0(index);
   }
   // Returns either a Method or Constructor.
   // Static initializers are returned as Method objects.
-  public Member   getMethodAt        (int index) { return getMethodAt0        (constantPoolOop, index); }
-  public Member   getMethodAtIfLoaded(int index) { return getMethodAtIfLoaded0(constantPoolOop, index); }
-  public Field    getFieldAt         (int index) { return getFieldAt0         (constantPoolOop, index); }
-  public Field    getFieldAtIfLoaded (int index) { return getFieldAtIfLoaded0 (constantPoolOop, index); }
+  public Member   getMethodAt        (int index) { return getMethodAt0        (index); }
+  public Member   getMethodAtIfLoaded(int index) { return getMethodAtIfLoaded0(index); }
+  public Field    getFieldAt         (int index) { return getFieldAt0         (index); }
+  public Field    getFieldAtIfLoaded (int index) { return getFieldAtIfLoaded0 (index); }
   // Fetches the class name, member (field, method or interface
   // method) name, and type descriptor as an array of three Strings
-  public String[] getMemberRefInfoAt (int index) { return getMemberRefInfoAt0 (constantPoolOop, index); }
+  public String[] getMemberRefInfoAt (int index) { return getMemberRefInfoAt0 (index); }
   // Returns a name and type reference index for a method, a field or an invokedynamic.
   public int getNameAndTypeRefIndexAt(int index) {
-      return getNameAndTypeRefIndexAt0(constantPoolOop, index);
+      return getNameAndTypeRefIndexAt0(index);
   }
   // Fetches the name and type from name_and_type index as an array of two Strings
   public String[] getNameAndTypeRefInfoAt(int index) {
-      return getNameAndTypeRefInfoAt0(constantPoolOop, index);
+      return getNameAndTypeRefInfoAt0(index);
   }
-  public int      getIntAt           (int index) { return getIntAt0           (constantPoolOop, index); }
-  public long     getLongAt          (int index) { return getLongAt0          (constantPoolOop, index); }
-  public float    getFloatAt         (int index) { return getFloatAt0         (constantPoolOop, index); }
-  public double   getDoubleAt        (int index) { return getDoubleAt0        (constantPoolOop, index); }
-  public String   getStringAt        (int index) { return getStringAt0        (constantPoolOop, index); }
-  public String   getUTF8At          (int index) { return getUTF8At0          (constantPoolOop, index); }
+  public int      getIntAt           (int index) { return getIntAt0           (index); }
+  public long     getLongAt          (int index) { return getLongAt0          (index); }
+  public float    getFloatAt         (int index) { return getFloatAt0         (index); }
+  public double   getDoubleAt        (int index) { return getDoubleAt0        (index); }
+  public String   getStringAt        (int index) { return getStringAt0        (index); }
+  public String   getUTF8At          (int index) { return getUTF8At0          (index); }
   public Tag getTagAt(int index) {
-      return Tag.valueOf(getTagAt0(constantPoolOop, index));
+      return Tag.valueOf(getTagAt0(index));
   }
 
-  public static enum Tag {
+  public enum Tag {
       UTF8(1),
       INTEGER(3),
       FLOAT(4),
@@ -82,7 +82,9 @@ public class ConstantPool {
       NAMEANDTYPE(12),
       METHODHANDLE(15),
       METHODTYPE(16),
+      DYNAMIC(17),
       INVOKEDYNAMIC(18),
+      // For index after long/double and 0
       INVALID(0);
 
       private final int tagCode;
@@ -111,22 +113,22 @@ public class ConstantPool {
   // HotSpot-internal constant pool object (set by the VM, name known to the VM)
   private Object constantPoolOop;
 
-  private native int      getSize0            (Object constantPoolOop);
-  private native Class<?> getClassAt0         (Object constantPoolOop, int index);
-  private native Class<?> getClassAtIfLoaded0 (Object constantPoolOop, int index);
-  private native int      getClassRefIndexAt0 (Object constantPoolOop, int index);
-  private native Member   getMethodAt0        (Object constantPoolOop, int index);
-  private native Member   getMethodAtIfLoaded0(Object constantPoolOop, int index);
-  private native Field    getFieldAt0         (Object constantPoolOop, int index);
-  private native Field    getFieldAtIfLoaded0 (Object constantPoolOop, int index);
-  private native String[] getMemberRefInfoAt0 (Object constantPoolOop, int index);
-  private native int      getNameAndTypeRefIndexAt0(Object constantPoolOop, int index);
-  private native String[] getNameAndTypeRefInfoAt0(Object constantPoolOop, int index);
-  private native int      getIntAt0           (Object constantPoolOop, int index);
-  private native long     getLongAt0          (Object constantPoolOop, int index);
-  private native float    getFloatAt0         (Object constantPoolOop, int index);
-  private native double   getDoubleAt0        (Object constantPoolOop, int index);
-  private native String   getStringAt0        (Object constantPoolOop, int index);
-  private native String   getUTF8At0          (Object constantPoolOop, int index);
-  private native byte     getTagAt0           (Object constantPoolOop, int index);
+  private native int      getSize0            ();
+  private native Class<?> getClassAt0         (int index);
+  private native Class<?> getClassAtIfLoaded0 (int index);
+  private native int      getClassRefIndexAt0 (int index);
+  private native Member   getMethodAt0        (int index);
+  private native Member   getMethodAtIfLoaded0(int index);
+  private native Field    getFieldAt0         (int index);
+  private native Field    getFieldAtIfLoaded0 (int index);
+  private native String[] getMemberRefInfoAt0 (int index);
+  private native int      getNameAndTypeRefIndexAt0(int index);
+  private native String[] getNameAndTypeRefInfoAt0(int index);
+  private native int      getIntAt0           (int index);
+  private native long     getLongAt0          (int index);
+  private native float    getFloatAt0         (int index);
+  private native double   getDoubleAt0        (int index);
+  private native String   getStringAt0        (int index);
+  private native String   getUTF8At0          (int index);
+  private native byte     getTagAt0           (int index);
 }
