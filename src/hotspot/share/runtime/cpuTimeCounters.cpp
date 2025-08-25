@@ -76,7 +76,8 @@ void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
 void CPUTimeCounters::publish_gc_total_cpu_time() {
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
   // Atomically fetch the current _gc_total_cpu_time_diff and reset it to zero.
-  jlong fetched_value = Atomic::xchg(&(instance->_gc_total_cpu_time_diff), 0);
+  jlong new_value = 0;
+  jlong fetched_value = Atomic::xchg(&(instance->_gc_total_cpu_time_diff), new_value);
   get_counter(CPUTimeGroups::CPUTimeType::gc_total)->inc(fetched_value);
 }
 
