@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * The standard (non-preset) implementation of StableValue.
+ * The standard implementation of StableValue.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.

@@ -159,9 +159,9 @@ final class StableCollections {
 
         // The views subList() and reversed() in the base class suffice for this list type
 
-        public record ElementStableValue<T>(@Stable T[] elements, // fast track this one
-                                            AbstractImmutableStableElementList<?> list,
-                                            long offset) implements InternalStableValue<T> {
+        record ElementStableValue<T>(@Stable T[] elements, // fast track this one
+                                     AbstractImmutableStableElementList<?> list,
+                                     long offset) implements InternalStableValue<T> {
 
             @ForceInline
             @Override
