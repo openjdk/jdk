@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,8 +621,7 @@ public class TIFFImageWriter extends ImageWriter {
                 photometricInterpretation =
                     BaselineTIFFTagSet.PHOTOMETRIC_INTERPRETATION_RGB;
             }
-        } else if (sm.getNumBands() == 1 && cm instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel)cm;
+        } else if (sm.getNumBands() == 1 && cm instanceof IndexColorModel icm) {
             int r0 = icm.getRed(0);
             int r1 = icm.getRed(1);
             if (icm.getMapSize() == 2 &&
@@ -1017,10 +1016,8 @@ public class TIFFImageWriter extends ImageWriter {
         // Emit ColorMap if image is of palette color type
         if (photometricInterpretation ==
             BaselineTIFFTagSet.PHOTOMETRIC_INTERPRETATION_PALETTE_COLOR &&
-            cm instanceof IndexColorModel) {
+            cm instanceof IndexColorModel icm) {
             char[] colorMap = new char[3*(1 << bitsPerSample[0])];
-
-            IndexColorModel icm = (IndexColorModel)cm;
 
             // mapSize is determined by BitsPerSample, not by incoming ICM.
             int mapSize = 1 << bitsPerSample[0];

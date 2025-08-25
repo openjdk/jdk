@@ -165,12 +165,10 @@ public final class MethodFinder extends AbstractFinder<Method> {
     private static Method findAccessibleMethod(Method method, Type generic) throws NoSuchMethodException {
         String name = method.getName();
         Class<?>[] params = method.getParameterTypes();
-        if (generic instanceof Class) {
-            Class<?> type = (Class<?>) generic;
+        if (generic instanceof Class<?> type) {
             return findAccessibleMethod(type.getMethod(name, params));
         }
-        if (generic instanceof ParameterizedType) {
-            ParameterizedType pt = (ParameterizedType) generic;
+        if (generic instanceof ParameterizedType pt) {
             Class<?> type = (Class<?>) pt.getRawType();
             for (Method m : type.getMethods()) {
                 if (m.getName().equals(name)) {

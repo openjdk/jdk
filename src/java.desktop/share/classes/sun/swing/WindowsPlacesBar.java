@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,8 @@ public class WindowsPlacesBar extends JToolBar
                 folderName = folderName.substring(index + 1);
             }
             Icon icon;
-            if (files[i] instanceof ShellFolder) {
+            if (files[i] instanceof ShellFolder sf) {
                 // We want a large icon, fsv only gives us a small.
-                ShellFolder sf = (ShellFolder)files[i];
                 Image image = sf.getIcon(true);
 
                 if (image == null) {

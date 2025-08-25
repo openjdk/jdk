@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2889,8 +2889,7 @@ public class StyleSheet extends StyleContext {
 
             // didn't find it... try parent if it's a css attribute
             // that is inherited.
-            if (key instanceof CSS.Attribute) {
-                CSS.Attribute css = (CSS.Attribute) key;
+            if (key instanceof CSS.Attribute css) {
                 if (css.isInherited()) {
                     AttributeSet parent = getResolveParent();
                     if (parent != null)

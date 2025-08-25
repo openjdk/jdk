@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,9 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
     }
 
     public boolean canDecodeInput(Object source) throws IOException {
-        if (!(source instanceof ImageInputStream)) {
+        if (!(source instanceof ImageInputStream iis)) {
             return false;
         }
-        ImageInputStream iis = (ImageInputStream) source;
         iis.mark();
         // If the first two bytes are a JPEG SOI marker, it's probably
         // a JPEG file.  If they aren't, it definitely isn't a JPEG file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ class SynthMenuLayout extends DefaultMenuLayout {
     }
 
     public Dimension preferredLayoutSize(Container target) {
-        if (target instanceof JPopupMenu) {
-            JPopupMenu popupMenu = (JPopupMenu) target;
+        if (target instanceof JPopupMenu popupMenu) {
             popupMenu.putClientProperty(
                     SynthMenuItemLayoutHelper.MAX_ACC_OR_ARROW_WIDTH, null);
         }

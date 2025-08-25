@@ -303,8 +303,7 @@ public class Decoration {
                 if (swapColors) {
                     background = fgPaint==null? savedPaint : fgPaint;
                     if (bgPaint == null) {
-                        if (background instanceof Color) {
-                            Color bg = (Color)background;
+                        if (background instanceof Color bg) {
                             // 30/59/11 is standard weights, tweaked a bit
                             int brightness = 33 * bg.getRed()
                                 + 53 * bg.getGreen()

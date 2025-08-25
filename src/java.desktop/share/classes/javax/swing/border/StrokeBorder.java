@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,7 @@ public class StrokeBorder extends AbstractBorder {
         float size = this.stroke.getLineWidth();
         if (size > 0.0f) {
             g = g.create();
-            if (g instanceof Graphics2D) {
-                Graphics2D g2d = (Graphics2D) g;
+            if (g instanceof Graphics2D g2d) {
                 g2d.setStroke(this.stroke);
                 g2d.setPaint(this.paint != null ? this.paint : c == null ? null : c.getForeground());
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,

@@ -425,8 +425,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 hasCustomComponents = true;
             }
 
-        } else if (msg instanceof Object[]) {
-            Object [] msgs = (Object[]) msg;
+        } else if (msg instanceof Object[] msgs) {
             for (Object o : msgs) {
                 addMessageComponents(container, cons, o, maxll, false);
             }
@@ -818,8 +817,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 }
                 if (counter == initialIndex) {
                     initialFocusComponent = newComponent;
-                    if (initialFocusComponent instanceof JButton) {
-                        JButton defaultB = (JButton)initialFocusComponent;
+                    if (initialFocusComponent instanceof JButton defaultB) {
                         defaultB.addHierarchyListener(new HierarchyListener() {
                             public void hierarchyChanged(HierarchyEvent e) {
                                 if ((e.getChangeFlags() &

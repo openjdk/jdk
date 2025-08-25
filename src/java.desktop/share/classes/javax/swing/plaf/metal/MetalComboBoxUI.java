@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,9 +225,8 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
             String propertyName = e.getPropertyName();
 
             if ( propertyName == "editable" ) {
-                if(arrowButton instanceof MetalComboBoxButton) {
-                            MetalComboBoxButton button = (MetalComboBoxButton)arrowButton;
-                            button.setIconOnly( comboBox.isEditable() ||
+                if (arrowButton instanceof MetalComboBoxButton button) {
+                    button.setIconOnly( comboBox.isEditable() ||
                                     MetalLookAndFeel.usingOcean() );
                 }
                         comboBox.repaint();
