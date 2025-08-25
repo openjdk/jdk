@@ -67,10 +67,21 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @Stable
     private Object contents;
 
+    // Shadow contents that eventually will be the same as the field `contents` but is
+    // guaranteed to respect any and all happens-before constraints but at the same
+    // time, allows read operations under plain memory semantics.
+    //
+    // Typically, this fields is checked first and if it is non-null, it's contents
+    // can safely be used directly. If it is null, its contents needs to be set by reading
+    // from `contents` before being used.
+    @Stable
+    private Object contentsPlain;
+
     private StandardStableValue() {}
 
     private StandardStableValue(T contents) {
         this.contents = contents;
+        this.contentsPlain = contents;
     }
 
     @ForceInline
@@ -94,25 +105,28 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T get() {
-        final Object t = contentsAcquire();
-        if (t == null) {
-            throw new NoSuchElementException("No contents set");
+        Object t = contentsPlain;
+        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
+            return (T) t;
         }
-        return (T) t;
+        throw new NoSuchElementException("No contents set");
     }
 
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = contentsAcquire();
-        return t == null ? other : (T) t;
+        Object t = contentsPlain;
+        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
+            return (T) t;
+        }
+        return other;
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return contentsAcquire() != null;
+        return (contentsPlain != null || (contentsPlain = contentsAcquire()) != null);
     }
 
     @SuppressWarnings("unchecked")
@@ -120,8 +134,11 @@ public final class StandardStableValue<T> implements StableValue<T> {
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        final Object t = contentsAcquire();
-        return (t == null) ? orElseSetSlowPath(supplier) : (T) t;
+        Object t = contentsPlain;
+        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
+            return (T) t;
+        }
+        return orElseSetSlowPath(supplier);
     }
 
     @SuppressWarnings("unchecked")

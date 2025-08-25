@@ -85,7 +85,7 @@ public class StableMapBenchmark {
     }
 
     @Benchmark
-    public int staticSMap() {
+    public int staticMap() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
             sum += MAP.get(i);
