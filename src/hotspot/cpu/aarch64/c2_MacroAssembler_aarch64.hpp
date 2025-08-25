@@ -131,14 +131,20 @@
                                 Register isrc, FloatRegister vsrc,
                                 unsigned vector_length_in_bytes, FloatRegister vtmp);
 
-  void neon_reduce_mul_integral(Register dst, BasicType bt,
-                                Register isrc, FloatRegister vsrc,
-                                unsigned vector_length_in_bytes,
-                                FloatRegister vtmp1, FloatRegister vtmp2);
+  void reduce_mul_integral_le128b(Register dst, BasicType bt, Register isrc, FloatRegister vsrc,
+                                  unsigned vector_length_in_bytes, FloatRegister vtmp1,
+                                  FloatRegister vtmp2);
 
-  void neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
-                          FloatRegister fsrc, FloatRegister vsrc,
-                          unsigned vector_length_in_bytes, FloatRegister vtmp);
+  void reduce_mul_integral_256b(Register dst, BasicType bt, Register isrc, FloatRegister vsrc,
+                                unsigned vector_length_in_bytes, FloatRegister vtmp1,
+                                FloatRegister vtmp2, FloatRegister vtmp3);
+
+  void reduce_mul_fp_le128b(FloatRegister dst, BasicType bt, FloatRegister fsrc, FloatRegister vsrc,
+                            unsigned vector_length_in_bytes, FloatRegister vtmp);
+
+  void reduce_non_strict_order_mul_fp_256b(FloatRegister dst, BasicType bt, FloatRegister fsrc,
+                                           FloatRegister vsrc, unsigned vector_length_in_bytes,
+                                           FloatRegister vtmp1, FloatRegister vtmp2);
 
   void neon_reduce_logical(int opc, Register dst, BasicType bt, Register isrc,
                            FloatRegister vsrc, unsigned vector_length_in_bytes);
