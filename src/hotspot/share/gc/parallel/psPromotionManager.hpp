@@ -113,6 +113,13 @@ class PSPromotionManager {
   template<bool promote_immediately>
   oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
+  inline HeapWord* allocate_in_young_gen(Klass* klass,
+                                         size_t obj_size,
+                                         uint age);
+  inline HeapWord* allocate_in_old_gen(Klass* klass,
+                                       size_t obj_size,
+                                       uint age);
+
  public:
   // Static
   static void initialize();
