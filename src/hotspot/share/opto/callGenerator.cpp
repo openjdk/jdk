@@ -41,6 +41,9 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
+#ifdef ASSERT
+#include "ci/ciUtilities.inline.hpp"
+#endif
 
 // Utility function.
 const TypeFunc* CallGenerator::tf() const {
@@ -470,7 +473,18 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   virtual void do_late_inline();
 
   virtual void set_callee_method(ciMethod* m) {
-    assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
+#ifdef ASSERT
+    // Check that the callee hasn't changed between inline attempts (except with dynamic loading: then check dependencies)
+    if (_callee != nullptr && _callee != m) {
+      VM_ENTRY_MARK;
+      Compile* C = Compile::current();
+      Dependencies* deps = C->dependencies();
+      MutexLocker ml(Compile_lock);
+      deps->encode_content_bytes();
+      assert(deps->validate_dependencies(C->env()->task()) != Dependencies::end_marker,
+        "repeated inline attempt with different callee");
+    }
+#endif
     _callee = m;
   }
 
