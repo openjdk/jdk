@@ -27,7 +27,8 @@
  * @summary Dominator failure because ConvL2I node becomes TOP, kills data-flow, but range-check does not collapse
  *          due to insufficient overflow/underflow handling in CmpUNode::Value.
  *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -Xcomp -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestRangeCheckCmpUUnderflow::*
  *                   -XX:RepeatCompilation=300
  *                   compiler.rangechecks.TestRangeCheckCmpUUnderflow

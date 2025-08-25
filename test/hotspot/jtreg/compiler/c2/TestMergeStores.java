@@ -120,7 +120,7 @@ public class TestMergeStores {
             //   StoreI            [   StoreL  ]            StoreI
             // But now it would have been better to do this instead:
             //   [         StoreL       ] [       StoreL         ]
-            case "StressIGVN"  -> { framework.addFlags("-XX:+StressIGVN"); }
+            case "StressIGVN"  -> { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+StressIGVN"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();
