@@ -40,13 +40,15 @@ import java.util.Locale;
 import java.util.Objects;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
+import sun.nio.cs.UTF_8;
 
 /**
  * JdkConsole implementation based on the platform's TTY.
  */
-public class JdkConsoleImpl implements JdkConsole {
+public final class JdkConsoleImpl implements JdkConsole {
     @Override
     public PrintWriter writer() {
         return pw;
@@ -106,7 +108,30 @@ public class JdkConsoleImpl implements JdkConsole {
         return readPassword0(false, locale, format, args);
     }
 
-    protected char[] readPassword0(boolean noNewLine, Locale locale, String format, Object ... args) {
+    // Dedicated entry for sun.security.util.Password.
+    private static final StableValue<Object> INSTANCE = StableValue.of();
+    public static Object passwordConsole() {
+        return INSTANCE.orElseSet(() -> {
+            var sysc = System.console();
+
+            if (sysc != null) {
+                return sysc;
+            } else {
+                // If stdin is NOT redirected, return a JdkConsoleImpl instance,
+                // otherwise null
+                return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
+                    new JdkConsoleImpl(
+                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE)) : null;
+            }
+        });
+    }
+
+    public char[] readPasswordNoNewLine() {
+        return readPassword0(true, Locale.getDefault(Locale.Category.FORMAT), "");
+    }
+
+    private char[] readPassword0(boolean noNewLine, Locale locale, String format, Object ... args) {
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {

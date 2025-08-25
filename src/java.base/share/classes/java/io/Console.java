@@ -610,7 +610,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         if (isTerminal && c == null) {
             c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
-System.out.printf("istty: %x, isTerminal: %b%n", istty, isTerminal);
+
         return c;
     }
 
