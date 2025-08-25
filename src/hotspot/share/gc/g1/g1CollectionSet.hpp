@@ -233,9 +233,6 @@ public:
   G1CollectionSetCandidates* candidates() { return &_candidates; }
   const G1CollectionSetCandidates* candidates() const { return &_candidates; }
 
-  G1CSetCandidateGroupList* groups() { return &_groups; }
-  const G1CSetCandidateGroupList* groups() const { return &_groups; }
-
   void prepare_for_scan();
 
   void init_region_lengths(uint eden_cset_region_length,

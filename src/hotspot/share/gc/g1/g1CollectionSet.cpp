@@ -105,7 +105,7 @@ void G1CollectionSet::abandon_all_candidates() {
 }
 
 void G1CollectionSet::prepare_for_scan () {
-  groups()->prepare_for_scan();
+  _groups.prepare_for_scan();
 }
 
 void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
