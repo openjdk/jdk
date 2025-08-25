@@ -2576,20 +2576,20 @@ class StubGenerator: public StubCodeGenerator {
     StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
     StubCodeMark mark(this, stub_id);
 
-    const Register in = c_rarg0;
-    const Register out = c_rarg1;
-    const Register key = c_rarg2;
-    const Register counter = c_rarg3;
-    const Register input_len = c_rarg4;
+    const Register in                  = c_rarg0;
+    const Register out                 = c_rarg1;
+    const Register key                 = c_rarg2;
+    const Register counter             = c_rarg3;
+    const Register input_len           = c_rarg4;
     const Register saved_encrypted_ctr = c_rarg5;
-    const Register used_ptr = c_rarg6;
+    const Register used_ptr            = c_rarg6;
 
-    const Register keylen = x31;
-    const Register used = x30;
-    const Register len = x29;
-    const Register len32 = x28;
-    const Register vl = t1;
-    const Register ctr = t2;
+    const Register keylen              = x31;
+    const Register used                = x30;
+    const Register len                 = x29;
+    const Register len32               = x28;
+    const Register vl                  = t1;
+    const Register ctr                 = t2;
 
     const unsigned char block_size = 16;
 
@@ -2609,17 +2609,17 @@ class StubGenerator: public StubCodeGenerator {
 
     // Init 0b01010101... v0 mask for counter increase
     uint64_t maskIndex = 0xaaul;
-    __ li(t0, maskIndex);
+    __ mv(t0, maskIndex);
     __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
     __ vmv_v_x(v0, t0);
 
     Label L_aes128_loadkeys, L_aes192_loadkeys, L_exit_loadkeys;
     // Compute #rounds for AES based on the length of the key array
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ lw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128_loadkeys);
-    __ beq(keylen, t2, L_aes192_loadkeys);
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loadkeys);
+    __ beq(keylen, t0, L_aes192_loadkeys);
 
     // Load aes keys into working_vregs according to the keylen
     generate_aes_loadkeys(key, working_vregs, 15);
@@ -2633,14 +2633,14 @@ class StubGenerator: public StubCodeGenerator {
     generate_aes_loadkeys(key, working_vregs, 11);
     __ bind(L_exit_loadkeys);
 
-    Label L_slow_loop, L_encrypt_slow, L_main_loop;
+    Label L_next, L_encrypt_next, L_main;
 
     // Encrypt bytes left with last encryptedCounter
-    __ bind(L_slow_loop);
-    __ mv(t2, block_size);
-    __ bge(used, t2, L_main_loop);
+    __ bind(L_next);
+    __ mv(t0, block_size);
+    __ bge(used, t0, L_main);
 
-    __ bind(L_encrypt_slow);
+    __ bind(L_encrypt_next);
     __ add(t1, saved_encrypted_ctr, used);
     __ lb(t0, Address(t1));
     __ lb(t1, Address(in));
@@ -2651,21 +2651,22 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(used, used, 1);
     __ subi(len, len, 1);
     __ beqz(len, L_exit);
-    __ j(L_slow_loop);
+    __ j(L_next);
 
     Label L_first_loop, L_loop, L_calculate_one_next;
 
-    // Calculate the number of 16 Bytes for CTR large block
-    // and save the num of e32 into len32 for zvkn.
-    // We have fewer than 16 Bytes data left saved in len.
-    // We will Encrypt them one by one in slow path later.
-    __ bind(L_main_loop);
+    // Calculate the number of 16 Bytes for CTR large block as t0.
+    // Because of zvkned need sew as e32, so we save t0 * 4 into len32.
+    // After that we save the data length < 16 back into len,
+    // and calculate them one by one in L_next later.
+    __ bind(L_main);
     __ srli(t0, len, 4);
     __ slli(len32, t0, 2);
     __ slli(t0, len32, 2);
     __ sub(len, len, t0);
 
-    // We may have fewer than 16 Bytes data at begining
+    // We may still have fewer than 16 Bytes data at beginning.
+    // So we need to calculate next counter and encryptedCounter
     __ beqz(len32, L_calculate_one_next);
 
     // AES/CTR large block loop
@@ -2696,9 +2697,9 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesz_vs(v24, working_vregs[0]);
 
     Label L_aes128_loop, L_aes192_loop, L_exit_aes_loop;
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128_loop);
-    __ beq(keylen, t2, L_aes192_loop);
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loop);
+    __ beq(keylen, t0, L_aes192_loop);
 
     // Encrypt the counters aes256
     for (int i = 1; i < 14; i++) {
@@ -2723,7 +2724,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesef_vs(v24, working_vregs[10]);
     __ bind(L_exit_aes_loop);
 
-    // XOR the encrypted counters with the inputs
+    // XOR the encryptedCounter with the inputs
     __ vle32_v(v20, in);
     __ slli(t0, vl, 2);
     __ srli(ctr, vl, 2);
@@ -2735,7 +2736,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(out, out, t0);
     __ bnez(len32, L_loop);
 
-    // Save the encrypted_counter and next counter according to ctr
+    // Save the encryptedCounter and next counter according to ctr
     __ mv(used, block_size);
     __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
     __ vadd_vx(v16, v16, ctr, Assembler::VectorMask::v0_t);
@@ -2747,9 +2748,9 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(v24, counter);
 
     Label L_aes128_loop_next, L_aes192_loop_next, L_exit_aes_loop_next;
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128_loop_next);
-    __ beq(keylen, t2, L_aes192_loop_next);
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loop_next);
+    __ beq(keylen, t0, L_aes192_loop_next);
 
     generate_aes_encrypt(v24, working_vregs, 15);
     __ j(L_exit_aes_loop_next);
@@ -2772,7 +2773,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t);
     __ vse64_v(v31, counter);
     __ beqz(len, L_exit);
-    __ j(L_encrypt_slow);
+    __ j(L_encrypt_next);
 
     __ bind(L_exit);
     __ sw(used, Address(used_ptr));
