@@ -210,7 +210,7 @@ import sun.text.SupplementaryCharacterData;
  * </blockquote>
  *
  * <p>For a more complete explanation, see <a
- * href="http://www.ibm.com/java/education/boundaries/boundaries.html">http://www.ibm.com/java/education/boundaries/boundaries.html</a>.
+ * href="https://icu-project.org/docs/papers/text_boundary_analysis_in_java/">Text Boundary Analysis in Java</a> by Richard Gillam.
  * &nbsp; For examples, see the resource data (which is annotated).</p>
  *
  * @author Richard Gillam
