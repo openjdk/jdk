@@ -238,9 +238,7 @@ final class DateTimePrintContext {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
                     temporal.get(OFFSET_SECONDS) != overrideZone.getRules().getOffset(Instant.EPOCH).getTotalSeconds()) {
-                throw new DateTimeException("Unable to apply override zone '" + overrideZone +
-                        "' because the temporal object being formatted has a different offset but" +
-                        " does not represent an instant: " + temporal);
+                throw unableApplyOverrideZone(temporal, overrideZone);
             }
         }
         final ZoneId effectiveZone = (overrideZone != null ? overrideZone : temporalZone);
@@ -253,9 +251,7 @@ final class DateTimePrintContext {
                 if (!(overrideChrono == IsoChronology.INSTANCE && temporalChrono == null)) {
                     for (ChronoField f : ChronoField.values()) {
                         if (f.isDateBased() && temporal.isSupported(f)) {
-                            throw new DateTimeException("Unable to apply override chronology '" + overrideChrono +
-                                    "' because the temporal object being formatted contains date fields but" +
-                                    " does not represent a whole date: " + temporal);
+                            throw unableApplyOverrideChronology(temporal, overrideChrono);
                         }
                     }
                 }
@@ -314,6 +310,18 @@ final class DateTimePrintContext {
         };
     }
 
+    private static DateTimeException unableApplyOverrideChronology(TemporalAccessor temporal, Chronology overrideChrono) {
+        return new DateTimeException("Unable to apply override chronology '" + overrideChrono +
+                "' because the temporal object being formatted contains date fields but" +
+                " does not represent a whole date: " + temporal);
+    }
+
+    private static DateTimeException unableApplyOverrideZone(TemporalAccessor temporal, ZoneId overrideZone) {
+        return new DateTimeException("Unable to apply override zone '" + overrideZone +
+                "' because the temporal object being formatted has a different offset but" +
+                " does not represent an instant: " + temporal);
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Gets the temporal object being output.
@@ -360,6 +368,13 @@ final class DateTimePrintContext {
      */
     void endOptional() {
         this.optional--;
+    }
+
+    /**
+     * isOption segment of the input.
+     */
+    boolean isSupported(TemporalField field) {
+        return optional == 0 || temporal.isSupported(field);
     }
 
     /**

@@ -2144,6 +2144,12 @@ public final class System {
             public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
+            public void appendTwoDigitNumber(StringBuilder buf, int v) {
+                buf.appendTwoDigitNumber(v);
+            }
+            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesNoRepl(s, cs);
+            }
 
             public byte[] getBytesUTF8NoRepl(String s) {
                 return String.getBytesUTF8NoRepl(s);
