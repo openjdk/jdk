@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug        6346690 8361606
+  @bug        6346690 8361606 8321303
   @summary    Tests that key_typed is consumed after mnemonic key_pressed is handled for a menu item.
   @library    /test/lib
   @build      jdk.test.lib.Platform
