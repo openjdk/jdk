@@ -22,9 +22,9 @@
  *
  */
 #include "logging/logTag.hpp"
-#include "utilities/stringUtils.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/stringUtils.hpp"
 
 const char* const LogTag::_name[] = {
   "", // __NO_TAG

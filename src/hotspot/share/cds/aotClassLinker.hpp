@@ -31,8 +31,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 class AOTLinkedClassTable;
 class InstanceKlass;
@@ -69,7 +69,7 @@ enum class AOTLinkedClassCategory : int;
 //
 class AOTClassLinker :  AllStatic {
   static const int TABLE_SIZE = 15889; // prime number
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
+  using ClassesTable = HashTable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 
   // Classes loaded inside vmClasses::resolve_all()
   static ClassesTable* _vm_classes;
