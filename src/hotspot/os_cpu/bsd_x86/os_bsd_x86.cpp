@@ -276,14 +276,10 @@
 #endif
 
 address os::current_stack_pointer() {
-#if defined(__clang__) || defined(__llvm__)
-  void *esp;
-  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
-  return (address) esp;
-#else
-  register void *esp __asm__ (SPELL_REG_SP);
-  return (address) esp;
-#endif
+  using get_sp_func = address();
+  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
+                                     StubRoutines::x86::get_previous_sp_entry());
+  return (*func)();
 }
 
 char* os::non_memory_address_word() {
