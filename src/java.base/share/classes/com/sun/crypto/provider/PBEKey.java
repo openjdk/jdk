@@ -80,6 +80,9 @@ final class PBEKey implements SecretKey {
 
     public byte[] getEncoded() {
         try {
+            if (isDestroyed()) {
+                throw new IllegalStateException("Key is destroyed");
+            }
             return key.clone();
         } finally {
             // prevent this from being cleaned for the above block
@@ -139,7 +142,6 @@ final class PBEKey implements SecretKey {
 
     /**
      * Clears the internal copy of the key.
-     *
      */
     @Override
     public void destroy() {
@@ -202,6 +204,9 @@ final class PBEKey implements SecretKey {
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
         try {
+            if (isDestroyed()) {
+                throw new IllegalStateException("Key is destroyed");
+            }
             return new KeyRep(KeyRep.Type.SECRET,
                     getAlgorithm(),
                     getFormat(),
