@@ -91,7 +91,7 @@ struct ShenandoahNoiseStats {
 //
 // In addition, this class also maintains per worker population vectors into which
 // census for the current minor GC is accumulated (during marking or, optionally, during
-// evacuation). These are cleared after each marking (resectively, evacuation) cycle,
+// evacuation). These are cleared after each marking (respectively, evacuation) cycle,
 // once the per-worker data is consolidated into the appropriate population vector
 // per minor collection. The _local_age_table is thus C x N, for N GC workers.
 class ShenandoahAgeCensus: public CHeapObj<mtGC> {
@@ -114,6 +114,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   uint _epoch;                       // Current epoch (modulo max age)
   uint *_tenuring_threshold;         // An array of the last N tenuring threshold values we
                                      // computed.
+
+  uint _max_workers;                 // Maximum number of workers for parallel tasks
 
   // Mortality rate of a cohort, given its population in
   // previous and current epochs
@@ -165,11 +167,18 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   };
 
   ShenandoahAgeCensus();
+  ShenandoahAgeCensus(uint max_workers);
+  ~ShenandoahAgeCensus();
 
   // Return the local age table (population vector) for worker_id.
   // Only used in the case of (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac)
-  AgeTable* get_local_age_table(uint worker_id) {
-    return (AgeTable*) _local_age_table[worker_id];
+  AgeTable* get_local_age_table(uint worker_id) const {
+    return _local_age_table[worker_id];
+  }
+
+  // Return true if this age is above the tenuring threshold.
+  bool is_tenurable(uint age) const {
+    return age > tenuring_threshold();
   }
 
   // Update the local age table for worker_id by size for
