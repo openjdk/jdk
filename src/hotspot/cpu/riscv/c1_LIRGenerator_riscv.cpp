@@ -772,7 +772,7 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   ciArrayKlass* expected_type = nullptr;
   arraycopy_helper(x, &flags, &expected_type);
   if (x->check_flag(Instruction::OmitChecksFlag)) {
-    flags = 0;
+    flags = (flags & LIR_OpArrayCopy::get_initial_copy_flags());
   }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp,
@@ -837,7 +837,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       CallingConvention* cc = frame_map()->c_calling_convention(&signature);
       const LIR_Opr result_reg = result_register_for(x->type());
 
-      LIR_Opr addr = new_pointer_register();
+      LIR_Opr addr = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(a), addr);
 
       crc.load_item_force(cc->at(0));

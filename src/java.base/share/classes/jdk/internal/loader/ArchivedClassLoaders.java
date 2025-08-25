@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ class ArchivedClassLoaders {
     private final ClassLoader appLoader;
     private final ServicesCatalog[] servicesCatalogs;
     private final Map<String, ?> packageToModule;
+    private final Module unnamedModuleForBootLoader;
 
     private ArchivedClassLoaders() {
         bootLoader = ClassLoaders.bootLoader();
@@ -52,6 +53,7 @@ class ArchivedClassLoaders {
         servicesCatalogs[2] = ServicesCatalog.getServicesCatalog(appLoader);
 
         packageToModule = BuiltinClassLoader.packageToModule();
+        unnamedModuleForBootLoader = BootLoader.getUnnamedModule();
     }
 
     ClassLoader bootLoader() {
@@ -80,6 +82,10 @@ class ArchivedClassLoaders {
 
     Map<String, ?> packageToModule() {
         return packageToModule;
+    }
+
+    Module unnamedModuleForBootLoader() {
+        return unnamedModuleForBootLoader;
     }
 
     static void archive() {

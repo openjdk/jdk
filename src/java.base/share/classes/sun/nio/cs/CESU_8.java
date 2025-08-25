@@ -446,7 +446,7 @@ class CESU_8 extends Unicode
             int dl = dst.arrayOffset() + dst.limit();
 
             // Handle ASCII-only prefix
-            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 
@@ -551,7 +551,7 @@ class CESU_8 extends Unicode
             int dp = 0;
 
             // Handle ASCII-only prefix
-            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(len, da.length));
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(len, da.length));
             sp += n;
             dp += n;
 
