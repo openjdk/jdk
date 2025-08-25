@@ -155,7 +155,8 @@ body.theme-dark {
     --button-focus-filter: brightness(104%);
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
-    div.main-grid img {
+    div.main-grid img,
+    .inherited-list h3 > button {
         filter: invert(100%) brightness(160%);
     }
 }
@@ -208,7 +209,8 @@ body.theme-dark {
         --button-focus-filter: brightness(104%);
         --invalid-tag-background-color: #ffe6e6;
         --invalid-tag-text-color: #000000;
-        div.main-grid img {
+        div.main-grid img,
+        .inherited-list h3 > button {
             filter: invert(100%) brightness(160%);
         }
     }
@@ -257,7 +259,8 @@ body.theme-dark {
         --button-focus-filter: brightness(104%);
         --invalid-tag-background-color: #ffe6e6;
         --invalid-tag-text-color: #000000;
-        div.main-grid img {
+        div.main-grid img,
+        .inherited-list h3 > button {
             filter: none;
         }
     }
