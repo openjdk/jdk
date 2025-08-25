@@ -51,6 +51,9 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert_lock_strong(VtableStubs_lock);
   assert(size == sizeof(VtableStub), "mismatched size");
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // compute real VtableStub size (rounded to nearest word)
   const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
