@@ -59,9 +59,10 @@ public class Stresser implements ExecutionController {
     private long maxIterations;
     private long iterations;
 
-    // In milliseconds
+    // In nanoseconds
     private long startTime;
     private long currentTime;
+    private long stressTime;
 
     private PrintStream defaultOutput = System.out;
 
@@ -181,15 +182,15 @@ public class Stresser implements ExecutionController {
      */
     public void printExecutionInfo(PrintStream out) {
         println(out, "Completed iterations: " + iterations);
-        println(out, "Execution time: " + (currentTime - startTime)/1000.0 + " seconds");
+        println(out, "Execution time: " + (currentTime - startTime)/1_000_000_000.0 + " seconds");
         if (!finished) {
             println(out, "Execution is not finished yet");
         } else if (forceFinish) {
             println(out, "Execution was forced to finish");
         } else if (maxIterations != 0 && iterations >= maxIterations) {
             println(out, "Execution finished because number of iterations was exceeded: " + iterations + " >= " + maxIterations);
-        } else if (options.getTime() != 0 && (currentTime - startTime) >= options.getTime() * 1000) {
-            println(out, "Execution finished because time was exceeded: " + (currentTime - startTime) + " >= " + options.getTime() * 1000);
+        } else if (stressTime != 0 && (currentTime - startTime) >= stressTime) {
+            println(out, "Execution finished because time has exceeded stress time: " + stressTime / 1_000_000_000 + " seconds");
         }
     }
 
@@ -210,8 +211,8 @@ public class Stresser implements ExecutionController {
     public void start(long stdIterations) {
         maxIterations = stdIterations * options.getIterationsFactor();
         iterations = 0;
-        long stressTime = options.getTime();
-        startTime = System.nanoTime()/1000000;
+        stressTime = options.getTime() * 1_000_000_000;
+        startTime = System.nanoTime();
         finished = false;
         forceFinish = false;
         if (options.isDebugEnabled()) {
@@ -229,7 +230,7 @@ public class Stresser implements ExecutionController {
      * finally {} block.
      */
     public void finish() {
-        currentTime = System.nanoTime()/1000000;
+        currentTime = System.nanoTime();
         finished = true;
         if (options.isDebugEnabled()) {
             printExecutionInfo(defaultOutput);
@@ -266,14 +267,14 @@ public class Stresser implements ExecutionController {
      * @return true if execution needs to continue
      */
     public boolean continueExecution() {
-        currentTime = System.nanoTime()/1000000;
+        currentTime = System.nanoTime();
         if (startTime == 0) {
             throw new TestBug("Stresser is not started.");
         }
         return !forceFinish
                 && !finished
                 && (maxIterations == 0 || iterations < maxIterations)
-                && (options.getTime() == 0 || (currentTime - startTime) < options.getTime() * 1000);
+                && (stressTime == 0 || (currentTime - startTime) < stressTime);
     }
 
     /**
@@ -308,7 +309,7 @@ public class Stresser implements ExecutionController {
      * @return time
      */
     public long getExecutionTime() {
-        return System.nanoTime()/1000000 - startTime;
+        return (System.nanoTime() - startTime) / 1_000_000;
     }
 
     /**
@@ -317,12 +318,11 @@ public class Stresser implements ExecutionController {
      * @return time
      */
     public long getTimeLeft() {
-        long elapsedTime = System.nanoTime()/1000000 - startTime;
-        long stressTime = options.getTime() * 1000;
+        long elapsedTime = System.nanoTime() - startTime;
         if (elapsedTime >= stressTime) {
             return 0;
         } else {
-            return stressTime - elapsedTime;
+            return (stressTime - elapsedTime) / 1_000_000;
         }
     }
 
