@@ -969,7 +969,7 @@ public:
   size_t used() const override;
   // This should be called when we're not holding the heap lock. The
   // result might be a bit inaccurate.
-  size_t used_unlocked() const;
+  size_t used_unlocked() const override;
   size_t recalculate_used() const;
 
   // These virtual functions do the actual allocation.
