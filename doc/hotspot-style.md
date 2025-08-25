@@ -624,6 +624,7 @@ For local variables, this can be used to make the code clearer by
 eliminating type information that is obvious or irrelevant.  Excessive
 use can make code much harder to understand.
 
+<a name="function-return-type-deduction"></a>
 * Function return type deduction
 ([n3638](https://isocpp.org/files/papers/N3638.html))<br>
 Only use if the function body has a very small number of `return`
@@ -651,6 +652,42 @@ pushing to extremes.
 Here are a few closely related example bugs:<br>
 <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95468><br>
 <https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html>
+
+### Trailing return type syntax for functions
+
+A function's return type may be specified after the parameters and qualifiers
+([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm)).
+In such a declaration the normal return type is `auto` and the return type is
+indicated by `->` followed by the type.  Although both use `auto` in the
+"normal" leading return type position, this differs from
+[function return type deduction](#function-return-type-deduction),
+in that the return type is explicit rather than deduced, but specified in a
+trailing position.
+
+Use of trailing return types is permitted.  However, the normal, leading
+position for the return type is preferred. A trailing return type should only
+be used where it provides some benefit. Such benefits usually arise because a
+trailing return type is in a different scope than a leading return type.
+
+* If the function identifier is a nested name specifier, then the trailing
+return type occurs in the nested scope. This may permit simpler naming in the
+return type because of the different name lookup context.
+
+* The trailing return type is in the scope of the parameters, making their
+types accessible via `decltype`. For example
+```
+template<typename T, typename U> auto add(T t, U u) -> decltype(t + u);
+```
+rather than
+```
+template<typename T, typename U> decltype((*(T*)0) + (*(U*)0)) add(T t, U u);
+```
+
+* Complex calculated leading return types may obscure the normal syntactic
+boundaries, making it more difficult for a reader to find the function name and
+parameters. This is particularly common in cases where the return type is
+being used for [SFINAE]. A trailing return type may be preferable in such
+situations.
 
 ### enum
 
@@ -1290,9 +1327,6 @@ in HotSpot code because of the "no implicit boolean" guideline.)
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
-
-* Trailing return type syntax for functions
-([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
 
 * Variable templates
 ([n3651](https://isocpp.org/files/papers/N3651.pdf))
