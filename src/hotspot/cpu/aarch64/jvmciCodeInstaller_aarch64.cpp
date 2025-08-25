@@ -140,14 +140,14 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
     case INVOKESTATIC: {
       assert(method->is_static(), "cannot call non-static method with invokestatic");
       call = nativeCall_at(_instructions->start() + pc_offset);
-      _instructions->relocate(call->instruction_address(), relocInfo::static_call_type, method_index);
+      _instructions->relocate(call->instruction_address(), relocInfo::static_call_type, 0, method_index);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESPECIAL: {
       assert(!method->is_static(), "cannot call static method with invokespecial");
       call = nativeCall_at(_instructions->start() + pc_offset);
-      _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type, method_index);
+      _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type, 0, method_index);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub(), JVMCI_CHECK);
       break;
     }
