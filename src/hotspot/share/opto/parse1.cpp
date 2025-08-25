@@ -370,6 +370,13 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       continue;
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      Node* loc = local(index);
+      if (loc->bottom_type() != TypePtr::NULL_PTR) {
+        assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
   for (index = 0; index < sp(); index++) {
@@ -378,6 +385,13 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     if (l->is_top())  continue;  // nothing here
     const Type *type = osr_block->stack_type_at(index);
     set_stack(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      Node* stk = stack(index);
+      if (stk->bottom_type() != TypePtr::NULL_PTR) {
+        assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
+        _stress_rf_hook->add_req(stk);
+      }
+    }
   }
 
   if (bad_type_exit->control()->req() > 1) {
@@ -412,6 +426,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final_or_stable = nullptr;
+  _stress_rf_hook = (StressReachabilityFences ? new Node(1) : nullptr);
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -643,6 +658,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
+
+  if (StressReachabilityFences) {
+    _stress_rf_hook->destruct(&_gvn);
+    _stress_rf_hook = nullptr;
+  }
 }
 
 //---------------------------do_all_blocks-------------------------------------
@@ -1199,6 +1219,17 @@ void Parse::do_method_entry() {
 
   if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_entry(method());
+  }
+
+  if (StressReachabilityFences) {
+    // Keep all oop arguments alive until method return.
+    int max_locals = jvms()->loc_size();
+    for (int idx = 0; idx < max_locals; idx++) {
+      Node* loc = local(idx);
+      if (loc->bottom_type()->isa_oopptr() != nullptr) {
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
 #ifdef ASSERT
@@ -2185,6 +2216,15 @@ void Parse::clinit_deopt() {
 void Parse::return_current(Node* value) {
   if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
+  }
+
+  if (StressReachabilityFences) {
+    // Keep all oop arguments alive until method return.
+    for (uint i = 1; i < _stress_rf_hook->req(); i++) {
+      Node* referent = _stress_rf_hook->in(i);
+      assert(referent->bottom_type()->isa_oopptr(), "%s", Type::str(referent->bottom_type()));
+      insert_reachability_fence(referent);
+    }
   }
 
   // Do not set_parse_bci, so that return goo is credited to the return insn.
