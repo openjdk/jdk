@@ -36,7 +36,6 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/quickSort.hpp"
 
 uint G1CollectionSet::groups_cur_length() const {
   assert(_inc_build_state == CSetBuildType::Inactive, "must be");
@@ -342,10 +341,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
   return remaining_time_ms;
-}
-
-static int compare_region_idx(const uint a, const uint b) {
-  return static_cast<int>(a-b);
 }
 
 // The current mechanism for evacuating pinned old regions is as below:
@@ -688,7 +683,6 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   finalize_old_part(time_remaining_ms);
 
   stop_incremental_building();
-  QuickSort::sort(_regions, _regions_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
