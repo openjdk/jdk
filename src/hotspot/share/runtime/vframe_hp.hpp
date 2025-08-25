@@ -56,6 +56,8 @@ class compiledVFrame: public javaVFrame {
     return (compiledVFrame*) vf;
   }
 
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* get_deferred_locals() const;
+
   void update_deferred_value(BasicType type, int index, jvalue value);
 
   // After object deoptimization, that is object reallocation and relocking, we
@@ -66,6 +68,8 @@ class compiledVFrame: public javaVFrame {
  public:
   // Constructors
   compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, nmethod* nm);
+
+  bool is_deoptimized_frame() const { return _fr.is_deoptimized_frame(); }
 
   // Update a local in a compiled frame. Update happens when deopt occurs
   void update_local(BasicType type, int index, jvalue value);
