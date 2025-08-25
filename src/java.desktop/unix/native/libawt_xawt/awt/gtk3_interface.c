@@ -615,17 +615,14 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_g_string_set_size = dl_symbol("g_string_set_size");
         fp_g_string_free = dl_symbol("g_string_free");
 
-        if (fp_glib_check_version != NULL) {
-            glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
-            if (glib_version_2_68) {
-                // those function are called only by Screencast / Remote desktop
-                fp_g_string_replace = dl_symbol("g_string_replace"); //since: 2.68
-                fp_g_uuid_string_is_valid = //since: 2.52
-                        dl_symbol("g_uuid_string_is_valid");
-                fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
-            }
+        glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
+        if (glib_version_2_68) {
+            // those function are called only by Screencast / Remote desktop
+            fp_g_string_replace = dl_symbol("g_string_replace"); //since: 2.68
+            fp_g_uuid_string_is_valid = //since: 2.52
+                    dl_symbol("g_uuid_string_is_valid");
+            fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
         }
-
         fp_g_string_printf = dl_symbol("g_string_printf");
         fp_g_strconcat = dl_symbol("g_strconcat");
 
