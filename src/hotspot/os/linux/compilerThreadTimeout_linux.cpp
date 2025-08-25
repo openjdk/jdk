@@ -98,11 +98,11 @@ bool CompilerThreadTimeoutLinux::init_timeout() {
   sev.sigev_value.sival_ptr = nullptr;
   sev.sigev_signo = TIMEOUT_SIGNAL;
   sev.sigev_notify = SIGEV_THREAD_ID;
-  #ifdef MUSL_LIBC
+#ifdef MUSL_LIBC
   sev.sigev_notify_thread_id = thread->osthread()->thread_id();
-  #else
+#else
   sev._sigev_un._tid = thread->osthread()->thread_id();
-  #endif // MUSL_LIBC
+#endif // MUSL_LIBC
   clockid_t clock;
   int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
   if (err != 0) {
