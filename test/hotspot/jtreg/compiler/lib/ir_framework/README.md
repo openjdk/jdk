@@ -180,7 +180,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
 - `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before meassurement.
 - `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
-- `-DExcluceRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
+- `-DExcludeRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
@@ -188,7 +188,6 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DTestCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a normal `@Test` annotated method.
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
-- `-DExcludeRandom=true`: Randomly exclude some methods from compilation.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
 
 ## 3. Test Framework Execution
