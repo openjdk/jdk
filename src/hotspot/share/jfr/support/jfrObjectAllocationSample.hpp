@@ -27,12 +27,12 @@
 
 #include "memory/allStatic.hpp"
 
+class JavaThread;
 class Klass;
-class Thread;
 
 class JfrObjectAllocationSample : AllStatic {
   friend class JfrAllocationTracer;
-  static void send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, Thread* thread);
+  static void send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP
