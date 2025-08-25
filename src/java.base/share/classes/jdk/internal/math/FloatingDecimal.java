@@ -35,21 +35,21 @@ import java.util.Arrays;
  * static convenience methods, although a {@link BinaryToASCIIConverter}
  * instance may be obtained and reused.
  */
-public class FloatingDecimal{
+public class FloatingDecimal {
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
     //
     private static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
-    private static final long   FRACT_HOB = ( 1L<<EXP_SHIFT ); // assumed High-Order bit
-    private static final long   EXP_ONE   = ((long)DoubleConsts.EXP_BIAS)<<EXP_SHIFT; // exponent of 1.0
+    private static final long   FRACT_HOB = 1L << EXP_SHIFT; // assumed High-Order bit
+    private static final long   EXP_ONE   = (long) DoubleConsts.EXP_BIAS << EXP_SHIFT; // exponent of 1.0
     private static final int    MAX_SMALL_BIN_EXP = 62;
-    private static final int    MIN_SMALL_BIN_EXP = -( 63 / 3 );
+    private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
     private static final int    MAX_DECIMAL_DIGITS = 15;  // max{n : 10^n <= 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // floor(log_10(Long.MAX_VALUE))
 
-    private static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
-    private static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
+    private static final int    SINGLE_EXP_SHIFT  = FloatConsts.SIGNIFICAND_WIDTH - 1;
+    private static final int    SINGLE_FRACT_HOB  = 1 << SINGLE_EXP_SHIFT;
     private static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
 
     /**
@@ -121,7 +121,7 @@ public class FloatingDecimal{
     }
 
     /**
-     * A <code>BinaryToASCIIConverter</code> which represents <code>NaN</code>
+     * A {@link BinaryToASCIIConverter} which represents <code>NaN</code>
      * and infinite values.
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
@@ -160,11 +160,11 @@ public class FloatingDecimal{
     private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP);
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP);
     private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP);
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[] {'0'});
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[] {'0'});
 
     /**
-     * A buffered implementation of <code>BinaryToASCIIConverter</code>.
+     * A buffered implementation of {@link BinaryToASCIIConverter}.
      */
     static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private boolean isNegative;
@@ -190,7 +190,7 @@ public class FloatingDecimal{
          * Default constructor; used for non-zero values,
          * <code>BinaryToASCIIBuffer</code> may be thread-local and reused
          */
-        BinaryToASCIIBuffer(){
+        BinaryToASCIIBuffer() {
             this.digits = new byte[20];
         }
 
@@ -1718,6 +1718,7 @@ public class FloatingDecimal{
          *       23 for BINARY_16_IX (Float16, once integrated in java.base)
          *      114 for BINARY_32_IX (float)
          *      769 for BINARY_64_IX (double)
+         * but is much shorter in common cases.
          */
         int len = in.length();  // fail fast on null
 
@@ -2045,7 +2046,6 @@ public class FloatingDecimal{
          * Again, since q is not known exactly, we proceed as in the previous
          * case, with ql as a safe replacement for q.
          */
-        // TODO insert logic for small n: 9 for float, 18 for double
         int ql = Math.max(MathUtils.flog2pow10(e - 1) - (P[ix] - 1), Q_MIN[ix]);
         int np = e + Math.max(2 - ql, 1);
         byte[] digits = new byte[Math.min(n, np)];
@@ -2167,7 +2167,7 @@ public class FloatingDecimal{
      *      c = b_1...b_P  (b_i in [0, 2))
      *
      * Equivalently, the floating-point value can be (uniquely) expressed as
-     *      m 2^ep
+     *      m 2^qe
      * where integer qe and real f meet
      *      qe = q + P
      *      m = c 2^(-P)
@@ -2206,7 +2206,6 @@ public class FloatingDecimal{
 //            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
     };
 
-    /* Minimum exponent in the m 2^e representation. */
     /* Minimum exponent in the c 2^q representation. */
     @Stable
     private static final int[] Q_MIN = {
@@ -2217,6 +2216,7 @@ public class FloatingDecimal{
 //            QE_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
     };
 
+    /* Minimum exponent in the m 2^qe representation. */
     @Stable
     private static final int[] QE_MIN = {
             Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
@@ -2226,7 +2226,7 @@ public class FloatingDecimal{
 //            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
     };
 
-    /* Maximum exponent in the m 2^e representation. */
+    /* Maximum exponent in the m 2^qe representation. */
     @Stable
     private static final int[] QE_MAX = {
             3 - QE_MIN[BINARY_16_IX],
