@@ -229,6 +229,7 @@ public class MethodTypeTest {
                 "([V)V",
                 "(" + "[".repeat(256) + "J)I",
                 "(java/lang/Object)V",
+                "()java/lang/Object",
         };
     }
 
