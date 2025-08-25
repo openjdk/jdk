@@ -182,6 +182,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
@@ -190,9 +191,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Reset Partial Array State Manager \\(ms\\)", Level.TRACE),
 
         // Misc Top-level
-        new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),
-        new LogMessageWithLevel("Serial Rebuild Free List:", Level.TRACE),
-        new LogMessageWithLevel("Parallel Rebuild Free List \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Prepare For Mutator:", Level.DEBUG),
         new LogMessageWithLevel("Resize Heap After Collection:", Level.DEBUG),
     };

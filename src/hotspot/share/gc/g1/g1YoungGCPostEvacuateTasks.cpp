@@ -36,6 +36,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -342,6 +343,7 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   size_t _freed_bytes;
   G1CollectedHeap* _g1h;
 
+public:
   // Returns whether the given humongous object defined by the start region index
   // is reclaimable.
   //
@@ -373,11 +375,10 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   // considerable effort for cleaning up the remembered sets. This is
   // required because stale remembered sets might reference locations that
   // are currently allocated into.
-  bool is_reclaimable(uint region_idx) const {
+  static bool is_reclaimable(uint region_idx) {
     return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(region_idx);
   }
 
-public:
   G1FreeHumongousRegionClosure() :
     _humongous_objects_reclaimed(0),
     _humongous_regions_reclaimed(0),
@@ -952,10 +953,22 @@ public:
   }
 };
 
+G1PostEvacuateCollectionSetCleanupTask2::WillBeFreeHeapRegionClosure::WillBeFreeHeapRegionClosure(G1EvacFailureRegions* evac_failure_regions) :
+  G1HeapRegionBoolClosure(), _evac_failure_regions(evac_failure_regions) { }
+
+bool G1PostEvacuateCollectionSetCleanupTask2::WillBeFreeHeapRegionClosure::do_heap_region(G1HeapRegion* r) const {
+  return
+    (G1CollectedHeap::heap()->is_in_cset(r) && !_evac_failure_regions->contains(r->hrm_index())) ||
+    // While is_reclaimable() accepts any region, only the humongous starts region is tracked wrt humongous eager
+    // reclaim. However all regions covered by of the humongous object will get freed during reclamation.
+    (r->is_humongous() && G1FreeHumongousRegionClosure::is_reclaimable(r->humongous_start_region()->hrm_index()));
+}
+
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times()),
+  _will_be_free_cl(evac_failure_regions)
 {
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
@@ -965,6 +978,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
   add_serial_task(new ResetPartialArrayStateManagerTask());
 
+  // The rebuild free list task is a bit special: it assumes that all workers will
+  // visit it once. So start it first to avoid lagging at the very end.
+  add_parallel_task(G1CollectedHeap::heap()->rebuild_free_list_task(&_will_be_free_cl));
   if (evac_failure_regions->has_regions_evac_failed()) {
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
