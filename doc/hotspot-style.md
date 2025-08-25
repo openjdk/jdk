@@ -1330,7 +1330,7 @@ but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
 
 ### Enhanced selection statements
 
-C++17 modified the _condition_ part `if` and `switch` statements, permitting
+C++17 modified the _condition_ part of `if` and `switch` statements, permitting
 an _init-statement_ to be included
 ([p0305r1](http://wg21.link/p0305r1)).
 
@@ -1364,7 +1364,7 @@ using this feature one could write
   }
 ```
 
-C++17 also added compile-time if statements
+C++17 also added compile-time `if` statements
 ([p0292r2](http://wg21.link/p0292r2)). Use of `if constexpr` is
 permitted. This feature can replace and (sometimes vastly) simplify many uses
 of [SFINAE]. The same declaration and initialization guidance for the
