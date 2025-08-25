@@ -217,11 +217,13 @@ public abstract class DocFile {
      * @throws DocFileIOException if there is a problem while writing the copy
      * @throws ResourceIOException if there is a problem while reading the resource
      */
-    public void copyResource(DocPath resource, URL url, UnaryOperator<String> lineTransformer) throws DocFileIOException, ResourceIOException {
+    public void copyResource(DocPath resource, URL url, UnaryOperator<String> lineTransformer)
+            throws DocFileIOException, ResourceIOException {
         copyResource(resource, url, true, lineTransformer);
     }
 
-    private void copyResource(DocPath resource, URL url, boolean replaceNewLine, UnaryOperator<String> lineTransformer) throws ResourceIOException, DocFileIOException {
+    private void copyResource(DocPath resource, URL url, boolean replaceNewLine, UnaryOperator<String> lineTransformer)
+            throws ResourceIOException, DocFileIOException {
         try {
             InputStream in = url.openStream();
 
