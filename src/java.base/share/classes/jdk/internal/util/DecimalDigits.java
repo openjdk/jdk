@@ -25,6 +25,8 @@
 
 package jdk.internal.util;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
@@ -36,6 +38,7 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  * @since 21
  */
 public final class DecimalDigits {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
@@ -442,5 +445,17 @@ public final class DecimalDigits {
     private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
         assert charPos >= 0 && charPos < (buf.length >> 1);
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
+    }
+
+    /**
+     * Appends the 2 width string representation of the {@code int}
+     * argument to this sequence.
+     *
+     * @param   buf   target buffer.
+     * @param   v   an {@code int}.
+     * @return  a reference to this object.
+     */
+    public static void appendPair(StringBuilder buf, int v) {
+        JLA.appendPair(buf, v);
     }
 }
