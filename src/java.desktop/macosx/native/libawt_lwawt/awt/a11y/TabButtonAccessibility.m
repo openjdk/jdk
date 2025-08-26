@@ -106,4 +106,13 @@
     return YES;
 }
 
+- (NSString *)accessibilityRoleDescription
+{
+    NSString *value = NSAccessibilityRoleDescription([self accessibilityRole], NSAccessibilityTabButtonSubrole);
+    if (value == nil) {
+        value = [super accessibilityRoleDescription];
+    }
+    return value;
+}
+
 @end

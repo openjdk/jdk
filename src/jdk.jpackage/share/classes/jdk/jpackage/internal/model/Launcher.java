@@ -173,10 +173,10 @@ public interface Launcher {
 
     /**
      * Gets the additional properties for application launcher entries in the app
-     * image (".jpackage") file.
+     * image (".jpackage.xml") file.
      *
      * @return the additional properties for application launcher entries in
-     *         ".jpackage" file
+     *         ".jpackage.xml" file
      */
     Map<String, String> extraAppImageFileData();
 

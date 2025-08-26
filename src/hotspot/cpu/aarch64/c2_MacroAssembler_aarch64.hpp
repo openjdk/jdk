@@ -34,6 +34,15 @@
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
+  void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
+                                    FloatRegister src2, FloatRegister index,
+                                    FloatRegister tmp, unsigned vector_length_in_bytes);
+
+  void select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
+                                   FloatRegister src2, FloatRegister index,
+                                   FloatRegister tmp, SIMD_RegVariant T,
+                                   unsigned vector_length_in_bytes);
+
  public:
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
@@ -42,9 +51,6 @@
                           FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
                           BasicType eltype);
 
-  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
-  void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
   void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
   void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
@@ -192,5 +198,10 @@
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
 
   void reconstruct_frame_pointer(Register rtmp);
+
+  // Select from a table of two vectors
+  void select_from_two_vectors(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                               FloatRegister index, FloatRegister tmp, BasicType bt,
+                               unsigned vector_length_in_bytes);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

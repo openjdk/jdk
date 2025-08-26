@@ -180,7 +180,6 @@ void G1GCPhaseTimes::reset() {
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_resize_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
-  _cur_collection_start_sec = 0.0;
   _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;

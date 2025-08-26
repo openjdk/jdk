@@ -26,11 +26,11 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
-#include "memory/resourceArea.hpp"
 
 MethodCounters::MethodCounters(const methodHandle& mh) :
   _method(mh()),
